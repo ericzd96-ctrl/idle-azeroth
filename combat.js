@@ -6,34 +6,34 @@
 
 /* ---------- Buff 中文名映射(供 UI 显示,覆盖所有来源:玩家技能/随从/硬编码) ---------- */
 const BUFF_NAMES = {
-  // 玩家技能 + BUFF_FX
-  s_burst:       { icon:'💢', name:'爆发',     desc:'攻击+50%·暴伤+30' },
-  s_empower:     { icon:'🔥', name:'法术爆发', desc:'暴击+25·暴伤+50' },
-  s_frenzy:      { icon:'😡', name:'狂热',     desc:'攻击+30%·攻速+30%' },
-  s_mitigate:    { icon:'🧱', name:'减伤',     desc:'受到伤害-50%' },
-  s_barrier:     { icon:'🪨', name:'护盾',     desc:'受伤-45%·防御+40%' },
-  s_haste:       { icon:'💨', name:'急速',     desc:'攻速+50%' },
-  s_lifesurge:   { icon:'🩸', name:'生命洪流', desc:'吸血+30·攻击+20%' },
-  s_avatar:      { icon:'⚡', name:'天神下凡', desc:'攻+40%·防+30%·减伤20%' },
-  // 硬编码 buff(旧版兼容,无 BUFF_FX 但 recomputeStats 有检查)
-  shield:        { icon:'🛡️', name:'盾墙',     desc:'防御×1.5' },
-  divine:        { icon:'✨', name:'神圣守护', desc:'防御×1.8' },
-  bark:          { icon:'🌳', name:'树皮术',   desc:'防御×1.6' },
-  iceBarrier:    { icon:'🧊', name:'寒冰屏障', desc:'防御×1.6' },
-  earthShield:   { icon:'🪨', name:'大地之盾', desc:'防御×1.5' },
-  evasion:       { icon:'💨', name:'闪避',     desc:'防御×1.4' },
-  bestial:       { icon:'🐻', name:'野兽狂怒', desc:'攻击×1.4' },
-  shadowstep:    { icon:'🌑', name:'暗影步',   desc:'攻击×1.5' },
-  battleShout:   { icon:'📯', name:'战斗怒吼', desc:'攻击×1.3' },
-  kings:         { icon:'👑', name:'王者祝福', desc:'攻+20%·防+20%' },
-  berserk:       { icon:'😡', name:'狂暴',     desc:'攻×1.4·攻速×1.3' },
-  windfury:      { icon:'⚡', name:'风怒',     desc:'攻速×1.6' },
-  rapidFire:     { icon:'🏹', name:'急速射击', desc:'攻速×1.6' },
-  bloodlust:     { icon:'🩸', name:'嗜血',     desc:'攻速×1.7' },
-  timeWarp:      { icon:'🌀', name:'时间扭曲', desc:'攻速×1.8' },
-  sacredShield:  { icon:'🟡', name:'圣盾',     desc:'防御×1.4·回复+5' },
-  seraphim:      { icon:'😇', name:'炽天使',   desc:'攻×1.6·全能+10' },
-  demonForm:     { icon:'😈', name:'恶魔形态', desc:'攻×1.5·吸血+15' },
+  // 玩家技能 + BUFF_FX (效果已减1/3)
+  s_burst:       { icon:'💢', name:'爆发',     desc:'攻击+33%·暴伤+20' },
+  s_empower:     { icon:'🔥', name:'法术爆发', desc:'暴击+17·暴伤+34' },
+  s_frenzy:      { icon:'😡', name:'狂热',     desc:'攻击+20%·攻速+20%' },
+  s_mitigate:    { icon:'🧱', name:'减伤',     desc:'受到伤害-34%' },
+  s_barrier:     { icon:'🪨', name:'护盾',     desc:'受伤-30%·防御+27%' },
+  s_haste:       { icon:'💨', name:'急速',     desc:'攻速+33%' },
+  s_lifesurge:   { icon:'🩸', name:'生命洪流', desc:'吸血+20·攻击+13%' },
+  s_avatar:      { icon:'⚡', name:'天神下凡', desc:'攻+27%·防+20%·减伤13%' },
+  // 硬编码 buff (效果已减1/3)
+  shield:        { icon:'🛡️', name:'盾墙',     desc:'防御×1.33' },
+  divine:        { icon:'✨', name:'神圣守护', desc:'防御×1.53' },
+  bark:          { icon:'🌳', name:'树皮术',   desc:'防御×1.40' },
+  iceBarrier:    { icon:'🧊', name:'寒冰屏障', desc:'防御×1.40' },
+  earthShield:   { icon:'🪨', name:'大地之盾', desc:'防御×1.33' },
+  evasion:       { icon:'💨', name:'闪避',     desc:'防御×1.27' },
+  bestial:       { icon:'🐻', name:'野兽狂怒', desc:'攻击×1.27' },
+  shadowstep:    { icon:'🌑', name:'暗影步',   desc:'攻击×1.33' },
+  battleShout:   { icon:'📯', name:'战斗怒吼', desc:'攻击×1.20' },
+  kings:         { icon:'👑', name:'王者祝福', desc:'攻+13%·防+13%' },
+  berserk:       { icon:'😡', name:'狂暴',     desc:'攻×1.27·攻速×1.20' },
+  windfury:      { icon:'⚡', name:'风怒',     desc:'攻速×1.40' },
+  rapidFire:     { icon:'🏹', name:'急速射击', desc:'攻速×1.40' },
+  bloodlust:     { icon:'🩸', name:'嗜血',     desc:'攻速×1.47' },
+  timeWarp:      { icon:'🌀', name:'时间扭曲', desc:'攻速×1.53' },
+  sacredShield:  { icon:'🟡', name:'圣盾',     desc:'防御×1.27·回复+3' },
+  seraphim:      { icon:'😇', name:'炽天使',   desc:'攻×1.40·全能+7' },
+  demonForm:     { icon:'😈', name:'恶魔形态', desc:'攻×1.33·吸血+10' },
 };
 const MASTERY_TYPE = {
   dmgAmp:    { per:0.6,  fmt:n=>`造成的伤害 +${(n*0.6).toFixed(1)}%` },
@@ -323,24 +323,24 @@ function recomputeStats() {
   mpMax = Math.floor(mpMax * (1 + mpPct/100));
 
   const now = Date.now();
-  if (state.buffs.shield>now) def=Math.floor(def*1.5);
-  if (state.buffs.divine>now) def=Math.floor(def*1.8);
-  if (state.buffs.bark>now) def=Math.floor(def*1.6);
-  if (state.buffs.iceBarrier>now) def=Math.floor(def*1.6);
-  if (state.buffs.earthShield>now) def=Math.floor(def*1.5);
-  if (state.buffs.evasion>now) def=Math.floor(def*1.4);
-  if (state.buffs.bestial>now) atk=Math.floor(atk*1.4);
-  if (state.buffs.shadowstep>now) atk=Math.floor(atk*1.5);
-  if (state.buffs.battleShout>now) atk=Math.floor(atk*1.3);
-  if (state.buffs.kings>now){atk=Math.floor(atk*1.2);def=Math.floor(def*1.2);}
-  if (state.buffs.berserk>now){atk=Math.floor(atk*1.4);spd=+(spd*1.3).toFixed(2);}
-  if (state.buffs.windfury>now) spd=+(spd*1.6).toFixed(2);
-  if (state.buffs.rapidFire>now) spd=+(spd*1.6).toFixed(2);
-  if (state.buffs.bloodlust>now) spd=+(spd*1.7).toFixed(2);
-  if (state.buffs.timeWarp>now) spd=+(spd*1.8).toFixed(2);
-  if (state.buffs.sacredShield>now){def=Math.floor(def*1.4);reg+=5;}
-  if (state.buffs.seraphim>now){atk=Math.floor(atk*1.6);vers+=10;}
-  if (state.buffs.demonForm>now){atk=Math.floor(atk*1.5);leech+=15;}
+  if (state.buffs.shield>now) def=Math.floor(def*1.33);
+  if (state.buffs.divine>now) def=Math.floor(def*1.53);
+  if (state.buffs.bark>now) def=Math.floor(def*1.40);
+  if (state.buffs.iceBarrier>now) def=Math.floor(def*1.40);
+  if (state.buffs.earthShield>now) def=Math.floor(def*1.33);
+  if (state.buffs.evasion>now) def=Math.floor(def*1.27);
+  if (state.buffs.bestial>now) atk=Math.floor(atk*1.27);
+  if (state.buffs.shadowstep>now) atk=Math.floor(atk*1.33);
+  if (state.buffs.battleShout>now) atk=Math.floor(atk*1.20);
+  if (state.buffs.kings>now){atk=Math.floor(atk*1.13);def=Math.floor(def*1.13);}
+  if (state.buffs.berserk>now){atk=Math.floor(atk*1.27);spd=+(spd*1.20).toFixed(2);}
+  if (state.buffs.windfury>now) spd=+(spd*1.40).toFixed(2);
+  if (state.buffs.rapidFire>now) spd=+(spd*1.40).toFixed(2);
+  if (state.buffs.bloodlust>now) spd=+(spd*1.47).toFixed(2);
+  if (state.buffs.timeWarp>now) spd=+(spd*1.53).toFixed(2);
+  if (state.buffs.sacredShield>now){def=Math.floor(def*1.27);reg+=3;}
+  if (state.buffs.seraphim>now){atk=Math.floor(atk*1.40);vers+=7;}
+  if (state.buffs.demonForm>now){atk=Math.floor(atk*1.33);leech+=10;}
   // 新技能通用增益(skills_ext.js 的 BUFF_FX);dr 在受击时由 buffDamageReductionMult 处理
   if (typeof BUFF_FX==='object') {
     for (const k in BUFF_FX) {
@@ -986,7 +986,7 @@ function hasteFactor(){return 1+((state.hero&&state.hero.haste)||0)/100;}       
 function castSpeedMul(){return (state.battleSpeed||1)*hasteFactor();}             // 读条速度&技能CD 提速 = 战斗倍速 × 极速
 function castDmgBonus(sk){return 1+((sk&&sk.castTime)||0)*0.3;}                   // 法系补偿:带读条的技能按读条时长加伤(读条=投资,换更高爆发)
 function getCastTime(sk){if(sk.type==='interrupt')return 0;if(sk.castTime!==undefined)return sk.castTime;return 0;}
-function getSkillCd(sk){let base;if(sk.cd)base=sk.cd;else if(sk.type==='buff')base=30;else if(sk.type==='heal')base=16;else{const mul=sk.mul||1;if(mul>=8)base=35;else if(mul>=6)base=24;else if(mul>=5)base=18;else if(mul>=4)base=13;else if(mul>=3)base=9;else base=7;}if(state.hero.cdReduction>0)base=Math.max(3,Math.floor(base*(1-state.hero.cdReduction/100)));return base;}
+function getSkillCd(sk){let base;if(sk.cd)base=sk.cd;else if(sk.type==='buff')base=40;else if(sk.type==='heal')base=16;else{const mul=sk.mul||1;if(mul>=8)base=35;else if(mul>=6)base=24;else if(mul>=5)base=18;else if(mul>=4)base=13;else if(mul>=3)base=9;else base=7;}if(state.hero.cdReduction>0)base=Math.max(3,Math.floor(base*(1-state.hero.cdReduction/100)));return base;}
 function startCast(skillKey,manual){
   const c=getCls();const sk=c.skills[skillKey];if(!sk)return;
   const castTime=getCastTime(sk);if(castTime<=0){castSkill(skillKey,manual);return;}

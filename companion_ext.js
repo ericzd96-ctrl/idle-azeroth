@@ -27,7 +27,7 @@
 
   const D = (name, icon, desc, mul, extra) => Object.assign({ name, icon, desc, type:'dmg', mul, cd:8 }, extra || {});
   const H = (name, icon, heal, cd) => ({ name, icon, desc:`恢复${Math.round(heal*100)}%生命`, type:'heal', heal, cd:cd||14 });
-  const B = (name, icon, buff, desc, cd) => ({ name, icon, desc, type:'buff', buff, duration:12000, cd:cd||22 });
+  const B = (name, icon, buff, desc, cd) => ({ name, icon, desc, type:'buff', buff, duration:6000, cd:cd||30 });
 
   const add = [
     // ---------- 白(杂兵,1技能)----------
