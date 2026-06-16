@@ -1162,14 +1162,23 @@ function renderCompanion() {
   cl.innerHTML = html;
 }
 
+let dgFilter = 'all'; // 'all' | '5man' | 'raid'
 function renderDungeon() {
   const dl = $('dungeon-list');
   dl.innerHTML = '';
+  // 更新按钮状态
+  const btn5 = $('btn-dg-5man'), btnR = $('btn-dg-raid');
+  if (btn5) { btn5.classList.toggle('active', dgFilter === 'all' || dgFilter === '5man'); }
+  if (btnR) { btnR.classList.toggle('active', dgFilter === 'all' || dgFilter === 'raid'); }
   const sortedDungeons = [...DUNGEONS].sort((a, b) => {
     const hl = state.hero.lvl;
     const aDist = hl >= a.reqLvl ? hl - a.reqLvl : (a.reqLvl - hl) * 2;
     const bDist = hl >= b.reqLvl ? hl - b.reqLvl : (b.reqLvl - hl) * 2;
     return aDist - bDist;
+  }).filter(dg => {
+    if (dgFilter === '5man') return dg.type !== 'raid';
+    if (dgFilter === 'raid') return dg.type === 'raid';
+    return true;
   });
   for (const dg of sortedDungeons) {
     const cdEnd = state.dungeonCd[dg.key] || 0;

@@ -194,6 +194,9 @@ function setupDelegation() {
       if (key === 'tower' && typeof renderTowerPanel === 'function') renderTowerPanel();
       return;
     }
+    // 副本筛选按钮
+    if (e.target.id === 'btn-dg-5man') { dgFilter = dgFilter === '5man' ? 'all' : '5man'; renderDungeon(); }
+    if (e.target.id === 'btn-dg-raid') { dgFilter = dgFilter === 'raid' ? 'all' : 'raid'; renderDungeon(); }
   });
 
   // 神器 事件代理
