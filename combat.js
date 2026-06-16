@@ -60,7 +60,7 @@ function recomputeStats() {
   // 来源追踪(供 UI 展示各来源贡献明细)
   state._statSources = {};
   let _srcSnap = {};
-  const _snapSrc = () => { _srcSnap = {atkPct, hpPct, defPct, spdPct, critdPct, crit:critFlat, leech, vers, mastery, haste, regFlat}; };
+  const _snapSrc = () => { _srcSnap = {atkPct, hpPct, defPct, spdPct, critdPct, crit:critFlat, leech, vers, mastery, haste, regFlat, extraAtk}; };
   const _saveSrc = (name) => {
     const cur = {atkPct, hpPct, defPct, spdPct, critdPct, crit:critFlat, leech, vers, mastery, haste, regFlat};
     const d = {}; let has = false;
@@ -385,7 +385,7 @@ function recomputeStats() {
   else if (_mspec==='leechAmp') leech += mastery*MASTERY_TYPE.leechAmp.per;
 
   // 保存来源汇总(供 UI 展示)— 注意:这些是 buff 前的基础百分比汇总
-  state._statSources._total = {atkPct, hpPct, defPct, spdPct, critdPct, crit:critFlat, leech, vers, mastery, haste, regFlat};
+  state._statSources._total = {atkPct, hpPct, defPct, spdPct, critdPct, crit:critFlat, leech, vers, mastery, haste, regFlat, extraAtk};
   state.hero.atk=atk; state.hero.def=def; state.hero.hpMax=hpMax;
   state.hero.mpMax=Math.max(50,mpMax); state.hero.crit=Math.min(crit,90);
   state.hero.critd=critd; state.hero.spd=Math.min(spd,2.5); state.hero.reg=reg;   // 攻速封顶下调 6→2.5(攻速稀有化)

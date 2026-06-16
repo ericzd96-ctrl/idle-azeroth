@@ -713,6 +713,7 @@ function renderSourceTable() {
     {key:'mastery', label:'精通', fmt:v => '+' + v.toFixed(1)},
     {key:'haste', label:'极速', fmt:v => '+' + v.toFixed(1)},
     {key:'regFlat', label:'回复', fmt:v => '+' + v.toFixed(0)},
+    {key:'extraAtk', label:'额外攻击', fmt:v => '+' + v.toFixed(1) + '%'},
   ];
   // 收集哪些列有数据
   const activeCols = statCols.filter(col => {
