@@ -259,19 +259,34 @@ function updateBattleVisuals() {
     const map = getMap();
     $('h-zone').textContent = `${map.icon} ${map.name} · ⚔️BOSS战`;
     $('zone-name').textContent = `⚔️ ${map.icon} ${map.name} · BOSS战`;
-    let bossExtra = '';
-    if (map.boss.skills) bossExtra += ' · '+map.boss.skills.map(s=>s.icon+s.name).join(' ');
-    if (map.boss.passive) {
-      const p = map.boss.passive;
-      const tags = [];
-      if (p.dodgeChance) tags.push('💨闪避+'+(p.dodgeChance*100)+'%');
-      if (p.critChance) tags.push('💥暴击+'+(p.critChance*100)+'%');
-      if (p.dmgReduction) tags.push('🛡️减伤+'+(p.dmgReduction*100)+'%');
-      if (p.atkBonus) tags.push('⚔️攻击+'+(p.atkBonus*100)+'%');
-      if (p.leech) tags.push('🩸吸血+'+(p.leech*100)+'%');
-      if (tags.length) bossExtra += ' · '+tags.join(' ');
+    // BOSS名悬浮显示技能/被动
+    $('progress-text').innerHTML = `<b class=\"boss-tip\" style=\"cursor:help;border-bottom:1px dotted var(--muted)\">${map.boss.name}</b>`;
+    const bossTip = $('progress-text').querySelector('.boss-tip');
+    if (bossTip && map.boss.skills) {
+      bossTip.addEventListener('mouseenter', e => {
+        let tip = '<b>'+map.boss.emoji+' '+map.boss.name+' Lv.'+map.boss.lvl+'</b>';
+        if (map.boss.skills) {
+          tip += '<div style=\"margin-top:3px;color:#fbbf24\">技能:</div>';
+          map.boss.skills.forEach(s => tip += '<div>'+s.icon+' '+s.name+' — '+s.desc+' ('+(s.castTime||0)+'s读条)</div>');
+        }
+        if (map.boss.passive) {
+          tip += '<div style=\"margin-top:3px;color:#6ee7b7\">被动:</div>';
+          const p = map.boss.passive;
+          if (p.dodgeChance) tip += '<div>💨 闪避 +'+(p.dodgeChance*100)+'%</div>';
+          if (p.critChance) tip += '<div>💥 暴击 +'+(p.critChance*100)+'%</div>';
+          if (p.dmgReduction) tip += '<div>🛡️ 减伤 +'+(p.dmgReduction*100)+'%</div>';
+          if (p.atkBonus) tip += '<div>⚔️ 攻击 +'+(p.atkBonus*100)+'%</div>';
+          if (p.leech) tip += '<div>🩸 吸血 +'+(p.leech*100)+'%</div>';
+        }
+        const tipEl = $('compare-tip');
+        tipEl.querySelector('.compare-head').innerHTML = tip;
+        tipEl.querySelector('.compare-body').innerHTML = '';
+        tipEl.style.display = 'block';
+        positionTip(tipEl, e);
+      });
+      bossTip.addEventListener('mouseleave', () => { $('compare-tip').style.display = 'none'; });
+      bossTip.addEventListener('mousemove', e => positionTip($('compare-tip'), e));
     }
-    $('progress-text').innerHTML = `<b>${map.boss.name}</b><span style="font-size:10px;color:var(--muted)">${bossExtra}</span>`;
   } else if (state.mode === 'dungeon') {
     const dg = DUNGEONS.find(d => d.key === state.dungeonState.key);
     if (!dg) return;
