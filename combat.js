@@ -1039,13 +1039,23 @@ function tickCast(now){
         taken=Math.max(1,Math.floor(taken*buffDamageReductionMult()));   // 减伤技能也对 boss 技能生效
         taken=Math.max(1,Math.floor(taken*heroDebuffTakenMult()));       // 易伤等增加受到伤害
         taken=Math.max(1,Math.floor(taken*masteryTakenMult()));          // 精通:减伤(dr 专精)
+        // BOSS技能随从承伤(与普攻同一仇恨逻辑)
+        if(companionTargetable()&&Math.random()<compAggroChance()){
+          const cst=computeCompanionStats();
+          const compTaken=Math.max(1,Math.floor(taken*(cst?cst.def/(cst.def+100):1)));
+          state._compHp=Math.max(0,(state._compHp||0)-compTaken);
+          showFloat($('comp-mini'),'💀'+wasCasting.icon+'-'+compTaken,'#ff9aa0');
+          if(wasCasting.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(compTaken*wasCasting.lifeSteal));
+          log('🛡️ 随从替你承受了 '+wasCasting.icon+'!','info');
+          if(state._compHp<=0)downCompanion(Date.now());
+        }else{
         state.hp-=taken;showFloat($('hero-emoji'),'💀'+wasCasting.icon+'-'+taken,'#ff4444');
         if(typeof passiveOnTakeDamage==='function')passiveOnTakeDamage(mon,taken);
         if(wasCasting.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(taken*wasCasting.lifeSteal));
-        // boss 给英雄上 debuff(修复:dot 以前错误地加在 boss 自己身上)
+        // boss 给英雄上 debuff
         if(wasCasting.dot){applyHeroDebuff('burn',6000,{dps:Math.max(1,Math.floor(taken*0.12))});log('☠️ 你陷入了'+(wasCasting.icon||'')+'持续伤害!','bad');}
         else{applyHeroDebuff('vulnerable',5000);log('🩸 你被打成了易伤(受到伤害+20%,5秒)','bad');}
-        if(state.hp<=0)onHeroDeath();}
+        if(state.hp<=0)onHeroDeath();}}
     }else{castSkill(wasCasting.skillKey,wasCasting.manual);}
   }
 }
