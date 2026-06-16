@@ -1033,7 +1033,18 @@ function renderMap() {
         let tip = '<b>'+m.boss.emoji+' '+m.boss.name+' Lv.'+m.boss.lvl+'</b>';
         if (m.boss.skills) {
           tip += '<div style="margin-top:3px;color:#fbbf24">技能:</div>';
-          m.boss.skills.forEach(s => tip += '<div>'+s.icon+' '+s.name+' — '+s.desc+' ('+(s.castTime||0)+'s读条)</div>');
+          m.boss.skills.forEach(s => {
+            let tags = '';
+            if (s.aoe) tags += ' 💥AOE';
+            if (s.stun) tags += ' 💫眩晕';
+            if (s.slow) tags += ' ❄️减速';
+            if (s.dot) tags += ' ☠️灼烧';
+            if (s.weaken) tags += ' 💔削弱';
+            if (s.sunder) tags += ' 🩸易伤';
+            if (s.spdBuff) tags += ' ⚡加速';
+            if (s.lifeSteal) tags += ' 🩸吸血';
+            tip += '<div>'+s.icon+' '+s.name+' — '+s.desc+' ('+(s.castTime||0)+'s读条)'+tags+'</div>';
+          });
         }
         if (m.boss.passive) {
           tip += '<div style="margin-top:3px;color:#6ee7b7">被动:</div>';
