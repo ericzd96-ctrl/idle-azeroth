@@ -1170,7 +1170,7 @@ function renderDungeon() {
         <span><span class="icon">${dg.icon}</span> <b>${dg.name}</b></span>
         <span class="pill">Lv.${dg.reqLvl}</span>
       </div>
-      <div class="muted">${dg.desc} · ${(dg.bosses||[]).length}个BOSS · ${((dg.bosses||[])[dg.bosses.length-1]||{}).name||'??'}</div>
+      <div class="muted">${dg.type==='raid'?'<span style=\"color:#fbbf24\">[团本]</span> ':'<span style=\"color:#6ee7b7\">[5人本]</span> '}${dg.desc} · ${(dg.bosses||[]).length}个BOSS · 最终: ${((dg.bosses||[])[dg.bosses.length-1]||{}).name||'??'}${dg.type==='raid'?' · 掉落:紫装/最终橙':''}</div>
       <div class="row">
         <span class="cd-display">${statusText}</span>
         <button class="enter-btn ${canEnter?'epic':''}" data-action="enterdungeon" data-key="${dg.key}" ${canEnter?'':'disabled'}>${btnText}</button>

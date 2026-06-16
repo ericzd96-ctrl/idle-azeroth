@@ -483,18 +483,34 @@ function spawnDungeonMonster(){
   const temoji=bossEmojis.length?choice(bossEmojis):(dg.icon||'👹');
   const name=isBoss?(boss.emoji+boss.name):(temoji+choice(['爪牙','守卫','暴徒','狂徒','奴仆','哨兵','卫士','督军']));
   // 副本小怪大幅强于野外:血量×4 / 攻击×1.6 / 防御×1.6(野外同级只是 ×1.8/×1/×1)
+  const isRaid=dg.type==='raid';
+  const isFinalBoss=isBoss&&boss===dg.bosses[dg.bosses.length-1];
+  const bossMaxRarity=isRaid?(isFinalBoss?'legend':'epic'):(isBoss?'legend':'rare');
   state.currentMonsters.push({name,isBoss,bossName:isBoss?boss.name:null,
     lvl:Math.max(1,Math.floor(power*1.05)),
     hpMax:Math.floor((100+power*power*5.0)*(isBoss?14:4.0)*scale),hp:Math.floor((100+power*power*5.0)*(isBoss?14:4.0)*scale),
     atk:Math.floor((10+power*3.2)*(isBoss?2.0:1.6)*scale),def:Math.floor((3+power*1.5)*(isBoss?1.5:1.6)*scale),
     baseGold:Math.floor(10+power*3),baseXp:Math.floor(35+power*5),
     goldReward:Math.floor((10+power*3)*(isBoss?15:1.5)*scale),honorReward:isBoss?Math.floor(25+power*2.5):2,
-    dropRate:isBoss?1.0:0.35,gemChance:isBoss?0.8:0.05,maxRarity:isBoss?'legend':'rare',fromDungeon:true,_uid:monUidSeq++,
+    dropRate:isBoss?1.0:0.35,gemChance:isBoss?0.8:0.05,maxRarity:bossMaxRarity,fromDungeon:true,_uid:monUidSeq++,
+    _isRaidFinal:isRaid&&isFinalBoss,_isRaid:isRaid,
     atkInterval:(isBoss?1400:1700)+rng(-200,200),_lastAtk:Date.now()-rng(0,1200)});
   // 大秘境词缀:修改怪物属性
   const mon = state.currentMonsters[state.currentMonsters.length-1];
-  // 副本/大秘境 BOSS 被动机制:闪避英雄攻击 / 暴击 / 普攻几率击晕 / 部分技能瞬发(无法打断)
-  if (isBoss) { mon.dodgeChance=0.15; mon.critChance=0.25; mon.critMult=2.0; mon.stunChance=0.12; mon.instantCast=true; }
+  // 副本/大秘境 BOSS 被动:优先读数据中的passive,否则用默认
+  if (isBoss) {
+    mon.dodgeChance=0; mon.critChance=0; mon.critMult=2.0; mon.stunChance=0; mon.instantCast=true;
+    if (boss.passive) {
+      if (boss.passive.dodgeChance) mon.dodgeChance = boss.passive.dodgeChance;
+      if (boss.passive.critChance) mon.critChance = boss.passive.critChance;
+      if (boss.passive.dmgReduction) mon.dmgReduction = boss.passive.dmgReduction;
+      if (boss.passive.atkBonus) mon.atk = Math.floor(mon.atk * (1 + boss.passive.atkBonus));
+      if (boss.passive.leech) mon.lifeSteal = boss.passive.leech;
+      if (boss.passive.stunChance) mon.stunChance = boss.passive.stunChance;
+    } else {
+      mon.dodgeChance=0.15; mon.critChance=0.25; mon.stunChance=0.12;
+    }
+  }
   if (ds.affixes) {
     mon._affixes = ds.affixes;
     mon._arcaneShield = 0;
@@ -855,6 +871,8 @@ function onMonsterDeath(mon){
   // 掉率受声望加成 (一次性提升)
   const adjDrop=(mon.isBoss&&state.mode==='dungeon')?1:Math.min(1,mon.dropRate*bonus.dropMult*olp);   // 副本BOSS必掉1件其专属池装备(不吃越级惩罚)
   if(Math.random()<adjDrop){const dKey=mon.fromDungeon?((state.dungeonState||state.mythicState)?.key):null;const it=rollItem(mon.maxRarity,mon.lvl,dKey,mon.isBoss?mon.bossName:null);if((state.mode==='dungeon'||state.mode==='mythic')&&(state.dungeonState||state.mythicState))(state.dungeonState||state.mythicState).loot.push(it);addToInventory(it);if(typeof eventsOnItemGet==='function') eventsOnItemGet(it);if(it.rarity==='legend'&&typeof progressionOnLegendary==='function') progressionOnLegendary();const c=it.rarity==='legend'?'legend':(it.rarity==='epic'?'epic':'loot');log('🎁 掉落 ['+it.rarityName+'] '+it.name,c);}
+  // 团本最终BOSS额外低概率掉落橙装
+  if(mon._isRaidFinal&&Math.random()<0.08){const dKey2=mon.fromDungeon?((state.dungeonState||state.mythicState)?.key):null;const legend=rollItem('legend',mon.lvl,dKey2,mon.bossName);addToInventory(legend);log('🎉 团本最终BOSS额外掉落 ['+legend.rarityName+'] '+legend.name,'legend');if(typeof progressionOnLegendary==='function') progressionOnLegendary();}
   // 世界Boss 击杀
   if(mon.isWorldBoss){if(typeof onWorldBossKill==='function') onWorldBossKill(mon);return;}
   if(state.mode==='dungeon'){const ds=state.dungeonState;const dg=DUNGEONS.find(d=>d.key===ds.key);const lastBoss=(dg.bosses||[])[dg.bosses.length-1];ds.wave+=1;if(lastBoss&&ds.wave>lastBoss.wave){onDungeonClear(dg);return;}spawnDungeonMonster();}

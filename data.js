@@ -1168,7 +1168,8 @@ const DUNGEONS = [{
       mul: 2.5,
       cd: 10,
       castTime: 1
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '塔格尔·邪炉',
     emoji: '👹',
@@ -1190,7 +1191,8 @@ const DUNGEONS = [{
       mul: 4,
       cd: 20,
       castTime: 2
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '奥格瑞玛地下的火焰洞穴'
 },{
@@ -1212,7 +1214,8 @@ const DUNGEONS = [{
       mul: 2.5,
       cd: 10,
       castTime: 1
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '斯尼德',
     emoji: '🤖',
@@ -1233,7 +1236,8 @@ const DUNGEONS = [{
       mul: 3.5,
       cd: 18,
       castTime: 1.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '范克瑞斯',
     emoji: '🦹',
@@ -1255,7 +1259,8 @@ const DUNGEONS = [{
       slow: true,
       cd: 18,
       castTime: 1
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '迪菲亚兄弟会的据点'
 },{
@@ -1278,7 +1283,8 @@ const DUNGEONS = [{
       dot: true,
       cd: 12,
       castTime: 1
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '斯卡姆',
     emoji: '🦖',
@@ -1291,7 +1297,8 @@ const DUNGEONS = [{
       mul: 3.5,
       cd: 14,
       castTime: 1.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '梦魇之王',
     emoji: '👹',
@@ -1313,7 +1320,8 @@ const DUNGEONS = [{
       slow: true,
       cd: 20,
       castTime: 1.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '被腐蚀的德鲁伊洞穴'
 },{
@@ -1335,7 +1343,8 @@ const DUNGEONS = [{
       mul: 2.5,
       cd: 10,
       castTime: 1
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '格里哈斯特',
     emoji: '🦀',
@@ -1348,7 +1357,8 @@ const DUNGEONS = [{
       mul: 3,
       cd: 12,
       castTime: 1
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '阿库麦尔',
     emoji: '🐙',
@@ -1369,7 +1379,8 @@ const DUNGEONS = [{
       mul: 3,
       cd: 18,
       castTime: 1.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '佐拉姆海岸下的远古神殿'
 },{
@@ -1392,7 +1403,8 @@ const DUNGEONS = [{
       lifeSteal: 0.3,
       cd: 12,
       castTime: 1
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '指挥官斯普林瓦尔',
     emoji: '👻',
@@ -1405,7 +1417,8 @@ const DUNGEONS = [{
       mul: 3.5,
       cd: 14,
       castTime: 1.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '阿鲁高',
     emoji: '🧙',
@@ -1426,7 +1439,8 @@ const DUNGEONS = [{
       mul: 5,
       cd: 22,
       castTime: 2.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '狼人贵族的诅咒之地'
 },{
@@ -1448,7 +1462,8 @@ const DUNGEONS = [{
       mul: 3,
       cd: 12,
       castTime: 1
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '群体打击者9-60',
     emoji: '🤖',
@@ -1461,7 +1476,8 @@ const DUNGEONS = [{
       mul: 3.5,
       cd: 14,
       castTime: 1.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '机械师瑟玛普拉格',
     emoji: '🤖',
@@ -1482,7 +1498,8 @@ const DUNGEONS = [{
       mul: 6,
       cd: 24,
       castTime: 3
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '被污染的侏儒科技之城'
 },{
@@ -1504,7 +1521,8 @@ const DUNGEONS = [{
       mul: 3,
       cd: 12,
       castTime: 1
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '阿格姆',
     emoji: '🐗',
@@ -1517,7 +1535,8 @@ const DUNGEONS = [{
       mul: 2,
       cd: 14,
       castTime: 1
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '卡尔加·刺肋',
     emoji: '🐗',
@@ -1539,7 +1558,8 @@ const DUNGEONS = [{
       mul: 5,
       cd: 22,
       castTime: 2.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '野猪人的荆棘巢穴'
 },{
@@ -1561,7 +1581,8 @@ const DUNGEONS = [{
       mul: 3,
       cd: 10,
       castTime: 1
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '赫洛德',
     emoji: '⚔️',
@@ -1574,7 +1595,8 @@ const DUNGEONS = [{
       mul: 4,
       cd: 14,
       castTime: 1.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '奥法师杜安',
     emoji: '🧙',
@@ -1587,7 +1609,8 @@ const DUNGEONS = [{
       mul: 4,
       cd: 14,
       castTime: 1.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '莫格莱尼',
     emoji: '💀',
@@ -1609,7 +1632,8 @@ const DUNGEONS = [{
       alwaysCrit: true,
       cd: 26,
       castTime: 2.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '狂热的圣光信徒'
 },{
@@ -1632,7 +1656,8 @@ const DUNGEONS = [{
       slow: true,
       cd: 12,
       castTime: 1
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '火眼莫德雷斯',
     emoji: '🔥',
@@ -1645,7 +1670,8 @@ const DUNGEONS = [{
       mul: 3.5,
       cd: 14,
       castTime: 1.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '巫妖寒冰之王',
     emoji: '💀',
@@ -1667,7 +1693,8 @@ const DUNGEONS = [{
       slow: true,
       cd: 22,
       castTime: 2.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '野猪人与亡灵的荆棘高地'
 },{
@@ -1689,7 +1716,8 @@ const DUNGEONS = [{
       mul: 3,
       cd: 12,
       castTime: 1
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '石窟织石者',
     emoji: '🕷️',
@@ -1703,7 +1731,8 @@ const DUNGEONS = [{
       dot: true,
       cd: 14,
       castTime: 1.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '阿扎达斯',
     emoji: '👑',
@@ -1724,7 +1753,8 @@ const DUNGEONS = [{
       mul: 6,
       cd: 24,
       castTime: 3
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '泰坦遗迹中的土灵密室'
 },{
@@ -1746,7 +1776,8 @@ const DUNGEONS = [{
       mul: 3.5,
       cd: 14,
       castTime: 1.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '工匠吉兹洛克',
     emoji: '🗿',
@@ -1759,7 +1790,8 @@ const DUNGEONS = [{
       mul: 4,
       cd: 16,
       castTime: 1.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '瑟莱德丝公主',
     emoji: '👹',
@@ -1781,7 +1813,8 @@ const DUNGEONS = [{
       mul: 6,
       cd: 26,
       castTime: 3
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '半人马与土元素的腐化神殿'
 },{
@@ -1803,7 +1836,8 @@ const DUNGEONS = [{
       mul: 3.5,
       cd: 14,
       castTime: 1.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '乌克兹·沙顶',
     emoji: '🦂',
@@ -1816,7 +1850,8 @@ const DUNGEONS = [{
       mul: 4,
       cd: 16,
       castTime: 1.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '巫医祖穆拉恩',
     emoji: '🗿',
@@ -1839,7 +1874,8 @@ const DUNGEONS = [{
       dot: true,
       cd: 24,
       castTime: 2.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '沙怒巨魔的失落之城'
 },{
@@ -1861,7 +1897,8 @@ const DUNGEONS = [{
       mul: 3.5,
       cd: 14,
       castTime: 1.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '德姆塞卡尔',
     emoji: '🐉',
@@ -1874,7 +1911,8 @@ const DUNGEONS = [{
       mul: 4.5,
       cd: 16,
       castTime: 2
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '伊兰尼库斯之影',
     emoji: '🐉',
@@ -1895,7 +1933,8 @@ const DUNGEONS = [{
       mul: 7,
       cd: 26,
       castTime: 3
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '悲伤沼泽水下的绿龙神殿'
 },{
@@ -1917,7 +1956,8 @@ const DUNGEONS = [{
       mul: 4,
       cd: 14,
       castTime: 1.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '黑暗院长加丁',
     emoji: '🧙',
@@ -1930,7 +1970,8 @@ const DUNGEONS = [{
       mul: 5,
       cd: 18,
       castTime: 2
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '拉斯·弗罗斯特维斯帕',
     emoji: '🧛',
@@ -1952,7 +1993,8 @@ const DUNGEONS = [{
       alwaysCrit: true,
       cd: 28,
       castTime: 2.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '死灵术士的禁忌学府'
 },{
@@ -1974,7 +2016,8 @@ const DUNGEONS = [{
       mul: 3.5,
       cd: 14,
       castTime: 1.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '贝尔加',
     emoji: '🔥',
@@ -1987,7 +2030,8 @@ const DUNGEONS = [{
       mul: 4.5,
       cd: 16,
       castTime: 2
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '弗莱拉斯大使',
     emoji: '👹',
@@ -2000,7 +2044,8 @@ const DUNGEONS = [{
       mul: 5,
       cd: 18,
       castTime: 2
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '达格兰·索瑞森大帝',
     emoji: '👑',
@@ -2021,7 +2066,8 @@ const DUNGEONS = [{
       mul: 6,
       cd: 30,
       castTime: 3
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '黑铁矮人的熔火帝国'
 },{
@@ -2044,7 +2090,8 @@ const DUNGEONS = [{
       slow: true,
       cd: 14,
       castTime: 1.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '炮手威利',
     emoji: '💣',
@@ -2057,7 +2104,8 @@ const DUNGEONS = [{
       mul: 5,
       cd: 16,
       castTime: 2
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '巴纳扎尔',
     emoji: '😈',
@@ -2070,7 +2118,8 @@ const DUNGEONS = [{
       mul: 5,
       cd: 18,
       castTime: 2
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '瑞文戴尔男爵',
     emoji: '🧛',
@@ -2091,7 +2140,8 @@ const DUNGEONS = [{
       mul: 7,
       cd: 30,
       castTime: 3
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '被天灾军团毁灭的人类城市'
 },{
@@ -2100,6 +2150,7 @@ const DUNGEONS = [{
   icon: '🌋',
   reqLvl: 60,
   waves: 10,
+    type: "raid",
   cd: 3600,
   bosses: [{
     name: '鲁西弗隆',
@@ -2126,7 +2177,8 @@ const DUNGEONS = [{
       mul: 5,
       cd: 16,
       castTime: 2
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '加尔',
     emoji: '🪨',
@@ -2139,7 +2191,8 @@ const DUNGEONS = [{
       mul: 4.5,
       cd: 16,
       castTime: 2
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '迦顿男爵',
     emoji: '🔥',
@@ -2152,7 +2205,8 @@ const DUNGEONS = [{
       mul: 6,
       cd: 20,
       castTime: 2.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '拉格纳罗斯',
     emoji: '🔥',
@@ -2174,7 +2228,8 @@ const DUNGEONS = [{
       alwaysCrit: true,
       cd: 36,
       castTime: 4
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '萨弗隆元素领主的火焰之心'
 },{
@@ -2196,7 +2251,8 @@ const DUNGEONS = [{
       mul: 4,
       cd: 14,
       castTime: 1.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '塔瓦洛克',
     emoji: '🪨',
@@ -2209,7 +2265,8 @@ const DUNGEONS = [{
       mul: 4.5,
       cd: 16,
       castTime: 2
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '节点亲王沙法尔',
     emoji: '🌀',
@@ -2231,7 +2288,8 @@ const DUNGEONS = [{
       alwaysCrit: true,
       cd: 24,
       castTime: 2.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '奥金顿的虚空能量墓穴'
 },{
@@ -2240,6 +2298,7 @@ const DUNGEONS = [{
   icon: '🐉',
   reqLvl: 65,
   waves: 10,
+    type: "raid",
   cd: 4200,
   bosses: [{
     name: '狂野的拉佐格尔',
@@ -2266,7 +2325,8 @@ const DUNGEONS = [{
       mul: 6,
       cd: 18,
       castTime: 2.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '克洛玛古斯',
     emoji: '🐕',
@@ -2280,7 +2340,8 @@ const DUNGEONS = [{
       slow: true,
       cd: 16,
       castTime: 2
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '奈法利安',
     emoji: '🐉',
@@ -2302,7 +2363,8 @@ const DUNGEONS = [{
       alwaysCrit: true,
       cd: 34,
       castTime: 4
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '黑龙王子的腐败实验场'
 },{
@@ -2324,7 +2386,8 @@ const DUNGEONS = [{
       mul: 4.5,
       cd: 14,
       castTime: 1.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '机械师斯蒂里格',
     emoji: '🔧',
@@ -2337,7 +2400,8 @@ const DUNGEONS = [{
       mul: 5,
       cd: 16,
       castTime: 2
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '督军卡利瑟里斯',
     emoji: '🐊',
@@ -2350,7 +2414,8 @@ const DUNGEONS = [{
       mul: 6,
       cd: 20,
       castTime: 2.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '盘牙水库的蒸汽密室'
 },{
@@ -2359,6 +2424,7 @@ const DUNGEONS = [{
   icon: '☠️',
   reqLvl: 70,
   waves: 12,
+    type: "raid",
   cd: 5400,
   bosses: [{
     name: '阿努布雷坎',
@@ -2386,7 +2452,8 @@ const DUNGEONS = [{
       lifeSteal: 0.3,
       cd: 18,
       castTime: 2.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '塔迪乌斯',
     emoji: '⚡',
@@ -2399,7 +2466,8 @@ const DUNGEONS = [{
       mul: 6,
       cd: 18,
       castTime: 2.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '萨菲隆',
     emoji: '🐉',
@@ -2420,7 +2488,8 @@ const DUNGEONS = [{
       mul: 6,
       cd: 28,
       castTime: 3
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '克尔苏加德',
     emoji: '☠️',
@@ -2442,7 +2511,8 @@ const DUNGEONS = [{
       alwaysCrit: true,
       cd: 40,
       castTime: 4
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '天灾军团的浮空堡垒'
 },{
@@ -2464,7 +2534,8 @@ const DUNGEONS = [{
       mul: 5,
       cd: 16,
       castTime: 2
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '女祭司德莉希亚',
     emoji: '🧝‍♀️',
@@ -2477,7 +2548,8 @@ const DUNGEONS = [{
       heal: 0.3,
       cd: 20,
       castTime: 1.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '凯尔萨斯·逐日者',
     emoji: '🧝',
@@ -2499,7 +2571,8 @@ const DUNGEONS = [{
       alwaysCrit: true,
       cd: 36,
       castTime: 4
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '血精灵王子的最后堡垒'
 },{
@@ -2508,6 +2581,7 @@ const DUNGEONS = [{
   icon: '🌌',
   reqLvl: 75,
   waves: 10,
+    type: "raid",
   cd: 6000,
   bosses: [{
     name: '猎手阿图门',
@@ -2535,7 +2609,8 @@ const DUNGEONS = [{
       dot: true,
       cd: 16,
       castTime: 2
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '馆长',
     emoji: '🤖',
@@ -2548,7 +2623,8 @@ const DUNGEONS = [{
       mul: 6,
       cd: 20,
       castTime: 2.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '麦迪文',
     emoji: '🔮',
@@ -2561,7 +2637,8 @@ const DUNGEONS = [{
       mul: 8,
       cd: 24,
       castTime: 3
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '最后的守护者之塔'
 },{
@@ -2583,7 +2660,8 @@ const DUNGEONS = [{
       mul: 5,
       cd: 14,
       castTime: 2
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '沃尔坎',
     emoji: '🔥',
@@ -2596,7 +2674,8 @@ const DUNGEONS = [{
       mul: 6,
       cd: 18,
       castTime: 2.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '洛肯',
     emoji: '⚡',
@@ -2618,7 +2697,8 @@ const DUNGEONS = [{
       alwaysCrit: true,
       cd: 32,
       castTime: 3
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '奥杜尔的泰坦闪电圣殿'
 },{
@@ -2640,7 +2720,8 @@ const DUNGEONS = [{
       mul: 4.5,
       cd: 14,
       castTime: 1.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '黑骑士',
     emoji: '⚫',
@@ -2653,7 +2734,8 @@ const DUNGEONS = [{
       mul: 5.5,
       cd: 16,
       castTime: 2
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '纯洁者耶德瑞克',
     emoji: '✨',
@@ -2666,7 +2748,8 @@ const DUNGEONS = [{
       mul: 6,
       cd: 18,
       castTime: 2.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '银白十字军冠军',
     emoji: '🏆',
@@ -2679,7 +2762,8 @@ const DUNGEONS = [{
       mul: 8,
       cd: 22,
       castTime: 3
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '银白十字军的勇士试炼'
 },{
@@ -2688,6 +2772,7 @@ const DUNGEONS = [{
   icon: '☀️',
   reqLvl: 80,
   waves: 11,
+    type: "raid",
   cd: 7200,
   bosses: [{
     name: '卡雷苟斯',
@@ -2714,7 +2799,8 @@ const DUNGEONS = [{
       mul: 7,
       cd: 20,
       castTime: 2.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '艾瑞达双子',
     emoji: '👯',
@@ -2727,7 +2813,8 @@ const DUNGEONS = [{
       mul: 7,
       cd: 20,
       castTime: 2.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '基尔加丹',
     emoji: '😈',
@@ -2749,7 +2836,8 @@ const DUNGEONS = [{
       alwaysCrit: true,
       cd: 44,
       castTime: 5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '燃烧军团的入侵之门'
 },{
@@ -2758,6 +2846,7 @@ const DUNGEONS = [{
   icon: '⚙️',
   reqLvl: 80,
   waves: 11,
+    type: "raid",
   cd: 7200,
   bosses: [{
     name: '烈焰巨兽',
@@ -2784,7 +2873,8 @@ const DUNGEONS = [{
       mul: 7,
       cd: 20,
       castTime: 2.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '芙蕾雅',
     emoji: '🌿',
@@ -2797,7 +2887,8 @@ const DUNGEONS = [{
       heal: 0.25,
       cd: 18,
       castTime: 1.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '尤格-萨隆',
     emoji: '👁️',
@@ -2823,7 +2914,8 @@ const DUNGEONS = [{
       mul: 6,
       cd: 18,
       castTime: 2.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '灵魂吞噬者',
     emoji: '💀',
@@ -2837,7 +2929,8 @@ const DUNGEONS = [{
       lifeSteal: 0.5,
       cd: 20,
       castTime: 2.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '噬魂者布隆亚姆',
     emoji: '👻',
@@ -2859,7 +2952,8 @@ const DUNGEONS = [{
       alwaysCrit: true,
       cd: 40,
       castTime: 4
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '冰冠堡垒的亡灵熔炉'
 },{
@@ -2868,6 +2962,7 @@ const DUNGEONS = [{
   icon: '💎',
   reqLvl: 80,
   waves: 12,
+    type: "raid",
   cd: 9000,
   bosses: [{
     name: '巴尔萨鲁斯',
@@ -2894,7 +2989,8 @@ const DUNGEONS = [{
       mul: 7,
       cd: 20,
       castTime: 2.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '暮光龙·萨维安娜',
     emoji: '🐉',
@@ -2915,7 +3011,8 @@ const DUNGEONS = [{
       heal: 0.25,
       cd: 22,
       castTime: 1.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '海里昂',
     emoji: '🐉',
@@ -2937,7 +3034,8 @@ const DUNGEONS = [{
       alwaysCrit: true,
       cd: 42,
       castTime: 4
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '红龙军团的暮光试炼'
 },{
@@ -2946,6 +3044,7 @@ const DUNGEONS = [{
   icon: '❄️',
   reqLvl: 80,
   waves: 14,
+    type: "raid",
   cd: 10800,
   bosses: [{
     name: '玛洛加尔领主',
@@ -2972,7 +3071,8 @@ const DUNGEONS = [{
       mul: 7,
       cd: 20,
       castTime: 2.5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '普崔塞德教授',
     skills: [{
@@ -3020,7 +3120,8 @@ const DUNGEONS = [{
       alwaysCrit: true,
       cd: 38,
       castTime: 4
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   },{
     name: '巫妖王',
     emoji: '☠️',
@@ -3042,7 +3143,8 @@ const DUNGEONS = [{
       alwaysCrit: true,
       cd: 48,
       castTime: 5
-    }]
+    }],
+        passive: {dmgReduction:0.1}
   }],
   desc: '巫妖王的最终堡垒'
 }];
