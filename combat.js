@@ -1172,9 +1172,9 @@ function collectCompanionMod(){
 function activeCompanionBonds(){if(typeof COMPANION_BONDS==='undefined'||!state.companions)return[];const ks=new Set(state.companions.map(c=>c.key));return COMPANION_BONDS.filter(b=>b.keys.every(k=>ks.has(k)));}
 function initCompanionHp(){
   const st=computeCompanionStats();
-  if(!st){state._compHp=0;return;}
+  if(!st){state._compHp=null;state._compDownUntil=0;return;}   // 无随从时清空状态
   if(state._compDownUntil===undefined||state._compDownUntil===null)state._compDownUntil=0;
-  if(state._compHp===undefined||state._compHp===null)state._compHp=st.hpMax;                 // 首次:满血
+  if((state._compHp===undefined||state._compHp===null||state._compHp<=0)&&!compDowned())state._compHp=st.hpMax;   // 首次/复活:满血
   else if(!compDowned())state._compHp=Math.min(state._compHp,st.hpMax);                       // 跨波保留(只把超出新上限的钳回)
 }
 /* 随从是否处于阵亡(倒下计时中) */
