@@ -3032,7 +3032,7 @@ const ITEM_POOLS = {
     legend: [
       { name:'霜之哀伤', stats:{atk:4,critd:3} }, { name:'灰烬使者', stats:{atk:4,hp:3} },
       { name:'埃提耶什·守护者的传说之杖', stats:{atk:3,int:3,spi:3} }, { name:'巨龙之怒·泰蕾苟萨的寄魂杖', stats:{atk:3,int:3,critd:3} },
-    ]},
+     ,{ name:'萨拉塔斯·黑暗帝国之刃', stats:{atk:4,vers:2,leech:1} } ,{ name:'阿格拉玛的步伐', stats:{atk:4,haste:2,spdPct:3} }]},
   helmet: {
     uncommon: [
       { name:'卫兵头盔', stats:{def:1} }, { name:'皮制兜帽', stats:{def:1} },
@@ -3050,7 +3050,7 @@ const ITEM_POOLS = {
     ],
     legend: [
       { name:'巫妖王的王冠', stats:{def:4,hp:3,sta:3} }, { name:'泰坦之盔', stats:{def:4,str:3} },
-    ]},
+     ,{ name:'艾露恩的祝福之冠', stats:{def:4,int:3,spi:3} } ,{ name:'死亡之翼的龙盔', stats:{def:4,sta:3,hp:2} }]},
   shoulder: {
     uncommon: [
       { name:'卫戍护肩', stats:{atk:1} }, { name:'旅行者披肩', stats:{atk:1} },
@@ -3068,7 +3068,7 @@ const ITEM_POOLS = {
     ],
     legend: [
       { name:'天灾领主肩铠', stats:{atk:3,str:2} },
-    ]},
+     ,{ name:'炎魔之肩', stats:{atk:3,critd:2,str:2} } ,{ name:'天灾领主肩铠', stats:{def:3,sta:3,hp:2} }]},
   armor: {
     uncommon: [
       { name:'新兵胸甲', stats:{def:1} }, { name:'皮背心', stats:{def:1} },
@@ -3086,7 +3086,7 @@ const ITEM_POOLS = {
     ],
     legend: [
       { name:'冰封王座胸铠', stats:{def:4,hp:3,str:3} }, { name:'守护巨龙胸甲', stats:{def:4,sta:3,spi:3} },
-    ]},
+     ,{ name:'艾萨拉女王的鳞甲', stats:{def:4,agi:3,dodge:1} } ,{ name:'守护巨龙的胸铠', stats:{def:4,sta:4,hp:3} }]},
   gloves: {
     uncommon: [
       { name:'士兵手套', stats:{} }, { name:'皮手套', stats:{} },
@@ -3104,7 +3104,7 @@ const ITEM_POOLS = {
     ],
     legend: [
       { name:'死亡之握', stats:{agi:2} },
-    ]},
+     ,{ name:'死亡之握', stats:{atk:3,str:2,crit:1} } ,{ name:'艾露恩之触', stats:{atk:3,int:2,haste:1} }]},
   belt: {
     uncommon: [
       { name:'布质腰带', stats:{def:1} }, { name:'皮束带', stats:{def:1} },
@@ -3122,7 +3122,7 @@ const ITEM_POOLS = {
     ],
     legend: [
       { name:'尤格萨隆的触须之握', stats:{def:3,hp:3,sta:3} },
-    ]},
+     ,{ name:'缚龙者腰带', stats:{def:3,sta:3,dodge:1} } ,{ name:'时光扭曲腰带', stats:{def:3,haste:2,cdReduction:3} }]},
   pants: {
     uncommon: [
       { name:'布裤', stats:{hp:1} }, { name:'皮短裤', stats:{hp:1} },
@@ -3140,7 +3140,7 @@ const ITEM_POOLS = {
     ],
     legend: [
       { name:'冰霜巨龙腿甲', stats:{hp:4,sta:3,str:3} },
-    ]},
+     ,{ name:'烈焰之痕护腿', stats:{def:3,atk:2,critd:2} } ,{ name:'永冬护腿', stats:{def:3,sta:3,hp:2} }]},
   boots: {
     uncommon: [
       { name:'新兵战靴', stats:{} }, { name:'轻便皮靴', stats:{} },
@@ -3158,7 +3158,7 @@ const ITEM_POOLS = {
     ],
     legend: [
       { name:'巫妖王的步履', stats:{agi:2} },
-    ]},
+     ,{ name:'风行者之靴', stats:{atk:2,agi:3,spdPct:4} } ,{ name:'泰坦之足', stats:{def:3,sta:3,dodge:1} }]},
   ring: {
     uncommon: [
       { name:'铜戒', stats:{} }, { name:'银戒', stats:{} },
@@ -3176,7 +3176,7 @@ const ITEM_POOLS = {
     ],
     legend: [
       { name:'克尔苏加德的封印', stats:{atk:3,int:3} },
-    ]},
+     ,{ name:'至尊五戒', stats:{atk:2,hp:2,vers:1} } ,{ name:'卡德加的智慧之戒', stats:{atk:2,int:2,haste:1} }]},
   trinket: {
     uncommon: [
       { name:'幸运兔脚', stats:{sta:1} }, { name:'士兵勋章', stats:{sta:1} },
@@ -3194,7 +3194,7 @@ const ITEM_POOLS = {
     ],
     legend: [
       { name:'阿尔萨斯的悔恨', stats:{sta:4,hp:3,str:3} },
-    ]}};
+     ,{ name:'龙魂之匣', stats:{critd:4,atk:2,crit:1} } ,{ name:'不稳定的奥术水晶', stats:{atk:3,vers:2,haste:1} }]}};
 
 /* ---------- 副本专属掉落(每个BOSS有独立掉落) ---------- */
 const DUNGEON_LOOT = {

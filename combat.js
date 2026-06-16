@@ -460,7 +460,8 @@ function spawnMonster(){
 }
 function spawnZoneBoss(){
   state.currentMonsters=[];const map=getMap();if(!map)return;
-  const mon=makeMonster(map.boss.emoji+map.boss.name,map.boss.lvl,true,'epic');
+  const maxR=map.boss.lvl>=60?'legend':'epic';
+  const mon=makeMonster(map.boss.emoji+map.boss.name,map.boss.lvl,true,maxR);
   // 应用地图BOSS被动
   if(map.boss.passive){
     if(map.boss.passive.dodgeChance)mon.dodgeChance=map.boss.passive.dodgeChance;
@@ -860,10 +861,15 @@ function onMonsterDeath(mon){
   else if(state.mode==='mythic'){const ms=state.mythicState;const dg=DUNGEONS.find(d=>d.key===ms.key);const lastBoss=(dg.bosses||[])[dg.bosses.length-1];if(mon.isBoss)onMythicBossKill();ms.wave+=1;if(lastBoss&&ms.wave>lastBoss.wave){onMythicClear();return;}spawnDungeonMonster();}
   else if(state.mode==='tower'){if(typeof onTowerMonsterKill==='function') onTowerMonsterKill(mon);}
   else if(state.mode==='boss'){if(mon.isBoss){const map=getMap();log('👑 '+map.boss.name+' 已被击败!','legend');
-    // 必爆一件当前地图等级的蓝装(精良)
-    const blue=rollItemOfRarity('rare',mon.lvl);addToInventory(blue);if(typeof eventsOnItemGet==='function')eventsOnItemGet(blue);log('🎁 必掉 ['+blue.rarityName+'] '+blue.name,'loot');
-    // 低概率额外爆一件紫装(史诗)
-    if(Math.random()<0.15){const purple=rollItemOfRarity('epic',mon.lvl);addToInventory(purple);if(typeof eventsOnItemGet==='function')eventsOnItemGet(purple);log('🎉 额外掉落 ['+purple.rarityName+'] '+purple.name,'epic');}
+    if(map.boss.lvl>=60){
+      // 60+ BOSS: 必爆紫装 + 15%概率橙装
+      const purple=rollItemOfRarity('epic',mon.lvl);addToInventory(purple);if(typeof eventsOnItemGet==='function')eventsOnItemGet(purple);log('🎁 必掉 ['+purple.rarityName+'] '+purple.name,'epic');
+      if(Math.random()<0.15){const orange=rollItemOfRarity('legend',mon.lvl);addToInventory(orange);if(typeof eventsOnItemGet==='function')eventsOnItemGet(orange);log('🎉 额外掉落 ['+orange.rarityName+'] '+orange.name,'legend');}
+    }else{
+      // 60以下: 必爆蓝装 + 15%概率紫装
+      const blue=rollItemOfRarity('rare',mon.lvl);addToInventory(blue);if(typeof eventsOnItemGet==='function')eventsOnItemGet(blue);log('🎁 必掉 ['+blue.rarityName+'] '+blue.name,'loot');
+      if(Math.random()<0.15){const purple=rollItemOfRarity('epic',mon.lvl);addToInventory(purple);if(typeof eventsOnItemGet==='function')eventsOnItemGet(purple);log('🎉 额外掉落 ['+purple.rarityName+'] '+purple.name,'epic');}
+    }
     state.mode='world';markDirty('map');}spawnMonster();}
   else{const subKey=state.currentMap+'-'+state.currentSubzone;state.subzoneKills[subKey]=(state.subzoneKills[subKey]||0)+1;if(state.subzoneKills[subKey]===50&&!state.subzoneCleared[subKey]){state.subzoneCleared[subKey]=true;const map=getMap();const sub=map.sub[state.currentSubzone];state.gold+=sub.lvl[1]*30;log('🌟 ['+sub.name+'] 探索完成! +'+sub.lvl[1]*30+'💰','epic');const it3=rollItem('rare',sub.lvl[1],state.currentMap);addToInventory(it3);if(typeof eventsOnItemGet==='function') eventsOnItemGet(it3);if(typeof eventsOnSubzoneClear==='function') eventsOnSubzoneClear();if(typeof progressionOnSubzoneClear==='function') progressionOnSubzoneClear(state.currentMap,state.currentSubzone);markDirty('map');}
     // 多敌:仅移除这一只,整波清空后才刷新下一波
