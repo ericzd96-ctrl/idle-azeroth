@@ -85,23 +85,13 @@
 })();
 
 /* =========================================================
-   BOSS技能描述同步:倍率 → 最大生命百分比(2026-06-15)
+   BOSS技能描述同步:N倍 → N倍攻击(2026-06-16 改用calcDmg公式)
    ----------------------------------------------------------
-   BOSS 伤害技能已改为按英雄"最大生命百分比"结算(combat.js tickCast:hpMax*min(0.45,0.06*mul)),
-   不再是"N倍攻击"。故把 DUNGEONS 里 BOSS 技能 desc 的"N倍"改写为"X%最大生命"(X=min(45,6*mul)),
-   与实际结算一致。仅精确替换等于 mul 的"N倍"。
+   BOSS技能已改为calcDmg(BOSS攻击力×倍率, 防御, 暴击, 暴伤)统一公式,
+   不再按HP%结算。保留原始的"N倍"描述(即BOSS攻击力×N),不做额外转换。
    ========================================================= */
 (function () {
-  try {
-    if (typeof DUNGEONS === 'undefined') return;
-    const pct = mul => Math.min(45, Math.round(6 * mul));
-    for (const dg of DUNGEONS) for (const b of (dg.bosses || [])) for (const sk of (b.skills || [])) {
-      if (typeof sk.mul !== 'number' || typeof sk.desc !== 'string') continue;
-      const mulStr = String(sk.mul).replace('.', '\\.');
-      const re = new RegExp('(?<![\\d.])' + mulStr + '倍');
-      if (re.test(sk.desc)) sk.desc = sk.desc.replace(re, pct(sk.mul) + '%最大生命');
-    }
-  } catch (e) { console.error('boss desc tuning error:', e); }
+  // BOSS技能描述保持原始"N倍"格式,不再转换为HP%描述
 })();
 
 /* =========================================================
