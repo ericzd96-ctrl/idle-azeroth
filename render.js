@@ -1199,28 +1199,35 @@ function renderDungeon() {
     // 副本hover掉落预览 - 按BOSS分组展示
     div.addEventListener('mouseenter', e => {
       const loot = DUNGEON_LOOT[dg.key];
-      const power = dg.reqLvl + 5; // 副本等级的装备强度
-      let html = `<div style="font-weight:bold;margin-bottom:4px">${dg.icon} ${dg.name} (${(dg.bosses||[]).length}BOSS)</div>`;
+      const power = dg.reqLvl + 5;
+      const isRaid = dg.type === 'raid';
+      const lastBossName = (dg.bosses||[])[(dg.bosses||[]).length-1]?.name;
+      let html = `<div style=\"font-weight:bold;margin-bottom:4px\">${dg.icon} ${dg.name} (${(dg.bosses||[]).length}BOSS)${isRaid?' <span style=\"color:#a335ee\">[紫装]</span>':''}</div>`;
       if (loot?.bosses) {
         for (const [bossName, items] of Object.entries(loot.bosses)) {
           const bossData=(dg.bosses||[]).find(b=>b.name===bossName);
-          const skillInfo=bossData?.skills?bossData.skills.map(s=>`${s.icon}${s.name}(${s.desc},${s.castTime||0}秒读条)`).join(' · '):'';
-          html += `<div style="margin-top:4px;color:var(--legend);font-size:11px">👑 ${bossName} (必掉1件)${skillInfo?' · '+skillInfo:''}</div>`;
+          const isFinal = bossName === lastBossName;
+          const skillInfo=bossData?.skills?bossData.skills.map(s=>`${s.icon}${s.name}(${s.desc},${s.castTime||0}s读条)`).join(' · '):'';
+          const dropLabel = isRaid ? (isFinal ? '(必紫+8%橙)' : '(必紫)') : '(必掉1件)';
+          html += `<div style=\"margin-top:4px;color:var(--legend);font-size:11px\">👑 ${bossName} ${dropLabel}${skillInfo?' · '+skillInfo:''}</div>`;
           const tw = items.reduce((s,it)=>s+(RARITY.find(r=>r.key===it.rarity)?.weight||1),0);
           for (const it of items) {
-            const r = RARITY.find(r=>r.key===it.rarity);
-            const itemRate = Math.round((r?.weight||1)/tw*100);   // 池内按稀有度加权的实际爆率
-            const scaledStats = scaleLootStats(it.stats||{}, it.rarity, power);
+            let displayRarity = it.rarity;
+            if (isRaid && (displayRarity === 'common' || displayRarity === 'uncommon')) displayRarity = 'rare';
+            if (isRaid && displayRarity === 'rare') displayRarity = 'epic';
+            const r = RARITY.find(r=>r.key===displayRarity);
+            const itemRate = Math.round((RARITY.find(r2=>r2.key===it.rarity)?.weight||1)/tw*100);
+            const scaledStats = scaleLootStats(it.stats||{}, displayRarity, power);
             const statsText = Object.entries(scaledStats).map(([k,v])=>fmtMod(k, v)).join(' ');
-            html += `<div class="${r?.cls||''}" style="font-size:10px;margin:0 0 0 8px">${r?.name?.[0]||'?'} ${it.name} ${itemRate}% <span style="opacity:.5">${statsText}</span></div>`;
+            html += `<div class=\"${r?.cls||''}\" style=\"font-size:10px;margin:0 0 0 8px\">${r?.name?.[0]||'?'} ${it.name} ${itemRate}% <span style=\"opacity:.5\">${statsText}</span></div>`;
           }
         }
       }
       if (loot?.trash?.length) {
-        html += `<div style="margin-top:4px;color:var(--muted);font-size:10px">杂兵掉落 (35%掉率): ${loot.trash.map(it=>it.name).join(', ')}</div>`;
+        html += `<div style=\"margin-top:4px;color:var(--muted);font-size:10px\">杂兵掉落 (35%掉率): ${loot.trash.map(it=>it.name).join(', ')}</div>`;
       }
       if (!loot) {
-        html += '<div class="muted">通用掉落池</div>';
+        html += '<div class=\"muted\">' + (isRaid ? '团本紫装掉落池' : '通用掉落池') + '</div>';
       }
       const tip = $('compare-tip');
       tip.querySelector('.compare-head').innerHTML = html;
