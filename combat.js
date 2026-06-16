@@ -798,12 +798,13 @@ function tickBattle(now){
     lastMonAtk=now;
     if(getCls().resKey==='rage')state.resource=Math.min(state.resourceMax,state.resource+5);
   }
-  // BOSS技能(带读条)— 自带独立计时,与普攻解耦,支持副本/大秘境/地图BOSS
+  // BOSS技能(带读条)— 使用技能自身CD, 支持副本/大秘境/地图BOSS
   if(mon.isBoss&&!casting){let bossData=null;
     const dg=DUNGEONS.find(d=>d.key===(state.dungeonState||state.mythicState)?.key);
     if(dg)bossData=(dg.bosses||[]).find(b=>b.name===mon.bossName);
     if(!bossData){const map=MAPS.find(m=>m.key===state.currentMap);if(map?.boss)bossData=map.boss;}
-    if(bossData?.skills?.length&&now-lastBossSkill>10000){const sk=bossData.skills[bossSkillIdx%bossData.skills.length];let castTime=sk.castTime!==undefined?sk.castTime:2;const instant=mon.instantCast&&Math.random()<0.35;if(instant)castTime=0;casting={isBoss:true,bossName:mon.bossName,icon:sk.icon,type:sk.type,heal:sk.heal,mul:sk.mul,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,startTime:now,duration:castTime*1000};log('💀 '+mon.bossName+(instant?' 瞬发 ':' 开始施放 ')+sk.name+'!'+(instant?'(无法打断)':''),'bad');lastBossSkill=now;bossSkillIdx++;}}
+    const skillCd=((bossData?.skills||[])[bossSkillIdx%(bossData?.skills||[]).length])?.cd||10;
+    if(bossData?.skills?.length&&now-lastBossSkill>skillCd*1000){const sk=bossData.skills[bossSkillIdx%bossData.skills.length];let castTime=sk.castTime!==undefined?sk.castTime:2;const instant=mon.instantCast&&Math.random()<0.35;if(instant)castTime=0;casting={isBoss:true,bossName:mon.bossName,icon:sk.icon,type:sk.type,heal:sk.heal,mul:sk.mul,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,startTime:now,duration:castTime*1000};log('💀 '+mon.bossName+(instant?' 瞬发 ':' 开始施放 ')+sk.name+'!'+(instant?'(无法打断)':''),'bad');lastBossSkill=now;bossSkillIdx++;}}
   if(state.hp<=0)onHeroDeath();
 }
 
@@ -1054,32 +1055,36 @@ function tickCast(now){
     if(wasCasting.isBoss){const mon=state.currentMonsters[0];if(!mon||mon.hp<=0)return;
       if(wasCasting.type==='heal'){const h=Math.floor(mon.hpMax*(wasCasting.heal||0.2));mon.hp=Math.min(mon.hpMax,mon.hp+h);}
       else{
-        // BOSS技能按英雄"最大生命百分比"结算,绕开护甲减伤的 floor —— 无论你堆多少防御,boss 大招永远是威胁。
-        // 基础 6%/技能倍率 maxHP,封顶 45%;再吃全能/减伤/易伤/等级差,所以高防玩家也只是把它压到可接受、而非归零。
-        const pctMul=wasCasting.mul||2;
-        let taken=Math.max(1,Math.floor(state.hero.hpMax*Math.min(0.45,0.06*pctMul)*lvlDmgMult(mon.lvl,state.hero.lvl)));
-        if(state.hero.vers>0)taken=Math.max(1,Math.floor(taken*(1-state.hero.vers/100)));   // boss技能同样吃全能减伤(修复:之前直接扣血)
-        if(typeof passiveDamageTakenMult==='function')taken=Math.max(1,Math.floor(taken*passiveDamageTakenMult()));
-        taken=Math.max(1,Math.floor(taken*buffDamageReductionMult()));   // 减伤技能也对 boss 技能生效
-        taken=Math.max(1,Math.floor(taken*heroDebuffTakenMult()));       // 易伤等增加受到伤害
-        taken=Math.max(1,Math.floor(taken*masteryTakenMult()));          // 精通:减伤(dr 专精)
-        // BOSS技能随从承伤(与普攻同一仇恨逻辑)
-        if(companionTargetable()&&Math.random()<compAggroChance()){
+        // 统一伤害公式: calcDmg(BOSS攻击力×倍率, 防御, 暴击, 暴伤, 必暴)
+        const mul=wasCasting.mul||2;
+        const rawAtk=Math.floor(mon.atk*mul);
+        // 仇恨前置:先判断随从是否挡刀
+        const hitsCompanion=companionTargetable()&&Math.random()<compAggroChance();
+        if(hitsCompanion){
           const cst=computeCompanionStats();
-          const compTaken=Math.max(1,Math.floor(taken*(cst?cst.def/(cst.def+100):1)));
-          state._compHp=Math.max(0,(state._compHp||0)-compTaken);
-          showFloat($('comp-mini'),'💀'+wasCasting.icon+'-'+compTaken,'#ff9aa0');
-          if(wasCasting.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(compTaken*wasCasting.lifeSteal));
+          const d2=calcDmg(rawAtk,cst?cst.def:mon.def,mon.critChance?mon.critChance*100:5,mon.critMult?mon.critMult*100:150,wasCasting.alwaysCrit,state.hero.lvl,mon.lvl);
+          const taken=d2.dmg;
+          state._compHp=Math.max(0,(state._compHp||0)-taken);
+          showFloat($('comp-mini'),'💀'+wasCasting.icon+'-'+taken,'#ff9aa0');
+          if(wasCasting.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(taken*wasCasting.lifeSteal));
           log('🛡️ 随从替你承受了 '+wasCasting.icon+'!','info');
           if(state._compHp<=0)downCompanion(Date.now());
         }else{
-        state.hp-=taken;showFloat($('hero-emoji'),'💀'+wasCasting.icon+'-'+taken,'#ff4444');
-        if(typeof passiveOnTakeDamage==='function')passiveOnTakeDamage(mon,taken);
-        if(wasCasting.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(taken*wasCasting.lifeSteal));
-        // boss 给英雄上 debuff
-        if(wasCasting.dot){applyHeroDebuff('burn',6000,{dps:Math.max(1,Math.floor(taken*0.12))});log('☠️ 你陷入了'+(wasCasting.icon||'')+'持续伤害!','bad');}
-        else{applyHeroDebuff('vulnerable',5000);log('🩸 你被打成了易伤(受到伤害+20%,5秒)','bad');}
-        if(state.hp<=0)onHeroDeath();}}
+          const d=calcDmg(rawAtk,state.hero.def,mon.critChance?mon.critChance*100:5,mon.critMult?mon.critMult*100:150,wasCasting.alwaysCrit,state.hero.lvl,mon.lvl);
+          let taken=d.dmg;
+          if(state.hero.vers>0)taken=Math.max(1,Math.floor(taken*(1-state.hero.vers/100)));
+          if(typeof passiveDamageTakenMult==='function')taken=Math.max(1,Math.floor(taken*passiveDamageTakenMult()));
+          taken=Math.max(1,Math.floor(taken*buffDamageReductionMult()));
+          taken=Math.max(1,Math.floor(taken*heroDebuffTakenMult()));
+          taken=Math.max(1,Math.floor(taken*masteryTakenMult()));
+          state.hp-=taken;showFloat($('hero-emoji'),'💀'+wasCasting.icon+'-'+taken,'#ff4444');
+          if(typeof passiveOnTakeDamage==='function')passiveOnTakeDamage(mon,taken);
+          if(wasCasting.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(taken*wasCasting.lifeSteal));
+          // 技能特效
+          if(wasCasting.dot){applyHeroDebuff('burn',6000,{dps:Math.max(1,Math.floor(taken*0.12))});log('☠️ 你陷入了'+(wasCasting.icon||'')+'持续伤害!','bad');}
+          else if(wasCasting.slow){applyHeroDebuff('chill',4000);log('❄️ 你被减速了!','bad');}
+          else{applyHeroDebuff('vulnerable',5000);log('🩸 你被打成了易伤(受到伤害+20%,5秒)','bad');}
+          if(state.hp<=0)onHeroDeath();}}
     }else{castSkill(wasCasting.skillKey,wasCasting.manual);}
   }
 }
