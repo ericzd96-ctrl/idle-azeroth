@@ -273,10 +273,21 @@ function updateBattleVisuals() {
     const bossList = dg.bosses || [];
     const killedBosses = bossList.filter(b => b.wave < state.dungeonState.wave).length;
     const curBoss = bossList.find(b => b.wave === state.dungeonState.wave);
-    const bossNames = bossList.map(b => b.name).join(' › ');
+    const isRaid = dg.type === 'raid';
+    const typeTag = isRaid ? '<span style=\"color:#fbbf24\">[团本]</span>' : '<span style=\"color:#6ee7b7\">[5人本]</span>';
     $('h-zone').textContent = `${dg.icon} ${dg.name}`;
-    $('zone-name').textContent = `${dg.icon} ${dg.name}`;
-    const bossTag = curBoss ? ` ⚔️<b style="color:var(--legend)">${curBoss.name}</b>` : '';
+    $('zone-name').innerHTML = `${dg.icon} ${dg.name} ${typeTag}`;
+    let bossExtra = '';
+    if (curBoss?.passive) {
+      const p = curBoss.passive;
+      const tags = [];
+      if (p.dodgeChance) tags.push('💨闪避+'+(p.dodgeChance*100)+'%');
+      if (p.critChance) tags.push('💥暴击+'+(p.critChance*100)+'%');
+      if (p.dmgReduction) tags.push('🛡️减伤+'+(p.dmgReduction*100)+'%');
+      if (p.atkBonus) tags.push('⚔️攻击+'+(p.atkBonus*100)+'%');
+      if (tags.length) bossExtra += ' <span style=\"font-size:10px;color:#6ee7b7\">'+tags.join(' ')+'</span>';
+    }
+    const bossTag = curBoss ? ` ⚔️<b style=\"color:var(--legend)\">${curBoss.name}</b>${bossExtra}` : '';
     $('progress-text').innerHTML = `波次 ${state.dungeonState.wave}/${dg.waves} · BOSS ${killedBosses}/${bossList.length}${bossTag}`;
   } else if (state.mode === 'mythic') {
     const ms = state.mythicState;
@@ -285,7 +296,17 @@ function updateBattleVisuals() {
     const bossList = dg.bosses || [];
     const killedBosses = bossList.filter(b => b.wave < ms.wave).length;
     const curBoss = bossList.find(b => b.wave === ms.wave);
-    const bossTag = curBoss ? ` ⚔️<b style="color:var(--legend)">${curBoss.name}</b>` : '';
+    let bossExtra = '';
+    if (curBoss?.passive) {
+      const p = curBoss.passive;
+      const tags = [];
+      if (p.dodgeChance) tags.push('💨闪避+'+(p.dodgeChance*100)+'%');
+      if (p.critChance) tags.push('💥暴击+'+(p.critChance*100)+'%');
+      if (p.dmgReduction) tags.push('🛡️减伤+'+(p.dmgReduction*100)+'%');
+      if (p.atkBonus) tags.push('⚔️攻击+'+(p.atkBonus*100)+'%');
+      if (tags.length) bossExtra += ' <span style=\"font-size:10px;color:#6ee7b7\">'+tags.join(' ')+'</span>';
+    }
+    const bossTag = curBoss ? ` ⚔️<b style="color:var(--legend)">${curBoss.name}</b>${bossExtra}` : '';
     const affixStr = (ms.affixes && ms.affixes.length > 0)
       ? ' '+ms.affixes.map(a => `<span style="background:rgba(239,68,68,0.12);color:#f87171;padding:0 4px;border-radius:3px;font-size:10px;margin:0 1px;cursor:help"
         onmouseenter="showAffixTip(event,'${a.icon} ${a.name}','${a.desc}')"
