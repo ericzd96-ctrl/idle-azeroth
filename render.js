@@ -108,18 +108,18 @@ function attachFocusBossHover(focus) {
   emojiEl.onmouseenter = function(e) {
     let html = '<b>'+focus.name+' Lv.'+focus.lvl+'</b>';
     if (bossData.skills) {
-      html += '<div style="margin-top:3px;color:#fbbf24">技能:</div>';
+      html += '<div style=\"margin-top:3px;color:#fbbf24\">技能:</div>';
       bossData.skills.forEach(s => {
-        let tags = '';
-        if (s.aoe) tags += ' 💥AOE';
-        if (s.stun) tags += ' 💫眩晕';
-        if (s.slow) tags += ' ❄️减速';
-        if (s.dot) tags += ' ☠️灼烧';
-        if (s.weaken) tags += ' 💔削弱';
-        if (s.sunder) tags += ' 🩸易伤';
-        if (s.spdBuff) tags += ' ⚡加速';
-        if (s.lifeSteal) tags += ' 🩸吸血';
-        html += '<div>'+s.icon+' '+s.name+' — '+s.desc+' ('+(s.castTime||0)+'s读条)'+tags+'</div>';
+        let tags = [];
+        if (s.aoe) tags.push('💥AOE');
+        if (s.stun) tags.push('💫眩晕2秒');
+        if (s.slow) tags.push('❄️减速5秒');
+        if (s.dot) tags.push('☠️灼烧6秒');
+        if (s.weaken) tags.push('💔削弱5秒');
+        if (s.sunder) tags.push('🩸易伤5秒');
+        if (s.spdBuff) tags.push('⚡自加速8秒');
+        if (s.lifeSteal) tags.push('🩸吸血'+(s.lifeSteal*100)+'%');
+        html += '<div>'+s.icon+' '+s.name+' — '+s.desc+' ('+(s.castTime||0)+'s读条)'+(tags.length?' <span style=\"color:#fbbf24;font-size:10px\">'+tags.join(' ')+'</span>':'')+'</div>';
       });
     }
     if (bossData.passive) {
@@ -1032,18 +1032,18 @@ function renderMap() {
       nameEl.addEventListener('mouseenter', e => {
         let tip = '<b>'+m.boss.emoji+' '+m.boss.name+' Lv.'+m.boss.lvl+'</b>';
         if (m.boss.skills) {
-          tip += '<div style="margin-top:3px;color:#fbbf24">技能:</div>';
+          tip += '<div style=\"margin-top:3px;color:#fbbf24\">技能:</div>';
           m.boss.skills.forEach(s => {
-            let tags = '';
-            if (s.aoe) tags += ' 💥AOE';
-            if (s.stun) tags += ' 💫眩晕';
-            if (s.slow) tags += ' ❄️减速';
-            if (s.dot) tags += ' ☠️灼烧';
-            if (s.weaken) tags += ' 💔削弱';
-            if (s.sunder) tags += ' 🩸易伤';
-            if (s.spdBuff) tags += ' ⚡加速';
-            if (s.lifeSteal) tags += ' 🩸吸血';
-            tip += '<div>'+s.icon+' '+s.name+' — '+s.desc+' ('+(s.castTime||0)+'s读条)'+tags+'</div>';
+            let tags = [];
+            if (s.aoe) tags.push('💥AOE');
+            if (s.stun) tags.push('💫眩晕2秒');
+            if (s.slow) tags.push('❄️减速5秒');
+            if (s.dot) tags.push('☠️灼烧6秒');
+            if (s.weaken) tags.push('💔削弱5秒');
+            if (s.sunder) tags.push('🩸易伤5秒');
+            if (s.spdBuff) tags.push('⚡自加速8秒');
+            if (s.lifeSteal) tags.push('🩸吸血'+(s.lifeSteal*100)+'%');
+            tip += '<div>'+s.icon+' '+s.name+' — '+s.desc+' ('+(s.castTime||0)+'s读条)'+(tags.length?' <span style=\"color:#fbbf24;font-size:10px\">'+tags.join(' ')+'</span>':'')+'</div>';
           });
         }
         if (m.boss.passive) {
@@ -1239,9 +1239,9 @@ function renderDungeon() {
           const bossData=(dg.bosses||[]).find(b=>b.name===bossName);
           const isFinal = bossName === lastBossName;
           const skillInfo=bossData?.skills?bossData.skills.map(s=>{
-            let t='';
-            if(s.aoe)t+='💥'; if(s.stun)t+='💫'; if(s.slow)t+='❄️'; if(s.dot)t+='☠️'; if(s.weaken)t+='💔'; if(s.spdBuff)t+='⚡'; if(s.lifeSteal)t+='🩸';
-            return s.icon+s.name+(t?' '+t:'')+'('+s.desc+','+(s.castTime||0)+'s读条)';
+            let t=[];
+            if(s.aoe)t.push('💥AOE'); if(s.stun)t.push('💫眩晕'); if(s.slow)t.push('❄️减速'); if(s.dot)t.push('☠️灼烧'); if(s.weaken)t.push('💔削弱'); if(s.spdBuff)t.push('⚡加速'); if(s.lifeSteal)t.push('🩸吸血');
+            return s.icon+s.name+(t.length?'['+t.join('')+']':'')+'('+s.desc+','+(s.castTime||0)+'s)';
           }).join(' · '):'';
           const dropLabel = isRaid ? (isFinal ? '(必紫+8%橙)' : '(必紫)') : '(必掉1件)';
           html += `<div style=\"margin-top:4px;color:var(--legend);font-size:11px\">👑 ${bossName} ${dropLabel}${skillInfo?' · '+skillInfo:''}</div>`;
