@@ -135,7 +135,7 @@ const CLASSES = {
       {key:'fury', name:'狂暴', icon:'🔥', masteryDesc:'嗜血吸血效果 +4%/精通', talents:[
         {key:'激怒_n0b6', name:'激怒', desc:'攻速 +5%/层', max:5, mod:{spdPct:5}},
         {key:'夺命_1b6c', name:'夺命', desc:'暴伤 +8%/层', max:5, mod:{critdPct:8}},
-        {key:'血之狂热_nf2d', name:'血之狂热', desc:'吸血 +2%/层', max:3, mod:{leech:2}},
+        {key:'血之狂热_nf2d', name:'血之狂热', desc:'攻速 +4%/层', max:3, mod:{spdPct:4}},
         {key:'狂战士_n468', name:'狂战士', desc:'攻击 +2%/层 · 暴击 +1%/层', max:5, mod:{atkPct:2,crit:1}},
         {key:'怒气爆发_3ytl', name:'怒气爆发', desc:'技能CD +5%/层', max:3, mod:{cdReduction:5}},
         {key:'嗜血_vq9y', name:'嗜血', desc:'解锁: 嗜血', max:1, req:10, unlockSkill:'bloodthirst'},
