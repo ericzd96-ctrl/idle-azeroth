@@ -857,7 +857,7 @@ function tickBattle(now){
     if(!bossData){const map=MAPS.find(m=>m.key===state.currentMap);if(map?.boss)bossData=map.boss;}
     const rawCd=((bossData?.skills||[])[bossSkillIdx%(bossData?.skills||[]).length])?.cd||10;
     const skillCd=Math.max(3,Math.floor(rawCd*0.6));   // CD加速40%,但最低3秒间隔
-    if(bossData?.skills?.length&&now-lastBossSkill>skillCd*1000){const sk=bossData.skills[bossSkillIdx%bossData.skills.length];let castTime=sk.castTime!==undefined?sk.castTime:2;const instant=mon.instantCast&&Math.random()<0.35;if(instant)castTime=0;casting={isBoss:true,bossName:mon.bossName,icon:sk.icon,type:sk.type,heal:sk.heal,mul:sk.mul,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,aoe:sk.aoe,startTime:now,duration:castTime*1000};log('💀 '+mon.bossName+(instant?' 瞬发 ':' 开始施放 ')+sk.name+'!'+(instant?'(无法打断)':''),'bad');lastBossSkill=now;bossSkillIdx++;}
+    if(bossData?.skills?.length&&now-lastBossSkill>skillCd*1000){const sk=bossData.skills[bossSkillIdx%bossData.skills.length];let castTime=sk.castTime!==undefined?sk.castTime:2;const instant=mon.instantCast&&Math.random()<0.35;if(instant)castTime=0;casting={isBoss:true,bossName:mon.bossName,icon:sk.icon,type:sk.type,heal:sk.heal,mul:sk.mul,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,aoe:sk.aoe,silence:sk.silence,disarm:sk.disarm,fear:sk.fear,freeze:sk.freeze,cripple:sk.cripple,decay:sk.decay,wither:sk.wither,manaDrain:sk.manaDrain,bomb:sk.bomb,plague:sk.plague,bleed:sk.bleed,brittle:sk.brittle,soulDrain:sk.soulDrain,soulLink:sk.soulLink,revenge:sk.revenge,frenzy:sk.frenzy,decay2:sk.decay2,mirror:sk.mirror,startTime:now,duration:castTime*1000};log('💀 '+mon.bossName+(instant?' 瞬发 ':' 开始施放 ')+sk.name+'!'+(instant?'(无法打断)':''),'bad');lastBossSkill=now;bossSkillIdx++;}
     // BOSS技巧(不占技能池,开局3秒必触发,之后每秒15%概率)
     if(!mon._lastTrick)mon._lastTrick=0;
     if(!mon._trickFirst)mon._trickFirst=false;
@@ -1114,11 +1114,29 @@ function startCast(skillKey,manual){
 function skillEffects(wc,mon,taken,now){
   if(wc.dot){applyHeroDebuff('burn',6000,{dps:Math.max(1,Math.floor(taken*0.12))});log('☠️ '+mon.bossName+(wc.icon||'')+'让你中毒了!','bad');}
   if(wc.slow){applyHeroDebuff('chill',5000);log('❄️ '+mon.bossName+(wc.icon||'')+'减速了你!','bad');}
-  if(wc.stun){state.heroStunUntil=now+2000;showFloat($('hero-emoji'),'💫眩晕','#fde047');log('💫 '+mon.bossName+(wc.icon||'')+'击晕了你!','bad');}
+  if(wc.stun){state.heroStunUntil=now+(wc.stun===true?2000:wc.stun);showFloat($('hero-emoji'),'💫眩晕','#fde047');log('💫 '+mon.bossName+(wc.icon||'')+'击晕了你!','bad');}
+  if(wc.silence){state.heroSilenceUntil=now+(wc.silence===true?4000:wc.silence);log('🔇 '+mon.bossName+(wc.icon||'')+'沉默了你!','bad');}
+  if(wc.disarm){state.heroDisarmUntil=now+(wc.disarm===true?3000:wc.disarm);log('⚔️❌ '+mon.bossName+(wc.icon||'')+'缴械了你!','bad');}
+  if(wc.fear){state.heroStunUntil=now+2000;applyHeroDebuff('burn',3000,{dps:Math.max(1,Math.floor(taken*0.05))});showFloat($('hero-emoji'),'👻恐惧','#a78bfa');log('👻 '+mon.bossName+(wc.icon||'')+'恐惧了你!','bad');}
+  if(wc.freeze){state.heroStunUntil=now+2000;state.hero.def=Math.floor(state.hero.def*2);setTimeout(()=>recomputeStats(),2100);log('🧊 '+mon.bossName+(wc.icon||'')+'冻结了你!','bad');}
+  if(wc.cripple){applyHeroDebuff('weaken',5000);applyHeroDebuff('chill',5000);log('🦿 '+mon.bossName+(wc.icon||'')+'残废了你!','bad');}
+  if(wc.decay){applyHeroDebuff('weaken',8000);log('👴 '+mon.bossName+(wc.icon||'')+'让你衰老了!','bad');}
+  if(wc.wither){state.hp=Math.max(1,Math.floor(state.hp*0.85));showFloat($('hero-emoji'),'🥀-'+Math.floor(state.hero.hpMax*0.15),'#9ca3af');log('🥀 '+mon.bossName+(wc.icon||'')+'枯萎了你的生命!','bad');}
+  if(wc.manaDrain){state.resource=Math.max(0,state.resource-(wc.manaDrain===true?50:wc.manaDrain));log('💧 '+mon.bossName+(wc.icon||'')+'吸取了你的能量!','bad');}
+  if(wc.bomb){const bdmg=Math.floor(state.hero.hpMax*0.3);setTimeout(()=>{if(state.hp>0){state.hp=Math.max(1,state.hp-bdmg);showFloat($('hero-emoji'),'💣-'+bdmg,'#ef4444');log('💣 BOSS的自爆印记爆炸了!','bad');}},5000);log('💣 '+mon.bossName+(wc.icon||'')+'给你施加了自爆印记(5秒后爆炸)!','bad');}
+  if(wc.plague){applyHeroDebuff('burn',6000,{dps:Math.max(1,Math.floor(taken*0.15))});log('🦠 '+mon.bossName+(wc.icon||'')+'散播了暗影瘟疫!','bad');}
+  if(wc.bleed){applyHeroDebuff('burn',8000,{dps:Math.max(1,Math.floor(taken*0.1))});log('🩸 '+mon.bossName+(wc.icon||'')+'让你流血了!','bad');}
+  if(wc.brittle){state._brittleUntil=now+6000;log('💥 '+mon.bossName+(wc.icon||'')+'让你变得易爆(下次受伤翻倍)!','bad');}
+  if(wc.soulDrain){mon.lifeSteal=(mon.lifeSteal||0)+0.3;mon._trickLeech=now+8000;log('🧛 '+mon.bossName+(wc.icon||'')+'开始吸取你的精力!','bad');}
+  if(wc.soulLink){state._soulLinkUntil=now+8000;log('🔗 '+mon.bossName+(wc.icon||'')+'链接了你的灵魂!','bad');}
+  if(wc.revenge){applyHeroDebuff('vulnerable',6000);log('🎯 '+mon.bossName+(wc.icon||'')+'标记了你!','bad');}
+  if(wc.frenzy){state.hero.atk=Math.floor(state.hero.atk*1.3);state.hero.def=Math.floor(state.hero.def*0.5);setTimeout(()=>recomputeStats(),8100);log('🤯 '+mon.bossName+(wc.icon||'')+'让你陷入了狂乱!','bad');}
+  if(wc.decay2){state._decayUntil=now+8000;log('🌑 '+mon.bossName+(wc.icon||'')+'凋零了你的回复能力!','bad');}
+  if(wc.mirror){log('🪞 '+mon.bossName+(wc.icon||'')+'制造了你的镜像!','bad');}
   if(wc.weaken){applyHeroDebuff('weaken',5000);log('💔 '+mon.bossName+(wc.icon||'')+'削弱了你!','bad');}
   if(wc.sunder){applyHeroDebuff('vulnerable',5000);log('🩸 '+mon.bossName+(wc.icon||'')+'打出了易伤!','bad');}
   if(wc.spdBuff){mon.spdBuffUntil=now+8000;log('⚡ '+mon.bossName+'攻速提升了!','bad');}
-  if(!wc.dot&&!wc.slow&&!wc.stun&&!wc.weaken&&!wc.sunder)applyHeroDebuff('vulnerable',5000);
+  if(!wc.dot&&!wc.slow&&!wc.stun&&!wc.weaken&&!wc.sunder&&!wc.silence&&!wc.disarm&&!wc.fear&&!wc.freeze&&!wc.cripple&&!wc.decay&&!wc.wither&&!wc.manaDrain&&!wc.bomb&&!wc.plague&&!wc.bleed&&!wc.brittle&&!wc.soulDrain&&!wc.soulLink&&!wc.revenge&&!wc.frenzy&&!wc.decay2&&!wc.mirror)applyHeroDebuff('vulnerable',5000);
 }
 function tickCast(now){
   if(!casting)return;
