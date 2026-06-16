@@ -460,7 +460,16 @@ function spawnMonster(){
 }
 function spawnZoneBoss(){
   state.currentMonsters=[];const map=getMap();if(!map)return;
-  state.currentMonsters.push(makeMonster(map.boss.emoji+map.boss.name,map.boss.lvl,true,'epic'));
+  const mon=makeMonster(map.boss.emoji+map.boss.name,map.boss.lvl,true,'epic');
+  // 应用地图BOSS被动
+  if(map.boss.passive){
+    if(map.boss.passive.dodgeChance)mon.dodgeChance=map.boss.passive.dodgeChance;
+    if(map.boss.passive.critChance)mon.critChance=map.boss.passive.critChance;
+    if(map.boss.passive.dmgReduction)mon.dmgReduction=map.boss.passive.dmgReduction;
+    if(map.boss.passive.atkBonus)mon.atk=Math.floor(mon.atk*(1+map.boss.passive.atkBonus));
+    if(map.boss.passive.leech)mon.lifeSteal=map.boss.passive.leech;
+  }
+  state.currentMonsters.push(mon);
 }
 function spawnDungeonMonster(){
   state.currentMonsters=[];const ds=state.dungeonState||state.mythicState;if(!ds)return;
@@ -768,11 +777,16 @@ function tickBattle(now){
   }
   if(anyHit){
     $('hero-emoji').classList.add('shake');setTimeout(()=>$('hero-emoji').classList.remove('shake'),200);
+    if(mon.lifeSteal&&totalDmg>0){const heal=Math.floor(totalDmg*mon.lifeSteal);mon.hp=Math.min(mon.hpMax,mon.hp+heal);showFloat($('mon-emoji'),'🩸+'+heal,'#ef4444');}
     lastMonAtk=now;
     if(getCls().resKey==='rage')state.resource=Math.min(state.resourceMax,state.resource+5);
   }
-  // BOSS技能(带读条)— 自带独立计时,与普攻解耦
-  if(mon.isBoss&&(state.mode==='dungeon'||state.mode==='mythic')&&!casting){const dg=DUNGEONS.find(d=>d.key===(state.dungeonState||state.mythicState)?.key);const bossData=(dg?.bosses||[]).find(b=>b.name===mon.bossName);if(bossData?.skills?.length&&now-lastBossSkill>10000){const sk=bossData.skills[bossSkillIdx%bossData.skills.length];let castTime=sk.castTime!==undefined?sk.castTime:2;const instant=mon.instantCast&&Math.random()<0.35;if(instant)castTime=0;casting={isBoss:true,bossName:mon.bossName,icon:sk.icon,type:sk.type,heal:sk.heal,mul:sk.mul,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,startTime:now,duration:castTime*1000};log('💀 '+mon.bossName+(instant?' 瞬发 ':' 开始施放 ')+sk.name+'!'+(instant?'(无法打断)':''),'bad');lastBossSkill=now;bossSkillIdx++;}}
+  // BOSS技能(带读条)— 自带独立计时,与普攻解耦,支持副本/大秘境/地图BOSS
+  if(mon.isBoss&&!casting){let bossData=null;
+    const dg=DUNGEONS.find(d=>d.key===(state.dungeonState||state.mythicState)?.key);
+    if(dg)bossData=(dg.bosses||[]).find(b=>b.name===mon.bossName);
+    if(!bossData){const map=MAPS.find(m=>m.key===state.currentMap);if(map?.boss)bossData=map.boss;}
+    if(bossData?.skills?.length&&now-lastBossSkill>10000){const sk=bossData.skills[bossSkillIdx%bossData.skills.length];let castTime=sk.castTime!==undefined?sk.castTime:2;const instant=mon.instantCast&&Math.random()<0.35;if(instant)castTime=0;casting={isBoss:true,bossName:mon.bossName,icon:sk.icon,type:sk.type,heal:sk.heal,mul:sk.mul,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,startTime:now,duration:castTime*1000};log('💀 '+mon.bossName+(instant?' 瞬发 ':' 开始施放 ')+sk.name+'!'+(instant?'(无法打断)':''),'bad');lastBossSkill=now;bossSkillIdx++;}}
   if(state.hp<=0)onHeroDeath();
 }
 
