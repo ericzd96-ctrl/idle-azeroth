@@ -1237,7 +1237,7 @@ function renderDungeon() {
       if (loot?.bosses) {
         for (const [bossName, items] of Object.entries(loot.bosses)) {
           const bossData=(dg.bosses||[]).find(b=>b.name===bossName);
-          const isFinal = bossName === lastBossName;
+          const isFinal = bossData && bossName === lastBossName;
           const skillInfo=bossData?.skills?bossData.skills.map(s=>{
             let t=[];
             if(s.aoe)t.push('💥AOE'); if(s.stun)t.push('💫眩晕'); if(s.slow)t.push('❄️减速'); if(s.dot)t.push('☠️灼烧'); if(s.weaken)t.push('💔削弱'); if(s.spdBuff)t.push('⚡加速'); if(s.lifeSteal)t.push('🩸吸血');
