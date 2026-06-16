@@ -755,6 +755,12 @@ function tickBattle(now){
     if(!(now-last>interval||now-last>6000))continue;   // 还没到这只怪的下一次出手
     m._lastAtk=now;
     let matk=m.atk;if(m._affixes&&m._affixes.some(a=>a.mod.raging)&&m.hp<m.hpMax*0.3)matk=Math.floor(matk*1.5);
+    // BOSS技巧效果
+    const trickAtk=m._trickAtkBuff&&m._trickAtkBuff>now;if(trickAtk)matk=Math.floor(matk*1.5);
+    const trickCrit=m._trickCrit&&m._trickCrit>now;
+    if(m._trickDefBuff&&m._trickDefBuff>now)m.def=Math.floor(m.def*1.5);
+    // 双倍攻击
+    let doubleAtk=m._nextAtkDouble&&m._nextAtkDouble>0;if(doubleAtk)m._nextAtkDouble--;
     // 野外小怪身份技能(每~5秒一次):算伤害加成;英雄专属副作用(减速/日志)延后到确实命中英雄时再施加
     let kindFloat=null,kindColor='#f59e0b',kindChill=false,kindLog=null;
     if(m.kind&&now-(m._lastSkill||0)>5000){m._lastSkill=now;
@@ -779,7 +785,8 @@ function tickBattle(now){
     if(kindFloat)showFloat($('hero-emoji'),kindFloat,kindColor);
     if(kindChill&&typeof applyHeroDebuff==='function')applyHeroDebuff('chill',3000);
     if(kindLog)log(kindLog[0],kindLog[1]);
-    const d=calcDmg(matk,state.hero.def,(m.critChance?m.critChance*100:5),(m.critMult?m.critMult*100:150),false,state.hero.lvl,m.lvl);let taken=d.dmg;   // BOSS 暴击
+    const critRate=trickCrit?100:(m.critChance?m.critChance*100:5);
+    const d=calcDmg(matk,state.hero.def,critRate,(m.critMult?m.critMult*100:150),trickCrit,state.hero.lvl,m.lvl);let taken=d.dmg;
     // BOSS 普攻几率击晕英雄(1.5秒无法攻击/施法)
     if(m.stunChance&&Math.random()<m.stunChance){state.heroStunUntil=now+1500;showFloat($('hero-emoji'),'💫晕眩','#fde047');log('💫 你被 '+m.name+' 击晕了!','bad');}
     if(state.hero.vers>0)taken=Math.max(1,Math.floor(taken*(1-state.hero.vers/100)));
@@ -792,10 +799,19 @@ function tickBattle(now){
     if(typeof passiveOnTakeDamage==='function')passiveOnTakeDamage(m,taken);
     showFloat($('hero-emoji'),'-'+taken,'#ff7a7a');
     anyHit=true;
+    // 双倍攻击技巧: 再来一刀
+    if(doubleAtk){
+      const d2d=calcDmg(matk,state.hero.def,(m.critChance?m.critChance*100:5),(m.critMult?m.critMult*100:150),false,state.hero.lvl,m.lvl);let t2=d2d.dmg;
+      if(state.hero.vers>0)t2=Math.max(1,Math.floor(t2*(1-state.hero.vers/100)));
+      if(typeof passiveDamageTakenMult==='function')t2=Math.max(1,Math.floor(t2*passiveDamageTakenMult()));
+      t2=Math.max(1,Math.floor(t2*buffDamageReductionMult()));t2=Math.max(1,Math.floor(t2*heroDebuffTakenMult()));t2=Math.max(1,Math.floor(t2*masteryTakenMult()));
+      state.hp-=t2;showFloat($('hero-emoji'),'⚡-'+t2,'#fbbf24');totalDmg+=t2;
+    }
   }
   if(anyHit){
     $('hero-emoji').classList.add('shake');setTimeout(()=>$('hero-emoji').classList.remove('shake'),200);
-    if(mon.lifeSteal&&totalDmg>0){const heal=Math.floor(totalDmg*mon.lifeSteal);mon.hp=Math.min(mon.hpMax,mon.hp+heal);showFloat($('mon-emoji'),'🩸+'+heal,'#ef4444');}
+    const trickLeech=mon._trickLeech&&mon._trickLeech>now;
+    if((mon.lifeSteal||trickLeech)&&totalDmg>0){const ls=trickLeech?0.2:(mon.lifeSteal||0);const heal=Math.floor(totalDmg*ls);mon.hp=Math.min(mon.hpMax,mon.hp+heal);showFloat($('mon-emoji'),'🩸+'+heal,'#ef4444');}
     lastMonAtk=now;
     if(getCls().resKey==='rage')state.resource=Math.min(state.resourceMax,state.resource+5);
   }
@@ -806,7 +822,21 @@ function tickBattle(now){
     if(!bossData){const map=MAPS.find(m=>m.key===state.currentMap);if(map?.boss)bossData=map.boss;}
     const rawCd=((bossData?.skills||[])[bossSkillIdx%(bossData?.skills||[]).length])?.cd||10;
     const skillCd=Math.max(3,Math.floor(rawCd*0.6));   // CD加速40%,但最低3秒间隔
-    if(bossData?.skills?.length&&now-lastBossSkill>skillCd*1000){const sk=bossData.skills[bossSkillIdx%bossData.skills.length];let castTime=sk.castTime!==undefined?sk.castTime:2;const instant=mon.instantCast&&Math.random()<0.35;if(instant)castTime=0;casting={isBoss:true,bossName:mon.bossName,icon:sk.icon,type:sk.type,heal:sk.heal,mul:sk.mul,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,aoe:sk.aoe,startTime:now,duration:castTime*1000};log('💀 '+mon.bossName+(instant?' 瞬发 ':' 开始施放 ')+sk.name+'!'+(instant?'(无法打断)':''),'bad');lastBossSkill=now;bossSkillIdx++;}}
+    if(bossData?.skills?.length&&now-lastBossSkill>skillCd*1000){const sk=bossData.skills[bossSkillIdx%bossData.skills.length];let castTime=sk.castTime!==undefined?sk.castTime:2;const instant=mon.instantCast&&Math.random()<0.35;if(instant)castTime=0;casting={isBoss:true,bossName:mon.bossName,icon:sk.icon,type:sk.type,heal:sk.heal,mul:sk.mul,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,aoe:sk.aoe,startTime:now,duration:castTime*1000};log('💀 '+mon.bossName+(instant?' 瞬发 ':' 开始施放 ')+sk.name+'!'+(instant?'(无法打断)':''),'bad');lastBossSkill=now;bossSkillIdx++;}
+    // BOSS技巧(不占技能池,随机触发,有预告)
+    if(!mon._lastTrick)mon._lastTrick=0;
+    if(bossData?.tricks?.length&&now-mon._lastTrick>8000&&Math.random()<0.12){
+      const trick=bossData.tricks[Math.floor(Math.random()*bossData.tricks.length)];
+      log('⚡ '+mon.bossName+' 使用技巧 '+trick.icon+trick.name+'!','bad');
+      mon._lastTrick=now;
+      if(trick.nextDouble)mon._nextAtkDouble=(mon._nextAtkDouble||0)+1;
+      if(trick.atkBuff)mon._trickAtkBuff=now+trick.atkBuff*1000;
+      if(trick.spdBuff)mon._trickSpdBuff=now+trick.spdBuff*1000;
+      if(trick.defBuff)mon._trickDefBuff=now+trick.defBuff*1000;
+      if(trick.healPct)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(mon.hpMax*trick.healPct));
+      if(trick.leechBuff)mon._trickLeech=now+trick.leechBuff*1000;
+      if(trick.critBuff)mon._trickCrit=now+trick.critBuff*1000;
+    }}
   if(state.hp<=0)onHeroDeath();
 }
 
