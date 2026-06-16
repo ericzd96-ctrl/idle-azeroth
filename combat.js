@@ -3,6 +3,38 @@
    ========================================================= */
 
 /* ---------- 精通(mastery)被动:按专精映射到一种效果原型,数值随精通点数提升(2026-06-16) ---------- */
+
+/* ---------- Buff 中文名映射(供 UI 显示,覆盖所有来源:玩家技能/随从/硬编码) ---------- */
+const BUFF_NAMES = {
+  // 玩家技能 + BUFF_FX
+  s_burst:       { icon:'💢', name:'爆发',     desc:'攻击+50%·暴伤+30' },
+  s_empower:     { icon:'🔥', name:'法术爆发', desc:'暴击+25·暴伤+50' },
+  s_frenzy:      { icon:'😡', name:'狂热',     desc:'攻击+30%·攻速+30%' },
+  s_mitigate:    { icon:'🧱', name:'减伤',     desc:'受到伤害-50%' },
+  s_barrier:     { icon:'🪨', name:'护盾',     desc:'受伤-45%·防御+40%' },
+  s_haste:       { icon:'💨', name:'急速',     desc:'攻速+50%' },
+  s_lifesurge:   { icon:'🩸', name:'生命洪流', desc:'吸血+30·攻击+20%' },
+  s_avatar:      { icon:'⚡', name:'天神下凡', desc:'攻+40%·防+30%·减伤20%' },
+  // 硬编码 buff(旧版兼容,无 BUFF_FX 但 recomputeStats 有检查)
+  shield:        { icon:'🛡️', name:'盾墙',     desc:'防御×1.5' },
+  divine:        { icon:'✨', name:'神圣守护', desc:'防御×1.8' },
+  bark:          { icon:'🌳', name:'树皮术',   desc:'防御×1.6' },
+  iceBarrier:    { icon:'🧊', name:'寒冰屏障', desc:'防御×1.6' },
+  earthShield:   { icon:'🪨', name:'大地之盾', desc:'防御×1.5' },
+  evasion:       { icon:'💨', name:'闪避',     desc:'防御×1.4' },
+  bestial:       { icon:'🐻', name:'野兽狂怒', desc:'攻击×1.4' },
+  shadowstep:    { icon:'🌑', name:'暗影步',   desc:'攻击×1.5' },
+  battleShout:   { icon:'📯', name:'战斗怒吼', desc:'攻击×1.3' },
+  kings:         { icon:'👑', name:'王者祝福', desc:'攻+20%·防+20%' },
+  berserk:       { icon:'😡', name:'狂暴',     desc:'攻×1.4·攻速×1.3' },
+  windfury:      { icon:'⚡', name:'风怒',     desc:'攻速×1.6' },
+  rapidFire:     { icon:'🏹', name:'急速射击', desc:'攻速×1.6' },
+  bloodlust:     { icon:'🩸', name:'嗜血',     desc:'攻速×1.7' },
+  timeWarp:      { icon:'🌀', name:'时间扭曲', desc:'攻速×1.8' },
+  sacredShield:  { icon:'🟡', name:'圣盾',     desc:'防御×1.4·回复+5' },
+  seraphim:      { icon:'😇', name:'炽天使',   desc:'攻×1.6·全能+10' },
+  demonForm:     { icon:'😈', name:'恶魔形态', desc:'攻×1.5·吸血+15' },
+};
 const MASTERY_TYPE = {
   dmgAmp:    { per:0.6,  fmt:n=>`造成的伤害 +${(n*0.6).toFixed(1)}%` },
   dotAmp:    { per:1.2,  fmt:n=>`持续伤害(灼烧/中毒/流血)效果 +${(n*1.2).toFixed(0)}%` },
@@ -912,8 +944,8 @@ function finishItem(item,slotKey,rarity,power,extraStats){
   // ---- 惊喜副属性 ----
   // 仅蓝装(rare)以上才可能出现,各自独立低概率,不占常规副属分配(额外附加),可同时出现也可能都不出现。
   // 数值随品质 蓝/紫/橙:吸血/全能/极速/暴击/精通 = 1/2/4;暴伤倍率更高 = 3/6/12。
-  const SURPRISE_CHANCE=0.22;   // 每个惊喜副属独立出现概率(可调:越小越稀有)
-  const SURPRISE={leech:{rare:1,epic:2,legend:4},vers:{rare:1,epic:2,legend:4},haste:{rare:1,epic:2,legend:4},mastery:{rare:1,epic:2,legend:4},crit:{rare:1,epic:2,legend:4},critd:{rare:3,epic:6,legend:12}};
+  const SURPRISE_CHANCE=0.15;   // 每个惊喜副属独立出现概率(可调:越小越稀有)
+  const SURPRISE={leech:{rare:1,epic:2,legend:4},vers:{rare:1,epic:2,legend:4},haste:{rare:1,epic:2,legend:4},mastery:{rare:1,epic:2,legend:4},crit:{rare:1,epic:2,legend:3},critd:{rare:3,epic:6,legend:12}};
   for(const sk in SURPRISE){const v=SURPRISE[sk][rarity.key];if(v&&Math.random()<SURPRISE_CHANCE)item.stats[sk]=(item.stats[sk]||0)+v;}
   item.reqLvl=Math.max(1,Math.floor(power*0.9));item.sell=Math.floor(10*rarity.mult*(1+power*0.5));
   if(typeof enhanceItemOnCreate==='function') enhanceItemOnCreate(item,rarity,power);

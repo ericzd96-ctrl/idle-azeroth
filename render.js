@@ -60,7 +60,7 @@ function renderBuffBar() {
   for (const k in (state.buffs || {})) {
     const exp = state.buffs[k];
     if (!(exp > now)) continue;
-    const m = meta[k] || { icon: '✨', name: k, desc: '', dr: false };
+    const m = meta[k] || (typeof BUFF_NAMES!=='undefined' && BUFF_NAMES[k]) || { icon: '✨', name: k, desc: '', dr: false };
     buffs.push({ kind: m.dr ? 'dr' : 'buff', icon: m.icon, name: m.name, desc: m.desc, left: Math.ceil((exp - now) / 1000) });
   }
   buffs.sort((a, b) => a.left - b.left);
