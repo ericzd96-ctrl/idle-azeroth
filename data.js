@@ -342,7 +342,7 @@ const CLASSES = {
       shadow:      {name:'影遁',     icon:'👤', desc:'15秒攻击+50%', mp:50, type:'buff', buff:'shadowstep', duration:15000},
     },
       cloakOfShadows:{name:"暗影斗篷",icon:"🌑",desc:"12秒防御+30%",mp:30,type:"buff",buff:"evasion",duration:12000,unlockLvl:42},
-      garrote:{name:"绞喉",icon:"🪢",desc:"3倍伤害,沉默3秒",mp:38,type:"dmg",mul:5,unlockLvl:58},
+      garrote:{name:"绞喉",icon:"🪢",desc:"3倍伤害,沉默3秒",mp:38,type:"dmg",mul:5,silence:3000,unlockLvl:58},
 
       throw:        {name:'致命投掷', icon:'🎯', desc:'3倍远程攻击', mp:25, type:'dmg', mul:3, unlockLvl:28},
       rupture:      {name:'割裂',     icon:'🩸', desc:'4倍攻击,持续流血', mp:32, type:'dmg', mul:4, dot:true, unlockLvl:50},
@@ -422,7 +422,7 @@ const CLASSES = {
       barrage:{name:"弹幕射击",icon:"💥",desc:"3倍范围伤害",mp:48,type:"dmg",mul:6,unlockLvl:60},
 
       explosiveShot:{name:'爆炸射击', icon:'💥', desc:'4倍火焰伤害', mp:32, type:'dmg', mul:4, dot:true, unlockLvl:38,castTime:0},
-      freezingTrap: {name:'冰冻陷阱', icon:'❄️', desc:'4倍攻击,冰冻减速', mp:25, type:'dmg', mul:4, slow:true, unlockLvl:52,castTime:0},
+      freezingTrap: {name:'冰冻陷阱', icon:'❄️', desc:'4倍攻击,冰冻减速', mp:25, type:'dmg', mul:4, slow:true, freeze:true, unlockLvl:52,castTime:0},
       stampede:     {name:'万兽奔腾', icon:'🐾', desc:'7倍攻击,兽群践踏', mp:58, type:'dmg', mul:7, unlockLvl:74,castTime:0},
     trees:[
       {key:'bm', name:'兽王', icon:'🦁', masteryDesc:'狂野怒火攻击加成 +5%/精通', talents:[
@@ -935,7 +935,7 @@ const MAPS = [
     boss:{ name:'鲁卡安', emoji:'👁️', lvl:62, desc:'希利苏斯的禁忌之眼',
       passive:{dodgeChance:0.2,critChance:0.2,stunChance:0.1,
       tricks: [{name:"不死之躯",icon:"💀",desc:"接下来5秒防御+50%且吸血20%",defBuff:5,leechBuff:5},{name:"闪电反射",icon:"⚡",desc:"接下来5秒攻速+60%且必定暴击",spdBuff:5,critBuff:5}] },
-      skills:[{name:"暗影凝视",icon:"👁️",desc:"5倍暗影伤害",type:"dmg",mul:5,castTime:2,weaken:true},{name:"精神鞭笞",icon:"🌀",desc:"6倍伤害+减速",type:"dmg",mul:6,slow:true,castTime:3,stun:true},{name:'克苏恩之眼',icon:'👁️',desc:'6倍暗影伤害+恐惧',type:'dmg',mul:6,castTime:3}] } },
+      skills:[{name:"暗影凝视",icon:"👁️",desc:"5倍暗影伤害",type:"dmg",mul:5,castTime:2,weaken:true},{name:"精神鞭笞",icon:"🌀",desc:"6倍伤害+减速",type:"dmg",mul:6,slow:true,castTime:3,stun:true},{name:'克苏恩之眼',icon:'👁️',desc:'6倍暗影伤害+恐惧',type:'dmg',mul:6,castTime:3,fear:true}] } },
   { key:'eastern_plague', name:'东瘟疫之地', icon:'☠️', faction:'中立', lvlRange:[55,60],
     desc:'被天灾军团彻底污染的死亡之地',
     sub:[
@@ -995,7 +995,7 @@ const MAPS = [
     boss:{ name:'索林姆', emoji:'⚡', lvl:82, desc:'雷电之王',
       passive:{critChance:0.3,dmgReduction:0.15,dodgeChance:0.15,stunChance:0.15,atkBonus:0.1,
       tricks: [{name:"疾风",icon:"💨",desc:"接下来5秒攻速提升60%",spdBuff:5},{name:"复苏",icon:"💚",desc:"立即回复15%最大生命",healPct:0.15},{name:"不死之躯",icon:"💀",desc:"接下来5秒防御+50%且吸血20%",defBuff:5,leechBuff:5}] },
-      skills:[{name:"雷霆之怒",icon:"⚡",desc:"7倍自然伤害",type:"dmg",mul:7,castTime:2.5,stun:true},{name:"闪电风暴",icon:"🌩️",desc:"8倍AOE伤害",type:"dmg",mul:8,castTime:4,stun:true},{name:'雷霆万钧',icon:'⚡',desc:'8倍自然伤害',type:'dmg',mul:8,castTime:3},{name:'风暴之锤',icon:'🔨',desc:'7倍伤害+击晕',type:'dmg',mul:7,castTime:3},{name:'雷神之怒',icon:'🌩️',desc:'9倍AOE伤害',type:'dmg',mul:9,castTime:4}] } },
+      skills:[{name:"雷霆之怒",icon:"⚡",desc:"7倍自然伤害",type:"dmg",mul:7,castTime:2.5,stun:true},{name:"闪电风暴",icon:"🌩️",desc:"8倍AOE伤害",type:"dmg",mul:8,castTime:4,stun:true},{name:'雷霆万钧',icon:'⚡',desc:'8倍自然伤害',type:'dmg',mul:8,castTime:3},{name:'风暴之锤',icon:'🔨',desc:'7倍伤害+击晕',type:'dmg',mul:7,castTime:3,stun:true},{name:'雷神之怒',icon:'🌩️',desc:'9倍AOE伤害',type:'dmg',mul:9,castTime:4}] } },
   { key:'icecrown', name:'冰冠冰川', icon:'🏰', faction:'诺森德', lvlRange:[78,80],
     desc:'巫妖王的领地,天灾军团总部',
     sub:[
@@ -2364,7 +2364,7 @@ const DUNGEONS = [{
             {name: "暗影烈焰", icon: "🔥", desc: "7倍暗影火焰伤害", type: "dmg", mul: 7, castTime: 3,weaken:true,
           tricks: [{name:"双刃",icon:"⚔️",desc:"下一次攻击造成双倍伤害",nextDouble:1},{name:"连斩",icon:"🗡️",desc:"下一次攻击造成两次伤害",nextDouble:2},{name:"坚韧",icon:"🧱",desc:"接下来8秒防御提升40%",defBuff:8}] },
             {name: "龙族召唤", icon: "🐲", desc: "8倍AOE伤害", type: "dmg", mul: 8, castTime: 4, aoe: true},
-            {name: "奈法利安之怒", icon: "💢", desc: "9倍伤害+恐惧", type: "dmg", mul: 9, castTime: 4,weaken:true},
+            {name: "奈法利安之怒", icon: "💢", desc: "9倍伤害+恐惧", type: "dmg", mul: 9, castTime: 4,weaken:true,fear:true},
             {name: "黑龙之息", icon: "🔥", desc: "10倍AOE火焰伤害", type: "dmg", mul: 10, castTime: 5, dot: true, aoe: true}
           ],
           passive: {dodgeChance: 0.15, critChance: 0.25, dmgReduction: 0.25, atkBonus: 0.2}
@@ -2447,7 +2447,7 @@ const DUNGEONS = [{
           emoji: "☠️",
           wave: 6,
           skills: [
-            {name: "瘟疫", icon: "🦠", desc: "5倍伤害+灼烧", type: "dmg", mul: 5, castTime: 2.5, dot: true,
+            {name: "瘟疫", icon: "🦠", desc: "5倍伤害+灼烧", type: "dmg", mul: 5, castTime: 2.5, dot: true, plague:true,
           tricks: [{name:"狂暴之怒",icon:"😡",desc:"接下来5秒攻击+50%且攻速+30%",atkBuff:5,spdBuff:5},{name:"狂怒",icon:"💢",desc:"接下来5秒攻击力提升50%",atkBuff:5},{name:"弱点感知",icon:"👁️",desc:"接下来8秒必定暴击",critBuff:8}] },
             {name: "亡者诅咒", icon: "💀", desc: "6倍暗影伤害", type: "dmg", mul: 6, castTime: 3,weaken:true}
           ],
@@ -2625,7 +2625,7 @@ const DUNGEONS = [{
             {name: "暗影新星", icon: "💥", desc: "7倍暗影AOE", type: "dmg", mul: 7, castTime: 3, aoe: true,
           tricks: [{name:"复苏",icon:"💚",desc:"立即回复15%最大生命",healPct:0.15},{name:"不死之躯",icon:"💀",desc:"接下来5秒防御+50%且吸血20%",defBuff:5,leechBuff:5},{name:"致命专注",icon:"🎯",desc:"接下来5秒必定暴击",critBuff:5}] },
             {name: "地狱火", icon: "🔥", desc: "8倍火焰伤害+灼烧", type: "dmg", mul: 8, castTime: 4, dot: true},
-            {name: "恐惧", icon: "👻", desc: "7倍伤害+减速", type: "dmg", mul: 7, castTime: 3, slow: true},
+            {name: "恐惧", icon: "👻", desc: "7倍伤害+减速", type: "dmg", mul: 7, castTime: 3, slow: true, fear:true},
             {name: "军团之怒", icon: "😈", desc: "9倍AOE伤害", type: "dmg", mul: 9, castTime: 4.5, aoe: true}
           ],
           passive: {dodgeChance: 0.15, critChance: 0.25, dmgReduction: 0.25, atkBonus: 0.2}
@@ -2840,7 +2840,7 @@ const DUNGEONS = [{
           emoji: "🤖",
           wave: 6,
           skills: [
-            {name: "重力炸弹", icon: "💣", desc: "7倍伤害", type: "dmg", mul: 7, castTime: 3,weaken:true,
+            {name: "重力炸弹", icon: "💣", desc: "7倍伤害", type: "dmg", mul: 7, castTime: 3,weaken:true,bomb:true,
           tricks: [{name:"致命专注",icon:"🎯",desc:"接下来5秒必定暴击",critBuff:5},{name:"连斩",icon:"🗡️",desc:"下一次攻击造成两次伤害",nextDouble:2},{name:"迅捷",icon:"⚡",desc:"接下来8秒攻速提升40%",spdBuff:8}] },
             {name: "拆解", icon: "🔧", desc: "6倍AOE+减速", type: "dmg", mul: 6, castTime: 3, slow: true, aoe: true}
           ],
@@ -3027,7 +3027,7 @@ const DUNGEONS = [{
           emoji: "🧪",
           wave: 9,
           skills: [
-            {name: "瘟疫爆发", icon: "🦠", desc: "7倍AOE+灼烧", type: "dmg", mul: 7, castTime: 3.5, dot: true, aoe: true,
+            {name: "瘟疫爆发", icon: "🦠", desc: "7倍AOE+灼烧", type: "dmg", mul: 7, castTime: 3.5, dot: true, aoe: true, plague:true,
           tricks: [{name:"铁壁",icon:"🛡️",desc:"接下来5秒防御提升50%",defBuff:5},{name:"复苏",icon:"💚",desc:"立即回复15%最大生命",healPct:0.15},{name:"终极防御",icon:"🛡️",desc:"回复20%生命且接下来5秒防御+50%",defBuff:5,healPct:0.2}] },
             {name: "突变", icon: "🧬", desc: "8倍伤害", type: "dmg", mul: 8, castTime: 3,weaken:true}
           ],
@@ -3436,6 +3436,270 @@ function getDungeonBossLoot(dungeonKey, bossName) {
   const alias = DUNGEON_LOOT_ALIASES[dungeonKey]?.[bossName];
   return loot.bosses[bossName] || (alias ? loot.bosses[alias] : null) || null;
 }
+const WORLD_BOSS_SKILLSETS = {
+  deathwing: {
+    passive:{ dmgReduction:0.35, critChance:0.28, dodgeChance:0.12, atkBonus:0.28, leech:0.12, stunChance:0.18 },
+    supportCount:4,
+    skills:[
+      {name:'灾变烈焰', icon:'🌋', desc:'12倍火焰伤害', type:'dmg', mul:12, castTime:3.5, dot:true, brittle:true, silence:2200},
+      {name:'熔岩撕裂', icon:'🦴', desc:'11倍伤害', type:'dmg', mul:11, castTime:3, bleed:true, cripple:true, brittle:true},
+      {name:'灭世龙息', icon:'🐲', desc:'13倍AOE烈焰伤害', type:'dmg', mul:13, castTime:4.5, aoe:true, dot:true, weaken:true, fear:1800},
+      {name:'大地裂变', icon:'🌍', desc:'12倍AOE伤害', type:'dmg', mul:12, castTime:4, aoe:true, stun:1800, decay2:true},
+      {name:'暮光腐化', icon:'🌑', desc:'11倍暗影伤害', type:'dmg', mul:11, castTime:3.5, weaken:true, plague:true, soulLink:true}
+    ]
+  },
+  ragnaros: {
+    passive:{ dmgReduction:0.3, critChance:0.25, atkBonus:0.32, leech:0.08 },
+    supportCount:4,
+    skills:[
+      {name:'萨弗隆之焰', icon:'🔥', desc:'11倍火焰伤害', type:'dmg', mul:11, castTime:3, dot:true, brittle:true},
+      {name:'熔火新星', icon:'☄️', desc:'12倍AOE火焰伤害', type:'dmg', mul:12, castTime:4, aoe:true, dot:true, silence:1800},
+      {name:'炎魔之手', icon:'🖐️', desc:'10倍伤害', type:'dmg', mul:10, castTime:2.8, stun:1600, dot:true, manaDrain:55},
+      {name:'元素湮灭', icon:'🌋', desc:'13倍AOE伤害', type:'dmg', mul:13, castTime:4.5, aoe:true, dot:true, decay:true, brittle:true}
+    ]
+  },
+  cthun: {
+    passive:{ dmgReduction:0.38, critChance:0.22, dodgeChance:0.18, atkBonus:0.2 },
+    supportCount:4,
+    skills:[
+      {name:'眼棱贯穿', icon:'👁️', desc:'10倍暗影伤害', type:'dmg', mul:10, castTime:2.5, silence:2200, weaken:true, manaDrain:60},
+      {name:'疯狂凝视', icon:'🌀', desc:'11倍伤害', type:'dmg', mul:11, castTime:3.2, fear:2200, decay2:true, mirror:true},
+      {name:'触须风暴', icon:'🦑', desc:'12倍AOE伤害', type:'dmg', mul:12, castTime:4, aoe:true, cripple:true, soulLink:true, revenge:true},
+      {name:'古神低语', icon:'🔮', desc:'10倍暗影伤害', type:'dmg', mul:10, castTime:3, weaken:true, plague:true, soulDrain:true}
+    ]
+  }
+};
+const RAID_EXTRA_BOSSES = {
+  mc: [
+    { name:'迦顿男爵', emoji:'🔥', passive:{critChance:0.18,dmgReduction:0.12,atkBonus:0.16},
+      skills:[
+        {name:'活体炸弹', icon:'💣', desc:'7倍火焰伤害', type:'dmg', mul:7, castTime:3, bomb:true, dot:true, brittle:true},
+        {name:'地狱烈焰', icon:'🌋', desc:'8倍AOE火焰伤害', type:'dmg', mul:8, castTime:4, aoe:true, dot:true, silence:1600},
+      ] }
+  ],
+  bwl: [
+    { name:'堕落的瓦拉斯塔兹', emoji:'🐉', passive:{critChance:0.22,dmgReduction:0.15,atkBonus:0.18},
+      skills:[
+        {name:'燃烧肾击', icon:'🩸', desc:'8倍伤害', type:'dmg', mul:8, castTime:3, bleed:true, dot:true, brittle:true},
+        {name:'红龙吐息', icon:'🔥', desc:'9倍火焰伤害', type:'dmg', mul:9, castTime:3.5, dot:true, weaken:true, silence:1800},
+        {name:'生命灼烧', icon:'☠️', desc:'8倍暗影火焰伤害', type:'dmg', mul:8, castTime:3, decay:true, dot:true}
+      ] }
+  ],
+  naxx: [
+    { name:'帕奇维克', emoji:'🪓', passive:{critChance:0.18,dmgReduction:0.22,atkBonus:0.24},
+      skills:[
+        {name:'憎恶重殴', icon:'🪓', desc:'9倍伤害', type:'dmg', mul:9, castTime:2.5, stun:1600, bleed:true, brittle:true},
+        {name:'腐臭横扫', icon:'🦠', desc:'8倍AOE伤害', type:'dmg', mul:8, castTime:3.5, aoe:true, plague:true, cripple:true},
+      ] },
+    { name:'萨菲隆', emoji:'🐉', passive:{critChance:0.22,dmgReduction:0.22,dodgeChance:0.12,atkBonus:0.18},
+      skills:[
+        {name:'冰霜吐息', icon:'❄️', desc:'9倍冰霜伤害', type:'dmg', mul:9, castTime:3.5, slow:true, freeze:1800, decay:true},
+        {name:'寒冰爆裂', icon:'🧊', desc:'8倍AOE伤害', type:'dmg', mul:8, castTime:4, aoe:true, freeze:1500, brittle:true},
+        {name:'死亡严寒', icon:'🥶', desc:'9倍暗影冰霜伤害', type:'dmg', mul:9, castTime:4, weaken:true, decay2:true, manaDrain:50}
+      ] }
+  ],
+  sunwell: [
+    { name:'艾瑞达双子', emoji:'👯', passive:{critChance:0.24,dmgReduction:0.18,dodgeChance:0.1,atkBonus:0.18},
+      skills:[
+        {name:'烈焰共鸣', icon:'🔥', desc:'8倍火焰伤害', type:'dmg', mul:8, castTime:3, dot:true, silence:1800, brittle:true},
+        {name:'暗影缠结', icon:'🌑', desc:'8倍暗影伤害', type:'dmg', mul:8, castTime:3, weaken:true, fear:1800, soulLink:true},
+        {name:'双子爆裂', icon:'💥', desc:'9倍AOE伤害', type:'dmg', mul:9, castTime:4, aoe:true, dot:true, manaDrain:60}
+      ] }
+  ],
+  ulduar: [
+    { name:'芙蕾雅', emoji:'🌿', passive:{critChance:0.2,dmgReduction:0.18,dodgeChance:0.12},
+      skills:[
+        {name:'荆棘缠绕', icon:'🌿', desc:'8倍自然伤害', type:'dmg', mul:8, castTime:3, cripple:true, decay:true},
+        {name:'生命凋零', icon:'🍄', desc:'8倍自然伤害', type:'dmg', mul:8, castTime:3.5, plague:true, decay2:true},
+        {name:'古树震击', icon:'🌳', desc:'9倍AOE伤害', type:'dmg', mul:9, castTime:4, aoe:true, stun:1500, weaken:true}
+      ] }
+  ],
+  ruby: [
+    { name:'扎里斯利安将军', emoji:'🐲', passive:{critChance:0.2,dmgReduction:0.18,atkBonus:0.2},
+      skills:[
+        {name:'暮光战吼', icon:'🌗', desc:'8倍伤害', type:'dmg', mul:8, castTime:3, weaken:true, revenge:true},
+        {name:'暮光冲锋', icon:'💨', desc:'9倍伤害', type:'dmg', mul:9, castTime:3.5, stun:1500, bleed:true, brittle:true},
+        {name:'龙炎斩', icon:'🔥', desc:'9倍火焰伤害', type:'dmg', mul:9, castTime:3.5, dot:true, silence:1800}
+      ] }
+  ],
+  icc: [
+    { name:'鲜血女王兰娜瑟尔', emoji:'🩸', passive:{critChance:0.26,dmgReduction:0.2,dodgeChance:0.12,atkBonus:0.22,leech:0.15},
+      skills:[
+        {name:'鲜血镜像', icon:'🪞', desc:'9倍暗影伤害', type:'dmg', mul:9, castTime:3, mirror:true, weaken:true, soulLink:true},
+        {name:'血色狂宴', icon:'🩸', desc:'10倍AOE伤害', type:'dmg', mul:10, castTime:4, aoe:true, bleed:true, frenzy:true},
+        {name:'女王之咬', icon:'🧛', desc:'9倍伤害', type:'dmg', mul:9, castTime:3.5, soulDrain:true, fear:1800, bleed:true}
+      ] }
+  ]
+};
+const GENERATED_BOSS_SKILLS = {
+  fire: [
+    {name:'烈焰吐息', icon:'🔥', desc:'7倍火焰伤害', type:'dmg', mul:7, castTime:3, dot:true},
+    {name:'熔火爆裂', icon:'🌋', desc:'8倍伤害', type:'dmg', mul:8, castTime:3.5, brittle:true},
+    {name:'火雨倾泻', icon:'☄️', desc:'8倍AOE伤害', type:'dmg', mul:8, castTime:4, aoe:true, dot:true},
+    {name:'灼烧烙印', icon:'🔥', desc:'7倍暗焰伤害', type:'dmg', mul:7, castTime:3, silence:1600}
+  ],
+  frost: [
+    {name:'极寒冲击', icon:'❄️', desc:'7倍冰霜伤害', type:'dmg', mul:7, castTime:3, slow:true},
+    {name:'冰墓封印', icon:'🧊', desc:'8倍伤害', type:'dmg', mul:8, castTime:3.5, freeze:1500},
+    {name:'霜暴', icon:'🌨️', desc:'8倍AOE伤害', type:'dmg', mul:8, castTime:4, aoe:true, slow:true},
+    {name:'寒魂凋零', icon:'🥶', desc:'8倍冰霜暗影伤害', type:'dmg', mul:8, castTime:3.5, decay:true}
+  ],
+  shadow: [
+    {name:'暗影收割', icon:'🌑', desc:'7倍暗影伤害', type:'dmg', mul:7, castTime:3, weaken:true},
+    {name:'恐惧尖啸', icon:'👻', desc:'7倍伤害', type:'dmg', mul:7, castTime:3, fear:1800},
+    {name:'灵魂枷锁', icon:'🔗', desc:'8倍暗影伤害', type:'dmg', mul:8, castTime:3.5, soulLink:true, decay:true},
+    {name:'虚空崩解', icon:'🌀', desc:'8倍AOE伤害', type:'dmg', mul:8, castTime:4, aoe:true, manaDrain:50}
+  ],
+  poison: [
+    {name:'腐毒撕咬', icon:'🦠', desc:'7倍伤害', type:'dmg', mul:7, castTime:3, dot:true, plague:true},
+    {name:'毒针穿刺', icon:'🪡', desc:'7倍伤害', type:'dmg', mul:7, castTime:3, cripple:true, dot:true},
+    {name:'腐化喷吐', icon:'🐍', desc:'8倍AOE伤害', type:'dmg', mul:8, castTime:4, aoe:true, dot:true, decay:true}
+  ],
+  storm: [
+    {name:'雷霆轰击', icon:'⚡', desc:'7倍自然伤害', type:'dmg', mul:7, castTime:3, stun:1400},
+    {name:'静电灼烧', icon:'🌩️', desc:'8倍伤害', type:'dmg', mul:8, castTime:3.5, manaDrain:45, silence:1600},
+    {name:'风暴新星', icon:'⛈️', desc:'8倍AOE伤害', type:'dmg', mul:8, castTime:4, aoe:true, stun:1200, weaken:true}
+  ],
+  nature: [
+    {name:'根须缠绕', icon:'🌿', desc:'7倍自然伤害', type:'dmg', mul:7, castTime:3, cripple:true},
+    {name:'孢子腐蚀', icon:'🍄', desc:'7倍伤害', type:'dmg', mul:7, castTime:3.5, plague:true, decay:true},
+    {name:'自然震荡', icon:'🌳', desc:'8倍AOE伤害', type:'dmg', mul:8, castTime:4, aoe:true, weaken:true}
+  ],
+  dragon: [
+    {name:'龙炎吐息', icon:'🐉', desc:'8倍火焰伤害', type:'dmg', mul:8, castTime:3, dot:true, weaken:true},
+    {name:'巨尾横扫', icon:'🪽', desc:'8倍AOE伤害', type:'dmg', mul:8, castTime:3.5, aoe:true, stun:1500},
+    {name:'龙爪撕裂', icon:'🩸', desc:'8倍伤害', type:'dmg', mul:8, castTime:3, bleed:true, cripple:true},
+    {name:'龙威压制', icon:'👁️', desc:'9倍伤害', type:'dmg', mul:9, castTime:4, fear:1800, brittle:true}
+  ],
+  arcane: [
+    {name:'奥术震爆', icon:'✨', desc:'7倍奥术伤害', type:'dmg', mul:7, castTime:3, silence:1600},
+    {name:'法力崩坏', icon:'💧', desc:'7倍伤害', type:'dmg', mul:7, castTime:3.5, manaDrain:50, weaken:true},
+    {name:'虚空风暴', icon:'🌀', desc:'8倍AOE伤害', type:'dmg', mul:8, castTime:4, aoe:true, mirror:true, silence:2000}
+  ],
+  brute: [
+    {name:'粉碎重殴', icon:'🔨', desc:'7倍伤害', type:'dmg', mul:7, castTime:3, stun:1300, brittle:true},
+    {name:'裂骨打击', icon:'🪓', desc:'8倍伤害', type:'dmg', mul:8, castTime:3.5, bleed:true, weaken:true},
+    {name:'践踏震击', icon:'🌍', desc:'8倍AOE伤害', type:'dmg', mul:8, castTime:4, aoe:true, stun:1000, cripple:true}
+  ]
+};
+const BOSS_DEBUFF_KEYS = ['dot','slow','stun','weaken','sunder','silence','disarm','fear','freeze','cripple','decay','wither','manaDrain','bomb','plague','bleed','brittle','soulDrain','soulLink','revenge','frenzy','decay2','mirror'];
+function bossDebuffCount(sk){
+  return BOSS_DEBUFF_KEYS.reduce((sum, key)=>sum + (sk && sk[key] ? 1 : 0), 0);
+}
+function inferBossTheme(name, sk){
+  const text = `${name||''} ${sk?.name||''} ${sk?.icon||''}`;
+  if(/火|焰|熔|炎|爆|拉格纳罗斯|烈焰/.test(text)) return 'fire';
+  if(/冰|霜|寒|冻|辛达苟萨|萨菲隆/.test(text)) return 'frost';
+  if(/毒|瘟|蝎|蛇|腐|孢/.test(text)) return 'poison';
+  if(/雷|电|风暴|索林姆|洛肯/.test(text)) return 'storm';
+  if(/龙|吐息|奥妮克希亚|奈法利安|萨维安娜|海里昂/.test(text)) return 'dragon';
+  if(/奥术|法力|虚空|麦迪文|凯尔萨斯|馆长|摩摩尔/.test(text)) return 'arcane';
+  if(/自然|根须|藤蔓|芙蕾雅|瑟莱德丝|瓦斯琪/.test(text)) return 'nature';
+  if(/暗|影|亡|死|魂|暮光|巫妖|克尔苏加德|阿尔萨斯|尤格|克苏恩|卡扎克/.test(text)) return 'shadow';
+  return 'brute';
+}
+function ensureBossSkillDebuffs(sk, ctx){
+  const skill = Object.assign({}, sk);
+  const theme = inferBossTheme(ctx.name, skill);
+  let need = ctx.kind === 'raid' ? 2 : 1;
+  if(ctx.final) need += 1;
+  if(ctx.kind === 'map' && (ctx.lvl||1) >= 60) need = Math.max(need, 2);
+  if(skill.aoe || (skill.castTime||0) >= 4 || (skill.mul||0) >= 9) need += (ctx.kind === 'raid' ? 1 : 0);
+  need = Math.min(need, ctx.kind === 'raid' ? 4 : 3);
+  const pools = {
+    fire: [['dot', true], ['brittle', true], ['silence', 1600], ['manaDrain', 40]],
+    frost: [['slow', true], ['freeze', 1500], ['decay', true], ['brittle', true]],
+    poison: [['dot', true], ['cripple', true], ['plague', true], ['decay', true]],
+    storm: [['stun', 1400], ['manaDrain', 45], ['silence', 1800], ['weaken', true]],
+    dragon: [['dot', true], ['weaken', true], ['stun', 1200], ['bleed', true]],
+    arcane: [['silence', 1800], ['manaDrain', 50], ['mirror', true], ['weaken', true]],
+    nature: [['cripple', true], ['decay', true], ['plague', true], ['weaken', true]],
+    shadow: [['weaken', true], ['fear', 1800], ['decay2', true], ['soulLink', true], ['soulDrain', true]],
+    brute: [['stun', 1200], ['bleed', true], ['brittle', true], ['sunder', true], ['cripple', true]]
+  };
+  for(const [key, value] of (pools[theme] || pools.brute)){
+    if(bossDebuffCount(skill) >= need) break;
+    if(skill[key]) continue;
+    skill[key] = value;
+  }
+  if(bossDebuffCount(skill) === 0) skill.weaken = true;
+  return skill;
+}
+function bossMinSkillCount(ctx){
+  if(ctx.kind === 'raid') return ctx.final ? 4 : 3;
+  if(ctx.kind === 'dungeon') return ctx.final ? 3 : 2;
+  return (ctx.lvl||1) >= 70 ? 4 : ((ctx.lvl||1) >= 35 ? 3 : 2);
+}
+function bossSupportCount(ctx){
+  if(ctx.kind === 'raid') return ctx.final ? 4 : 2;
+  if(ctx.kind === 'dungeon') return ctx.final ? 2 : 1;
+  if((ctx.lvl||1) >= 70) return 4;
+  if((ctx.lvl||1) >= 40) return 3;
+  return 2;
+}
+function ensureBossSkills(boss, ctx){
+  boss.skills = (boss.skills || []).map(sk => ensureBossSkillDebuffs(sk, ctx));
+  const theme = inferBossTheme(ctx.name, boss.skills[0] || { name: ctx.name });
+  const templates = GENERATED_BOSS_SKILLS[theme] || GENERATED_BOSS_SKILLS.brute;
+  let idx = 0;
+  while(boss.skills.length < bossMinSkillCount(ctx) && idx < templates.length * 2){
+    const tpl = templates[idx % templates.length];
+    idx++;
+    if(boss.skills.some(sk => sk.name === tpl.name)) continue;
+    const extra = Object.assign({}, tpl);
+    if((ctx.lvl||1) >= 70) extra.mul += 1;
+    else if((ctx.lvl||1) >= 40) extra.mul += 0.5;
+    boss.skills.push(ensureBossSkillDebuffs(extra, ctx));
+  }
+  boss.supportCount = Math.max(boss.supportCount || 0, bossSupportCount(ctx));
+}
+function enhanceBossCollection(list, ctxBase){
+  for(let i=0;i<list.length;i++){
+    const boss = list[i];
+    const ctx = Object.assign({}, ctxBase, {
+      name: boss.name,
+      lvl: boss.lvl || ctxBase.lvl || 1,
+      final: ctxBase.final === true || i === ctxBase.finalAt
+    });
+    ensureBossSkills(boss, ctx);
+  }
+}
+function insertRaidBossBeforeFinal(dg, boss){
+  if((dg.bosses || []).some(b => b.name === boss.name)) return;
+  const final = dg.bosses[dg.bosses.length - 1];
+  const insertAt = Math.max(0, dg.bosses.length - 1);
+  dg.bosses.splice(insertAt, 0, boss);
+  if(final && dg.bosses[dg.bosses.length - 1] !== final){
+    dg.bosses = dg.bosses.filter(Boolean);
+  }
+}
+function normalizeBossContent(){
+  for(const map of MAPS){
+    if(!map.boss) continue;
+    ensureBossSkills(map.boss, { kind:'map', name:map.boss.name, lvl:map.boss.lvl || map.lvlRange?.[1] || 1, final:true });
+  }
+  for(const dg of DUNGEONS){
+    if(dg.type === 'raid'){
+      if(dg.key === 'ruby'){
+        const rubyBoss = (dg.bosses || []).find(b => b.name === '萨维安娜·怒焰');
+        if(rubyBoss) rubyBoss.name = '暮光龙·萨维安娜';
+      }
+      if(dg.key === 'ulduar'){
+        const yogg = (dg.bosses || []).find(b => b.name === '尤格萨隆');
+        if(yogg) yogg.name = '尤格-萨隆';
+      }
+      for(const extra of (RAID_EXTRA_BOSSES[dg.key] || [])){
+        insertRaidBossBeforeFinal(dg, JSON.parse(JSON.stringify(extra)));
+      }
+      enhanceBossCollection(dg.bosses, { kind:'raid', lvl:dg.reqLvl, finalAt:(dg.bosses.length - 1) });
+      dg.waves = Math.max(dg.bosses.length * 2, 8);
+      dg.bosses.forEach((boss, idx) => { boss.wave = (idx + 1) * 2; });
+    } else {
+      enhanceBossCollection(dg.bosses, { kind:'dungeon', lvl:dg.reqLvl, finalAt:(dg.bosses.length - 1) });
+    }
+  }
+}
+normalizeBossContent();
 /* ========== COMPANIONS(2026-06-15 大修)==========
    品质=按背景设定固定(不可升级),技能数=品质等级(白1→橙5)
    mult=战力系数(越稀有越强),weight=抽卡权重,starsMax=可升星上限 */
@@ -3463,5 +3727,3 @@ const COMPANION_BONDS=[
 ];
 function compQuality(tpl){ return COMPANION_QUALITY.find(q=>q.key===(tpl&&tpl.quality)) || COMPANION_QUALITY[0]; }
 const COMPANIONS=[{key:"fordring",name:"提里奥·弗丁",emoji:"👴",role:"tank",desc:"白银之手大领主",skills:[{name:"圣光审判",icon:"⚖️",desc:"2倍伤害,回复5%HP",type:"dmg",mul:2,heal:0.05,cd:10},{name:"圣盾守护",icon:"🛡️",desc:"8秒减伤40%",type:"buff",buff:"shield",cd:22},{name:"灰烬觉醒",icon:"✨",desc:"3倍伤害",type:"dmg",mul:4,cd:20},{name:"圣疗术",icon:"💚",desc:"恢复25%HP",type:"heal",heal:0.25,cd:30}]},{key:"varian",name:"瓦里安·乌瑞恩",emoji:"👑",role:"tank",desc:"暴风城国王",skills:[{name:"冲锋",icon:"💨",desc:"2倍伤害",type:"dmg",mul:2,cd:6},{name:"破甲",icon:"🔨",desc:"3倍伤害降防",type:"dmg",mul:3,cd:12},{name:"剑刃风暴",icon:"🌀",desc:"3倍伤害",type:"dmg",mul:5,cd:25},{name:"怒吼",icon:"📯",desc:"10秒攻击+15%",type:"buff",buff:"battleShout",cd:30}]},{key:"thrall",name:"萨尔",emoji:"👊",role:"tank",desc:"部落大酋长",skills:[{name:"闪电箭",icon:"⚡",desc:"2倍伤害",type:"dmg",mul:2,cd:6},{name:"大地之盾",icon:"🪨",desc:"8秒防御+40%",type:"buff",buff:"earthShield",cd:20},{name:"雷霆风暴",icon:"⛈️",desc:"3倍伤害",type:"dmg",mul:4,cd:18},{name:"治疗波",icon:"🌊",desc:"恢复20%HP",type:"heal",heal:0.2,cd:25}]},{key:"illidan",name:"伊利丹·怒风",emoji:"😈",role:"dps",desc:"背叛者",skills:[{name:"恶魔之咬",icon:"🦷",desc:"3倍伤害",type:"dmg",mul:3,cd:8},{name:"眼棱",icon:"👁️",desc:"3倍必暴",type:"dmg",mul:3,alwaysCrit:true,cd:16},{name:"恶魔变形",icon:"😈",desc:"10秒攻击+30%",type:"buff",buff:"bestial",cd:28},{name:"混沌打击",icon:"💥",desc:"3倍伤害",type:"dmg",mul:5,cd:24}]},{key:"arthas",name:"阿尔萨斯",emoji:"⚔️",role:"dps",desc:"洛丹伦王子",skills:[{name:"死亡缠绕",icon:"💀",desc:"3倍伤害吸血20%",type:"dmg",mul:3,lifeSteal:0.2,cd:10},{name:"凛风冲击",icon:"❄️",desc:"3倍伤害",type:"dmg",mul:3,cd:14},{name:"亡者大军",icon:"🧟",desc:"3倍伤害",type:"dmg",mul:5,cd:22,stun:true},{name:"巫妖之怒",icon:"☠️",desc:"10秒攻速+40%",type:"buff",buff:"rapidFire",cd:30}]},{key:"jaina",name:"吉安娜",emoji:"🧙‍♀️",role:"dps",desc:"肯瑞托大法师",skills:[{name:"寒冰箭",icon:"❄️",desc:"2倍伤害减速",type:"dmg",mul:2,cd:7,slow:true},{name:"冰霜新星",icon:"💠",desc:"3倍伤害",type:"dmg",mul:3,cd:15,slow:true},{name:"暴风雪",icon:"🌨️",desc:"3倍伤害",type:"dmg",mul:4,cd:20},{name:"奥术智慧",icon:"📖",desc:"10秒攻击+20%",type:"buff",buff:"battleShout",cd:28}]},{key:"sylvanas",name:"希尔瓦娜斯",emoji:"🏹",role:"dps",desc:"黑暗游侠",skills:[{name:"暗影箭",icon:"🏹",desc:"2倍伤害",type:"dmg",mul:2,cd:7},{name:"毒蛇射击",icon:"🐍",desc:"3倍中毒",type:"dmg",mul:3,dot:true,cd:12},{name:"黑暗之怒",icon:"🌑",desc:"3倍伤害",type:"dmg",mul:4,cd:18},{name:"亡灵意志",icon:"💀",desc:"10秒吸血+10%",type:"buff",buff:"shadowstep",cd:26}]},{key:"anduin",name:"安度因·乌瑞恩",emoji:"✝️",role:"heal",desc:"暴风城王子",skills:[{name:"惩击",icon:"✨",desc:"2倍伤害",type:"dmg",mul:2,cd:6},{name:"治疗术",icon:"💚",desc:"恢复30%HP",type:"heal",heal:0.3,cd:14},{name:"真言术盾",icon:"🛡️",desc:"8秒防御+30%",type:"buff",buff:"shield",cd:20},{name:"神圣赞美诗",icon:"🎵",desc:"恢复40%HP",type:"heal",heal:0.4,cd:28}]},{key:"tyrande",name:"泰兰德·语风",emoji:"🌙",role:"heal",desc:"月之女祭司",skills:[{name:"月火术",icon:"🌙",desc:"2倍伤害",type:"dmg",mul:2,cd:8},{name:"治疗之触",icon:"🌿",desc:"恢复25%HP",type:"heal",heal:0.25,cd:12},{name:"星陨术",icon:"🌟",desc:"3倍伤害",type:"dmg",mul:3,cd:18},{name:"宁静",icon:"🍃",desc:"恢复35%HP",type:"heal",heal:0.35,cd:26}]},{key:"malfurion",name:"玛法里奥·怒风",emoji:"🍂",role:"heal",desc:"大德鲁伊",skills:[{name:"愤怒",icon:"🌿",desc:"2倍伤害",type:"dmg",mul:2,cd:6},{name:"回春术",icon:"🌱",desc:"恢复20%HP",type:"heal",heal:0.2,cd:10},{name:"树皮术",icon:"🪵",desc:"8秒防御+35%",type:"buff",buff:"bark",cd:18},{name:"自然之力",icon:"🌳",desc:"恢复35%HP",type:"heal",heal:0.35,cd:24}]}];
-
-

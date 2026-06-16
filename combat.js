@@ -303,7 +303,8 @@ function applySkillFollowupDamage(mon, amount, icon, color){
     if(amount <= mon._arcaneShield){ mon._arcaneShield -= amount; amount = 0; }
     else { amount -= mon._arcaneShield; mon._arcaneShield = 0; }
   }
-  if(mon.dmgReduction && amount > 0) amount = Math.max(1, Math.floor(amount * (1 - mon.dmgReduction)));
+    const dr = monsterDamageReduction(mon, now);
+    if(dr && amount > 0) amount = Math.max(1, Math.floor(amount * (1 - dr)));
   if(amount <= 0) return 0;
   mon.hp -= amount;
   trackDmg('hero', amount);
@@ -419,6 +420,8 @@ function spreadDotFromMonster(mon, ratio, dotMs){
 function healHeroAmount(amount, icon, color){
   amount = Math.max(0, Math.floor(amount || 0));
   if(amount <= 0) return { applied:0, overheal:0 };
+  amount = Math.max(0, Math.floor(amount * heroDebuffHealMult()));
+  if(amount <= 0) return { applied:0, overheal:0 };
   const before = state.hp;
   state.hp = Math.min(state.hero.hpMax, state.hp + amount);
   const applied = state.hp - before;
@@ -428,9 +431,19 @@ function healHeroAmount(amount, icon, color){
 }
 function applyHeroDamage(amount, mon, opts){
   const now = opts?.now || Date.now();
-  const taken = absorbTalentShield(amount);
+  let amountIn = Math.max(0, Math.floor(amount || 0));
+  if(state.heroDebuffs && state.heroDebuffs.brittle && state.heroDebuffs.brittle.expire > now){
+    amountIn *= 2;
+    delete state.heroDebuffs.brittle;
+  }
+  const taken = absorbTalentShield(amountIn);
   if(taken <= 0) return 0;
   state.hp -= taken;
+  if(state._soulLinkUntil > now && mon && mon.hp > 0){
+    const healBack = Math.max(1, Math.floor(taken * 0.25));
+    mon.hp = Math.min(mon.hpMax, mon.hp + healBack);
+    showFloat($('mon-emoji'), '🔗+' + healBack, '#a78bfa');
+  }
   if(opts?.show !== false){
     const text = typeof opts?.label === 'function' ? opts.label(taken) : (opts?.label || ('-' + taken));
     showFloat($('hero-emoji'), text, opts?.color || '#ff7a7a');
@@ -474,7 +487,9 @@ function autoSkillScore(skillKey, sk, mon, ctx){
   if(tag === 'execute') score += Math.round((1 - ctx.targetHpFrac) * 70);
   if(tag === 'setup' && ai.useIfTargetMissing) score += 16;
   if(tag === 'dot' && ai.useIfTargetMissing) score += 12;
+  if(tag === 'dot' && ai.useIfTargetDotKeyMissing) score += 12;
   if(tag === 'spender' && ai.useIfTargetHas) score += 16;
+  if(tag === 'spender' && ai.useIfTargetDotKeyPresent) score += 16;
   if(tag === 'spender' && ai.useIfDotCountAtLeast) score += dotCount * 8;
   if(tag === 'aoe') score += Math.min(18, ctx.aliveN * 6);
   if((sk.mul || 0) >= 6 && mon.isBoss) score += 8;
@@ -494,7 +509,8 @@ function runTalentAction(fx, mon, value, ctx, now){
       if(extra <= mon._arcaneShield){ mon._arcaneShield -= extra; extra = 0; }
       else { extra -= mon._arcaneShield; mon._arcaneShield = 0; }
     }
-    if(mon.dmgReduction && extra > 0) extra = Math.max(1, Math.floor(extra * (1 - mon.dmgReduction)));
+    const dr = monsterDamageReduction(mon, now);
+    if(dr && extra > 0) extra = Math.max(1, Math.floor(extra * (1 - dr)));
     if(extra > 0){
       mon.hp -= extra;
       trackDmg('hero', extra);
@@ -967,42 +983,320 @@ function mobKind(name){
   if(/卫兵|守卫|护卫|盾|龟|蟹|甲|岩|石|骑士|战士|督军|领主/.test(name))return 'tank';
   return null;
 }
-// 小怪技能池(20种,瞬发低倍率,可带debuff)
+function mobSkillTags(name, kind, isBoss){
+  const tags = [];
+  const push = tag => { if(tag && !tags.includes(tag)) tags.push(tag); };
+  if(isBoss) push('boss');
+  if(/蜘蛛|蛛|蝎|蛇|毒|蠕虫|爬虫|虫|异虫|蚊/.test(name)) { push('poison'); push('beast'); }
+  if(/亡灵|食尸鬼|骨|骷髅|怨灵|幽灵|鬼|死|天灾|尸|亡魂|灵魂/.test(name)) { push('undead'); push('spirit'); }
+  if(/火|焰|炎|熔岩|地狱火|炎魔/.test(name)) { push('fire'); push('elemental'); }
+  if(/冰|霜|雪|寒|冻/.test(name)) { push('frost'); push('elemental'); }
+  if(/雷|电|风暴|风|空气/.test(name)) { push('storm'); push('elemental'); }
+  if(/龙|雏龙|飞龙/.test(name)) push('dragon');
+  if(/机器人|机甲|傀儡|造物|守护者|泰坦/.test(name)) push('construct');
+  if(/劫匪|盗贼|刺客|斥候|特工|猎手|强盗|窃贼/.test(name)) push('rogue');
+  if(/兽人|战士|卫兵|守卫|护卫|督军|骑士|领主|巨魔|掠夺者|指挥官/.test(name)) push('soldier');
+  if(/树精|鞭笞者|蘑菇|真菌|孢子|沼泽行者/.test(name)) push('nature');
+  if(/水|潮汐|海|鲨|龟|鳄|湖|沼泽/.test(name)) push('aquatic');
+  if(/鹰|狮鹫|角鹰兽|风蛇|翼/.test(name)) push('storm');
+  if(/猪|野猪|公猪|鹿|马|狼|虎|狮|猎犬|豹|鳄鱼|猩猩|迅猛龙|雄鹿/.test(name)) { push('beast'); push('charger'); }
+  if(/犀|牛|象|猛犸|熊|暴龙|巨熊/.test(name)) { push('beast'); push('brute'); }
+  if(/元素|奥术|法师|术士|祭司|先知|巫|咒|虚空|日怒|魔导|施法/.test(name)) push('caster');
+  if(kind) push(kind);
+  return tags;
+}
+// 小怪技能池(扩展版,按主题/等级抽取,支持更多 debuff)
 const MON_SKILLS = [
-  {name:'重击',icon:'💥',mul:1.5,stun:1000},
-  {name:'火球术',icon:'🔥',mul:1.5,dot:3},
-  {name:'寒冰箭',icon:'❄️',mul:1.5,slow:true},
-  {name:'暗影箭',icon:'🌑',mul:1.8,weaken:true},
-  {name:'撕裂',icon:'🩸',mul:1.5,dot:2},
-  {name:'猛击',icon:'👊',mul:2.0,stun:800},
-  {name:'毒刃',icon:'🗡️',mul:1.5,dot:4},
-  {name:'冲锋',icon:'🐗',mul:1.8,stun:600},
-  {name:'雷霆一击',icon:'⚡',mul:1.5,slow:true},
-  {name:'破甲',icon:'🔨',mul:1.5,weaken:true},
-  {name:'旋风斩',icon:'🌀',mul:1.8},
-  {name:'灼热之触',icon:'🔥',mul:1.5,dot:3},
-  {name:'冰霜之握',icon:'❄️',mul:1.5,slow:true},
-  {name:'暗影打击',icon:'💀',mul:2.0,weaken:true},
-  {name:'穿刺',icon:'🗡️',mul:1.8,dot:2},
-  {name:'地震',icon:'🌍',mul:1.5,stun:800},
-  {name:'毒液喷吐',icon:'🦂',mul:1.5,dot:5},
-  {name:'骨刺',icon:'🦴',mul:1.8,stun:1000},
-  {name:'暗言术·痛',icon:'☠️',mul:1.5,dot:3},
-  {name:'风暴打击',icon:'⚡',mul:2.0,slow:true},
+  {name:'重击',icon:'💥',mul:1.5,stun:1000,tags:['soldier','brute','tank','construct','generic']},
+  {name:'猛击',icon:'👊',mul:2.0,stun:800,tags:['beast','brute','tank','soldier','construct','generic']},
+  {name:'冲锋',icon:'🐗',mul:1.8,stun:600,tags:['beast','charger','soldier','brute','generic']},
+  {name:'撕裂',icon:'🩸',mul:1.5,dot:2,tags:['beast','brute','dragon','rogue','generic']},
+  {name:'穿刺',icon:'🗡️',mul:1.8,dot:2,tags:['poison','beast','rogue','soldier','generic']},
+  {name:'破甲',icon:'🔨',mul:1.5,weaken:true,tags:['tank','soldier','construct','brute']},
+  {name:'盾击',icon:'🛡️',mul:1.4,silence:2000,minLvl:12,tags:['tank','soldier','construct']},
+  {name:'断筋',icon:'🦵',mul:1.6,cripple:true,minLvl:10,tags:['soldier','rogue','beast','brute']},
+  {name:'凿骨打击',icon:'🪓',mul:1.7,brittle:true,minLvl:18,tags:['brute','undead','soldier','construct']},
+  {name:'雷霆一击',icon:'⚡',mul:1.5,slow:true,tags:['tank','soldier','storm','construct']},
+  {name:'旋风斩',icon:'🌀',mul:1.8,tags:['soldier','rogue','storm','generic']},
+  {name:'横扫打击',icon:'🪓',mul:1.9,tags:['beast','brute','soldier','generic']},
+  {name:'毒刃',icon:'🗡️',mul:1.5,dot:4,tags:['poison','rogue']},
+  {name:'毒液喷吐',icon:'🦂',mul:1.5,dot:5,tags:['poison']},
+  {name:'毒牙撕咬',icon:'🐍',mul:1.6,dot:4,minLvl:8,tags:['poison','beast']},
+  {name:'麻痹毒针',icon:'🪡',mul:1.4,cripple:true,minLvl:16,tags:['poison']},
+  {name:'腐毒感染',icon:'🦠',mul:1.4,plague:true,minLvl:24,tags:['poison','undead']},
+  {name:'火球术',icon:'🔥',mul:1.5,dot:3,tags:['fire','caster','dragon']},
+  {name:'灼热之触',icon:'🔥',mul:1.5,dot:3,tags:['fire','elemental','caster']},
+  {name:'烈焰冲击',icon:'🌋',mul:1.7,dot:4,minLvl:14,tags:['fire','caster','dragon','elemental']},
+  {name:'熔岩爆裂',icon:'🌋',mul:1.9,brittle:true,minLvl:28,tags:['fire','dragon','elemental']},
+  {name:'寒冰箭',icon:'❄️',mul:1.5,slow:true,tags:['frost','caster']},
+  {name:'冰霜之握',icon:'❄️',mul:1.5,slow:true,tags:['frost','undead','caster']},
+  {name:'冰枪穿刺',icon:'🧊',mul:1.6,freeze:1200,minLvl:18,tags:['frost','caster','dragon']},
+  {name:'寒冰新星',icon:'❄️',mul:1.4,freeze:1500,minLvl:26,tags:['frost','caster','elemental']},
+  {name:'暗影箭',icon:'🌑',mul:1.8,weaken:true,tags:['undead','caster','spirit']},
+  {name:'暗言术·痛',icon:'☠️',mul:1.5,dot:3,tags:['undead','caster','spirit']},
+  {name:'暗影打击',icon:'💀',mul:2.0,weaken:true,tags:['undead','rogue','caster']},
+  {name:'骨刺',icon:'🦴',mul:1.8,stun:1000,tags:['undead']},
+  {name:'灵魂尖啸',icon:'👻',mul:1.4,fear:1800,minLvl:20,tags:['spirit','undead','caster']},
+  {name:'枯萎诅咒',icon:'🥀',mul:1.4,decay:true,minLvl:24,tags:['undead','caster','spirit']},
+  {name:'凋零之触',icon:'🌑',mul:1.5,decay2:true,minLvl:42,tags:['undead','caster','spirit']},
+  {name:'灵魂虹吸',icon:'🧛',mul:1.5,soulDrain:true,minLvl:30,tags:['spirit','undead','caster']},
+  {name:'灵魂锁链',icon:'🔗',mul:1.5,soulLink:true,minLvl:45,tags:['spirit','undead','caster']},
+  {name:'奥术飞弹',icon:'✨',mul:1.8,tags:['caster']},
+  {name:'法力灼烧',icon:'💧',mul:1.4,manaDrain:40,minLvl:20,tags:['caster','spirit']},
+  {name:'虚空震击',icon:'🌀',mul:1.6,silence:2000,minLvl:30,tags:['caster','spirit','elemental']},
+  {name:'风暴打击',icon:'⚡',mul:2.0,slow:true,tags:['storm','soldier','dragon','elemental']},
+  {name:'连环闪电',icon:'🌩️',mul:1.7,manaDrain:25,minLvl:24,tags:['storm','caster','elemental']},
+  {name:'静电震爆',icon:'⚡',mul:1.5,silence:1500,minLvl:32,tags:['storm','elemental','caster']},
+  {name:'地震',icon:'🌍',mul:1.5,stun:800,tags:['construct','tank','brute','elemental']},
+  {name:'岩刺突袭',icon:'🪨',mul:1.7,brittle:true,minLvl:20,tags:['construct','tank','elemental']},
+  {name:'龙息术',icon:'🐉',mul:1.8,dot:4,minLvl:18,tags:['dragon','fire']},
+  {name:'龙翼震击',icon:'🪽',mul:1.7,stun:900,minLvl:20,tags:['dragon','soldier']},
+  {name:'尾击横扫',icon:'🦴',mul:1.7,slow:true,minLvl:16,tags:['dragon','beast']},
+  {name:'藤蔓缠绕',icon:'🌿',mul:1.4,cripple:true,minLvl:12,tags:['nature','caster','elemental']},
+  {name:'孢子侵染',icon:'🍄',mul:1.4,decay:true,minLvl:22,tags:['nature','poison']},
 ];
-function pickMonSkill(){return MON_SKILLS[Math.floor(Math.random()*MON_SKILLS.length)];}
+const MON_SKILL_FALLBACKS = {
+  beast: ['撕裂','冲锋','猛击','穿刺','横扫打击','断筋'],
+  brute: ['重击','猛击','冲锋','破甲','凿骨打击','横扫打击'],
+  charger: ['冲锋','重击','猛击','断筋'],
+  poison: ['毒液喷吐','毒刃','穿刺','毒牙撕咬','麻痹毒针','腐毒感染'],
+  undead: ['暗影箭','暗影打击','骨刺','暗言术·痛','冰霜之握','灵魂尖啸','枯萎诅咒'],
+  spirit: ['暗言术·痛','灵魂尖啸','灵魂虹吸','灵魂锁链','法力灼烧'],
+  fire: ['火球术','灼热之触','烈焰冲击','熔岩爆裂','龙息术'],
+  frost: ['寒冰箭','冰霜之握','冰枪穿刺','寒冰新星'],
+  storm: ['风暴打击','雷霆一击','旋风斩','连环闪电','静电震爆'],
+  caster: ['火球术','寒冰箭','暗影箭','暗言术·痛','灼热之触','冰霜之握','奥术飞弹','法力灼烧','虚空震击'],
+  dragon: ['龙息术','龙翼震击','尾击横扫','撕裂','火球术','风暴打击'],
+  construct: ['重击','雷霆一击','破甲','地震','盾击','岩刺突袭'],
+  rogue: ['毒刃','穿刺','撕裂','旋风斩','暗影打击','断筋'],
+  soldier: ['重击','猛击','冲锋','破甲','雷霆一击','旋风斩','盾击','断筋'],
+  tank: ['重击','猛击','破甲','雷霆一击','地震','盾击','岩刺突袭'],
+  nature: ['藤蔓缠绕','孢子侵染','撕裂'],
+  elemental: ['灼热之触','烈焰冲击','寒冰新星','连环闪电','地震','风暴打击'],
+  aquatic: ['撕裂','断筋','冲锋'],
+  generic: ['重击','撕裂','猛击','冲锋','旋风斩','横扫打击']
+};
+function pickWeightedSkill(pool){
+  const total = pool.reduce((sum, entry) => sum + Math.max(1, entry.weight || entry.score || 1), 0);
+  let roll = Math.random() * total;
+  for(const entry of pool){
+    roll -= Math.max(1, entry.weight || entry.score || 1);
+    if(roll <= 0) return entry.skill || entry;
+  }
+  return (pool[pool.length - 1] || {}).skill || pool[pool.length - 1];
+}
+function buildMonSkillCandidatePool(name, kind, lvl){
+  const tags = mobSkillTags(name, kind, false);
+  const level = Math.max(1, lvl || 1);
+  let pool = MON_SKILLS
+    .filter(sk => level >= (sk.minLvl || 1))
+    .map(sk => {
+      const matches = (sk.tags || []).reduce((sum, tag) => {
+        const idx = tags.indexOf(tag);
+        return idx >= 0 ? sum + Math.max(1, tags.length - idx) : sum;
+      }, 0);
+      return matches > 0 ? { skill: sk, score: matches } : null;
+    })
+      .filter(Boolean);
+  if(pool.length){
+    const bestScore = pool.reduce((best, entry) => Math.max(best, entry.score), 0);
+    const minScore = bestScore >= 5 ? bestScore - 2 : (bestScore >= 3 ? 2 : 1);
+    pool = pool.filter(entry => entry.score >= minScore);
+  }
+  if(!pool.length){
+    const fallbackNames = new Set([...(MON_SKILL_FALLBACKS[kind] || []), ...(MON_SKILL_FALLBACKS.generic || [])]);
+    pool = MON_SKILLS
+      .filter(sk => level >= (sk.minLvl || 1) && fallbackNames.has(sk.name))
+      .map(sk => ({ skill: sk, score: 1 }));
+  }
+  if(!pool.length){
+    pool = MON_SKILLS
+      .filter(sk => level >= (sk.minLvl || 1) && (sk.tags || []).includes('generic'))
+      .map(sk => ({ skill: sk, score: 1 }));
+  }
+  return pool;
+}
+function pickMonSkills(name, kind, lvl, count){
+  const pool = buildMonSkillCandidatePool(name, kind, lvl);
+  if(!pool.length) return [];
+  const picks = [];
+  const used = new Set();
+  const total = Math.max(1, count || 1);
+  while(picks.length < total){
+    const candidates = pool.filter(entry => !used.has(entry.skill.name));
+    if(!candidates.length) break;
+    const skill = pickWeightedSkill(candidates);
+    if(!skill) break;
+    picks.push(skill);
+    used.add(skill.name);
+  }
+  return picks;
+}
+function pickMonSkill(name, kind, lvl){
+  return pickMonSkills(name, kind, lvl, 1)[0] || null;
+}
+const MON_SUPPORT_SKILLS = [
+  {name:'低吼', icon:'📯', desc:'6秒攻击提高20%', minLvl:1, atkBuffSecs:6, atkBuffPct:20, cd:12000, tags:['beast','soldier','generic']},
+  {name:'硬皮', icon:'🪵', desc:'6秒防御提高20%', minLvl:1, defBuffSecs:6, defBuffPct:20, cd:13000, tags:['beast','tank','generic']},
+  {name:'喘息', icon:'💚', desc:'恢复8%最大生命', minLvl:1, healPct:0.08, cd:15000, tags:['generic','beast','soldier']},
+  {name:'战吼', icon:'📯', desc:'8秒攻击提高30%', minLvl:8, atkBuffSecs:8, atkBuffPct:30, cd:12000, tags:['soldier','brute','boss','generic']},
+  {name:'疾风', icon:'💨', desc:'6秒攻速提高40%', minLvl:10, spdBuffSecs:6, spdBuffPct:40, cd:12000, tags:['beast','storm','rogue','boss']},
+  {name:'石肤', icon:'🪨', desc:'8秒防御提高35%', minLvl:12, defBuffSecs:8, defBuffPct:35, cd:13000, tags:['tank','construct','elemental','boss']},
+  {name:'护体屏障', icon:'🔮', desc:'获得15%最大生命值的护盾', minLvl:16, shieldPct:0.15, cd:14000, tags:['caster','construct','boss','elemental']},
+  {name:'自愈', icon:'💚', desc:'恢复15%最大生命', minLvl:8, healPct:0.15, cd:14000, tags:['beast','nature','aquatic','generic','boss']},
+  {name:'亡者护佑', icon:'☠️', desc:'获得10%最大生命值护盾', minLvl:12, shieldPct:0.10, cd:15000, tags:['undead','spirit']},
+  {name:'邪咒回涌', icon:'🧿', desc:'恢复10%最大生命并6秒暴击提高25%', minLvl:14, healPct:0.10, critBuffSecs:6, critBuffPct:25, cd:17000, tags:['caster','spirit','undead']},
+  {name:'暗影修补', icon:'🌑', desc:'恢复12%最大生命并获得25%减伤6秒', minLvl:26, healPct:0.12, drBuffSecs:6, drBuffPct:0.25, cd:18000, tags:['undead','spirit','caster','boss']},
+  {name:'狂暴', icon:'😡', desc:'6秒攻击提高35%,攻速提高25%', minLvl:18, atkBuffSecs:6, atkBuffPct:35, spdBuffSecs:6, spdBuffPct:25, cd:16000, tags:['beast','brute','soldier','boss']},
+  {name:'铁壁', icon:'🛡️', desc:'6秒减伤30%', minLvl:18, drBuffSecs:6, drBuffPct:0.30, cd:16000, tags:['tank','construct','boss']},
+  {name:'嗜血', icon:'🩸', desc:'8秒吸血18%', minLvl:20, leechBuffSecs:8, leechBuffPct:18, cd:16000, tags:['beast','undead','boss','brute']},
+  {name:'弱点洞察', icon:'👁️', desc:'6秒暴击率提高35%', minLvl:20, critBuffSecs:6, critBuffPct:35, cd:15000, tags:['rogue','caster','boss','dragon']},
+  {name:'复苏结界', icon:'✨', desc:'恢复10%最大生命并获得12%护盾', minLvl:28, healPct:0.10, shieldPct:0.12, cd:17000, tags:['caster','nature','boss']},
+  {name:'奥术护壁', icon:'🌀', desc:'获得18%最大生命值护盾并8秒减伤20%', minLvl:34, shieldPct:0.18, drBuffSecs:8, drBuffPct:0.20, cd:18000, tags:['caster','construct','elemental','boss']},
+  {name:'呼唤同伴', icon:'📣', desc:'召唤1只同伴助战', minLvl:14, summonCount:1, summonTheme:'beast', cd:18000, tags:['beast','charger','boss']},
+  {name:'亡灵再起', icon:'☠️', desc:'召唤1个亡灵仆从', minLvl:24, summonCount:1, summonTheme:'undead', cd:19000, tags:['undead','spirit','boss']},
+  {name:'虚空裂隙', icon:'🛸', desc:'召唤1个虚空爪牙并获得20%护盾', minLvl:38, summonCount:1, summonTheme:'void', shieldPct:0.20, cd:22000, tags:['caster','spirit','boss']},
+  {name:'元素涌现', icon:'🌪️', desc:'召唤1个元素爪牙并6秒攻速提高35%', minLvl:32, summonCount:1, summonTheme:'elemental', spdBuffSecs:6, spdBuffPct:35, cd:20000, tags:['elemental','storm','fire','frost','boss']},
+  {name:'召集守卫', icon:'🚩', desc:'召唤1名守卫并6秒防御提高30%', minLvl:30, summonCount:1, summonTheme:'soldier', defBuffSecs:6, defBuffPct:30, cd:20000, tags:['soldier','tank','construct','boss']},
+  {name:'生命绽放', icon:'🌿', desc:'恢复18%最大生命并8秒回复强化', minLvl:26, healPct:0.18, drBuffSecs:5, drBuffPct:0.15, cd:17000, tags:['nature','aquatic','boss']}
+];
+const MON_SUPPORT_SUMMONS = {
+  beast: { icon:'🐺', names:['猎犬同伴','荒野幼兽','狂野扑袭者'] },
+  undead: { icon:'💀', names:['骸骨仆从','幽魂爪牙','亡者残躯'] },
+  elemental: { icon:'🌪️', names:['元素碎片','风暴幼体','失控元素'] },
+  void: { icon:'🛸', names:['虚空仆从','裂隙幽影','以太爪牙'] },
+  soldier: { icon:'👤', names:['受召守卫','战场援军','狂热卫士'] },
+  generic: { icon:'👹', names:['爪牙','仆从','召唤物'] }
+};
+const BOSS_SUPPORT_PACKAGES = {
+  beast_alpha: ['低吼','硬皮','嗜血','狂暴','呼唤同伴'],
+  warlord_command: ['战吼','铁壁','召集守卫','狂暴','弱点洞察'],
+  undead_lord: ['亡者护佑','邪咒回涌','亡灵再起','暗影修补','灵魂虹吸'],
+  dragon_tyrant: ['弱点洞察','铁壁','嗜血','狂暴','呼唤同伴'],
+  arcane_master: ['护体屏障','奥术护壁','复苏结界','虚空裂隙','弱点洞察'],
+  elemental_core: ['石肤','元素涌现','护体屏障','奥术护壁','生命绽放'],
+  wild_ritual: ['自愈','生命绽放','疾风','呼唤同伴','复苏结界'],
+  void_prophet: ['护体屏障','虚空裂隙','奥术护壁','弱点洞察','邪咒回涌']
+};
+const BOSS_SUPPORT_OVERRIDES = {
+  '霍格':'beast_alpha',
+  '纳尔图':'undead_lord',
+  '莫斯虎尔的复仇之灵':'void_prophet',
+  '阿鲁高的侍从':'arcane_master',
+  '山口烈焰':'dragon_tyrant',
+  '沙鳞之翼':'beast_alpha',
+  '萨格雷·烈焰之心':'elemental_core',
+  '斯特拉霍尔姆勋爵':'warlord_command',
+  '加兹瑞拉':'wild_ritual',
+  '拉格纳罗斯的仆从':'elemental_core',
+  '瓦斯琪':'wild_ritual',
+  '伊利丹·怒风':'void_prophet',
+  '辛达苟萨':'dragon_tyrant',
+  '奥妮克希亚':'dragon_tyrant',
+  '卡扎克':'void_prophet',
+  '摩摩尔':'arcane_master',
+  '格鲁尔':'warlord_command',
+  '凯尔萨斯·逐日者':'arcane_master',
+  '阿尔萨斯·巫妖王':'undead_lord',
+  '鲁西弗隆':'elemental_core',
+  '奈法利安':'dragon_tyrant',
+  '克尔苏加德':'undead_lord'
+};
+function supportSkillByName(name){
+  return MON_SUPPORT_SKILLS.find(sk => sk.name === name) || null;
+}
+function supportSkillsByNames(names, lvl){
+  const level = Math.max(1, lvl || 1);
+  return (names || []).map(supportSkillByName).filter(sk => sk && level >= (sk.minLvl || 1));
+}
+function buildSupportSkillCandidatePool(name, kind, lvl, isBoss){
+  const tags = mobSkillTags(name, kind, !!isBoss);
+  const level = Math.max(1, lvl || 1);
+  let pool = MON_SUPPORT_SKILLS
+    .filter(sk => level >= (sk.minLvl || 1))
+    .map(sk => {
+      const matches = (sk.tags || []).reduce((sum, tag) => {
+        const idx = tags.indexOf(tag);
+        return idx >= 0 ? sum + Math.max(1, tags.length - idx) : sum;
+      }, 0);
+      return matches > 0 ? { skill: sk, score: matches } : null;
+    })
+    .filter(Boolean);
+  if(pool.length){
+    const bestScore = pool.reduce((best, entry) => Math.max(best, entry.score), 0);
+    const minScore = bestScore >= 5 ? bestScore - 2 : (bestScore >= 3 ? 2 : 1);
+    pool = pool.filter(entry => entry.score >= minScore);
+  }
+  if(!pool.length){
+    pool = MON_SUPPORT_SKILLS
+      .filter(sk => level >= (sk.minLvl || 1) && (sk.tags || []).includes(isBoss ? 'boss' : 'generic'))
+      .map(sk => ({ skill: sk, score: 1 }));
+  }
+  return pool;
+}
+function pickMonSupportSkills(name, kind, lvl, count, isBoss){
+  const pool = buildSupportSkillCandidatePool(name, kind, lvl, isBoss);
+  if(!pool.length) return [];
+  const picks = [];
+  const used = new Set();
+  const total = Math.max(1, count || 1);
+  while(picks.length < total){
+    const candidates = pool.filter(entry => !used.has(entry.skill.name));
+    if(!candidates.length) break;
+    const skill = pickWeightedSkill(candidates);
+    if(!skill) break;
+    picks.push(skill);
+    used.add(skill.name);
+  }
+  return picks;
+}
+function inferBossSupportPackage(name){
+  if(!name) return 'warlord_command';
+  const clean = String(name).replace(/^[^\u4e00-\u9fa5A-Za-z]+/, '');
+  if(BOSS_SUPPORT_OVERRIDES[clean]) return BOSS_SUPPORT_OVERRIDES[clean];
+  if(/龙|奈法利安|奥妮克希亚|辛达苟萨|雏龙/.test(clean)) return 'dragon_tyrant';
+  if(/亡灵|巫妖|克尔苏加德|阿尔萨斯|骷髅|幽魂|怨灵|纳克萨玛斯/.test(clean)) return 'undead_lord';
+  if(/炎|焰|火|熔岩|拉格纳罗斯|元素/.test(clean)) return 'elemental_core';
+  if(/术士|法师|虚空|奥术|先知|摩摩尔|凯尔萨斯|阿鲁高|暗影/.test(clean)) return 'arcane_master';
+  if(/戈隆|督军|将军|领主|可汗|兽人|格鲁尔|赫洛德/.test(clean)) return 'warlord_command';
+  if(/野兽|狼|熊|虎|豹|猎犬|猛犸|霍格|沙鳞|加兹瑞拉/.test(clean)) return 'beast_alpha';
+  if(/德鲁伊|植物|孢子|沼泽|瓦斯琪|自然/.test(clean)) return 'wild_ritual';
+  if(/伊利丹|卡扎克|虚空|恶魔|深渊/.test(clean)) return 'void_prophet';
+  return 'warlord_command';
+}
+function buildMonsterSupportPool(name, kind, lvl, isBoss, desiredCount){
+  const count = Math.max(1, desiredCount || 1);
+  if(!isBoss){
+    return pickMonSupportSkills(name, kind, lvl, count, false);
+  }
+  const pkg = inferBossSupportPackage(name);
+  let pool = supportSkillsByNames(BOSS_SUPPORT_PACKAGES[pkg], lvl).slice(0, count);
+  if(pool.length < count){
+    const bonus = pickMonSupportSkills(name, kind, lvl, count, true);
+    for(const sk of bonus){
+      if(pool.length >= count) break;
+      if(!pool.some(x => x.name === sk.name)) pool.push(sk);
+    }
+  }
+  return pool;
+}
+function pickMonSupportSkill(name, kind, lvl, isBoss){
+  return pickMonSupportSkills(name, kind, lvl, 1, isBoss)[0] || null;
+}
 
 function makeMonster(name,lvl,isBoss,maxRarity){
   const hp=Math.floor((100+lvl*lvl*6.0)*(isBoss?15:1));
   const kind=isBoss?null:mobKind(name);   // boss 走自己的被动,小怪用身份技能
-  const ms=pickMonSkill();
+  const msList=pickMonSkills(name, kind, lvl, 1);
+  const supportSkills=buildMonsterSupportPool(name, kind, lvl, isBoss, 1);
   return {name,isBoss,lvl,hpMax:hp,hp,atk:Math.floor((8+lvl*3.0)*(isBoss?1.8:1)),
     def:Math.floor((3+lvl*1.3)*(isBoss?1.5:1)),baseGold:Math.floor(5+lvl*1.5),
     baseXp:Math.floor(30+lvl*5.0),goldReward:Math.floor((5+lvl*1.5)*(isBoss?18:1)),
     honorReward:isBoss?Math.floor(15+lvl*3):0,dropRate:isBoss?1.0:0.18,
     gemChance:isBoss?1.0:0.015,maxRarity:maxRarity||'uncommon',_uid:monUidSeq++,
     _dots:{},_dotLegacyImported:true,_lastDotTick:0,
-    kind, _monSkill:isBoss?null:ms,
+    kind, _monSkills:isBoss?[]:msList, _monSkill:isBoss?null:(msList[0]||null),
+    _monSupportSkills:supportSkills,_supportSkillCooldowns:{},_lastSupportSkill:Date.now()-rng(3000,9000),
     _lastSkill:Date.now()-rng(1000,4000),                  // 进场1-4秒后首放
     dmgReduction:kind==='tank'?0.30:0,                        // 坦克:受到伤害-30%
     atkInterval:(isBoss?1400:1700)+rng(-200,200),    // 每只独立攻速(带抖动,避免同步出手)
@@ -1046,6 +1340,8 @@ function spawnZoneBoss(){
   state.currentMonsters=[];const map=getMap();if(!map)return;
   const maxR=map.boss.lvl>=60?'legend':'epic';
   const mon=makeMonster(map.boss.emoji+map.boss.name,map.boss.lvl,true,maxR);
+  mon._monSupportSkills = buildMonsterSupportPool(map.boss.name, null, map.boss.lvl, true, map.boss.supportCount || 2);
+  mon._supportSkillCooldowns = {};
   // 应用地图BOSS被动
   if(map.boss.passive){
     if(map.boss.passive.dodgeChance)mon.dodgeChance=map.boss.passive.dodgeChance;
@@ -1070,6 +1366,10 @@ function spawnDungeonMonster(){
   const isRaid=dg.type==='raid';
   const isFinalBoss=isBoss&&boss===dg.bosses[dg.bosses.length-1];
   const bossMaxRarity=isRaid?(isFinalBoss?'legend':'epic'):(isBoss?'legend':'rare');
+  const trashDamageSkillCount = !isBoss ? (isRaid ? 2 : 1) : 0;
+  const trashSupportSkillCount = !isBoss ? (isRaid ? 2 : 1) : 0;
+  const bossSupportSkillCount = isBoss ? (boss.supportCount || (isRaid ? (isFinalBoss ? 4 : 2) : (isFinalBoss ? 2 : 1))) : 0;
+  const monSkills = !isBoss ? pickMonSkills(name, null, power, trashDamageSkillCount) : [];
   state.currentMonsters.push({name,isBoss,bossName:isBoss?boss.name:null,
     lvl:Math.max(1,Math.floor(power*1.05)),
     hpMax:Math.floor((100+power*power*5.0)*(isBoss?14:4.0)*scale),hp:Math.floor((100+power*power*5.0)*(isBoss?14:4.0)*scale),
@@ -1079,7 +1379,7 @@ function spawnDungeonMonster(){
     dropRate:isBoss?1.0:0.35,gemChance:isBoss?0.8:0.05,maxRarity:bossMaxRarity,fromDungeon:true,_uid:monUidSeq++,
     _dots:{},_dotLegacyImported:true,_lastDotTick:0,
     _isRaidFinal:isRaid&&isFinalBoss,_isRaid:isRaid,
-    _monSkill:isBoss?null:pickMonSkill(),_lastSkill:Date.now()-rng(1000,4000),
+    _monSkills:isBoss?[]:monSkills,_monSkill:isBoss?null:(monSkills[0]||null),_monSupportSkills:buildMonsterSupportPool(isBoss?boss.name:name,null,power,isBoss,isBoss?bossSupportSkillCount:trashSupportSkillCount),_supportSkillCooldowns:{},_lastSupportSkill:Date.now()-rng(3000,9000),_lastSkill:Date.now()-rng(1000,4000),
     atkInterval:(isBoss?1400:1700)+rng(-200,200),_lastAtk:Date.now()-rng(0,1200)});
   // 大秘境词缀:修改怪物属性
   const mon = state.currentMonsters[state.currentMonsters.length-1];
@@ -1126,8 +1426,266 @@ function calcDmg(atk,def,crit,critd,forceCrit,defLvl,atkLvl){
 }
 function getPrimaryMonster(){return state.currentMonsters[0];}
 function getAliveMonsters(){return state.currentMonsters.filter(m=>m.hp>0);}
+function bossTrickList(bossData){
+  if(!bossData) return [];
+  if(Array.isArray(bossData.tricks) && bossData.tricks.length) return bossData.tricks;
+  if(Array.isArray(bossData.passive?.tricks) && bossData.passive.tricks.length) return bossData.passive.tricks;
+  const skillTricks = [];
+  for(const sk of (bossData.skills || [])){
+    if(Array.isArray(sk?.tricks) && sk.tricks.length) skillTricks.push(...sk.tricks);
+  }
+  return skillTricks;
+}
+function getMonsterBossData(mon){
+  if(!mon || !mon.isBoss) return null;
+  if(mon.isWorldBoss && typeof WORLD_BOSSES !== 'undefined'){
+    return WORLD_BOSSES.find(b => b.key === mon.wbKey) || null;
+  }
+  if(state.mode === 'boss'){
+    return getMap()?.boss || null;
+  }
+  if(state.mode === 'dungeon' || state.mode === 'mythic'){
+    const dg = DUNGEONS.find(d=>d.key===(state.dungeonState||state.mythicState)?.key);
+    if(dg) return (dg.bosses||[]).find(b=>b.name===mon.bossName) || null;
+  }
+  return null;
+}
+function ensureMonsterTrickAuras(mon){
+  if(!mon) return {};
+  if(!mon._trickAuras) mon._trickAuras = {};
+  return mon._trickAuras;
+}
+function setMonsterTrickAura(mon, key, trick, expire, extra){
+  if(!mon || !key || !trick) return;
+  const auras = ensureMonsterTrickAuras(mon);
+  auras[key] = Object.assign({
+    key,
+    name: trick.name || key,
+    icon: trick.icon || '⚡',
+    desc: trick.desc || '',
+    expire: expire || 0
+  }, extra || {});
+}
+function syncMonsterDoubleAura(mon){
+  if(!mon || !mon._trickAuras) return;
+  if((mon._nextAtkDouble || 0) > 0){
+    const aura = mon._trickAuras.nextDouble;
+    if(aura) aura.stacks = mon._nextAtkDouble;
+  }else{
+    delete mon._trickAuras.nextDouble;
+  }
+}
+function monsterDamageReduction(mon, now){
+  if(!mon) return 0;
+  const ts = now || Date.now();
+  let dr = mon.dmgReduction || 0;
+  if(mon._monsterDrBuffUntil && mon._monsterDrBuffUntil > ts) dr = Math.max(dr, mon._monsterDrBuffPct || 0.2);
+  return dr;
+}
+function monsterLeechRate(mon, now){
+  if(!mon) return 0;
+  const ts = now || Date.now();
+  let rate = mon.lifeSteal || 0;
+  if(mon._trickLeech && mon._trickLeech > ts) rate = Math.max(rate, (mon._trickLeechPct || 20) / 100);
+  return rate;
+}
+function monsterCritRate(mon, now){
+  if(!mon) return 5;
+  const ts = now || Date.now();
+  let rate = mon.critChance ? mon.critChance * 100 : 5;
+  if(mon._trickCrit && mon._trickCrit > ts) rate = Math.max(rate, mon._trickCritPct || 100);
+  return rate;
+}
+function monsterSpeedMult(mon, now){
+  if(!mon) return 1;
+  const ts = now || Date.now();
+  let mult = 1;
+  if(mon.spdBuffUntil && mon.spdBuffUntil > ts) mult *= 1.5;
+  if(mon._trickSpdBuff && mon._trickSpdBuff > ts) mult *= 1 + ((mon._trickSpdPct || 50) / 100);
+  return mult;
+}
+function monsterAttackValue(mon, now){
+  if(!mon) return 0;
+  const ts = now || Date.now();
+  let atk = mon.atk;
+  if(mon._trickAtkBuff && mon._trickAtkBuff > ts) atk = Math.floor(atk * (1 + ((mon._trickAtkPct || 50) / 100)));
+  return atk;
+}
+function monsterHasActiveAura(mon, key, now){
+  if(!mon?._trickAuras) return false;
+  const aura = mon._trickAuras[key];
+  if(!aura) return false;
+  const ts = now || Date.now();
+  if(aura.expire && aura.expire > ts) return true;
+  if(key === 'nextDouble') return (mon._nextAtkDouble || 0) > 0;
+  if(key === 'shield') return (mon._arcaneShield || 0) > 0;
+  return false;
+}
+function summonMonsterAlly(mon, skill, now){
+  const theme = skill.summonTheme || 'generic';
+  const cfg = MON_SUPPORT_SUMMONS[theme] || MON_SUPPORT_SUMMONS.generic;
+  const living = (state.currentMonsters || []).filter(x => x && x.hp > 0);
+  const ownAdds = living.filter(x => x._summonerId === mon._uid).length;
+  const maxAdds = mon.isBoss ? 3 : 2;
+  const count = Math.max(0, Math.min(skill.summonCount || 1, maxAdds - ownAdds, (mon.isBoss ? 6 : 4) - living.length));
+  if(count <= 0) return 0;
+  for(let i = 0; i < count; i++){
+    const summonName = (cfg.icon || '👹') + choice(cfg.names || ['爪牙']);
+    const lvl = Math.max(1, mon.lvl - (skill.summonLvlOffset || 2));
+    const add = makeMonster(summonName, lvl, false, 'common');
+    add.hpMax = Math.max(20, Math.floor(mon.hpMax * (skill.summonHpPct || 0.18)));
+    add.hp = add.hpMax;
+    add.atk = Math.max(1, Math.floor(mon.atk * (skill.summonAtkPct || 0.35)));
+    add.def = Math.max(0, Math.floor(mon.def * (skill.summonDefPct || 0.45)));
+    add.baseGold = 0; add.baseXp = 0; add.goldReward = 0; add.honorReward = 0; add.dropRate = 0; add.gemChance = 0;
+    add.maxRarity = 'common';
+    add._summoned = true;
+    add._summonerId = mon._uid;
+    add._monSupportSkills = [];
+    add._supportSkillCooldowns = {};
+    state.currentMonsters.push(add);
+  }
+  if(typeof markDirty === 'function') markDirty('stage');
+  return count;
+}
+function canUseMonsterSupportSkill(mon, skill, now){
+  if(!mon || !skill) return false;
+  if(skill.healPct && mon.hp >= mon.hpMax * 0.92) return false;
+  if(skill.shieldPct && mon._arcaneShield > mon.hpMax * Math.max(0.08, (skill.shieldPct || 0) * 0.6)) return false;
+  if(skill.atkBuffSecs && monsterHasActiveAura(mon, 'atk', now)) return false;
+  if(skill.spdBuffSecs && monsterHasActiveAura(mon, 'spd', now)) return false;
+  if(skill.defBuffSecs && monsterHasActiveAura(mon, 'def', now)) return false;
+  if(skill.drBuffSecs && monsterHasActiveAura(mon, 'dr', now)) return false;
+  if(skill.leechBuffSecs && monsterHasActiveAura(mon, 'leech', now)) return false;
+  if(skill.critBuffSecs && monsterHasActiveAura(mon, 'crit', now)) return false;
+  if(skill.summonCount){
+    const living = (state.currentMonsters || []).filter(x => x && x.hp > 0);
+    const ownAdds = living.filter(x => x._summonerId === mon._uid).length;
+    if(ownAdds >= (mon.isBoss ? 3 : 2)) return false;
+  }
+  return true;
+}
+function heroHasDebuff(key, now){
+  const ts = now || Date.now();
+  return !!(state.heroDebuffs && state.heroDebuffs[key] && state.heroDebuffs[key].expire > ts);
+}
+function monsterCombatSkillWeight(mon, skill, now){
+  let score = 10 + (skill.mul || 1) * 2;
+  if(skill.dot && !heroHasDebuff('burn', now)) score += 10;
+  if(skill.slow && !heroHasDebuff('chill', now)) score += 9;
+  if(skill.weaken && !heroHasDebuff('weaken', now)) score += 10;
+  if(skill.silence && !heroHasDebuff('silence', now)) score += 14;
+  if(skill.disarm && !heroHasDebuff('disarm', now)) score += 14;
+  if(skill.fear && !heroHasDebuff('fear', now)) score += 13;
+  if(skill.freeze && !heroHasDebuff('freeze', now)) score += 13;
+  if(skill.cripple && !heroHasDebuff('cripple', now)) score += 11;
+  if(skill.decay && !heroHasDebuff('decay', now)) score += 11;
+  if(skill.decay2 && !heroHasDebuff('decay2', now)) score += 13;
+  if(skill.brittle && !heroHasDebuff('brittle', now)) score += 12;
+  if(skill.soulLink && !heroHasDebuff('soulLink', now)) score += 12;
+  if(skill.revenge && !heroHasDebuff('vulnerable', now)) score += 11;
+  if(skill.manaDrain && state.resource > state.resourceMax * 0.35) score += 8;
+  if(skill.stun) score += 7;
+  if(mon._lastSkillName === skill.name) score -= 4;
+  return score;
+}
+function getReadyMonsterCombatSkill(mon, now){
+  const pool = mon?._monSkills?.length ? mon._monSkills : (mon?._monSkill ? [mon._monSkill] : []);
+  if(!pool.length) return null;
+  const scored = pool.map(skill => ({ skill, weight: monsterCombatSkillWeight(mon, skill, now) }));
+  return pickWeightedSkill(scored);
+}
+function getReadyMonsterSupportSkill(mon, now){
+  const pool = mon?._monSupportSkills || [];
+  if(!pool.length) return null;
+  const ready = pool.filter(skill => {
+    const expire = mon._supportSkillCooldowns?.[skill.name] || 0;
+    return expire <= now && canUseMonsterSupportSkill(mon, skill, now);
+  });
+  if(!ready.length) return null;
+  const scored = ready.map(skill => {
+    let score = 10;
+    if(skill.healPct && mon.hp < mon.hpMax * 0.55) score += 40;
+    if(skill.shieldPct && (!mon._arcaneShield || mon._arcaneShield < mon.hpMax * 0.08)) score += 24;
+    if(skill.summonCount) score += 12;
+    if(skill.drBuffSecs && mon.hp < mon.hpMax * 0.7) score += 18;
+    if(skill.atkBuffSecs || skill.critBuffSecs || skill.spdBuffSecs) score += mon.isBoss ? 16 : 8;
+    return { skill, weight: score };
+  });
+  return pickWeightedSkill(scored);
+}
+function applyMonsterSupportSkill(mon, skill, now){
+  if(!mon || !skill) return false;
+  if(!mon._supportSkillCooldowns) mon._supportSkillCooldowns = {};
+  mon._supportSkillCooldowns[skill.name] = now + (skill.cd || 14000);
+  let used = false;
+  log(`${skill.icon || '✨'} ${mon.bossName || mon.name} 使用 ${skill.name}!`,'bad');
+  showFloat($('mon-emoji'), (skill.icon || '✨') + skill.name, '#93c5fd');
+  if(skill.healPct){
+    const heal = Math.max(1, Math.floor(mon.hpMax * skill.healPct));
+    mon.hp = Math.min(mon.hpMax, mon.hp + heal);
+    showFloat($('mon-emoji'), '💚+' + heal, '#6ee7b7');
+    used = true;
+  }
+  if(skill.shieldPct){
+    const shield = Math.max(1, Math.floor(mon.hpMax * skill.shieldPct));
+    mon._arcaneShield = (mon._arcaneShield || 0) + shield;
+    setMonsterTrickAura(mon, 'shield', skill, 0, { desc:`护盾吸收 ${fmt(mon._arcaneShield)} 点伤害` });
+    used = true;
+  }
+  if(skill.atkBuffSecs){
+    mon._trickAtkBuff = now + skill.atkBuffSecs * 1000;
+    mon._trickAtkPct = skill.atkBuffPct || 30;
+    setMonsterTrickAura(mon, 'atk', skill, mon._trickAtkBuff);
+    used = true;
+  }
+  if(skill.spdBuffSecs){
+    mon._trickSpdBuff = now + skill.spdBuffSecs * 1000;
+    mon._trickSpdPct = skill.spdBuffPct || 35;
+    setMonsterTrickAura(mon, 'spd', skill, mon._trickSpdBuff);
+    used = true;
+  }
+  if(skill.defBuffSecs){
+    mon._trickDefBuff = now + skill.defBuffSecs * 1000;
+    mon._trickDefPct = skill.defBuffPct || 35;
+    setMonsterTrickAura(mon, 'def', skill, mon._trickDefBuff);
+    used = true;
+  }
+  if(skill.drBuffSecs){
+    mon._monsterDrBuffUntil = now + skill.drBuffSecs * 1000;
+    mon._monsterDrBuffPct = skill.drBuffPct || 0.25;
+    setMonsterTrickAura(mon, 'dr', skill, mon._monsterDrBuffUntil);
+    used = true;
+  }
+  if(skill.leechBuffSecs){
+    mon._trickLeech = now + skill.leechBuffSecs * 1000;
+    mon._trickLeechPct = skill.leechBuffPct || 18;
+    setMonsterTrickAura(mon, 'leech', skill, mon._trickLeech);
+    used = true;
+  }
+  if(skill.critBuffSecs){
+    mon._trickCrit = now + skill.critBuffSecs * 1000;
+    mon._trickCritPct = skill.critBuffPct || 35;
+    setMonsterTrickAura(mon, 'crit', skill, mon._trickCrit);
+    used = true;
+  }
+  if(skill.summonCount){
+    const summoned = summonMonsterAlly(mon, skill, now);
+    if(summoned > 0){
+      log(`👥 ${mon.bossName || mon.name} 召来了 ${summoned} 个援军!`,'bad');
+      used = true;
+    }
+  }
+  return used;
+}
 /* 破甲(sunder)等护甲削减后的有效防御 */
-function monArmor(mon){ if(!mon)return 0; let def=mon.def; if(mon.sunderUntil>Date.now())def=Math.floor(def*0.7); return def; }
+function monArmor(mon){
+  if(!mon)return 0;
+  let def=mon.def;
+  if(mon._trickDefBuff&&mon._trickDefBuff>Date.now())def=Math.floor(def*(1+((mon._trickDefPct||50)/100)));
+  if(mon.sunderUntil>Date.now())def=Math.floor(def*0.7);
+  return def;
+}
 /* 英雄视角的目标有效护甲(含"破甲"天赋:无视部分护甲) */
 function heroTargetDef(mon){ return Math.floor(monArmor(mon)*(1-(state.hero.armorPen||0)/100)); }
 
@@ -1137,6 +1695,15 @@ const DEBUFF_FX = {
   weaken:     { name:'虚弱',     icon:'💔', atkMul:0.85 },      // 攻击-15%
   vulnerable: { name:'易伤',     icon:'🩸', takenMul:1.2 },     // 受到伤害+20%
   chill:      { name:'冰缚',     icon:'🥶', spdMul:0.85 },      // 攻速-15%
+  silence:    { name:'沉默',     icon:'🔇', desc:'无法施放技能' },
+  disarm:     { name:'缴械',     icon:'⚔️', atkMul:0.75, desc:'无法普通攻击,攻击降低25%' },
+  fear:       { name:'恐惧',     icon:'👻', desc:'无法行动' },
+  freeze:     { name:'冻结',     icon:'🧊', spdMul:0.7, desc:'无法行动,攻速降低30%' },
+  cripple:    { name:'残废',     icon:'🦿', atkMul:0.85, spdMul:0.8, desc:'攻击降低15%,攻速降低20%' },
+  decay:      { name:'衰老',     icon:'👴', healMul:0.7, regMul:0.7, desc:'受到治疗和生命回复降低30%' },
+  decay2:     { name:'凋零',     icon:'🌑', healMul:0.45, regMul:0.35, desc:'受到治疗降低55%,生命回复降低65%' },
+  brittle:    { name:'易爆',     icon:'💥', desc:'下次受到的伤害翻倍' },
+  soulLink:   { name:'灵魂链接', icon:'🔗', desc:'受到伤害时会为敌人恢复生命' },
 };
 function applyHeroDebuff(key, durMs, opts){
   if(!DEBUFF_FX[key])return;
@@ -1154,9 +1721,19 @@ function heroDebuffTakenMult(){
   for(const k in state.heroDebuffs){const d=state.heroDebuffs[k];if(d.expire>now){const fx=DEBUFF_FX[k];if(fx&&fx.takenMul)m*=fx.takenMul;}}
   return m;
 }
+function heroDebuffHealMult(){
+  if(!state.heroDebuffs)return 1;const now=Date.now();let m=1;
+  for(const k in state.heroDebuffs){const d=state.heroDebuffs[k];if(d.expire>now){const fx=DEBUFF_FX[k];if(fx&&fx.healMul)m*=fx.healMul;}}
+  return m;
+}
+function heroDebuffRegenMult(){
+  if(!state.heroDebuffs)return 1;const now=Date.now();let m=1;
+  for(const k in state.heroDebuffs){const d=state.heroDebuffs[k];if(d.expire>now){const fx=DEBUFF_FX[k];if(fx&&fx.regMul)m*=fx.regMul;}}
+  return m;
+}
 function dealDmgToAll(atk,def,crit,critd,mul,forceCrit){
   let total=0;
-  for(const mon of state.currentMonsters){if(mon.hp<=0)continue;const d=calcDmg(atk*mul,heroTargetDef(mon),crit,critd,forceCrit,mon.lvl,state.hero.lvl);let dd=d.dmg;if(mon.dmgReduction)dd=Math.max(1,Math.floor(dd*(1-mon.dmgReduction)));mon.hp-=dd;total+=dd;trackDmg('hero',dd);}
+  for(const mon of state.currentMonsters){if(mon.hp<=0)continue;const d=calcDmg(atk*mul,heroTargetDef(mon),crit,critd,forceCrit,mon.lvl,state.hero.lvl);let dd=d.dmg;const dr=monsterDamageReduction(mon);if(dr)dd=Math.max(1,Math.floor(dd*(1-dr)));mon.hp-=dd;total+=dd;trackDmg('hero',dd);}
   return total;
 }
 /* 仇恨锁定:把仇恨值最高的存活敌人放到 index 0(英雄/随从/单体技能都打 [0] = 当前焦点) */
@@ -1210,7 +1787,7 @@ function tickBattle(now){
   const regenInterval=1000/spdMul;
 
   if(now-lastRegen>regenInterval){
-    state.hp=Math.min(state.hero.hpMax,state.hp+state.hero.reg);
+    state.hp=Math.min(state.hero.hpMax,state.hp+Math.max(0,Math.floor(state.hero.reg*heroDebuffRegenMult())));
     const c=getCls();
     if(c.resKey==='rage')state.resource=Math.max(0,state.resource-3);
     else if(c.resKey==='energy')state.resource=Math.min(state.resourceMax,state.resource+10);
@@ -1265,7 +1842,7 @@ function tickBattle(now){
   // 玩家攻击(锁定焦点 = 仇恨最高者)
   const spd=state.hero.spd||1;
   const heroInterval=1000/(spd*spdMul*hasteFactor());   // 极速也提升攻击速度
-  if((now-lastHeroAtk>heroInterval||now-lastHeroAtk>5000)&&!(state.heroStunUntil>now)){   // 被BOSS击晕时无法攻击
+  if((now-lastHeroAtk>heroInterval||now-lastHeroAtk>5000)&&!(state.heroStunUntil>now)&&!(state.heroDisarmUntil>now)){   // 被控制或缴械时无法普通攻击
 
     let ap=state.hero.atk;
     if(state.hero.executeBonus>0&&mon.hp<mon.hpMax*0.3)ap=Math.floor(ap*(1+state.hero.executeBonus/100));
@@ -1282,10 +1859,10 @@ function tickBattle(now){
       if (actualDmg <= mon._arcaneShield) { mon._arcaneShield -= actualDmg; actualDmg = 0; }
       else { actualDmg -= mon._arcaneShield; mon._arcaneShield = 0; }
     }
-    if(mon.dmgReduction&&actualDmg>0)actualDmg=Math.max(1,Math.floor(actualDmg*(1-mon.dmgReduction)));   // 坦克小怪减伤
+    {const dr=monsterDamageReduction(mon, now);if(dr&&actualDmg>0)actualDmg=Math.max(1,Math.floor(actualDmg*(1-dr)));}   // 怪物减伤
     mon.hp-=actualDmg;trackDmg('hero',actualDmg);
     if(typeof progressionOnDamage==='function') progressionOnDamage(actualDmg);
-    if(!dodged&&state.hero.extraAtk>0&&Math.random()*100<state.hero.extraAtk){const d2=calcDmg(ap,heroTargetDef(mon),state.hero.crit,state.hero.critd,false,mon.lvl,state.hero.lvl);let dd2=d2.dmg;if(mon.dmgReduction)dd2=Math.max(1,Math.floor(dd2*(1-mon.dmgReduction)));mon.hp-=dd2;trackDmg('hero',dd2);showFloat($('mon-emoji'),'🎯+'+dd2,'#fbbf24');}
+    if(!dodged&&state.hero.extraAtk>0&&Math.random()*100<state.hero.extraAtk){const d2=calcDmg(ap,heroTargetDef(mon),state.hero.crit,state.hero.critd,false,mon.lvl,state.hero.lvl);let dd2=d2.dmg;const dr=monsterDamageReduction(mon, now);if(dr)dd2=Math.max(1,Math.floor(dd2*(1-dr)));mon.hp-=dd2;trackDmg('hero',dd2);showFloat($('mon-emoji'),'🎯+'+dd2,'#fbbf24');}
     showFloat($('mon-emoji'),dodged?'闪避':('-'+actualDmg),dodged?'#9ca3af':(d.crit?'#fbbf24':'#fff'));
     {const me=$('mon-emoji');if(me){me.classList.add('shake');setTimeout(()=>{const e2=$('mon-emoji');if(e2)e2.classList.remove('shake');},200);}}
     if(!dodged&&typeof passiveOnHit==='function')passiveOnHit(mon,actualDmg,ap);
@@ -1336,35 +1913,36 @@ function tickBattle(now){
   for(const m of state.currentMonsters){
     if(m.hp<=0)continue;
     if(m.stunUntil&&m.stunUntil>now)continue;   // 被英雄击晕的敌人无法攻击
-    const spdBuffed=m.spdBuffUntil&&m.spdBuffUntil>now;
-    let interval=(m.atkInterval||(m.isBoss?1400:1700))/spdMul/(spdBuffed?1.5:1);
+    let interval=(m.atkInterval||(m.isBoss?1400:1700))/spdMul/monsterSpeedMult(m, now);
     if(m.slowUntil&&m.slowUntil>now)interval=Math.floor(interval*1.5);
     const last=m._lastAtk||0;
     if(!(now-last>interval||now-last>6000))continue;   // 还没到这只怪的下一次出手
     m._lastAtk=now;
-    let matk=m.atk;if(m._affixes&&m._affixes.some(a=>a.mod.raging)&&m.hp<m.hpMax*0.3)matk=Math.floor(matk*1.5);
-    // BOSS技巧效果
-    const trickAtk=m._trickAtkBuff&&m._trickAtkBuff>now;if(trickAtk)matk=Math.floor(matk*1.5);
-    const trickCrit=m._trickCrit&&m._trickCrit>now;
-    if(m._trickDefBuff&&m._trickDefBuff>now)m.def=Math.floor(m.def*1.5);
+    const supportSkill = getReadyMonsterSupportSkill(m, now);
+    if(supportSkill && now-(m._lastSupportSkill||0)>1800){
+      m._lastSupportSkill=now;
+      if(applyMonsterSupportSkill(m,supportSkill,now)) continue;
+    }
+    let matk=monsterAttackValue(m, now);if(m._affixes&&m._affixes.some(a=>a.mod.raging)&&m.hp<m.hpMax*0.3)matk=Math.floor(matk*1.5);
+    const critRate=monsterCritRate(m, now);
     // 双倍攻击
-    let doubleAtk=m._nextAtkDouble&&m._nextAtkDouble>0;if(doubleAtk)m._nextAtkDouble--;
+    let doubleAtk=m._nextAtkDouble&&m._nextAtkDouble>0;if(doubleAtk){m._nextAtkDouble--;syncMonsterDoubleAura(m);}
     // 小怪技能(每3秒一次,瞬发低倍率,可带debuff)
-    let kindFloat=null,kindColor='#f59e0b',kindChill=false,kindLog=null,kindStun=0,kindDot=0,kindWeaken=false;
-    if(!m.isBoss&&m._monSkill&&now-(m._lastSkill||0)>3000){
-      m._lastSkill=now;const sk=m._monSkill;
+    let kindFloat=null,kindColor='#f59e0b',kindLog=null,kindSkill=null;
+    if(!m.isBoss&&(m._monSkills?.length||m._monSkill)&&now-(m._lastSkill||0)>3000){
+      m._lastSkill=now;const sk=getReadyMonsterCombatSkill(m, now);
+      if(sk){
       matk=Math.floor(matk*sk.mul);kindFloat=sk.icon+sk.name+'!';kindColor='#fbbf24';
-      if(sk.stun)kindStun=sk.stun;
-      if(sk.dot)kindDot=sk.dot;
-      if(sk.slow)kindChill=true;
-      if(sk.weaken)kindWeaken=true;
+      kindSkill=sk;
       kindLog=[sk.icon+' '+m.name+' 释放 '+sk.name+'!','bad'];
+      m._lastSkillName = sk.name;
+      }
     }
     m.threat=(m.threat||0)+matk*0.6;
     // —— 仇恨分配:存活随从按定位概率把这次攻击吸引到自己身上(坦克更高)——
     if(companionTargetable()&&Math.random()<compAggroChance()){
       const cst=computeCompanionStats();
-      const cd=calcDmg(matk,cst?cst.def:0,(m.critChance?m.critChance*100:5),(m.critMult?m.critMult*100:150),false,state.hero.lvl,m.lvl);
+      const cd=calcDmg(matk,cst?cst.def:0,critRate,(m.critMult?m.critMult*100:150),false,state.hero.lvl,m.lvl);
       const tc=Math.max(1,cd.dmg);
       state._compHp=Math.max(0,(state._compHp||0)-tc);
       showFloat($('comp-mini'),(kindFloat?kindFloat+' ':'')+'-'+tc,'#ff9aa0');
@@ -1375,13 +1953,8 @@ function tickBattle(now){
     // —— 命中英雄(原逻辑) ——
     if(state.hero.dodge&&Math.random()*100<state.hero.dodge){showFloat($('hero-emoji'),'闪避','#9ca3af');continue;}   // 英雄"闪避"天赋
     if(kindFloat)showFloat($('hero-emoji'),kindFloat,kindColor);
-    if(kindChill&&typeof applyHeroDebuff==='function')applyHeroDebuff('chill',3000);
-    if(kindStun)state.heroStunUntil=now+kindStun;
-    if(kindDot&&typeof applyHeroDebuff==='function')applyHeroDebuff('burn',4000,{dps:Math.max(1,kindDot)});
-    if(kindWeaken&&typeof applyHeroDebuff==='function')applyHeroDebuff('weaken',3000);
     if(kindLog)log(kindLog[0],kindLog[1]);
-    const critRate=trickCrit?100:(m.critChance?m.critChance*100:5);
-    const d=calcDmg(matk,state.hero.def,critRate,(m.critMult?m.critMult*100:150),trickCrit,state.hero.lvl,m.lvl);let taken=d.dmg;
+    const d=calcDmg(matk,state.hero.def,critRate,(m.critMult?m.critMult*100:150),false,state.hero.lvl,m.lvl);let taken=d.dmg;
     // BOSS 普攻几率击晕英雄(1.5秒无法攻击/施法)
     if(m.stunChance&&Math.random()<m.stunChance){state.heroStunUntil=now+1500;showFloat($('hero-emoji'),'💫晕眩','#fde047');log('💫 你被 '+m.name+' 击晕了!','bad');}
     if(state.hero.vers>0)taken=Math.max(1,Math.floor(taken*(1-state.hero.vers/100)));
@@ -1391,6 +1964,7 @@ function tickBattle(now){
     taken=Math.max(1,Math.floor(taken*masteryTakenMult()));      // 精通:减伤(dr 专精)
     taken=Math.max(1,Math.floor(taken*talentTakenMult(m)));
     taken=applyHeroDamage(taken,m,{label:t=>'-'+t,color:'#ff7a7a',now});
+    if(kindSkill)skillEffects(kindSkill,m,taken,now,{allowFallback:false});
     processTalentLowHp(m,now);
     totalDmg+=taken;
     if(state.hero.reflectDmg>0){const reflect=Math.floor(d.dmg*state.hero.reflectDmg/100);m.hp-=reflect;}
@@ -1398,7 +1972,7 @@ function tickBattle(now){
     anyHit=true;
     // 双倍攻击技巧: 再来一刀
     if(doubleAtk){
-      const d2d=calcDmg(matk,state.hero.def,(m.critChance?m.critChance*100:5),(m.critMult?m.critMult*100:150),false,state.hero.lvl,m.lvl);let t2=d2d.dmg;
+      const d2d=calcDmg(matk,state.hero.def,critRate,(m.critMult?m.critMult*100:150),false,state.hero.lvl,m.lvl);let t2=d2d.dmg;
       if(state.hero.vers>0)t2=Math.max(1,Math.floor(t2*(1-state.hero.vers/100)));
       if(typeof passiveDamageTakenMult==='function')t2=Math.max(1,Math.floor(t2*passiveDamageTakenMult()));
       t2=Math.max(1,Math.floor(t2*buffDamageReductionMult()));t2=Math.max(1,Math.floor(t2*heroDebuffTakenMult()));t2=Math.max(1,Math.floor(t2*masteryTakenMult()));t2=Math.max(1,Math.floor(t2*talentTakenMult(m)));
@@ -1407,34 +1981,56 @@ function tickBattle(now){
   }
   if(anyHit){
     $('hero-emoji').classList.add('shake');setTimeout(()=>$('hero-emoji').classList.remove('shake'),200);
-    const trickLeech=mon._trickLeech&&mon._trickLeech>now;
-    if((mon.lifeSteal||trickLeech)&&totalDmg>0){const ls=trickLeech?0.2:(mon.lifeSteal||0);const heal=Math.floor(totalDmg*ls);mon.hp=Math.min(mon.hpMax,mon.hp+heal);showFloat($('mon-emoji'),'🩸+'+heal,'#ef4444');}
+    const ls=monsterLeechRate(mon, now);
+    if(ls>0&&totalDmg>0){const heal=Math.floor(totalDmg*ls);mon.hp=Math.min(mon.hpMax,mon.hp+heal);showFloat($('mon-emoji'),'🩸+'+heal,'#ef4444');}
     lastMonAtk=now;
     if(getCls().resKey==='rage')state.resource=Math.min(state.resourceMax,state.resource+5);
   }
   // BOSS技能(带读条)— 使用技能自身CD, 支持副本/大秘境/地图BOSS
-  if(mon.isBoss&&!casting){let bossData=null;
-    const dg=DUNGEONS.find(d=>d.key===(state.dungeonState||state.mythicState)?.key);
-    if(dg)bossData=(dg.bosses||[]).find(b=>b.name===mon.bossName);
+  if(mon.isBoss&&!casting){let bossData=getMonsterBossData(mon);
     if(!bossData){const map=MAPS.find(m=>m.key===state.currentMap);if(map?.boss)bossData=map.boss;}
     const rawCd=((bossData?.skills||[])[bossSkillIdx%(bossData?.skills||[]).length])?.cd||10;
     const skillCd=Math.max(3,Math.floor(rawCd*0.6));   // CD加速40%,但最低3秒间隔
-    if(bossData?.skills?.length&&now-lastBossSkill>skillCd*1000){const sk=bossData.skills[bossSkillIdx%bossData.skills.length];let castTime=sk.castTime!==undefined?sk.castTime:2;const instant=mon.instantCast&&Math.random()<0.35;if(instant)castTime=0;casting={isBoss:true,bossName:mon.bossName,icon:sk.icon,type:sk.type,heal:sk.heal,mul:sk.mul,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,aoe:sk.aoe,silence:sk.silence,disarm:sk.disarm,fear:sk.fear,freeze:sk.freeze,cripple:sk.cripple,decay:sk.decay,wither:sk.wither,manaDrain:sk.manaDrain,bomb:sk.bomb,plague:sk.plague,bleed:sk.bleed,brittle:sk.brittle,soulDrain:sk.soulDrain,soulLink:sk.soulLink,revenge:sk.revenge,frenzy:sk.frenzy,decay2:sk.decay2,mirror:sk.mirror,startTime:now,duration:castTime*1000};log('💀 '+mon.bossName+(instant?' 瞬发 ':' 开始施放 ')+sk.name+'!'+(instant?'(无法打断)':''),'bad');lastBossSkill=now;bossSkillIdx++;}
+    if(bossData?.skills?.length&&now-lastBossSkill>skillCd*1000){const sk=bossData.skills[bossSkillIdx%bossData.skills.length];let castTime=sk.castTime!==undefined?sk.castTime:2;const instant=mon.instantCast&&Math.random()<0.35;if(instant)castTime=0;casting={isBoss:true,bossName:mon.bossName,name:sk.name,icon:sk.icon,type:sk.type,heal:sk.heal,mul:sk.mul,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,spdBuffSecs:sk.spdBuffSecs,spdBuffPct:sk.spdBuffPct,atkBuffSecs:sk.atkBuffSecs,atkBuffPct:sk.atkBuffPct,defBuffSecs:sk.defBuffSecs,defBuffPct:sk.defBuffPct,drBuffSecs:sk.drBuffSecs,drBuffPct:sk.drBuffPct,shieldPct:sk.shieldPct,critBuffSecs:sk.critBuffSecs,critBuffPct:sk.critBuffPct,leechBuffSecs:sk.leechBuffSecs,leechBuffPct:sk.leechBuffPct,summonCount:sk.summonCount,summonTheme:sk.summonTheme,aoe:sk.aoe,silence:sk.silence,disarm:sk.disarm,fear:sk.fear,freeze:sk.freeze,cripple:sk.cripple,decay:sk.decay,wither:sk.wither,manaDrain:sk.manaDrain,bomb:sk.bomb,plague:sk.plague,bleed:sk.bleed,brittle:sk.brittle,soulDrain:sk.soulDrain,soulLink:sk.soulLink,revenge:sk.revenge,frenzy:sk.frenzy,decay2:sk.decay2,mirror:sk.mirror,startTime:now,duration:castTime*1000};log('💀 '+mon.bossName+(instant?' 瞬发 ':' 开始施放 ')+sk.name+'!'+(instant?'(无法打断)':''),'bad');lastBossSkill=now;bossSkillIdx++;}
     // BOSS技巧(不占技能池,开局3秒必触发,之后每秒15%概率)
     if(!mon._lastTrick)mon._lastTrick=0;
     if(!mon._trickFirst)mon._trickFirst=false;
     const trickReady=!mon._trickFirst?(now-mon._lastTrick>3000):(now-mon._lastTrick>1000&&Math.random()<0.15);
-    if(bossData?.tricks?.length&&trickReady){
-      const trick=bossData.tricks[Math.floor(Math.random()*bossData.tricks.length)];
+    const tricks=bossTrickList(bossData);
+    if(tricks.length&&trickReady){
+      const trick=tricks[Math.floor(Math.random()*tricks.length)];
       log('⚡ '+mon.bossName+' 使用技巧 '+trick.icon+trick.name+'!','bad');
       mon._lastTrick=now;mon._trickFirst=true;
-      if(trick.nextDouble)mon._nextAtkDouble=(mon._nextAtkDouble||0)+1;
-      if(trick.atkBuff)mon._trickAtkBuff=now+trick.atkBuff*1000;
-      if(trick.spdBuff)mon._trickSpdBuff=now+trick.spdBuff*1000;
-      if(trick.defBuff)mon._trickDefBuff=now+trick.defBuff*1000;
+      if(trick.nextDouble){
+        mon._nextAtkDouble=(mon._nextAtkDouble||0)+trick.nextDouble;
+        setMonsterTrickAura(mon,'nextDouble',trick,0,{stacks:mon._nextAtkDouble, desc: trick.nextDouble>1 ? `接下来 ${trick.nextDouble} 次攻击会追加打击` : '下一次攻击会追加打击'});
+      }
+      if(trick.atkBuff){
+        mon._trickAtkBuff=now+trick.atkBuff*1000;
+        mon._trickAtkPct=trick.atkBuffPct||50;
+        setMonsterTrickAura(mon,'atk',trick,mon._trickAtkBuff);
+      }
+      if(trick.spdBuff){
+        mon._trickSpdBuff=now+trick.spdBuff*1000;
+        mon._trickSpdPct=trick.spdBuffPct||50;
+        setMonsterTrickAura(mon,'spd',trick,mon._trickSpdBuff);
+      }
+      if(trick.defBuff){
+        mon._trickDefBuff=now+trick.defBuff*1000;
+        mon._trickDefPct=trick.defBuffPct||50;
+        setMonsterTrickAura(mon,'def',trick,mon._trickDefBuff);
+      }
       if(trick.healPct)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(mon.hpMax*trick.healPct));
-      if(trick.leechBuff)mon._trickLeech=now+trick.leechBuff*1000;
-      if(trick.critBuff)mon._trickCrit=now+trick.critBuff*1000;
+      if(trick.leechBuff){
+        mon._trickLeech=now+trick.leechBuff*1000;
+        mon._trickLeechPct=trick.leechBuffPct||20;
+        setMonsterTrickAura(mon,'leech',trick,mon._trickLeech);
+      }
+      if(trick.critBuff){
+        mon._trickCrit=now+trick.critBuff*1000;
+        mon._trickCritPct=trick.critBuffPct||100;
+        setMonsterTrickAura(mon,'crit',trick,mon._trickCrit);
+      }
     }}
   if(state.hp<=0)onHeroDeath();
 }
@@ -1538,6 +2134,13 @@ function onMonsterDeath(mon){
 
 function onHeroDeath(){
   log('☠️ 你倒下了…','bad');state._compHp=null;state._compDownUntil=0;   // 复活后随从满血归来
+  state.heroDebuffs = {};
+  state.heroStunUntil = 0;
+  state.heroSilenceUntil = 0;
+  state.heroDisarmUntil = 0;
+  state._brittleUntil = 0;
+  state._soulLinkUntil = 0;
+  state._decayUntil = 0;
   state.talentAuras = {};
   state.talentState = { cds:{}, flags:{}, shield:0 };
   state.skillRuntime = { auras:{} };
@@ -1655,7 +2258,11 @@ let casting=null;
 function resetCombatState(){
   casting=null;
   lastHeroAtk=0;lastMonAtk=0;lastRegen=0;dotTick=0;lastBossSkill=0;bossSkillIdx=0;burnTick=0;
-  if(state){state.heroDebuffs={};state.heroStunUntil=0;state.talentAuras={};state.talentState={cds:{},flags:{},shield:0};state.skillRuntime={auras:{}};}
+  if(state){
+    state.heroDebuffs={};state.heroStunUntil=0;state.heroSilenceUntil=0;state.heroDisarmUntil=0;
+    state._brittleUntil=0;state._soulLinkUntil=0;state._decayUntil=0;
+    state.talentAuras={};state.talentState={cds:{},flags:{},shield:0};state.skillRuntime={auras:{}};
+  }
   if(typeof lastCompAtk==='number')lastCompAtk=0;
   if(typeof lastCompSkill==='number')lastCompSkill=0;
   if(typeof compSkillIdx==='number')compSkillIdx=0;
@@ -1669,41 +2276,50 @@ function hasteFactor(){return 1+((state.hero&&state.hero.haste)||0)/100;}       
 function castSpeedMul(){return (state.battleSpeed||1)*hasteFactor();}             // 读条速度&技能CD 提速 = 战斗倍速 × 极速
 function castDmgBonus(sk){return 1+((sk&&sk.castTime)||0)*0.3;}                   // 法系补偿:带读条的技能按读条时长加伤(读条=投资,换更高爆发)
 function getCastTime(sk){if(sk.type==='interrupt')return 0;if(sk.castTime!==undefined)return sk.castTime;return 0;}
+function cancelHeroCast(){
+  if(!casting || casting.isBoss) return;
+  casting = null;
+  const cb = document.getElementById('cast-bar-wrap');
+  if(cb) cb.style.visibility = 'hidden';
+}
 function getSkillCd(sk){let base;if(sk.cd)base=sk.cd;else if(sk.type==='buff')base=40;else if(sk.type==='heal')base=16;else{const mul=sk.mul||1;if(mul>=8)base=35;else if(mul>=6)base=24;else if(mul>=5)base=18;else if(mul>=4)base=13;else if(mul>=3)base=9;else base=7;}if(state.hero.cdReduction>0)base=Math.max(3,Math.floor(base*(1-state.hero.cdReduction/100)));return base;}
 function startCast(skillKey,manual){
   const c=getCls();const sk=c.skills[skillKey];if(!sk)return;
+  const now=Date.now();
+  if(state.heroSilenceUntil>now){if(manual)log('你被沉默了,无法施法','bad');return;}
   const castTime=getCastTime(sk);if(castTime<=0){castSkill(skillKey,manual);return;}
-  const now=Date.now();if(state.skillCooldowns[skillKey]&&state.skillCooldowns[skillKey]>now){if(manual)log(sk.name+' 冷却中','bad');return;}
+  if(state.skillCooldowns[skillKey]&&state.skillCooldowns[skillKey]>now){if(manual)log(sk.name+' 冷却中','bad');return;}
   let cost=sk.mp;if(state.hero.costReduction>0)cost=Math.max(1,Math.floor(sk.mp*(1-state.hero.costReduction/100)));
   if(state.resource<cost){if(manual)log(c.resource+'不足','bad');return;}
   casting={skillKey,startTime:now,duration:castTime*1000/castSpeedMul(),manual:!!manual};log(sk.icon+' 施放 '+sk.name+'...','info');   // 读条受 倍速×极速 影响
 }
-function skillEffects(wc,mon,taken,now){
-  if(wc.dot){applyHeroDebuff('burn',6000,{dps:Math.max(1,Math.floor(taken*0.12))});log('☠️ '+mon.bossName+(wc.icon||'')+'让你中毒了!','bad');}
-  if(wc.slow){applyHeroDebuff('chill',5000);log('❄️ '+mon.bossName+(wc.icon||'')+'减速了你!','bad');}
-  if(wc.stun){state.heroStunUntil=now+(wc.stun===true?2000:wc.stun);showFloat($('hero-emoji'),'💫眩晕','#fde047');log('💫 '+mon.bossName+(wc.icon||'')+'击晕了你!','bad');}
-  if(wc.silence){state.heroSilenceUntil=now+(wc.silence===true?4000:wc.silence);log('🔇 '+mon.bossName+(wc.icon||'')+'沉默了你!','bad');}
-  if(wc.disarm){state.heroDisarmUntil=now+(wc.disarm===true?3000:wc.disarm);log('⚔️❌ '+mon.bossName+(wc.icon||'')+'缴械了你!','bad');}
-  if(wc.fear){state.heroStunUntil=now+2000;applyHeroDebuff('burn',3000,{dps:Math.max(1,Math.floor(taken*0.05))});showFloat($('hero-emoji'),'👻恐惧','#a78bfa');log('👻 '+mon.bossName+(wc.icon||'')+'恐惧了你!','bad');}
-  if(wc.freeze){state.heroStunUntil=now+2000;state.hero.def=Math.floor(state.hero.def*2);setTimeout(()=>recomputeStats(),2100);log('🧊 '+mon.bossName+(wc.icon||'')+'冻结了你!','bad');}
-  if(wc.cripple){applyHeroDebuff('weaken',5000);applyHeroDebuff('chill',5000);log('🦿 '+mon.bossName+(wc.icon||'')+'残废了你!','bad');}
-  if(wc.decay){applyHeroDebuff('weaken',8000);log('👴 '+mon.bossName+(wc.icon||'')+'让你衰老了!','bad');}
-  if(wc.wither){const wdmg=Math.max(1,Math.floor(state.hp*0.15));applyHeroDamage(wdmg,mon,{label:t=>'🥀-'+t,color:'#9ca3af',now});processTalentLowHp(mon,now);log('🥀 '+mon.bossName+(wc.icon||'')+'枯萎了你的生命!','bad');}
-  if(wc.manaDrain){state.resource=Math.max(0,state.resource-(wc.manaDrain===true?50:wc.manaDrain));log('💧 '+mon.bossName+(wc.icon||'')+'吸取了你的能量!','bad');}
-  if(wc.bomb){const bdmg=Math.floor(state.hero.hpMax*0.3);setTimeout(()=>{if(state.hp>0){applyHeroDamage(bdmg,mon,{label:t=>'💣-'+t,color:'#ef4444',now:Date.now()});processTalentLowHp(mon,Date.now());log('💣 BOSS的自爆印记爆炸了!','bad');}},5000);log('💣 '+mon.bossName+(wc.icon||'')+'给你施加了自爆印记(5秒后爆炸)!','bad');}
-  if(wc.plague){applyHeroDebuff('burn',6000,{dps:Math.max(1,Math.floor(taken*0.15))});log('🦠 '+mon.bossName+(wc.icon||'')+'散播了暗影瘟疫!','bad');}
-  if(wc.bleed){applyHeroDebuff('burn',8000,{dps:Math.max(1,Math.floor(taken*0.1))});log('🩸 '+mon.bossName+(wc.icon||'')+'让你流血了!','bad');}
-  if(wc.brittle){state._brittleUntil=now+6000;log('💥 '+mon.bossName+(wc.icon||'')+'让你变得易爆(下次受伤翻倍)!','bad');}
-  if(wc.soulDrain){mon.lifeSteal=(mon.lifeSteal||0)+0.3;mon._trickLeech=now+8000;log('🧛 '+mon.bossName+(wc.icon||'')+'开始吸取你的精力!','bad');}
-  if(wc.soulLink){state._soulLinkUntil=now+8000;log('🔗 '+mon.bossName+(wc.icon||'')+'链接了你的灵魂!','bad');}
-  if(wc.revenge){applyHeroDebuff('vulnerable',6000);log('🎯 '+mon.bossName+(wc.icon||'')+'标记了你!','bad');}
-  if(wc.frenzy){state.hero.atk=Math.floor(state.hero.atk*1.3);state.hero.def=Math.floor(state.hero.def*0.5);setTimeout(()=>recomputeStats(),8100);log('🤯 '+mon.bossName+(wc.icon||'')+'让你陷入了狂乱!','bad');}
-  if(wc.decay2){state._decayUntil=now+8000;log('🌑 '+mon.bossName+(wc.icon||'')+'凋零了你的回复能力!','bad');}
-  if(wc.mirror){log('🪞 '+mon.bossName+(wc.icon||'')+'制造了你的镜像!','bad');}
-  if(wc.weaken){applyHeroDebuff('weaken',5000);log('💔 '+mon.bossName+(wc.icon||'')+'削弱了你!','bad');}
-  if(wc.sunder){applyHeroDebuff('vulnerable',5000);log('🩸 '+mon.bossName+(wc.icon||'')+'打出了易伤!','bad');}
-  if(wc.spdBuff){mon.spdBuffUntil=now+8000;log('⚡ '+mon.bossName+'攻速提升了!','bad');}
-  if(!wc.dot&&!wc.slow&&!wc.stun&&!wc.weaken&&!wc.sunder&&!wc.silence&&!wc.disarm&&!wc.fear&&!wc.freeze&&!wc.cripple&&!wc.decay&&!wc.wither&&!wc.manaDrain&&!wc.bomb&&!wc.plague&&!wc.bleed&&!wc.brittle&&!wc.soulDrain&&!wc.soulLink&&!wc.revenge&&!wc.frenzy&&!wc.decay2&&!wc.mirror)applyHeroDebuff('vulnerable',5000);
+function skillEffects(wc,mon,taken,now,opts){
+  const enemyName = mon?.bossName || mon?.name || '敌人';
+  if(wc.dot){applyHeroDebuff('burn',6000,{dps:Math.max(1,Math.floor(taken*0.12))});log('☠️ '+enemyName+(wc.icon||'')+'让你中毒了!','bad');}
+  if(wc.slow){applyHeroDebuff('chill',5000);log('❄️ '+enemyName+(wc.icon||'')+'减速了你!','bad');}
+  if(wc.stun){state.heroStunUntil=now+(wc.stun===true?2000:wc.stun);cancelHeroCast();showFloat($('hero-emoji'),'💫眩晕','#fde047');log('💫 '+enemyName+(wc.icon||'')+'击晕了你!','bad');}
+  if(wc.silence){const dur=wc.silence===true?4000:wc.silence;state.heroSilenceUntil=now+dur;cancelHeroCast();applyHeroDebuff('silence',dur);log('🔇 '+enemyName+(wc.icon||'')+'沉默了你!','bad');}
+  if(wc.disarm){const dur=wc.disarm===true?3000:wc.disarm;state.heroDisarmUntil=now+dur;applyHeroDebuff('disarm',dur);log('⚔️❌ '+enemyName+(wc.icon||'')+'缴械了你!','bad');}
+  if(wc.fear){const dur=wc.fear===true?2500:wc.fear;state.heroStunUntil=now+dur;cancelHeroCast();applyHeroDebuff('fear',dur);showFloat($('hero-emoji'),'👻恐惧','#a78bfa');log('👻 '+enemyName+(wc.icon||'')+'恐惧了你!','bad');}
+  if(wc.freeze){const dur=wc.freeze===true?2500:wc.freeze;state.heroStunUntil=now+dur;cancelHeroCast();applyHeroDebuff('freeze',dur);log('🧊 '+enemyName+(wc.icon||'')+'冻结了你!','bad');}
+  if(wc.cripple){applyHeroDebuff('cripple',5000);log('🦿 '+enemyName+(wc.icon||'')+'残废了你!','bad');}
+  if(wc.decay){applyHeroDebuff('decay',8000);log('👴 '+enemyName+(wc.icon||'')+'让你衰老了!','bad');}
+  if(wc.wither){const wdmg=Math.max(1,Math.floor(state.hp*0.15));applyHeroDamage(wdmg,mon,{label:t=>'🥀-'+t,color:'#9ca3af',now});processTalentLowHp(mon,now);log('🥀 '+enemyName+(wc.icon||'')+'枯萎了你的生命!','bad');}
+  if(wc.manaDrain){state.resource=Math.max(0,state.resource-(wc.manaDrain===true?50:wc.manaDrain));log('💧 '+enemyName+(wc.icon||'')+'吸取了你的能量!','bad');}
+  if(wc.bomb){const bdmg=Math.floor(state.hero.hpMax*0.3);setTimeout(()=>{if(state.hp>0){applyHeroDamage(bdmg,mon,{label:t=>'💣-'+t,color:'#ef4444',now:Date.now()});processTalentLowHp(mon,Date.now());log('💣 '+enemyName+'的自爆印记爆炸了!','bad');}},5000);log('💣 '+enemyName+(wc.icon||'')+'给你施加了自爆印记(5秒后爆炸)!','bad');}
+  if(wc.plague){applyHeroDebuff('burn',6000,{dps:Math.max(1,Math.floor(taken*0.15))});log('🦠 '+enemyName+(wc.icon||'')+'散播了暗影瘟疫!','bad');}
+  if(wc.bleed){applyHeroDebuff('burn',8000,{dps:Math.max(1,Math.floor(taken*0.1))});log('🩸 '+enemyName+(wc.icon||'')+'让你流血了!','bad');}
+  if(wc.brittle){applyHeroDebuff('brittle',6000);log('💥 '+enemyName+(wc.icon||'')+'让你变得易爆(下次受伤翻倍)!','bad');}
+  if(wc.soulDrain){mon.lifeSteal=(mon.lifeSteal||0)+0.3;mon._trickLeech=now+8000;log('🧛 '+enemyName+(wc.icon||'')+'开始吸取你的精力!','bad');}
+  if(wc.soulLink){state._soulLinkUntil=now+8000;applyHeroDebuff('soulLink',8000);log('🔗 '+enemyName+(wc.icon||'')+'链接了你的灵魂!','bad');}
+  if(wc.revenge){applyHeroDebuff('vulnerable',6000);log('🎯 '+enemyName+(wc.icon||'')+'标记了你!','bad');}
+  if(wc.frenzy){state.hero.atk=Math.floor(state.hero.atk*1.3);state.hero.def=Math.floor(state.hero.def*0.5);setTimeout(()=>recomputeStats(),8100);log('🤯 '+enemyName+(wc.icon||'')+'让你陷入了狂乱!','bad');}
+  if(wc.decay2){state._decayUntil=now+8000;applyHeroDebuff('decay2',8000);log('🌑 '+enemyName+(wc.icon||'')+'凋零了你的回复能力!','bad');}
+  if(wc.mirror){log('🪞 '+enemyName+(wc.icon||'')+'制造了你的镜像!','bad');}
+  if(wc.weaken){applyHeroDebuff('weaken',5000);log('💔 '+enemyName+(wc.icon||'')+'削弱了你!','bad');}
+  if(wc.sunder){applyHeroDebuff('vulnerable',5000);log('🩸 '+enemyName+(wc.icon||'')+'打出了易伤!','bad');}
+  if(wc.spdBuff){mon.spdBuffUntil=now+8000;setMonsterTrickAura(mon,'spd',wc,mon.spdBuffUntil,{desc:wc.desc||'攻速提升'});log('⚡ '+enemyName+'攻速提升了!','bad');}
+  if(opts?.allowFallback!==false && !wc.dot&&!wc.slow&&!wc.stun&&!wc.weaken&&!wc.sunder&&!wc.silence&&!wc.disarm&&!wc.fear&&!wc.freeze&&!wc.cripple&&!wc.decay&&!wc.wither&&!wc.manaDrain&&!wc.bomb&&!wc.plague&&!wc.bleed&&!wc.brittle&&!wc.soulDrain&&!wc.soulLink&&!wc.revenge&&!wc.frenzy&&!wc.decay2&&!wc.mirror)applyHeroDebuff('vulnerable',5000);
 }
 function tickCast(now){
   if(!casting)return;
@@ -1716,13 +2332,16 @@ function tickCast(now){
   $('cast-time').textContent=remaining>0?remaining+'s':'';$('b-cast').style.width=pct+'%';
   if(elapsed>=casting.duration){$('cast-bar-wrap').style.visibility='hidden';const wasCasting=casting;casting=null;
     if(wasCasting.isBoss){const mon=state.currentMonsters[0];if(!mon||mon.hp<=0)return;
-      if(wasCasting.type==='heal'){const h=Math.floor(mon.hpMax*(wasCasting.heal||0.2));mon.hp=Math.min(mon.hpMax,mon.hp+h);}
-      else{
+      const critRate = monsterCritRate(mon, now);
+      if(wasCasting.type==='heal'){const h=Math.floor(mon.hpMax*(wasCasting.heal||0.2));mon.hp=Math.min(mon.hpMax,mon.hp+h);showFloat($('mon-emoji'),'💚+'+h,'#6ee7b7');}
+      else if(wasCasting.type==='buff'||wasCasting.type==='support'||wasCasting.type==='summon'){
+        applyMonsterSupportSkill(mon, wasCasting, now);
+      } else{
         const mul=wasCasting.mul||2;
-        const rawAtk=Math.floor(mon.atk*mul);
+        const rawAtk=Math.floor(monsterAttackValue(mon, now)*mul);
         if(wasCasting.aoe){
           // AOE: 同时命中英雄和随从
-          let taken=calcDmg(rawAtk,state.hero.def,mon.critChance?mon.critChance*100:5,mon.critMult?mon.critMult*100:150,wasCasting.alwaysCrit,state.hero.lvl,mon.lvl).dmg;
+          let taken=calcDmg(rawAtk,state.hero.def,critRate,mon.critMult?mon.critMult*100:150,wasCasting.alwaysCrit,state.hero.lvl,mon.lvl).dmg;
           if(state.hero.vers>0)taken=Math.max(1,Math.floor(taken*(1-state.hero.vers/100)));
           if(typeof passiveDamageTakenMult==='function')taken=Math.max(1,Math.floor(taken*passiveDamageTakenMult()));
           taken=Math.max(1,Math.floor(taken*buffDamageReductionMult()));
@@ -1736,21 +2355,21 @@ function tickCast(now){
           skillEffects(wasCasting,mon,taken,now);
           if(companionTargetable()){
             const cst=computeCompanionStats();
-            const cd=calcDmg(rawAtk,cst?cst.def:mon.def,mon.critChance?mon.critChance*100:5,mon.critMult?mon.critMult*100:150,wasCasting.alwaysCrit,state.hero.lvl,mon.lvl);
+            const cd=calcDmg(rawAtk,cst?cst.def:mon.def,critRate,mon.critMult?mon.critMult*100:150,wasCasting.alwaysCrit,state.hero.lvl,mon.lvl);
             state._compHp=Math.max(0,(state._compHp||0)-cd.dmg);
             showFloat($('comp-mini'),'💀'+wasCasting.icon+'-'+cd.dmg,'#ff9aa0');
             if(state._compHp<=0)downCompanion(Date.now());}
           if(state.hp<=0)onHeroDeath();
         }else if(companionTargetable()&&Math.random()<compAggroChance()){
           const cst=computeCompanionStats();
-          const d2=calcDmg(rawAtk,cst?cst.def:mon.def,mon.critChance?mon.critChance*100:5,mon.critMult?mon.critMult*100:150,wasCasting.alwaysCrit,state.hero.lvl,mon.lvl);
+          const d2=calcDmg(rawAtk,cst?cst.def:mon.def,critRate,mon.critMult?mon.critMult*100:150,wasCasting.alwaysCrit,state.hero.lvl,mon.lvl);
           state._compHp=Math.max(0,(state._compHp||0)-d2.dmg);
           showFloat($('comp-mini'),'💀'+wasCasting.icon+'-'+d2.dmg,'#ff9aa0');
           if(wasCasting.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(d2.dmg*wasCasting.lifeSteal));
           log('🛡️ 随从替你承受了 '+wasCasting.icon+'!','info');
           if(state._compHp<=0)downCompanion(Date.now());
         }else{
-          let taken=calcDmg(rawAtk,state.hero.def,mon.critChance?mon.critChance*100:5,mon.critMult?mon.critMult*100:150,wasCasting.alwaysCrit,state.hero.lvl,mon.lvl).dmg;
+          let taken=calcDmg(rawAtk,state.hero.def,critRate,mon.critMult?mon.critMult*100:150,wasCasting.alwaysCrit,state.hero.lvl,mon.lvl).dmg;
           if(state.hero.vers>0)taken=Math.max(1,Math.floor(taken*(1-state.hero.vers/100)));
           if(typeof passiveDamageTakenMult==='function')taken=Math.max(1,Math.floor(taken*passiveDamageTakenMult()));
           taken=Math.max(1,Math.floor(taken*buffDamageReductionMult()));
@@ -1793,7 +2412,7 @@ function castSkill(skillKey,manual){
         const forceCrit = baseForceCrit || rt.forceCrit;
         const d=calcDmg(state.hero.atk*sk.mul*cb*talentDamageMult(target,skillKey)*rt.mult,heroTargetDef(target),state.hero.crit,state.hero.critd,forceCrit,target.lvl,state.hero.lvl);
         let dd=d.dmg;
-        if(target.dmgReduction)dd=Math.max(1,Math.floor(dd*(1-target.dmgReduction)));
+        {const dr=monsterDamageReduction(target, now);if(dr)dd=Math.max(1,Math.floor(dd*(1-dr)));}
         target.hp-=dd;dmgDone+=dd;trackDmg('hero',dd);
         if(d.crit||forceCrit)processTalentOnCrit(target,dd,{skillKey});
         if(sk.lifeSteal){const heal=Math.floor(dd*sk.lifeSteal);healHeroAmount(heal,'🩸','#6ee7b7');}
@@ -1811,7 +2430,7 @@ function castSkill(skillKey,manual){
       const forceCrit = baseForceCrit || rt.forceCrit;
       const d=calcDmg(state.hero.atk*sk.mul*cb*talentDamageMult(mon,skillKey)*rt.mult,heroTargetDef(mon),state.hero.crit,state.hero.critd,forceCrit,mon.lvl,state.hero.lvl);
       let dd=d.dmg;
-      if(mon.dmgReduction)dd=Math.max(1,Math.floor(dd*(1-mon.dmgReduction)));
+      {const dr=monsterDamageReduction(mon, now);if(dr)dd=Math.max(1,Math.floor(dd*(1-dr)));}
       mon.hp-=dd;dmgDone=dd;trackDmg('hero',dd);
       showFloat($('mon-emoji'),'-'+dd,forceCrit?'#fbbf24':'#a335ee');
       log(sk.icon+' '+sk.name+'! '+dd+' 伤害'+(forceCrit?' (必暴)':''),'good');

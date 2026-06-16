@@ -57,7 +57,44 @@ function focusDebuffs(now) {
     }
   } else if (mon.dot > 0 && mon.dotEnd > now) out.push({ icon: '🔥', name: '灼烧/中毒', desc: `每秒受到 ${fmt(mon.dot)} 持续伤害`, left: Math.ceil((mon.dotEnd - now) / 1000) });
   if (mon.sunderUntil > now) out.push({ icon: '🔨', name: '破甲',   desc: '防御降低 30%', left: Math.ceil((mon.sunderUntil - now) / 1000) });
-  if (mon._arcaneShield > 0) out.push({ icon: '🔮', name: '法力护盾', desc: `吸收 ${fmt(mon._arcaneShield)} 点伤害`, left: 0 });
+  if (typeof MONSTER_STATE_META === 'object' && mon._skillStates) {
+    for (const [stateKey, expire] of Object.entries(mon._skillStates)) {
+      if (!(expire > now)) continue;
+      const meta = MONSTER_STATE_META[stateKey] || { icon:'✨', name:stateKey, desc:'目标处于特殊状态' };
+      out.push({
+        icon: meta.icon || '✨',
+        name: meta.name || stateKey,
+        desc: meta.desc || '目标处于特殊状态',
+        left: Math.ceil((expire - now) / 1000)
+      });
+    }
+  }
+  return out;
+}
+function focusBuffs(now) {
+  const mon = state.currentMonsters && state.currentMonsters[0];
+  if (!mon || mon.hp <= 0) return [];
+  const out = [];
+  if (mon._trickAuras) {
+    for (const [key, aura] of Object.entries(mon._trickAuras)) {
+      if (!aura) continue;
+      const stacks = key === 'nextDouble' ? (mon._nextAtkDouble || aura.stacks || 0) : (aura.stacks || 0);
+      const timed = aura.expire > now;
+      const stackActive = key === 'nextDouble' && stacks > 0;
+      if (!timed && !stackActive) continue;
+      const left = timed ? Math.ceil((aura.expire - now) / 1000) : 0;
+      const suffix = stacks > 1 ? ` · ${stacks}层` : '';
+      out.push({
+        icon: aura.icon || '⚡',
+        name: (aura.name || key) + suffix,
+        desc: aura.desc || '敌人获得了特殊技巧强化',
+        left
+      });
+    }
+  }
+  if (mon._arcaneShield > 0 && !(mon._trickAuras && mon._trickAuras.shield)) {
+    out.push({ icon:'🔮', name:'护体屏障', desc:`吸收 ${fmt(mon._arcaneShield)} 点伤害`, left:0 });
+  }
   return out;
 }
 function renderBuffBar() {
@@ -93,6 +130,7 @@ function renderBuffBar() {
     }
   }
   buffs.sort((a, b) => a.left - b.left);
+  const enemyBuffs = focusBuffs(now).map(b => ({ kind: 'enemy-buff', icon: b.icon, name: '敌·' + b.name, desc: b.desc, left: b.left }));
   // 焦点敌人减益
   const debuffs = focusDebuffs(now).map(d => ({ kind: 'debuff', icon: d.icon, name: '敌·' + d.name, desc: d.desc, left: d.left }));
   // 英雄身上的减益(boss 等施加)
@@ -103,13 +141,15 @@ function renderBuffBar() {
       const fx = DEBUFF_FX[k] || { name: k, icon: '☠️' };
       let desc = fx.name;
       if (k === 'burn') desc = `每秒受到 ${fmt(d.dps || 1)} 持续伤害`;
+      else if (fx.desc) desc = fx.desc;
       else if (fx.atkMul) desc = `攻击降低 ${Math.round((1 - fx.atkMul) * 100)}%`;
       else if (fx.spdMul) desc = `攻速降低 ${Math.round((1 - fx.spdMul) * 100)}%`;
       else if (fx.takenMul) desc = `受到伤害 +${Math.round((fx.takenMul - 1) * 100)}%`;
+      else if (fx.healMul || fx.regMul) desc = fx.name;
       heroDe.push({ kind: 'self-de', icon: fx.icon, name: '你·' + fx.name, desc, left: Math.ceil((d.expire - now) / 1000) });
     }
   }
-  const all = buffs.concat(heroDe, debuffs);
+  const all = buffs.concat(heroDe, enemyBuffs, debuffs);
   const sig = all.map(b => b.kind + b.icon + b.left).join('|');
   if (sig === _buffBarSig) return;   // 内容(含倒计时)没变就不重绘
   _buffBarSig = sig;
@@ -127,6 +167,15 @@ function effectTags(s) {
   if (s.weaken) t.push('💔削弱5秒');
   if (s.sunder) t.push('🩸易伤5秒');
   if (s.spdBuff) t.push('⚡自加速8秒');
+  if (s.heal) t.push(`💚恢复${Math.round((s.heal||0)*100)}%生命`);
+  if (s.healPct) t.push(`💚恢复${Math.round((s.healPct||0)*100)}%生命`);
+  if (s.atkBuffSecs) t.push(`📯攻击提高${Math.round(s.atkBuffPct||30)}%`);
+  if (s.defBuffSecs) t.push(`🪨防御提高${Math.round(s.defBuffPct||35)}%`);
+  if (s.drBuffSecs) t.push(`🛡️减伤提高${Math.round((s.drBuffPct||0.25)*100)}%`);
+  if (s.shieldPct) t.push(`🔮护盾${Math.round((s.shieldPct||0)*100)}%生命`);
+  if (s.critBuffSecs) t.push(`👁️暴击提高${Math.round(s.critBuffPct||35)}%`);
+  if (s.leechBuffSecs) t.push(`🩸吸血${Math.round(s.leechBuffPct||18)}%`);
+  if (s.summonCount) t.push(`👥召唤${s.summonCount}个援军`);
   if (s.lifeSteal) t.push('🩸吸血'+Math.round(s.lifeSteal*100)+'%');
   if (s.silence) t.push('🔇沉默');
   if (s.disarm) t.push('⚔️❌缴械');
@@ -150,30 +199,47 @@ function effectTags(s) {
 }
 function attachFocusBossHover(focus) {
   const emojiEl = $('mon-emoji'); if (!emojiEl) return;
-  if (!focus || !focus.isBoss) return;
+  if (!focus) return;
 
   // 获取BOSS数据(地图/副本/大秘境)
   let bossData = null;
   if (state.mode === 'boss') {
     const map = getMap();
     if (map?.boss) bossData = map.boss;
+  } else if (state.mode === 'worldboss') {
+    if (typeof WORLD_BOSSES !== 'undefined') bossData = WORLD_BOSSES.find(b => b.key === focus.wbKey) || null;
   } else if (state.mode === 'dungeon' || state.mode === 'mythic') {
     const dg = DUNGEONS.find(d=>d.key===(state.dungeonState||state.mythicState)?.key);
     if (dg) bossData = (dg.bosses||[]).find(b=>b.name===focus.bossName);
   }
 
-  if (!bossData) return;
+  const hasMobSkills = !!(focus._monSkills?.length || focus._monSkill || focus._monSupportSkills?.length);
+  if (!bossData && !hasMobSkills) return;
   emojiEl.style.cursor = 'help';
   emojiEl.onmouseenter = function(e) {
     let html = '<b>'+focus.name+' Lv.'+focus.lvl+'</b>';
-    if (bossData.skills) {
+    if (bossData?.skills) {
       html += '<div style=\"margin-top:3px;color:#fbbf24\">技能:</div>';
       bossData.skills.forEach(s => {
         const tags = effectTags(s);
         html += '<div>'+s.icon+' '+s.name+' — '+s.desc+' ('+(s.castTime||0)+'s读条)'+(tags.length?' <span style=\"color:#fbbf24;font-size:10px\">'+tags.join(' ')+'</span>':'')+'</div>';
       });
+    } else if (focus._monSkills?.length || focus._monSkill) {
+      const skills = focus._monSkills?.length ? focus._monSkills : [focus._monSkill];
+      html += '<div style=\"margin-top:3px;color:#fbbf24\">敌方技能:</div>';
+      skills.forEach(s => {
+        const tags = effectTags(s);
+        html += '<div>'+s.icon+' '+s.name+' — '+(s.desc||((s.mul||1)+'倍伤害'))+(tags.length?' <span style=\"color:#fbbf24;font-size:10px\">'+tags.join(' ')+'</span>':'')+'</div>';
+      });
     }
-    if (bossData.passive) {
+    if (focus._monSupportSkills && focus._monSupportSkills.length) {
+      html += '<div style=\"margin-top:3px;color:#93c5fd\">支援技能包:</div>';
+      focus._monSupportSkills.forEach(s => {
+        const tags = effectTags(s);
+        html += '<div>'+s.icon+' '+s.name+' — '+(s.desc||'支援技能')+(tags.length?' <span style=\"color:#93c5fd;font-size:10px\">'+tags.join(' ')+'</span>':'')+'</div>';
+      });
+    }
+    if (bossData?.passive) {
       html += '<div style="margin-top:3px;color:#6ee7b7">被动:</div>';
       const p = bossData.passive;
       if (p.dodgeChance) html += '<div>💨 闪避 +'+(p.dodgeChance*100)+'%</div>';
@@ -826,12 +892,15 @@ function renderSkills() {
     div.className = 'skill-item';
     div.style.borderColor = isSel ? 'var(--accent)' : '';
     const lockInfo = sk.unlockLvl ? `(Lv.${sk.unlockLvl})` : '(天赋解锁)';
+    const baseDesc = sk._baseDesc || sk.desc || '';
+    const detailDesc = sk._detailDesc || '';
     div.innerHTML = `
       <div class="row">
         <b style="color:${unlocked?'inherit':'var(--muted)'}">${sk.icon} ${sk.name}</b>
         <span class="pill">${unlocked?'已解锁':lockInfo}</span>
       </div>
-      <div class="muted">${sk.desc}</div>
+      <div class="muted">${baseDesc}</div>
+      ${detailDesc ? `<div class="muted" style="margin-top:4px;color:#cbd5e1;font-size:11px;line-height:1.45">联动: ${detailDesc}</div>` : ''}
       <div class="row">
         <span class="muted">${c.resource} ${sk.mp} · CD ${cdSec}秒</span>
         ${unlocked ? `<button class="${isSel?'success':''}" data-action="selectskill" data-key="${skKey}">${isSel?'取消':'选用'}</button>` : ''}
@@ -999,7 +1068,10 @@ function renderSkillBar() {
     const cdLeft = Math.max(0, Math.ceil((cdEnd - now) / 1000));
     const onCd = cdLeft > 0;
     const hasMp = state.resource >= sk.mp;
-    return `<button class="skill-btn ${onCd?'on-cd':''}" data-skill="${key}" draggable="true" title="拖动可调整施法优先级"
+    const baseDesc = sk._baseDesc || sk.desc || '';
+    const detailDesc = sk._detailDesc ? `\n联动: ${sk._detailDesc}` : '';
+    const tip = `${sk.name} · ${baseDesc}${detailDesc}\n${c.resource} ${sk.mp} · CD ${getSkillCd(sk)}秒`.replace(/"/g, '&quot;');
+    return `<button class="skill-btn ${onCd?'on-cd':''}" data-skill="${key}" draggable="true" title="${tip}"
       style="${!onCd&&hasMp?'border-color:var(--accent)':''}">
       <span>${sk.icon} ${sk.name}</span>
       <span class="mp-cost">${sk.mp}${c.resKey==='rage'?'怒':c.resKey==='energy'?'能':'蓝'}</span>

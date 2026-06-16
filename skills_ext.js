@@ -25,6 +25,15 @@ const SKILL_AURA_LIBRARY = {
   stormCharge:  { icon:'⚡', name:'雷霆充能', desc:'闪电箭叠加,强化风暴打击与闪电链', maxStacks:3 },
 };
 
+const MONSTER_STATE_META = {
+  slow:    { icon:'❄️', name:'减速',   desc:'攻击速度降低约33%' },
+  sunder:  { icon:'🔨', name:'破甲',   desc:'防御降低30%' },
+  judged:  { icon:'⚖️', name:'审判',   desc:'十字军打击额外+55%，奉献额外+35%，神圣风暴额外+45%' },
+  frozen:  { icon:'🧊', name:'冻结',   desc:'暴风雪额外+50%伤害' },
+  exposed: { icon:'🗡️', name:'破绽',   desc:'背刺额外+60%伤害' },
+  terror:  { icon:'👻', name:'恐惧',   desc:'目标陷入恐惧状态' },
+};
+
 /* 每个职业 4 个新技能:爆发 / 减伤 / 功能性 / 职业特色 */
 const NEW_SKILLS = {
   warrior: {
@@ -217,6 +226,138 @@ const SKILL_REWORKS = {
   }
 })();
 
+function skillPctText(pct) {
+  return Math.round((pct || 0) * 100) + '%';
+}
+
+function skillSecText(ms) {
+  return ((ms || 0) / 1000).toFixed(((ms || 0) % 1000) ? 1 : 0).replace(/\.0$/, '') + '秒';
+}
+
+function skillAuraName(key) {
+  return (typeof SKILL_AURA_LIBRARY === 'object' && SKILL_AURA_LIBRARY[key] && SKILL_AURA_LIBRARY[key].name) || key;
+}
+
+function skillStateName(key) {
+  if (key === 'dot') return '带持续伤害';
+  return (typeof MONSTER_STATE_META === 'object' && MONSTER_STATE_META[key] && MONSTER_STATE_META[key].name) || key;
+}
+
+const BUFF_NAME_OVERRIDES = {
+  battleShout: '战斗怒吼',
+  windfury: '风怒',
+  earthShield: '大地之盾',
+  kings: '王者祝福',
+  bestial: '野兽之怒',
+  rapidFire: '急速射击',
+  shield: '真言术盾',
+  berserk: '狂暴',
+  shadowstep: '暗影步',
+  bloodlust: '嗜血',
+};
+
+function skillBuffName(key, clsKey) {
+  if (!key) return '';
+  if (BUFF_NAME_OVERRIDES[key]) return BUFF_NAME_OVERRIDES[key];
+  const cls = clsKey && typeof CLASSES !== 'undefined' ? CLASSES[clsKey] : null;
+  if (cls && cls.skills) {
+    for (const sk of Object.values(cls.skills)) {
+      if (sk && sk.type === 'buff' && sk.buff === key) return sk.name;
+    }
+  }
+  for (const cls of Object.values(typeof CLASSES === 'undefined' ? {} : CLASSES)) {
+    for (const sk of Object.values((cls && cls.skills) || {})) {
+      if (sk && sk.type === 'buff' && sk.buff === key) return sk.name;
+    }
+  }
+  return key;
+}
+
+function buildBuffEffectParts(buffKey) {
+  const fx = buffKey && BUFF_FX[buffKey];
+  if (!fx) return [];
+  const parts = [];
+  if (fx.atkMul) parts.push(`攻击+${Math.round((fx.atkMul - 1) * 100)}%`);
+  if (fx.defMul) parts.push(`防御+${Math.round((fx.defMul - 1) * 100)}%`);
+  if (fx.spdMul) parts.push(`攻速+${Math.round((fx.spdMul - 1) * 100)}%`);
+  if (fx.critAdd) parts.push(`暴击+${fx.critAdd}`);
+  if (fx.critdAdd) parts.push(`暴伤+${fx.critdAdd}%`);
+  if (fx.leechAdd) parts.push(`吸血+${fx.leechAdd}`);
+  if (fx.dr) parts.push(`减伤${Math.round(fx.dr * 100)}%`);
+  return parts;
+}
+
+function buildSkillDetailParts(clsKey, sk, baseDesc) {
+  const fx = sk && sk.fx;
+  const parts = [];
+
+  if (sk && sk.type === 'buff' && sk.buff && !/%/.test(baseDesc || '')) {
+    parts.push(...buildBuffEffectParts(sk.buff));
+  }
+
+  if (!fx) return parts;
+
+  if (fx.applyTargetState) parts.push(`施加${skillStateName(fx.applyTargetState)}${skillSecText(fx.stateDurationMs || 10000)}`);
+  if (fx.grantAura) parts.push(`叠加${skillAuraName(fx.grantAura.key)}${fx.grantAura.add || 1}层(最多${fx.grantAura.max || 99}层,持续${skillSecText(fx.grantAura.duration || 0)})`);
+  if (fx.consumeAura) {
+    let how = '消耗';
+    if (fx.consumeAura.all) how += `全部${skillAuraName(fx.consumeAura.key)}`;
+    else how += `${skillAuraName(fx.consumeAura.key)}${Math.abs(fx.consumeAura.add || 1)}层`;
+    parts.push(how);
+  }
+  if (fx.bonusPerAuraStack) parts.push(`${skillAuraName(fx.bonusPerAuraStack.key)}每层额外+${skillPctText(fx.bonusPerAuraStack.pct)}伤害`);
+  if (fx.bonusStates) {
+    for (const [stateKey, pct] of Object.entries(fx.bonusStates)) {
+      parts.push(`对${skillStateName(stateKey)}目标额外+${skillPctText(pct)}伤害`);
+    }
+  }
+  if (fx.bonusPerDot) parts.push(`目标每有1种持续伤害额外+${skillPctText(fx.bonusPerDot)}伤害`);
+  if (fx.bonusVsLowHp) parts.push(`目标低于${skillPctText(fx.executeThreshold || 0.35)}生命时额外+${skillPctText(fx.bonusVsLowHp)}伤害`);
+  if (fx.bonusIfBuff) {
+    if (fx.bonusIfBuff.key) parts.push(`${skillBuffName(fx.bonusIfBuff.key, clsKey)}期间额外+${skillPctText(fx.bonusIfBuff.pct)}伤害`);
+    else for (const [buffKey, pct] of Object.entries(fx.bonusIfBuff)) parts.push(`${skillBuffName(buffKey, clsKey)}期间额外+${skillPctText(pct)}伤害`);
+  }
+  if (fx.forceCritIfBuff) parts.push(`${skillBuffName(fx.forceCritIfBuff, clsKey)}期间必定暴击`);
+  if (fx.consumeDots) parts.push('消耗目标身上的持续伤害');
+  if (fx.consumeState) {
+    const states = Array.isArray(fx.consumeState) ? fx.consumeState : [fx.consumeState];
+    parts.push(`消耗${states.map(skillStateName).join('、')}`);
+  }
+  if (fx.applyDotKey) parts.push(`附加${fx.dotName || '持续伤害'}(${skillPctText(fx.dotPct)}攻击/秒,持续${skillSecText(fx.dotMs || 5000)})`);
+  if (fx.healFromDamagePct) parts.push(`回复造成伤害的${skillPctText(fx.healFromDamagePct)}生命`);
+  if (fx.healFromDamagePctIfBuff) parts.push(`${skillBuffName(fx.healFromDamagePctIfBuff.key, clsKey)}期间额外回复${skillPctText(fx.healFromDamagePctIfBuff.pct)}伤害量生命`);
+  if (fx.extraHealPct && fx.healBonusIfSelfHpBelow) parts.push(`生命低于${skillPctText(fx.healBonusIfSelfHpBelow)}时额外恢复${skillPctText(fx.extraHealPct)}最大生命`);
+  if (fx.shieldFromOverhealPct) parts.push(`过量治疗的${skillPctText(fx.shieldFromOverhealPct)}转为护盾`);
+  if (fx.shieldFromHealPct) parts.push(`额外获得相当于治疗量${skillPctText(fx.shieldFromHealPct)}的护盾`);
+  if (fx.shieldFromDamagePct) parts.push(`额外获得相当于伤害${skillPctText(fx.shieldFromDamagePct)}的护盾`);
+  if (fx.shieldBonusIfBuff) parts.push(`${skillBuffName(fx.shieldBonusIfBuff.key, clsKey)}期间额外获得相当于治疗量${skillPctText(fx.shieldBonusIfBuff.pct)}的护盾`);
+  if (fx.extraHitPct) parts.push(`追加1次${skillPctText(fx.extraHitPct)}伤害追击`);
+  if (fx.extraHitPctIfBuff) parts.push(`${skillBuffName(fx.extraHitPctIfBuff.key, clsKey)}期间追加1次${skillPctText(fx.extraHitPctIfBuff.pct)}伤害追击`);
+  if (fx.splashPct) parts.push(`对附近敌人造成${skillPctText(fx.splashPct)}溅射伤害`);
+  if (fx.resourceGain) parts.push(`命中获得${fx.resourceGain}点资源`);
+  if (fx.resourceGainOnKill) parts.push(`击杀返还${fx.resourceGainOnKill}点资源`);
+
+  return parts;
+}
+
+function syncSkillDescriptions() {
+  if (typeof CLASSES === 'undefined') return;
+  for (const [clsKey, cls] of Object.entries(CLASSES)) {
+    if (!cls || !cls.skills) continue;
+    for (const sk of Object.values(cls.skills)) {
+      if (!sk) continue;
+      const base = sk._rawDesc || sk.desc || '';
+      sk._rawDesc = base;
+      const parts = buildSkillDetailParts(clsKey, sk, base);
+      sk._baseDesc = base;
+      sk._detailDesc = parts.join('；');
+      sk.desc = parts.length ? `${base} · ${parts.join('；')}` : base;
+    }
+  }
+}
+
+syncSkillDescriptions();
+
 const AUTO_DEFENSIVE_BUFFS = new Set(['shield','divine','bark','iceBarrier','earthShield','evasion','s_mitigate','s_barrier','sacredShield']);
 
 const SKILL_AI_OVERRIDES = {
@@ -227,7 +368,7 @@ const SKILL_AI_OVERRIDES = {
     execute:{ priorityTag:'execute', useIfTargetHpBelow:0.35, preferOnBoss:true },
     shieldWall:{ priorityTag:'defBuff', useIfSelfHpBelow:0.42 },
     thunderClap:{ priorityTag:'aoe', minEnemies:3 },
-    sweepingStrikes:{ priorityTag:'buff', useIfBuffMissing:'battleShout', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
+    sweepingStrikes:{ priorityTag:'aoe', minEnemies:2, preferOnBoss:true },
     bladestorm:{ priorityTag:'aoe', minEnemies:3, preferOnBoss:true },
     w_recklessness:{ priorityTag:'buff', useIfBuffMissing:'s_burst', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
     w_ironwall:{ priorityTag:'defBuff', useIfSelfHpBelow:0.45 },
@@ -312,7 +453,7 @@ const SKILL_AI_OVERRIDES = {
     chaosBolt:{ priorityTag:'spender', useIfDotCountAtLeast:2, preferOnBoss:true },
     drainLife:{ priorityTag:'heal', useIfSelfHpBelow:0.72, preferOnBoss:true },
     incinerate:{ priorityTag:'strike', useIfDotCountAtLeast:1, preferOnBoss:true },
-    fear:{ priorityTag:'setup', applyTargetState:'slow', useIfTargetMissing:'slow', avoidIfTargetHpBelow:0.2 },
+    fear:{ priorityTag:'strike', avoidIfTargetHpBelow:0.2 },
     wl_demonSkin:{ priorityTag:'defBuff', useIfSelfHpBelow:0.48 },
     wl_darkSoul:{ priorityTag:'buff', useIfBuffMissing:'s_empower', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
     wl_lifeTap:{ priorityTag:'buff', useIfBuffMissing:'s_lifesurge', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
@@ -389,6 +530,45 @@ function inferSkillAi(clsKey, skillKey, sk) {
   return ai;
 }
 
+function normalizeSkillAi(sk, ai, override) {
+  const out = Object.assign({}, ai);
+  const hasOverride = (key) => !!(override && Object.prototype.hasOwnProperty.call(override, key));
+  const hasExplicitMinEnemies = !!(override && Object.prototype.hasOwnProperty.call(override, 'minEnemies'));
+  const isTrueAoeSkill = !!(sk && (sk.aoe || (sk.mul || 0) >= 4));
+
+  if (!isTrueAoeSkill && !hasExplicitMinEnemies) delete out.minEnemies;
+  if (out.priorityTag !== 'aoe' && !hasExplicitMinEnemies) delete out.minEnemies;
+  if (out.priorityTag === 'aoe' && !isTrueAoeSkill) out.priorityTag = (sk && (sk.mul || 0) >= 6) ? 'spender' : 'strike';
+
+  if (out.useIfTargetDotKeyMissing || out.useIfTargetDotKeyPresent) {
+    if (!hasOverride('useIfTargetMissing')) delete out.useIfTargetMissing;
+    if (!hasOverride('useIfTargetHas')) delete out.useIfTargetHas;
+    if (!hasOverride('applyTargetState')) delete out.applyTargetState;
+  }
+
+  if (out.useIfTargetHas) {
+    if (!hasOverride('useIfTargetMissing')) delete out.useIfTargetMissing;
+    if (!hasOverride('applyTargetState')) delete out.applyTargetState;
+  }
+
+  if (out.useIfDotCountAtLeast !== undefined || out.useIfDotCountBelow !== undefined) {
+    if (!hasOverride('useIfTargetMissing')) delete out.useIfTargetMissing;
+    if (!hasOverride('applyTargetState')) delete out.applyTargetState;
+  }
+
+  if ((override && override.priorityTag === 'builder') || out.priorityTag === 'builder') {
+    if (!hasOverride('applyTargetState')) delete out.applyTargetState;
+    if (!hasOverride('useIfTargetMissing')) delete out.useIfTargetMissing;
+    if (!hasOverride('useIfTargetHas')) delete out.useIfTargetHas;
+    if (!hasOverride('useIfTargetDotKeyPresent')) delete out.useIfTargetDotKeyPresent;
+    if (!hasOverride('useIfTargetDotKeyMissing')) delete out.useIfTargetDotKeyMissing;
+    if (!hasOverride('useIfDotCountAtLeast')) delete out.useIfDotCountAtLeast;
+    if (!hasOverride('useIfDotCountBelow')) delete out.useIfDotCountBelow;
+  }
+
+  return out;
+}
+
 (function injectSkillAi() {
   if (typeof CLASSES === 'undefined') return;
   for (const [clsKey, cls] of Object.entries(CLASSES)) {
@@ -396,7 +576,8 @@ function inferSkillAi(clsKey, skillKey, sk) {
     const overrides = SKILL_AI_OVERRIDES[clsKey] || {};
     for (const [skillKey, sk] of Object.entries(cls.skills)) {
       const base = inferSkillAi(clsKey, skillKey, sk);
-      sk.ai = Object.assign({}, base, sk.ai || {}, overrides[skillKey] || {});
+      const override = overrides[skillKey] || {};
+      sk.ai = normalizeSkillAi(sk, Object.assign({}, base, sk.ai || {}, override), override);
     }
   }
 })();

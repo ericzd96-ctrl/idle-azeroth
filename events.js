@@ -21,6 +21,10 @@ const WORLD_BOSSES = [
     hpMul:35, atkMul:3, defMul:3,
     rewards:{ gold:45000, gem:100, honor:2500, essence:20, shards:10 } },
 ];
+for (const wb of WORLD_BOSSES) {
+  const profile = (typeof WORLD_BOSS_SKILLSETS === 'object' && WORLD_BOSS_SKILLSETS[wb.key]) || null;
+  if (profile) Object.assign(wb, profile);
+}
 const WBOSS_CD_HOURS = 8;
 const SHARD_EXCHANGE_COST = 50; // 50 碎片 = 1 自选橙装
 
@@ -53,14 +57,31 @@ function challengeWorldBoss(key) {
   state.hp = state.hero.hpMax; state.resource = state.resourceMax;
   // 生成怪物对象
   const baseHp = Math.floor((100 + wb.lvl*wb.lvl*6.0) * wb.hpMul);
+  const baseAtk = Math.floor((8 + wb.lvl*3.0) * wb.atkMul);
   state.currentMonsters.push({
     name: wb.emoji + wb.name, isBoss:true, isWorldBoss:true, wbKey:key,
+    bossName: wb.name,
+    _uid: Date.now() + Math.floor(Math.random()*1000),
     lvl: wb.lvl, hpMax: baseHp, hp: baseHp,
-    atk: Math.floor((8 + wb.lvl*3.0) * wb.atkMul),
+    atk: Math.floor(baseAtk * (1 + (wb.passive?.atkBonus || 0))),
     def: Math.floor((3 + wb.lvl*1.3) * wb.defMul),
     baseGold: wb.rewards.gold/30, baseXp:300,
     goldReward: wb.rewards.gold, honorReward: wb.rewards.honor,
     dropRate:1.0, gemChance:0, maxRarity:'legend',
+    _dots:{}, _dotLegacyImported:true, _lastDotTick:0,
+    dodgeChance: wb.passive?.dodgeChance || 0.08,
+    critChance: wb.passive?.critChance || 0.18,
+    dmgReduction: wb.passive?.dmgReduction || 0.2,
+    lifeSteal: wb.passive?.leech || 0,
+    stunChance: wb.passive?.stunChance || 0,
+    instantCast:true,
+    _monSkills:[],
+    _monSkill:null,
+    _monSupportSkills: typeof buildMonsterSupportPool === 'function'
+      ? buildMonsterSupportPool(wb.name, null, wb.lvl, true, wb.supportCount || 4)
+      : [],
+    _supportSkillCooldowns:{},
+    _lastSupportSkill:Date.now()-4000
   });
   log(`⚔️ 挑战世界BOSS [${wb.name}]!`, 'epic');
   markDirty('stage','events');
