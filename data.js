@@ -47,7 +47,7 @@ const PERCENT_STATS = new Set([
   'strPct','agiPct','intPct','spiPct','staPct',
   'cdReduction','costReduction','extraAtk',
   'healBonus','dotBonus','executeBonus','reflectDmg',
-  'crit','critd','leech','vers','haste',
+  'crit','critd','vers','haste',
   'xpMult','goldMult','dropMult','buffDuration',
 ]);
 
@@ -98,22 +98,22 @@ const CLASSES = {
     skills:{
       interrupt:{name:"拳击",icon:"👊",desc:"打断BOSS施法,5秒CD",mp:10,type:"interrupt",cd:5,unlockLvl:1},
       cleave:       {name:'顺劈斩', icon:'🗡️', desc:'造成3倍攻击伤害', mp:20, type:'dmg', mul:3, unlockLvl:1},
-      thunderClap:  {name:'雷霆一击', icon:'⚡', desc:'2.5倍攻击,降低敌人攻速', mp:25, type:'dmg', mul:2.5, slow:true, unlockLvl:12},
+      thunderClap:  {name:'雷霆一击', icon:'⚡', desc:'2倍攻击,降低敌人攻速', mp:25, type:'dmg', mul:2, slow:true, unlockLvl:12},
       battleShout:  {name:'战斗怒吼', icon:'📯', desc:'15秒攻击+30%', mp:30, type:'buff', buff:'battleShout', duration:15000, unlockLvl:22},
-      mortalStrike: {name:'致死打击', icon:'⚔️', desc:'4倍攻击,必定暴击', mp:32, type:'dmg', mul:4, alwaysCrit:true},
-      bloodthirst:  {name:'嗜血', icon:'🩸', desc:'5倍攻击,吸血50%', mp:40, type:'dmg', mul:5, lifeSteal:0.5},
-      execute:      {name:'斩杀', icon:'💀', desc:'8倍攻击,残血终结', mp:35, type:'dmg', mul:8, unlockLvl:42},
+      mortalStrike: {name:'致死打击', icon:'⚔️', desc:'3倍攻击,必定暴击', mp:32, type:'dmg', mul:3, alwaysCrit:true},
+      bloodthirst:  {name:'嗜血', icon:'🩸', desc:'3倍攻击,吸血50%', mp:40, type:'dmg', mul:4, lifeSteal:0.5},
+      execute:      {name:'斩杀', icon:'💀', desc:'3倍攻击,残血终结', mp:35, type:'dmg', mul:7, unlockLvl:42},
       sunderArmor:  {name:'破甲攻击', icon:'🔨', desc:'3倍攻击,降低敌人防御15秒', mp:28, type:'dmg', mul:3, debuff:'sunder', unlockLvl:30},
-      sweepingStrikes:{name:'横扫攻击',icon:'🌀', desc:'5倍攻击,范围横扫', mp:45, type:'dmg', mul:5, unlockLvl:56},
-      bladestorm:   {name:'剑刃风暴', icon:'🌪️', desc:'8倍攻击,毁灭旋风', mp:60, type:'dmg', mul:8, unlockLvl:72},
+      sweepingStrikes:{name:'横扫攻击',icon:'🌀', desc:'3倍攻击,范围横扫', mp:45, type:'dmg', mul:4, unlockLvl:56},
+      bladestorm:   {name:'剑刃风暴', icon:'🌪️', desc:'3倍攻击,毁灭旋风', mp:60, type:'dmg', mul:7, unlockLvl:72},
       shieldWall:   {name:'盾墙', icon:'🛡️', desc:'15秒减伤50%', mp:50, type:'buff', buff:'shield', duration:15000},
     },
-      shatteringThrow:{name:"碎裂投掷",icon:"🪓",desc:"4倍远程攻击,降低防御15秒",mp:35,type:"dmg",mul:4,unlockLvl:50},
+      shatteringThrow:{name:"碎裂投掷",icon:"🪓",desc:"3倍远程攻击,降低防御15秒",mp:35,type:"dmg",mul:3,unlockLvl:50},
       challengingShout:{name:"挑战怒吼",icon:"📯",desc:"10秒防御+30%,反伤+5%",mp:45,type:"buff",buff:"shield",duration:10000,unlockLvl:66},
 
       sunderArmor:  {name:'破甲攻击', icon:'🔨', desc:'3倍攻击,降低防御15秒', mp:28, type:'dmg', mul:3, unlockLvl:28},
-      sweepingStrikes:{name:'横扫攻击',icon:'🌀', desc:'5倍攻击,范围伤害', mp:45, type:'dmg', mul:5, unlockLvl:56},
-      bladestormUlt: {name:'剑刃风暴', icon:'🌪️', desc:'8倍攻击,毁灭旋风', mp:65, type:'dmg', mul:8, unlockLvl:74},
+      sweepingStrikes:{name:'横扫攻击',icon:'🌀', desc:'3倍攻击,范围伤害', mp:45, type:'dmg', mul:4, unlockLvl:56},
+      bladestormUlt: {name:'剑刃风暴', icon:'🌪️', desc:'3倍攻击,毁灭旋风', mp:65, type:'dmg', mul:7, unlockLvl:74},
     trees:[
       {key:'arms', name:'武器', icon:'⚔️', masteryDesc:'致死打击伤害 +2%/精通', talents:[
         {key:'致命武器_9afo', name:'致命武器', desc:'攻击 +2%/层', max:5, mod:{atkPct:2}},
@@ -180,17 +180,17 @@ const CLASSES = {
       interrupt:{name:"法术反制",icon:"✋",desc:"打断BOSS施法,5秒CD",mp:15,type:"interrupt",cd:5,unlockLvl:1},
       arcane:       {name:'奥术飞弹', icon:'✨', desc:'造成3倍攻击伤害', mp:15, type:'dmg', mul:3, unlockLvl:1,castTime:1.5},
       arcaneExplosion:{name:'奥术爆炸', icon:'💥', desc:'3倍攻击范围伤害', mp:30, type:'dmg', mul:3, unlockLvl:14,castTime:0},
-      fireball:     {name:'火球术',   icon:'🔥', desc:'4倍攻击,引燃灼烧', mp:25, type:'dmg', mul:4, dot:true,castTime:2.5},
-      frostbolt:    {name:'寒冰箭',   icon:'❄️', desc:'3.5倍攻击,降低敌人攻速', mp:20, type:'dmg', mul:3.5, slow:true,castTime:2},
+      fireball:     {name:'火球术',   icon:'🔥', desc:'3倍攻击,引燃灼烧', mp:25, type:'dmg', mul:3, dot:true,castTime:2.5},
+      frostbolt:    {name:'寒冰箭',   icon:'❄️', desc:'3倍攻击,降低敌人攻速', mp:20, type:'dmg', mul:3, slow:true,castTime:2},
       iceBarrier:   {name:'寒冰护体', icon:'🧊', desc:'15秒防御+60%', mp:40, type:'buff', buff:'iceBarrier', duration:15000, unlockLvl:28,castTime:0},
-      pyroblast:    {name:'炎爆术',   icon:'☄️', desc:'7倍攻击,必定暴击', mp:50, type:'dmg', mul:7, alwaysCrit:true, unlockLvl:46,castTime:4},
-      blizzard:     {name:'暴风雪',   icon:'🌨️', desc:'6倍攻击,毁灭风暴', mp:55, type:'dmg', mul:6,castTime:2},
+      pyroblast:    {name:'炎爆术',   icon:'☄️', desc:'3倍攻击,必定暴击', mp:50, type:'dmg', mul:6, alwaysCrit:true, unlockLvl:46,castTime:4},
+      blizzard:     {name:'暴风雪',   icon:'🌨️', desc:'3倍攻击,毁灭风暴', mp:55, type:'dmg', mul:5,castTime:2},
     },
       mirrorImage:{name:"镜像",icon:"🪞",desc:"15秒攻击+30%",mp:40,type:"buff",buff:"bestial",duration:15000,unlockLvl:48},
-      slow:{name:"减速",icon:"🐌",desc:"4倍伤害,大幅减速",mp:30,type:"dmg",mul:4,slow:true,unlockLvl:62},
+      slow:{name:"减速",icon:"🐌",desc:"3倍伤害,大幅减速",mp:30,type:"dmg",mul:3,slow:true,unlockLvl:62},
 
-      polymorph:    {name:'变形术',   icon:'🐑', desc:'4倍攻击,大幅减速', mp:30, type:'dmg', mul:4, slow:true, unlockLvl:35,castTime:1.5},
-      dragonBreath: {name:'龙息术',   icon:'🐲', desc:'6倍火焰伤害', mp:48, type:'dmg', mul:6, dot:true, unlockLvl:58,castTime:0},
+      polymorph:    {name:'变形术',   icon:'🐑', desc:'3倍攻击,大幅减速', mp:30, type:'dmg', mul:3, slow:true, unlockLvl:35,castTime:1.5},
+      dragonBreath: {name:'龙息术',   icon:'🐲', desc:'3倍火焰伤害', mp:48, type:'dmg', mul:5, dot:true, unlockLvl:58,castTime:0},
       timeWarp:     {name:'时间扭曲', icon:'⏳', desc:'15秒攻速+80%', mp:60, type:'buff', buff:'timeWarp', duration:15000, unlockLvl:76,castTime:0},
     trees:[
       {key:'arcane', name:'奥术', icon:'✨', masteryDesc:'暴风雪伤害 +3%/精通', talents:[
@@ -255,19 +255,19 @@ const CLASSES = {
     baseStats:{hpMax:55, mpMax:90, atk:5, def:2, crit:5, critd:150, spd:0.9, reg:2},
     skills:{
       interrupt:{name:"沉默",icon:"🤫",desc:"打断BOSS施法,5秒CD",mp:12,type:"interrupt",cd:5,unlockLvl:1},
-      smite:      {name:'惩击',     icon:'✝️', desc:'2.5倍神圣伤害', mp:15, type:'dmg', mul:2.5, unlockLvl:1,castTime:1.5},
+      smite:      {name:'惩击',     icon:'✝️', desc:'2倍神圣伤害', mp:15, type:'dmg', mul:2, unlockLvl:1,castTime:1.5},
       shadowWord: {name:'暗言术·痛',icon:'🌑', desc:'3倍攻击,持续暗影伤害', mp:20, type:'dmg', mul:3, dot:true, unlockLvl:12,castTime:0},
       shield:     {name:'真言术盾', icon:'🛡️', desc:'15秒防御+50%', mp:30, type:'buff', buff:'shield', duration:15000,castTime:0},
       heal:       {name:'治疗术',   icon:'💚', desc:'恢复40%生命', mp:35, type:'heal', heal:0.4,castTime:2.5},
       holyNova:   {name:'神圣新星', icon:'✨', desc:'3倍攻击+15%自愈', mp:38, type:'dmg', mul:3, lifeSteal:0.3, unlockLvl:30,castTime:0},
       powerInfusion:{name:'能量灌注',icon:'💉', desc:'15秒攻速+50%', mp:45, type:'buff', buff:'windfury', duration:15000, unlockLvl:42,castTime:0},
-      mindBlast:  {name:'心灵震爆', icon:'🌀', desc:'5倍攻击伤害', mp:40, type:'dmg', mul:5,castTime:1.5},
+      mindBlast:  {name:'心灵震爆', icon:'🌀', desc:'3倍攻击伤害', mp:40, type:'dmg', mul:4,castTime:1.5},
     },
-      shackleUndead:{name:"束缚亡灵",icon:"⛓️",desc:"4倍伤害,定身减速",mp:28,type:"dmg",mul:4,slow:true,unlockLvl:44},
-      holyFire:{name:"神圣之火",icon:"🔥",desc:"5倍伤害,持续灼烧",mp:38,type:"dmg",mul:5,dot:true,unlockLvl:60},
+      shackleUndead:{name:"束缚亡灵",icon:"⛓️",desc:"3倍伤害,定身减速",mp:28,type:"dmg",mul:3,slow:true,unlockLvl:44},
+      holyFire:{name:"神圣之火",icon:"🔥",desc:"3倍伤害,持续灼烧",mp:38,type:"dmg",mul:4,dot:true,unlockLvl:60},
 
       renew:        {name:'恢复',     icon:'🌱', desc:'恢复35%生命', mp:30, type:'heal', heal:0.35, unlockLvl:32,castTime:0},
-      shadowDeath:  {name:'暗言术·灭',icon:'💀', desc:'7倍暗影伤害', mp:45, type:'dmg', mul:7, unlockLvl:52,castTime:0},
+      shadowDeath:  {name:'暗言术·灭',icon:'💀', desc:'3倍暗影伤害', mp:45, type:'dmg', mul:6, unlockLvl:52,castTime:0},
       divineHymn:   {name:'神圣赞美诗',icon:'🎵', desc:'恢复50%生命', mp:60, type:'heal', heal:0.5, unlockLvl:72,castTime:2},
     trees:[
       {key:'discipline', name:'戒律', icon:'🕊️', masteryDesc:'真言术盾吸收量 +4%/精通', talents:[
@@ -333,20 +333,20 @@ const CLASSES = {
     baseStats:{hpMax:60, mpMax:100, atk:7, def:3, crit:10, critd:160, spd:1.4, reg:2},
     skills:{
       interrupt:{name:"脚踢",icon:"🦶",desc:"打断BOSS施法,5秒CD",mp:15,type:"interrupt",cd:5,unlockLvl:1},
-      sinister:    {name:'邪恶打击', icon:'🗡️', desc:'造成2.5倍攻击', mp:20, type:'dmg', mul:2.5, unlockLvl:1},
-      backstab:    {name:'背刺',     icon:'🔪', desc:'4倍攻击伤害', mp:30, type:'dmg', mul:4},
+      sinister:    {name:'邪恶打击', icon:'🗡️', desc:'造成2倍攻击', mp:20, type:'dmg', mul:2, unlockLvl:1},
+      backstab:    {name:'背刺',     icon:'🔪', desc:'3倍攻击伤害', mp:30, type:'dmg', mul:3},
       poison:      {name:'毒刃',     icon:'🐍', desc:'3倍攻击,持续中毒', mp:25, type:'dmg', mul:3, dot:true},
       evasion:     {name:'闪避',     icon:'💨', desc:'15秒防御+40%', mp:30, type:'buff', buff:'evasion', duration:15000, unlockLvl:18},
-      kidneyShot:  {name:'肾击',     icon:'👊', desc:'5倍攻击,降低敌人攻速', mp:32, type:'dmg', mul:5, slow:true, unlockLvl:32},
-      killingSpree:{name:'杀戮盛宴', icon:'💀', desc:'7倍攻击,必定暴击', mp:48, type:'dmg', mul:7, alwaysCrit:true, unlockLvl:48},
+      kidneyShot:  {name:'肾击',     icon:'👊', desc:'3倍攻击,降低敌人攻速', mp:32, type:'dmg', mul:4, slow:true, unlockLvl:32},
+      killingSpree:{name:'杀戮盛宴', icon:'💀', desc:'3倍攻击,必定暴击', mp:48, type:'dmg', mul:6, alwaysCrit:true, unlockLvl:48},
       shadow:      {name:'影遁',     icon:'👤', desc:'15秒攻击+50%', mp:50, type:'buff', buff:'shadowstep', duration:15000},
     },
       cloakOfShadows:{name:"暗影斗篷",icon:"🌑",desc:"12秒防御+30%",mp:30,type:"buff",buff:"evasion",duration:12000,unlockLvl:42},
-      garrote:{name:"绞喉",icon:"🪢",desc:"5倍伤害,沉默3秒",mp:38,type:"dmg",mul:5,unlockLvl:58},
+      garrote:{name:"绞喉",icon:"🪢",desc:"3倍伤害,沉默3秒",mp:38,type:"dmg",mul:4,unlockLvl:58},
 
-      throw:        {name:'致命投掷', icon:'🎯', desc:'4倍远程攻击', mp:25, type:'dmg', mul:4, unlockLvl:28},
-      rupture:      {name:'割裂',     icon:'🩸', desc:'4倍攻击,持续流血', mp:32, type:'dmg', mul:4, dot:true, unlockLvl:50},
-      deathMark:    {name:'死亡标记', icon:'☠️', desc:'8倍必暴终结技', mp:55, type:'dmg', mul:8, alwaysCrit:true, unlockLvl:70},
+      throw:        {name:'致命投掷', icon:'🎯', desc:'3倍远程攻击', mp:25, type:'dmg', mul:3, unlockLvl:28},
+      rupture:      {name:'割裂',     icon:'🩸', desc:'3倍攻击,持续流血', mp:32, type:'dmg', mul:3, dot:true, unlockLvl:50},
+      deathMark:    {name:'死亡标记', icon:'☠️', desc:'3倍必暴终结技', mp:55, type:'dmg', mul:7, alwaysCrit:true, unlockLvl:70},
     trees:[
       {key:'assassination', name:'刺杀', icon:'🐍', masteryDesc:'毒刃持续伤害 +4%/精通', talents:[
         {key:'恶毒_yx0e', name:'恶毒', desc:'暴击 +1.5%/层', max:5, mod:{crit:1.5}},
@@ -410,20 +410,20 @@ const CLASSES = {
     baseStats:{hpMax:65, mpMax:80, atk:7, def:4, crit:8, critd:155, spd:1.2, reg:1},
     skills:{
       interrupt:{name:"反制射击",icon:"🏹",desc:"打断BOSS施法,5秒CD",mp:15,type:"interrupt",cd:5,unlockLvl:1},
-      arcaneShot:   {name:'奥术射击', icon:'🏹', desc:'2.5倍攻击', mp:15, type:'dmg', mul:2.5, unlockLvl:1,castTime:0},
+      arcaneShot:   {name:'奥术射击', icon:'🏹', desc:'2倍攻击', mp:15, type:'dmg', mul:2, unlockLvl:1,castTime:0},
       serpentSting: {name:'毒蛇钉刺', icon:'🐍', desc:'3倍攻击,持续中毒', mp:20, type:'dmg', mul:3, dot:true, unlockLvl:12,castTime:0},
       rapidFire:    {name:'急速射击', icon:'⚡', desc:'15秒攻速+60%', mp:35, type:'buff', buff:'rapidFire', duration:15000, unlockLvl:25,castTime:0},
-      aimed:        {name:'瞄准射击', icon:'🎯', desc:'5倍攻击,必定暴击', mp:35, type:'dmg', mul:5, alwaysCrit:true,castTime:2.5},
-      multi:        {name:'多重射击', icon:'🎯', desc:'4倍攻击', mp:30, type:'dmg', mul:4,castTime:0},
-      killShot:     {name:'杀戮射击', icon:'💀', desc:'7倍攻击,残血斩杀', mp:42, type:'dmg', mul:7, unlockLvl:45,castTime:0},
+      aimed:        {name:'瞄准射击', icon:'🎯', desc:'3倍攻击,必定暴击', mp:35, type:'dmg', mul:4, alwaysCrit:true,castTime:2.5},
+      multi:        {name:'多重射击', icon:'🎯', desc:'3倍攻击', mp:30, type:'dmg', mul:3,castTime:0},
+      killShot:     {name:'杀戮射击', icon:'💀', desc:'3倍攻击,残血斩杀', mp:42, type:'dmg', mul:6, unlockLvl:45,castTime:0},
       bestialWrath: {name:'狂野怒火', icon:'🦁', desc:'15秒攻击+40%', mp:50, type:'buff', buff:'bestial', duration:15000,castTime:0},
     },
       huntersMark:{name:"猎人印记",icon:"🎯",desc:"15秒降低敌人防御20%",mp:25,type:"dmg",mul:2,unlockLvl:40},
-      barrage:{name:"弹幕射击",icon:"💥",desc:"6倍范围伤害",mp:48,type:"dmg",mul:6,unlockLvl:60},
+      barrage:{name:"弹幕射击",icon:"💥",desc:"3倍范围伤害",mp:48,type:"dmg",mul:5,unlockLvl:60},
 
-      explosiveShot:{name:'爆炸射击', icon:'💥', desc:'4.5倍火焰伤害', mp:32, type:'dmg', mul:4.5, dot:true, unlockLvl:38,castTime:0},
+      explosiveShot:{name:'爆炸射击', icon:'💥', desc:'4倍火焰伤害', mp:32, type:'dmg', mul:4, dot:true, unlockLvl:38,castTime:0},
       freezingTrap: {name:'冰冻陷阱', icon:'❄️', desc:'3倍攻击,冰冻减速', mp:25, type:'dmg', mul:3, slow:true, unlockLvl:52,castTime:0},
-      stampede:     {name:'万兽奔腾', icon:'🐾', desc:'7倍攻击,兽群践踏', mp:58, type:'dmg', mul:7, unlockLvl:74,castTime:0},
+      stampede:     {name:'万兽奔腾', icon:'🐾', desc:'3倍攻击,兽群践踏', mp:58, type:'dmg', mul:6, unlockLvl:74,castTime:0},
     trees:[
       {key:'bm', name:'兽王', icon:'🦁', masteryDesc:'狂野怒火攻击加成 +5%/精通', talents:[
         {key:'野性精神_kuxe', name:'野性精神', desc:'攻击 +2%/层', max:5, mod:{atkPct:2}},
@@ -490,17 +490,17 @@ const CLASSES = {
       lightning:      {name:'闪电箭', icon:'⚡', desc:'3倍攻击', mp:20, type:'dmg', mul:3, unlockLvl:1,castTime:2},
       flameShock:     {name:'烈焰震击',icon:'🔥', desc:'3倍攻击,持续灼烧', mp:22, type:'dmg', mul:3, dot:true, unlockLvl:14,castTime:0},
       earthShield:    {name:'大地之盾',icon:'🪨', desc:'15秒防御+50%', mp:35, type:'buff', buff:'earthShield', duration:15000, unlockLvl:28,castTime:0},
-      chainLightning: {name:'闪电链', icon:'🌩️', desc:'4.5倍攻击', mp:35, type:'dmg', mul:4.5,castTime:2},
+      chainLightning: {name:'闪电链', icon:'🌩️', desc:'4倍攻击', mp:35, type:'dmg', mul:4,castTime:2},
       healingWave:    {name:'治疗波', icon:'🌊', desc:'恢复35%生命', mp:30, type:'heal', heal:0.35,castTime:2.5},
       bloodlust:      {name:'嗜血',   icon:'🩸', desc:'15秒攻速+70%', mp:55, type:'buff', buff:'bloodlust', duration:15000, unlockLvl:46,castTime:0},
       windfury:       {name:'风怒武器',icon:'💨', desc:'15秒攻速+60%', mp:50, type:'buff', buff:'windfury', duration:15000,castTime:0},
     },
-      hex:{name:"妖术",icon:"🐸",desc:"4倍伤害,变形减速",mp:32,type:"dmg",mul:4,slow:true,unlockLvl:42},
-      earthquake:{name:"地震术",icon:"🌍",desc:"6倍范围伤害+减速",mp:50,type:"dmg",mul:6,slow:true,unlockLvl:58},
+      hex:{name:"妖术",icon:"🐸",desc:"3倍伤害,变形减速",mp:32,type:"dmg",mul:3,slow:true,unlockLvl:42},
+      earthquake:{name:"地震术",icon:"🌍",desc:"3倍范围伤害+减速",mp:50,type:"dmg",mul:5,slow:true,unlockLvl:58},
 
-      lavaBurst:    {name:'熔岩爆裂', icon:'🌋', desc:'6倍火焰伤害,必暴', mp:42, type:'dmg', mul:6, alwaysCrit:true, unlockLvl:38,castTime:2},
+      lavaBurst:    {name:'熔岩爆裂', icon:'🌋', desc:'3倍火焰伤害,必暴', mp:42, type:'dmg', mul:5, alwaysCrit:true, unlockLvl:38,castTime:2},
       spiritLink:   {name:'灵魂链接', icon:'🔗', desc:'恢复30%生命,15秒减伤30%', mp:50, type:'heal', heal:0.3, unlockLvl:54,castTime:0},
-      thunderstorm: {name:'雷霆风暴', icon:'⛈️', desc:'7倍自然伤害', mp:58, type:'dmg', mul:7, unlockLvl:73,castTime:2},
+      thunderstorm: {name:'雷霆风暴', icon:'⛈️', desc:'3倍自然伤害', mp:58, type:'dmg', mul:6, unlockLvl:73,castTime:2},
     trees:[
       {key:'element', name:'元素', icon:'⚡', masteryDesc:'闪电链伤害 +4%/精通', talents:[
         {key:'元素专精_fgqo', name:'元素专精', desc:'智力 +5%/层', max:5, mod:{intPct:5}},
@@ -564,18 +564,18 @@ const CLASSES = {
     baseStats:{hpMax:75, mpMax:90, atk:7, def:6, crit:5, critd:150, spd:1.0, reg:2},
     skills:{
       interrupt:{name:"责难",icon:"⚖️",desc:"打断BOSS施法,5秒CD",mp:15,type:"interrupt",cd:5,unlockLvl:1},
-      judgement:    {name:'审判',       icon:'⚖️', desc:'2.5倍神圣伤害', mp:20, type:'dmg', mul:2.5, unlockLvl:1,castTime:0},
+      judgement:    {name:'审判',       icon:'⚖️', desc:'2倍神圣伤害', mp:20, type:'dmg', mul:2, unlockLvl:1,castTime:0},
       consecration: {name:'奉献',       icon:'🔥', desc:'3倍攻击,范围圣光', mp:25, type:'dmg', mul:3, unlockLvl:12,castTime:0},
       holyLight:    {name:'圣光术',     icon:'✨', desc:'恢复40%生命', mp:35, type:'heal', heal:0.4,castTime:2.5},
-      crusader:     {name:'十字军打击', icon:'⚔️', desc:'4倍攻击,必定暴击', mp:30, type:'dmg', mul:4, alwaysCrit:true,castTime:0},
+      crusader:     {name:'十字军打击', icon:'⚔️', desc:'3倍攻击,必定暴击', mp:30, type:'dmg', mul:3, alwaysCrit:true,castTime:0},
       blessingKings:{name:'王者祝福',   icon:'👑', desc:'15秒全属性+20%', mp:45, type:'buff', buff:'kings', duration:15000, unlockLvl:34,castTime:0},
       avengingWrath:{name:'复仇之怒',   icon:'😇', desc:'15秒攻击+50%', mp:50, type:'buff', buff:'bestial', duration:15000, unlockLvl:46,castTime:0},
       divineShield: {name:'圣盾术',     icon:'🛡️', desc:'15秒减伤80%', mp:60, type:'buff', buff:'divine', duration:15000,castTime:0},
     },
-      hammerOfRighteous:{name:"正义之锤",icon:"🔨",desc:"4倍远程神圣伤害",mp:30,type:"dmg",mul:4,unlockLvl:44},
+      hammerOfRighteous:{name:"正义之锤",icon:"🔨",desc:"3倍远程神圣伤害",mp:30,type:"dmg",mul:3,unlockLvl:44},
       flashOfLight:{name:"圣光闪现",icon:"💫",desc:"恢复25%生命",mp:25,type:"heal",heal:0.25,unlockLvl:55},
 
-      holyWrath:    {name:'神圣愤怒', icon:'😡', desc:'4倍范围神圣伤害', mp:32, type:'dmg', mul:4, unlockLvl:30,castTime:0},
+      holyWrath:    {name:'神圣愤怒', icon:'😡', desc:'3倍范围神圣伤害', mp:32, type:'dmg', mul:3, unlockLvl:30,castTime:0},
       sacredShield: {name:'圣洁护盾', icon:'💠', desc:'15秒减伤40%,回复+5/秒', mp:45, type:'buff', buff:'sacredShield', duration:15000, unlockLvl:54,castTime:0},
       seraphim:     {name:'炽天使',   icon:'👼', desc:'15秒攻击+60%,全能+10%', mp:65, type:'buff', buff:'seraphim', duration:15000, unlockLvl:76,castTime:0},
     trees:[
@@ -629,17 +629,17 @@ const CLASSES = {
       interrupt:{name:"法术封锁",icon:"🔇",desc:"打断BOSS施法,5秒CD",mp:12,type:"interrupt",cd:5,unlockLvl:1},
       shadowBolt: {name:'暗影箭',   icon:'🌑', desc:'3倍攻击', mp:20, type:'dmg', mul:3, unlockLvl:1,castTime:2.5},
       immolate:   {name:'献祭',     icon:'🔥', desc:'3倍攻击,持续灼烧', mp:22, type:'dmg', mul:3, dot:true, unlockLvl:12,castTime:1.5},
-      corruption: {name:'腐蚀术',   icon:'🧿', desc:'4倍攻击,持续腐蚀', mp:25, type:'dmg', mul:4, dot:true,castTime:0},
-      drainLife:  {name:'生命分流', icon:'🩸', desc:'5倍攻击,吸血80%', mp:40, type:'dmg', mul:5, lifeSteal:0.8,castTime:2},
-      fear:       {name:'恐惧',     icon:'👁️', desc:'4倍攻击,降低敌人攻速', mp:28, type:'dmg', mul:4, slow:true, unlockLvl:28,castTime:1.5},
-      chaosBolt:  {name:'混乱之箭', icon:'☄️', desc:'8倍攻击,无视防御', mp:55, type:'dmg', mul:8, alwaysCrit:true, unlockLvl:48,castTime:3},
-      incinerate: {name:'烧尽',     icon:'🔥', desc:'6倍攻击伤害', mp:50, type:'dmg', mul:6,castTime:2},
+      corruption: {name:'腐蚀术',   icon:'🧿', desc:'3倍攻击,持续腐蚀', mp:25, type:'dmg', mul:3, dot:true,castTime:0},
+      drainLife:  {name:'生命分流', icon:'🩸', desc:'3倍攻击,吸血80%', mp:40, type:'dmg', mul:4, lifeSteal:0.8,castTime:2},
+      fear:       {name:'恐惧',     icon:'👁️', desc:'3倍攻击,降低敌人攻速', mp:28, type:'dmg', mul:3, slow:true, unlockLvl:28,castTime:1.5},
+      chaosBolt:  {name:'混乱之箭', icon:'☄️', desc:'3倍攻击,无视防御', mp:55, type:'dmg', mul:7, alwaysCrit:true, unlockLvl:48,castTime:3},
+      incinerate: {name:'烧尽',     icon:'🔥', desc:'3倍攻击伤害', mp:50, type:'dmg', mul:5,castTime:2},
     },
-      shadowFury:{name:"暗影之怒",icon:"💢",desc:"5倍范围伤害+减速",mp:42,type:"dmg",mul:5,slow:true,unlockLvl:44},
-      soulFire:{name:"灵魂之火",icon:"💀",desc:"8倍伤害,必暴",mp:55,type:"dmg",mul:8,alwaysCrit:true,unlockLvl:62},
+      shadowFury:{name:"暗影之怒",icon:"💢",desc:"3倍范围伤害+减速",mp:42,type:"dmg",mul:4,slow:true,unlockLvl:44},
+      soulFire:{name:"灵魂之火",icon:"💀",desc:"3倍伤害,必暴",mp:55,type:"dmg",mul:7,alwaysCrit:true,unlockLvl:62},
 
-      unstableAffliction:{name:'痛苦无常',icon:'💜', desc:'5倍攻击,持续痛苦', mp:38, type:'dmg', mul:5, dot:true, unlockLvl:36,castTime:1.5},
-      inferno:      {name:'召唤地狱火',icon:'🔥', desc:'7倍范围火焰伤害', mp:55, type:'dmg', mul:7, unlockLvl:58,castTime:2.5},
+      unstableAffliction:{name:'痛苦无常',icon:'💜', desc:'3倍攻击,持续痛苦', mp:38, type:'dmg', mul:4, dot:true, unlockLvl:36,castTime:1.5},
+      inferno:      {name:'召唤地狱火',icon:'🔥', desc:'3倍范围火焰伤害', mp:55, type:'dmg', mul:6, unlockLvl:58,castTime:2.5},
       metamorphosis:{name:'恶魔变身', icon:'😈', desc:'20秒攻击+50%,吸血+15%', mp:70, type:'buff', buff:'demonForm', duration:20000, unlockLvl:78,castTime:0},
     trees:[
       {key:'affliction', name:'痛苦', icon:'🧿', masteryDesc:'腐蚀术持续伤害 +5%/精通', talents:[
@@ -704,19 +704,19 @@ const CLASSES = {
     baseStats:{hpMax:65, mpMax:85, atk:7, def:4, crit:7, critd:150, spd:1.1, reg:2},
     skills:{
       interrupt:{name:"日光术",icon:"☀️",desc:"打断BOSS施法,5秒CD",mp:12,type:"interrupt",cd:5,unlockLvl:1},
-      wrath:       {name:'愤怒',     icon:'🌿', desc:'2.5倍自然伤害', mp:15, type:'dmg', mul:2.5, unlockLvl:1,castTime:1.5},
-      swipe:       {name:'横扫',     icon:'🐾', desc:'2.5倍攻击范围伤害', mp:22, type:'dmg', mul:2.5, unlockLvl:12,castTime:0},
+      wrath:       {name:'愤怒',     icon:'🌿', desc:'2倍自然伤害', mp:15, type:'dmg', mul:2, unlockLvl:1,castTime:1.5},
+      swipe:       {name:'横扫',     icon:'🐾', desc:'2倍攻击范围伤害', mp:22, type:'dmg', mul:2, unlockLvl:12,castTime:0},
       rejuvenation:{name:'回春术',   icon:'🍃', desc:'恢复35%生命', mp:28, type:'heal', heal:0.35, unlockLvl:22,castTime:0},
-      moonfire:    {name:'月火术',   icon:'🌙', desc:'4倍攻击,持续灼烧', mp:25, type:'dmg', mul:4, dot:true,castTime:0},
-      bite:        {name:'凶猛撕咬', icon:'🦷', desc:'5倍攻击,必定暴击', mp:35, type:'dmg', mul:5, alwaysCrit:true,castTime:0},
+      moonfire:    {name:'月火术',   icon:'🌙', desc:'3倍攻击,持续灼烧', mp:25, type:'dmg', mul:3, dot:true,castTime:0},
+      bite:        {name:'凶猛撕咬', icon:'🦷', desc:'3倍攻击,必定暴击', mp:35, type:'dmg', mul:4, alwaysCrit:true,castTime:0},
       berserk:     {name:'狂暴',     icon:'💢', desc:'15秒攻击+40%攻速+30%', mp:50, type:'buff', buff:'berserk', duration:15000, unlockLvl:44,castTime:0},
       barkskin:    {name:'树皮术',   icon:'🪵', desc:'15秒减伤60%', mp:50, type:'buff', buff:'bark', duration:15000,castTime:0},
     },
-      starfire:{name:"星火术",icon:"⭐",desc:"6倍奥术伤害,2.5秒读条",mp:45,type:"dmg",mul:6,castTime:2.5,unlockLvl:40},
+      starfire:{name:"星火术",icon:"⭐",desc:"3倍奥术伤害,2.5秒读条",mp:45,type:"dmg",mul:5,castTime:2.5,unlockLvl:40},
       wildGrowth:{name:"野性成长",icon:"🌺",desc:"恢复30%生命",mp:35,type:"heal",heal:0.3,unlockLvl:55},
 
       entanglingRoots:{name:'纠缠根须',icon:'🌿', desc:'3倍自然伤害,缠绕减速', mp:28, type:'dmg', mul:3, slow:true, unlockLvl:32,castTime:1.5},
-      hurricane:    {name:'飓风',     icon:'🌀', desc:'5倍自然范围伤害', mp:48, type:'dmg', mul:5, unlockLvl:56,castTime:2},
+      hurricane:    {name:'飓风',     icon:'🌀', desc:'3倍自然范围伤害', mp:48, type:'dmg', mul:4, unlockLvl:56,castTime:2},
       tranquility:  {name:'宁静',     icon:'🌟', desc:'恢复45%生命', mp:58, type:'heal', heal:0.45, unlockLvl:74,castTime:2.5},
     trees:[
       {key:'balance', name:'平衡', icon:'🌙', masteryDesc:'月火术持续伤害 +4%/精通', talents:[
@@ -1083,7 +1083,7 @@ const DUNGEONS = [{
     skills: [{
       name: '火焰冲击',
       icon: '🔥',
-      desc: '2.5倍火焰伤害',
+      desc: '2倍火焰伤害',
       type: 'dmg',
       mul: 2.5,
       cd: 10,
@@ -1105,7 +1105,7 @@ const DUNGEONS = [{
     },{
       name: '火焰之雨',
       icon: '🌧️',
-      desc: '4倍AOE',
+      desc: '3倍AOE',
       type: 'dmg',
       mul: 4,
       cd: 20,
@@ -1127,7 +1127,7 @@ const DUNGEONS = [{
     skills: [{
       name: '粉碎打击',
       icon: '🔨',
-      desc: '2.5倍伤害',
+      desc: '2倍伤害',
       type: 'dmg',
       mul: 2.5,
       cd: 10,
@@ -1148,7 +1148,7 @@ const DUNGEONS = [{
     },{
       name: '伐木机撞击',
       icon: '🚜',
-      desc: '3.5倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 3.5,
       cd: 18,
@@ -1161,7 +1161,7 @@ const DUNGEONS = [{
     skills: [{
       name: '暗影步',
       icon: '👤',
-      desc: '2.5倍伤害+闪避',
+      desc: '2倍伤害+闪避',
       type: 'dmg',
       mul: 2.5,
       cd: 10,
@@ -1192,7 +1192,7 @@ const DUNGEONS = [{
     skills: [{
       name: '毒液喷吐',
       icon: '🐍',
-      desc: '2.5倍伤害+中毒',
+      desc: '2倍伤害+中毒',
       type: 'dmg',
       mul: 2.5,
       dot: true,
@@ -1206,7 +1206,7 @@ const DUNGEONS = [{
     skills: [{
       name: '雷霆践踏',
       icon: '🦶',
-      desc: '3.5倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 3.5,
       cd: 14,
@@ -1219,7 +1219,7 @@ const DUNGEONS = [{
     skills: [{
       name: '暗影箭雨',
       icon: '🌑',
-      desc: '4.5倍暗影伤害',
+      desc: '4倍暗影伤害',
       type: 'dmg',
       mul: 4.5,
       cd: 16,
@@ -1250,7 +1250,7 @@ const DUNGEONS = [{
     skills: [{
       name: '水流冲击',
       icon: '🌊',
-      desc: '2.5倍伤害',
+      desc: '2倍伤害',
       type: 'dmg',
       mul: 2.5,
       cd: 10,
@@ -1276,7 +1276,7 @@ const DUNGEONS = [{
     skills: [{
       name: '深渊之怒',
       icon: '🐙',
-      desc: '4倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 4,
       cd: 14,
@@ -1320,7 +1320,7 @@ const DUNGEONS = [{
     skills: [{
       name: '亡灵之怒',
       icon: '💀',
-      desc: '3.5倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 3.5,
       cd: 14,
@@ -1333,7 +1333,7 @@ const DUNGEONS = [{
     skills: [{
       name: '暗影诅咒',
       icon: '🧿',
-      desc: '4.5倍伤害',
+      desc: '4倍伤害',
       type: 'dmg',
       mul: 4.5,
       cd: 16,
@@ -1341,7 +1341,7 @@ const DUNGEONS = [{
     },{
       name: '召唤狼人',
       icon: '🐺',
-      desc: '5倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 5,
       cd: 22,
@@ -1376,7 +1376,7 @@ const DUNGEONS = [{
     skills: [{
       name: '群体打击',
       icon: '🤖',
-      desc: '3.5倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 3.5,
       cd: 14,
@@ -1389,7 +1389,7 @@ const DUNGEONS = [{
     skills: [{
       name: '电击网',
       icon: '🔌',
-      desc: '4倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 4,
       cd: 16,
@@ -1397,7 +1397,7 @@ const DUNGEONS = [{
     },{
       name: '自爆机器人',
       icon: '💣',
-      desc: '6倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 6,
       cd: 24,
@@ -1445,7 +1445,7 @@ const DUNGEONS = [{
     skills: [{
       name: '荆棘之刺',
       icon: '🐗',
-      desc: '4倍伤害+流血',
+      desc: '3倍伤害+流血',
       type: 'dmg',
       mul: 4,
       dot: true,
@@ -1454,7 +1454,7 @@ const DUNGEONS = [{
     },{
       name: '野猪之魂',
       icon: '🐗',
-      desc: '5倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 5,
       cd: 22,
@@ -1489,7 +1489,7 @@ const DUNGEONS = [{
     skills: [{
       name: '旋风斩',
       icon: '🌀',
-      desc: '4倍AOE',
+      desc: '3倍AOE',
       type: 'dmg',
       mul: 4,
       cd: 14,
@@ -1502,7 +1502,7 @@ const DUNGEONS = [{
     skills: [{
       name: '奥术爆炸',
       icon: '💥',
-      desc: '4倍奥术伤害',
+      desc: '3倍奥术伤害',
       type: 'dmg',
       mul: 4,
       cd: 14,
@@ -1515,7 +1515,7 @@ const DUNGEONS = [{
     skills: [{
       name: '灰烬使者',
       icon: '✨',
-      desc: '6倍神圣伤害',
+      desc: '3倍神圣伤害',
       type: 'dmg',
       mul: 6,
       cd: 20,
@@ -1523,7 +1523,7 @@ const DUNGEONS = [{
     },{
       name: '圣光之怒',
       icon: '😡',
-      desc: '5倍必暴',
+      desc: '3倍必暴',
       type: 'dmg',
       mul: 5,
       alwaysCrit: true,
@@ -1546,7 +1546,7 @@ const DUNGEONS = [{
     skills: [{
       name: '蛛网喷射',
       icon: '🕸️',
-      desc: '2.5倍伤害+减速',
+      desc: '2倍伤害+减速',
       type: 'dmg',
       mul: 2.5,
       slow: true,
@@ -1560,7 +1560,7 @@ const DUNGEONS = [{
     skills: [{
       name: '火眼',
       icon: '🔥',
-      desc: '3.5倍火焰伤害',
+      desc: '3倍火焰伤害',
       type: 'dmg',
       mul: 3.5,
       cd: 14,
@@ -1573,7 +1573,7 @@ const DUNGEONS = [{
     skills: [{
       name: '寒冰箭',
       icon: '❄️',
-      desc: '4.5倍冰霜伤害',
+      desc: '4倍冰霜伤害',
       type: 'dmg',
       mul: 4.5,
       cd: 16,
@@ -1581,7 +1581,7 @@ const DUNGEONS = [{
     },{
       name: '冰霜新星',
       icon: '💠',
-      desc: '5倍AOE+减速',
+      desc: '3倍AOE+减速',
       type: 'dmg',
       mul: 5,
       slow: true,
@@ -1617,7 +1617,7 @@ const DUNGEONS = [{
     skills: [{
       name: '蜘蛛毒液',
       icon: '🕷️',
-      desc: '3.5倍中毒',
+      desc: '3倍中毒',
       type: 'dmg',
       mul: 3.5,
       dot: true,
@@ -1631,7 +1631,7 @@ const DUNGEONS = [{
     skills: [{
       name: '大地之怒',
       icon: '⛰️',
-      desc: '5倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 5,
       cd: 18,
@@ -1639,7 +1639,7 @@ const DUNGEONS = [{
     },{
       name: '岩石风暴',
       icon: '🪨',
-      desc: '6倍AOE',
+      desc: '3倍AOE',
       type: 'dmg',
       mul: 6,
       cd: 24,
@@ -1661,7 +1661,7 @@ const DUNGEONS = [{
     skills: [{
       name: '自然之怒',
       icon: '🌱',
-      desc: '3.5倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 3.5,
       cd: 14,
@@ -1674,7 +1674,7 @@ const DUNGEONS = [{
     skills: [{
       name: '地精工程',
       icon: '🔧',
-      desc: '4倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 4,
       cd: 16,
@@ -1687,7 +1687,7 @@ const DUNGEONS = [{
     skills: [{
       name: '腐化',
       icon: '👹',
-      desc: '5倍伤害+中毒',
+      desc: '3倍伤害+中毒',
       type: 'dmg',
       mul: 5,
       dot: true,
@@ -1696,7 +1696,7 @@ const DUNGEONS = [{
     },{
       name: '地震',
       icon: '🌍',
-      desc: '6倍AOE',
+      desc: '3倍AOE',
       type: 'dmg',
       mul: 6,
       cd: 26,
@@ -1718,7 +1718,7 @@ const DUNGEONS = [{
     skills: [{
       name: '暗影祭祀',
       icon: '🌑',
-      desc: '3.5倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 3.5,
       cd: 14,
@@ -1731,7 +1731,7 @@ const DUNGEONS = [{
     skills: [{
       name: '沙暴',
       icon: '🏜️',
-      desc: '4倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 4,
       cd: 16,
@@ -1744,7 +1744,7 @@ const DUNGEONS = [{
     skills: [{
       name: '祖尔法拉克之怒',
       icon: '🗿',
-      desc: '5倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 5,
       cd: 18,
@@ -1752,7 +1752,7 @@ const DUNGEONS = [{
     },{
       name: '巫毒诅咒',
       icon: '💀',
-      desc: '4倍必暴+流血',
+      desc: '3倍必暴+流血',
       type: 'dmg',
       mul: 4,
       alwaysCrit: true,
@@ -1776,7 +1776,7 @@ const DUNGEONS = [{
     skills: [{
       name: '哈卡之影',
       icon: '🐍',
-      desc: '3.5倍暗影伤害',
+      desc: '3倍暗影伤害',
       type: 'dmg',
       mul: 3.5,
       cd: 14,
@@ -1789,7 +1789,7 @@ const DUNGEONS = [{
     skills: [{
       name: '龙息术',
       icon: '🐉',
-      desc: '4.5倍火焰伤害',
+      desc: '4倍火焰伤害',
       type: 'dmg',
       mul: 4.5,
       cd: 16,
@@ -1802,7 +1802,7 @@ const DUNGEONS = [{
     skills: [{
       name: '翡翠梦境',
       icon: '🐉',
-      desc: '5倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 5,
       cd: 18,
@@ -1810,7 +1810,7 @@ const DUNGEONS = [{
     },{
       name: '梦魇',
       icon: '👁️',
-      desc: '7倍暗影伤害',
+      desc: '3倍暗影伤害',
       type: 'dmg',
       mul: 7,
       cd: 26,
@@ -1832,7 +1832,7 @@ const DUNGEONS = [{
     skills: [{
       name: '灵魂分裂',
       icon: '👻',
-      desc: '4倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 4,
       cd: 14,
@@ -1845,7 +1845,7 @@ const DUNGEONS = [{
     skills: [{
       name: '暗影魔法',
       icon: '📖',
-      desc: '5倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 5,
       cd: 18,
@@ -1858,7 +1858,7 @@ const DUNGEONS = [{
     skills: [{
       name: '冰霜之触',
       icon: '❄️',
-      desc: '6倍冰霜伤害',
+      desc: '3倍冰霜伤害',
       type: 'dmg',
       mul: 6,
       cd: 20,
@@ -1866,7 +1866,7 @@ const DUNGEONS = [{
     },{
       name: '死灵诅咒',
       icon: '💀',
-      desc: '5倍必暴',
+      desc: '3倍必暴',
       type: 'dmg',
       mul: 5,
       alwaysCrit: true,
@@ -1889,7 +1889,7 @@ const DUNGEONS = [{
     skills: [{
       name: '宝库守卫',
       icon: '💰',
-      desc: '3.5倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 3.5,
       cd: 14,
@@ -1902,7 +1902,7 @@ const DUNGEONS = [{
     skills: [{
       name: '熔岩喷发',
       icon: '🌋',
-      desc: '4.5倍火焰伤害',
+      desc: '4倍火焰伤害',
       type: 'dmg',
       mul: 4.5,
       cd: 16,
@@ -1915,7 +1915,7 @@ const DUNGEONS = [{
     skills: [{
       name: '暗影烈焰',
       icon: '🔥',
-      desc: '5倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 5,
       cd: 18,
@@ -1928,7 +1928,7 @@ const DUNGEONS = [{
     skills: [{
       name: '索瑞森之怒',
       icon: '👑',
-      desc: '7倍火焰伤害',
+      desc: '3倍火焰伤害',
       type: 'dmg',
       mul: 7,
       cd: 22,
@@ -1936,7 +1936,7 @@ const DUNGEONS = [{
     },{
       name: '熔火之心',
       icon: '🌋',
-      desc: '6倍AOE',
+      desc: '3倍AOE',
       type: 'dmg',
       mul: 6,
       cd: 30,
@@ -1958,7 +1958,7 @@ const DUNGEONS = [{
     skills: [{
       name: '悲惨嚎叫',
       icon: '😭',
-      desc: '4倍伤害+减速',
+      desc: '3倍伤害+减速',
       type: 'dmg',
       mul: 4,
       slow: true,
@@ -1972,7 +1972,7 @@ const DUNGEONS = [{
     skills: [{
       name: '火炮轰击',
       icon: '💣',
-      desc: '5倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 5,
       cd: 16,
@@ -1985,7 +1985,7 @@ const DUNGEONS = [{
     skills: [{
       name: '恐惧',
       icon: '😈',
-      desc: '5倍暗影伤害',
+      desc: '3倍暗影伤害',
       type: 'dmg',
       mul: 5,
       cd: 18,
@@ -1998,7 +1998,7 @@ const DUNGEONS = [{
     skills: [{
       name: '死亡之握',
       icon: '💀',
-      desc: '6倍暗影伤害',
+      desc: '3倍暗影伤害',
       type: 'dmg',
       mul: 6,
       cd: 20,
@@ -2006,7 +2006,7 @@ const DUNGEONS = [{
     },{
       name: '亡灵大军',
       icon: '🧟',
-      desc: '7倍AOE',
+      desc: '3倍AOE',
       type: 'dmg',
       mul: 7,
       cd: 30,
@@ -2028,7 +2028,7 @@ const DUNGEONS = [{
     skills: [{
       name: '末日诅咒',
       icon: '😈',
-      desc: '4倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 4,
       cd: 14,
@@ -2041,7 +2041,7 @@ const DUNGEONS = [{
     skills: [{
       name: '火焰吐息',
       icon: '🔥',
-      desc: '5倍火焰伤害',
+      desc: '3倍火焰伤害',
       type: 'dmg',
       mul: 5,
       cd: 16,
@@ -2054,7 +2054,7 @@ const DUNGEONS = [{
     skills: [{
       name: '岩石粉碎',
       icon: '🪨',
-      desc: '4.5倍伤害',
+      desc: '4倍伤害',
       type: 'dmg',
       mul: 4.5,
       cd: 16,
@@ -2067,7 +2067,7 @@ const DUNGEONS = [{
     skills: [{
       name: '地狱火',
       icon: '🔥',
-      desc: '6倍火焰伤害',
+      desc: '3倍火焰伤害',
       type: 'dmg',
       mul: 6,
       cd: 20,
@@ -2080,7 +2080,7 @@ const DUNGEONS = [{
     skills: [{
       name: '萨弗隆之怒',
       icon: '🌋',
-      desc: '8倍火焰伤害',
+      desc: '3倍火焰伤害',
       type: 'dmg',
       mul: 8,
       cd: 24,
@@ -2088,7 +2088,7 @@ const DUNGEONS = [{
     },{
       name: '熔岩喷涌',
       icon: '🔥',
-      desc: '7倍AOE必暴',
+      desc: '3倍AOE必暴',
       type: 'dmg',
       mul: 7,
       alwaysCrit: true,
@@ -2111,7 +2111,7 @@ const DUNGEONS = [{
     skills: [{
       name: '虚空冲击',
       icon: '🌀',
-      desc: '4倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 4,
       cd: 14,
@@ -2124,7 +2124,7 @@ const DUNGEONS = [{
     skills: [{
       name: '岩石猛击',
       icon: '🪨',
-      desc: '4.5倍伤害',
+      desc: '4倍伤害',
       type: 'dmg',
       mul: 4.5,
       cd: 16,
@@ -2137,7 +2137,7 @@ const DUNGEONS = [{
     skills: [{
       name: '虚空之怒',
       icon: '🌀',
-      desc: '5倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 5,
       cd: 18,
@@ -2145,7 +2145,7 @@ const DUNGEONS = [{
     },{
       name: '能量虚空',
       icon: '⚡',
-      desc: '6倍必暴',
+      desc: '3倍必暴',
       type: 'dmg',
       mul: 6,
       alwaysCrit: true,
@@ -2168,7 +2168,7 @@ const DUNGEONS = [{
     skills: [{
       name: '龙翼打击',
       icon: '🐉',
-      desc: '5倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 5,
       cd: 16,
@@ -2181,7 +2181,7 @@ const DUNGEONS = [{
     skills: [{
       name: '暗影烈焰',
       icon: '🔥',
-      desc: '6倍火焰伤害',
+      desc: '3倍火焰伤害',
       type: 'dmg',
       mul: 6,
       cd: 18,
@@ -2194,7 +2194,7 @@ const DUNGEONS = [{
     skills: [{
       name: '时光扭曲',
       icon: '⏳',
-      desc: '5倍伤害+减速',
+      desc: '3倍伤害+减速',
       type: 'dmg',
       mul: 5,
       slow: true,
@@ -2208,7 +2208,7 @@ const DUNGEONS = [{
     skills: [{
       name: '暗影烈焰',
       icon: '🐉',
-      desc: '8倍火焰伤害',
+      desc: '3倍火焰伤害',
       type: 'dmg',
       mul: 8,
       cd: 22,
@@ -2216,7 +2216,7 @@ const DUNGEONS = [{
     },{
       name: '龙族之怒',
       icon: '🐲',
-      desc: '7倍AOE必暴',
+      desc: '3倍AOE必暴',
       type: 'dmg',
       mul: 7,
       alwaysCrit: true,
@@ -2239,7 +2239,7 @@ const DUNGEONS = [{
     skills: [{
       name: '水龙卷',
       icon: '💧',
-      desc: '4.5倍伤害',
+      desc: '4倍伤害',
       type: 'dmg',
       mul: 4.5,
       cd: 14,
@@ -2252,7 +2252,7 @@ const DUNGEONS = [{
     skills: [{
       name: '蒸汽爆炸',
       icon: '💨',
-      desc: '5倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 5,
       cd: 16,
@@ -2265,7 +2265,7 @@ const DUNGEONS = [{
     skills: [{
       name: '盘牙之怒',
       icon: '🐊',
-      desc: '6倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 6,
       cd: 20,
@@ -2287,7 +2287,7 @@ const DUNGEONS = [{
     skills: [{
       name: '虫群风暴',
       icon: '🕷️',
-      desc: '5倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 5,
       cd: 16,
@@ -2300,7 +2300,7 @@ const DUNGEONS = [{
     skills: [{
       name: '憎恶打击',
       icon: '🧟',
-      desc: '6倍伤害+吸血',
+      desc: '3倍伤害+吸血',
       type: 'dmg',
       mul: 6,
       lifeSteal: 0.3,
@@ -2314,7 +2314,7 @@ const DUNGEONS = [{
     skills: [{
       name: '闪电链',
       icon: '⚡',
-      desc: '6倍自然伤害',
+      desc: '3倍自然伤害',
       type: 'dmg',
       mul: 6,
       cd: 18,
@@ -2327,7 +2327,7 @@ const DUNGEONS = [{
     skills: [{
       name: '冰霜吐息',
       icon: '❄️',
-      desc: '7倍冰霜伤害',
+      desc: '3倍冰霜伤害',
       type: 'dmg',
       mul: 7,
       cd: 22,
@@ -2335,7 +2335,7 @@ const DUNGEONS = [{
     },{
       name: '冰霜光环',
       icon: '🧊',
-      desc: '6倍AOE',
+      desc: '3倍AOE',
       type: 'dmg',
       mul: 6,
       cd: 28,
@@ -2348,7 +2348,7 @@ const DUNGEONS = [{
     skills: [{
       name: '暗影裂隙',
       icon: '☠️',
-      desc: '8倍暗影伤害',
+      desc: '3倍暗影伤害',
       type: 'dmg',
       mul: 8,
       cd: 24,
@@ -2356,7 +2356,7 @@ const DUNGEONS = [{
     },{
       name: '冰霜陨石',
       icon: '❄️',
-      desc: '9倍AOE必暴',
+      desc: '3倍AOE必暴',
       type: 'dmg',
       mul: 9,
       alwaysCrit: true,
@@ -2379,7 +2379,7 @@ const DUNGEONS = [{
     skills: [{
       name: '凤凰之火',
       icon: '🔥',
-      desc: '5倍火焰伤害',
+      desc: '3倍火焰伤害',
       type: 'dmg',
       mul: 5,
       cd: 16,
@@ -2405,7 +2405,7 @@ const DUNGEONS = [{
     skills: [{
       name: '凤凰',
       icon: '🔥',
-      desc: '8倍火焰伤害',
+      desc: '3倍火焰伤害',
       type: 'dmg',
       mul: 8,
       cd: 22,
@@ -2413,7 +2413,7 @@ const DUNGEONS = [{
     },{
       name: '炎爆术',
       icon: '☄️',
-      desc: '10倍必暴',
+      desc: '3倍必暴',
       type: 'dmg',
       mul: 10,
       alwaysCrit: true,
@@ -2436,7 +2436,7 @@ const DUNGEONS = [{
     skills: [{
       name: '暗影冲锋',
       icon: '🐴',
-      desc: '5倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 5,
       cd: 16,
@@ -2449,7 +2449,7 @@ const DUNGEONS = [{
     skills: [{
       name: '暗杀',
       icon: '🗡️',
-      desc: '5倍伤害+流血',
+      desc: '3倍伤害+流血',
       type: 'dmg',
       mul: 5,
       dot: true,
@@ -2463,7 +2463,7 @@ const DUNGEONS = [{
     skills: [{
       name: '奥术充能',
       icon: '⚡',
-      desc: '6倍奥术伤害',
+      desc: '3倍奥术伤害',
       type: 'dmg',
       mul: 6,
       cd: 20,
@@ -2476,7 +2476,7 @@ const DUNGEONS = [{
     skills: [{
       name: '奥术风暴',
       icon: '🔮',
-      desc: '8倍奥术伤害',
+      desc: '3倍奥术伤害',
       type: 'dmg',
       mul: 8,
       cd: 24,
@@ -2498,7 +2498,7 @@ const DUNGEONS = [{
     skills: [{
       name: '闪电打击',
       icon: '⚡',
-      desc: '5倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 5,
       cd: 14,
@@ -2511,7 +2511,7 @@ const DUNGEONS = [{
     skills: [{
       name: '锻造之火',
       icon: '🔥',
-      desc: '6倍火焰伤害',
+      desc: '3倍火焰伤害',
       type: 'dmg',
       mul: 6,
       cd: 18,
@@ -2524,7 +2524,7 @@ const DUNGEONS = [{
     skills: [{
       name: '闪电新星',
       icon: '⚡',
-      desc: '8倍自然伤害',
+      desc: '3倍自然伤害',
       type: 'dmg',
       mul: 8,
       cd: 22,
@@ -2532,7 +2532,7 @@ const DUNGEONS = [{
     },{
       name: '雷霆万钧',
       icon: '⛈️',
-      desc: '7倍AOE必暴',
+      desc: '3倍AOE必暴',
       type: 'dmg',
       mul: 7,
       alwaysCrit: true,
@@ -2555,7 +2555,7 @@ const DUNGEONS = [{
     skills: [{
       name: '圣光审判',
       icon: '✨',
-      desc: '4.5倍神圣伤害',
+      desc: '4倍神圣伤害',
       type: 'dmg',
       mul: 4.5,
       cd: 14,
@@ -2568,7 +2568,7 @@ const DUNGEONS = [{
     skills: [{
       name: '死亡之握',
       icon: '⚫',
-      desc: '5.5倍暗影伤害',
+      desc: '5.3倍暗影伤害',
       type: 'dmg',
       mul: 5.5,
       cd: 16,
@@ -2581,7 +2581,7 @@ const DUNGEONS = [{
     skills: [{
       name: '圣光之锤',
       icon: '🔨',
-      desc: '6倍神圣伤害',
+      desc: '3倍神圣伤害',
       type: 'dmg',
       mul: 6,
       cd: 18,
@@ -2594,7 +2594,7 @@ const DUNGEONS = [{
     skills: [{
       name: '冠军之击',
       icon: '🏆',
-      desc: '8倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 8,
       cd: 22,
@@ -2616,7 +2616,7 @@ const DUNGEONS = [{
     skills: [{
       name: '奥术吐息',
       icon: '🐉',
-      desc: '5.5倍奥术伤害',
+      desc: '5.3倍奥术伤害',
       type: 'dmg',
       mul: 5.5,
       cd: 16,
@@ -2629,7 +2629,7 @@ const DUNGEONS = [{
     skills: [{
       name: '流星',
       icon: '☄️',
-      desc: '7倍火焰伤害',
+      desc: '3倍火焰伤害',
       type: 'dmg',
       mul: 7,
       cd: 20,
@@ -2642,7 +2642,7 @@ const DUNGEONS = [{
     skills: [{
       name: '暗影之怒',
       icon: '😈',
-      desc: '7倍暗影伤害',
+      desc: '3倍暗影伤害',
       type: 'dmg',
       mul: 7,
       cd: 20,
@@ -2655,7 +2655,7 @@ const DUNGEONS = [{
     skills: [{
       name: '千魂之暗',
       icon: '😈',
-      desc: '10倍暗影伤害',
+      desc: '3倍暗影伤害',
       type: 'dmg',
       mul: 10,
       cd: 26,
@@ -2686,7 +2686,7 @@ const DUNGEONS = [{
     skills: [{
       name: '火焰喷射',
       icon: '🚂',
-      desc: '6倍火焰伤害',
+      desc: '3倍火焰伤害',
       type: 'dmg',
       mul: 6,
       cd: 18,
@@ -2699,7 +2699,7 @@ const DUNGEONS = [{
     skills: [{
       name: '过载',
       icon: '⚙️',
-      desc: '7倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 7,
       cd: 20,
@@ -2738,7 +2738,7 @@ const DUNGEONS = [{
     skills: [{
       name: '灵魂收割',
       icon: '👻',
-      desc: '6倍暗影伤害',
+      desc: '3倍暗影伤害',
       type: 'dmg',
       mul: 6,
       cd: 18,
@@ -2751,7 +2751,7 @@ const DUNGEONS = [{
     skills: [{
       name: '灵魂吞噬',
       icon: '💀',
-      desc: '7倍伤害+吸血50%',
+      desc: '3倍伤害+吸血50%',
       type: 'dmg',
       mul: 7,
       lifeSteal: 0.5,
@@ -2765,7 +2765,7 @@ const DUNGEONS = [{
     skills: [{
       name: '灵魂洪炉',
       icon: '👻',
-      desc: '10倍暗影伤害',
+      desc: '3倍暗影伤害',
       type: 'dmg',
       mul: 10,
       cd: 28,
@@ -2773,7 +2773,7 @@ const DUNGEONS = [{
     },{
       name: '灵魂风暴',
       icon: '💀',
-      desc: '8倍AOE必暴',
+      desc: '3倍AOE必暴',
       type: 'dmg',
       mul: 8,
       alwaysCrit: true,
@@ -2796,7 +2796,7 @@ const DUNGEONS = [{
     skills: [{
       name: '黄昏之火',
       icon: '🐉',
-      desc: '6倍火焰伤害',
+      desc: '3倍火焰伤害',
       type: 'dmg',
       mul: 6,
       cd: 18,
@@ -2809,7 +2809,7 @@ const DUNGEONS = [{
     skills: [{
       name: '暗影之息',
       icon: '🐉',
-      desc: '7倍暗影伤害',
+      desc: '3倍暗影伤害',
       type: 'dmg',
       mul: 7,
       cd: 20,
@@ -2822,7 +2822,7 @@ const DUNGEONS = [{
     skills: [{
       name: '暮光烈焰',
       icon: '🐉',
-      desc: '8倍火焰伤害',
+      desc: '3倍火焰伤害',
       type: 'dmg',
       mul: 8,
       cd: 24,
@@ -2843,7 +2843,7 @@ const DUNGEONS = [{
     skills: [{
       name: '暮光切割',
       icon: '🐉',
-      desc: '10倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 10,
       cd: 28,
@@ -2851,7 +2851,7 @@ const DUNGEONS = [{
     },{
       name: '红玉之火',
       icon: '💎',
-      desc: '9倍必暴',
+      desc: '3倍必暴',
       type: 'dmg',
       mul: 9,
       alwaysCrit: true,
@@ -2874,7 +2874,7 @@ const DUNGEONS = [{
     skills: [{
       name: '骨刺',
       icon: '🦴',
-      desc: '6倍伤害',
+      desc: '3倍伤害',
       type: 'dmg',
       mul: 6,
       cd: 18,
@@ -2887,7 +2887,7 @@ const DUNGEONS = [{
     skills: [{
       name: '死亡使者之怒',
       icon: '💀',
-      desc: '7倍暗影伤害',
+      desc: '3倍暗影伤害',
       type: 'dmg',
       mul: 7,
       cd: 20,
@@ -2898,7 +2898,7 @@ const DUNGEONS = [{
     skills: [{
       name: '毒气弹',
       icon: '🧪',
-      desc: '7倍伤害+中毒',
+      desc: '3倍伤害+中毒',
       type: 'dmg',
       mul: 7,
       dot: true,
@@ -2911,7 +2911,7 @@ const DUNGEONS = [{
     skills: [{
       name: '鲜血之咬',
       icon: '🧛‍♀️',
-      desc: '8倍伤害+吸血50%',
+      desc: '3倍伤害+吸血50%',
       type: 'dmg',
       mul: 8,
       lifeSteal: 0.5,
@@ -2926,7 +2926,7 @@ const DUNGEONS = [{
     skills: [{
       name: '冰霜吐息',
       icon: '❄️',
-      desc: '10倍冰霜伤害',
+      desc: '3倍冰霜伤害',
       type: 'dmg',
       mul: 10,
       cd: 26,
@@ -2934,7 +2934,7 @@ const DUNGEONS = [{
     },{
       name: '冰墓',
       icon: '❄️',
-      desc: '8倍AOE必暴',
+      desc: '3倍AOE必暴',
       type: 'dmg',
       mul: 8,
       alwaysCrit: true,
@@ -2956,7 +2956,7 @@ const DUNGEONS = [{
     },{
       name: '亡者大军',
       icon: '🧟',
-      desc: '10倍AOE必暴',
+      desc: '3倍AOE必暴',
       type: 'dmg',
       mul: 10,
       alwaysCrit: true,
@@ -3349,6 +3349,6 @@ const COMPANION_BONDS=[
   {name:"白银之手",   keys:["fordring","maraad"],         mod:{hpPct:6,defPct:4},  desc:"提里奥 + 玛拉达尔"},
 ];
 function compQuality(tpl){ return COMPANION_QUALITY.find(q=>q.key===(tpl&&tpl.quality)) || COMPANION_QUALITY[0]; }
-const COMPANIONS=[{key:"fordring",name:"提里奥·弗丁",emoji:"👴",role:"tank",desc:"白银之手大领主",skills:[{name:"圣光审判",icon:"⚖️",desc:"2.5倍伤害,回复5%HP",type:"dmg",mul:2.5,heal:0.05,cd:10},{name:"圣盾守护",icon:"🛡️",desc:"8秒减伤40%",type:"buff",buff:"shield",cd:22},{name:"灰烬觉醒",icon:"✨",desc:"5倍伤害",type:"dmg",mul:5,cd:20},{name:"圣疗术",icon:"💚",desc:"恢复25%HP",type:"heal",heal:0.25,cd:30}]},{key:"varian",name:"瓦里安·乌瑞恩",emoji:"👑",role:"tank",desc:"暴风城国王",skills:[{name:"冲锋",icon:"💨",desc:"2倍伤害",type:"dmg",mul:2,cd:6},{name:"破甲",icon:"🔨",desc:"3倍伤害降防",type:"dmg",mul:3,cd:12},{name:"剑刃风暴",icon:"🌀",desc:"6倍伤害",type:"dmg",mul:6,cd:25},{name:"怒吼",icon:"📯",desc:"10秒攻击+15%",type:"buff",buff:"battleShout",cd:30}]},{key:"thrall",name:"萨尔",emoji:"👊",role:"tank",desc:"部落大酋长",skills:[{name:"闪电箭",icon:"⚡",desc:"2倍伤害",type:"dmg",mul:2,cd:6},{name:"大地之盾",icon:"🪨",desc:"8秒防御+40%",type:"buff",buff:"earthShield",cd:20},{name:"雷霆风暴",icon:"⛈️",desc:"5倍伤害",type:"dmg",mul:5,cd:18},{name:"治疗波",icon:"🌊",desc:"恢复20%HP",type:"heal",heal:0.2,cd:25}]},{key:"illidan",name:"伊利丹·怒风",emoji:"😈",role:"dps",desc:"背叛者",skills:[{name:"恶魔之咬",icon:"🦷",desc:"3倍伤害",type:"dmg",mul:3,cd:8},{name:"眼棱",icon:"👁️",desc:"4倍必暴",type:"dmg",mul:4,alwaysCrit:true,cd:16},{name:"恶魔变形",icon:"😈",desc:"10秒攻击+30%",type:"buff",buff:"bestial",cd:28},{name:"混沌打击",icon:"💥",desc:"6倍伤害",type:"dmg",mul:6,cd:24}]},{key:"arthas",name:"阿尔萨斯",emoji:"⚔️",role:"dps",desc:"洛丹伦王子",skills:[{name:"死亡缠绕",icon:"💀",desc:"3倍伤害吸血20%",type:"dmg",mul:3,lifeSteal:0.2,cd:10},{name:"凛风冲击",icon:"❄️",desc:"4倍伤害",type:"dmg",mul:4,cd:14},{name:"亡者大军",icon:"🧟",desc:"6倍伤害",type:"dmg",mul:6,cd:22},{name:"巫妖之怒",icon:"☠️",desc:"10秒攻速+40%",type:"buff",buff:"rapidFire",cd:30}]},{key:"jaina",name:"吉安娜",emoji:"🧙‍♀️",role:"dps",desc:"肯瑞托大法师",skills:[{name:"寒冰箭",icon:"❄️",desc:"2.5倍伤害减速",type:"dmg",mul:2.5,cd:7},{name:"冰霜新星",icon:"💠",desc:"4倍伤害",type:"dmg",mul:4,cd:15},{name:"暴风雪",icon:"🌨️",desc:"5倍伤害",type:"dmg",mul:5,cd:20},{name:"奥术智慧",icon:"📖",desc:"10秒攻击+20%",type:"buff",buff:"battleShout",cd:28}]},{key:"sylvanas",name:"希尔瓦娜斯",emoji:"🏹",role:"dps",desc:"黑暗游侠",skills:[{name:"暗影箭",icon:"🏹",desc:"2.5倍伤害",type:"dmg",mul:2.5,cd:7},{name:"毒蛇射击",icon:"🐍",desc:"3倍中毒",type:"dmg",mul:3,dot:true,cd:12},{name:"黑暗之怒",icon:"🌑",desc:"5倍伤害",type:"dmg",mul:5,cd:18},{name:"亡灵意志",icon:"💀",desc:"10秒吸血+10%",type:"buff",buff:"shadowstep",cd:26}]},{key:"anduin",name:"安度因·乌瑞恩",emoji:"✝️",role:"heal",desc:"暴风城王子",skills:[{name:"惩击",icon:"✨",desc:"2倍伤害",type:"dmg",mul:2,cd:6},{name:"治疗术",icon:"💚",desc:"恢复30%HP",type:"heal",heal:0.3,cd:14},{name:"真言术盾",icon:"🛡️",desc:"8秒防御+30%",type:"buff",buff:"shield",cd:20},{name:"神圣赞美诗",icon:"🎵",desc:"恢复40%HP",type:"heal",heal:0.4,cd:28}]},{key:"tyrande",name:"泰兰德·语风",emoji:"🌙",role:"heal",desc:"月之女祭司",skills:[{name:"月火术",icon:"🌙",desc:"2.5倍伤害",type:"dmg",mul:2.5,cd:8},{name:"治疗之触",icon:"🌿",desc:"恢复25%HP",type:"heal",heal:0.25,cd:12},{name:"星陨术",icon:"🌟",desc:"4倍伤害",type:"dmg",mul:4,cd:18},{name:"宁静",icon:"🍃",desc:"恢复35%HP",type:"heal",heal:0.35,cd:26}]},{key:"malfurion",name:"玛法里奥·怒风",emoji:"🍂",role:"heal",desc:"大德鲁伊",skills:[{name:"愤怒",icon:"🌿",desc:"2倍伤害",type:"dmg",mul:2,cd:6},{name:"回春术",icon:"🌱",desc:"恢复20%HP",type:"heal",heal:0.2,cd:10},{name:"树皮术",icon:"🪵",desc:"8秒防御+35%",type:"buff",buff:"bark",cd:18},{name:"自然之力",icon:"🌳",desc:"恢复35%HP",type:"heal",heal:0.35,cd:24}]}];
+const COMPANIONS=[{key:"fordring",name:"提里奥·弗丁",emoji:"👴",role:"tank",desc:"白银之手大领主",skills:[{name:"圣光审判",icon:"⚖️",desc:"2倍伤害,回复5%HP",type:"dmg",mul:2,heal:0.05,cd:10},{name:"圣盾守护",icon:"🛡️",desc:"8秒减伤40%",type:"buff",buff:"shield",cd:22},{name:"灰烬觉醒",icon:"✨",desc:"3倍伤害",type:"dmg",mul:4,cd:20},{name:"圣疗术",icon:"💚",desc:"恢复25%HP",type:"heal",heal:0.25,cd:30}]},{key:"varian",name:"瓦里安·乌瑞恩",emoji:"👑",role:"tank",desc:"暴风城国王",skills:[{name:"冲锋",icon:"💨",desc:"2倍伤害",type:"dmg",mul:2,cd:6},{name:"破甲",icon:"🔨",desc:"3倍伤害降防",type:"dmg",mul:3,cd:12},{name:"剑刃风暴",icon:"🌀",desc:"3倍伤害",type:"dmg",mul:5,cd:25},{name:"怒吼",icon:"📯",desc:"10秒攻击+15%",type:"buff",buff:"battleShout",cd:30}]},{key:"thrall",name:"萨尔",emoji:"👊",role:"tank",desc:"部落大酋长",skills:[{name:"闪电箭",icon:"⚡",desc:"2倍伤害",type:"dmg",mul:2,cd:6},{name:"大地之盾",icon:"🪨",desc:"8秒防御+40%",type:"buff",buff:"earthShield",cd:20},{name:"雷霆风暴",icon:"⛈️",desc:"3倍伤害",type:"dmg",mul:4,cd:18},{name:"治疗波",icon:"🌊",desc:"恢复20%HP",type:"heal",heal:0.2,cd:25}]},{key:"illidan",name:"伊利丹·怒风",emoji:"😈",role:"dps",desc:"背叛者",skills:[{name:"恶魔之咬",icon:"🦷",desc:"3倍伤害",type:"dmg",mul:3,cd:8},{name:"眼棱",icon:"👁️",desc:"3倍必暴",type:"dmg",mul:3,alwaysCrit:true,cd:16},{name:"恶魔变形",icon:"😈",desc:"10秒攻击+30%",type:"buff",buff:"bestial",cd:28},{name:"混沌打击",icon:"💥",desc:"3倍伤害",type:"dmg",mul:5,cd:24}]},{key:"arthas",name:"阿尔萨斯",emoji:"⚔️",role:"dps",desc:"洛丹伦王子",skills:[{name:"死亡缠绕",icon:"💀",desc:"3倍伤害吸血20%",type:"dmg",mul:3,lifeSteal:0.2,cd:10},{name:"凛风冲击",icon:"❄️",desc:"3倍伤害",type:"dmg",mul:3,cd:14},{name:"亡者大军",icon:"🧟",desc:"3倍伤害",type:"dmg",mul:5,cd:22},{name:"巫妖之怒",icon:"☠️",desc:"10秒攻速+40%",type:"buff",buff:"rapidFire",cd:30}]},{key:"jaina",name:"吉安娜",emoji:"🧙‍♀️",role:"dps",desc:"肯瑞托大法师",skills:[{name:"寒冰箭",icon:"❄️",desc:"2倍伤害减速",type:"dmg",mul:2,cd:7},{name:"冰霜新星",icon:"💠",desc:"3倍伤害",type:"dmg",mul:3,cd:15},{name:"暴风雪",icon:"🌨️",desc:"3倍伤害",type:"dmg",mul:4,cd:20},{name:"奥术智慧",icon:"📖",desc:"10秒攻击+20%",type:"buff",buff:"battleShout",cd:28}]},{key:"sylvanas",name:"希尔瓦娜斯",emoji:"🏹",role:"dps",desc:"黑暗游侠",skills:[{name:"暗影箭",icon:"🏹",desc:"2倍伤害",type:"dmg",mul:2,cd:7},{name:"毒蛇射击",icon:"🐍",desc:"3倍中毒",type:"dmg",mul:3,dot:true,cd:12},{name:"黑暗之怒",icon:"🌑",desc:"3倍伤害",type:"dmg",mul:4,cd:18},{name:"亡灵意志",icon:"💀",desc:"10秒吸血+10%",type:"buff",buff:"shadowstep",cd:26}]},{key:"anduin",name:"安度因·乌瑞恩",emoji:"✝️",role:"heal",desc:"暴风城王子",skills:[{name:"惩击",icon:"✨",desc:"2倍伤害",type:"dmg",mul:2,cd:6},{name:"治疗术",icon:"💚",desc:"恢复30%HP",type:"heal",heal:0.3,cd:14},{name:"真言术盾",icon:"🛡️",desc:"8秒防御+30%",type:"buff",buff:"shield",cd:20},{name:"神圣赞美诗",icon:"🎵",desc:"恢复40%HP",type:"heal",heal:0.4,cd:28}]},{key:"tyrande",name:"泰兰德·语风",emoji:"🌙",role:"heal",desc:"月之女祭司",skills:[{name:"月火术",icon:"🌙",desc:"2倍伤害",type:"dmg",mul:2,cd:8},{name:"治疗之触",icon:"🌿",desc:"恢复25%HP",type:"heal",heal:0.25,cd:12},{name:"星陨术",icon:"🌟",desc:"3倍伤害",type:"dmg",mul:3,cd:18},{name:"宁静",icon:"🍃",desc:"恢复35%HP",type:"heal",heal:0.35,cd:26}]},{key:"malfurion",name:"玛法里奥·怒风",emoji:"🍂",role:"heal",desc:"大德鲁伊",skills:[{name:"愤怒",icon:"🌿",desc:"2倍伤害",type:"dmg",mul:2,cd:6},{name:"回春术",icon:"🌱",desc:"恢复20%HP",type:"heal",heal:0.2,cd:10},{name:"树皮术",icon:"🪵",desc:"8秒防御+35%",type:"buff",buff:"bark",cd:18},{name:"自然之力",icon:"🌳",desc:"恢复35%HP",type:"heal",heal:0.35,cd:24}]}];
 
 

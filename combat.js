@@ -674,7 +674,7 @@ function tickBattle(now){
     if(!dodged&&d.crit&&typeof passiveOnCrit==='function')passiveOnCrit(mon,actualDmg);
     if(!dodged&&d.crit&&masteryFor('bleedOnCrit')>0){const bleed=Math.floor(actualDmg*masteryFor('bleedOnCrit')*MASTERY_TYPE.bleedOnCrit.per/100);if(bleed>0){mon.dot=(mon.dot||0)+bleed;mon.dotEnd=Date.now()+5000;showFloat($('mon-emoji'),'🩸流血','#dc2626');}}   // 精通:暴击流血
     if(!dodged&&state.hero.stunChance&&Math.random()*100<state.hero.stunChance){mon.stunUntil=now+1500;showFloat($('mon-emoji'),'💫击晕','#fde047');}   // 趣味天赋:几率击晕敌人
-    if(!dodged&&state.hero.leech>0)state.hp=Math.min(state.hero.hpMax,state.hp+Math.floor(d.dmg*state.hero.leech*0.5/100));   // 吸血改为每点0.5%(2026-06-16)
+    if(!dodged&&state.hero.leech>0){const leechHeal=Math.floor(d.dmg*state.hero.leech*0.5/100);if(leechHeal>0){state.hp=Math.min(state.hero.hpMax,state.hp+leechHeal);showFloat($('hero-emoji'),'🩸+'+leechHeal,'#6ee7b7');}}   // 吸血:每点=0.5%实际吸取,有浮动数字可见
     lastHeroAtk=now;
     if(getCls().resKey==='rage')state.resource=Math.min(state.resourceMax,state.resource+(d.crit?12:8));
     // 智能自动施法:GCD 节流避免一次性倾泻;残血治疗可无视GCD;焦点残血优先斩杀;敌群多优先AOE
