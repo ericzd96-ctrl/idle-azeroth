@@ -325,12 +325,15 @@ function updateBattleVisuals() {
   } else if (state.mode === 'world') {
     const map = getMap();
     const sub = map.sub[state.currentSubzone];
-    const subKey = `${state.currentMap}-${state.currentSubzone}`;
-    const subKills = state.subzoneKills[subKey] || 0;
-    const cleared = state.subzoneCleared[subKey];
-    $('h-zone').textContent = `${map.icon} ${map.name} · ${sub.name}`;
-    $('zone-name').textContent = `${map.icon} ${map.name} · ${sub.name} (Lv ${sub.lvl[0]}-${sub.lvl[1]})`;
-    $('progress-text').innerHTML = `探索进度 <b>${Math.min(subKills,50)}</b> / 50 ${cleared?'✅':''}`;
+    if (!sub) { $('h-zone').textContent = `${map.icon} ${map.name}`; $('zone-name').textContent = `${map.icon} ${map.name}`; $('progress-text').innerHTML = ''; }
+    else {
+      const subKey = `${state.currentMap}-${state.currentSubzone}`;
+      const subKills = state.subzoneKills[subKey] || 0;
+      const cleared = state.subzoneCleared[subKey];
+      $('h-zone').textContent = `${map.icon} ${map.name} · ${sub.name}`;
+      $('zone-name').textContent = `${map.icon} ${map.name} · ${sub.name} (Lv ${sub.lvl[0]}-${sub.lvl[1]})`;
+      $('progress-text').innerHTML = `探索进度 <b>${Math.min(subKills,50)}</b> / 50 ${cleared?'✅':''}`;
+    }
   } else if (state.mode === 'boss') {
     const map = getMap();
     $('h-zone').textContent = `${map.icon} ${map.name} · ⚔️BOSS战`;
