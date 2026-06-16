@@ -981,7 +981,14 @@ function renderMap() {
       <div class="boss-row">
         <div class="boss-info">
           <div><span class="bname">⚔️ ${m.boss.emoji} ${m.boss.name}</span> <span class="pill">Lv ${m.boss.lvl}</span></div>
-          <div class="muted">${m.boss.desc}</div>
+          <div class="muted">${m.boss.desc}${m.boss.skills?' · '+m.boss.skills.map(s=>s.icon+s.name).join(' '):''}${m.boss.passive?' · 被动:'+Object.keys(m.boss.passive).map(k=>{
+          if(k==='dodgeChance')return '闪避+'+(m.boss.passive[k]*100)+'%';
+          if(k==='critChance')return '暴击+'+(m.boss.passive[k]*100)+'%';
+          if(k==='dmgReduction')return '减伤+'+(m.boss.passive[k]*100)+'%';
+          if(k==='atkBonus')return '攻击+'+(m.boss.passive[k]*100)+'%';
+          if(k==='leech')return '吸血+'+(m.boss.passive[k]*100)+'%';
+          return '';
+        }).filter(Boolean).join(' '):''}</div>
         </div>
         <button class="boss-btn ${canBoss?'epic':''}" data-action="boss" data-map="${m.key}" ${canBoss?'':'disabled'}>${bossText}</button>
       </div>`;
@@ -990,11 +997,16 @@ function renderMap() {
     const bossBtn = div.querySelector('.boss-btn');
     if (bossBtn) {
       bossBtn.addEventListener('mouseenter', e => {
+        const isHighBoss=m.boss.lvl>=60;
         const bossDrops = [
           {name:'💰 金币 ×'+(m.boss.lvl*30),rarity:'common',stats:{}},
           {name:'✨ 经验 ×'+(m.boss.lvl*15),rarity:'common',stats:{}},
-          {name:'🎁 必掉 Lv.'+m.boss.lvl+' 蓝装 ×1',rarity:'rare',stats:{}},
-          {name:'🎉 15% 额外掉落 紫装 ×1',rarity:'epic',stats:{}},
+          isHighBoss
+            ? {name:'🎁 必掉 Lv.'+m.boss.lvl+' 紫装 ×1',rarity:'epic',stats:{}}
+            : {name:'🎁 必掉 Lv.'+m.boss.lvl+' 蓝装 ×1',rarity:'rare',stats:{}},
+          isHighBoss
+            ? {name:'🎉 15% 额外掉落 橙装 ×1',rarity:'legend',stats:{}}
+            : {name:'🎉 15% 额外掉落 紫装 ×1',rarity:'epic',stats:{}},
           {name:'💎 钻石 ×3~8',rarity:'rare',stats:{}},
           {name:'📊 首次免费 · CD最高1小时 · CD中🎫跳过',rarity:'legend',stats:{}},
         ];
