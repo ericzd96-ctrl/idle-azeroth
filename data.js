@@ -1247,8 +1247,8 @@ const DUNGEONS = [{
       mul: 2.5,
       cd: 10,
       castTime: 1
-    , dot: true}],
-        passive: {dmgReduction:0.1}
+    , dot: true,plague:true}],
+        passive: {dmgReduction:0.1,silence:true}
   },{
     name: '塔格尔·邪炉',
     emoji: '👹',
@@ -1293,8 +1293,8 @@ const DUNGEONS = [{
       mul: 2.5,
       cd: 10,
       castTime: 1
-    , stun: true}],
-        passive: {dmgReduction:0.1}
+    , stun: true,frenzy:true}],
+        passive: {dmgReduction:0.1,bomb:true}
   },{
     name: '斯尼德',
     emoji: '🤖',
@@ -1362,8 +1362,8 @@ const DUNGEONS = [{
       dot: true,
       cd: 12,
       castTime: 1
-    }],
-        passive: {dmgReduction:0.1}
+    ,plague:true}],
+        passive: {dmgReduction:0.1,freeze:true}
   },{
     name: '斯卡姆',
     emoji: '🦖',
@@ -1422,8 +1422,8 @@ const DUNGEONS = [{
       mul: 2.5,
       cd: 10,
       castTime: 1
-    }],
-        passive: {dmgReduction:0.1}
+    ,bomb:true}],
+        passive: {dmgReduction:0.1,bleed:true}
   },{
     name: '格里哈斯特',
     emoji: '🦀',
@@ -1482,8 +1482,8 @@ const DUNGEONS = [{
       lifeSteal: 0.3,
       cd: 12,
       castTime: 1
-    ,soulDrain:true,bleed:true}],
-        passive: {dmgReduction:0.1}
+    ,soulDrain:true,bleed:true,fear:true}],
+        passive: {dmgReduction:0.1,decay:true}
   },{
     name: '指挥官斯普林瓦尔',
     emoji: '👻',
@@ -1541,8 +1541,8 @@ const DUNGEONS = [{
       mul: 3,
       cd: 12,
       castTime: 1
-    , stun: true}],
-        passive: {dmgReduction:0.1}
+    , stun: true,frenzy:true}],
+        passive: {dmgReduction:0.1,soulDrain:true}
   },{
     name: '群体打击者9-60',
     emoji: '🤖',
@@ -1600,8 +1600,8 @@ const DUNGEONS = [{
       mul: 3,
       cd: 12,
       castTime: 1
-    , stun: true}],
-        passive: {dmgReduction:0.1}
+    , stun: true,soulLink:true}],
+        passive: {dmgReduction:0.1,brittle:true}
   },{
     name: '阿格姆',
     emoji: '🐗',
@@ -1660,8 +1660,8 @@ const DUNGEONS = [{
       mul: 3,
       cd: 10,
       castTime: 1
-    , stun: true}],
-        passive: {dmgReduction:0.1}
+    , stun: true,brittle:true}],
+        passive: {dmgReduction:0.1,freeze:true}
   },{
     name: '赫洛德',
     emoji: '⚔️',
@@ -1735,8 +1735,8 @@ const DUNGEONS = [{
       slow: true,
       cd: 12,
       castTime: 1
-    }],
-        passive: {dmgReduction:0.1}
+    ,brittle:true}],
+        passive: {dmgReduction:0.1,freeze:true}
   },{
     name: '火眼莫德雷斯',
     emoji: '🔥',
@@ -1795,8 +1795,8 @@ const DUNGEONS = [{
       mul: 3,
       cd: 12,
       castTime: 1
-    }],
-        passive: {dmgReduction:0.1}
+    ,disarm:true}],
+        passive: {dmgReduction:0.1,fear:true}
   },{
     name: '石窟织石者',
     emoji: '🕷️',
@@ -1855,8 +1855,8 @@ const DUNGEONS = [{
       mul: 3.5,
       cd: 14,
       castTime: 1.5
-    , weaken: true}],
-        passive: {dmgReduction:0.1}
+    , weaken: true,silence:true}],
+        passive: {dmgReduction:0.1,plague:true}
   },{
     name: '工匠吉兹洛克',
     emoji: '🗿',
@@ -1915,8 +1915,8 @@ const DUNGEONS = [{
       mul: 3.5,
       cd: 14,
       castTime: 1.5
-    , weaken: true}],
-        passive: {dmgReduction:0.1}
+    , weaken: true,soulDrain:true}],
+        passive: {dmgReduction:0.1,plague:true}
   },{
     name: '乌克兹·沙顶',
     emoji: '🦂',
@@ -1976,8 +1976,8 @@ const DUNGEONS = [{
       mul: 3.5,
       cd: 14,
       castTime: 1.5
-    , weaken: true}],
-        passive: {dmgReduction:0.1}
+    , weaken: true,wither:true}],
+        passive: {dmgReduction:0.1,silence:true}
   },{
     name: '德姆塞卡尔',
     emoji: '🐉',
@@ -2035,8 +2035,8 @@ const DUNGEONS = [{
       mul: 4,
       cd: 14,
       castTime: 1.5
-    }],
-        passive: {dmgReduction:0.1}
+    ,brittle:true}],
+        passive: {dmgReduction:0.1,plague:true}
   },{
     name: '黑暗院长加丁',
     emoji: '🧙',
@@ -2095,8 +2095,8 @@ const DUNGEONS = [{
       mul: 3.5,
       cd: 14,
       castTime: 1.5
-    }],
-        passive: {dmgReduction:0.1}
+    ,bleed:true}],
+        passive: {dmgReduction:0.1,silence:true}
   },{
     name: '贝尔加',
     emoji: '🔥',
@@ -2169,8 +2169,8 @@ const DUNGEONS = [{
       slow: true,
       cd: 14,
       castTime: 1.5
-    }],
-        passive: {dmgReduction:0.1}
+    ,wither:true}],
+        passive: {dmgReduction:0.1,brittle:true}
   },{
     name: '炮手威利',
     emoji: '💣',
@@ -2238,8 +2238,8 @@ const DUNGEONS = [{
           wave: 3,
           skills: [
             {name: "暗影冲击", icon: "🌑", desc: "4倍暗影伤害", type: "dmg", mul: 4, castTime: 2,weaken:true,
-          tricks: [{name:"不死之躯",icon:"💀",desc:"接下来5秒防御+50%且吸血20%",defBuff:5,leechBuff:5},{name:"复苏",icon:"💚",desc:"立即回复15%最大生命",healPct:0.15},{name:"终极防御",icon:"🛡️",desc:"回复20%生命且接下来5秒防御+50%",defBuff:5,healPct:0.2}] },
-            {name: "末日诅咒", icon: "🧿", desc: "5倍伤害+灼烧", type: "dmg", mul: 5, castTime: 3, dot: true}
+          tricks: [{name:"不死之躯",icon:"💀",desc:"接下来5秒防御+50%且吸血20%",defBuff:5,leechBuff:5,silence:true},{name:"复苏",icon:"💚",desc:"立即回复15%最大生命",healPct:0.15},{name:"终极防御",icon:"🛡️",desc:"回复20%生命且接下来5秒防御+50%",defBuff:5,healPct:0.2}] },
+            {name: "末日诅咒", icon: "🧿", desc: "5倍伤害+灼烧", type: "dmg", mul: 5, castTime: 3, dot: true,revenge:true}
           ],
           passive: {critChance: 0.15, dmgReduction: 0.15}
         },
@@ -2311,8 +2311,8 @@ const DUNGEONS = [{
       mul: 4,
       cd: 14,
       castTime: 1.5
-    }],
-        passive: {dmgReduction:0.1}
+    ,freeze:true}],
+        passive: {dmgReduction:0.1,wither:true}
   },{
     name: '塔瓦洛克',
     emoji: '🪨',
@@ -2367,8 +2367,8 @@ const DUNGEONS = [{
           wave: 3,
           skills: [
             {name: "龙息术", icon: "🔥", desc: "5倍火焰伤害", type: "dmg", mul: 5, castTime: 2,dot:true,
-          tricks: [{name:"战斗狂怒",icon:"🔥",desc:"接下来5秒攻击+40%且吸血15%",atkBuff:5,leechBuff:5},{name:"不死之躯",icon:"💀",desc:"接下来5秒防御+50%且吸血20%",defBuff:5,leechBuff:5},{name:"终极防御",icon:"🛡️",desc:"回复20%生命且接下来5秒防御+50%",defBuff:5,healPct:0.2}] },
-            {name: "扫尾", icon: "🌀", desc: "6倍AOE伤害", type: "dmg", mul: 6, castTime: 3, aoe: true}
+          tricks: [{name:"战斗狂怒",icon:"🔥",desc:"接下来5秒攻击+40%且吸血15%",atkBuff:5,leechBuff:5,soulDrain:true},{name:"不死之躯",icon:"💀",desc:"接下来5秒防御+50%且吸血20%",defBuff:5,leechBuff:5},{name:"终极防御",icon:"🛡️",desc:"回复20%生命且接下来5秒防御+50%",defBuff:5,healPct:0.2}] },
+            {name: "扫尾", icon: "🌀", desc: "6倍AOE伤害", type: "dmg", mul: 6, castTime: 3, aoe: true,revenge:true}
           ],
           passive: {dodgeChance: 0.2, critChance: 0.15, dmgReduction: 0.1}
         },
@@ -2429,8 +2429,8 @@ const DUNGEONS = [{
       mul: 4.5,
       cd: 14,
       castTime: 1.5
-    , dot: true}],
-        passive: {dmgReduction:0.1}
+    , dot: true,revenge:true}],
+        passive: {dmgReduction:0.1,bomb:true}
   },{
     name: '机械师斯蒂里格',
     emoji: '🔧',
@@ -2476,8 +2476,8 @@ const DUNGEONS = [{
           wave: 3,
           skills: [
             {name: "穿刺", icon: "🗡️", desc: "5倍伤害", type: "dmg", mul: 5, castTime: 2,stun:true,
-          tricks: [{name:"连斩",icon:"🗡️",desc:"下一次攻击造成两次伤害",nextDouble:2},{name:"双刃",icon:"⚔️",desc:"下一次攻击造成双倍伤害",nextDouble:1}] },
-            {name: "虫群风暴", icon: "🦗", desc: "6倍AOE伤害", type: "dmg", mul: 6, castTime: 3, aoe: true}
+          tricks: [{name:"连斩",icon:"🗡️",desc:"下一次攻击造成两次伤害",nextDouble:2,silence:true},{name:"双刃",icon:"⚔️",desc:"下一次攻击造成双倍伤害",nextDouble:1}] },
+            {name: "虫群风暴", icon: "🦗", desc: "6倍AOE伤害", type: "dmg", mul: 6, castTime: 3, aoe: true,frenzy:true}
           ],
           passive: {dodgeChance: 0.2, critChance: 0.15, dmgReduction: 0.1}
         },
@@ -2549,8 +2549,8 @@ const DUNGEONS = [{
       mul: 5,
       cd: 16,
       castTime: 2
-    , dot: true}],
-        passive: {dmgReduction:0.1}
+    , dot: true,bleed:true}],
+        passive: {dmgReduction:0.1,soulDrain:true}
   },{
     name: '女祭司德莉希亚',
     emoji: '🧝‍♀️',
@@ -2605,8 +2605,8 @@ const DUNGEONS = [{
           wave: 3,
           skills: [
             {name: "冲锋", icon: "💨", desc: "5倍伤害", type: "dmg", mul: 5, castTime: 2,stun:true,
-          tricks: [{name:"吸血光环",icon:"🩸",desc:"接下来8秒攻击吸血15%",leechBuff:8},{name:"复苏",icon:"💚",desc:"立即回复15%最大生命",healPct:0.15},{name:"疾风",icon:"💨",desc:"接下来5秒攻速提升60%",spdBuff:5}] },
-            {name: "暗影践踏", icon: "🌑", desc: "6倍AOE伤害", type: "dmg", mul: 6, castTime: 3, aoe: true}
+          tricks: [{name:"吸血光环",icon:"🩸",desc:"接下来8秒攻击吸血15%",leechBuff:8,soulDrain:true},{name:"复苏",icon:"💚",desc:"立即回复15%最大生命",healPct:0.15},{name:"疾风",icon:"💨",desc:"接下来5秒攻速提升60%",spdBuff:5}] },
+            {name: "暗影践踏", icon: "🌑", desc: "6倍AOE伤害", type: "dmg", mul: 6, castTime: 3, aoe: true,silence:true}
           ],
           passive: {dodgeChance: 0.15, critChance: 0.1, atkBonus: 0.2}
         },
@@ -2690,8 +2690,8 @@ const DUNGEONS = [{
       mul: 5,
       cd: 14,
       castTime: 2
-    , stun: true}],
-        passive: {dmgReduction:0.1}
+    , stun: true,wither:true}],
+        passive: {dmgReduction:0.1,soulDrain:true}
   },{
     name: '沃尔坎',
     emoji: '🔥',
@@ -2750,8 +2750,8 @@ const DUNGEONS = [{
       mul: 4.5,
       cd: 14,
       castTime: 1.5
-    }],
-        passive: {dmgReduction:0.1}
+    ,silence:true}],
+        passive: {dmgReduction:0.1,soulDrain:true}
   },{
     name: '黑骑士',
     emoji: '⚫',
@@ -2811,8 +2811,8 @@ const DUNGEONS = [{
           wave: 3,
           skills: [
             {name: "奥术吐息", icon: "🌀", desc: "6倍奥术伤害", type: "dmg", mul: 6, castTime: 2.5,dot:true,
-          tricks: [{name:"双刃",icon:"⚔️",desc:"下一次攻击造成双倍伤害",nextDouble:1},{name:"战吼",icon:"📯",desc:"接下来8秒攻击力提升30%",atkBuff:8}] },
-            {name: "冰霜之触", icon: "❄️", desc: "7倍冰霜伤害", type: "dmg", mul: 7, castTime: 3,slow:true}
+          tricks: [{name:"双刃",icon:"⚔️",desc:"下一次攻击造成双倍伤害",nextDouble:1,decay2:true},{name:"战吼",icon:"📯",desc:"接下来8秒攻击力提升30%",atkBuff:8}] },
+            {name: "冰霜之触", icon: "❄️", desc: "7倍冰霜伤害", type: "dmg", mul: 7, castTime: 3,slow:true,bomb:true}
           ],
           passive: {dodgeChance: 0.2, critChance: 0.2}
         },
@@ -2869,8 +2869,8 @@ const DUNGEONS = [{
           wave: 3,
           skills: [
             {name: "火焰喷射", icon: "🔥", desc: "6倍火焰伤害", type: "dmg", mul: 6, castTime: 2.5,dot:true,
-          tricks: [{name:"血之渴望",icon:"🩸",desc:"接下来5秒攻击吸血20%",leechBuff:5},{name:"疾风",icon:"💨",desc:"接下来5秒攻速提升60%",spdBuff:5}] },
-            {name: "炮击", icon: "💣", desc: "7倍AOE伤害", type: "dmg", mul: 7, castTime: 3.5, aoe: true}
+          tricks: [{name:"血之渴望",icon:"🩸",desc:"接下来5秒攻击吸血20%",leechBuff:5,frenzy:true},{name:"疾风",icon:"💨",desc:"接下来5秒攻速提升60%",spdBuff:5}] },
+            {name: "炮击", icon: "💣", desc: "7倍AOE伤害", type: "dmg", mul: 7, castTime: 3.5, aoe: true,plague:true}
           ],
           passive: {dmgReduction: 0.25, atkBonus: 0.15}
         },
@@ -2942,8 +2942,8 @@ const DUNGEONS = [{
       mul: 6,
       cd: 18,
       castTime: 2.5
-    , weaken: true}],
-        passive: {dmgReduction:0.1}
+    , weaken: true,soulDrain:true}],
+        passive: {dmgReduction:0.1,brittle:true}
   },{
     name: '灵魂吞噬者',
     emoji: '💀',
@@ -2999,8 +2999,8 @@ const DUNGEONS = [{
           wave: 3,
           skills: [
             {name: "火焰之息", icon: "🔥", desc: "6倍火焰伤害+灼烧", type: "dmg", mul: 6, castTime: 2.5, dot: true,
-          tricks: [{name:"吸血光环",icon:"🩸",desc:"接下来8秒攻击吸血15%",leechBuff:8},{name:"血之渴望",icon:"🩸",desc:"接下来5秒攻击吸血20%",leechBuff:5}] },
-            {name: "龙翼打击", icon: "💢", desc: "7倍AOE伤害", type: "dmg", mul: 7, castTime: 3.5, aoe: true}
+          tricks: [{name:"吸血光环",icon:"🩸",desc:"接下来8秒攻击吸血15%",leechBuff:8,bomb:true},{name:"血之渴望",icon:"🩸",desc:"接下来5秒攻击吸血20%",leechBuff:5}] },
+            {name: "龙翼打击", icon: "💢", desc: "7倍AOE伤害", type: "dmg", mul: 7, castTime: 3.5, aoe: true,wither:true}
           ],
           passive: {critChance: 0.2, dmgReduction: 0.2}
         },
@@ -3045,8 +3045,8 @@ const DUNGEONS = [{
           wave: 3,
           skills: [
             {name: "骨刺", icon: "🦴", desc: "6倍伤害", type: "dmg", mul: 6, castTime: 2.5,weaken:true,
-          tricks: [{name:"血之渴望",icon:"🩸",desc:"接下来5秒攻击吸血20%",leechBuff:5},{name:"不死之躯",icon:"💀",desc:"接下来5秒防御+50%且吸血20%",defBuff:5,leechBuff:5}] },
-            {name: "白骨风暴", icon: "💀", desc: "7倍AOE伤害", type: "dmg", mul: 7, castTime: 3.5, aoe: true}
+          tricks: [{name:"血之渴望",icon:"🩸",desc:"接下来5秒攻击吸血20%",leechBuff:5,soulDrain:true},{name:"不死之躯",icon:"💀",desc:"接下来5秒防御+50%且吸血20%",defBuff:5,leechBuff:5}] },
+            {name: "白骨风暴", icon: "💀", desc: "7倍AOE伤害", type: "dmg", mul: 7, castTime: 3.5, aoe: true,silence:true}
           ],
           passive: {critChance: 0.2, dmgReduction: 0.2}
         },
