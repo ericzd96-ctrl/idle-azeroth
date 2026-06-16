@@ -411,15 +411,42 @@ function mobKind(name){
   if(/卫兵|守卫|护卫|盾|龟|蟹|甲|岩|石|骑士|战士|督军|领主/.test(name))return 'tank';
   return null;
 }
+// 小怪技能池(20种,瞬发低倍率,可带debuff)
+const MON_SKILLS = [
+  {name:'重击',icon:'💥',mul:1.5,stun:1000},
+  {name:'火球术',icon:'🔥',mul:1.5,dot:3},
+  {name:'寒冰箭',icon:'❄️',mul:1.5,slow:true},
+  {name:'暗影箭',icon:'🌑',mul:1.8,weaken:true},
+  {name:'撕裂',icon:'🩸',mul:1.5,dot:2},
+  {name:'猛击',icon:'👊',mul:2.0,stun:800},
+  {name:'毒刃',icon:'🗡️',mul:1.5,dot:4},
+  {name:'冲锋',icon:'🐗',mul:1.8,stun:600},
+  {name:'雷霆一击',icon:'⚡',mul:1.5,slow:true},
+  {name:'破甲',icon:'🔨',mul:1.5,weaken:true},
+  {name:'旋风斩',icon:'🌀',mul:1.8},
+  {name:'灼热之触',icon:'🔥',mul:1.5,dot:3},
+  {name:'冰霜之握',icon:'❄️',mul:1.5,slow:true},
+  {name:'暗影打击',icon:'💀',mul:2.0,weaken:true},
+  {name:'穿刺',icon:'🗡️',mul:1.8,dot:2},
+  {name:'地震',icon:'🌍',mul:1.5,stun:800},
+  {name:'毒液喷吐',icon:'🦂',mul:1.5,dot:5},
+  {name:'骨刺',icon:'🦴',mul:1.8,stun:1000},
+  {name:'暗言术·痛',icon:'☠️',mul:1.5,dot:3},
+  {name:'风暴打击',icon:'⚡',mul:2.0,slow:true},
+];
+function pickMonSkill(){return MON_SKILLS[Math.floor(Math.random()*MON_SKILLS.length)];}
+
 function makeMonster(name,lvl,isBoss,maxRarity){
   const hp=Math.floor((100+lvl*lvl*6.0)*(isBoss?15:1));
   const kind=isBoss?null:mobKind(name);   // boss 走自己的被动,小怪用身份技能
+  const ms=pickMonSkill();
   return {name,isBoss,lvl,hpMax:hp,hp,atk:Math.floor((8+lvl*3.0)*(isBoss?1.8:1)),
     def:Math.floor((3+lvl*1.3)*(isBoss?1.5:1)),baseGold:Math.floor(5+lvl*1.5),
     baseXp:Math.floor(30+lvl*5.0),goldReward:Math.floor((5+lvl*1.5)*(isBoss?18:1)),
     honorReward:isBoss?Math.floor(15+lvl*3):0,dropRate:isBoss?1.0:0.18,
     gemChance:isBoss?1.0:0.015,maxRarity:maxRarity||'uncommon',_uid:monUidSeq++,
-    kind, _lastSkill:Date.now()-rng(0,3000),                  // 身份技能冷却
+    kind, _monSkill:isBoss?null:ms,
+    _lastSkill:Date.now()-rng(1000,4000),                  // 进场1-4秒后首放
     dmgReduction:kind==='tank'?0.30:0,                        // 坦克:受到伤害-30%
     atkInterval:(isBoss?1400:1700)+rng(-200,200),    // 每只独立攻速(带抖动,避免同步出手)
     _lastAtk:Date.now()-rng(0,1200)};                // 进场即错峰
@@ -494,6 +521,7 @@ function spawnDungeonMonster(){
     goldReward:Math.floor((10+power*3)*(isBoss?15:1.5)*scale),honorReward:isBoss?Math.floor(25+power*2.5):2,
     dropRate:isBoss?1.0:0.35,gemChance:isBoss?0.8:0.05,maxRarity:bossMaxRarity,fromDungeon:true,_uid:monUidSeq++,
     _isRaidFinal:isRaid&&isFinalBoss,_isRaid:isRaid,
+    _monSkill:isBoss?null:pickMonSkill(),_lastSkill:Date.now()-rng(1000,4000),
     atkInterval:(isBoss?1400:1700)+rng(-200,200),_lastAtk:Date.now()-rng(0,1200)});
   // 大秘境词缀:修改怪物属性
   const mon = state.currentMonsters[state.currentMonsters.length-1];
@@ -761,12 +789,16 @@ function tickBattle(now){
     if(m._trickDefBuff&&m._trickDefBuff>now)m.def=Math.floor(m.def*1.5);
     // 双倍攻击
     let doubleAtk=m._nextAtkDouble&&m._nextAtkDouble>0;if(doubleAtk)m._nextAtkDouble--;
-    // 野外小怪身份技能(每~5秒一次):算伤害加成;英雄专属副作用(减速/日志)延后到确实命中英雄时再施加
-    let kindFloat=null,kindColor='#f59e0b',kindChill=false,kindLog=null;
-    if(m.kind&&now-(m._lastSkill||0)>5000){m._lastSkill=now;
-      if(m.kind==='charger'){matk=Math.floor(matk*2.5);kindFloat='🐗冲锋!';kindLog=['🐗 '+m.name+' 发动冲锋!','bad'];}
-      else if(m.kind==='caster'){matk=Math.floor(matk*2.0);kindChill=true;kindFloat='✨法术!';kindColor='#a78bfa';kindLog=['✨ '+m.name+' 施放法术(减速)!','bad'];}
-      else if(m.kind==='tank'){const heal=Math.floor(m.hpMax*0.05);m.hp=Math.min(m.hpMax,m.hp+heal);showFloat($('mon-emoji'),'💚+'+heal,'#6ee7b7');}
+    // 小怪技能(每3秒一次,瞬发低倍率,可带debuff)
+    let kindFloat=null,kindColor='#f59e0b',kindChill=false,kindLog=null,kindStun=0,kindDot=0,kindWeaken=false;
+    if(!m.isBoss&&m._monSkill&&now-(m._lastSkill||0)>3000){
+      m._lastSkill=now;const sk=m._monSkill;
+      matk=Math.floor(matk*sk.mul);kindFloat=sk.icon+sk.name+'!';kindColor='#fbbf24';
+      if(sk.stun)kindStun=sk.stun;
+      if(sk.dot)kindDot=sk.dot;
+      if(sk.slow)kindChill=true;
+      if(sk.weaken)kindWeaken=true;
+      kindLog=[sk.icon+' '+m.name+' 释放 '+sk.name+'!','bad'];
     }
     m.threat=(m.threat||0)+matk*0.6;
     // —— 仇恨分配:存活随从按定位概率把这次攻击吸引到自己身上(坦克更高)——
@@ -784,6 +816,9 @@ function tickBattle(now){
     if(state.hero.dodge&&Math.random()*100<state.hero.dodge){showFloat($('hero-emoji'),'闪避','#9ca3af');continue;}   // 英雄"闪避"天赋
     if(kindFloat)showFloat($('hero-emoji'),kindFloat,kindColor);
     if(kindChill&&typeof applyHeroDebuff==='function')applyHeroDebuff('chill',3000);
+    if(kindStun)state.heroStunUntil=now+kindStun;
+    if(kindDot&&typeof applyHeroDebuff==='function')applyHeroDebuff('burn',4000,{dps:Math.max(1,kindDot)});
+    if(kindWeaken&&typeof applyHeroDebuff==='function')applyHeroDebuff('weaken',3000);
     if(kindLog)log(kindLog[0],kindLog[1]);
     const critRate=trickCrit?100:(m.critChance?m.critChance*100:5);
     const d=calcDmg(matk,state.hero.def,critRate,(m.critMult?m.critMult*100:150),trickCrit,state.hero.lvl,m.lvl);let taken=d.dmg;
