@@ -1036,13 +1036,17 @@ function castSkill(skillKey,manual){
   const now=Date.now();
   if(state.skillCooldowns[skillKey]&&state.skillCooldowns[skillKey]>now){if(manual){const left=Math.ceil((state.skillCooldowns[skillKey]-now)/1000);log(sk.name+' 冷却中('+left+'秒)','bad');}return;}
   let cost=sk.mp;if(state.hero.costReduction>0)cost=Math.max(1,Math.floor(sk.mp*(1-state.hero.costReduction/100)));
+  if(sk.consumeRage){cost=Math.min(state.resource,10);}   // 斩杀:至少需10怒,但会消耗全部
   if(state.resource<cost){if(manual)log(c.resource+'不足','bad');return;}
-  state.resource-=cost;
+  if(!sk.consumeRage)state.resource-=cost;   // 斩杀在伤害计算时消耗全部怒气
   const cdSec=getSkillCd(sk);state.skillCooldowns[skillKey]=now+cdSec*1000/castSpeedMul();   // CD 受 倍速×极速 影响
   if(sk.type==='dmg'){const mon=state.currentMonsters[0];if(!mon)return;
+    // 斩杀:消耗所有怒气,每点怒气+1%伤害
+    let rageBonus=1;
+    if(sk.consumeRage&&c.resKey==='rage'&&state.resource>0){rageBonus=1+state.resource/100;log('💀 消耗 '+state.resource+' 怒气,伤害 +'+(state.resource)+'%','good');state.resource=0;}
     const isAOE=(sk.mul>=4&&getAliveMonsters().length>1);
     let dmgDone=0;
-    const cb=castDmgBonus(sk)*masteryDmgMult();   // 读条技能的伤害补偿(法系) + 精通伤害增幅
+    const cb=castDmgBonus(sk)*masteryDmgMult()*rageBonus;   // 读条技能的伤害补偿(法系) + 精通伤害增幅 + 怒气加成
     if(isAOE){dmgDone=dealDmgToAll(state.hero.atk*cb,mon.def,state.hero.crit,state.hero.critd,sk.mul,sk.alwaysCrit);log(sk.icon+' '+sk.name+'! AOE '+dmgDone+' 总伤害','good');}
     else if(mon.dodgeChance&&Math.random()<mon.dodgeChance){showFloat($('mon-emoji'),'闪避','#9ca3af');log(sk.icon+' '+sk.name+' 被 '+mon.name+' 闪避!','bad');}
     else{const d=calcDmg(state.hero.atk*sk.mul*cb,heroTargetDef(mon),state.hero.crit,state.hero.critd,sk.alwaysCrit,mon.lvl,state.hero.lvl);let dd=d.dmg;if(mon.dmgReduction)dd=Math.max(1,Math.floor(dd*(1-mon.dmgReduction)));mon.hp-=dd;dmgDone=dd;trackDmg('hero',dd);showFloat($('mon-emoji'),'-'+dd,sk.alwaysCrit?'#fbbf24':'#a335ee');log(sk.icon+' '+sk.name+'! '+dd+' 伤害'+(sk.alwaysCrit?' (必暴)':''),'good');}

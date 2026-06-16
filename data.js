@@ -102,7 +102,7 @@ const CLASSES = {
       battleShout:  {name:'战斗怒吼', icon:'📯', desc:'15秒攻击+30%', mp:30, type:'buff', buff:'battleShout', duration:15000, unlockLvl:22},
       mortalStrike: {name:'致死打击', icon:'⚔️', desc:'3倍攻击,必定暴击', mp:32, type:'dmg', mul:3, alwaysCrit:true},
       bloodthirst:  {name:'嗜血', icon:'🩸', desc:'3倍攻击,吸血50%', mp:40, type:'dmg', mul:4, lifeSteal:0.5},
-      execute:      {name:'斩杀', icon:'💀', desc:'3倍攻击,残血终结', mp:35, type:'dmg', mul:7, unlockLvl:42},
+      execute:      {name:'斩杀', icon:'💀', desc:'5倍攻击,消耗所有怒气,每点怒气+1%伤害', mp:0, type:'dmg', mul:5, consumeRage:true, unlockLvl:42},
       sunderArmor:  {name:'破甲攻击', icon:'🔨', desc:'3倍攻击,降低敌人防御15秒', mp:28, type:'dmg', mul:3, debuff:'sunder', unlockLvl:30},
       sweepingStrikes:{name:'横扫攻击',icon:'🌀', desc:'5倍攻击,范围横扫', mp:45, type:'dmg', mul:5, unlockLvl:56},
       bladestorm:   {name:'剑刃风暴', icon:'🌪️', desc:'8倍攻击,毁灭旋风', mp:60, type:'dmg', mul:8, unlockLvl:72},
