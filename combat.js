@@ -858,12 +858,14 @@ function tickBattle(now){
     const rawCd=((bossData?.skills||[])[bossSkillIdx%(bossData?.skills||[]).length])?.cd||10;
     const skillCd=Math.max(3,Math.floor(rawCd*0.6));   // CD加速40%,但最低3秒间隔
     if(bossData?.skills?.length&&now-lastBossSkill>skillCd*1000){const sk=bossData.skills[bossSkillIdx%bossData.skills.length];let castTime=sk.castTime!==undefined?sk.castTime:2;const instant=mon.instantCast&&Math.random()<0.35;if(instant)castTime=0;casting={isBoss:true,bossName:mon.bossName,icon:sk.icon,type:sk.type,heal:sk.heal,mul:sk.mul,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,aoe:sk.aoe,startTime:now,duration:castTime*1000};log('💀 '+mon.bossName+(instant?' 瞬发 ':' 开始施放 ')+sk.name+'!'+(instant?'(无法打断)':''),'bad');lastBossSkill=now;bossSkillIdx++;}
-    // BOSS技巧(不占技能池,随机触发,有预告)
+    // BOSS技巧(不占技能池,开局3秒必触发,之后每秒15%概率)
     if(!mon._lastTrick)mon._lastTrick=0;
-    if(bossData?.tricks?.length&&now-mon._lastTrick>8000&&Math.random()<0.12){
+    if(!mon._trickFirst)mon._trickFirst=false;
+    const trickReady=!mon._trickFirst?(now-mon._lastTrick>3000):(now-mon._lastTrick>1000&&Math.random()<0.15);
+    if(bossData?.tricks?.length&&trickReady){
       const trick=bossData.tricks[Math.floor(Math.random()*bossData.tricks.length)];
       log('⚡ '+mon.bossName+' 使用技巧 '+trick.icon+trick.name+'!','bad');
-      mon._lastTrick=now;
+      mon._lastTrick=now;mon._trickFirst=true;
       if(trick.nextDouble)mon._nextAtkDouble=(mon._nextAtkDouble||0)+1;
       if(trick.atkBuff)mon._trickAtkBuff=now+trick.atkBuff*1000;
       if(trick.spdBuff)mon._trickSpdBuff=now+trick.spdBuff*1000;
