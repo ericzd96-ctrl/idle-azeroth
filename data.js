@@ -1027,7 +1027,7 @@ const MAPS = [
       passive:{dmgReduction:0.25,critChance:0.3,dodgeChance:0.2,atkBonus:0.2,leech:0.15 },
       
       tricks: [{name:"狂怒",icon:"💢",desc:"接下来5秒攻击力提升50%",atkBuff:5},{name:"双刃",icon:"⚔️",desc:"下一次攻击造成双倍伤害",nextDouble:1}],
-      skills:[{name:"霜之哀伤",icon:"🗡️",desc:"7倍伤害+吸血30%",type:"dmg",mul:7,lifeSteal:0.3,castTime:2},{name:"死亡缠绕",icon:"💀",desc:"8倍暗影伤害",type:"dmg",mul:8,castTime:3},{name:"寒冰风暴",icon:"❄️",desc:"8倍AOE+减速",type:"dmg",mul:8,slow:true,castTime:3.5},{name:"亡者大军",icon:"🧟",desc:"9倍伤害",type:"dmg",mul:9,castTime:4,stun:true},{name:"巫妖王之怒",icon:"👑",desc:"10倍AOE暗影伤害",type:"dmg",mul:10,castTime:5,freeze:true,fear:true,decay2:true,freeze:true,fear:true,decay2:true}] } },
+      skills:[{name:"霜之哀伤",icon:"🗡️",desc:"7倍伤害+吸血30%",type:"dmg",mul:7,lifeSteal:0.3,castTime:2},{name:"死亡缠绕",icon:"💀",desc:"8倍暗影伤害",type:"dmg",mul:8,castTime:3},{name:"寒冰风暴",icon:"❄️",desc:"8倍AOE+减速",type:"dmg",mul:8,slow:true,castTime:3.5},{name:"亡者大军",icon:"🧟",desc:"9倍伤害",type:"dmg",mul:9,castTime:4,stun:true},{name:"巫妖王之怒",icon:"👑",desc:"10倍AOE暗影伤害",type:"dmg",mul:10,castTime:5,freeze:true,fear:true,decay2:true}] } },
   { key:'lochmodan', name:'洛克莫丹', icon:'🏔️', faction:'联盟', lvlRange:[10,18],
     desc:'丹莫罗之外的雪山湖泊',
     sub:[
