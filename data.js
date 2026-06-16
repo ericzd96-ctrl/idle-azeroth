@@ -2158,7 +2158,7 @@ const DUNGEONS = [{
           emoji: "👹",
           wave: 3,
           skills: [
-            {name: "暗影冲击", icon: "🌑", desc: "4倍暗影伤害", type: "dmg", mul: 4, castTime: 2},
+            {name: "暗影冲击", icon: "🌑", desc: "4倍暗影伤害", type: "dmg", mul: 4, castTime: 2,weaken:true},
             {name: "末日诅咒", icon: "🧿", desc: "5倍伤害+灼烧", type: "dmg", mul: 5, castTime: 3, dot: true}
           ],
           passive: {critChance: 0.15, dmgReduction: 0.15}
@@ -2179,7 +2179,7 @@ const DUNGEONS = [{
           wave: 8,
           skills: [
             {name: "火焰之雨", icon: "🌋", desc: "5倍AOE火焰伤害", type: "dmg", mul: 5, castTime: 3, aoe: true},
-            {name: "熔岩护盾", icon: "🛡️", desc: "4倍伤害+减伤", type: "dmg", mul: 4, castTime: 2}
+            {name: "熔岩护盾", icon: "🛡️", desc: "4倍伤害+减伤", type: "dmg", mul: 4, castTime: 2,dot:true}
           ],
           passive: {dodgeChance: 0.1, critChance: 0.1, dmgReduction: 0.2}
         },
@@ -2188,7 +2188,7 @@ const DUNGEONS = [{
           emoji: "🪨",
           wave: 11,
           skills: [
-            {name: "岩石投掷", icon: "🪨", desc: "5倍伤害", type: "dmg", mul: 5, castTime: 2},
+            {name: "岩石投掷", icon: "🪨", desc: "5倍伤害", type: "dmg", mul: 5, castTime: 2,stun:true},
             {name: "地震", icon: "🌍", desc: "6倍AOE伤害", type: "dmg", mul: 6, castTime: 3, aoe: true},
             {name: "岩浆爆发", icon: "🌋", desc: "7倍伤害+灼烧", type: "dmg", mul: 7, castTime: 3.5, dot: true}
           ],
@@ -2199,9 +2199,9 @@ const DUNGEONS = [{
           emoji: "🔥",
           wave: 14,
           skills: [
-            {name: "萨弗拉斯之击", icon: "🔨", desc: "7倍火焰伤害", type: "dmg", mul: 7, castTime: 3},
+            {name: "萨弗拉斯之击", icon: "🔨", desc: "7倍火焰伤害", type: "dmg", mul: 7, castTime: 3,dot:true},
             {name: "熔岩爆发", icon: "🌋", desc: "8倍AOE+灼烧", type: "dmg", mul: 8, castTime: 3.5, dot: true, aoe: true},
-            {name: "火焰之子", icon: "🔥", desc: "6倍伤害+召唤", type: "dmg", mul: 6, castTime: 2.5},
+            {name: "火焰之子", icon: "🔥", desc: "6倍伤害+召唤", type: "dmg", mul: 6, castTime: 2.5,dot:true},
             {name: "炎魔之怒", icon: "💥", desc: "9倍AOE伤害", type: "dmg", mul: 9, castTime: 4, aoe: true}
           ],
           passive: {dodgeChance: 0.15, critChance: 0.25, dmgReduction: 0.25, atkBonus: 0.2}
@@ -2282,7 +2282,7 @@ const DUNGEONS = [{
           emoji: "🐉",
           wave: 3,
           skills: [
-            {name: "龙息术", icon: "🔥", desc: "5倍火焰伤害", type: "dmg", mul: 5, castTime: 2},
+            {name: "龙息术", icon: "🔥", desc: "5倍火焰伤害", type: "dmg", mul: 5, castTime: 2,dot:true},
             {name: "扫尾", icon: "🌀", desc: "6倍AOE伤害", type: "dmg", mul: 6, castTime: 3, aoe: true}
           ],
           passive: {dodgeChance: 0.2, critChance: 0.15, dmgReduction: 0.1}
@@ -2292,7 +2292,7 @@ const DUNGEONS = [{
           emoji: "🐲",
           wave: 6,
           skills: [
-            {name: "暗影烈焰", icon: "🔥", desc: "6倍暗影火焰伤害", type: "dmg", mul: 6, castTime: 2.5},
+            {name: "暗影烈焰", icon: "🔥", desc: "6倍暗影火焰伤害", type: "dmg", mul: 6, castTime: 2.5,weaken:true},
             {name: "龙翼打击", icon: "💢", desc: "5倍AOE+减速", type: "dmg", mul: 5, castTime: 3, slow: true, aoe: true}
           ],
           passive: {critChance: 0.1, dmgReduction: 0.2, atkBonus: 0.15}
@@ -2304,7 +2304,7 @@ const DUNGEONS = [{
           skills: [
             {name: "时光扭曲", icon: "🌀", desc: "5倍伤害+减速", type: "dmg", mul: 5, castTime: 2.5, slow: true},
             {name: "多种吐息", icon: "🌈", desc: "7倍AOE伤害", type: "dmg", mul: 7, castTime: 3.5, aoe: true},
-            {name: "龙血之怒", icon: "💢", desc: "8倍伤害", type: "dmg", mul: 8, castTime: 4}
+            {name: "龙血之怒", icon: "💢", desc: "8倍伤害", type: "dmg", mul: 8, castTime: 4,dot:true}
           ],
           passive: {dodgeChance: 0.1, critChance: 0.2, dmgReduction: 0.2}
         },
@@ -2313,9 +2313,9 @@ const DUNGEONS = [{
           emoji: "🐉",
           wave: 12,
           skills: [
-            {name: "暗影烈焰", icon: "🔥", desc: "7倍暗影火焰伤害", type: "dmg", mul: 7, castTime: 3},
+            {name: "暗影烈焰", icon: "🔥", desc: "7倍暗影火焰伤害", type: "dmg", mul: 7, castTime: 3,weaken:true},
             {name: "龙族召唤", icon: "🐲", desc: "8倍AOE伤害", type: "dmg", mul: 8, castTime: 4, aoe: true},
-            {name: "奈法利安之怒", icon: "💢", desc: "9倍伤害+恐惧", type: "dmg", mul: 9, castTime: 4},
+            {name: "奈法利安之怒", icon: "💢", desc: "9倍伤害+恐惧", type: "dmg", mul: 9, castTime: 4,weaken:true},
             {name: "黑龙之息", icon: "🔥", desc: "10倍AOE火焰伤害", type: "dmg", mul: 10, castTime: 5, dot: true, aoe: true}
           ],
           passive: {dodgeChance: 0.15, critChance: 0.25, dmgReduction: 0.25, atkBonus: 0.2}
@@ -2387,7 +2387,7 @@ const DUNGEONS = [{
           emoji: "🕷️",
           wave: 3,
           skills: [
-            {name: "穿刺", icon: "🗡️", desc: "5倍伤害", type: "dmg", mul: 5, castTime: 2},
+            {name: "穿刺", icon: "🗡️", desc: "5倍伤害", type: "dmg", mul: 5, castTime: 2,stun:true},
             {name: "虫群风暴", icon: "🦗", desc: "6倍AOE伤害", type: "dmg", mul: 6, castTime: 3, aoe: true}
           ],
           passive: {dodgeChance: 0.2, critChance: 0.15, dmgReduction: 0.1}
@@ -2398,7 +2398,7 @@ const DUNGEONS = [{
           wave: 6,
           skills: [
             {name: "瘟疫", icon: "🦠", desc: "5倍伤害+灼烧", type: "dmg", mul: 5, castTime: 2.5, dot: true},
-            {name: "亡者诅咒", icon: "💀", desc: "6倍暗影伤害", type: "dmg", mul: 6, castTime: 3}
+            {name: "亡者诅咒", icon: "💀", desc: "6倍暗影伤害", type: "dmg", mul: 6, castTime: 3,weaken:true}
           ],
           passive: {critChance: 0.2, dmgReduction: 0.1, atkBonus: 0.1}
         },
@@ -2408,7 +2408,7 @@ const DUNGEONS = [{
           wave: 9,
           skills: [
             {name: "疾病之云", icon: "☁️", desc: "6倍AOE+灼烧", type: "dmg", mul: 6, castTime: 3, dot: true, aoe: true},
-            {name: "天灾之握", icon: "💀", desc: "7倍伤害", type: "dmg", mul: 7, castTime: 3.5},
+            {name: "天灾之握", icon: "💀", desc: "7倍伤害", type: "dmg", mul: 7, castTime: 3.5,weaken:true},
             {name: "腐烂", icon: "🦠", desc: "6倍伤害+减速", type: "dmg", mul: 6, castTime: 3, slow: true}
           ],
           passive: {critChance: 0.15, dmgReduction: 0.2, atkBonus: 0.15}
@@ -2418,7 +2418,7 @@ const DUNGEONS = [{
           emoji: "⚡",
           wave: 12,
           skills: [
-            {name: "闪电链", icon: "⚡", desc: "7倍自然伤害", type: "dmg", mul: 7, castTime: 3},
+            {name: "闪电链", icon: "⚡", desc: "7倍自然伤害", type: "dmg", mul: 7, castTime: 3,stun:true},
             {name: "极性转换", icon: "🔄", desc: "6倍AOE伤害", type: "dmg", mul: 6, castTime: 3, aoe: true}
           ],
           passive: {dodgeChance: 0.1, critChance: 0.25, dmgReduction: 0.15}
@@ -2428,8 +2428,8 @@ const DUNGEONS = [{
           emoji: "💀",
           wave: 15,
           skills: [
-            {name: "冰霜冲击", icon: "❄️", desc: "8倍冰霜伤害", type: "dmg", mul: 8, castTime: 3},
-            {name: "暗影裂隙", icon: "🌑", desc: "9倍暗影伤害", type: "dmg", mul: 9, castTime: 4},
+            {name: "冰霜冲击", icon: "❄️", desc: "8倍冰霜伤害", type: "dmg", mul: 8, castTime: 3,slow:true},
+            {name: "暗影裂隙", icon: "🌑", desc: "9倍暗影伤害", type: "dmg", mul: 9, castTime: 4,weaken:true},
             {name: "亡者大军", icon: "🧟", desc: "8倍AOE伤害", type: "dmg", mul: 8, castTime: 3.5, aoe: true},
             {name: "巫妖之怒", icon: "👑", desc: "10倍伤害+灼烧", type: "dmg", mul: 10, castTime: 5, dot: true}
           ],
@@ -2511,7 +2511,7 @@ const DUNGEONS = [{
           emoji: "🐴",
           wave: 3,
           skills: [
-            {name: "冲锋", icon: "💨", desc: "5倍伤害", type: "dmg", mul: 5, castTime: 2},
+            {name: "冲锋", icon: "💨", desc: "5倍伤害", type: "dmg", mul: 5, castTime: 2,stun:true},
             {name: "暗影践踏", icon: "🌑", desc: "6倍AOE伤害", type: "dmg", mul: 6, castTime: 3, aoe: true}
           ],
           passive: {dodgeChance: 0.15, critChance: 0.1, atkBonus: 0.2}
@@ -2522,7 +2522,7 @@ const DUNGEONS = [{
           wave: 6,
           skills: [
             {name: "致残打击", icon: "🗡️", desc: "6倍伤害+减速", type: "dmg", mul: 6, castTime: 2.5, slow: true},
-            {name: "暗杀", icon: "🔪", desc: "7倍必暴伤害", type: "dmg", mul: 7, castTime: 3, alwaysCrit: true}
+            {name: "暗杀", icon: "🔪", desc: "7倍必暴伤害", type: "dmg", mul: 7, castTime: 3, alwaysCrit: true,weaken:true}
           ],
           passive: {dodgeChance: 0.15, critChance: 0.25, dmgReduction: 0.1}
         },
@@ -2531,7 +2531,7 @@ const DUNGEONS = [{
           emoji: "🤖",
           wave: 9,
           skills: [
-            {name: "奥术弹幕", icon: "🌀", desc: "6倍奥术伤害", type: "dmg", mul: 6, castTime: 2.5},
+            {name: "奥术弹幕", icon: "🌀", desc: "6倍奥术伤害", type: "dmg", mul: 6, castTime: 2.5,weaken:true},
             {name: "能量过载", icon: "⚡", desc: "7倍AOE伤害", type: "dmg", mul: 7, castTime: 3.5, aoe: true},
             {name: "电弧", icon: "⚡", desc: "6倍伤害+减速", type: "dmg", mul: 6, castTime: 3, slow: true}
           ],
@@ -2690,8 +2690,8 @@ const DUNGEONS = [{
           emoji: "🐉",
           wave: 3,
           skills: [
-            {name: "奥术吐息", icon: "🌀", desc: "6倍奥术伤害", type: "dmg", mul: 6, castTime: 2.5},
-            {name: "冰霜之触", icon: "❄️", desc: "7倍冰霜伤害", type: "dmg", mul: 7, castTime: 3}
+            {name: "奥术吐息", icon: "🌀", desc: "6倍奥术伤害", type: "dmg", mul: 6, castTime: 2.5,dot:true},
+            {name: "冰霜之触", icon: "❄️", desc: "7倍冰霜伤害", type: "dmg", mul: 7, castTime: 3,slow:true}
           ],
           passive: {dodgeChance: 0.2, critChance: 0.2}
         },
@@ -2700,7 +2700,7 @@ const DUNGEONS = [{
           emoji: "😈",
           wave: 6,
           skills: [
-            {name: "陨石打击", icon: "☄️", desc: "7倍火焰伤害", type: "dmg", mul: 7, castTime: 3},
+            {name: "陨石打击", icon: "☄️", desc: "7倍火焰伤害", type: "dmg", mul: 7, castTime: 3,dot:true},
             {name: "燃烧", icon: "🔥", desc: "6倍AOE+灼烧", type: "dmg", mul: 6, castTime: 3, dot: true, aoe: true}
           ],
           passive: {critChance: 0.1, dmgReduction: 0.15, atkBonus: 0.25}
@@ -2710,7 +2710,7 @@ const DUNGEONS = [{
           emoji: "🌑",
           wave: 9,
           skills: [
-            {name: "暗影之怒", icon: "💢", desc: "7倍暗影伤害", type: "dmg", mul: 7, castTime: 3},
+            {name: "暗影之怒", icon: "💢", desc: "7倍暗影伤害", type: "dmg", mul: 7, castTime: 3,weaken:true},
             {name: "负能量", icon: "🖤", desc: "8倍AOE伤害", type: "dmg", mul: 8, castTime: 4, aoe: true},
             {name: "熵", icon: "🌀", desc: "7倍伤害+减速", type: "dmg", mul: 7, castTime: 3, slow: true}
           ],
@@ -2721,7 +2721,7 @@ const DUNGEONS = [{
           emoji: "😈",
           wave: 12,
           skills: [
-            {name: "欺诈者之触", icon: "👿", desc: "8倍暗影伤害", type: "dmg", mul: 8, castTime: 3},
+            {name: "欺诈者之触", icon: "👿", desc: "8倍暗影伤害", type: "dmg", mul: 8, castTime: 3,weaken:true},
             {name: "末日火雨", icon: "🌋", desc: "9倍AOE火焰伤害", type: "dmg", mul: 9, castTime: 4, dot: true, aoe: true},
             {name: "黑暗", icon: "🌑", desc: "8倍伤害+减速", type: "dmg", mul: 8, castTime: 3.5, slow: true},
             {name: "军团之怒", icon: "😈", desc: "10倍AOE伤害", type: "dmg", mul: 10, castTime: 5, aoe: true}
@@ -2744,7 +2744,7 @@ const DUNGEONS = [{
           emoji: "🤖",
           wave: 3,
           skills: [
-            {name: "火焰喷射", icon: "🔥", desc: "6倍火焰伤害", type: "dmg", mul: 6, castTime: 2.5},
+            {name: "火焰喷射", icon: "🔥", desc: "6倍火焰伤害", type: "dmg", mul: 6, castTime: 2.5,dot:true},
             {name: "炮击", icon: "💣", desc: "7倍AOE伤害", type: "dmg", mul: 7, castTime: 3.5, aoe: true}
           ],
           passive: {dmgReduction: 0.25, atkBonus: 0.15}
@@ -2754,7 +2754,7 @@ const DUNGEONS = [{
           emoji: "🤖",
           wave: 6,
           skills: [
-            {name: "重力炸弹", icon: "💣", desc: "7倍伤害", type: "dmg", mul: 7, castTime: 3},
+            {name: "重力炸弹", icon: "💣", desc: "7倍伤害", type: "dmg", mul: 7, castTime: 3,weaken:true},
             {name: "拆解", icon: "🔧", desc: "6倍AOE+减速", type: "dmg", mul: 6, castTime: 3, slow: true, aoe: true}
           ],
           passive: {dodgeChance: 0.1, critChance: 0.2, dmgReduction: 0.2}
@@ -2764,7 +2764,7 @@ const DUNGEONS = [{
           emoji: "⚡",
           wave: 9,
           skills: [
-            {name: "闪电链", icon: "⚡", desc: "7倍自然伤害", type: "dmg", mul: 7, castTime: 3},
+            {name: "闪电链", icon: "⚡", desc: "7倍自然伤害", type: "dmg", mul: 7, castTime: 3,stun:true},
             {name: "过载", icon: "💥", desc: "8倍AOE伤害", type: "dmg", mul: 8, castTime: 4, aoe: true}
           ],
           passive: {dodgeChance: 0.15, critChance: 0.25, dmgReduction: 0.15}
@@ -2774,7 +2774,7 @@ const DUNGEONS = [{
           emoji: "👹",
           wave: 12,
           skills: [
-            {name: "暗影撞击", icon: "🌑", desc: "8倍暗影伤害", type: "dmg", mul: 8, castTime: 3.5},
+            {name: "暗影撞击", icon: "🌑", desc: "8倍暗影伤害", type: "dmg", mul: 8, castTime: 3.5,weaken:true},
             {name: "无面者之怒", icon: "💢", desc: "7倍AOE伤害", type: "dmg", mul: 7, castTime: 3, aoe: true},
             {name: "虚空", icon: "🌌", desc: "8倍伤害+减速", type: "dmg", mul: 8, castTime: 4, slow: true}
           ],
@@ -2785,7 +2785,7 @@ const DUNGEONS = [{
           emoji: "🐙",
           wave: 15,
           skills: [
-            {name: "精神鞭笞", icon: "🌀", desc: "8倍暗影伤害", type: "dmg", mul: 8, castTime: 3},
+            {name: "精神鞭笞", icon: "🌀", desc: "8倍暗影伤害", type: "dmg", mul: 8, castTime: 3,weaken:true},
             {name: "疯狂", icon: "👁️", desc: "9倍AOE+灼烧", type: "dmg", mul: 9, castTime: 4, dot: true, aoe: true},
             {name: "千喉之兽", icon: "🐙", desc: "8倍伤害+减速", type: "dmg", mul: 8, castTime: 3.5, slow: true},
             {name: "尤格萨隆之影", icon: "💀", desc: "10倍暗影AOE", type: "dmg", mul: 10, castTime: 5, aoe: true}
@@ -2879,9 +2879,9 @@ const DUNGEONS = [{
           emoji: "🐲",
           wave: 6,
           skills: [
-            {name: "暗影烈焰", icon: "🔥", desc: "7倍暗影火焰伤害", type: "dmg", mul: 7, castTime: 3},
+            {name: "暗影烈焰", icon: "🔥", desc: "7倍暗影火焰伤害", type: "dmg", mul: 7, castTime: 3,weaken:true},
             {name: "暮光之息", icon: "🌑", desc: "8倍AOE伤害", type: "dmg", mul: 8, castTime: 4, aoe: true},
-            {name: "暮光屏障", icon: "🛡️", desc: "6倍伤害+减伤", type: "dmg", mul: 6, castTime: 3}
+            {name: "暮光屏障", icon: "🛡️", desc: "6倍伤害+减伤", type: "dmg", mul: 6, castTime: 3,spdBuff:true}
           ],
           passive: {critChance: 0.15, dmgReduction: 0.2, atkBonus: 0.25}
         },
@@ -2890,7 +2890,7 @@ const DUNGEONS = [{
           emoji: "🐉",
           wave: 9,
           skills: [
-            {name: "暮光切割", icon: "🌗", desc: "8倍暗影伤害", type: "dmg", mul: 8, castTime: 3},
+            {name: "暮光切割", icon: "🌗", desc: "8倍暗影伤害", type: "dmg", mul: 8, castTime: 3,weaken:true},
             {name: "虚空之息", icon: "🌌", desc: "9倍AOE+灼烧", type: "dmg", mul: 9, castTime: 4, dot: true, aoe: true},
             {name: "暮光毁灭", icon: "💥", desc: "10倍AOE伤害", type: "dmg", mul: 10, castTime: 5, aoe: true}
           ],
@@ -2912,7 +2912,7 @@ const DUNGEONS = [{
           emoji: "💀",
           wave: 3,
           skills: [
-            {name: "骨刺", icon: "🦴", desc: "6倍伤害", type: "dmg", mul: 6, castTime: 2.5},
+            {name: "骨刺", icon: "🦴", desc: "6倍伤害", type: "dmg", mul: 6, castTime: 2.5,weaken:true},
             {name: "白骨风暴", icon: "💀", desc: "7倍AOE伤害", type: "dmg", mul: 7, castTime: 3.5, aoe: true}
           ],
           passive: {critChance: 0.2, dmgReduction: 0.2}
@@ -2922,7 +2922,7 @@ const DUNGEONS = [{
           emoji: "💀",
           wave: 6,
           skills: [
-            {name: "鲜血之力", icon: "🩸", desc: "7倍伤害+吸血30%", type: "dmg", mul: 7, castTime: 3, lifeSteal: 0.3},
+            {name: "鲜血之力", icon: "🩸", desc: "7倍伤害+吸血30%", type: "dmg", mul: 7, castTime: 3, lifeSteal: 0.3,lifeSteal:0.2},
             {name: "死亡之握", icon: "👊", desc: "6倍伤害+减速", type: "dmg", mul: 6, castTime: 3, slow: true}
           ],
           passive: {critChance: 0.2, dmgReduction: 0.1, atkBonus: 0.25}
@@ -2933,7 +2933,7 @@ const DUNGEONS = [{
           wave: 9,
           skills: [
             {name: "瘟疫爆发", icon: "🦠", desc: "7倍AOE+灼烧", type: "dmg", mul: 7, castTime: 3.5, dot: true, aoe: true},
-            {name: "突变", icon: "🧬", desc: "8倍伤害", type: "dmg", mul: 8, castTime: 3}
+            {name: "突变", icon: "🧬", desc: "8倍伤害", type: "dmg", mul: 8, castTime: 3,weaken:true}
           ],
           passive: {dodgeChance: 0.1, critChance: 0.25, dmgReduction: 0.2}
         },
@@ -2953,7 +2953,7 @@ const DUNGEONS = [{
           emoji: "👑",
           wave: 15,
           skills: [
-            {name: "霜之哀伤", icon: "🗡️", desc: "9倍伤害+吸血30%", type: "dmg", mul: 9, castTime: 3, lifeSteal: 0.3},
+            {name: "霜之哀伤", icon: "🗡️", desc: "9倍伤害+吸血30%", type: "dmg", mul: 9, castTime: 3, lifeSteal: 0.3,lifeSteal:0.2},
             {name: "亡者大军", icon: "🧟", desc: "10倍AOE伤害", type: "dmg", mul: 10, castTime: 4, aoe: true},
             {name: "污染", icon: "☠️", desc: "8倍AOE+灼烧", type: "dmg", mul: 8, castTime: 3.5, dot: true, aoe: true},
             {name: "巫妖王之怒", icon: "👑", desc: "12倍AOE暗影伤害", type: "dmg", mul: 12, castTime: 6, aoe: true}
