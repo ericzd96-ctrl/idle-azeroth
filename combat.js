@@ -947,6 +947,10 @@ function finishItem(item,slotKey,rarity,power,extraStats){
   const SURPRISE_CHANCE=0.15;   // 每个惊喜副属独立出现概率(可调:越小越稀有)
   const SURPRISE={leech:{rare:1,epic:2,legend:4},vers:{rare:1,epic:2,legend:4},haste:{rare:1,epic:2,legend:4},mastery:{rare:1,epic:2,legend:4},crit:{rare:1,epic:2,legend:3},critd:{rare:3,epic:6,legend:12}};
   for(const sk in SURPRISE){const v=SURPRISE[sk][rarity.key];if(v&&Math.random()<SURPRISE_CHANCE)item.stats[sk]=(item.stats[sk]||0)+v;}
+  // 安全帽:暴击/暴伤/极速上限(防止任何路径溢出)
+  if(item.stats.crit>4)item.stats.crit=4;
+  if(item.stats.critd>12)item.stats.critd=12;
+  if(item.stats.haste>4)item.stats.haste=4;
   item.reqLvl=Math.max(1,Math.floor(power*0.9));item.sell=Math.floor(10*rarity.mult*(1+power*0.5));
   if(typeof enhanceItemOnCreate==='function') enhanceItemOnCreate(item,rarity,power);
   return item;

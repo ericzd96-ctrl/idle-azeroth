@@ -2976,22 +2976,21 @@ const ITEM_POOLS = {
       { name:'符文短杖', stats:{atk:1} }, { name:'曲刃拳匕', stats:{atk:1} },
     ],
     rare: [
-      { name:'霜狼之牙', stats:{atk:1} }, { name:'痛击之刃', stats:{atk:1,crit:1} },
-      { name:'克罗之刃', stats:{atk:1} }, { name:'斩魔者', stats:{atk:1,crit:1} },
+      { name:'霜狼之牙', stats:{atk:1} }, { name:'痛击之刃', stats:{atk:1} },
+      { name:'克罗之刃', stats:{atk:1} }, { name:'斩魔者', stats:{atk:1} },
       { name:'萨隆邪铁短斧', stats:{atk:1} }, { name:'龙骑士长剑', stats:{atk:1,hp:1} },
       { name:'北风之锤', stats:{atk:1} }, { name:'冰霜镰刀', stats:{atk:1,critd:1} },
     ],
     epic: [
-      { name:'埃辛诺斯战刃', stats:{atk:2,crit:2} }, { name:'雷霆之怒·逐风者', stats:{atk:2,crit:1} },
+      { name:'埃辛诺斯战刃', stats:{atk:2} }, { name:'雷霆之怒·逐风者', stats:{atk:2} },
       { name:'影之哀伤', stats:{atk:3} }, { name:'瓦兰奈尔·远古王者之锤', stats:{atk:2,hp:2} },
-      { name:'萨弗拉斯·炎魔拉格纳罗斯之手', stats:{atk:2,critd:2} }, { name:'索利达尔·群星之怒', stats:{atk:2,crit:2} },
+      { name:'萨弗拉斯·炎魔拉格纳罗斯之手', stats:{atk:2,critd:2} }, { name:'索利达尔·群星之怒', stats:{atk:2} },
       { name:'奎尔塞拉', stats:{atk:2,def:2} }, { name:'米奈希尔之力', stats:{atk:2,sta:2} },
     ],
     legend: [
-      { name:'霜之哀伤', stats:{atk:4,crit:3,critd:3} }, { name:'灰烬使者', stats:{atk:4,hp:3,crit:3} },
+      { name:'霜之哀伤', stats:{atk:4,critd:3} }, { name:'灰烬使者', stats:{atk:4,hp:3} },
       { name:'埃提耶什·守护者的传说之杖', stats:{atk:3,int:3,spi:3} }, { name:'巨龙之怒·泰蕾苟萨的寄魂杖', stats:{atk:3,int:3,critd:3} },
-    ],
-  },
+    ]},
   helmet: {
     uncommon: [
       { name:'卫兵头盔', stats:{def:1} }, { name:'皮制兜帽', stats:{def:1} },
@@ -3003,33 +3002,31 @@ const ITEM_POOLS = {
       { name:'圣光之盔', stats:{def:1,spi:1} }, { name:'铁颚头盔', stats:{def:1,hp:1} },
     ],
     epic: [
-      { name:'伊利达雷面甲', stats:{def:2,crit:2} }, { name:'萨格拉斯的诅咒视界', stats:{def:2,atk:1} },
+      { name:'伊利达雷面甲', stats:{def:2} }, { name:'萨格拉斯的诅咒视界', stats:{def:2,atk:1} },
       { name:'霜火头饰', stats:{def:2,int:2} }, { name:'愤怒之盔', stats:{def:2,str:2} },
       { name:'水晶头冠', stats:{def:2,spi:2} }, { name:'湮灭之盔', stats:{def:2,sta:2} },
     ],
     legend: [
-      { name:'巫妖王的王冠', stats:{def:4,hp:3,sta:3} }, { name:'泰坦之盔', stats:{def:4,str:3,crit:2} },
-    ],
-  },
+      { name:'巫妖王的王冠', stats:{def:4,hp:3,sta:3} }, { name:'泰坦之盔', stats:{def:4,str:3} },
+    ]},
   shoulder: {
     uncommon: [
       { name:'卫戍护肩', stats:{atk:1} }, { name:'旅行者披肩', stats:{atk:1} },
       { name:'铜丝肩甲', stats:{atk:1} }, { name:'轻羽垫肩', stats:{atk:1} },
     ],
     rare: [
-      { name:'龙火肩铠', stats:{atk:1,crit:1} }, { name:'暗影护肩', stats:{atk:1,agi:1} },
+      { name:'龙火肩铠', stats:{atk:1} }, { name:'暗影护肩', stats:{atk:1,agi:1} },
       { name:'圣殿骑士肩甲', stats:{atk:1,def:1} }, { name:'奥术师肩垫', stats:{atk:1,int:1} },
       { name:'屠龙者肩铠', stats:{atk:1,hp:1} }, { name:'霜狼肩甲', stats:{atk:1,sta:1} },
     ],
     epic: [
-      { name:'污染者肩铠', stats:{atk:2,crit:2} }, { name:'霜火肩垫', stats:{atk:2,int:2} },
+      { name:'污染者肩铠', stats:{atk:2} }, { name:'霜火肩垫', stats:{atk:2,int:2} },
       { name:'无尽怒气肩甲', stats:{atk:2,str:2} }, { name:'黑暗低语肩铠', stats:{atk:2,agi:2} },
       { name:'圣光使者肩甲', stats:{atk:2,spi:2} }, { name:'铁壁肩铠', stats:{atk:2,sta:2} },
     ],
     legend: [
-      { name:'天灾领主肩铠', stats:{atk:3,crit:3,str:2} },
-    ],
-  },
+      { name:'天灾领主肩铠', stats:{atk:3,str:2} },
+    ]},
   armor: {
     uncommon: [
       { name:'新兵胸甲', stats:{def:1} }, { name:'皮背心', stats:{def:1} },
@@ -3043,31 +3040,29 @@ const ITEM_POOLS = {
     epic: [
       { name:'虚空之心长袍', stats:{def:2,int:2} }, { name:'血牙胸甲', stats:{def:2,agi:2} },
       { name:'无畏战铠', stats:{def:2,str:2} }, { name:'信仰长袍', stats:{def:2,spi:2} },
-      { name:'潮汐之怒胸铠', stats:{def:2,sta:2} }, { name:'凤凰之焰长袍', stats:{def:2,crit:2} },
+      { name:'潮汐之怒胸铠', stats:{def:2,sta:2} }, { name:'凤凰之焰长袍', stats:{def:2} },
     ],
     legend: [
       { name:'冰封王座胸铠', stats:{def:4,hp:3,str:3} }, { name:'守护巨龙胸甲', stats:{def:4,sta:3,spi:3} },
-    ],
-  },
+    ]},
   gloves: {
     uncommon: [
-      { name:'士兵手套', stats:{crit:1} }, { name:'皮手套', stats:{crit:1} },
-      { name:'锁链护手', stats:{crit:1} }, { name:'咒术裹手', stats:{crit:1} },
+      { name:'士兵手套', stats:{} }, { name:'皮手套', stats:{} },
+      { name:'锁链护手', stats:{} }, { name:'咒术裹手', stats:{} },
     ],
     rare: [
-      { name:'迅击护手', stats:{crit:1,agi:1} }, { name:'奥术师手套', stats:{crit:1,int:1} },
-      { name:'勇气护手', stats:{crit:1,str:1} }, { name:'暗影裹手', stats:{crit:1,crit:1} },
-      { name:'圣疗手套', stats:{crit:1,spi:1} }, { name:'铁拳护手', stats:{crit:1,sta:1} },
+      { name:'迅击护手', stats:{agi:1} }, { name:'奥术师手套', stats:{int:1} },
+      { name:'勇气护手', stats:{str:1} }, { name:'暗影裹手', stats:{} },
+      { name:'圣疗手套', stats:{spi:1} }, { name:'铁拳护手', stats:{sta:1} },
     ],
     epic: [
-      { name:'灵风手套', stats:{crit:1,int:2} }, { name:'血牙手套', stats:{crit:1,agi:2} },
-      { name:'无尽勇气护手', stats:{crit:1,str:2} }, { name:'暗影烈焰手套', stats:{crit:1,crit:2} },
-      { name:'救赎手套', stats:{crit:1,spi:2} }, { name:'石化护手', stats:{crit:1,sta:2} },
+      { name:'灵风手套', stats:{int:2} }, { name:'血牙手套', stats:{agi:2} },
+      { name:'无尽勇气护手', stats:{str:2} }, { name:'暗影烈焰手套', stats:{} },
+      { name:'救赎手套', stats:{spi:2} }, { name:'石化护手', stats:{sta:2} },
     ],
     legend: [
-      { name:'死亡之握', stats:{crit:1,crit:3,agi:2} },
-    ],
-  },
+      { name:'死亡之握', stats:{agi:2} },
+    ]},
   belt: {
     uncommon: [
       { name:'布质腰带', stats:{def:1} }, { name:'皮束带', stats:{def:1} },
@@ -3085,8 +3080,7 @@ const ITEM_POOLS = {
     ],
     legend: [
       { name:'尤格萨隆的触须之握', stats:{def:3,hp:3,sta:3} },
-    ],
-  },
+    ]},
   pants: {
     uncommon: [
       { name:'布裤', stats:{hp:1} }, { name:'皮短裤', stats:{hp:1} },
@@ -3100,271 +3094,235 @@ const ITEM_POOLS = {
     epic: [
       { name:'血牙短裤', stats:{hp:2,agi:2} }, { name:'灵风长裤', stats:{hp:2,int:2} },
       { name:'无畏腿铠', stats:{hp:2,str:2} }, { name:'信仰护腿', stats:{hp:2,spi:2} },
-      { name:'潮汐之怒腿铠', stats:{hp:2,sta:2} }, { name:'凤凰之羽长裤', stats:{hp:2,crit:2} },
+      { name:'潮汐之怒腿铠', stats:{hp:2,sta:2} }, { name:'凤凰之羽长裤', stats:{hp:2} },
     ],
     legend: [
       { name:'冰霜巨龙腿甲', stats:{hp:4,sta:3,str:3} },
-    ],
-  },
+    ]},
   boots: {
     uncommon: [
-      { name:'新兵战靴', stats:{crit:1} }, { name:'轻便皮靴', stats:{crit:1} },
-      { name:'锁甲靴', stats:{crit:1} }, { name:'布质便鞋', stats:{crit:1} },
+      { name:'新兵战靴', stats:{} }, { name:'轻便皮靴', stats:{} },
+      { name:'锁甲靴', stats:{} }, { name:'布质便鞋', stats:{} },
     ],
     rare: [
-      { name:'迅捷之靴', stats:{crit:1,agi:1} }, { name:'奥术便鞋', stats:{crit:1,int:1} },
-      { name:'勇士战靴', stats:{crit:1,str:1} }, { name:'圣光步履', stats:{crit:1,spi:1} },
-      { name:'铁踵战靴', stats:{crit:1,sta:1} }, { name:'疾行靴', stats:{crit:1,crit:1} },
+      { name:'迅捷之靴', stats:{agi:1} }, { name:'奥术便鞋', stats:{int:1} },
+      { name:'勇士战靴', stats:{str:1} }, { name:'圣光步履', stats:{spi:1} },
+      { name:'铁踵战靴', stats:{sta:1} }, { name:'疾行靴', stats:{} },
     ],
     epic: [
-      { name:'暗影烈焰之靴', stats:{crit:1,crit:2} }, { name:'踏冰者', stats:{crit:1,agi:2} },
-      { name:'风暴行者', stats:{crit:1,int:2} }, { name:'凯旋胫甲', stats:{crit:1,str:2} },
-      { name:'光之步履', stats:{crit:1,spi:2} }, { name:'不毁战靴', stats:{crit:1,sta:2} },
+      { name:'暗影烈焰之靴', stats:{} }, { name:'踏冰者', stats:{agi:2} },
+      { name:'风暴行者', stats:{int:2} }, { name:'凯旋胫甲', stats:{str:2} },
+      { name:'光之步履', stats:{spi:2} }, { name:'不毁战靴', stats:{sta:2} },
     ],
     legend: [
-      { name:'巫妖王的步履', stats:{crit:1,crit:3,agi:2} },
-    ],
-  },
+      { name:'巫妖王的步履', stats:{agi:2} },
+    ]},
   ring: {
     uncommon: [
-      { name:'铜戒', stats:{crit:1} }, { name:'银戒', stats:{crit:1} },
-      { name:'骨戒', stats:{crit:1} }, { name:'石戒', stats:{crit:1} },
+      { name:'铜戒', stats:{} }, { name:'银戒', stats:{} },
+      { name:'骨戒', stats:{} }, { name:'石戒', stats:{} },
     ],
     rare: [
-      { name:'龙鳞戒指', stats:{crit:1,atk:1} }, { name:'暗影之戒', stats:{crit:1,agi:1} },
-      { name:'奥术之环', stats:{crit:1,int:1} }, { name:'勇士印记', stats:{crit:1,str:1} },
-      { name:'圣光之戒', stats:{crit:1,spi:1} }, { name:'要塞指环', stats:{crit:1,sta:1} },
+      { name:'龙鳞戒指', stats:{atk:1} }, { name:'暗影之戒', stats:{agi:1} },
+      { name:'奥术之环', stats:{int:1} }, { name:'勇士印记', stats:{str:1} },
+      { name:'圣光之戒', stats:{spi:1} }, { name:'要塞指环', stats:{sta:1} },
     ],
     epic: [
-      { name:'龙王之戒', stats:{crit:2,atk:2} }, { name:'血牙指环', stats:{crit:2,agi:2} },
-      { name:'奥术能量之戒', stats:{crit:2,int:2} }, { name:'战神之戒', stats:{crit:2,str:2} },
-      { name:'救赎之戒', stats:{crit:2,spi:2} }, { name:'不灭指环', stats:{crit:2,sta:2} },
+      { name:'龙王之戒', stats:{atk:2} }, { name:'血牙指环', stats:{agi:2} },
+      { name:'奥术能量之戒', stats:{int:2} }, { name:'战神之戒', stats:{str:2} },
+      { name:'救赎之戒', stats:{spi:2} }, { name:'不灭指环', stats:{sta:2} },
     ],
     legend: [
-      { name:'克尔苏加德的封印', stats:{crit:4,atk:3,int:3} },
-    ],
-  },
+      { name:'克尔苏加德的封印', stats:{atk:3,int:3} },
+    ]},
   trinket: {
     uncommon: [
       { name:'幸运兔脚', stats:{sta:1} }, { name:'士兵勋章', stats:{sta:1} },
       { name:'小护符', stats:{sta:1} }, { name:'占卜石', stats:{sta:1} },
     ],
     rare: [
-      { name:'龙鳞护符', stats:{sta:1,hp:1} }, { name:'暗影之石', stats:{sta:1,crit:1} },
+      { name:'龙鳞护符', stats:{sta:1,hp:1} }, { name:'暗影之石', stats:{sta:1} },
       { name:'奥术水晶', stats:{sta:1,int:1} }, { name:'勇士勋章', stats:{sta:1,str:1} },
       { name:'圣光护符', stats:{sta:1,spi:1} }, { name:'要塞之印', stats:{sta:1,def:1} },
     ],
     epic: [
-      { name:'龙牙饰物', stats:{sta:2,crit:2} }, { name:'暗影之眼', stats:{sta:2,agi:2} },
+      { name:'龙牙饰物', stats:{sta:2} }, { name:'暗影之眼', stats:{sta:2,agi:2} },
       { name:'奥术宝珠', stats:{sta:2,int:2} }, { name:'战神徽记', stats:{sta:2,str:2} },
       { name:'救赎之魂', stats:{sta:2,spi:2} }, { name:'不灭之印', stats:{sta:2,hp:2} },
     ],
     legend: [
       { name:'阿尔萨斯的悔恨', stats:{sta:4,hp:3,str:3} },
-    ],
-  },
-};
+    ]}};
 
 /* ---------- 副本专属掉落(每个BOSS有独立掉落) ---------- */
 const DUNGEON_LOOT = {
   // 怒焰裂谷
   ragefire: { bosses: {
     '邪炉卫士':   [{name:'邪炉战锤',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'熔岩护肩',slot:'shoulder',rarity:'rare',stats:{atk:1,sta:1}}],
-    '塔格尔·邪炉': [{name:'邪炉之心',slot:'trinket',rarity:'epic',stats:{sta:2,str:1}},{name:'怒焰长袍',slot:'armor',rarity:'rare',stats:{def:1,int:1}}],
-  }, trash:[{name:'焦炭手套',slot:'gloves',rarity:'uncommon',stats:{crit:1}},
+    '塔格尔·邪炉': [{name:'邪炉之心',slot:'trinket',rarity:'epic',stats:{sta:2,str:1}},{name:'怒焰长袍',slot:'armor',rarity:'rare',stats:{def:1,int:1}}]}, trash:[{name:'焦炭手套',slot:'gloves',rarity:'uncommon',stats:{}},
 	        {name:'怒焰腰带',slot:'belt',rarity:'uncommon',stats:{def:1}}]},
   // 死亡矿井
   deadmines: { bosses: {
     '矿工约翰逊': [{name:'矿工锄',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'矿工头盔',slot:'helmet',rarity:'rare',stats:{def:1,sta:1}}],
-    '斯尼德':     [{name:'电锯',slot:'weapon',rarity:'rare',stats:{atk:1,agi:1}},{name:'伐木工手套',slot:'gloves',rarity:'rare',stats:{crit:1,str:1}}],
-    '范克瑞斯':   [{name:'残酷倒钩',slot:'weapon',rarity:'epic',stats:{atk:2,agi:2}},{name:'迪菲亚面罩',slot:'helmet',rarity:'rare',stats:{def:1,agi:1}},{name:'兄弟会徽记',slot:'ring',rarity:'rare',stats:{crit:1,agi:1}}],
-  }, trash:[{name:'迪菲亚匕首',slot:'weapon',rarity:'uncommon',stats:{atk:1}},
+    '斯尼德':     [{name:'电锯',slot:'weapon',rarity:'rare',stats:{atk:1,agi:1}},{name:'伐木工手套',slot:'gloves',rarity:'rare',stats:{str:1}}],
+    '范克瑞斯':   [{name:'残酷倒钩',slot:'weapon',rarity:'epic',stats:{atk:2,agi:2}},{name:'迪菲亚面罩',slot:'helmet',rarity:'rare',stats:{def:1,agi:1}},{name:'兄弟会徽记',slot:'ring',rarity:'rare',stats:{agi:1}}]}, trash:[{name:'迪菲亚匕首',slot:'weapon',rarity:'uncommon',stats:{atk:1}},
 	        {name:'西部荒野背心',slot:'armor',rarity:'uncommon',stats:{def:1}}]},
   // 哀嚎洞穴
   wailing: { bosses: {
     '安娜科德拉': [{name:'毒蛇之刺',slot:'weapon',rarity:'rare',stats:{atk:1,agi:1}},{name:'蛇皮护腿',slot:'pants',rarity:'rare',stats:{hp:1,agi:1}}],
     '斯卡姆':     [{name:'斯卡姆的壳',slot:'armor',rarity:'rare',stats:{def:1,sta:1}},{name:'龙鳞腰带',slot:'belt',rarity:'rare',stats:{def:1,hp:1}}],
-    '梦魇之王':   [{name:'梦魇之杖',slot:'weapon',rarity:'epic',stats:{atk:2,int:2}},{name:'梦魇之戒',slot:'ring',rarity:'rare',stats:{crit:1,int:1}},{name:'尖牙护腿',slot:'pants',rarity:'rare',stats:{hp:1,agi:1}}],
-  }, trash:[{name:'尖牙皮靴',slot:'boots',rarity:'uncommon',stats:{crit:1}},{name:'蛇鳞护手',slot:'gloves',rarity:'uncommon',stats:{crit:1}}]},
+    '梦魇之王':   [{name:'梦魇之杖',slot:'weapon',rarity:'epic',stats:{atk:2,int:2}},{name:'梦魇之戒',slot:'ring',rarity:'rare',stats:{int:1}},{name:'尖牙护腿',slot:'pants',rarity:'rare',stats:{hp:1,agi:1}}]}, trash:[{name:'尖牙皮靴',slot:'boots',rarity:'uncommon',stats:{}},{name:'蛇鳞护手',slot:'gloves',rarity:'uncommon',stats:{}}]},
   // 黑暗深渊
   bfd: { bosses: {
     '深渊守卫':   [{name:'深渊之刃',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'深海腰带',slot:'belt',rarity:'rare',stats:{def:1,sta:1}}],
-    '格里哈斯特': [{name:'蟹钳之锤',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'珊瑚手套',slot:'gloves',rarity:'rare',stats:{crit:1,agi:1}}],
-    '阿库麦尔':   [{name:'阿库麦尔之牙',slot:'weapon',rarity:'epic',stats:{atk:2,agi:2}},{name:'深渊头盔',slot:'helmet',rarity:'rare',stats:{def:1,int:1}},{name:'深渊指环',slot:'ring',rarity:'rare',stats:{crit:1,spi:1}}],
-  }, trash:[{name:'鱼鳞护肩',slot:'shoulder',rarity:'uncommon',stats:{atk:1}},{name:'贝壳腰带',slot:'belt',rarity:'uncommon',stats:{def:1}}]},
+    '格里哈斯特': [{name:'蟹钳之锤',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'珊瑚手套',slot:'gloves',rarity:'rare',stats:{agi:1}}],
+    '阿库麦尔':   [{name:'阿库麦尔之牙',slot:'weapon',rarity:'epic',stats:{atk:2,agi:2}},{name:'深渊头盔',slot:'helmet',rarity:'rare',stats:{def:1,int:1}},{name:'深渊指环',slot:'ring',rarity:'rare',stats:{spi:1}}]}, trash:[{name:'鱼鳞护肩',slot:'shoulder',rarity:'uncommon',stats:{atk:1}},{name:'贝壳腰带',slot:'belt',rarity:'uncommon',stats:{def:1}}]},
   // 影牙城堡
   shadowfang: { bosses: {
     '席瓦莱恩男爵':     [{name:'席瓦莱恩之剑',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'男爵腰带',slot:'belt',rarity:'rare',stats:{def:1,str:1}}],
-    '指挥官斯普林瓦尔': [{name:'指挥官之盾',slot:'armor',rarity:'rare',stats:{def:1,sta:1}},{name:'斯普林瓦尔之戒',slot:'ring',rarity:'rare',stats:{crit:1,def:1}}],
-    '阿鲁高':           [{name:'阿鲁高的法杖',slot:'weapon',rarity:'epic',stats:{atk:2,int:2}},{name:'影牙肩甲',slot:'shoulder',rarity:'rare',stats:{atk:1,agi:1}},{name:'狼王之戒',slot:'ring',rarity:'rare',stats:{crit:1,str:1}}],
-  }, trash:[{name:'狼人皮毛腰带',slot:'belt',rarity:'uncommon',stats:{def:1}},{name:'银松肩垫',slot:'shoulder',rarity:'uncommon',stats:{atk:1}}]},
+    '指挥官斯普林瓦尔': [{name:'指挥官之盾',slot:'armor',rarity:'rare',stats:{def:1,sta:1}},{name:'斯普林瓦尔之戒',slot:'ring',rarity:'rare',stats:{def:1}}],
+    '阿鲁高':           [{name:'阿鲁高的法杖',slot:'weapon',rarity:'epic',stats:{atk:2,int:2}},{name:'影牙肩甲',slot:'shoulder',rarity:'rare',stats:{atk:1,agi:1}},{name:'狼王之戒',slot:'ring',rarity:'rare',stats:{str:1}}]}, trash:[{name:'狼人皮毛腰带',slot:'belt',rarity:'uncommon',stats:{def:1}},{name:'银松肩垫',slot:'shoulder',rarity:'uncommon',stats:{atk:1}}]},
   // 诺莫瑞根
   gnomeregan: { bosses: {
-    '电刑器6000型':     [{name:'电刑器线圈',slot:'ring',rarity:'rare',stats:{crit:1,int:1}},{name:'避雷护腿',slot:'pants',rarity:'rare',stats:{hp:1,sta:1}}],
-    '群体打击者9-60':   [{name:'群体打击者之臂',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'机械手套',slot:'gloves',rarity:'rare',stats:{crit:1,str:1}}],
-    '机械师瑟玛普拉格': [{name:'瑟玛普拉格的机械臂',slot:'weapon',rarity:'epic',stats:{atk:2,str:2}},{name:'侏儒工程头盔',slot:'helmet',rarity:'rare',stats:{def:1,int:1}},{name:'工程师徽记',slot:'trinket',rarity:'rare',stats:{sta:1,int:1}}],
-  }, trash:[{name:'齿轮腰带',slot:'belt',rarity:'uncommon',stats:{def:1}},{name:'焊接口罩',slot:'helmet',rarity:'uncommon',stats:{def:1}}]},
+    '电刑器6000型':     [{name:'电刑器线圈',slot:'ring',rarity:'rare',stats:{int:1}},{name:'避雷护腿',slot:'pants',rarity:'rare',stats:{hp:1,sta:1}}],
+    '群体打击者9-60':   [{name:'群体打击者之臂',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'机械手套',slot:'gloves',rarity:'rare',stats:{str:1}}],
+    '机械师瑟玛普拉格': [{name:'瑟玛普拉格的机械臂',slot:'weapon',rarity:'epic',stats:{atk:2,str:2}},{name:'侏儒工程头盔',slot:'helmet',rarity:'rare',stats:{def:1,int:1}},{name:'工程师徽记',slot:'trinket',rarity:'rare',stats:{sta:1,int:1}}]}, trash:[{name:'齿轮腰带',slot:'belt',rarity:'uncommon',stats:{def:1}},{name:'焊接口罩',slot:'helmet',rarity:'uncommon',stats:{def:1}}]},
   // 剃刀沼泽
   razorfen: { bosses: {
     '主宰拉姆塔斯': [{name:'拉姆塔斯之角',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'荆棘腰带',slot:'belt',rarity:'rare',stats:{def:1,str:1}}],
-    '阿格姆':       [{name:'阿格姆之锤',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'藤蔓手套',slot:'gloves',rarity:'rare',stats:{crit:1,sta:1}}],
-    '卡尔加·刺肋': [{name:'刺肋之斧',slot:'weapon',rarity:'epic',stats:{atk:2,str:2}},{name:'荆棘护胸',slot:'armor',rarity:'rare',stats:{def:1,sta:1}},{name:'野猪之牙',slot:'trinket',rarity:'rare',stats:{sta:1,str:1}}],
-  }, trash:[{name:'棘刺护腿',slot:'pants',rarity:'uncommon',stats:{hp:1}},{name:'野猪皮手套',slot:'gloves',rarity:'uncommon',stats:{crit:1}}]},
+    '阿格姆':       [{name:'阿格姆之锤',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'藤蔓手套',slot:'gloves',rarity:'rare',stats:{sta:1}}],
+    '卡尔加·刺肋': [{name:'刺肋之斧',slot:'weapon',rarity:'epic',stats:{atk:2,str:2}},{name:'荆棘护胸',slot:'armor',rarity:'rare',stats:{def:1,sta:1}},{name:'野猪之牙',slot:'trinket',rarity:'rare',stats:{sta:1,str:1}}]}, trash:[{name:'棘刺护腿',slot:'pants',rarity:'uncommon',stats:{hp:1}},{name:'野猪皮手套',slot:'gloves',rarity:'uncommon',stats:{}}]},
   // 血色修道院
   scarlet: { bosses: {
     '血色十字军指挥官': [{name:'指挥官之盾',slot:'armor',rarity:'rare',stats:{def:1,sta:1}},{name:'十字军腰带',slot:'belt',rarity:'rare',stats:{def:1,str:1}}],
-    '赫洛德':           [{name:'赫洛德的肩甲',slot:'shoulder',rarity:'rare',stats:{atk:1,str:1}},{name:'血色战靴',slot:'boots',rarity:'rare',stats:{crit:1,str:1}}],
-    '奥法师杜安':       [{name:'杜安的法杖',slot:'weapon',rarity:'rare',stats:{atk:1,int:1}},{name:'奥术师手套',slot:'gloves',rarity:'rare',stats:{crit:1,int:1}}],
-    '莫格莱尼':         [{name:'莫格莱尼的力量',slot:'weapon',rarity:'epic',stats:{atk:2,str:2}},{name:'血色十字军战盔',slot:'helmet',rarity:'rare',stats:{def:1,str:1}},{name:'狂热者之戒',slot:'ring',rarity:'rare',stats:{crit:1,spi:1}}],
-  }, trash:[{name:'血色肩甲',slot:'shoulder',rarity:'uncommon',stats:{atk:1}},{name:'狂热者手套',slot:'gloves',rarity:'uncommon',stats:{crit:1}}]},
+    '赫洛德':           [{name:'赫洛德的肩甲',slot:'shoulder',rarity:'rare',stats:{atk:1,str:1}},{name:'血色战靴',slot:'boots',rarity:'rare',stats:{str:1}}],
+    '奥法师杜安':       [{name:'杜安的法杖',slot:'weapon',rarity:'rare',stats:{atk:1,int:1}},{name:'奥术师手套',slot:'gloves',rarity:'rare',stats:{int:1}}],
+    '莫格莱尼':         [{name:'莫格莱尼的力量',slot:'weapon',rarity:'epic',stats:{atk:2,str:2}},{name:'血色十字军战盔',slot:'helmet',rarity:'rare',stats:{def:1,str:1}},{name:'狂热者之戒',slot:'ring',rarity:'rare',stats:{spi:1}}]}, trash:[{name:'血色肩甲',slot:'shoulder',rarity:'uncommon',stats:{atk:1}},{name:'狂热者手套',slot:'gloves',rarity:'uncommon',stats:{}}]},
   // 剃刀高地
   razorfend: { bosses: {
     '图特卡什':       [{name:'蜘蛛牙短剑',slot:'weapon',rarity:'rare',stats:{atk:1,agi:1}},{name:'蛛丝腰带',slot:'belt',rarity:'rare',stats:{def:1,agi:1}}],
-    '火眼莫德雷斯':   [{name:'莫德雷斯之眼',slot:'trinket',rarity:'rare',stats:{sta:1,int:1}},{name:'火焰手套',slot:'gloves',rarity:'rare',stats:{crit:1,int:1}}],
-    '巫妖寒冰之王':   [{name:'寒冰之王的节杖',slot:'weapon',rarity:'epic',stats:{atk:2,int:2}},{name:'骨棘胸甲',slot:'armor',rarity:'rare',stats:{def:1,sta:1}},{name:'寒冰之戒',slot:'ring',rarity:'rare',stats:{crit:1,int:1}}],
-  }, trash:[{name:'白骨护腿',slot:'pants',rarity:'uncommon',stats:{hp:1}},{name:'亡灵手套',slot:'gloves',rarity:'uncommon',stats:{crit:1}}]},
+    '火眼莫德雷斯':   [{name:'莫德雷斯之眼',slot:'trinket',rarity:'rare',stats:{sta:1,int:1}},{name:'火焰手套',slot:'gloves',rarity:'rare',stats:{int:1}}],
+    '巫妖寒冰之王':   [{name:'寒冰之王的节杖',slot:'weapon',rarity:'epic',stats:{atk:2,int:2}},{name:'骨棘胸甲',slot:'armor',rarity:'rare',stats:{def:1,sta:1}},{name:'寒冰之戒',slot:'ring',rarity:'rare',stats:{int:1}}]}, trash:[{name:'白骨护腿',slot:'pants',rarity:'uncommon',stats:{hp:1}},{name:'亡灵手套',slot:'gloves',rarity:'uncommon',stats:{}}]},
   // 奥达曼
   uldaman: { bosses: {
     '艾隆纳亚':   [{name:'艾隆纳亚的石锤',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'石腭腰带',slot:'belt',rarity:'rare',stats:{def:1,sta:1}}],
-    '石窟织石者': [{name:'织石者手套',slot:'gloves',rarity:'rare',stats:{crit:1,int:1}},{name:'遗迹护腿',slot:'pants',rarity:'rare',stats:{hp:1,sta:1}}],
-    '阿扎达斯':   [{name:'阿扎达斯之锤',slot:'weapon',rarity:'epic',stats:{atk:2,str:2}},{name:'泰坦石板护胸',slot:'armor',rarity:'rare',stats:{def:1,sta:1}},{name:'土灵之戒',slot:'ring',rarity:'rare',stats:{crit:1,def:1}}],
-  }, trash:[{name:'土灵腰带',slot:'belt',rarity:'uncommon',stats:{def:1}},{name:'遗迹手套',slot:'gloves',rarity:'uncommon',stats:{crit:1}}]},
+    '石窟织石者': [{name:'织石者手套',slot:'gloves',rarity:'rare',stats:{int:1}},{name:'遗迹护腿',slot:'pants',rarity:'rare',stats:{hp:1,sta:1}}],
+    '阿扎达斯':   [{name:'阿扎达斯之锤',slot:'weapon',rarity:'epic',stats:{atk:2,str:2}},{name:'泰坦石板护胸',slot:'armor',rarity:'rare',stats:{def:1,sta:1}},{name:'土灵之戒',slot:'ring',rarity:'rare',stats:{def:1}}]}, trash:[{name:'土灵腰带',slot:'belt',rarity:'uncommon',stats:{def:1}},{name:'遗迹手套',slot:'gloves',rarity:'uncommon',stats:{}}]},
   // 玛拉顿
   maraudon: { bosses: {
     '诺克赛恩':       [{name:'诺克赛恩之刺',slot:'weapon',rarity:'rare',stats:{atk:1,agi:1}},{name:'藤蔓束腰',slot:'belt',rarity:'rare',stats:{def:1,spi:1}}],
-    '工匠吉兹洛克':   [{name:'吉兹洛克之锤',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'石花护手',slot:'gloves',rarity:'rare',stats:{crit:1,str:1}}],
-    '瑟莱德丝公主':   [{name:'瑟莱德丝之拥',slot:'weapon',rarity:'epic',stats:{atk:2,int:2}},{name:'自然守护者胸甲',slot:'armor',rarity:'rare',stats:{def:1,spi:1}},{name:'腐败之戒',slot:'ring',rarity:'rare',stats:{crit:1,sta:1}}],
-  }, trash:[{name:'石花腰带',slot:'belt',rarity:'uncommon',stats:{def:1}},{name:'丛林手套',slot:'gloves',rarity:'uncommon',stats:{crit:1}}]},
+    '工匠吉兹洛克':   [{name:'吉兹洛克之锤',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'石花护手',slot:'gloves',rarity:'rare',stats:{str:1}}],
+    '瑟莱德丝公主':   [{name:'瑟莱德丝之拥',slot:'weapon',rarity:'epic',stats:{atk:2,int:2}},{name:'自然守护者胸甲',slot:'armor',rarity:'rare',stats:{def:1,spi:1}},{name:'腐败之戒',slot:'ring',rarity:'rare',stats:{sta:1}}]}, trash:[{name:'石花腰带',slot:'belt',rarity:'uncommon',stats:{def:1}},{name:'丛林手套',slot:'gloves',rarity:'uncommon',stats:{}}]},
   // 祖尔法拉克
   zulfarrak: { bosses: {
-    '暗影祭司塞瑟斯': [{name:'塞瑟斯的匕首',slot:'weapon',rarity:'rare',stats:{atk:1,crit:1}},{name:'沙行护腿',slot:'pants',rarity:'rare',stats:{hp:1,agi:1}}],
+    '暗影祭司塞瑟斯': [{name:'塞瑟斯的匕首',slot:'weapon',rarity:'rare',stats:{atk:1}},{name:'沙行护腿',slot:'pants',rarity:'rare',stats:{hp:1,agi:1}}],
     '乌克兹·沙顶':   [{name:'沙顶之锤',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'沙漠腰带',slot:'belt',rarity:'rare',stats:{def:1,sta:1}}],
-    '巫医祖穆拉恩':   [{name:'祖穆拉恩的祭祀之刃',slot:'weapon',rarity:'epic',stats:{atk:2,crit:2}},{name:'沙怒头巾',slot:'helmet',rarity:'rare',stats:{def:1,int:1}},{name:'巨魔护符',slot:'trinket',rarity:'rare',stats:{sta:1,crit:1}}],
-  }, trash:[{name:'沙怒护肩',slot:'shoulder',rarity:'uncommon',stats:{atk:1}},{name:'巨魔手套',slot:'gloves',rarity:'uncommon',stats:{crit:1}}]},
+    '巫医祖穆拉恩':   [{name:'祖穆拉恩的祭祀之刃',slot:'weapon',rarity:'epic',stats:{atk:2}},{name:'沙怒头巾',slot:'helmet',rarity:'rare',stats:{def:1,int:1}},{name:'巨魔护符',slot:'trinket',rarity:'rare',stats:{sta:1}}]}, trash:[{name:'沙怒护肩',slot:'shoulder',rarity:'uncommon',stats:{atk:1}},{name:'巨魔手套',slot:'gloves',rarity:'uncommon',stats:{}}]},
   // 沉没的神庙
   sunktemple: { bosses: {
     '哈卡的化身':       [{name:'哈卡之牙',slot:'weapon',rarity:'rare',stats:{atk:1,agi:1}},{name:'翡翠护腿',slot:'pants',rarity:'rare',stats:{hp:1,spi:1}}],
     '德姆塞卡尔':       [{name:'德姆塞卡尔的龙鳞',slot:'shoulder',rarity:'rare',stats:{atk:1,sta:1}},{name:'龙人腰带',slot:'belt',rarity:'rare',stats:{def:1,hp:1}}],
-    '伊兰尼库斯之影':   [{name:'伊兰尼库斯之角',slot:'weapon',rarity:'epic',stats:{atk:2,crit:2}},{name:'龙鳞肩铠',slot:'shoulder',rarity:'rare',stats:{atk:1,sta:1}},{name:'沉睡者之戒',slot:'ring',rarity:'rare',stats:{crit:1,spi:1}}],
-  }, trash:[{name:'龙人护肩',slot:'shoulder',rarity:'uncommon',stats:{atk:1}},{name:'翡翠腰带',slot:'belt',rarity:'uncommon',stats:{def:1}}]},
+    '伊兰尼库斯之影':   [{name:'伊兰尼库斯之角',slot:'weapon',rarity:'epic',stats:{atk:2}},{name:'龙鳞肩铠',slot:'shoulder',rarity:'rare',stats:{atk:1,sta:1}},{name:'沉睡者之戒',slot:'ring',rarity:'rare',stats:{spi:1}}]}, trash:[{name:'龙人护肩',slot:'shoulder',rarity:'uncommon',stats:{atk:1}},{name:'翡翠腰带',slot:'belt',rarity:'uncommon',stats:{def:1}}]},
   // 通灵学院
   scholomance: { bosses: {
-    '詹迪斯·巴罗夫':         [{name:'巴罗夫家族长剑',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'白骨手套',slot:'gloves',rarity:'rare',stats:{crit:1,int:1}}],
+    '詹迪斯·巴罗夫':         [{name:'巴罗夫家族长剑',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'白骨手套',slot:'gloves',rarity:'rare',stats:{int:1}}],
     '黑暗院长加丁':           [{name:'加丁的黑暗法杖',slot:'weapon',rarity:'rare',stats:{atk:1,int:1}},{name:'黑暗腰带',slot:'belt',rarity:'rare',stats:{def:1,int:1}}],
-    '拉斯·弗罗斯特维斯帕':   [{name:'拉斯·弗罗斯特的法杖',slot:'weapon',rarity:'epic',stats:{atk:2,int:2}},{name:'亡灵仪祭头盔',slot:'helmet',rarity:'rare',stats:{def:1,int:1}},{name:'黑暗符文戒指',slot:'ring',rarity:'rare',stats:{crit:1,int:1}}],
-  }, trash:[{name:'亡灵手套',slot:'gloves',rarity:'uncommon',stats:{crit:1}},{name:'白骨腰带',slot:'belt',rarity:'uncommon',stats:{def:1}}]},
+    '拉斯·弗罗斯特维斯帕':   [{name:'拉斯·弗罗斯特的法杖',slot:'weapon',rarity:'epic',stats:{atk:2,int:2}},{name:'亡灵仪祭头盔',slot:'helmet',rarity:'rare',stats:{def:1,int:1}},{name:'黑暗符文戒指',slot:'ring',rarity:'rare',stats:{int:1}}]}, trash:[{name:'亡灵手套',slot:'gloves',rarity:'uncommon',stats:{}},{name:'白骨腰带',slot:'belt',rarity:'uncommon',stats:{def:1}}]},
   // 黑石深渊
   brd: { bosses: {
-    '弗诺斯·达克维尔':       [{name:'达克维尔的宝库钥匙',slot:'ring',rarity:'rare',stats:{crit:1,sta:1}},{name:'黑铁腰带',slot:'belt',rarity:'rare',stats:{def:1,str:1}}],
+    '弗诺斯·达克维尔':       [{name:'达克维尔的宝库钥匙',slot:'ring',rarity:'rare',stats:{sta:1}},{name:'黑铁腰带',slot:'belt',rarity:'rare',stats:{def:1,str:1}}],
     '贝尔加':                 [{name:'贝尔加之锤',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'熔岩护肩',slot:'shoulder',rarity:'rare',stats:{atk:1,sta:1}}],
-    '弗莱拉斯大使':           [{name:'大使之杖',slot:'weapon',rarity:'rare',stats:{atk:1,int:1}},{name:'黑铁手套',slot:'gloves',rarity:'rare',stats:{crit:1,int:1}}],
-    '达格兰·索瑞森大帝':     [{name:'索瑞森皇家节杖',slot:'weapon',rarity:'epic',stats:{atk:2,str:2}},{name:'黑铁战盔',slot:'helmet',rarity:'rare',stats:{def:1,sta:1}},{name:'熔火徽记',slot:'trinket',rarity:'rare',stats:{sta:1,def:1}}],
-  }, trash:[{name:'黑铁护手',slot:'gloves',rarity:'uncommon',stats:{crit:1}},{name:'暗炉腰带',slot:'belt',rarity:'uncommon',stats:{def:1}}]},
+    '弗莱拉斯大使':           [{name:'大使之杖',slot:'weapon',rarity:'rare',stats:{atk:1,int:1}},{name:'黑铁手套',slot:'gloves',rarity:'rare',stats:{int:1}}],
+    '达格兰·索瑞森大帝':     [{name:'索瑞森皇家节杖',slot:'weapon',rarity:'epic',stats:{atk:2,str:2}},{name:'黑铁战盔',slot:'helmet',rarity:'rare',stats:{def:1,sta:1}},{name:'熔火徽记',slot:'trinket',rarity:'rare',stats:{sta:1,def:1}}]}, trash:[{name:'黑铁护手',slot:'gloves',rarity:'uncommon',stats:{}},{name:'暗炉腰带',slot:'belt',rarity:'uncommon',stats:{def:1}}]},
   // 斯坦索姆
   stratholme: { bosses: {
     '悲惨的提米':     [{name:'提米的玩具锤',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'亡灵腰带',slot:'belt',rarity:'rare',stats:{def:1,sta:1}}],
     '炮手威利':       [{name:'威利的炸弹发射器',slot:'weapon',rarity:'rare',stats:{atk:1,agi:1}},{name:'火药护肩',slot:'shoulder',rarity:'rare',stats:{atk:1,agi:1}}],
-    '巴纳扎尔':       [{name:'巴纳扎尔的恐惧之刃',slot:'weapon',rarity:'rare',stats:{atk:1,crit:1}},{name:'恶魔之戒',slot:'ring',rarity:'rare',stats:{crit:1,atk:1}}],
-    '瑞文戴尔男爵':   [{name:'瑞文戴尔之剑',slot:'weapon',rarity:'epic',stats:{atk:2,str:2}},{name:'亡灵领主头盔',slot:'helmet',rarity:'rare',stats:{def:1,sta:1}},{name:'死亡骑士之戒',slot:'ring',rarity:'rare',stats:{crit:1,str:1}}],
-  }, trash:[{name:'瘟疫手套',slot:'gloves',rarity:'uncommon',stats:{crit:1}},{name:'亡灵肩甲',slot:'shoulder',rarity:'uncommon',stats:{atk:1}}]},
+    '巴纳扎尔':       [{name:'巴纳扎尔的恐惧之刃',slot:'weapon',rarity:'rare',stats:{atk:1}},{name:'恶魔之戒',slot:'ring',rarity:'rare',stats:{atk:1}}],
+    '瑞文戴尔男爵':   [{name:'瑞文戴尔之剑',slot:'weapon',rarity:'epic',stats:{atk:2,str:2}},{name:'亡灵领主头盔',slot:'helmet',rarity:'rare',stats:{def:1,sta:1}},{name:'死亡骑士之戒',slot:'ring',rarity:'rare',stats:{str:1}}]}, trash:[{name:'瘟疫手套',slot:'gloves',rarity:'uncommon',stats:{}},{name:'亡灵肩甲',slot:'shoulder',rarity:'uncommon',stats:{atk:1}}]},
   // 熔火之心
   mc: { bosses: {
-    '鲁西弗隆':   [{name:'鲁西弗隆的诅咒',slot:'trinket',rarity:'rare',stats:{sta:1,crit:1}},{name:'火焰手套',slot:'gloves',rarity:'rare',stats:{crit:1,int:1}}],
+    '鲁西弗隆':   [{name:'鲁西弗隆的诅咒',slot:'trinket',rarity:'rare',stats:{sta:1}},{name:'火焰手套',slot:'gloves',rarity:'rare',stats:{int:1}}],
     '玛格曼达':   [{name:'玛格曼达的獠牙',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'熔岩护肩',slot:'shoulder',rarity:'rare',stats:{atk:1,sta:1}}],
     '加尔':       [{name:'加尔之石',slot:'trinket',rarity:'rare',stats:{sta:1,def:1}},{name:'熔岩腰带',slot:'belt',rarity:'rare',stats:{def:1,sta:1}}],
     '迦顿男爵':   [{name:'迦顿的火焰之剑',slot:'weapon',rarity:'epic',stats:{atk:2,str:2}},{name:'烈焰行者护腿',slot:'pants',rarity:'rare',stats:{hp:1,sta:1}}],
-    '拉格纳罗斯': [{name:'萨弗隆战锤',slot:'weapon',rarity:'legend',stats:{atk:4,crit:3,str:3}},{name:'火焰之王头盔',slot:'helmet',rarity:'epic',stats:{def:2,sta:2}},{name:'熔岩之环',slot:'ring',rarity:'epic',stats:{crit:2,int:2}}],
-  }, trash:[{name:'熔岩护手',slot:'gloves',rarity:'rare',stats:{crit:1,sta:1}},{name:'黑铁战靴',slot:'boots',rarity:'rare',stats:{crit:1,sta:1}},{name:'炽热腰带',slot:'belt',rarity:'rare',stats:{def:1,str:1}}]},
+    '拉格纳罗斯': [{name:'萨弗隆战锤',slot:'weapon',rarity:'legend',stats:{atk:4,str:3}},{name:'火焰之王头盔',slot:'helmet',rarity:'epic',stats:{def:2,sta:2}},{name:'熔岩之环',slot:'ring',rarity:'epic',stats:{int:2}}]}, trash:[{name:'熔岩护手',slot:'gloves',rarity:'rare',stats:{sta:1}},{name:'黑铁战靴',slot:'boots',rarity:'rare',stats:{sta:1}},{name:'炽热腰带',slot:'belt',rarity:'rare',stats:{def:1,str:1}}]},
   // 法力陵墓
   manatombs: { bosses: {
-    '潘德莫努斯':       [{name:'潘德莫努斯之刃',slot:'weapon',rarity:'rare',stats:{atk:1,agi:1}},{name:'虚空裹手',slot:'gloves',rarity:'rare',stats:{crit:1,int:1}}],
+    '潘德莫努斯':       [{name:'潘德莫努斯之刃',slot:'weapon',rarity:'rare',stats:{atk:1,agi:1}},{name:'虚空裹手',slot:'gloves',rarity:'rare',stats:{int:1}}],
     '塔瓦洛克':         [{name:'塔瓦洛克的石拳',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'暗影腰带',slot:'belt',rarity:'rare',stats:{def:1,sta:1}}],
-    '节点亲王沙法尔':   [{name:'沙法尔的虚空法杖',slot:'weapon',rarity:'epic',stats:{atk:2,int:2}},{name:'能量灌注戒指',slot:'ring',rarity:'rare',stats:{crit:1,int:1}},{name:'虚空护肩',slot:'shoulder',rarity:'rare',stats:{atk:1,int:1}}],
-  }, trash:[{name:'奥金顿手套',slot:'gloves',rarity:'uncommon',stats:{crit:1}},{name:'虚空腰带',slot:'belt',rarity:'uncommon',stats:{def:1}}]},
+    '节点亲王沙法尔':   [{name:'沙法尔的虚空法杖',slot:'weapon',rarity:'epic',stats:{atk:2,int:2}},{name:'能量灌注戒指',slot:'ring',rarity:'rare',stats:{int:1}},{name:'虚空护肩',slot:'shoulder',rarity:'rare',stats:{atk:1,int:1}}]}, trash:[{name:'奥金顿手套',slot:'gloves',rarity:'uncommon',stats:{}},{name:'虚空腰带',slot:'belt',rarity:'uncommon',stats:{def:1}}]},
   // 黑翼之巢
   bwl: { bosses: {
     '狂野的拉佐格尔':     [{name:'拉佐格尔之爪',slot:'weapon',rarity:'rare',stats:{atk:1,agi:1}},{name:'黑翼护肩',slot:'shoulder',rarity:'rare',stats:{atk:1,agi:1}}],
-    '堕落的瓦拉斯塔兹':   [{name:'瓦拉斯塔兹之角',slot:'trinket',rarity:'rare',stats:{sta:1,crit:1}},{name:'龙人手套',slot:'gloves',rarity:'rare',stats:{crit:1,crit:1}}],
+    '堕落的瓦拉斯塔兹':   [{name:'瓦拉斯塔兹之角',slot:'trinket',rarity:'rare',stats:{sta:1}},{name:'龙人手套',slot:'gloves',rarity:'rare',stats:{}}],
     '克洛玛古斯':         [{name:'克洛玛古斯之牙',slot:'weapon',rarity:'epic',stats:{atk:2,agi:2}},{name:'多彩龙鳞腰带',slot:'belt',rarity:'rare',stats:{def:1,hp:1}}],
-    '奈法利安':           [{name:'暗影烈焰法杖',slot:'weapon',rarity:'legend',stats:{atk:4,crit:3,int:3}},{name:'黑龙王头盔',slot:'helmet',rarity:'epic',stats:{def:2,crit:2}},{name:'龙牙饰物',slot:'trinket',rarity:'epic',stats:{sta:2,crit:2}}],
-  }, trash:[{name:'黑龙肩甲',slot:'shoulder',rarity:'rare',stats:{atk:1,sta:1}},{name:'黑翼手套',slot:'gloves',rarity:'rare',stats:{crit:1,agi:1}},{name:'龙人腰带',slot:'belt',rarity:'rare',stats:{def:1,hp:1}}]},
+    '奈法利安':           [{name:'暗影烈焰法杖',slot:'weapon',rarity:'legend',stats:{atk:4,int:3}},{name:'黑龙王头盔',slot:'helmet',rarity:'epic',stats:{def:2}},{name:'龙牙饰物',slot:'trinket',rarity:'epic',stats:{sta:2}}]}, trash:[{name:'黑龙肩甲',slot:'shoulder',rarity:'rare',stats:{atk:1,sta:1}},{name:'黑翼手套',slot:'gloves',rarity:'rare',stats:{agi:1}},{name:'龙人腰带',slot:'belt',rarity:'rare',stats:{def:1,hp:1}}]},
   // 蒸汽地窟
   steamvault: { bosses: {
-    '水术师瑟丝比亚':   [{name:'瑟丝比亚的水晶杖',slot:'weapon',rarity:'rare',stats:{atk:1,int:1}},{name:'盘牙手套',slot:'gloves',rarity:'rare',stats:{crit:1,int:1}}],
+    '水术师瑟丝比亚':   [{name:'瑟丝比亚的水晶杖',slot:'weapon',rarity:'rare',stats:{atk:1,int:1}},{name:'盘牙手套',slot:'gloves',rarity:'rare',stats:{int:1}}],
     '机械师斯蒂里格':   [{name:'斯蒂里格的扳手',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'蒸汽腰带',slot:'belt',rarity:'rare',stats:{def:1,str:1}}],
-    '督军卡利瑟里斯':   [{name:'卡利瑟里斯的战斗斧',slot:'weapon',rarity:'epic',stats:{atk:2,str:2}},{name:'蒸汽护肩',slot:'shoulder',rarity:'rare',stats:{atk:1,sta:1}},{name:'盘牙徽记',slot:'trinket',rarity:'rare',stats:{sta:1,str:1}}],
-  }, trash:[{name:'沼泽护肩',slot:'shoulder',rarity:'uncommon',stats:{atk:1}},{name:'蒸汽手套',slot:'gloves',rarity:'uncommon',stats:{crit:1}}]},
+    '督军卡利瑟里斯':   [{name:'卡利瑟里斯的战斗斧',slot:'weapon',rarity:'epic',stats:{atk:2,str:2}},{name:'蒸汽护肩',slot:'shoulder',rarity:'rare',stats:{atk:1,sta:1}},{name:'盘牙徽记',slot:'trinket',rarity:'rare',stats:{sta:1,str:1}}]}, trash:[{name:'沼泽护肩',slot:'shoulder',rarity:'uncommon',stats:{atk:1}},{name:'蒸汽手套',slot:'gloves',rarity:'uncommon',stats:{}}]},
   // 纳克萨玛斯
   naxx: { bosses: {
     '阿努布雷坎': [{name:'阿努布雷坎的蛛牙',slot:'weapon',rarity:'rare',stats:{atk:1,agi:1}},{name:'蛛魔腰带',slot:'belt',rarity:'rare',stats:{def:1,agi:1}}],
-    '帕奇维克':   [{name:'帕奇维克的屠刀',slot:'weapon',rarity:'epic',stats:{atk:2,str:2}},{name:'憎恶手套',slot:'gloves',rarity:'rare',stats:{crit:1,str:1}}],
-    '塔迪乌斯':   [{name:'塔迪乌斯的闪电护肩',slot:'shoulder',rarity:'epic',stats:{atk:2,crit:1}},{name:'电击之戒',slot:'ring',rarity:'rare',stats:{crit:1,crit:1}}],
+    '帕奇维克':   [{name:'帕奇维克的屠刀',slot:'weapon',rarity:'epic',stats:{atk:2,str:2}},{name:'憎恶手套',slot:'gloves',rarity:'rare',stats:{str:1}}],
+    '塔迪乌斯':   [{name:'塔迪乌斯的闪电护肩',slot:'shoulder',rarity:'epic',stats:{atk:2}},{name:'电击之戒',slot:'ring',rarity:'rare',stats:{}}],
     '萨菲隆':     [{name:'萨菲隆的冰霜之息',slot:'trinket',rarity:'epic',stats:{sta:2,int:2}},{name:'冰霜巨龙腿甲',slot:'pants',rarity:'rare',stats:{hp:1,sta:1}}],
-    '克尔苏加德': [{name:'克尔苏加德的法杖',slot:'weapon',rarity:'legend',stats:{atk:4,crit:3,int:3}},{name:'霜火头饰',slot:'helmet',rarity:'epic',stats:{def:2,int:2}},{name:'白骨之环',slot:'ring',rarity:'epic',stats:{crit:2,atk:2}}],
-  }, trash:[{name:'天灾护肩',slot:'shoulder',rarity:'rare',stats:{atk:1,sta:1}},{name:'瘟疫手套',slot:'gloves',rarity:'rare',stats:{crit:1,int:1}},{name:'亡灵壁垒腰带',slot:'belt',rarity:'rare',stats:{def:1,def:1}}]},
+    '克尔苏加德': [{name:'克尔苏加德的法杖',slot:'weapon',rarity:'legend',stats:{atk:4,int:3}},{name:'霜火头饰',slot:'helmet',rarity:'epic',stats:{def:2,int:2}},{name:'白骨之环',slot:'ring',rarity:'epic',stats:{atk:2}}]}, trash:[{name:'天灾护肩',slot:'shoulder',rarity:'rare',stats:{atk:1,sta:1}},{name:'瘟疫手套',slot:'gloves',rarity:'rare',stats:{int:1}},{name:'亡灵壁垒腰带',slot:'belt',rarity:'rare',stats:{def:1,def:1}}]},
   // 魔导师平台
   magister: { bosses: {
     '塞林·火心':         [{name:'火心之剑',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'血精灵护肩',slot:'shoulder',rarity:'rare',stats:{atk:1,int:1}}],
     '女祭司德莉希亚':     [{name:'德莉希亚的圣光之锤',slot:'weapon',rarity:'rare',stats:{atk:1,spi:1}},{name:'奥术腰带',slot:'belt',rarity:'rare',stats:{def:1,int:1}}],
-    '凯尔萨斯·逐日者':   [{name:'凯尔萨斯的凤凰之刃',slot:'weapon',rarity:'legend',stats:{atk:4,int:3,crit:3}},{name:'日怒肩垫',slot:'shoulder',rarity:'epic',stats:{atk:2,int:2}},{name:'炎刃手套',slot:'gloves',rarity:'epic',stats:{crit:1,crit:2}}],
-  }, trash:[{name:'日怒手套',slot:'gloves',rarity:'rare',stats:{crit:1,int:1}},{name:'银月腰带',slot:'belt',rarity:'rare',stats:{def:1,int:1}}]},
+    '凯尔萨斯·逐日者':   [{name:'凯尔萨斯的凤凰之刃',slot:'weapon',rarity:'legend',stats:{atk:4,int:3}},{name:'日怒肩垫',slot:'shoulder',rarity:'epic',stats:{atk:2,int:2}},{name:'炎刃手套',slot:'gloves',rarity:'epic',stats:{}}]}, trash:[{name:'日怒手套',slot:'gloves',rarity:'rare',stats:{int:1}},{name:'银月腰带',slot:'belt',rarity:'rare',stats:{def:1,int:1}}]},
   // 卡拉赞
   karazhan: { bosses: {
     '猎手阿图门': [{name:'阿图门之剑',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'午夜马鞍',slot:'belt',rarity:'rare',stats:{def:1,agi:1}}],
-    '莫罗斯':     [{name:'莫罗斯的幸运怀表',slot:'trinket',rarity:'rare',stats:{sta:1,crit:1}},{name:'管家手套',slot:'gloves',rarity:'rare',stats:{crit:1,agi:1}}],
+    '莫罗斯':     [{name:'莫罗斯的幸运怀表',slot:'trinket',rarity:'rare',stats:{sta:1}},{name:'管家手套',slot:'gloves',rarity:'rare',stats:{agi:1}}],
     '馆长':       [{name:'馆长的奥术核心',slot:'trinket',rarity:'epic',stats:{sta:2,int:2}},{name:'奥术护肩',slot:'shoulder',rarity:'rare',stats:{atk:1,int:1}}],
-    '麦迪文':     [{name:'麦迪文的法杖',slot:'weapon',rarity:'legend',stats:{atk:4,int:3,spi:3}},{name:'守护者头盔',slot:'helmet',rarity:'epic',stats:{def:2,int:2}},{name:'卡拉赞徽记',slot:'trinket',rarity:'epic',stats:{sta:2,int:2}}],
-  }, trash:[{name:'占星者手套',slot:'gloves',rarity:'rare',stats:{crit:1,int:1}},{name:'奥术腰带',slot:'belt',rarity:'rare',stats:{def:1,int:1}}]},
+    '麦迪文':     [{name:'麦迪文的法杖',slot:'weapon',rarity:'legend',stats:{atk:4,int:3,spi:3}},{name:'守护者头盔',slot:'helmet',rarity:'epic',stats:{def:2,int:2}},{name:'卡拉赞徽记',slot:'trinket',rarity:'epic',stats:{sta:2,int:2}}]}, trash:[{name:'占星者手套',slot:'gloves',rarity:'rare',stats:{int:1}},{name:'奥术腰带',slot:'belt',rarity:'rare',stats:{def:1,int:1}}]},
   // 闪电大厅
   hol: { bosses: {
     '比亚格里将军': [{name:'比亚格里的战锤',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'风暴护肩',slot:'shoulder',rarity:'rare',stats:{atk:1,sta:1}}],
-    '沃尔坎':       [{name:'沃尔坎的熔岩拳套',slot:'gloves',rarity:'rare',stats:{crit:1,str:1}},{name:'铁矮人护腿',slot:'pants',rarity:'rare',stats:{hp:1,sta:1}}],
-    '洛肯':         [{name:'洛肯的闪电之锤',slot:'weapon',rarity:'epic',stats:{atk:3,str:2}},{name:'雷霆头盔',slot:'helmet',rarity:'epic',stats:{def:2,sta:2}},{name:'闪电之戒',slot:'ring',rarity:'rare',stats:{crit:1,crit:1}}],
-  }, trash:[{name:'铁矮人手套',slot:'gloves',rarity:'rare',stats:{crit:1,str:1}},{name:'风暴腰带',slot:'belt',rarity:'rare',stats:{def:1,sta:1}}]},
+    '沃尔坎':       [{name:'沃尔坎的熔岩拳套',slot:'gloves',rarity:'rare',stats:{str:1}},{name:'铁矮人护腿',slot:'pants',rarity:'rare',stats:{hp:1,sta:1}}],
+    '洛肯':         [{name:'洛肯的闪电之锤',slot:'weapon',rarity:'epic',stats:{atk:3,str:2}},{name:'雷霆头盔',slot:'helmet',rarity:'epic',stats:{def:2,sta:2}},{name:'闪电之戒',slot:'ring',rarity:'rare',stats:{}}]}, trash:[{name:'铁矮人手套',slot:'gloves',rarity:'rare',stats:{str:1}},{name:'风暴腰带',slot:'belt',rarity:'rare',stats:{def:1,sta:1}}]},
   // 冠军的试炼
   toc: { bosses: {
     '银色勇士':           [{name:'银色勇士之剑',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'银白护肩',slot:'shoulder',rarity:'rare',stats:{atk:1,spi:1}}],
-    '黑骑士':             [{name:'黑骑士之刃',slot:'weapon',rarity:'rare',stats:{atk:1,crit:1}},{name:'暗影战靴',slot:'boots',rarity:'rare',stats:{crit:1,str:1}}],
+    '黑骑士':             [{name:'黑骑士之刃',slot:'weapon',rarity:'rare',stats:{atk:1}},{name:'暗影战靴',slot:'boots',rarity:'rare',stats:{str:1}}],
     '纯洁者耶德瑞克':     [{name:'纯洁者的圣光之锤',slot:'weapon',rarity:'rare',stats:{atk:1,spi:1}},{name:'圣光腰带',slot:'belt',rarity:'rare',stats:{def:1,spi:1}}],
-    '银白十字军冠军':     [{name:'冠军的荣耀之剑',slot:'weapon',rarity:'epic',stats:{atk:3,crit:3}},{name:'银白十字军战盔',slot:'helmet',rarity:'epic',stats:{def:2,str:2}},{name:'冠军徽记',slot:'trinket',rarity:'epic',stats:{sta:2,crit:2}}],
-  }, trash:[{name:'银白手套',slot:'gloves',rarity:'rare',stats:{crit:1,spi:1}},{name:'十字军战靴',slot:'boots',rarity:'rare',stats:{crit:1,str:1}}]},
+    '银白十字军冠军':     [{name:'冠军的荣耀之剑',slot:'weapon',rarity:'epic',stats:{atk:3}},{name:'银白十字军战盔',slot:'helmet',rarity:'epic',stats:{def:2,str:2}},{name:'冠军徽记',slot:'trinket',rarity:'epic',stats:{sta:2}}]}, trash:[{name:'银白手套',slot:'gloves',rarity:'rare',stats:{spi:1}},{name:'十字军战靴',slot:'boots',rarity:'rare',stats:{str:1}}]},
   // 太阳之井
   sunwell: { bosses: {
-    '卡雷苟斯':   [{name:'卡雷苟斯之鳞',slot:'armor',rarity:'rare',stats:{def:1,int:1}},{name:'蓝龙之戒',slot:'ring',rarity:'rare',stats:{crit:1,int:1}}],
+    '卡雷苟斯':   [{name:'卡雷苟斯之鳞',slot:'armor',rarity:'rare',stats:{def:1,int:1}},{name:'蓝龙之戒',slot:'ring',rarity:'rare',stats:{int:1}}],
     '布鲁塔卢斯': [{name:'布鲁塔卢斯的断角',slot:'weapon',rarity:'epic',stats:{atk:2,str:2}},{name:'恶魔护肩',slot:'shoulder',rarity:'rare',stats:{atk:1,str:1}}],
-    '艾瑞达双子': [{name:'双子之刃',slot:'weapon',rarity:'epic',stats:{atk:2,crit:2}},{name:'双子之环',slot:'ring',rarity:'rare',stats:{crit:1,atk:1}}],
-    '基尔加丹':   [{name:'索利达尔·群星之怒',slot:'weapon',rarity:'legend',stats:{atk:4,crit:4,agi:3}},{name:'基尔加丹的冠冕',slot:'helmet',rarity:'epic',stats:{def:2,crit:2}},{name:'永恒之光胸甲',slot:'armor',rarity:'epic',stats:{def:2,spi:2}}],
-  }, trash:[{name:'日怒肩垫',slot:'shoulder',rarity:'rare',stats:{atk:1,int:1}},{name:'炎刃手套',slot:'gloves',rarity:'rare',stats:{crit:1,crit:1}}]},
+    '艾瑞达双子': [{name:'双子之刃',slot:'weapon',rarity:'epic',stats:{atk:2}},{name:'双子之环',slot:'ring',rarity:'rare',stats:{atk:1}}],
+    '基尔加丹':   [{name:'索利达尔·群星之怒',slot:'weapon',rarity:'legend',stats:{atk:4,agi:3}},{name:'基尔加丹的冠冕',slot:'helmet',rarity:'epic',stats:{def:2}},{name:'永恒之光胸甲',slot:'armor',rarity:'epic',stats:{def:2,spi:2}}]}, trash:[{name:'日怒肩垫',slot:'shoulder',rarity:'rare',stats:{atk:1,int:1}},{name:'炎刃手套',slot:'gloves',rarity:'rare',stats:{}}]},
   // 奥杜尔
   ulduar: { bosses: {
     '烈焰巨兽': [{name:'烈焰巨兽的活塞',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'泰坦护肩',slot:'shoulder',rarity:'rare',stats:{atk:1,sta:1}}],
-    '钢铁议会': [{name:'钢铁议会之锤',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'符文手套',slot:'gloves',rarity:'rare',stats:{crit:1,int:1}}],
-    '芙蕾雅':   [{name:'芙蕾雅的自然法杖',slot:'weapon',rarity:'epic',stats:{atk:2,spi:2}},{name:'自然之环',slot:'ring',rarity:'rare',stats:{crit:1,spi:1}}],
-    '尤格-萨隆':[{name:'瓦兰奈尔·远古王者之锤',slot:'weapon',rarity:'legend',stats:{atk:4,hp:3,spi:3}},{name:'尤格萨隆的触须之盔',slot:'helmet',rarity:'epic',stats:{def:2,sta:2}},{name:'泰坦之戒',slot:'ring',rarity:'epic',stats:{crit:2,sta:2}}],
-  }, trash:[{name:'钢铁腰带',slot:'belt',rarity:'rare',stats:{def:1,sta:1}},{name:'泰坦手套',slot:'gloves',rarity:'rare',stats:{crit:1,sta:1}}]},
+    '钢铁议会': [{name:'钢铁议会之锤',slot:'weapon',rarity:'rare',stats:{atk:1,str:1}},{name:'符文手套',slot:'gloves',rarity:'rare',stats:{int:1}}],
+    '芙蕾雅':   [{name:'芙蕾雅的自然法杖',slot:'weapon',rarity:'epic',stats:{atk:2,spi:2}},{name:'自然之环',slot:'ring',rarity:'rare',stats:{spi:1}}],
+    '尤格-萨隆':[{name:'瓦兰奈尔·远古王者之锤',slot:'weapon',rarity:'legend',stats:{atk:4,hp:3,spi:3}},{name:'尤格萨隆的触须之盔',slot:'helmet',rarity:'epic',stats:{def:2,sta:2}},{name:'泰坦之戒',slot:'ring',rarity:'epic',stats:{sta:2}}]}, trash:[{name:'钢铁腰带',slot:'belt',rarity:'rare',stats:{def:1,sta:1}},{name:'泰坦手套',slot:'gloves',rarity:'rare',stats:{sta:1}}]},
   // 灵魂洪炉
   forge: { bosses: {
     '布隆亚姆':         [{name:'布隆亚姆的镰刀',slot:'weapon',rarity:'rare',stats:{atk:1,agi:1}},{name:'灵魂护肩',slot:'shoulder',rarity:'rare',stats:{atk:1,int:1}}],
-    '灵魂吞噬者':       [{name:'灵魂吞噬者之爪',slot:'gloves',rarity:'rare',stats:{crit:1,crit:1}},{name:'痛苦腰带',slot:'belt',rarity:'rare',stats:{def:1,crit:1}}],
-    '噬魂者布隆亚姆':   [{name:'噬魂者之镰',slot:'weapon',rarity:'legend',stats:{atk:4,crit:3,agi:3}},{name:'灵魂熔炉头盔',slot:'helmet',rarity:'epic',stats:{def:2,sta:2}},{name:'噬魂之戒',slot:'ring',rarity:'epic',stats:{crit:2,atk:2}}],
-  }, trash:[{name:'灵魂手套',slot:'gloves',rarity:'rare',stats:{crit:1,int:1}},{name:'熔炉腰带',slot:'belt',rarity:'rare',stats:{def:1,sta:1}}]},
+    '灵魂吞噬者':       [{name:'灵魂吞噬者之爪',slot:'gloves',rarity:'rare',stats:{}},{name:'痛苦腰带',slot:'belt',rarity:'rare',stats:{def:1}}],
+    '噬魂者布隆亚姆':   [{name:'噬魂者之镰',slot:'weapon',rarity:'legend',stats:{atk:4,agi:3}},{name:'灵魂熔炉头盔',slot:'helmet',rarity:'epic',stats:{def:2,sta:2}},{name:'噬魂之戒',slot:'ring',rarity:'epic',stats:{atk:2}}]}, trash:[{name:'灵魂手套',slot:'gloves',rarity:'rare',stats:{int:1}},{name:'熔炉腰带',slot:'belt',rarity:'rare',stats:{def:1,sta:1}}]},
   // 红玉圣殿
   ruby: { bosses: {
     '巴尔萨鲁斯':         [{name:'巴尔萨鲁斯的龙鳞',slot:'shoulder',rarity:'rare',stats:{atk:1,sta:1}},{name:'红龙护肩',slot:'shoulder',rarity:'rare',stats:{atk:1,hp:1}}],
-    '扎里斯利安将军':     [{name:'将军的龙鳞护手',slot:'gloves',rarity:'rare',stats:{crit:1,str:1}},{name:'暮光腰带',slot:'belt',rarity:'rare',stats:{def:1,sta:1}}],
-    '暮光龙·萨维安娜':    [{name:'萨维安娜的龙牙',slot:'weapon',rarity:'epic',stats:{atk:2,crit:2}},{name:'暮光龙鳞胸甲',slot:'armor',rarity:'rare',stats:{def:1,hp:1}}],
-    '海里昂':             [{name:'海里昂的龙鳞法杖',slot:'weapon',rarity:'legend',stats:{atk:4,int:3,spi:3}},{name:'红玉龙鳞头盔',slot:'helmet',rarity:'epic',stats:{def:2,hp:2}},{name:'暮光徽记',slot:'trinket',rarity:'epic',stats:{sta:2,crit:2}}],
-  }, trash:[{name:'暮光手套',slot:'gloves',rarity:'rare',stats:{crit:1,int:1}},{name:'红玉腰带',slot:'belt',rarity:'rare',stats:{def:1,hp:1}}]},
+    '扎里斯利安将军':     [{name:'将军的龙鳞护手',slot:'gloves',rarity:'rare',stats:{str:1}},{name:'暮光腰带',slot:'belt',rarity:'rare',stats:{def:1,sta:1}}],
+    '暮光龙·萨维安娜':    [{name:'萨维安娜的龙牙',slot:'weapon',rarity:'epic',stats:{atk:2}},{name:'暮光龙鳞胸甲',slot:'armor',rarity:'rare',stats:{def:1,hp:1}}],
+    '海里昂':             [{name:'海里昂的龙鳞法杖',slot:'weapon',rarity:'legend',stats:{atk:4,int:3,spi:3}},{name:'红玉龙鳞头盔',slot:'helmet',rarity:'epic',stats:{def:2,hp:2}},{name:'暮光徽记',slot:'trinket',rarity:'epic',stats:{sta:2}}]}, trash:[{name:'暮光手套',slot:'gloves',rarity:'rare',stats:{int:1}},{name:'红玉腰带',slot:'belt',rarity:'rare',stats:{def:1,hp:1}}]},
   // 冰冠堡垒
   icc: { bosses: {
-    '玛洛加尔领主':       [{name:'玛洛加尔的骨刺',slot:'weapon',rarity:'rare',stats:{atk:1,crit:1}},{name:'白骨腰带',slot:'belt',rarity:'rare',stats:{def:1,str:1}}],
+    '玛洛加尔领主':       [{name:'玛洛加尔的骨刺',slot:'weapon',rarity:'rare',stats:{atk:1}},{name:'白骨腰带',slot:'belt',rarity:'rare',stats:{def:1,str:1}}],
     '死亡使者萨鲁法尔':   [{name:'萨鲁法尔的战斧',slot:'weapon',rarity:'epic',stats:{atk:2,str:2}},{name:'死亡使者肩铠',slot:'shoulder',rarity:'rare',stats:{atk:1,str:1}}],
-    '普崔塞德教授':       [{name:'教授的实验瓶',slot:'trinket',rarity:'epic',stats:{sta:2,int:2}},{name:'瘟疫科学家手套',slot:'gloves',rarity:'rare',stats:{crit:1,int:1}}],
-    '鲜血女王兰娜瑟尔':   [{name:'兰娜瑟尔的鲜血之牙',slot:'weapon',rarity:'epic',stats:{atk:2,agi:2}},{name:'鲜血女王之戒',slot:'ring',rarity:'rare',stats:{crit:1,atk:1}}],
-    '辛达苟萨':           [{name:'辛达苟萨的冰霜之息',slot:'trinket',rarity:'epic',stats:{sta:2,crit:2}},{name:'冰霜巨龙腿甲',slot:'pants',rarity:'epic',stats:{hp:2,str:2}}],
-    '巫妖王':             [{name:'影之哀伤',slot:'weapon',rarity:'legend',stats:{atk:5,crit:4,str:4}},{name:'巫妖王的王冠',slot:'helmet',rarity:'epic',stats:{def:3,str:3}},{name:'阿尔萨斯的悔恨',slot:'trinket',rarity:'epic',stats:{sta:3,str:3}},{name:'冰封王座胸铠',slot:'armor',rarity:'epic',stats:{def:3,sta:3}}],
-  }, trash:[{name:'天灾领主肩铠',slot:'shoulder',rarity:'rare',stats:{atk:1,str:1}},{name:'死亡之握',slot:'gloves',rarity:'rare',stats:{crit:1,crit:1}},{name:'冰霜壁垒腰带',slot:'belt',rarity:'rare',stats:{def:1,sta:1}},{name:'灵魂洪炉战靴',slot:'boots',rarity:'rare',stats:{crit:1,str:1}}]},
-};
+    '普崔塞德教授':       [{name:'教授的实验瓶',slot:'trinket',rarity:'epic',stats:{sta:2,int:2}},{name:'瘟疫科学家手套',slot:'gloves',rarity:'rare',stats:{int:1}}],
+    '鲜血女王兰娜瑟尔':   [{name:'兰娜瑟尔的鲜血之牙',slot:'weapon',rarity:'epic',stats:{atk:2,agi:2}},{name:'鲜血女王之戒',slot:'ring',rarity:'rare',stats:{atk:1}}],
+    '辛达苟萨':           [{name:'辛达苟萨的冰霜之息',slot:'trinket',rarity:'epic',stats:{sta:2}},{name:'冰霜巨龙腿甲',slot:'pants',rarity:'epic',stats:{hp:2,str:2}}],
+    '巫妖王':             [{name:'影之哀伤',slot:'weapon',rarity:'legend',stats:{atk:5,str:4}},{name:'巫妖王的王冠',slot:'helmet',rarity:'epic',stats:{def:3,str:3}},{name:'阿尔萨斯的悔恨',slot:'trinket',rarity:'epic',stats:{sta:3,str:3}},{name:'冰封王座胸铠',slot:'armor',rarity:'epic',stats:{def:3,sta:3}}]}, trash:[{name:'天灾领主肩铠',slot:'shoulder',rarity:'rare',stats:{atk:1,str:1}},{name:'死亡之握',slot:'gloves',rarity:'rare',stats:{}},{name:'冰霜壁垒腰带',slot:'belt',rarity:'rare',stats:{def:1,sta:1}},{name:'灵魂洪炉战靴',slot:'boots',rarity:'rare',stats:{str:1}}]}};
 /* ========== COMPANIONS(2026-06-15 大修)==========
    品质=按背景设定固定(不可升级),技能数=品质等级(白1→橙5)
    mult=战力系数(越稀有越强),weight=抽卡权重,starsMax=可升星上限 */
@@ -3379,11 +3337,10 @@ const COMPANION_QUALITY=[
 const ROLE_BONUS={
   tank:{defPct:12, hpPct:10},
   heal:{regFlat:8, hpPct:6, vers:3},
-  dps:{atkPct:4, crit:3},
-};
+  dps:{atkPct:4}};
 /* 羁绊:集齐 keys 中全部随从即激活,给主角额外加成 */
 const COMPANION_BONDS=[
-  {name:"守护者之力", keys:["medivh","jaina"],            mod:{atkPct:3,crit:4},   desc:"麦迪文 + 吉安娜"},
+  {name:"守护者之力", keys:["medivh","jaina"],            mod:{atkPct:3},   desc:"麦迪文 + 吉安娜"},
   {name:"燃烧军团",   keys:["kiljaeden","azshara"],       mod:{atkPct:3,critdPct:8},desc:"基尔加丹 + 艾萨拉"},
   {name:"天灾降临",   keys:["lichking","kelthuzad"],      mod:{atkPct:2,leech:6},  desc:"巫妖王 + 克尔苏加德"},
   {name:"怒风兄弟",   keys:["illidan","malfurion"],       mod:{atkPct:2,hpPct:5},  desc:"伊利丹 + 玛法里奥"},
