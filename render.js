@@ -259,7 +259,19 @@ function updateBattleVisuals() {
     const map = getMap();
     $('h-zone').textContent = `${map.icon} ${map.name} · ⚔️BOSS战`;
     $('zone-name').textContent = `⚔️ ${map.icon} ${map.name} · BOSS战`;
-    $('progress-text').innerHTML = `<b>${map.boss.name}</b>`;
+    let bossExtra = '';
+    if (map.boss.skills) bossExtra += ' · '+map.boss.skills.map(s=>s.icon+s.name).join(' ');
+    if (map.boss.passive) {
+      const p = map.boss.passive;
+      const tags = [];
+      if (p.dodgeChance) tags.push('💨闪避+'+(p.dodgeChance*100)+'%');
+      if (p.critChance) tags.push('💥暴击+'+(p.critChance*100)+'%');
+      if (p.dmgReduction) tags.push('🛡️减伤+'+(p.dmgReduction*100)+'%');
+      if (p.atkBonus) tags.push('⚔️攻击+'+(p.atkBonus*100)+'%');
+      if (p.leech) tags.push('🩸吸血+'+(p.leech*100)+'%');
+      if (tags.length) bossExtra += ' · '+tags.join(' ');
+    }
+    $('progress-text').innerHTML = `<b>${map.boss.name}</b><span style="font-size:10px;color:var(--muted)">${bossExtra}</span>`;
   } else if (state.mode === 'dungeon') {
     const dg = DUNGEONS.find(d => d.key === state.dungeonState.key);
     if (!dg) return;
@@ -980,19 +992,40 @@ function renderMap() {
     html += `
       <div class="boss-row">
         <div class="boss-info">
-          <div><span class="bname">⚔️ ${m.boss.emoji} ${m.boss.name}</span> <span class="pill">Lv ${m.boss.lvl}</span></div>
-          <div class="muted">${m.boss.desc}${m.boss.skills?' · '+m.boss.skills.map(s=>s.icon+s.name).join(' '):''}${m.boss.passive?' · 被动:'+Object.keys(m.boss.passive).map(k=>{
-          if(k==='dodgeChance')return '闪避+'+(m.boss.passive[k]*100)+'%';
-          if(k==='critChance')return '暴击+'+(m.boss.passive[k]*100)+'%';
-          if(k==='dmgReduction')return '减伤+'+(m.boss.passive[k]*100)+'%';
-          if(k==='atkBonus')return '攻击+'+(m.boss.passive[k]*100)+'%';
-          if(k==='leech')return '吸血+'+(m.boss.passive[k]*100)+'%';
-          return '';
-        }).filter(Boolean).join(' '):''}</div>
+          <div><span class="bname boss-name-tip" data-bosskey="${m.key}">⚔️ ${m.boss.emoji} ${m.boss.name}</span> <span class="pill">Lv ${m.boss.lvl}</span></div>
+          <div class="muted">${m.boss.desc}</div>
         </div>
         <button class="boss-btn ${canBoss?'epic':''}" data-action="boss" data-map="${m.key}" ${canBoss?'':'disabled'}>${bossText}</button>
       </div>`;
     div.innerHTML = html;
+    // BOSS名字hover显示技能/被动
+    const nameEl = div.querySelector('.boss-name-tip');
+    if (nameEl && m.boss.skills) {
+      nameEl.style.cursor = 'help';
+      nameEl.addEventListener('mouseenter', e => {
+        let tip = '<b>'+m.boss.emoji+' '+m.boss.name+' Lv.'+m.boss.lvl+'</b>';
+        if (m.boss.skills) {
+          tip += '<div style="margin-top:3px;color:#fbbf24">技能:</div>';
+          m.boss.skills.forEach(s => tip += '<div>'+s.icon+' '+s.name+' — '+s.desc+' ('+(s.castTime||0)+'s读条)</div>');
+        }
+        if (m.boss.passive) {
+          tip += '<div style="margin-top:3px;color:#6ee7b7">被动:</div>';
+          const p = m.boss.passive;
+          if (p.dodgeChance) tip += '<div>💨 闪避 +'+(p.dodgeChance*100)+'%</div>';
+          if (p.critChance) tip += '<div>💥 暴击 +'+(p.critChance*100)+'%</div>';
+          if (p.dmgReduction) tip += '<div>🛡️ 减伤 +'+(p.dmgReduction*100)+'%</div>';
+          if (p.atkBonus) tip += '<div>⚔️ 攻击 +'+(p.atkBonus*100)+'%</div>';
+          if (p.leech) tip += '<div>🩸 吸血 +'+(p.leech*100)+'%</div>';
+        }
+        const tipEl = $('compare-tip');
+        tipEl.querySelector('.compare-head').innerHTML = tip;
+        tipEl.querySelector('.compare-body').innerHTML = '';
+        tipEl.style.display = 'block';
+        positionTip(tipEl, e);
+      });
+      nameEl.addEventListener('mouseleave', () => { $('compare-tip').style.display = 'none'; });
+      nameEl.addEventListener('mousemove', e => positionTip($('compare-tip'), e));
+    }
     // BOSS按钮hover掉落预览
     const bossBtn = div.querySelector('.boss-btn');
     if (bossBtn) {
