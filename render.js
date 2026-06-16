@@ -109,7 +109,18 @@ function attachFocusBossHover(focus) {
     let html = '<b>'+focus.name+' Lv.'+focus.lvl+'</b>';
     if (bossData.skills) {
       html += '<div style="margin-top:3px;color:#fbbf24">技能:</div>';
-      bossData.skills.forEach(s => html += '<div>'+s.icon+' '+s.name+' — '+s.desc+' ('+(s.castTime||0)+'s读条)</div>');
+      bossData.skills.forEach(s => {
+        let tags = '';
+        if (s.aoe) tags += ' 💥AOE';
+        if (s.stun) tags += ' 💫眩晕';
+        if (s.slow) tags += ' ❄️减速';
+        if (s.dot) tags += ' ☠️灼烧';
+        if (s.weaken) tags += ' 💔削弱';
+        if (s.sunder) tags += ' 🩸易伤';
+        if (s.spdBuff) tags += ' ⚡加速';
+        if (s.lifeSteal) tags += ' 🩸吸血';
+        html += '<div>'+s.icon+' '+s.name+' — '+s.desc+' ('+(s.castTime||0)+'s读条)'+tags+'</div>';
+      });
     }
     if (bossData.passive) {
       html += '<div style="margin-top:3px;color:#6ee7b7">被动:</div>';
@@ -1216,7 +1227,11 @@ function renderDungeon() {
         for (const [bossName, items] of Object.entries(loot.bosses)) {
           const bossData=(dg.bosses||[]).find(b=>b.name===bossName);
           const isFinal = bossName === lastBossName;
-          const skillInfo=bossData?.skills?bossData.skills.map(s=>`${s.icon}${s.name}(${s.desc},${s.castTime||0}s读条)`).join(' · '):'';
+          const skillInfo=bossData?.skills?bossData.skills.map(s=>{
+            let t='';
+            if(s.aoe)t+='💥'; if(s.stun)t+='💫'; if(s.slow)t+='❄️'; if(s.dot)t+='☠️'; if(s.weaken)t+='💔'; if(s.spdBuff)t+='⚡'; if(s.lifeSteal)t+='🩸';
+            return s.icon+s.name+(t?' '+t:'')+'('+s.desc+','+(s.castTime||0)+'s读条)';
+          }).join(' · '):'';
           const dropLabel = isRaid ? (isFinal ? '(必紫+8%橙)' : '(必紫)') : '(必掉1件)';
           html += `<div style=\"margin-top:4px;color:var(--legend);font-size:11px\">👑 ${bossName} ${dropLabel}${skillInfo?' · '+skillInfo:''}</div>`;
           const tw = items.reduce((s,it)=>s+(RARITY.find(r=>r.key===it.rarity)?.weight||1),0);
