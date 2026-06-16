@@ -502,6 +502,16 @@ function setupMainButtons() {
       if (btn.dataset.action === 'claimach') {
         claimAchievement(btn.dataset.key);
         renderProgression();
+      } else if (btn.dataset.action === 'equiptitle') {
+        if (setActiveTitle(btn.dataset.title)) {
+          log(`👑 已切换称号: ${btn.dataset.title}`, 'good');
+          renderProgression();
+        }
+      } else if (btn.dataset.action === 'cleartitle') {
+        if (setActiveTitle('')) {
+          log('👤 已隐藏当前称号', 'info');
+          renderProgression();
+        }
       }
     });
   }
@@ -679,9 +689,10 @@ function showCharacterList() {
   const list = getCharacterList();
   content.innerHTML = list.map(c => {
     const cls = c.cls ? CLASSES[c.cls] : null;
+    const titleHtml = c.title ? `<span class="pill" style="background:var(--gold);color:#000;font-weight:bold;margin-left:4px">${c.title}</span>` : '';
     return `<div class="char-item ${c.active?'current':''}" style="display:flex;justify-content:space-between;align-items:center;padding:10px;margin-bottom:6px;background:var(--panel-2);border:1px solid ${c.active?'var(--accent)':'var(--border)'};border-radius:8px">
       <div>
-        <div style="font-weight:bold">👤 ${c.name} ${c.active?'<span class="pill" style="background:var(--accent);color:#000">当前</span>':''}</div>
+        <div style="font-weight:bold">👤 ${c.name} ${c.active?'<span class="pill" style="background:var(--accent);color:#000">当前</span>':''}${titleHtml}</div>
         <div class="muted">${cls?classIcon(c.cls,16,cls.icon)+' '+cls.name:'无'} · Lv.${c.lvl} · 💰${fmt(c.gold)}</div>
       </div>
       <div style="display:flex;gap:4px">

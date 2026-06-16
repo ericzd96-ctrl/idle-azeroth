@@ -223,6 +223,70 @@ function collectItemBonuses(item) {
   return out;
 }
 
+/* ---------- 单项来源加成(供 combat 分源追踪) ---------- */
+/* 返回零值模板 */
+function _emptyBonusOut() {
+  return {
+    atk:0, def:0, hp:0, crit:0, critd:0, spd:0, reg:0,
+    str:0, agi:0, int:0, spi:0, sta:0,
+    leech:0, vers:0, mastery:0, haste:0, dodge:0,
+    atkPct:0, hpPct:0, defPct:0, spdPct:0, critdPct:0,
+    strPct:0, agiPct:0, intPct:0, spiPct:0, staPct:0,
+    cdReduction:0, costReduction:0, extraAtk:0,
+    healBonus:0, dotBonus:0, executeBonus:0, reflectDmg:0,
+  };
+}
+
+/* 仅装备基础属性(不含词缀/宝石/附魔) */
+function collectBaseBonuses(item) {
+  const out = _emptyBonusOut();
+  if (!item || !item.stats) return out;
+  for (const [k, v] of Object.entries(item.stats)) {
+    if (k in out) out[k] += v;
+  }
+  return out;
+}
+
+/* 仅词缀加成 */
+function collectAffixBonuses(item) {
+  const out = _emptyBonusOut();
+  if (!item || !item.affixes) return out;
+  for (const af of item.affixes) {
+    const def = AFFIX_BY_KEY[af.key]; if (!def) continue;
+    if (def.mod in out) out[def.mod] += af.value;
+  }
+  return out;
+}
+
+/* 仅宝石加成 */
+function collectGemBonuses(item) {
+  const out = _emptyBonusOut();
+  if (!item || !item.sockets) return out;
+  for (const sk of item.sockets) {
+    if (!sk.gem) continue;
+    const g = GEM_TYPES[sk.gem]; if (!g) continue;
+    const match = sk.color === g.color ? 1 + SOCKET_MATCH_BONUS : 1;
+    for (const [k, v] of Object.entries(g.stats)) {
+      if (k in out) out[k] += v * match;
+    }
+  }
+  return out;
+}
+
+/* 仅附魔加成 */
+function collectEnchantBonuses(item) {
+  const out = _emptyBonusOut();
+  if (!item || !item.enchant) return out;
+  const slotEnchs = ENCHANT_POOL[item.slot] || [];
+  const e = slotEnchs.find(x => x.key === item.enchant);
+  if (e) {
+    for (const [k, v] of Object.entries(e.mod)) {
+      if (k in out) out[k] += v;
+    }
+  }
+  return out;
+}
+
 /* ---------- 玩家操作 ---------- */
 function getItemById(id) {
   for (const it of state.inventory) if (it.id === id) return { item:it, source:'inv' };

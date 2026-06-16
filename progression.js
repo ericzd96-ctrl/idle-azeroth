@@ -14,6 +14,94 @@ function accLvl() {
 }
 function accEns() { if (!account) account = defaultAccount(); return account; }
 
+function ensureUnlockedTitles() {
+  const acc = accEns();
+  if (!Array.isArray(acc.unlockedTitles)) acc.unlockedTitles = [];
+  const seen = new Set(acc.unlockedTitles.filter(Boolean));
+  const add = (title) => {
+    if (!title || seen.has(title)) return;
+    seen.add(title);
+    acc.unlockedTitles.push(title);
+  };
+
+  add(acc.title);
+  for (const a of ACHIEVEMENTS) {
+    if (a.reward?.title && acc.achievementsClaimed?.[a.key]) add(a.reward.title);
+  }
+  if (typeof ASCEND_MILESTONES !== 'undefined') {
+    for (const ms of ASCEND_MILESTONES) {
+      if (ms.title && (acc.ascendMilestones?.[ms.lvl] || (acc.ascendLvl || 0) >= ms.lvl)) add(ms.title);
+    }
+  }
+  if (typeof SEASON_TIERS !== 'undefined') {
+    for (const r of (acc.season?.history || [])) {
+      const tier = SEASON_TIERS.find(x => x.key === r.tierKey);
+      if (tier?.title && r.seasonId) add(`${tier.title} · S${r.seasonId}`);
+    }
+  }
+  if (typeof TOWER_MILESTONES !== 'undefined') {
+    let highest = state?.tower?.highest || 0;
+    if (characters?.length) {
+      for (const c of characters) highest = Math.max(highest, c.tower?.highest || 0);
+    }
+    for (const [floor, ms] of Object.entries(TOWER_MILESTONES)) {
+      if (ms.title && highest >= parseInt(floor, 10)) add(ms.title);
+    }
+  }
+  return acc.unlockedTitles;
+}
+
+function unlockTitle(title, autoEquip=true) {
+  if (!title) return;
+  ensureUnlockedTitles();
+  const acc = accEns();
+  if (!acc.unlockedTitles.includes(title)) acc.unlockedTitles.push(title);
+  if (autoEquip) acc.title = title;
+}
+
+function setActiveTitle(title) {
+  const acc = accEns();
+  const titles = ensureUnlockedTitles();
+  if (title && !titles.includes(title)) return false;
+  acc.title = title || '';
+  markDirty('progression', 'hero');
+  return true;
+}
+
+function titleSourceMap() {
+  const acc = accEns();
+  const map = {};
+  const add = (title, source) => {
+    if (!title || !source || map[title]) return;
+    map[title] = source;
+  };
+
+  for (const a of ACHIEVEMENTS) {
+    if (a.reward?.title && acc.achievementsClaimed?.[a.key]) add(a.reward.title, `成就 · ${a.name}`);
+  }
+  if (typeof ASCEND_MILESTONES !== 'undefined') {
+    for (const ms of ASCEND_MILESTONES) {
+      if (ms.title && (acc.ascendMilestones?.[ms.lvl] || (acc.ascendLvl || 0) >= ms.lvl)) add(ms.title, `觉醒 · ${ms.name}`);
+    }
+  }
+  if (typeof SEASON_TIERS !== 'undefined') {
+    for (const r of (acc.season?.history || [])) {
+      const tier = SEASON_TIERS.find(x => x.key === r.tierKey);
+      if (tier?.title && r.seasonId) add(`${tier.title} · S${r.seasonId}`, `赛季 · ${tier.name} S${r.seasonId}`);
+    }
+  }
+  if (typeof TOWER_MILESTONES !== 'undefined') {
+    let highest = state?.tower?.highest || 0;
+    if (characters?.length) {
+      for (const c of characters) highest = Math.max(highest, c.tower?.highest || 0);
+    }
+    for (const [floor, ms] of Object.entries(TOWER_MILESTONES)) {
+      if (ms.title && highest >= parseInt(floor, 10)) add(ms.title, `无尽塔 · ${floor}层 ${ms.name}`);
+    }
+  }
+  return map;
+}
+
 /* ============ 成就定义 ============ */
 /* 每条: {key,name,desc,cat,cond(state)=>{cur,goal}, reward:{gold,gem,honor,title,stat}} */
 /* 成就条件 cond(): 返回 {cur, goal}, 全部从 account/characters 读 */
@@ -282,7 +370,7 @@ function claimAchievement(key) {
   if (r.gold) state.gold += r.gold;
   if (r.gem)  state.gem  += r.gem;
   if (r.honor)state.honor+= r.honor;
-  if (r.title) acc.title = r.title;
+  if (r.title) unlockTitle(r.title);
   if (r.stat) {
     for (const [k, v] of Object.entries(r.stat)) {
       acc.permanentStats[k] = (acc.permanentStats[k]||0) + v;
@@ -321,6 +409,8 @@ function renderProgression() {
 
 function renderAchSubtab() {
   const acc = accEns();
+  const titles = ensureUnlockedTitles();
+  const sourceMap = titleSourceMap();
   // 按分类分组
   const groups = {};
   for (const a of ACHIEVEMENTS) (groups[a.cat]=groups[a.cat]||[]).push(a);
@@ -328,6 +418,24 @@ function renderAchSubtab() {
   const totalCount = ACHIEVEMENTS.length;
   const curTitle = acc.title || state.title || '';
   let html = `<div class="prog-summary muted">已领取 <b>${claimedCount}</b> / ${totalCount} ${curTitle?' · 当前称号: <span style="color:var(--gold)">'+curTitle+'</span>':''}</div>`;
+  if (titles.length) {
+    html += `<div class="ascend-box" style="margin-bottom:8px">
+      <div class="row" style="align-items:center;gap:6px;flex-wrap:wrap">
+        <b>👑 称号收藏</b>
+        <span class="muted" style="font-size:11px">已拥有 ${titles.length} 个</span>
+        <span style="flex:1"></span>
+        <button data-action="cleartitle" ${curTitle?'':'disabled'}>隐藏称号</button>
+      </div>
+      <div class="muted" style="font-size:11px;margin:4px 0 6px">${curTitle ? `当前佩戴: <span style="color:var(--gold)">${curTitle}</span>` : '当前未佩戴称号'}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px">
+        ${titles.map(title => `<div style="border:1px solid ${title===curTitle?'var(--gold)':'var(--border)'};border-radius:8px;padding:6px;background:${title===curTitle?'rgba(251,191,36,0.08)':'var(--panel-2)'}">
+          <div style="font-weight:bold;color:${title===curTitle?'var(--gold)':'var(--text)'}">${title===curTitle?'✓ ':''}${title}</div>
+          <div class="muted" style="font-size:10px;margin:3px 0 6px">${sourceMap[title] || '未知来源'}</div>
+          <button data-action="equiptitle" data-title="${title.replace(/"/g,'&quot;')}" class="${title===curTitle?'gold':'primary'}" style="width:100%;font-size:11px">${title===curTitle?'已佩戴':'佩戴'}</button>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }
   for (const [cat, list] of Object.entries(groups)) {
     html += `<div class="ach-group"><div class="ach-cat">${cat}</div>`;
     for (const a of list) {

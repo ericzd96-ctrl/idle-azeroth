@@ -199,7 +199,8 @@ function onTowerMonsterKill(mon) {
     }
     if (ms.title) {
       if (!account) account = defaultAccount();
-      account.title = ms.title;
+      if (typeof unlockTitle === 'function') unlockTitle(ms.title);
+      else account.title = ms.title;
       extra += ` 称号「${ms.title}」`;
     }
     log(extra, 'legend');

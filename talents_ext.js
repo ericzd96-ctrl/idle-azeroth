@@ -1,80 +1,516 @@
 /* =========================================================
-   talents_ext.js — 给每个专精树追加 10 个进阶天赋
+   talents_ext.js — 给所有专精追加更有“玩法感”的高阶天赋
    ----------------------------------------------------------
-   背景:80 级约得 79 天赋点,而单棵专精树原容量 ~70,约 10 点浪费。
-   这里在加载时(data.js 之后)给每棵树按"攻/守"定位各追加 10 个高 req
-   天赋,既吃掉浪费的点,又因总容量>可用点数而产生 build 取舍。
-   其中包含原先挪出去的"纯属性被动"(武器大师/致命精准/钢铁之躯/吸血/全能),
-   现在改为由天赋点点出。所有 mod 都用 recomputeStats 已支持的 schema。
+   目标:
+   1) 尽量少碰 data.js 原始树结构
+   2) 用统一 fx 描述触发、联动、斩杀、低血保命、DOT 扩散等效果
+   3) 每个专精都补 3 个高层 capstone,让天赋不再只是堆面板
    ========================================================= */
+
+const TALENT_AURA_LIBRARY = {
+  arms_breach:          { icon:'⚔️', name:'战场掌控', desc:'攻击+18%·暴伤+20%', duration:6000, mod:{ atkPct:18, critdPct:20 } },
+  fury_bloodrush:       { icon:'🩸', name:'鲜血狂潮', desc:'攻速+20%·吸血+8%', duration:5000, mod:{ spdPct:20, leech:8 } },
+  fury_laststand:       { icon:'😡', name:'背水狂怒', desc:'攻击+15%·攻速+15%·全能+6%', duration:8000, mod:{ atkPct:15, spdPct:15, vers:6 } },
+  prot_wall:            { icon:'🛡️', name:'不屈壁垒', desc:'防御+28%·全能+8%', duration:8000, mod:{ defPct:28, vers:8 } },
+  prot_thunder:         { icon:'⚡', name:'震荡护卫', desc:'防御+15%·反伤+8%', duration:6000, mod:{ defPct:15, reflectDmg:8 } },
+  arcane_overload:      { icon:'✨', name:'节点过载', desc:'暴击+15%·技能急速+15%', duration:6000, mod:{ crit:15, cdReduction:15 } },
+  fire_hotstreak:       { icon:'🔥', name:'热能连锁', desc:'暴伤+25%·持续伤害+20%', duration:6000, mod:{ critdPct:25, dotBonus:20 } },
+  frost_icy:            { icon:'❄️', name:'冰脉回响', desc:'攻速+18%·暴击+10%', duration:6000, mod:{ spdPct:18, crit:10 } },
+  frost_shell:          { icon:'🧊', name:'冰川护体', desc:'防御+18%·全能+8%', duration:8000, mod:{ defPct:18, vers:8 } },
+  discipline_guard:     { icon:'🕊️', name:'苦修意志', desc:'治疗+16%·防御+18%', duration:8000, mod:{ healBonus:16, defPct:18 } },
+  holy_prayer:          { icon:'✨', name:'圣光涌动', desc:'治疗+20%·回复+5', duration:7000, mod:{ healBonus:20, regFlat:5 } },
+  holy_lastgrace:       { icon:'👼', name:'守护天启', desc:'防御+16%·治疗+14%', duration:8000, mod:{ defPct:16, healBonus:14 } },
+  shadow_void:          { icon:'🌑', name:'虚空澎湃', desc:'攻击+18%·暴击+12%', duration:6000, mod:{ atkPct:18, crit:12 } },
+  assassination_venom:  { icon:'🐍', name:'暗毒回流', desc:'持续伤害+20%·暴击+12%', duration:6000, mod:{ dotBonus:20, crit:12 } },
+  combat_rush:          { icon:'⚔️', name:'乘胜追击', desc:'攻速+20%·额外攻击+8%', duration:7000, mod:{ spdPct:20, extraAtk:8 } },
+  combat_blade:         { icon:'🗡️', name:'剑刃压制', desc:'攻击+16%·暴伤+18%', duration:6000, mod:{ atkPct:16, critdPct:18 } },
+  subtlety_dance:       { icon:'👤', name:'影舞连闪', desc:'攻击+18%·暴伤+22%', duration:6000, mod:{ atkPct:18, critdPct:22 } },
+  bm_pack:              { icon:'🐾', name:'兽群狂奔', desc:'攻击+18%·攻速+18%', duration:7000, mod:{ atkPct:18, spdPct:18 } },
+  bm_rampage:           { icon:'🦁', name:'撕咬命令', desc:'攻击+20%·额外攻击+8%', duration:7000, mod:{ atkPct:20, extraAtk:8 } },
+  survival_wild:        { icon:'🪤', name:'荒野复原', desc:'吸血+8%·全能+8%·攻速+12%', duration:7000, mod:{ leech:8, vers:8, spdPct:12 } },
+  element_storm:        { icon:'⛈️', name:'风暴余震', desc:'攻击+18%·暴击+12%', duration:6000, mod:{ atkPct:18, crit:12 } },
+  enhancement_wind:     { icon:'💨', name:'狂岚步伐', desc:'攻速+18%·额外攻击+8%', duration:7000, mod:{ spdPct:18, extraAtk:8 } },
+  enhancement_maelstrom:{ icon:'⚡', name:'漩涡涌动', desc:'攻击+16%·暴伤+18%', duration:7000, mod:{ atkPct:16, critdPct:18 } },
+  restoration_tidal:    { icon:'🌊', name:'激流施法', desc:'治疗+18%·技能急速+12%', duration:7000, mod:{ healBonus:18, cdReduction:12 } },
+  restoration_guard:    { icon:'🌀', name:'先祖庇佑', desc:'防御+20%·治疗+14%', duration:8000, mod:{ defPct:20, healBonus:14 } },
+  palholy_dawn:         { icon:'🌅', name:'黎明恩泽', desc:'治疗+20%·全能+8%', duration:8000, mod:{ healBonus:20, vers:8 } },
+  palprot_bastion:      { icon:'🛡️', name:'圣佑壁垒', desc:'防御+26%·全能+10%', duration:8000, mod:{ defPct:26, vers:10 } },
+  palprot_judgement:    { icon:'⚖️', name:'审判反击', desc:'防御+18%·攻击+14%·反伤+8%', duration:6000, mod:{ defPct:18, atkPct:14, reflectDmg:8 } },
+  ret_templar:          { icon:'⚔️', name:'审判连锁', desc:'攻击+20%·暴伤+20%', duration:6000, mod:{ atkPct:20, critdPct:20 } },
+  ret_ashes:            { icon:'🔥', name:'复仇圣焰', desc:'攻击+16%·攻速+14%', duration:7000, mod:{ atkPct:16, spdPct:14 } },
+  affliction_feast:     { icon:'🧿', name:'病疫盛宴', desc:'持续伤害+20%·吸血+8%', duration:7000, mod:{ dotBonus:20, leech:8 } },
+  demonology_guard:     { icon:'😈', name:'恶魔甲壳', desc:'生命+10%·防御+18%·吸血+6%', duration:8000, mod:{ hpPct:10, defPct:18, leech:6 } },
+  demonology_feast:     { icon:'👿', name:'邪能狂宴', desc:'攻击+16%·生命+10%·吸血+8%', duration:7000, mod:{ atkPct:16, hpPct:10, leech:8 } },
+  demonology_meta:      { icon:'🦴', name:'变形余威', desc:'攻击+18%·防御+16%', duration:7000, mod:{ atkPct:18, defPct:16 } },
+  destruction_embers:   { icon:'☄️', name:'烈焰余烬', desc:'攻击+18%·暴伤+24%', duration:6000, mod:{ atkPct:18, critdPct:24 } },
+  balance_eclipse:      { icon:'🌙', name:'星火连辉', desc:'攻击+18%·暴击+12%·持续伤害+18%', duration:7000, mod:{ atkPct:18, crit:12, dotBonus:18 } },
+  feral_hunt:           { icon:'🐺', name:'嗜血狂猎', desc:'攻击+18%·攻速+18%·吸血+8%', duration:7000, mod:{ atkPct:18, spdPct:18, leech:8 } },
+  resto_bloom:          { icon:'🌺', name:'百花复苏', desc:'治疗+20%·回复+5', duration:7000, mod:{ healBonus:20, regFlat:5 } },
+  resto_guard:          { icon:'🌿', name:'自然回护', desc:'防御+18%·治疗+16%', duration:8000, mod:{ defPct:18, healBonus:16 } },
+};
+
 (function extendTalentTrees() {
   if (typeof CLASSES === 'undefined') return;
-  const REQ = [46, 48, 50, 53, 56, 60, 63, 66, 70, 72];
 
-  // 攻击向进阶池(含挪来的:武器大师/致命精准/渴血/全能/精通)
-  const OFFENSE = [
-    { name:'武器大师', desc:'攻击 +1%/层',            max:5, mod:{atkPct:1} },
-    { name:'致命精准', desc:'暴击 +2%/层 · 暴伤 +6%/层', max:5, mod:{crit:2, critdPct:6} },
-    { name:'疾风步',   desc:'攻速 +5%/层',            max:5, mod:{spdPct:5} },
-    { name:'连击',     desc:'攻击有 3%/层 几率额外攻击一次', max:5, mod:{extraAtk:3} },
-    { name:'破甲',     desc:'攻击无视目标 4%/层 护甲',  max:5, mod:{armorPen:4} },
-    { name:'狂暴',     desc:'攻击 +2%/层 · 攻速 +3%/层', max:3, mod:{atkPct:2, spdPct:3} },
-    { name:'处决精通', desc:'斩杀加成 +6%/层',         max:3, mod:{executeBonus:6} },
-    { name:'震慑打击', desc:'攻击有 1%/层 几率击晕敌人1.5秒', max:3, mod:{stunChance:1} },
-    { name:'精通·攻', desc:'精通 +2%/层',            max:3, mod:{mastery:2} },
-    { name:'战争领主', desc:'攻击 +1%/层 · 暴伤 +10%/层 · 精通 +2%/层', max:3, mod:{atkPct:4, critdPct:10, mastery:3} },
-  ];
-  // 防御向进阶池(含挪来的:钢铁之躯/全能宗师/精通)
-  const DEFENSE = [
-    { name:'钢铁之躯', desc:'生命 +6%/层',            max:5, mod:{hpPct:6} },
-    { name:'铜墙铁壁', desc:'防御 +6%/层 · 生命 +4%/层', max:5, mod:{defPct:6, hpPct:4} },
-    { name:'壁垒',     desc:'耐力 +6%/层',            max:5, mod:{staPct:6} },
-    { name:'荆棘护甲', desc:'反伤 +4%/层',            max:5, mod:{reflectDmg:4} },
-    { name:'闪避',     desc:'有 2%/层 几率闪避敌人攻击', max:5, mod:{dodge:2} },
-    { name:'守护',     desc:'防御 +8%/层',            max:3, mod:{defPct:8} },
-    { name:'韧性',     desc:'生命 +5%/层 · 全能 +2%/层', max:3, mod:{hpPct:5, vers:2} },
-    { name:'节能',     desc:'技能减耗 +4%/层',         max:3, mod:{costReduction:4} },
-    { name:'精通·守', desc:'精通 +2%/层 · 防御 +4%/层', max:3, mod:{mastery:2, defPct:4} },
-    { name:'不灭壁垒', desc:'生命 +12%/层 · 防御 +10%/层 · 精通 +2%/层', max:3, mod:{hpPct:12, defPct:10, mastery:3} },
-  ];
+  const CAPSTONES = {
+    warrior: {
+      arms: [
+        { name:'处刑连锁', req:46, desc:'击杀敌人后，你的下一次伤害技能必暴。', fx:{ type:'onKill', nextSkillCrit:1 } },
+        { name:'破军', req:56, desc:'你对被破甲的目标造成的伤害提高 24%。', fx:{ type:'vsState', state:'sunder', dmgPct:24 } },
+        { name:'战场掌控', req:66, desc:'施放破甲攻击后，获得 6 秒【战场掌控】。', fx:{ type:'afterSkill', skill:'sunderArmor', aura:'arms_breach' } },
+      ],
+      fury: [
+        { name:'鲜血狂潮', req:46, desc:'暴击有 35% 几率触发 5 秒【鲜血狂潮】。', fx:{ type:'onCrit', chance:35, cooldown:5000, aura:'fury_bloodrush' } },
+        { name:'杀戮渴望', req:56, desc:'击杀敌人后，恢复 6% 生命并回复 12 点资源。', fx:{ type:'onKill', healPct:0.06, resource:12 } },
+        { name:'背水狂怒', req:66, desc:'生命低于 35% 时，获得 8 秒【背水狂怒】并吸收 12% 最大生命伤害，30秒冷却。', fx:{ type:'lowHp', threshold:0.35, cooldown:30000, aura:'fury_laststand', shieldPct:0.12 } },
+      ],
+      prot: [
+        { name:'不屈壁垒', req:46, desc:'生命低于 40% 时，获得 8 秒【不屈壁垒】并吸收 18% 最大生命伤害，35秒冷却。', fx:{ type:'lowHp', threshold:0.4, cooldown:35000, aura:'prot_wall', shieldPct:0.18 } },
+        { name:'重盾反制', req:56, desc:'对首领造成的伤害提高 18%，受到其伤害降低 12%。', fx:{ type:'vsBoss', dmgPct:18, takenPct:12 } },
+        { name:'震荡护卫', req:66, desc:'施放雷霆一击后，获得 6 秒【震荡护卫】。', fx:{ type:'afterSkill', skill:'thunderClap', aura:'prot_thunder' } },
+      ],
+    },
+    mage: {
+      arcane: [
+        { name:'奥术回流', req:46, desc:'击杀敌人后，回复 25 点资源并重置奥术飞弹冷却。', fx:{ type:'onKill', resource:25, resetSkill:'arcane' } },
+        { name:'节点过载', req:56, desc:'施放奥术飞弹后，获得 6 秒【节点过载】。', fx:{ type:'afterSkill', skill:'arcane', aura:'arcane_overload' } },
+        { name:'法网收束', req:66, desc:'你对首领造成的伤害提高 20%。', fx:{ type:'vsBoss', dmgPct:20 } },
+      ],
+      fire: [
+        { name:'热能连锁', req:46, desc:'暴击有 35% 几率触发 6 秒【热能连锁】。', fx:{ type:'onCrit', chance:35, cooldown:6000, aura:'fire_hotstreak' } },
+        { name:'余烬蔓延', req:56, desc:'若目标带有持续伤害效果而死亡，会把 60% 的 DOT 蔓延给下一个敌人。', fx:{ type:'onKill', requireDot:true, spreadDotPct:0.6 } },
+        { name:'烈焰处决', req:66, desc:'对生命低于 35% 的敌人造成的伤害提高 30%。', fx:{ type:'executeWindow', threshold:0.35, dmgPct:30 } },
+      ],
+      frost: [
+        { name:'寒霜裂片', req:46, desc:'你对被减速的敌人造成的伤害提高 25%。', fx:{ type:'vsState', state:'slow', dmgPct:25 } },
+        { name:'冰脉回响', req:56, desc:'暴击有 35% 几率触发 6 秒【冰脉回响】。', fx:{ type:'onCrit', chance:35, cooldown:6000, aura:'frost_icy' } },
+        { name:'冰川护体', req:66, desc:'生命低于 40% 时，获得 8 秒【冰川护体】并吸收 15% 最大生命伤害，30秒冷却。', fx:{ type:'lowHp', threshold:0.4, cooldown:30000, aura:'frost_shell', shieldPct:0.15 } },
+      ],
+    },
+    priest: {
+      discipline: [
+        { name:'赎罪回响', req:46, desc:'施放惩击或心灵震爆后，恢复 5% 最大生命。', fx:{ type:'afterSkill', skill:['smite','mindBlast'], healPct:0.05 } },
+        { name:'灵魂庇护', req:56, desc:'你的过量治疗会转化为 60% 吸收护盾。', fx:{ type:'afterHeal', overhealShieldPct:0.6 } },
+        { name:'苦修意志', req:66, desc:'生命低于 35% 时，获得 8 秒【苦修意志】并吸收 10% 最大生命伤害，30秒冷却。', fx:{ type:'lowHp', threshold:0.35, cooldown:30000, aura:'discipline_guard', shieldPct:0.10, healPct:0.08 } },
+      ],
+      holy: [
+        { name:'圣光涌动', req:46, desc:'施放治疗术、恢复或神圣赞美诗后，获得 7 秒【圣光涌动】。', fx:{ type:'afterSkill', skill:['heal','renew','divineHymn'], aura:'holy_prayer' } },
+        { name:'永续祷言', req:56, desc:'你的过量治疗会转化为 45% 吸收护盾。', fx:{ type:'afterHeal', overhealShieldPct:0.45 } },
+        { name:'守护天启', req:66, desc:'生命低于 35% 时，立刻恢复 15% 生命并获得 8 秒【守护天启】，30秒冷却。', fx:{ type:'lowHp', threshold:0.35, cooldown:30000, healPct:0.15, aura:'holy_lastgrace' } },
+      ],
+      shadow: [
+        { name:'暗影回响', req:46, desc:'暴击会额外施加一层基于本次伤害 18% 的持续暗影伤害。', fx:{ type:'onCrit', applyDotPct:0.18 } },
+        { name:'痛苦蔓延', req:56, desc:'若目标带有持续伤害效果而死亡，会把 50% 的 DOT 蔓延给下一个敌人。', fx:{ type:'onKill', requireDot:true, spreadDotPct:0.5 } },
+        { name:'虚空收割', req:66, desc:'对生命低于 35% 的敌人造成的伤害提高 28%。', fx:{ type:'executeWindow', threshold:0.35, dmgPct:28 } },
+      ],
+    },
+    rogue: {
+      assassination: [
+        { name:'毒液奔涌', req:46, desc:'你对带有持续伤害效果的敌人造成的伤害提高 22%。', fx:{ type:'vsState', state:'dot', dmgPct:22 } },
+        { name:'血色收割', req:56, desc:'击杀敌人后，你的下一次伤害技能必暴，并回复 20 点资源。', fx:{ type:'onKill', nextSkillCrit:1, resource:20 } },
+        { name:'暗毒回流', req:66, desc:'暴击有 30% 几率触发 6 秒【暗毒回流】。', fx:{ type:'onCrit', chance:30, cooldown:6000, aura:'assassination_venom' } },
+      ],
+      combat: [
+        { name:'乘胜追击', req:46, desc:'击杀敌人后，获得 7 秒【乘胜追击】。', fx:{ type:'onKill', aura:'combat_rush' } },
+        { name:'见招拆招', req:56, desc:'暴击后追加一次 70% 伤害的追击，2秒冷却。', fx:{ type:'onCrit', cooldown:2000, extraHitMul:0.7, extraHitIcon:'⚔️' } },
+        { name:'剑刃压制', req:66, desc:'施放邪恶打击或背刺后，获得 6 秒【剑刃压制】。', fx:{ type:'afterSkill', skill:['sinister','backstab'], aura:'combat_blade' } },
+      ],
+      subtlety: [
+        { name:'暗影绝息', req:46, desc:'施放影遁后，你的下一次伤害技能必暴。', fx:{ type:'afterSkill', skill:'shadow', nextSkillCrit:1 } },
+        { name:'猎杀号令', req:56, desc:'对生命低于 35% 的敌人造成的伤害提高 28%。', fx:{ type:'executeWindow', threshold:0.35, dmgPct:28 } },
+        { name:'影舞连闪', req:66, desc:'暴击有 35% 几率触发 6 秒【影舞连闪】。', fx:{ type:'onCrit', chance:35, cooldown:6000, aura:'subtlety_dance' } },
+      ],
+    },
+    hunter: {
+      bm: [
+        { name:'兽群狂奔', req:46, desc:'击杀敌人后，获得 7 秒【兽群狂奔】。', fx:{ type:'onKill', aura:'bm_pack' } },
+        { name:'野兽直觉', req:56, desc:'你对首领造成的伤害提高 22%。', fx:{ type:'vsBoss', dmgPct:22 } },
+        { name:'撕咬命令', req:66, desc:'施放狂野怒火后，获得 7 秒【撕咬命令】。', fx:{ type:'afterSkill', skill:'bestialWrath', aura:'bm_rampage' } },
+      ],
+      marks: [
+        { name:'狙击本能', req:46, desc:'你对首领造成的伤害提高 25%。', fx:{ type:'vsBoss', dmgPct:25 } },
+        { name:'穿心箭', req:56, desc:'对生命低于 40% 的敌人造成的伤害提高 30%。', fx:{ type:'executeWindow', threshold:0.4, dmgPct:30 } },
+        { name:'连珠射击', req:66, desc:'瞄准射击或奥术射击暴击后，追加一次 80% 伤害的补射，2.5秒冷却。', fx:{ type:'onCrit', skill:['aimed','arcaneShot'], cooldown:2500, extraHitMul:0.8, extraHitIcon:'🏹' } },
+      ],
+      survival: [
+        { name:'猎网收束', req:46, desc:'你对被减速的敌人造成的伤害提高 25%。', fx:{ type:'vsState', state:'slow', dmgPct:25 } },
+        { name:'荒野复原', req:56, desc:'击杀敌人后，恢复 7% 生命并获得 7 秒【荒野复原】。', fx:{ type:'onKill', healPct:0.07, aura:'survival_wild' } },
+        { name:'爆裂陷阱', req:66, desc:'施放多重射击或爆炸射击后，会附加一层基于本次伤害 20% 的持续伤害。', fx:{ type:'afterSkill', skill:['multi','explosiveShot'], applyDotPct:0.2, dotMs:6000 } },
+      ],
+    },
+    shaman: {
+      element: [
+        { name:'风暴余震', req:46, desc:'暴击有 30% 几率触发 6 秒【风暴余震】。', fx:{ type:'onCrit', chance:30, cooldown:6000, aura:'element_storm' } },
+        { name:'熔岩奔流', req:56, desc:'施放烈焰震击后，你的下一次伤害技能必暴。', fx:{ type:'afterSkill', skill:'flameShock', nextSkillCrit:1 } },
+        { name:'过载终结', req:66, desc:'对生命低于 35% 的敌人造成的伤害提高 30%。', fx:{ type:'executeWindow', threshold:0.35, dmgPct:30 } },
+      ],
+      enhancement: [
+        { name:'漩涡涌动', req:46, desc:'施放风怒武器后，获得 7 秒【漩涡涌动】。', fx:{ type:'afterSkill', skill:'windfury', aura:'enhancement_maelstrom' } },
+        { name:'狂岚步伐', req:56, desc:'击杀敌人后，获得 7 秒【狂岚步伐】。', fx:{ type:'onKill', aura:'enhancement_wind' } },
+        { name:'双风怒', req:66, desc:'暴击后追加一次 80% 伤害的风怒打击，2秒冷却。', fx:{ type:'onCrit', cooldown:2000, extraHitMul:0.8, extraHitIcon:'💨' } },
+      ],
+      restoration: [
+        { name:'潮汐回响', req:46, desc:'你的过量治疗会转化为 50% 吸收护盾。', fx:{ type:'afterHeal', overhealShieldPct:0.5 } },
+        { name:'先祖庇佑', req:56, desc:'生命低于 35% 时，恢复 8% 生命并获得 8 秒【先祖庇佑】，30秒冷却。', fx:{ type:'lowHp', threshold:0.35, cooldown:30000, healPct:0.08, shieldPct:0.12, aura:'restoration_guard' } },
+        { name:'激流施法', req:66, desc:'施放治疗波后，获得 7 秒【激流施法】。', fx:{ type:'afterSkill', skill:'healingWave', aura:'restoration_tidal' } },
+      ],
+    },
+    paladin: {
+      holy: [
+        { name:'圣光回流', req:46, desc:'你的过量治疗会转化为 60% 吸收护盾。', fx:{ type:'afterHeal', overhealShieldPct:0.6 } },
+        { name:'黎明恩泽', req:56, desc:'生命低于 35% 时，恢复 14% 生命并获得 8 秒【黎明恩泽】，30秒冷却。', fx:{ type:'lowHp', threshold:0.35, cooldown:30000, healPct:0.14, aura:'palholy_dawn' } },
+        { name:'神恩裁决', req:66, desc:'施放圣光术后，获得 8 秒【黎明恩泽】。', fx:{ type:'afterSkill', skill:['holyLight','flashOfLight'], aura:'palholy_dawn', cooldown:8000 } },
+      ],
+      prot: [
+        { name:'圣佑壁垒', req:46, desc:'生命低于 40% 时，获得 8 秒【圣佑壁垒】并吸收 18% 最大生命伤害，35秒冷却。', fx:{ type:'lowHp', threshold:0.4, cooldown:35000, shieldPct:0.18, aura:'palprot_bastion' } },
+        { name:'审判反击', req:56, desc:'施放审判后，获得 6 秒【审判反击】。', fx:{ type:'afterSkill', skill:'judgement', aura:'palprot_judgement' } },
+        { name:'炽天威仪', req:66, desc:'对首领造成的伤害提高 20%，受到其伤害降低 12%。', fx:{ type:'vsBoss', dmgPct:20, takenPct:12 } },
+      ],
+      ret: [
+        { name:'审判连锁', req:46, desc:'施放十字军打击后，获得 6 秒【审判连锁】。', fx:{ type:'afterSkill', skill:'crusader', aura:'ret_templar' } },
+        { name:'处刑宣判', req:56, desc:'对生命低于 35% 的敌人造成的伤害提高 32%。', fx:{ type:'executeWindow', threshold:0.35, dmgPct:32 } },
+        { name:'复仇圣焰', req:66, desc:'击杀敌人后，获得 7 秒【复仇圣焰】。', fx:{ type:'onKill', aura:'ret_ashes' } },
+      ],
+    },
+    warlock: {
+      affliction: [
+        { name:'病疫蔓延', req:46, desc:'若目标带有持续伤害效果而死亡，会把 70% 的 DOT 蔓延给下一个敌人。', fx:{ type:'onKill', requireDot:true, spreadDotPct:0.7 } },
+        { name:'灵魂虹吸', req:56, desc:'你对带有持续伤害效果的敌人造成的伤害提高 22%。', fx:{ type:'vsState', state:'dot', dmgPct:22 } },
+        { name:'痛苦盛宴', req:66, desc:'暴击会额外施加一层基于本次伤害 20% 的持续痛苦。', fx:{ type:'onCrit', applyDotPct:0.2 } },
+      ],
+      demonology: [
+        { name:'恶魔甲壳', req:46, desc:'生命低于 40% 时，获得 8 秒【恶魔甲壳】并吸收 16% 最大生命伤害，30秒冷却。', fx:{ type:'lowHp', threshold:0.4, cooldown:30000, shieldPct:0.16, aura:'demonology_guard' } },
+        { name:'邪能狂宴', req:56, desc:'击杀敌人后，获得 7 秒【邪能狂宴】。', fx:{ type:'onKill', aura:'demonology_feast' } },
+        { name:'变形余威', req:66, desc:'施放生命分流或恶魔变身后，获得 7 秒【变形余威】。', fx:{ type:'afterSkill', skill:['drainLife','metamorphosis'], aura:'demonology_meta' } },
+      ],
+      destruction: [
+        { name:'烈焰余烬', req:46, desc:'暴击有 35% 几率触发 6 秒【烈焰余烬】。', fx:{ type:'onCrit', chance:35, cooldown:6000, aura:'destruction_embers' } },
+        { name:'混沌压境', req:56, desc:'你对首领造成的伤害提高 24%。', fx:{ type:'vsBoss', dmgPct:24 } },
+        { name:'末日回响', req:66, desc:'施放混乱之箭后，你的下一次伤害技能必暴，8秒冷却。', fx:{ type:'afterSkill', skill:'chaosBolt', nextSkillCrit:1, cooldown:8000 } },
+      ],
+    },
+    druid: {
+      balance: [
+        { name:'星火连辉', req:46, desc:'施放月火术或星火术后，获得 7 秒【星火连辉】。', fx:{ type:'afterSkill', skill:['moonfire','starfire'], aura:'balance_eclipse' } },
+        { name:'新月收束', req:56, desc:'你对带有持续伤害效果的敌人造成的伤害提高 22%。', fx:{ type:'vsState', state:'dot', dmgPct:22 } },
+        { name:'天穹坠星', req:66, desc:'暴击有 35% 几率让你的下一次伤害技能必暴，7秒冷却。', fx:{ type:'onCrit', chance:35, cooldown:7000, nextSkillCrit:1 } },
+      ],
+      feral: [
+        { name:'撕裂狩猎', req:46, desc:'你对带有持续伤害效果的敌人造成的伤害提高 25%。', fx:{ type:'vsState', state:'dot', dmgPct:25 } },
+        { name:'嗜血狂猎', req:56, desc:'击杀敌人后，获得 7 秒【嗜血狂猎】。', fx:{ type:'onKill', aura:'feral_hunt' } },
+        { name:'野性伏击', req:66, desc:'暴击后追加一次 80% 伤害的扑击，2秒冷却。', fx:{ type:'onCrit', cooldown:2000, extraHitMul:0.8, extraHitIcon:'🐾' } },
+      ],
+      resto: [
+        { name:'森林馈赠', req:46, desc:'你的过量治疗会转化为 50% 吸收护盾。', fx:{ type:'afterHeal', overhealShieldPct:0.5 } },
+        { name:'百花复苏', req:56, desc:'施放回春术后，获得 7 秒【百花复苏】。', fx:{ type:'afterSkill', skill:'rejuvenation', aura:'resto_bloom' } },
+        { name:'自然回护', req:66, desc:'生命低于 35% 时，恢复 12% 生命并获得 8 秒【自然回护】，30秒冷却。', fx:{ type:'lowHp', threshold:0.35, cooldown:30000, healPct:0.12, aura:'resto_guard' } },
+      ],
+    },
+  };
 
-  function treeRole(tree) {
-    let off = 0, def = 0;
-    for (const t of tree.talents) {
-      const m = t.mod || {};
-      for (const k in m) {
-        const v = m[k];
-        if (['hpPct','defPct','staPct','reflectDmg'].includes(k)) def += v;
-        else if (['atkPct','crit','critdPct','spdPct','extraAtk','executeBonus','strPct','agiPct','intPct'].includes(k)) off += v;
-      }
-    }
-    return def > off ? 'def' : 'off';
-  }
-
-  for (const clsKey in CLASSES) {
+  for (const [clsKey, classSpecs] of Object.entries(CAPSTONES)) {
     const cls = CLASSES[clsKey];
-    if (!cls.trees) continue;
-    for (const tree of cls.trees) {
-      if (tree._ext10) continue;      // 幂等:只追加一次
-      tree._ext10 = true;
-      const pool = treeRole(tree) === 'def' ? DEFENSE : OFFENSE;
-      const added = pool.map((tpl, i) => {
-        const node = {
-          key: `ext_${clsKey}_${tree.key}_${i}`,
-          name: tpl.name, desc: tpl.desc, max: tpl.max,
-          req: REQ[i], mod: Object.assign({}, tpl.mod),
-        };
-        tree.talents.push(node);
-        return node;
+    if (!cls || !cls.trees) continue;
+    for (const [treeKey, talents] of Object.entries(classSpecs)) {
+      const tree = cls.trees.find(t => t.key === treeKey);
+      if (!tree || tree._flavorExt) continue;
+      tree._flavorExt = true;
+      talents.forEach((tpl, idx) => {
+        tree.talents.push({
+          key: `flavor_${clsKey}_${treeKey}_${idx}`,
+          name: tpl.name,
+          desc: tpl.desc,
+          req: tpl.req,
+          max: tpl.max || 1,
+          mod: tpl.mod ? Object.assign({}, tpl.mod) : undefined,
+          fx: tpl.fx ? JSON.parse(JSON.stringify(tpl.fx)) : undefined,
+        });
       });
-      // 保证该树总容量 ≥ 82,使 80 级(~79 点)无论哪个职业都不浪费天赋点,且略有取舍
-      let cap = tree.talents.reduce((s, t) => s + (t.max || 0), 0);
-      let gi = 0;
-      while (cap < 82 && gi < 1000) {
-        const node = added[gi % added.length];
-        if (node.max < 10) { node.max++; cap++; }
-        gi++;
+    }
+  }
+
+  const AUGMENTS = {
+    warrior: {
+      arms: [
+        { name:'致死打击', extra:'致死打击伤害额外提高 25%。', fx:{ type:'skillAmp', skill:'mortalStrike', dmgPct:25 } },
+        { name:'破甲专精', extra:'你对被破甲的目标造成的伤害提高 18%。', fx:{ type:'vsState', state:'sunder', dmgPct:18 } },
+      ],
+      fury: [
+        { name:'嗜血', extra:'嗜血伤害额外提高 22%。', fx:{ type:'skillAmp', skill:'bloodthirst', dmgPct:22 } },
+        { name:'血之渴望', extra:'击杀敌人后，恢复 5% 生命并回复 10 点资源。', fx:{ type:'onKill', healPct:0.05, resource:10 } },
+      ],
+      prot: [
+        { name:'圣盾', extra:'施放盾墙后，获得 6 秒【震荡护卫】。', fx:{ type:'afterSkill', skill:'shieldWall', aura:'prot_thunder', cooldown:8000 } },
+        { name:'炽热防御者', extra:'你受到首领伤害降低 10%。', fx:{ type:'vsBoss', takenPct:10 } },
+      ],
+    },
+    mage: {
+      arcane: [
+        { name:'暴风雪', extra:'暴风雪伤害额外提高 25%。', fx:{ type:'skillAmp', skill:'blizzard', dmgPct:25 } },
+        { name:'奥术回响', extra:'暴击后追加一次 60% 伤害的奥术回响，3秒冷却。', fx:{ type:'onCrit', cooldown:3000, extraHitMul:0.6, extraHitIcon:'✨' } },
+      ],
+      fire: [
+        { name:'火球术', extra:'火球术伤害额外提高 22%。', fx:{ type:'skillAmp', skill:'fireball', dmgPct:22 } },
+        { name:'烈焰之心', extra:'你对带有持续伤害效果的敌人造成的伤害提高 20%。', fx:{ type:'vsState', state:'dot', dmgPct:20 } },
+      ],
+      frost: [
+        { name:'寒冰箭', extra:'寒冰箭伤害额外提高 22%。', fx:{ type:'skillAmp', skill:'frostbolt', dmgPct:22 } },
+        { name:'深度冻结', extra:'你对被减速的敌人造成的伤害提高 18%。', fx:{ type:'vsState', state:'slow', dmgPct:18 } },
+      ],
+    },
+    priest: {
+      discipline: [
+        { name:'真言术盾', extra:'施放真言术盾后，获得 8 秒【苦修意志】。', fx:{ type:'afterSkill', skill:'shield', aura:'discipline_guard', cooldown:8000 } },
+        { name:'圣光道标', extra:'你的过量治疗会转化为 30% 吸收护盾。', fx:{ type:'afterHeal', overhealShieldPct:0.3 } },
+      ],
+      holy: [
+        { name:'守护之魂', extra:'生命低于 40% 时，恢复 8% 生命并获得【圣光涌动】，35秒冷却。', fx:{ type:'lowHp', threshold:0.4, cooldown:35000, healPct:0.08, aura:'holy_prayer' } },
+        { name:'圣疗', extra:'你的过量治疗会转化为 35% 吸收护盾。', fx:{ type:'afterHeal', overhealShieldPct:0.35 } },
+      ],
+      shadow: [
+        { name:'心灵震爆', extra:'心灵震爆伤害额外提高 24%。', fx:{ type:'skillAmp', skill:'mindBlast', dmgPct:24 } },
+        { name:'暗影之痛', extra:'你对带有持续伤害效果的敌人造成的伤害提高 20%。', fx:{ type:'vsState', state:'dot', dmgPct:20 } },
+      ],
+    },
+    rogue: {
+      assassination: [
+        { name:'毒刃', extra:'毒刃伤害额外提高 24%。', fx:{ type:'skillAmp', skill:'poison', dmgPct:24 } },
+        { name:'毒药大师', extra:'你对带有持续伤害效果的敌人造成的伤害提高 20%。', fx:{ type:'vsState', state:'dot', dmgPct:20 } },
+      ],
+      combat: [
+        { name:'背刺', extra:'背刺伤害额外提高 24%。', fx:{ type:'skillAmp', skill:'backstab', dmgPct:24 } },
+        { name:'致命打击', extra:'暴击后追加一次 70% 伤害的追击，2.5秒冷却。', fx:{ type:'onCrit', cooldown:2500, extraHitMul:0.7, extraHitIcon:'⚔️' } },
+      ],
+      subtlety: [
+        { name:'影遁', extra:'施放影遁后，你的下一次伤害技能必暴。', fx:{ type:'afterSkill', skill:'shadow', nextSkillCrit:1 } },
+        { name:'暗影之击', extra:'你对生命低于 35% 的敌人造成的伤害提高 22%。', fx:{ type:'executeWindow', threshold:0.35, dmgPct:22 } },
+      ],
+    },
+    hunter: {
+      bm: [
+        { name:'狂野怒火', extra:'施放狂野怒火后，获得 7 秒【撕咬命令】。', fx:{ type:'afterSkill', skill:'bestialWrath', aura:'bm_rampage', cooldown:8000 } },
+        { name:'凶暴', extra:'暴击后追加一次 70% 伤害的野兽扑击，3秒冷却。', fx:{ type:'onCrit', cooldown:3000, extraHitMul:0.7, extraHitIcon:'🐾' } },
+      ],
+      marks: [
+        { name:'瞄准射击', extra:'瞄准射击伤害额外提高 26%。', fx:{ type:'skillAmp', skill:'aimed', dmgPct:26 } },
+        { name:'远距射击', extra:'你对生命低于 40% 的敌人造成的伤害提高 22%。', fx:{ type:'executeWindow', threshold:0.4, dmgPct:22 } },
+      ],
+      survival: [
+        { name:'多重射击', extra:'多重射击伤害额外提高 20%。', fx:{ type:'skillAmp', skill:'multi', dmgPct:20 } },
+        { name:'陷阱大师', extra:'你对被减速的敌人造成的伤害提高 18%。', fx:{ type:'vsState', state:'slow', dmgPct:18 } },
+      ],
+    },
+    shaman: {
+      element: [
+        { name:'闪电链', extra:'闪电链伤害额外提高 24%。', fx:{ type:'skillAmp', skill:'chainLightning', dmgPct:24 } },
+        { name:'过载', extra:'暴击后追加一次 65% 伤害的闪电过载，3秒冷却。', fx:{ type:'onCrit', cooldown:3000, extraHitMul:0.65, extraHitIcon:'⚡' } },
+      ],
+      enhancement: [
+        { name:'风怒武器', extra:'施放风怒武器后，获得 7 秒【漩涡涌动】。', fx:{ type:'afterSkill', skill:'windfury', aura:'enhancement_maelstrom', cooldown:8000 } },
+        { name:'元素武器', extra:'暴击后追加一次 70% 伤害的元素打击，2.5秒冷却。', fx:{ type:'onCrit', cooldown:2500, extraHitMul:0.7, extraHitIcon:'⚡' } },
+      ],
+      restoration: [
+        { name:'治疗波', extra:'施放治疗波后，获得 7 秒【激流施法】。', fx:{ type:'afterSkill', skill:'healingWave', aura:'restoration_tidal', cooldown:8000 } },
+        { name:'大地之盾', extra:'你的过量治疗会转化为 35% 吸收护盾。', fx:{ type:'afterHeal', overhealShieldPct:0.35 } },
+      ],
+    },
+    paladin: {
+      holy: [
+        { name:'圣光信标', extra:'你的过量治疗会转化为 40% 吸收护盾。', fx:{ type:'afterHeal', overhealShieldPct:0.4 } },
+        { name:'风暴之怒', extra:'生命低于 40% 时，恢复 8% 生命并获得【黎明恩泽】，30秒冷却。', fx:{ type:'lowHp', threshold:0.4, cooldown:30000, healPct:0.08, aura:'palholy_dawn' } },
+      ],
+      prot: [
+        { name:'圣盾术', extra:'施放圣盾术后，获得 8 秒【圣佑壁垒】。', fx:{ type:'afterSkill', skill:'divineShield', aura:'palprot_bastion', cooldown:8000 } },
+        { name:'炽热防御者', extra:'你受到首领伤害降低 10%。', fx:{ type:'vsBoss', takenPct:10 } },
+      ],
+      ret: [
+        { name:'十字军打击', extra:'十字军打击伤害额外提高 24%。', fx:{ type:'skillAmp', skill:'crusader', dmgPct:24 } },
+        { name:'行刑者', extra:'你对生命低于 35% 的敌人造成的伤害提高 22%。', fx:{ type:'executeWindow', threshold:0.35, dmgPct:22 } },
+      ],
+    },
+    warlock: {
+      affliction: [
+        { name:'腐蚀术', extra:'施放腐蚀术后，获得 7 秒【病疫盛宴】。', fx:{ type:'afterSkill', skill:'corruption', aura:'affliction_feast', cooldown:8000 } },
+        { name:'无尽痛苦', extra:'你对带有持续伤害效果的敌人造成的伤害提高 20%。', fx:{ type:'vsState', state:'dot', dmgPct:20 } },
+      ],
+      demonology: [
+        { name:'生命分流', extra:'施放生命分流后，获得 7 秒【变形余威】。', fx:{ type:'afterSkill', skill:'drainLife', aura:'demonology_meta', cooldown:8000 } },
+        { name:'灵魂链接', extra:'生命低于 40% 时，获得 8 秒【恶魔甲壳】并吸收 12% 最大生命伤害，30秒冷却。', fx:{ type:'lowHp', threshold:0.4, cooldown:30000, shieldPct:0.12, aura:'demonology_guard' } },
+      ],
+      destruction: [
+        { name:'烧尽', extra:'烧尽伤害额外提高 24%。', fx:{ type:'skillAmp', skill:'incinerate', dmgPct:24 } },
+        { name:'混沌', extra:'暴击后，你的下一次伤害技能必暴，7秒冷却。', fx:{ type:'onCrit', cooldown:7000, nextSkillCrit:1 } },
+      ],
+    },
+    druid: {
+      balance: [
+        { name:'月火术', extra:'月火术伤害额外提高 22%。', fx:{ type:'skillAmp', skill:'moonfire', dmgPct:22 } },
+        { name:'自然之力', extra:'你对带有持续伤害效果的敌人造成的伤害提高 18%。', fx:{ type:'vsState', state:'dot', dmgPct:18 } },
+      ],
+      feral: [
+        { name:'凶猛撕咬', extra:'凶猛撕咬伤害额外提高 24%。', fx:{ type:'skillAmp', skill:'bite', dmgPct:24 } },
+        { name:'掠食本能', extra:'击杀敌人后，获得 7 秒【嗜血狂猎】。', fx:{ type:'onKill', aura:'feral_hunt' } },
+      ],
+      resto: [
+        { name:'树皮术', extra:'施放树皮术后，获得 8 秒【自然回护】。', fx:{ type:'afterSkill', skill:'barkskin', aura:'resto_guard', cooldown:8000 } },
+        { name:'愈合', extra:'你的过量治疗会转化为 35% 吸收护盾。', fx:{ type:'afterHeal', overhealShieldPct:0.35 } },
+      ],
+    },
+  };
+
+  const LOW_AUGMENTS = {
+    warrior: {
+      arms: [
+        { name:'残忍', extra:'暴击时有 18% 几率追加一次 45% 伤害的追击，4秒冷却。', fx:{ type:'onCrit', chance:18, cooldown:4000, extraHitMul:0.45, extraHitIcon:'🪓' } },
+        { name:'战术大师', extra:'施放致死打击或斩杀后，回复 8 点资源。', fx:{ type:'afterSkill', skill:['mortalStrike','execute'], resource:8 } },
+      ],
+      fury: [
+        { name:'激怒', extra:'暴击有 22% 几率触发 5 秒【鲜血狂潮】，8秒冷却。', fx:{ type:'onCrit', chance:22, cooldown:8000, aura:'fury_bloodrush' } },
+        { name:'怒气爆发', extra:'施放嗜血或斩杀后，回复 10 点资源。', fx:{ type:'afterSkill', skill:['bloodthirst','execute'], resource:10 } },
+      ],
+      prot: [
+        { name:'预判', extra:'你受到首领伤害降低 6%。', fx:{ type:'vsBoss', takenPct:6 } },
+        { name:'正义之怒', extra:'生命低于 45% 时，获得 6% 最大生命护盾，35秒冷却。', fx:{ type:'lowHp', threshold:0.45, cooldown:35000, shieldPct:0.06 } },
+      ],
+    },
+    mage: {
+      arcane: [
+        { name:'奥术心智', extra:'暴击有 20% 几率回复 12 点资源。', fx:{ type:'onCrit', chance:20, resource:12 } },
+        { name:'节能施法', extra:'施放奥术飞弹后，回复 8 点资源。', fx:{ type:'afterSkill', skill:'arcane', resource:8 } },
+      ],
+      fire: [
+        { name:'临界点', extra:'暴击有 22% 几率让你的下一次伤害技能必暴，9秒冷却。', fx:{ type:'onCrit', chance:22, cooldown:9000, nextSkillCrit:1 } },
+        { name:'火焰冲击', extra:'施放火球术或炎爆术后，回复 10 点资源。', fx:{ type:'afterSkill', skill:['fireball','pyroblast'], resource:10 } },
+      ],
+      frost: [
+        { name:'碎裂', extra:'你对被减速的敌人造成的伤害提高 10%。', fx:{ type:'vsState', state:'slow', dmgPct:10 } },
+        { name:'寒冰屏障', extra:'生命低于 45% 时，获得 6% 最大生命护盾，35秒冷却。', fx:{ type:'lowHp', threshold:0.45, cooldown:35000, shieldPct:0.06 } },
+      ],
+    },
+    priest: {
+      discipline: [
+        { name:'启迪', extra:'施放惩击后，恢复 3% 最大生命。', fx:{ type:'afterSkill', skill:'smite', healPct:0.03 } },
+        { name:'意志之力', extra:'生命低于 45% 时，获得 6% 最大生命护盾，35秒冷却。', fx:{ type:'lowHp', threshold:0.45, cooldown:35000, shieldPct:0.06 } },
+      ],
+      holy: [
+        { name:'神恩', extra:'施放治疗术、恢复或圣光术后，回复 6 点资源。', fx:{ type:'afterSkill', skill:['heal','renew','holyLight'], resource:6 } },
+        { name:'圣洁', extra:'生命低于 45% 时，恢复 5% 最大生命，35秒冷却。', fx:{ type:'lowHp', threshold:0.45, cooldown:35000, healPct:0.05 } },
+      ],
+      shadow: [
+        { name:'黑暗思维', extra:'暴击有 18% 几率回复 10 点资源。', fx:{ type:'onCrit', chance:18, resource:10 } },
+        { name:'心灵尖刺', extra:'施放心灵震爆后，回复 8 点资源。', fx:{ type:'afterSkill', skill:'mindBlast', resource:8 } },
+      ],
+    },
+    rogue: {
+      assassination: [
+        { name:'恶毒', extra:'暴击有 18% 几率让你的下一次伤害技能必暴，9秒冷却。', fx:{ type:'onCrit', chance:18, cooldown:9000, nextSkillCrit:1 } },
+        { name:'暗影步', extra:'施放毒刃后，回复 10 点资源。', fx:{ type:'afterSkill', skill:'poison', resource:10 } },
+      ],
+      combat: [
+        { name:'双武器精通', extra:'暴击有 18% 几率追加一次 45% 伤害的补刀，4秒冷却。', fx:{ type:'onCrit', chance:18, cooldown:4000, extraHitMul:0.45, extraHitIcon:'⚔️' } },
+        { name:'无尽能量', extra:'施放邪恶打击或背刺后，回复 10 点资源。', fx:{ type:'afterSkill', skill:['sinister','backstab'], resource:10 } },
+      ],
+      subtlety: [
+        { name:'机会', extra:'暴击有 18% 几率让你的下一次伤害技能必暴，9秒冷却。', fx:{ type:'onCrit', chance:18, cooldown:9000, nextSkillCrit:1 } },
+        { name:'潜伏', extra:'施放影遁后，回复 10 点资源。', fx:{ type:'afterSkill', skill:'shadow', resource:10 } },
+      ],
+    },
+    hunter: {
+      bm: [
+        { name:'狂热', extra:'击杀敌人后，回复 8 点资源。', fx:{ type:'onKill', resource:8 } },
+        { name:'灵魂兽', extra:'生命低于 45% 时，恢复 5% 最大生命，35秒冷却。', fx:{ type:'lowHp', threshold:0.45, cooldown:35000, healPct:0.05 } },
+      ],
+      marks: [
+        { name:'致命射击', extra:'暴击有 18% 几率让你的下一次伤害技能必暴，9秒冷却。', fx:{ type:'onCrit', chance:18, cooldown:9000, nextSkillCrit:1 } },
+        { name:'鹰眼', extra:'施放瞄准射击或奥术射击后，回复 8 点资源。', fx:{ type:'afterSkill', skill:['aimed','arcaneShot'], resource:8 } },
+      ],
+      survival: [
+        { name:'陷阱专家', extra:'你对被减速的敌人造成的伤害提高 10%。', fx:{ type:'vsState', state:'slow', dmgPct:10 } },
+        { name:'生存本能', extra:'生命低于 45% 时，获得 6% 最大生命护盾，35秒冷却。', fx:{ type:'lowHp', threshold:0.45, cooldown:35000, shieldPct:0.06 } },
+      ],
+    },
+    shaman: {
+      element: [
+        { name:'元素之怒', extra:'暴击有 18% 几率回复 10 点资源。', fx:{ type:'onCrit', chance:18, resource:10 } },
+        { name:'元素掌握', extra:'施放闪电箭或闪电链后，回复 8 点资源。', fx:{ type:'afterSkill', skill:['lightning','chainLightning'], resource:8 } },
+      ],
+      enhancement: [
+        { name:'怒火', extra:'暴击有 18% 几率追加一次 45% 伤害的风击，4秒冷却。', fx:{ type:'onCrit', chance:18, cooldown:4000, extraHitMul:0.45, extraHitIcon:'💨' } },
+        { name:'风暴之力', extra:'击杀敌人后，回复 8 点资源。', fx:{ type:'onKill', resource:8 } },
+      ],
+      restoration: [
+        { name:'水之护盾', extra:'你的过量治疗会转化为 20% 吸收护盾。', fx:{ type:'afterHeal', overhealShieldPct:0.2 } },
+        { name:'先祖活力', extra:'生命低于 45% 时，恢复 5% 最大生命，35秒冷却。', fx:{ type:'lowHp', threshold:0.45, cooldown:35000, healPct:0.05 } },
+      ],
+    },
+    paladin: {
+      holy: [
+        { name:'光明', extra:'施放圣光术或圣光闪现后，回复 6 点资源。', fx:{ type:'afterSkill', skill:['holyLight','flashOfLight'], resource:6 } },
+        { name:'神性', extra:'你的过量治疗会转化为 20% 吸收护盾。', fx:{ type:'afterHeal', overhealShieldPct:0.2 } },
+      ],
+      prot: [
+        { name:'预判', extra:'你受到首领伤害降低 6%。', fx:{ type:'vsBoss', takenPct:6 } },
+        { name:'壁垒', extra:'生命低于 45% 时，获得 6% 最大生命护盾，35秒冷却。', fx:{ type:'lowHp', threshold:0.45, cooldown:35000, shieldPct:0.06 } },
+      ],
+      ret: [
+        { name:'复仇', extra:'击杀敌人后，回复 8 点资源。', fx:{ type:'onKill', resource:8 } },
+        { name:'圣战', extra:'施放十字军打击后，回复 8 点资源。', fx:{ type:'afterSkill', skill:'crusader', resource:8 } },
+      ],
+    },
+    warlock: {
+      affliction: [
+        { name:'瘟疫蔓延', extra:'暴击会额外施加一层基于本次伤害 10% 的持续痛苦。', fx:{ type:'onCrit', applyDotPct:0.10 } },
+        { name:'灵魂虹吸', extra:'击杀敌人后，恢复 5% 最大生命。', fx:{ type:'onKill', healPct:0.05 } },
+      ],
+      demonology: [
+        { name:'强化恶魔', extra:'击杀敌人后，回复 8 点资源。', fx:{ type:'onKill', resource:8 } },
+        { name:'恶魔皮肤', extra:'生命低于 45% 时，获得 6% 最大生命护盾，35秒冷却。', fx:{ type:'lowHp', threshold:0.45, cooldown:35000, shieldPct:0.06 } },
+      ],
+      destruction: [
+        { name:'毁灭专精', extra:'暴击有 18% 几率让你的下一次伤害技能必暴，9秒冷却。', fx:{ type:'onCrit', chance:18, cooldown:9000, nextSkillCrit:1 } },
+        { name:'火焰之雨', extra:'施放烧尽后，回复 8 点资源。', fx:{ type:'afterSkill', skill:'incinerate', resource:8 } },
+      ],
+    },
+    druid: {
+      balance: [
+        { name:'自然之握', extra:'暴击有 18% 几率回复 10 点资源。', fx:{ type:'onCrit', chance:18, resource:10 } },
+        { name:'繁星', extra:'施放月火术或愤怒后，回复 8 点资源。', fx:{ type:'afterSkill', skill:['moonfire','wrath'], resource:8 } },
+      ],
+      feral: [
+        { name:'锋利利爪', extra:'暴击有 18% 几率追加一次 45% 伤害的扑击，4秒冷却。', fx:{ type:'onCrit', chance:18, cooldown:4000, extraHitMul:0.45, extraHitIcon:'🐾' } },
+        { name:'血爪', extra:'击杀敌人后，恢复 5% 最大生命。', fx:{ type:'onKill', healPct:0.05 } },
+      ],
+      resto: [
+        { name:'萌芽', extra:'施放回春术后，回复 6 点资源。', fx:{ type:'afterSkill', skill:'rejuvenation', resource:6 } },
+        { name:'自然之赐', extra:'你的过量治疗会转化为 20% 吸收护盾。', fx:{ type:'afterHeal', overhealShieldPct:0.2 } },
+      ],
+    },
+  };
+
+  function appendFx(talent, fx) {
+    if (!talent.fx) talent.fx = fx;
+    else if (Array.isArray(talent.fx)) talent.fx.push(fx);
+    else talent.fx = [talent.fx, fx];
+  }
+
+  function applyAugments(defs, marker) {
+    for (const [clsKey, classSpecs] of Object.entries(defs)) {
+      const cls = CLASSES[clsKey];
+      if (!cls || !cls.trees) continue;
+      for (const [treeKey, augments] of Object.entries(classSpecs)) {
+        const tree = cls.trees.find(t => t.key === treeKey);
+        if (!tree) continue;
+        augments.forEach(aug => {
+          const talent = tree.talents.find(t => t.name === aug.name && !t[marker]);
+          if (!talent) return;
+          talent.desc = talent.desc + ' · ' + aug.extra;
+          appendFx(talent, JSON.parse(JSON.stringify(aug.fx)));
+          talent[marker] = true;
+        });
       }
     }
   }
+
+  applyAugments(AUGMENTS, '_augFlavor');
+  applyAugments(LOW_AUGMENTS, '_augFlavor2');
 })();

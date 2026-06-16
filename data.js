@@ -3418,6 +3418,24 @@ const DUNGEON_LOOT = {
     '鲜血女王兰娜瑟尔':   [{name:'兰娜瑟尔的鲜血之牙',slot:'weapon',rarity:'epic',stats:{atk:2,agi:2}},{name:'鲜血女王之戒',slot:'ring',rarity:'rare',stats:{atk:1}}],
     '辛达苟萨':           [{name:'辛达苟萨的冰霜之息',slot:'trinket',rarity:'epic',stats:{sta:2}},{name:'冰霜巨龙腿甲',slot:'pants',rarity:'epic',stats:{hp:2,str:2}}],
     '巫妖王':             [{name:'影之哀伤',slot:'weapon',rarity:'legend',stats:{atk:5,str:4}},{name:'巫妖王的王冠',slot:'helmet',rarity:'epic',stats:{def:3,str:3}},{name:'阿尔萨斯的悔恨',slot:'trinket',rarity:'epic',stats:{sta:3,str:3}},{name:'冰封王座胸铠',slot:'armor',rarity:'epic',stats:{def:3,sta:3}}]}, trash:[{name:'天灾领主肩铠',slot:'shoulder',rarity:'rare',stats:{atk:1,str:1}},{name:'死亡之握',slot:'gloves',rarity:'rare',stats:{}},{name:'冰霜壁垒腰带',slot:'belt',rarity:'rare',stats:{def:1,sta:1}},{name:'灵魂洪炉战靴',slot:'boots',rarity:'rare',stats:{str:1}}]}};
+
+/* 当前 DUNGEONS 与部分历史 DUNGEON_LOOT boss 名不完全一致。
+   掉落按当前战斗 bossName 查找,这里做兼容映射,避免退回杂兵池。 */
+const DUNGEON_LOOT_ALIASES = {
+  mc: { '基赫纳斯':'迦顿男爵' },
+  bwl: { '勒什雷尔':'堕落的瓦拉斯塔兹' },
+  naxx: { '瘟疫使者诺斯':'帕奇维克', '肮脏的希尔盖':'帕奇维克', '塔迪乌斯':'塔迪乌斯' },
+  karazhan: { '午夜':'猎手阿图门', '玛克扎尔王子':'麦迪文' },
+  sunwell: { '穆鲁':'艾瑞达双子' },
+  ulduar: { 'XT-002拆解者':'芙蕾雅', '维扎克斯将军':'芙蕾雅', '尤格萨隆':'尤格-萨隆' },
+  ruby: { '萨维安娜·怒焰':'暮光龙·萨维安娜' },
+};
+function getDungeonBossLoot(dungeonKey, bossName) {
+  const loot = DUNGEON_LOOT[dungeonKey];
+  if (!loot || !loot.bosses || !bossName) return null;
+  const alias = DUNGEON_LOOT_ALIASES[dungeonKey]?.[bossName];
+  return loot.bosses[bossName] || (alias ? loot.bosses[alias] : null) || null;
+}
 /* ========== COMPANIONS(2026-06-15 大修)==========
    品质=按背景设定固定(不可升级),技能数=品质等级(白1→橙5)
    mult=战力系数(越稀有越强),weight=抽卡权重,starsMax=可升星上限 */

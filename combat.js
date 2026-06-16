@@ -52,6 +52,514 @@ function masteryDmgMult(){ return 1 + masteryFor('dmgAmp')*MASTERY_TYPE.dmgAmp.p
 function masteryTakenMult(){ return 1 - Math.min(30, masteryFor('dr')*MASTERY_TYPE.dr.per)/100; } // 受击减伤(封顶30%)
 function masteryDescText(){ const t=masterySpecType(); return t ? MASTERY_TYPE[t].fmt(state.hero.mastery||0) : '未选择专精'; }
 
+/* ---------- 天赋特效运行时 ---------- */
+function talentAuraMeta(key){ return (typeof TALENT_AURA_LIBRARY === 'object' && TALENT_AURA_LIBRARY[key]) || null; }
+function talentFxList(){ return state._talentFx || []; }
+function ensureTalentState(){
+  if(!state.talentAuras) state.talentAuras = {};
+  if(!state.talentState) state.talentState = { cds:{}, flags:{}, shield:0 };
+  if(!state.talentState.cds) state.talentState.cds = {};
+  if(!state.talentState.flags) state.talentState.flags = {};
+  if(typeof state.talentState.shield !== 'number') state.talentState.shield = 0;
+  return state.talentState;
+}
+function pruneTalentAuras(now){
+  if(!state.talentAuras) return false;
+  let changed = false;
+  for(const [k, expire] of Object.entries(state.talentAuras)){
+    if(!(expire > now)){ delete state.talentAuras[k]; changed = true; }
+  }
+  return changed;
+}
+function hasTalentAura(key){ return !!(state.talentAuras && state.talentAuras[key] > Date.now()); }
+function addTalentAura(key, quiet){
+  const meta = talentAuraMeta(key);
+  if(!meta) return;
+  ensureTalentState();
+  const now = Date.now();
+  const expire = now + (meta.duration || 5000);
+  if((state.talentAuras[key] || 0) >= expire - 250) return;
+  state.talentAuras[key] = expire;
+  if(!quiet) showFloat($('hero-emoji'), meta.icon || '✨', '#6ee7b7');
+  recomputeStats();
+  markDirty('hero');
+}
+function addTalentShield(amount, quiet){
+  amount = Math.max(0, Math.floor(amount || 0));
+  if(amount <= 0) return 0;
+  const rt = ensureTalentState();
+  rt.shield += amount;
+  if(!quiet) showFloat($('hero-emoji'), '🛡️+' + amount, '#93c5fd');
+  markDirty('hero');
+  return amount;
+}
+function absorbTalentShield(amount){
+  amount = Math.max(0, Math.floor(amount || 0));
+  if(amount <= 0) return 0;
+  const rt = ensureTalentState();
+  if(rt.shield <= 0) return amount;
+  const absorb = Math.min(rt.shield, amount);
+  rt.shield -= absorb;
+  showFloat($('hero-emoji'), '🛡️-' + absorb, '#93c5fd');
+  markDirty('hero');
+  return amount - absorb;
+}
+function talentCooldownReady(key, cooldownMs, now){
+  if(!cooldownMs) return true;
+  const rt = ensureTalentState();
+  if((rt.cds[key] || 0) > now) return false;
+  rt.cds[key] = now + cooldownMs;
+  return true;
+}
+function skillMatches(fx, skillKey){
+  if(!fx.skill) return true;
+  return Array.isArray(fx.skill) ? fx.skill.includes(skillKey) : fx.skill === skillKey;
+}
+function monsterStateActive(mon, stateKey){
+  if(!mon || !stateKey) return false;
+  const now = Date.now();
+  if(stateKey === 'dot') return getMonsterDotDps(mon, now) > 0;
+  if(stateKey === 'slow') return !!(mon.slowUntil > now);
+  if(stateKey === 'sunder') return !!(mon.sunderUntil > now);
+  if(stateKey === 'boss') return !!mon.isBoss;
+  if(mon._skillStates && mon._skillStates[stateKey] > now) return true;
+  return false;
+}
+function ensureMonsterDots(mon, now){
+  if(!mon) return {};
+  now = now || Date.now();
+  if(!mon._dots) mon._dots = {};
+  if(!mon._dotLegacyImported && mon.dot > 0 && mon.dotEnd > now){
+    mon._dots._legacy = { key:'_legacy', name:'灼烧/中毒', icon:'🔥', dps:mon.dot, expire:mon.dotEnd };
+  }
+  mon._dotLegacyImported = true;
+  for(const [key, dot] of Object.entries(mon._dots)){
+    if(!dot || !(dot.expire > now) || !(dot.dps > 0)) delete mon._dots[key];
+  }
+  let total = 0, latest = 0;
+  for(const dot of Object.values(mon._dots)){
+    total += dot.dps || 0;
+    latest = Math.max(latest, dot.expire || 0);
+  }
+  mon.dot = total > 0 ? total : 0;
+  mon.dotEnd = latest > now ? latest : 0;
+  return mon._dots;
+}
+function getMonsterDots(mon, now){
+  return Object.values(ensureMonsterDots(mon, now)).sort((a, b) => (b.dps || 0) - (a.dps || 0));
+}
+function getMonsterDotCount(mon, now){
+  return getMonsterDots(mon, now).length;
+}
+function monsterHasDotKey(mon, dotKey, now){
+  if(!mon || !dotKey) return false;
+  const dots = ensureMonsterDots(mon, now);
+  return !!(dots && dots[dotKey] && dots[dotKey].expire > (now || Date.now()));
+}
+function getMonsterDotDps(mon, now){
+  ensureMonsterDots(mon, now);
+  return mon && mon.dot > 0 ? mon.dot : 0;
+}
+function applyMonsterDot(mon, dotKey, dps, durMs, meta){
+  if(!mon || !(dps > 0)) return 0;
+  const now = Date.now();
+  ensureMonsterDots(mon, now);
+  const key = dotKey || '_generic';
+  const expire = now + (durMs || 5000);
+  const prev = mon._dots[key];
+  mon._dots[key] = {
+    key,
+    name: meta?.name || prev?.name || '持续伤害',
+    icon: meta?.icon || prev?.icon || '🔥',
+    source: meta?.source || prev?.source || key,
+    dps: Math.max(prev?.dps || 0, Math.floor(dps)),
+    expire: Math.max(prev?.expire || 0, expire),
+  };
+  ensureMonsterDots(mon, now);
+  return mon._dots[key].dps;
+}
+function tickMonsterDots(mon, now, tickInterval){
+  const total = getMonsterDotDps(mon, now);
+  if(total <= 0) return 0;
+  if(now - (mon._lastDotTick || 0) <= tickInterval) return 0;
+  mon._lastDotTick = now;
+  mon.hp -= total;
+  trackDmg('hero', total);
+  return total;
+}
+function consumeMonsterDots(mon, keys){
+  if(!mon) return 0;
+  const now = Date.now();
+  const dots = ensureMonsterDots(mon, now);
+  let removed = 0;
+  const dotKeys = keys ? (Array.isArray(keys) ? keys : [keys]) : Object.keys(dots);
+  for(const key of dotKeys){
+    const dot = dots[key];
+    if(!dot) continue;
+    removed += dot.dps || 0;
+    delete dots[key];
+  }
+  ensureMonsterDots(mon, now);
+  return removed;
+}
+function clearMonsterState(mon, stateKey){
+  if(!mon || !stateKey) return;
+  if(stateKey === 'slow') mon.slowUntil = 0;
+  else if(stateKey === 'sunder') mon.sunderUntil = 0;
+  else if(mon._skillStates) delete mon._skillStates[stateKey];
+}
+function ensureSkillRuntime(){
+  if(!state.skillRuntime) state.skillRuntime = { auras:{} };
+  if(!state.skillRuntime.auras) state.skillRuntime.auras = {};
+  return state.skillRuntime;
+}
+function pruneSkillAuras(now){
+  const rt = ensureSkillRuntime();
+  let changed = false;
+  for(const [key, aura] of Object.entries(rt.auras)){
+    if(!aura) { delete rt.auras[key]; changed = true; continue; }
+    if(aura.expire && aura.expire <= now){ delete rt.auras[key]; changed = true; }
+  }
+  return changed;
+}
+function getSkillAura(key){
+  const rt = ensureSkillRuntime();
+  const aura = rt.auras[key];
+  if(!aura) return null;
+  if(aura.expire && aura.expire <= Date.now()){ delete rt.auras[key]; return null; }
+  return aura;
+}
+function skillAuraStacks(key){
+  return getSkillAura(key)?.stacks || 0;
+}
+function hasSkillAura(key){
+  return skillAuraStacks(key) > 0;
+}
+function addSkillAura(key, cfg){
+  if(!key) return 0;
+  const rt = ensureSkillRuntime();
+  const now = Date.now();
+  const prev = getSkillAura(key) || { stacks:0, expire:0 };
+  const add = cfg?.add || 0;
+  const max = cfg?.max || prev.max || 1;
+  const duration = cfg?.duration || prev.duration || 0;
+  const nextStacks = Math.max(0, Math.min(max, (prev.stacks || 0) + add));
+  if(nextStacks <= 0){ delete rt.auras[key]; return 0; }
+  rt.auras[key] = {
+    key,
+    stacks: nextStacks,
+    max,
+    duration,
+    expire: duration ? now + duration : 0,
+  };
+  return nextStacks;
+}
+function consumeSkillAura(key, cfg){
+  const aura = getSkillAura(key);
+  if(!aura) return 0;
+  if(cfg?.all){ const out = aura.stacks || 0; ensureSkillRuntime().auras[key] = null; delete ensureSkillRuntime().auras[key]; return out; }
+  const add = cfg?.add || -1;
+  return addSkillAura(key, { add, max:aura.max, duration:aura.duration });
+}
+function buffActive(buffKey, now){
+  return !!(buffKey && state.buffs && state.buffs[buffKey] > (now || Date.now()));
+}
+function healFromPct(base, pct){
+  if(!(pct > 0) || !(base > 0)) return 0;
+  return Math.max(1, Math.floor(base * pct));
+}
+function skillFxMeta(skillKey, sk){ return (sk && sk.fx) || {}; }
+function skillBonusPctFromMap(map, key){
+  if(!map || !key) return 0;
+  return map[key] || 0;
+}
+function calcSkillRuntimeBonus(skillKey, sk, mon, now){
+  const fx = skillFxMeta(skillKey, sk);
+  let mult = 1;
+  let forceCrit = false;
+  const dotCount = getMonsterDotCount(mon, now);
+  if(fx.bonusStates){
+    for(const [stateKey, pct] of Object.entries(fx.bonusStates)){
+      if(monsterStateActive(mon, stateKey)) mult *= 1 + pct;
+    }
+  }
+  if(fx.bonusPerDot && dotCount > 0) mult *= 1 + dotCount * fx.bonusPerDot;
+  if(fx.executeThreshold && fx.bonusVsLowHp && mon && mon.hp > 0 && mon.hp <= mon.hpMax * fx.executeThreshold) mult *= 1 + fx.bonusVsLowHp;
+  if(fx.bonusPerAuraStack && fx.bonusPerAuraStack.key){
+    mult *= 1 + skillAuraStacks(fx.bonusPerAuraStack.key) * (fx.bonusPerAuraStack.pct || 0);
+  }
+  if(fx.bonusIfBuff){
+    for(const [buffKey, pct] of Object.entries(fx.bonusIfBuff)) if(buffActive(buffKey, now)) mult *= 1 + pct;
+  }
+  if(fx.forceCritIfBuff && buffActive(fx.forceCritIfBuff, now)) forceCrit = true;
+  if(fx.forceCritIfState && monsterStateActive(mon, fx.forceCritIfState)) forceCrit = true;
+  if(fx.forceCritIfDotCount && dotCount >= fx.forceCritIfDotCount) forceCrit = true;
+  return { fx, mult, forceCrit, dotCount };
+}
+function applySkillFollowupDamage(mon, amount, icon, color){
+  amount = Math.max(0, Math.floor(amount || 0));
+  if(!mon || mon.hp <= 0 || amount <= 0) return 0;
+  if(mon._arcaneShield > 0){
+    if(amount <= mon._arcaneShield){ mon._arcaneShield -= amount; amount = 0; }
+    else { amount -= mon._arcaneShield; mon._arcaneShield = 0; }
+  }
+  if(mon.dmgReduction && amount > 0) amount = Math.max(1, Math.floor(amount * (1 - mon.dmgReduction)));
+  if(amount <= 0) return 0;
+  mon.hp -= amount;
+  trackDmg('hero', amount);
+  showFloat($('mon-emoji'), (icon || '✨') + '-' + amount, color || '#fbbf24');
+  return amount;
+}
+function splashSkillDamage(sourceMon, amount, pct, icon){
+  if(!(pct > 0) || !(amount > 0)) return 0;
+  let total = 0;
+  for(const other of state.currentMonsters){
+    if(other === sourceMon || other.hp <= 0) continue;
+    total += applySkillFollowupDamage(other, amount * pct, icon || '💥', '#f59e0b');
+  }
+  return total;
+}
+function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
+  const fx = skillFxMeta(skillKey, sk);
+  const now = ctx?.now || Date.now();
+  if(!mon || dmgDone <= 0) return;
+  if(fx.consumeDots) consumeMonsterDots(mon, fx.consumeDotKeys);
+  if(sk.dot){
+    const dotKey = fx.applyDotKey || ('skill:' + skillKey);
+    applyMonsterDot(mon, dotKey, Math.floor(dmgDone * (fx.dotPct || 0.15) * (1 + (state.hero.dotBonus || 0) / 100)), fx.dotMs || 5000, { icon: fx.dotIcon || sk.icon || '🔥', name: fx.dotName || sk.name || '持续伤害', source: skillKey });
+  }
+  if(fx.applyTargetState) applyMonsterState(mon, fx.applyTargetState, fx.stateDurationMs || 6000);
+  if(fx.healFromDamagePct) healHeroAmount(healFromPct(dmgDone, fx.healFromDamagePct), sk.icon || '💚', '#6ee7b7');
+  if(fx.healFromDamagePctIfBuff && buffActive(fx.healFromDamagePctIfBuff.key, now)) healHeroAmount(healFromPct(dmgDone, fx.healFromDamagePctIfBuff.pct || 0), sk.icon || '💚', '#6ee7b7');
+  if(fx.healBonusIfSelfHpBelow && state.hp / Math.max(1, state.hero.hpMax) <= (fx.healBonusIfSelfHpBelow || 0.5)) healHeroAmount(healFromPct(state.hero.hpMax, fx.extraHealPct || 0), '💚', '#6ee7b7');
+  if(fx.shieldFromDamagePct) addTalentShield(healFromPct(dmgDone, fx.shieldFromDamagePct), true);
+  if(fx.resourceGain) grantTalentResource(fx.resourceGain);
+  if(fx.grantAura) addSkillAura(fx.grantAura.key, fx.grantAura);
+  if(fx.consumeAura) consumeSkillAura(fx.consumeAura.key, fx.consumeAura);
+  if(fx.consumeState){
+    const states = Array.isArray(fx.consumeState) ? fx.consumeState : [fx.consumeState];
+    for(const stateKey of states) clearMonsterState(mon, stateKey);
+  }
+  if(fx.extraHitPct) applySkillFollowupDamage(mon, dmgDone * fx.extraHitPct, sk.icon || '✨', '#fbbf24');
+  if(fx.extraHitPctIfBuff && buffActive(fx.extraHitPctIfBuff.key, now)) applySkillFollowupDamage(mon, dmgDone * (fx.extraHitPctIfBuff.pct || 0), sk.icon || '✨', '#fbbf24');
+  if(fx.splashPct && !ctx?.isAOE) splashSkillDamage(mon, dmgDone, fx.splashPct, sk.icon || '💥');
+  if(fx.spreadDotsPct) spreadDotFromMonster(mon, fx.spreadDotsPct, fx.dotMs || 5000);
+  if(fx.resourceGainOnKill && mon.hp <= 0) grantTalentResource(fx.resourceGainOnKill);
+}
+function applySkillHealEffects(skillKey, sk, amount, overheal){
+  const fx = skillFxMeta(skillKey, sk);
+  if(fx.shieldFromOverhealPct && overheal > 0) addTalentShield(Math.floor(overheal * fx.shieldFromOverhealPct), true);
+  if(fx.shieldFromHealPct && amount > 0) addTalentShield(Math.floor(amount * fx.shieldFromHealPct), true);
+  if(fx.shieldBonusIfBuff && buffActive(fx.shieldBonusIfBuff.key)) addTalentShield(Math.floor(amount * (fx.shieldBonusIfBuff.pct || 0)), true);
+  if(fx.grantAura) addSkillAura(fx.grantAura.key, fx.grantAura);
+}
+function applyMonsterState(mon, stateKey, durMs){
+  if(!mon || !stateKey) return;
+  if(!mon._skillStates) mon._skillStates = {};
+  mon._skillStates[stateKey] = Date.now() + (durMs || 10000);
+}
+function talentDamageMult(mon, skillKey){
+  let mult = 1;
+  for(const fx of talentFxList()){
+    if(fx.type === 'vsBoss' && mon?.isBoss && fx.dmgPct) mult *= 1 + fx.dmgPct/100;
+    else if(fx.type === 'executeWindow' && mon && mon.hp > 0 && mon.hp <= mon.hpMax * (fx.threshold || 0.35) && fx.dmgPct) mult *= 1 + fx.dmgPct/100;
+    else if(fx.type === 'vsState' && monsterStateActive(mon, fx.state) && fx.dmgPct) mult *= 1 + fx.dmgPct/100;
+    else if(fx.type === 'skillAmp' && skillMatches(fx, skillKey) && (!fx.state || monsterStateActive(mon, fx.state)) && fx.dmgPct) mult *= 1 + fx.dmgPct/100;
+    else if(fx.type === 'whileAura' && hasTalentAura(fx.auraKey) && (!fx.skill || skillMatches(fx, skillKey)) && fx.dmgPct) mult *= 1 + fx.dmgPct/100;
+  }
+  return mult;
+}
+function talentTakenMult(mon){
+  let mult = 1;
+  for(const fx of talentFxList()){
+    if(fx.type === 'vsBoss' && mon?.isBoss && fx.takenPct) mult *= 1 - Math.min(80, fx.takenPct)/100;
+    else if(fx.type === 'whileAura' && hasTalentAura(fx.auraKey) && fx.takenPct) mult *= 1 - Math.min(80, fx.takenPct)/100;
+  }
+  return mult;
+}
+function grantTalentResource(amount){
+  amount = Math.max(0, Math.floor(amount || 0));
+  if(amount <= 0) return;
+  state.resource = Math.min(state.resourceMax, state.resource + amount);
+  showFloat($('hero-emoji'), '⚡+' + amount, '#fbbf24');
+}
+function grantNextSkillCrit(count){
+  const rt = ensureTalentState();
+  rt.flags.nextSkillCrit = (rt.flags.nextSkillCrit || 0) + (count || 1);
+  showFloat($('hero-emoji'), '✨必暴', '#fbbf24');
+}
+function consumeNextSkillCrit(sk){
+  if(!sk || sk.type !== 'dmg') return false;
+  const rt = ensureTalentState();
+  if((rt.flags.nextSkillCrit || 0) <= 0) return false;
+  rt.flags.nextSkillCrit -= 1;
+  return true;
+}
+function resetSkillCooldown(skillKey, pct){
+  if(!skillKey || !state.skillCooldowns) return;
+  const now = Date.now();
+  const cur = state.skillCooldowns[skillKey] || 0;
+  if(cur <= now) return;
+  if(!pct || pct >= 1) delete state.skillCooldowns[skillKey];
+  else state.skillCooldowns[skillKey] = Math.max(now, cur - Math.floor((cur - now) * pct));
+  markDirty('skills');
+}
+function spreadDotFromMonster(mon, ratio, dotMs){
+  const dots = getMonsterDots(mon);
+  if(!mon || dots.length === 0) return;
+  const alive = state.currentMonsters.filter(x => x.hp > 0 && x !== mon);
+  if(alive.length === 0) return;
+  const target = alive[0];
+  for(const dot of dots){
+    const spread = Math.max(1, Math.floor((dot.dps || 0) * (ratio || 0.5)));
+    applyMonsterDot(target, dot.key, spread, dotMs || Math.max(1000, (dot.expire || Date.now()) - Date.now()), { icon: dot.icon, name: dot.name, source: dot.source });
+  }
+  showFloat($('mon-emoji'), '☠️蔓延', '#c084fc');
+}
+function healHeroAmount(amount, icon, color){
+  amount = Math.max(0, Math.floor(amount || 0));
+  if(amount <= 0) return { applied:0, overheal:0 };
+  const before = state.hp;
+  state.hp = Math.min(state.hero.hpMax, state.hp + amount);
+  const applied = state.hp - before;
+  const overheal = Math.max(0, amount - applied);
+  if(applied > 0) showFloat($('hero-emoji'), (icon || '') + '+' + applied, color || '#6ee7b7');
+  return { applied, overheal };
+}
+function applyHeroDamage(amount, mon, opts){
+  const now = opts?.now || Date.now();
+  const taken = absorbTalentShield(amount);
+  if(taken <= 0) return 0;
+  state.hp -= taken;
+  if(opts?.show !== false){
+    const text = typeof opts?.label === 'function' ? opts.label(taken) : (opts?.label || ('-' + taken));
+    showFloat($('hero-emoji'), text, opts?.color || '#ff7a7a');
+  }
+  return taken;
+}
+function talentProcKey(fx, suffix){
+  return [fx.key || fx.talentKey || fx.name || fx.aura || fx.type, suffix || 'base'].join(':');
+}
+function skillAiMeta(skillKey, sk){ return (sk && sk.ai) || {}; }
+function stateRequirementMet(mon, req){
+  if(!req) return true;
+  if(Array.isArray(req)) return req.some(x => monsterStateActive(mon, x));
+  return monsterStateActive(mon, req);
+}
+function autoSkillScore(skillKey, sk, mon, ctx){
+  const ai = skillAiMeta(skillKey, sk);
+  const tag = ai.priorityTag || 'builder';
+  const base = { heal:120, defBuff:110, buff:80, setup:78, spender:86, execute:92, aoe:74, dot:72, strike:56, builder:40 }[tag] || 40;
+  const dotCount = getMonsterDotCount(mon, ctx.now);
+  if(sk.type === 'buff' && sk.buff && state.buffs[sk.buff] > ctx.now) return null;
+  if(ai.useIfBuffMissing && state.buffs[ai.useIfBuffMissing] > ctx.now) return null;
+  if(ai.useIfBuffActive && !buffActive(ai.useIfBuffActive, ctx.now)) return null;
+  if(ai.onlyOnBoss && !mon.isBoss) return null;
+  if(ai.minEnemies && ctx.aliveN < ai.minEnemies) return null;
+  if(ai.useIfSelfHpBelow && ctx.hpFrac > ai.useIfSelfHpBelow) return null;
+  if(sk.type === 'heal' && !ai.useIfSelfHpBelow && ctx.hpFrac > 0.75) return null;
+  if(ai.useIfTargetHpBelow && ctx.targetHpFrac > ai.useIfTargetHpBelow) return null;
+  if(ai.avoidIfTargetHpBelow && ctx.targetHpFrac <= ai.avoidIfTargetHpBelow) return null;
+  if(ai.useIfTargetHas && !stateRequirementMet(mon, ai.useIfTargetHas)) return null;
+  if(ai.useIfTargetMissing && stateRequirementMet(mon, ai.useIfTargetMissing)) return null;
+  if(ai.useIfDotCountAtLeast && dotCount < ai.useIfDotCountAtLeast) return null;
+  if(ai.useIfDotCountBelow !== undefined && dotCount >= ai.useIfDotCountBelow) return null;
+  if(ai.useIfTargetDotKeyPresent && !monsterHasDotKey(mon, ai.useIfTargetDotKeyPresent, ctx.now)) return null;
+  if(ai.useIfTargetDotKeyMissing && monsterHasDotKey(mon, ai.useIfTargetDotKeyMissing, ctx.now)) return null;
+
+  let score = base;
+  if(mon.isBoss && ai.preferOnBoss) score += 18;
+  if(tag === 'heal') score += Math.round((1 - ctx.hpFrac) * 120);
+  if(tag === 'defBuff') score += Math.round((1 - ctx.hpFrac) * 105);
+  if(tag === 'execute') score += Math.round((1 - ctx.targetHpFrac) * 70);
+  if(tag === 'setup' && ai.useIfTargetMissing) score += 16;
+  if(tag === 'dot' && ai.useIfTargetMissing) score += 12;
+  if(tag === 'spender' && ai.useIfTargetHas) score += 16;
+  if(tag === 'spender' && ai.useIfDotCountAtLeast) score += dotCount * 8;
+  if(tag === 'aoe') score += Math.min(18, ctx.aliveN * 6);
+  if((sk.mul || 0) >= 6 && mon.isBoss) score += 8;
+  if(sk.castTime >= 2 && !mon.isBoss && ctx.targetHpFrac < 0.2) score -= 12;
+  if((skillAiMeta(skillKey, sk).priorityTag === 'buff') && ctx.targetHpFrac < 0.35 && !mon.isBoss) score -= 8;
+  return score;
+}
+function runTalentAction(fx, mon, value, ctx, now){
+  if(fx.aura) addTalentAura(fx.aura, true);
+  if(fx.resource) grantTalentResource(fx.resource);
+  if(fx.healPct) healHeroAmount(Math.floor(state.hero.hpMax * fx.healPct), fx.healIcon || '💚', '#6ee7b7');
+  if(fx.shieldPct) addTalentShield(Math.floor(state.hero.hpMax * fx.shieldPct), true);
+  if(fx.nextSkillCrit) grantNextSkillCrit(fx.nextSkillCrit);
+  if(fx.extraHitMul && mon && mon.hp > 0){
+    let extra = Math.max(1, Math.floor((value || state.hero.atk) * fx.extraHitMul));
+    if(mon._arcaneShield > 0){
+      if(extra <= mon._arcaneShield){ mon._arcaneShield -= extra; extra = 0; }
+      else { extra -= mon._arcaneShield; mon._arcaneShield = 0; }
+    }
+    if(mon.dmgReduction && extra > 0) extra = Math.max(1, Math.floor(extra * (1 - mon.dmgReduction)));
+    if(extra > 0){
+      mon.hp -= extra;
+      trackDmg('hero', extra);
+      showFloat($('mon-emoji'), (fx.extraHitIcon || '⚔️') + '-' + extra, '#fbbf24');
+    }
+  }
+  if(fx.applyDotPct && mon && mon.hp > 0){
+    const dot = Math.max(1, Math.floor((value || state.hero.atk) * fx.applyDotPct * (1 + (state.hero.dotBonus || 0)/100)));
+    applyMonsterDot(mon, 'talent:' + talentProcKey(fx, 'dot'), dot, fx.dotMs || 5000, { icon: fx.dotIcon || '☠️', name: fx.dotName || '天赋持续伤害', source: fx.name || fx.key || 'talent' });
+    showFloat($('mon-emoji'), fx.dotIcon || '☠️', '#c084fc');
+  }
+  if(fx.spreadDotPct) spreadDotFromMonster(mon, fx.spreadDotPct, fx.dotMs || 5000);
+  if(fx.resetSkill) resetSkillCooldown(fx.resetSkill, fx.resetPct || 1);
+}
+function processTalentOnCrit(mon, value, ctx){
+  const now = Date.now();
+  for(const fx of talentFxList()){
+    if(fx.type !== 'onCrit') continue;
+    if(!skillMatches(fx, ctx?.skillKey)) continue;
+    if(fx.state && !monsterStateActive(mon, fx.state)) continue;
+    if(fx.chance && Math.random() * 100 > fx.chance) continue;
+    if(!talentCooldownReady(talentProcKey(fx, 'crit'), fx.cooldown || 0, now)) continue;
+    runTalentAction(fx, mon, value, ctx, now);
+  }
+}
+function processTalentOnKill(mon){
+  const now = Date.now();
+  for(const fx of talentFxList()){
+    if(fx.type !== 'onKill') continue;
+    if(fx.requireDot && !monsterStateActive(mon, 'dot')) continue;
+    if(!talentCooldownReady(talentProcKey(fx, 'kill'), fx.cooldown || 0, now)) continue;
+    runTalentAction(fx, mon, getMonsterDotDps(mon, now) || state.hero.atk, { mon }, now);
+  }
+}
+function processTalentLowHp(mon, now){
+  const hpPct = state.hp / Math.max(1, state.hero.hpMax);
+  for(const fx of talentFxList()){
+    if(fx.type !== 'lowHp') continue;
+    if(hpPct > (fx.threshold || 0.35)) continue;
+    if(!talentCooldownReady(talentProcKey(fx, 'lowhp'), fx.cooldown || 30000, now)) continue;
+    runTalentAction(fx, mon, state.hero.hpMax, { mon }, now);
+  }
+}
+function processTalentAfterSkill(skillKey, sk, mon, value, ctx){
+  const now = Date.now();
+  for(const fx of talentFxList()){
+    if(fx.type !== 'afterSkill') continue;
+    if(!skillMatches(fx, skillKey)) continue;
+    if(fx.state && !monsterStateActive(mon, fx.state)) continue;
+    if(fx.chance && Math.random() * 100 > fx.chance) continue;
+    if(!talentCooldownReady(talentProcKey(fx, 'skill:' + skillKey), fx.cooldown || 0, now)) continue;
+    runTalentAction(fx, mon, value, Object.assign({ skillKey, sk }, ctx || {}), now);
+  }
+}
+function processTalentAfterHeal(skillKey, amount, overheal){
+  const now = Date.now();
+  for(const fx of talentFxList()){
+    if(fx.type !== 'afterHeal') continue;
+    if(!skillMatches(fx, skillKey)) continue;
+    if(!talentCooldownReady(talentProcKey(fx, 'heal:' + skillKey), fx.cooldown || 0, now)) continue;
+    if(fx.overhealShieldPct && overheal > 0) addTalentShield(Math.floor(overheal * fx.overhealShieldPct), true);
+    runTalentAction(fx, null, amount, { skillKey, overheal }, now);
+  }
+}
+
 /* ---------- 属性重算 ---------- */
 function recomputeStats() {
   const c = getCls(); if (!c) return;
@@ -79,12 +587,18 @@ function recomputeStats() {
   let cdReduction=0, buffDuration=0, extraAtk=0, healBonus=0, dotBonus=0;
   let costReduction=0, executeBonus=0, reflectDmg=0;
   let armorPen=0, dodge=0, stunChance=0;   // 趣味天赋:破甲/闪避/击晕
+  const talentFx = [];
 
   _snapSrc();
   for (const [treeKey, tals] of Object.entries(state.talents)) {
     for (const [tKey, rank] of Object.entries(tals)) {
       const tree = c.trees.find(t => t.key === treeKey); if (!tree) continue;
-      const t = tree.talents.find(x => x.key === tKey); if (!t || !t.mod) continue;
+      const t = tree.talents.find(x => x.key === tKey); if (!t || (!t.mod && !t.fx)) continue;
+      if (rank > 0 && t.fx) {
+        const fxList = Array.isArray(t.fx) ? t.fx : [t.fx];
+        for (const fx of fxList) talentFx.push(Object.assign({ talentKey:t.key, talentName:t.name, treeKey }, fx));
+      }
+      if (!t.mod) continue;
       for (const [k, v] of Object.entries(t.mod)) {
         const total = v * rank;
         if (k==='atkPct') atkPct+=total; else if (k==='critdPct') critdPct+=total;
@@ -106,6 +620,31 @@ function recomputeStats() {
     }
   }
   _saveSrc('天赋');
+  _snapSrc();
+  pruneTalentAuras(Date.now());
+  for (const [auraKey, expire] of Object.entries(state.talentAuras || {})) {
+    if (!(expire > Date.now())) continue;
+    const aura = talentAuraMeta(auraKey);
+    if (!aura || !aura.mod) continue;
+    for (const [k, v] of Object.entries(aura.mod)) {
+      if (k==='atkPct') atkPct+=v; else if (k==='critdPct') critdPct+=v;
+      else if (k==='hpPct') hpPct+=v; else if (k==='defPct') defPct+=v;
+      else if (k==='spdPct') spdPct+=v; else if (k==='mpPct') mpPct+=v;
+      else if (k==='crit') critFlat+=v; else if (k==='regFlat') regFlat+=v;
+      else if (k==='strPct') attrPct.str+=v; else if (k==='agiPct') attrPct.agi+=v;
+      else if (k==='intPct') attrPct.int+=v; else if (k==='spiPct') attrPct.spi+=v;
+      else if (k==='staPct') attrPct.sta+=v;
+      else if (k==='leech') leech+=v; else if (k==='vers') vers+=v;
+      else if (k==='mastery') mastery+=v; else if (k==='cdReduction') cdReduction+=v;
+      else if (k==='buffDuration') buffDuration+=v; else if (k==='extraAtk') extraAtk+=v;
+      else if (k==='healBonus') healBonus+=v; else if (k==='dotBonus') dotBonus+=v;
+      else if (k==='costReduction') costReduction+=v; else if (k==='executeBonus') executeBonus+=v;
+      else if (k==='reflectDmg') reflectDmg+=v;
+      else if (k==='armorPen') armorPen+=v; else if (k==='dodge') dodge+=v;
+      else if (k==='stunChance') stunChance+=v;
+    }
+  }
+  _saveSrc('天赋触发');
   // 永久属性加成(成就奖励)— 接入与 talent.mod 同 schema
   _snapSrc();
   if (typeof collectProgressionBonus === 'function') {
@@ -261,24 +800,22 @@ function recomputeStats() {
   let reg = base.reg + Math.floor(attrs.spi * 0.2) + regFlat;
 
   _snapSrc();
-  let equipAttrBonus = { str:0, agi:0, int:0, spi:0, sta:0 };
-  let gearAttrPct = { str:0, agi:0, int:0, spi:0, sta:0 };  // 仅来自装备(词缀/宝石/附魔)的%
-  for (const slotKey of SLOT_ORDER) {
-    const it = state.equipped[slotKey]; if (!it) continue;
-    // 用 collectItemBonuses 收集"基础+词缀+宝石+附魔"的总加成
-    const b = (typeof collectItemBonuses === 'function') ? collectItemBonuses(it) : null;
-    if (b) {
-      // 直接属性(装备攻/防/血不受百分比加成)
+  const _hasEnhanced = (typeof collectItemBonuses === 'function');
+  // 辅助:将一组加成(来自同一来源)应用到共享属性变量
+  const _applyBonusSet = (getBonus) => {
+    let equipAttrBonus = { str:0, agi:0, int:0, spi:0, sta:0 };
+    let gearAttrPct = { str:0, agi:0, int:0, spi:0, sta:0 };
+    for (const slotKey of SLOT_ORDER) {
+      const it = state.equipped[slotKey]; if (!it) continue;
+      const b = getBonus(it); if (!b) continue;
       equipAtk+=b.atk; def+=b.def; hpMax+=b.hp; crit+=b.crit;
       critd+=b.critd; spd+=b.spd; reg+=b.reg;
       leech+=b.leech; vers+=b.vers; mastery+=b.mastery; haste+=b.haste||0; dodge+=b.dodge||0;
-      // 5维度属性 (并算上主属性加攻击/耐力加生命,装备主属性也不受百分比加成)
       for (const ak of ['str','agi','int','spi','sta']) {
         equipAttrBonus[ak] += b[ak];
         if (ak === c.attackAttr) equipAtk += b[ak] * 1.5;
         if (ak === 'sta') hpMax += b[ak] * 10;
       }
-      // 词缀/附魔/宝石带来的百分比与额外
       atkPct+=b.atkPct; hpPct+=b.hpPct; defPct+=b.defPct;
       spdPct+=b.spdPct; critdPct+=b.critdPct;
       gearAttrPct.str+=b.strPct; gearAttrPct.agi+=b.agiPct; gearAttrPct.int+=b.intPct;
@@ -287,35 +824,53 @@ function recomputeStats() {
       extraAtk+=b.extraAtk; healBonus+=b.healBonus;
       dotBonus+=b.dotBonus; executeBonus+=b.executeBonus;
       reflectDmg+=b.reflectDmg;
-    } else {
-      // 回退: 老逻辑(不依赖 enhance.js)
-      for (const [k, v] of Object.entries(it.stats)) {
-        if (k==='atk') equipAtk+=v; else if (k==='def') def+=v;
-        else if (k==='hp') hpMax+=v; else if (k==='crit') crit+=v;
-        else if (k==='critd') critd+=v; else if (k==='spd') spd+=v;
-        else if (k==='reg') reg+=v;
-        else if (['str','agi','int','spi','sta'].includes(k)) {
-          equipAttrBonus[k]+=v;
-          if (k === c.attackAttr) equipAtk += v * 1.5;
-          if (k === 'sta') hpMax += v * 10;
-        }
-        else if (k==='leech') leech+=v; else if (k==='vers') vers+=v;
-        else if (k==='mastery') mastery+=v; else if (k==='haste') haste+=v;
-      }
     }
-  }
-  for (const k of Object.keys(attrs)) attrs[k] += (equipAttrBonus[k] || 0);
-  // 装备来源的属性百分比(在已加上装备实数后再乘),并把增量补到 equipAtk(不受atkPct加成)
-  for (const k of ['str','agi','int','spi','sta']) {
-    if (!gearAttrPct[k]) continue;
-    const before = attrs[k];
-    const after = Math.floor(before * (1 + gearAttrPct[k]/100));
-    const delta = after - before;
-    attrs[k] = after;
-    if (k === c.attackAttr) equipAtk += delta * 1.5;
-    if (k === 'sta') hpMax += delta * 10;
+    for (const k of Object.keys(attrs)) attrs[k] += (equipAttrBonus[k] || 0);
+    for (const k of ['str','agi','int','spi','sta']) {
+      if (!gearAttrPct[k]) continue;
+      const before = attrs[k];
+      const after = Math.floor(before * (1 + gearAttrPct[k]/100));
+      const delta = after - before;
+      attrs[k] = after;
+      if (k === c.attackAttr) equipAtk += delta * 1.5;
+      if (k === 'sta') hpMax += delta * 10;
+    }
+  };
+
+  // 1) 装备基础属性
+  if (_hasEnhanced) {
+    _applyBonusSet(it => (typeof collectBaseBonuses === 'function') ? collectBaseBonuses(it) : collectItemBonuses(it));
+  } else {
+    // 回退:老逻辑(不依赖 enhance.js)
+    _applyBonusSet(it => {
+      if (!it || !it.stats) return null;
+      const b = {atk:0,def:0,hp:0,crit:0,critd:0,spd:0,reg:0,str:0,agi:0,int:0,spi:0,sta:0,leech:0,vers:0,mastery:0,haste:0,dodge:0,atkPct:0,hpPct:0,defPct:0,spdPct:0,critdPct:0,strPct:0,agiPct:0,intPct:0,spiPct:0,staPct:0,cdReduction:0,costReduction:0,extraAtk:0,healBonus:0,dotBonus:0,executeBonus:0,reflectDmg:0};
+      for (const [k, v] of Object.entries(it.stats)) { if (k in b) b[k] += v; }
+      return b;
+    });
   }
   _saveSrc('装备');
+
+  // 2) 词缀
+  if (_hasEnhanced && typeof collectAffixBonuses === 'function') {
+    _snapSrc();
+    _applyBonusSet(it => collectAffixBonuses(it));
+    _saveSrc('词缀');
+  }
+
+  // 3) 宝石
+  if (_hasEnhanced && typeof collectGemBonuses === 'function') {
+    _snapSrc();
+    _applyBonusSet(it => collectGemBonuses(it));
+    _saveSrc('宝石');
+  }
+
+  // 4) 附魔
+  if (_hasEnhanced && typeof collectEnchantBonuses === 'function') {
+    _snapSrc();
+    _applyBonusSet(it => collectEnchantBonuses(it));
+    _saveSrc('附魔');
+  }
   atk = Math.floor(atk * (1 + atkPct/100)) + equipAtk; hpMax = Math.floor(hpMax * (1 + hpPct/100));
   def = Math.floor(def * (1 + defPct/100));
   // 攻速稀有化:spdPct 的各来源数值已在 spd_tuning.js 加载期统一归一化为 30%(显示=实际),
@@ -397,6 +952,7 @@ function recomputeStats() {
   state.hero.costReduction=Math.min(costReduction,30); state.hero.executeBonus=Math.min(executeBonus,40);
   state.hero.reflectDmg=Math.min(reflectDmg,20);
   state.hero.armorPen=Math.min(armorPen,40); state.hero.dodge=Math.min(dodge,30); state.hero.stunChance=Math.min(stunChance,15);
+  state._talentFx = talentFx;
   state.hp=Math.min(state.hp,state.hero.hpMax); state.resourceMax=state.hero.mpMax;
   state.resource=Math.min(state.resource,state.resourceMax);
   markDirty('hero','equipment');
@@ -445,6 +1001,7 @@ function makeMonster(name,lvl,isBoss,maxRarity){
     baseXp:Math.floor(30+lvl*5.0),goldReward:Math.floor((5+lvl*1.5)*(isBoss?18:1)),
     honorReward:isBoss?Math.floor(15+lvl*3):0,dropRate:isBoss?1.0:0.18,
     gemChance:isBoss?1.0:0.015,maxRarity:maxRarity||'uncommon',_uid:monUidSeq++,
+    _dots:{},_dotLegacyImported:true,_lastDotTick:0,
     kind, _monSkill:isBoss?null:ms,
     _lastSkill:Date.now()-rng(1000,4000),                  // 进场1-4秒后首放
     dmgReduction:kind==='tank'?0.30:0,                        // 坦克:受到伤害-30%
@@ -520,6 +1077,7 @@ function spawnDungeonMonster(){
     baseGold:Math.floor(10+power*3),baseXp:Math.floor(35+power*5),
     goldReward:Math.floor((10+power*3)*(isBoss?15:1.5)*scale),honorReward:isBoss?Math.floor(25+power*2.5):2,
     dropRate:isBoss?1.0:0.35,gemChance:isBoss?0.8:0.05,maxRarity:bossMaxRarity,fromDungeon:true,_uid:monUidSeq++,
+    _dots:{},_dotLegacyImported:true,_lastDotTick:0,
     _isRaidFinal:isRaid&&isFinalBoss,_isRaid:isRaid,
     _monSkill:isBoss?null:pickMonSkill(),_lastSkill:Date.now()-rng(1000,4000),
     atkInterval:(isBoss?1400:1700)+rng(-200,200),_lastAtk:Date.now()-rng(0,1200)});
@@ -642,6 +1200,8 @@ function buffDamageReductionMult(){
 let lastHeroAtk=0,lastMonAtk=0,lastRegen=0,dotTick=0,lastBossSkill=0,bossSkillIdx=0,lastAutoCast=0,burnTick=0;
 function tickBattle(now){
   if(state.mode==='travel'){lastHeroAtk=now;lastMonAtk=now;return;}
+  if(pruneTalentAuras(now)) recomputeStats();
+  pruneSkillAuras(now);
   reapDeadMonsters();                                   // 先结算上一拍可能死亡的敌人(含 AOE 群杀)
   if(getAliveMonsters().length===0){spawnMonster();lastHeroAtk=now;lastMonAtk=now;return;}
   focusHighestThreat();                                 // 锁定仇恨最高的敌人为焦点([0])
@@ -657,11 +1217,15 @@ function tickBattle(now){
     else{const reg=2+Math.floor((state._attrs?.spi||0)*0.3)+state.hero.reg;state.resource=Math.min(state.resourceMax,state.resource+reg);}
     lastRegen=now;
   }
-  if(mon.dot&&now>mon.dotEnd)mon.dot=0;
-  if(mon.dot&&now-dotTick>1000/spdMul){mon.hp-=mon.dot;dotTick=now;trackDmg('hero',mon.dot);}
+  const dotInterval = 1000 / spdMul;
+  for(const m of state.currentMonsters){
+    if(m.hp <= 0) continue;
+    const dotDmg = tickMonsterDots(m, now, dotInterval);
+    if(dotDmg > 0 && m === mon) showFloat($('mon-emoji'), '☠️-' + dotDmg, '#f97316');
+  }
   // 英雄身上的灼烧/中毒(boss debuff)持续掉血
   {const bd=state.heroDebuffs&&state.heroDebuffs.burn;
-   if(bd&&bd.expire>now&&now-burnTick>1000/spdMul){burnTick=now;const bdmg=Math.max(1,bd.dps||1);state.hp-=bdmg;showFloat($('hero-emoji'),'☠️-'+bdmg,'#a3e635');if(state.hp<=0){onHeroDeath();return;}}}
+   if(bd&&bd.expire>now&&now-burnTick>1000/spdMul){burnTick=now;const bdmg=Math.max(1,bd.dps||1);applyHeroDamage(bdmg,mon,{label:t=>'☠️-'+t,color:'#a3e635',now});processTalentLowHp(mon,now);if(state.hp<=0)return;}}
   // 大秘境词缀:血池治疗
   for (const m of state.currentMonsters) {
     if (m._sanguineHeal > 0 && m._sanguineEnd > now && now - (m._lastSanguineTick || 0) > 1000) {
@@ -681,15 +1245,13 @@ function tickBattle(now){
       if (mod.volcanic && now - (ms.lastVolcanic||0) > 8000) {
         ms.lastVolcanic = now;
         const vdmg = Math.max(1, Math.floor(state.hero.hpMax * 0.08 + rng(0, 50)));
-        state.hp -= vdmg;
-        showFloat($('hero-emoji'), '🌋-'+vdmg, '#ff7a7a');
+        applyHeroDamage(vdmg, mon, { label:t=>'🌋-'+t, color:'#ff7a7a', now });
       }
       // 折磨:每5秒
       if (mod.afflicted && now - (ms.lastAfflicted||0) > 5000) {
         ms.lastAfflicted = now;
         const admg = Math.max(1, Math.floor(state.hero.hpMax * 0.05));
-        state.hp -= admg;
-        showFloat($('hero-emoji'), '😈-'+admg, '#c084fc');
+        applyHeroDamage(admg, mon, { label:t=>'😈-'+t, color:'#c084fc', now });
       }
       // 奥术:每15秒给BOSS盾
       if (mod.arcane && mon.isBoss && now - (ms.lastArcane||0) > 15000) {
@@ -711,6 +1273,7 @@ function tickBattle(now){
     const zb=(typeof progressionCombatBonus==='function')?progressionCombatBonus(mon.name):{dmgMult:1};
     if(zb.dmgMult!==1)ap=Math.floor(ap*zb.dmgMult);
     ap=Math.floor(ap*masteryDmgMult());   // 精通:伤害增幅(dmgAmp 专精)
+    ap=Math.floor(ap*talentDamageMult(mon,null));
     const d=calcDmg(ap,heroTargetDef(mon),state.hero.crit,state.hero.critd,false,mon.lvl,state.hero.lvl);
     let actualDmg = d.dmg;
     const dodged = mon.dodgeChance && Math.random() < mon.dodgeChance;   // BOSS 闪避
@@ -727,7 +1290,8 @@ function tickBattle(now){
     {const me=$('mon-emoji');if(me){me.classList.add('shake');setTimeout(()=>{const e2=$('mon-emoji');if(e2)e2.classList.remove('shake');},200);}}
     if(!dodged&&typeof passiveOnHit==='function')passiveOnHit(mon,actualDmg,ap);
     if(!dodged&&d.crit&&typeof passiveOnCrit==='function')passiveOnCrit(mon,actualDmg);
-    if(!dodged&&d.crit&&masteryFor('bleedOnCrit')>0){const bleed=Math.floor(actualDmg*masteryFor('bleedOnCrit')*MASTERY_TYPE.bleedOnCrit.per/100);if(bleed>0){mon.dot=(mon.dot||0)+bleed;mon.dotEnd=Date.now()+5000;showFloat($('mon-emoji'),'🩸流血','#dc2626');}}   // 精通:暴击流血
+    if(!dodged&&d.crit)processTalentOnCrit(mon,actualDmg,{skillKey:null});
+    if(!dodged&&d.crit&&masteryFor('bleedOnCrit')>0){const bleed=Math.floor(actualDmg*masteryFor('bleedOnCrit')*MASTERY_TYPE.bleedOnCrit.per/100);if(bleed>0){applyMonsterDot(mon,'mastery:bleed',bleed,5000,{icon:'🩸',name:'流血',source:'mastery'});showFloat($('mon-emoji'),'🩸流血','#dc2626');}}   // 精通:暴击流血
     if(!dodged&&state.hero.stunChance&&Math.random()*100<state.hero.stunChance){mon.stunUntil=now+1500;showFloat($('mon-emoji'),'💫击晕','#fde047');}   // 趣味天赋:几率击晕敌人
     if(!dodged&&state.hero.leech>0){const leechHeal=Math.floor(d.dmg*state.hero.leech*0.5/100);if(leechHeal>0){state.hp=Math.min(state.hero.hpMax,state.hp+leechHeal);showFloat($('hero-emoji'),'🩸+'+leechHeal,'#6ee7b7');}}   // 吸血:每点=0.5%实际吸取,有浮动数字可见
     lastHeroAtk=now;
@@ -736,29 +1300,24 @@ function tickBattle(now){
     if(state.autoSkill&&state.selectedSkills.length>0&&!casting){
       const now2=Date.now();const aliveN=getAliveMonsters().length;
       const hpFrac=state.hp/Math.max(1,state.hero.hpMax);
-      const focusLow=mon&&mon.hp>0&&mon.hp<mon.hpMax*0.25;
+      const targetHpFrac=mon&&mon.hp>0?mon.hp/Math.max(1,mon.hpMax):1;
       const ready=[];
-      for(const skKey of state.selectedSkills){
+      for(let order=0;order<state.selectedSkills.length;order++){
+        const skKey=state.selectedSkills[order];
         if(!state.unlockedSkills[skKey])continue;
         if(state.skillCooldowns[skKey]&&state.skillCooldowns[skKey]>now2)continue;
         const sk=getCls().skills[skKey];if(!sk||sk.type==='interrupt')continue;
         let cost=sk.mp;if(state.hero.costReduction>0)cost=Math.max(1,Math.floor(sk.mp*(1-state.hero.costReduction/100)));
         if(state.resource<cost)continue;
-        if(sk.type==='heal'&&hpFrac>0.6)continue;                              // 血量充足不浪费治疗
-        if(sk.type==='buff'&&state.buffs[sk.buff]&&state.buffs[sk.buff]>now2)continue; // 增益还在,跳过
-        ready.push({skKey,sk});
+        const score=autoSkillScore(skKey,sk,mon,{now:now2,aliveN,hpFrac,targetHpFrac});
+        if(score==null)continue;
+        ready.push({skKey,sk,score,order});
       }
       if(ready.length){
-        const pri=s=>{
-          if(s.type==='heal')return hpFrac<0.35?6:3;                          // 危急治疗最高优先
-          if(s.type==='buff')return 2;
-          if(s.mul>=6&&focusLow)return 5;                                      // 焦点残血:大招斩杀
-          if(s.mul>=4&&aliveN>1)return 4;                                      // 多敌:AOE
-          return 1;
-        };
-        ready.sort((a,b)=>pri(b.sk)-pri(a.sk));
+        ready.sort((a,b)=>b.score-a.score||a.order-b.order);
         const top=ready[0];
-        const emergencyHeal=top.sk.type==='heal'&&hpFrac<0.35;
+        const topTag=(top.sk.ai&&top.sk.ai.priorityTag)||'builder';
+        const emergencyHeal=(topTag==='heal'&&hpFrac<0.45)||(topTag==='defBuff'&&hpFrac<0.4);
         const GCD=900/spdMul;                                                  // 全局冷却(倍速下同步缩短)
         if(emergencyHeal||now2-lastAutoCast>=GCD){
           startCast(top.skKey,false);
@@ -773,6 +1332,7 @@ function tickBattle(now){
 
   // 怪物攻击(每只敌人独立计时、独立出手,并各自累积仇恨)
   let anyHit=false;
+  let totalDmg=0;
   for(const m of state.currentMonsters){
     if(m.hp<=0)continue;
     if(m.stunUntil&&m.stunUntil>now)continue;   // 被英雄击晕的敌人无法攻击
@@ -829,18 +1389,20 @@ function tickBattle(now){
     taken=Math.max(1,Math.floor(taken*buffDamageReductionMult()));
     taken=Math.max(1,Math.floor(taken*heroDebuffTakenMult()));   // 易伤等增加受到伤害
     taken=Math.max(1,Math.floor(taken*masteryTakenMult()));      // 精通:减伤(dr 专精)
-    state.hp-=taken;
+    taken=Math.max(1,Math.floor(taken*talentTakenMult(m)));
+    taken=applyHeroDamage(taken,m,{label:t=>'-'+t,color:'#ff7a7a',now});
+    processTalentLowHp(m,now);
+    totalDmg+=taken;
     if(state.hero.reflectDmg>0){const reflect=Math.floor(d.dmg*state.hero.reflectDmg/100);m.hp-=reflect;}
     if(typeof passiveOnTakeDamage==='function')passiveOnTakeDamage(m,taken);
-    showFloat($('hero-emoji'),'-'+taken,'#ff7a7a');
     anyHit=true;
     // 双倍攻击技巧: 再来一刀
     if(doubleAtk){
       const d2d=calcDmg(matk,state.hero.def,(m.critChance?m.critChance*100:5),(m.critMult?m.critMult*100:150),false,state.hero.lvl,m.lvl);let t2=d2d.dmg;
       if(state.hero.vers>0)t2=Math.max(1,Math.floor(t2*(1-state.hero.vers/100)));
       if(typeof passiveDamageTakenMult==='function')t2=Math.max(1,Math.floor(t2*passiveDamageTakenMult()));
-      t2=Math.max(1,Math.floor(t2*buffDamageReductionMult()));t2=Math.max(1,Math.floor(t2*heroDebuffTakenMult()));t2=Math.max(1,Math.floor(t2*masteryTakenMult()));
-      state.hp-=t2;showFloat($('hero-emoji'),'⚡-'+t2,'#fbbf24');totalDmg+=t2;
+      t2=Math.max(1,Math.floor(t2*buffDamageReductionMult()));t2=Math.max(1,Math.floor(t2*heroDebuffTakenMult()));t2=Math.max(1,Math.floor(t2*masteryTakenMult()));t2=Math.max(1,Math.floor(t2*talentTakenMult(m)));
+      t2=applyHeroDamage(t2,m,{label:t=>'⚡-'+t,color:'#fbbf24',now});processTalentLowHp(m,now);totalDmg+=t2;
     }
   }
   if(anyHit){
@@ -927,6 +1489,7 @@ function onMonsterDeath(mon){
   if(typeof eventsOnGoldGain==='function') eventsOnGoldGain(goldEarned);
   if(typeof eventsOnKill==='function') eventsOnKill(mon);
   if(xp>0)gainXP(xp);state.killsTotal+=1;
+  processTalentOnKill(mon);
   if(typeof passiveOnKill==='function')passiveOnKill(mon);
   if(xp>0&&typeof artifactGainAp==='function') artifactGainAp(xp);
   if(Math.random()<mon.gemChance){const gems=mon.isBoss?rng(3,8):1;state.gem+=gems;log('💎 +'+gems+' 钻石','loot');}
@@ -975,6 +1538,10 @@ function onMonsterDeath(mon){
 
 function onHeroDeath(){
   log('☠️ 你倒下了…','bad');state._compHp=null;state._compDownUntil=0;   // 复活后随从满血归来
+  state.talentAuras = {};
+  state.talentState = { cds:{}, flags:{}, shield:0 };
+  state.skillRuntime = { auras:{} };
+  recomputeStats();
   const loss=Math.floor(state.gold*0.05);state.gold=Math.max(0,state.gold-loss);
   state.hp=state.hero.hpMax;state.resource=state.resourceMax;
   if(state.mode==='dungeon'){showDungeonFail();return;}
@@ -1026,7 +1593,7 @@ function rollItem(maxRarity,fromLvl,dungeonKey,bossName){
   const slotKey=choice(SLOT_ORDER);const slot=SLOT_INFO[slotKey];const rarity=pickRarity(maxRarity);
   const ds=state.dungeonState||state.mythicState;
   const power=(fromLvl||state.hero.lvl)+(ds?2:0);
-  if(dungeonKey){const loot=DUNGEON_LOOT[dungeonKey];if(loot){let lootPool;if(bossName&&loot.bosses)lootPool=loot.bosses[bossName]||loot.trash||[];else if(ds&&state.currentMonsters[0]&&state.currentMonsters[0].isBoss&&state.currentMonsters[0].bossName&&loot.bosses)lootPool=loot.bosses[state.currentMonsters[0].bossName]||loot.trash||[];else if(ds&&state.currentMonsters[0]&&state.currentMonsters[0].isBoss)lootPool=loot.boss||[];else lootPool=loot.trash||[];   // 杂兵只从杂兵池掉(BOSS专属装备只能由对应BOSS掉,不再从BOSS池偷)
+  if(dungeonKey){const loot=DUNGEON_LOOT[dungeonKey];if(loot){let lootPool;if(bossName&&loot.bosses)lootPool=(typeof getDungeonBossLoot==='function'?getDungeonBossLoot(dungeonKey,bossName):loot.bosses[bossName])||loot.trash||[];else if(ds&&state.currentMonsters[0]&&state.currentMonsters[0].isBoss&&state.currentMonsters[0].bossName&&loot.bosses)lootPool=(typeof getDungeonBossLoot==='function'?getDungeonBossLoot(dungeonKey,state.currentMonsters[0].bossName):loot.bosses[state.currentMonsters[0].bossName])||loot.trash||[];else if(ds&&state.currentMonsters[0]&&state.currentMonsters[0].isBoss)lootPool=loot.boss||[];else lootPool=loot.trash||[];   // 杂兵只从杂兵池掉(BOSS专属装备只能由对应BOSS掉,不再从BOSS池偷)
   if(lootPool.length>0){
     // 池内按"品质稀有度"加权挑一件(越稀有越少出),实现"必掉、但爆哪件看各装备爆率"
     let __tw=0;for(const p of lootPool)__tw+=(RARITY.find(r=>r.key===p.rarity)?.weight||1);
@@ -1088,7 +1655,7 @@ let casting=null;
 function resetCombatState(){
   casting=null;
   lastHeroAtk=0;lastMonAtk=0;lastRegen=0;dotTick=0;lastBossSkill=0;bossSkillIdx=0;burnTick=0;
-  if(state){state.heroDebuffs={};state.heroStunUntil=0;}
+  if(state){state.heroDebuffs={};state.heroStunUntil=0;state.talentAuras={};state.talentState={cds:{},flags:{},shield:0};state.skillRuntime={auras:{}};}
   if(typeof lastCompAtk==='number')lastCompAtk=0;
   if(typeof lastCompSkill==='number')lastCompSkill=0;
   if(typeof compSkillIdx==='number')compSkillIdx=0;
@@ -1121,9 +1688,9 @@ function skillEffects(wc,mon,taken,now){
   if(wc.freeze){state.heroStunUntil=now+2000;state.hero.def=Math.floor(state.hero.def*2);setTimeout(()=>recomputeStats(),2100);log('🧊 '+mon.bossName+(wc.icon||'')+'冻结了你!','bad');}
   if(wc.cripple){applyHeroDebuff('weaken',5000);applyHeroDebuff('chill',5000);log('🦿 '+mon.bossName+(wc.icon||'')+'残废了你!','bad');}
   if(wc.decay){applyHeroDebuff('weaken',8000);log('👴 '+mon.bossName+(wc.icon||'')+'让你衰老了!','bad');}
-  if(wc.wither){state.hp=Math.max(1,Math.floor(state.hp*0.85));showFloat($('hero-emoji'),'🥀-'+Math.floor(state.hero.hpMax*0.15),'#9ca3af');log('🥀 '+mon.bossName+(wc.icon||'')+'枯萎了你的生命!','bad');}
+  if(wc.wither){const wdmg=Math.max(1,Math.floor(state.hp*0.15));applyHeroDamage(wdmg,mon,{label:t=>'🥀-'+t,color:'#9ca3af',now});processTalentLowHp(mon,now);log('🥀 '+mon.bossName+(wc.icon||'')+'枯萎了你的生命!','bad');}
   if(wc.manaDrain){state.resource=Math.max(0,state.resource-(wc.manaDrain===true?50:wc.manaDrain));log('💧 '+mon.bossName+(wc.icon||'')+'吸取了你的能量!','bad');}
-  if(wc.bomb){const bdmg=Math.floor(state.hero.hpMax*0.3);setTimeout(()=>{if(state.hp>0){state.hp=Math.max(1,state.hp-bdmg);showFloat($('hero-emoji'),'💣-'+bdmg,'#ef4444');log('💣 BOSS的自爆印记爆炸了!','bad');}},5000);log('💣 '+mon.bossName+(wc.icon||'')+'给你施加了自爆印记(5秒后爆炸)!','bad');}
+  if(wc.bomb){const bdmg=Math.floor(state.hero.hpMax*0.3);setTimeout(()=>{if(state.hp>0){applyHeroDamage(bdmg,mon,{label:t=>'💣-'+t,color:'#ef4444',now:Date.now()});processTalentLowHp(mon,Date.now());log('💣 BOSS的自爆印记爆炸了!','bad');}},5000);log('💣 '+mon.bossName+(wc.icon||'')+'给你施加了自爆印记(5秒后爆炸)!','bad');}
   if(wc.plague){applyHeroDebuff('burn',6000,{dps:Math.max(1,Math.floor(taken*0.15))});log('🦠 '+mon.bossName+(wc.icon||'')+'散播了暗影瘟疫!','bad');}
   if(wc.bleed){applyHeroDebuff('burn',8000,{dps:Math.max(1,Math.floor(taken*0.1))});log('🩸 '+mon.bossName+(wc.icon||'')+'让你流血了!','bad');}
   if(wc.brittle){state._brittleUntil=now+6000;log('💥 '+mon.bossName+(wc.icon||'')+'让你变得易爆(下次受伤翻倍)!','bad');}
@@ -1161,7 +1728,9 @@ function tickCast(now){
           taken=Math.max(1,Math.floor(taken*buffDamageReductionMult()));
           taken=Math.max(1,Math.floor(taken*heroDebuffTakenMult()));
           taken=Math.max(1,Math.floor(taken*masteryTakenMult()));
-          state.hp-=taken;showFloat($('hero-emoji'),'💀'+wasCasting.icon+'-'+taken,'#ff4444');
+          taken=Math.max(1,Math.floor(taken*talentTakenMult(mon)));
+          taken=applyHeroDamage(taken,mon,{label:t=>'💀'+wasCasting.icon+'-'+t,color:'#ff4444',now});
+          processTalentLowHp(mon,now);
           if(typeof passiveOnTakeDamage==='function')passiveOnTakeDamage(mon,taken);
           if(wasCasting.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(taken*wasCasting.lifeSteal));
           skillEffects(wasCasting,mon,taken,now);
@@ -1187,7 +1756,9 @@ function tickCast(now){
           taken=Math.max(1,Math.floor(taken*buffDamageReductionMult()));
           taken=Math.max(1,Math.floor(taken*heroDebuffTakenMult()));
           taken=Math.max(1,Math.floor(taken*masteryTakenMult()));
-          state.hp-=taken;showFloat($('hero-emoji'),'💀'+wasCasting.icon+'-'+taken,'#ff4444');
+          taken=Math.max(1,Math.floor(taken*talentTakenMult(mon)));
+          taken=applyHeroDamage(taken,mon,{label:t=>'💀'+wasCasting.icon+'-'+t,color:'#ff4444',now});
+          processTalentLowHp(mon,now);
           if(typeof passiveOnTakeDamage==='function')passiveOnTakeDamage(mon,taken);
           if(wasCasting.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(taken*wasCasting.lifeSteal));
           skillEffects(wasCasting,mon,taken,now);
@@ -1196,6 +1767,7 @@ function tickCast(now){
   }
 function castSkill(skillKey,manual){
   const c=getCls();const sk=c.skills[skillKey];if(!sk)return;
+  const ai=skillAiMeta(skillKey, sk);
   if(!state.unlockedSkills[skillKey]){if(manual)log('技能未解锁','bad');return;}
   if(sk.type==='interrupt'){if(manual)doInterrupt();const cdSec=sk.cd||5;state.skillCooldowns[skillKey]=Date.now()+cdSec*1000/castSpeedMul();return;}
   const now=Date.now();
@@ -1205,22 +1777,64 @@ function castSkill(skillKey,manual){
   if(state.resource<cost){if(manual)log(c.resource+'不足','bad');return;}
   if(!sk.consumeRage)state.resource-=cost;   // 斩杀在伤害计算时消耗全部怒气
   const cdSec=getSkillCd(sk);state.skillCooldowns[skillKey]=now+cdSec*1000/castSpeedMul();   // CD 受 倍速×极速 影响
+  const talentForceCrit = consumeNextSkillCrit(sk);
   if(sk.type==='dmg'){const mon=state.currentMonsters[0];if(!mon)return;
     // 斩杀:消耗所有怒气,每点怒气+1%伤害
     let rageBonus=1;
     if(sk.consumeRage&&c.resKey==='rage'&&state.resource>0){rageBonus=1+state.resource/100;log('💀 消耗 '+state.resource+' 怒气,伤害 +'+(state.resource)+'%','good');state.resource=0;}
-    const isAOE=(sk.mul>=4&&getAliveMonsters().length>1);
+    const isAOE=((sk.aoe || sk.mul>=4)&&getAliveMonsters().length>1);
     let dmgDone=0;
-    const cb=castDmgBonus(sk)*masteryDmgMult()*rageBonus;   // 读条技能的伤害补偿(法系) + 精通伤害增幅 + 怒气加成
-    if(isAOE){dmgDone=dealDmgToAll(state.hero.atk*cb,mon.def,state.hero.crit,state.hero.critd,sk.mul,sk.alwaysCrit);log(sk.icon+' '+sk.name+'! AOE '+dmgDone+' 总伤害','good');}
+    const cb=castDmgBonus(sk)*masteryDmgMult()*rageBonus;   // 读条技能补偿 + 精通 + 怒气
+    const baseForceCrit = sk.alwaysCrit || talentForceCrit;
+    if(isAOE){
+      for(const target of state.currentMonsters){
+        if(target.hp<=0) continue;
+        const rt=calcSkillRuntimeBonus(skillKey, sk, target, now);
+        const forceCrit = baseForceCrit || rt.forceCrit;
+        const d=calcDmg(state.hero.atk*sk.mul*cb*talentDamageMult(target,skillKey)*rt.mult,heroTargetDef(target),state.hero.crit,state.hero.critd,forceCrit,target.lvl,state.hero.lvl);
+        let dd=d.dmg;
+        if(target.dmgReduction)dd=Math.max(1,Math.floor(dd*(1-target.dmgReduction)));
+        target.hp-=dd;dmgDone+=dd;trackDmg('hero',dd);
+        if(d.crit||forceCrit)processTalentOnCrit(target,dd,{skillKey});
+        if(sk.lifeSteal){const heal=Math.floor(dd*sk.lifeSteal);healHeroAmount(heal,'🩸','#6ee7b7');}
+        if(sk.slow)target.slowUntil=Date.now()+4000;
+        if(sk.debuff==='sunder'){target.sunderUntil=Date.now()+15000;}
+        const applyState=(!skillFxMeta(skillKey, sk).applyTargetState && ai.applyTargetState && !['dot','slow','sunder'].includes(ai.applyTargetState)) ? ai.applyTargetState : null;
+        if(applyState) applyMonsterState(target, applyState, ai.stateDurationMs || 10000);
+        applySkillHitEffects(skillKey, sk, target, dd, { now, isAOE:true });
+      }
+      log(sk.icon+' '+sk.name+'! AOE '+dmgDone+' 总伤害','good');
+    }
     else if(mon.dodgeChance&&Math.random()<mon.dodgeChance){showFloat($('mon-emoji'),'闪避','#9ca3af');log(sk.icon+' '+sk.name+' 被 '+mon.name+' 闪避!','bad');}
-    else{const d=calcDmg(state.hero.atk*sk.mul*cb,heroTargetDef(mon),state.hero.crit,state.hero.critd,sk.alwaysCrit,mon.lvl,state.hero.lvl);let dd=d.dmg;if(mon.dmgReduction)dd=Math.max(1,Math.floor(dd*(1-mon.dmgReduction)));mon.hp-=dd;dmgDone=dd;trackDmg('hero',dd);showFloat($('mon-emoji'),'-'+dd,sk.alwaysCrit?'#fbbf24':'#a335ee');log(sk.icon+' '+sk.name+'! '+dd+' 伤害'+(sk.alwaysCrit?' (必暴)':''),'good');}
-    if(sk.lifeSteal){const heal=Math.floor(dmgDone*sk.lifeSteal);state.hp=Math.min(state.hero.hpMax,state.hp+heal);}
-    if(sk.dot&&!isAOE){mon.dot=Math.floor(dmgDone*0.15*(1+(state.hero.dotBonus||0)/100));mon.dotEnd=Date.now()+5000;}
-    if(sk.slow)mon.slowUntil=Date.now()+4000;
-    if(sk.debuff==='sunder'){mon.sunderUntil=Date.now()+15000;}   // 破甲:15秒防御-30%
-  }else if(sk.type==='heal'){const healMult=1+(state.hero.healBonus||0)/100;const h=Math.floor(state.hero.hpMax*sk.heal*healMult);state.hp=Math.min(state.hero.hpMax,state.hp+h);showFloat($('hero-emoji'),'+'+h,'#6ee7b7');log(sk.icon+' '+sk.name+'!恢复 '+h+' 生命','good');}
+    else{
+      const rt=calcSkillRuntimeBonus(skillKey, sk, mon, now);
+      const forceCrit = baseForceCrit || rt.forceCrit;
+      const d=calcDmg(state.hero.atk*sk.mul*cb*talentDamageMult(mon,skillKey)*rt.mult,heroTargetDef(mon),state.hero.crit,state.hero.critd,forceCrit,mon.lvl,state.hero.lvl);
+      let dd=d.dmg;
+      if(mon.dmgReduction)dd=Math.max(1,Math.floor(dd*(1-mon.dmgReduction)));
+      mon.hp-=dd;dmgDone=dd;trackDmg('hero',dd);
+      showFloat($('mon-emoji'),'-'+dd,forceCrit?'#fbbf24':'#a335ee');
+      log(sk.icon+' '+sk.name+'! '+dd+' 伤害'+(forceCrit?' (必暴)':''),'good');
+      if(d.crit||forceCrit)processTalentOnCrit(mon,dd,{skillKey});
+      if(sk.lifeSteal){const heal=Math.floor(dmgDone*sk.lifeSteal);healHeroAmount(heal,'🩸','#6ee7b7');}
+      if(sk.slow)mon.slowUntil=Date.now()+4000;
+      if(sk.debuff==='sunder'){mon.sunderUntil=Date.now()+15000;}   // 破甲:15秒防御-30%
+      const applyState=(!skillFxMeta(skillKey, sk).applyTargetState && ai.applyTargetState && !['dot','slow','sunder'].includes(ai.applyTargetState)) ? ai.applyTargetState : null;
+      if(applyState) applyMonsterState(mon, applyState, ai.stateDurationMs || 10000);
+      applySkillHitEffects(skillKey, sk, mon, dmgDone, { now, isAOE:false });
+    }
+    processTalentAfterSkill(skillKey, sk, mon, dmgDone, { cost });
+  }else if(sk.type==='heal'){
+    const healMult=1+(state.hero.healBonus||0)/100;
+    const h=Math.floor(state.hero.hpMax*sk.heal*healMult);
+    const hr=healHeroAmount(h, sk.icon, '#6ee7b7');
+    log(sk.icon+' '+sk.name+'!恢复 '+hr.applied+' 生命','good');
+    applySkillHealEffects(skillKey, sk, hr.applied, hr.overheal);
+    processTalentAfterHeal(skillKey, hr.applied, hr.overheal);
+    processTalentAfterSkill(skillKey, sk, null, hr.applied, { overheal:hr.overheal, cost });
+  }
   else if(sk.type==='buff'){const dur=sk.duration+(state.hero.buffDuration||0)*1000;state.buffs[sk.buff]=Date.now()+dur;recomputeStats();log(sk.icon+' '+sk.name+'!','good');}
+  if(sk.type==='buff') processTalentAfterSkill(skillKey, sk, state.currentMonsters[0] || null, 0, { cost });
 }
 function doInterrupt(){if(!casting){log('没有正在施放的法术','info');return;}if(casting.isBoss){const bossName=casting.bossName||'BOSS';log('🦶 打断了 '+bossName+' 的 '+casting.icon+' 施法!','good');$('cast-bar-wrap').style.visibility='hidden';casting=null;}else{log('只能打断BOSS施法','info');}}
 

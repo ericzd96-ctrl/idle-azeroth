@@ -107,7 +107,10 @@ function doAscend() {
   const milestone = ASCEND_MILESTONES.find(m => m.lvl === account.ascendLvl);
   if (milestone) {
     log(`🌟 觉醒达成 ${account.ascendLvl} 阶 - ${milestone.name}: ${milestone.desc}`, 'legend');
-    if (milestone.title) account.title = milestone.title;
+    if (milestone.title) {
+      if (typeof unlockTitle === 'function') unlockTitle(milestone.title);
+      else account.title = milestone.title;
+    }
     account.ascendMilestones[account.ascendLvl] = true;
   } else {
     log(`🌟 觉醒 ${account.ascendLvl} 阶 (+1% 全属性)`, 'legend');

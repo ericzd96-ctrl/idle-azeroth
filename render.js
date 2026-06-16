@@ -46,7 +46,16 @@ function focusDebuffs(now) {
   if (!mon || mon.hp <= 0) return [];
   const out = [];
   if (mon.slowUntil > now)   out.push({ icon: '❄️', name: '减速',   desc: '攻击速度降低约33%', left: Math.ceil((mon.slowUntil - now) / 1000) });
-  if (mon.dot > 0 && mon.dotEnd > now) out.push({ icon: '🔥', name: '灼烧/中毒', desc: `每秒受到 ${fmt(mon.dot)} 持续伤害`, left: Math.ceil((mon.dotEnd - now) / 1000) });
+  if (typeof getMonsterDots === 'function') {
+    for (const dot of getMonsterDots(mon, now)) {
+      out.push({
+        icon: dot.icon || '🔥',
+        name: dot.name || '持续伤害',
+        desc: `每秒受到 ${fmt(dot.dps || 0)} 持续伤害`,
+        left: Math.ceil(((dot.expire || now) - now) / 1000)
+      });
+    }
+  } else if (mon.dot > 0 && mon.dotEnd > now) out.push({ icon: '🔥', name: '灼烧/中毒', desc: `每秒受到 ${fmt(mon.dot)} 持续伤害`, left: Math.ceil((mon.dotEnd - now) / 1000) });
   if (mon.sunderUntil > now) out.push({ icon: '🔨', name: '破甲',   desc: '防御降低 30%', left: Math.ceil((mon.sunderUntil - now) / 1000) });
   if (mon._arcaneShield > 0) out.push({ icon: '🔮', name: '法力护盾', desc: `吸收 ${fmt(mon._arcaneShield)} 点伤害`, left: 0 });
   return out;
@@ -62,6 +71,26 @@ function renderBuffBar() {
     if (!(exp > now)) continue;
     const m = meta[k] || (typeof BUFF_NAMES!=='undefined' && BUFF_NAMES[k]) || { icon: '✨', name: k, desc: '', dr: false };
     buffs.push({ kind: m.dr ? 'dr' : 'buff', icon: m.icon, name: m.name, desc: m.desc, left: Math.ceil((exp - now) / 1000) });
+  }
+  if (typeof TALENT_AURA_LIBRARY === 'object' && state.talentAuras) {
+    for (const k in state.talentAuras) {
+      const exp = state.talentAuras[k];
+      if (!(exp > now)) continue;
+      const m = TALENT_AURA_LIBRARY[k];
+      if (!m) continue;
+      buffs.push({ kind: 'buff', icon: m.icon || '✨', name: m.name || k, desc: m.desc || '', left: Math.ceil((exp - now) / 1000) });
+    }
+  }
+  if (typeof SKILL_AURA_LIBRARY === 'object' && state.skillRuntime && state.skillRuntime.auras) {
+    for (const [k, aura] of Object.entries(state.skillRuntime.auras)) {
+      if (!aura) continue;
+      const m = SKILL_AURA_LIBRARY[k];
+      if (!m) continue;
+      const left = aura.expire ? Math.ceil((aura.expire - now) / 1000) : 0;
+      if (aura.expire && aura.expire <= now) continue;
+      const stacks = aura.stacks > 1 ? ` · ${aura.stacks}层` : '';
+      buffs.push({ kind: 'buff', icon: m.icon || '✨', name: (m.name || k) + stacks, desc: m.desc || '', left });
+    }
   }
   buffs.sort((a, b) => a.left - b.left);
   // 焦点敌人减益
@@ -195,7 +224,14 @@ function renderMonList() {
     if (de) {
       let s = '';
       if (m.slowUntil > now)   s += `<span title="减速:攻速降低">❄️</span>`;
-      if (m.dot > 0 && m.dotEnd > now) s += `<span title="灼烧/中毒:每秒 ${fmt(m.dot)} 伤害">🔥</span>`;
+      if (typeof getMonsterDots === 'function') {
+        const dots = getMonsterDots(m, now);
+        if (dots.length) {
+          const total = dots.reduce((sum, dot) => sum + (dot.dps || 0), 0);
+          const names = dots.map(dot => `${dot.icon || '🔥'}${dot.name || '持续伤害'}:${fmt(dot.dps || 0)}/秒`).join(' · ');
+          s += `<span title="${names}">🔥${dots.length > 1 ? 'x' + dots.length : ''}:${fmt(total)}</span>`;
+        }
+      } else if (m.dot > 0 && m.dotEnd > now) s += `<span title="灼烧/中毒:每秒 ${fmt(m.dot)} 伤害">🔥</span>`;
       if (m.sunderUntil > now) s += `<span title="破甲:防御降低30%">🔨</span>`;
       if (m._arcaneShield > 0) s += `<span title="法力护盾:吸收 ${fmt(m._arcaneShield)} 伤害">🔮</span>`;
       if (de.dataset.s !== s) { de.innerHTML = s; de.dataset.s = s; }
@@ -722,7 +758,7 @@ function renderShop() {
 function renderSourceTable() {
   const srcs = state._statSources;
   if (!srcs) return '<div class="muted" style="margin-top:12px">暂无来源数据</div>';
-  const sourceOrder = ['天赋','成就','觉醒','生活','神器','坐骑','竞技场','被动','随从','装备'];
+  const sourceOrder = ['天赋','成就','觉醒','生活','神器','坐骑','竞技场','被动','随从','装备','词缀','宝石','附魔'];
   const statCols = [
     {key:'atkPct', label:'攻击%', fmt:v => '+' + v.toFixed(1) + '%'},
     {key:'hpPct',  label:'生命%', fmt:v => '+' + v.toFixed(1) + '%'},
@@ -1250,9 +1286,13 @@ function renderDungeon() {
       const lastBossName = (dg.bosses||[])[(dg.bosses||[]).length-1]?.name;
       let html = `<div style=\"font-weight:bold;margin-bottom:4px\">${dg.icon} ${dg.name} (${(dg.bosses||[]).length}BOSS)${isRaid?' <span style=\"color:#a335ee\">[紫装]</span>':''}</div>`;
       if (loot?.bosses) {
-        for (const [bossName, items] of Object.entries(loot.bosses)) {
-          const bossData=(dg.bosses||[]).find(b=>b.name===bossName);
-          const isFinal = bossData && bossName === lastBossName;
+        for (const bossData of (dg.bosses||[])) {
+          const bossName = bossData.name;
+          const items = (typeof getDungeonBossLoot === 'function')
+            ? getDungeonBossLoot(dg.key, bossName)
+            : loot.bosses[bossName];
+          if (!items?.length) continue;
+          const isFinal = bossName === lastBossName;
           const skillInfo=bossData?.skills?bossData.skills.map(s=>{
             const t=effectTags(s);
             return s.icon+s.name+(t.length?'['+t.join('')+']':'')+'('+s.desc+','+(s.castTime||0)+'s)';

@@ -22,6 +22,8 @@ const defaultState = () => ({
   resourceMax: 100,
   hp: 50,
   buffs: {},
+  talentAuras: {},         // 天赋触发出来的临时增益 { auraKey: expireTs }
+  talentState: { cds:{}, flags:{}, shield:0 }, // 天赋运行时状态(冷却/标记/护盾)
   heroDebuffs: {},         // 敌人/boss 施加在英雄身上的减益 {key:{expire,dps?}}
   currentMap: 'elwynn',
   currentSubzone: 0,
@@ -123,6 +125,7 @@ function defaultAccount() {
     // 成就(账号共享)
     achievementsClaimed: {},
     achievementsCompleted: {},
+    unlockedTitles: [],
     title: '',
     permanentStats: {},     // 成就奖励的永久属性
     // 成就追踪用的累计计数器
@@ -156,6 +159,7 @@ function mergeAccount(saved) {
   return Object.assign(d, saved, {
     achievementsClaimed: saved.achievementsClaimed || {},
     achievementsCompleted: saved.achievementsCompleted || {},
+    unlockedTitles: Array.isArray(saved.unlockedTitles) ? saved.unlockedTitles : [],
     permanentStats: saved.permanentStats || {},
     bossesKilled: saved.bossesKilled || {},
     subzonesCleared: saved.subzonesCleared || {},
@@ -266,7 +270,7 @@ function migrateAccountFromCharacters(chars) {
   }
   if (bestSeason) acc.season = mergeAccount({season: bestSeason}).season;
   // 称号:取首个非空
-  for (const c of chars) if (c.title) { acc.title = c.title; break; }
+  for (const c of chars) if (c.title) { acc.title = c.title; acc.unlockedTitles = [c.title]; break; }
   // 迁移后清掉每个角色上已搬到 account 的字段,避免重复计算
   for (const c of chars) {
     c.permanentStats = {};
@@ -303,6 +307,12 @@ function mergeState(saved) {
     passivesSeen: saved.passivesSeen || {},
     freeRespecUsed: !!saved.freeRespecUsed,
     buffs: saved.buffs || {},
+    talentAuras: saved.talentAuras || {},
+    talentState: saved.talentState ? Object.assign({}, d.talentState, saved.talentState, {
+      cds: saved.talentState.cds || {},
+      flags: saved.talentState.flags || {},
+      shield: typeof saved.talentState.shield === 'number' ? saved.talentState.shield : 0,
+    }) : d.talentState,
     heroDebuffs: saved.heroDebuffs || {},
     dungeonCd: saved.dungeonCd || {},
     bossCd: saved.bossCd || {},
@@ -420,6 +430,7 @@ function getCharacterList() {
     cls: c.cls,
     lvl: c.hero?.lvl || 1,
     gold: c.gold || 0,
+    title: (account && account.title) || '',
     active: i === activeCharIndex,
   }));
 }

@@ -296,7 +296,11 @@ function checkSeasonRollover() {
       account.permanentStats[k] = (account.permanentStats[k]||0) + v;
     }
   }
-  if (tier.title) account.title = tier.title + ' · S'+account.season.id;
+  if (tier.title) {
+    const seasonTitle = tier.title + ' · S'+account.season.id;
+    if (typeof unlockTitle === 'function') unlockTitle(seasonTitle);
+    else account.title = seasonTitle;
+  }
   // 启新赛季
   account.season.id = (account.season.id||1) + 1;
   account.season.startAt = now;

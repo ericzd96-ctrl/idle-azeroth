@@ -20,6 +20,11 @@ const BUFF_FX = {
   s_avatar:   { atkMul:1.27,  defMul:1.20, dr:0.13 },       // 化身(终极):攻+27%、防+20%、减伤13%
 };
 
+const SKILL_AURA_LIBRARY = {
+  arcaneCharge: { icon:'🔷', name:'奥术充能', desc:'奥术飞弹叠加,强化奥术爆炸', maxStacks:3 },
+  stormCharge:  { icon:'⚡', name:'雷霆充能', desc:'闪电箭叠加,强化风暴打击与闪电链', maxStacks:3 },
+};
+
 /* 每个职业 4 个新技能:爆发 / 减伤 / 功能性 / 职业特色 */
 const NEW_SKILLS = {
   warrior: {
@@ -86,6 +91,312 @@ const NEW_SKILLS = {
     const adds = NEW_SKILLS[clsKey];
     for (const skKey in adds) {
       if (!cls.skills[skKey]) cls.skills[skKey] = adds[skKey];  // 幂等
+    }
+  }
+})();
+
+const SKILL_REWORKS = {
+  warrior: {
+    cleave:{ desc:'对当前目标造成3倍伤害,并横扫周围敌人', aoe:true, cd:5, fx:{ resourceGain:4 } },
+    thunderClap:{ desc:'对所有敌人造成2倍伤害并减速,为斩杀做准备', aoe:true, cd:8, fx:{ bonusVsLowHp:0.18, executeThreshold:0.35 } },
+    battleShout:{ desc:'15秒攻击+30%,期间致死打击与斩杀额外造成伤害' },
+    mortalStrike:{ desc:'3倍攻击,对破甲目标额外造成60%伤害', cd:9, fx:{ bonusStates:{ sunder:0.6 } } },
+    bloodthirst:{ desc:'4倍攻击,吸血50%,并在低血时额外恢复', cd:8, fx:{ healFromDamagePct:0.25, healBonusIfSelfHpBelow:0.55, extraHealPct:0.08 } },
+    execute:{ desc:'5倍攻击,消耗全部怒气;对残血与破甲目标造成更高伤害', cd:12, fx:{ bonusStates:{ sunder:0.45 }, bonusVsLowHp:0.7, executeThreshold:0.35, resourceGainOnKill:12 } },
+    sunderArmor:{ desc:'3倍攻击并施加15秒破甲,后续武器技更致命', cd:7, fx:{ applyTargetState:'sunder', stateDurationMs:15000, resourceGain:6 } },
+    sweepingStrikes:{ desc:'5倍范围伤害,对残血敌人额外提高伤害', aoe:true, cd:18, fx:{ bonusVsLowHp:0.35, executeThreshold:0.4 } },
+    bladestorm:{ desc:'8倍范围伤害,对每个被命中的敌人追加旋风斩', aoe:true, cd:24, fx:{ extraHitPct:0.35 } },
+    shieldWall:{ desc:'15秒减伤50%,并在持续期间提升反击能力', cd:28 },
+    w_recklessness:{ desc:'6秒内攻击+33%与暴伤+20%,适合斩杀窗口', cd:24 },
+    w_avatar:{ desc:'8秒攻防兼备,武器技和斩杀都更稳定', cd:28 },
+  },
+  mage: {
+    arcane:{ desc:'3倍伤害并叠加奥术充能,强化奥术爆炸', cd:4, fx:{ grantAura:{ key:'arcaneCharge', duration:12000, add:1, max:3 } } },
+    arcaneExplosion:{ desc:'3倍范围伤害,消耗奥术充能,每层额外增伤35%', aoe:true, cd:10, fx:{ bonusPerAuraStack:{ key:'arcaneCharge', pct:0.35 }, consumeAura:{ key:'arcaneCharge', all:true } } },
+    fireball:{ desc:'3倍伤害并施加点燃,为炎爆与流星铺垫', cd:6, fx:{ applyDotKey:'skill:fireball', dotName:'点燃', dotIcon:'🔥', dotPct:0.18, dotMs:6000 } },
+    frostbolt:{ desc:'3倍伤害并冰缓目标,让暴风雪更致命', cd:6, fx:{ applyTargetState:'frozen', stateDurationMs:7000, bonusStates:{ slow:0.2 } } },
+    iceBarrier:{ desc:'15秒防御+60%,护体存在时寒冰法术更稳' },
+    pyroblast:{ desc:'7倍必暴,对点燃目标额外造成60%伤害并引爆灼烧', cd:14, fx:{ bonusStates:{ dot:0.6 }, bonusPerDot:0.18, consumeDots:true, applyDotKey:'skill:pyroblast', dotName:'炎爆灼烧', dotIcon:'☄️', dotPct:0.12, dotMs:5000 } },
+    blizzard:{ desc:'5倍范围伤害,对减速/冻结目标额外提高伤害', aoe:true, cd:16, fx:{ bonusStates:{ slow:0.35, frozen:0.5 } } },
+    m_combustion:{ desc:'5秒内暴击+17与暴伤+34,适合火法爆发' },
+    m_meteor:{ desc:'9倍范围火焰伤害,对带灼烧目标额外增伤并附加新灼烧', aoe:true, cd:24, fx:{ bonusStates:{ dot:0.45 }, applyDotKey:'skill:m_meteor', dotName:'流星余烬', dotIcon:'☄️', dotPct:0.14, dotMs:5000 } },
+  },
+  priest: {
+    smite:{ desc:'2倍神圣伤害;若你有真言术盾,将把部分伤害转为治疗', cd:4, fx:{ healFromDamagePct:0.2, healFromDamagePctIfBuff:{ key:'shield', pct:0.4 } } },
+    shadowWord:{ desc:'3倍伤害并施加暗言术·痛,为暗影技能提供联动', cd:6, fx:{ applyDotKey:'skill:shadowWord', dotName:'暗言术·痛', dotIcon:'🌑', dotPct:0.16, dotMs:7000 } },
+    shield:{ desc:'15秒防御+50%,并让惩击转化为额外治疗' },
+    heal:{ desc:'恢复40%生命,过量治疗将转化为护盾', cd:12, fx:{ shieldFromOverhealPct:0.65 } },
+    holyNova:{ desc:'3倍范围神圣伤害并自愈,敌人越多恢复越多', aoe:true, cd:10, fx:{ healFromDamagePct:0.32 } },
+    powerInfusion:{ desc:'15秒攻速+50%,让惩击与心灵震爆更快成型' },
+    mindBlast:{ desc:'4倍伤害,对带暗言术·痛的目标额外造成伤害并获得护盾', cd:9, fx:{ bonusPerDot:0.25, shieldFromDamagePct:0.16 } },
+    p_pwShield:{ desc:'5秒减伤并提高防御,适合戒律窗口' },
+    p_holyNova:{ desc:'立即恢复40%生命,并留下短暂护盾', fx:{ shieldFromHealPct:0.25 } },
+    p_mindBlast:{ desc:'9倍必暴暗影冲击,对持续伤害目标收益更高', fx:{ bonusPerDot:0.3, shieldFromDamagePct:0.18 } },
+  },
+  rogue: {
+    sinister:{ desc:'2倍伤害,命中减速/中毒目标时更容易打出追击', cd:4, fx:{ bonusStates:{ slow:0.2 }, resourceGain:4 } },
+    backstab:{ desc:'3倍伤害,对被控制或减速目标额外造成60%伤害', cd:5, fx:{ bonusStates:{ slow:0.6 } } },
+    poison:{ desc:'3倍伤害并施加致命毒药,为终结技提供收益', cd:6, fx:{ applyDotKey:'skill:poison', dotName:'致命毒药', dotIcon:'🐍', dotPct:0.17, dotMs:7000 } },
+    evasion:{ desc:'15秒防御+40%,帮助你撑过危险窗口' },
+    kidneyShot:{ desc:'4倍伤害并让目标进入破绽状态,便于背刺', cd:10, fx:{ applyTargetState:'exposed', stateDurationMs:7000 } },
+    killingSpree:{ desc:'7倍必暴,对中毒目标追加连击', cd:16, fx:{ bonusPerDot:0.22, extraHitPct:0.45 } },
+    shadow:{ desc:'15秒攻击+50%,且下一个终结技必定暴击' },
+    r_bladeflurry:{ desc:'6秒攻速与攻击提升,盗贼进入连打窗口' },
+    r_adrenaline:{ desc:'5秒攻速+33%,更快倾泻终结技' },
+    r_eviscerate:{ desc:'10倍攻击,若目标中毒则额外增伤并引爆所有持续伤害', cd:14, fx:{ bonusPerDot:0.28, forceCritIfBuff:'shadowstep', consumeDots:true, applyDotKey:'skill:r_eviscerate', dotName:'撕裂伤口', dotIcon:'🩸', dotPct:0.1, dotMs:5000 } },
+  },
+  hunter: {
+    arcaneShot:{ desc:'2倍攻击,对带钉刺目标额外提高伤害', cd:4, fx:{ bonusPerDot:0.18 } },
+    serpentSting:{ desc:'3倍攻击并施加毒蛇钉刺,为瞄准与爆炸射击做准备', cd:6, fx:{ applyDotKey:'skill:serpentSting', dotName:'毒蛇钉刺', dotIcon:'🐍', dotPct:0.16, dotMs:7000 } },
+    rapidFire:{ desc:'15秒攻速+60%,让射击循环明显提速' },
+    aimed:{ desc:'4倍必暴,对带钉刺目标额外提高伤害', cd:10, fx:{ bonusPerDot:0.32 } },
+    multi:{ desc:'3倍范围伤害,命中的敌人越多越适合接杀戮射击', aoe:true, cd:8, fx:{ bonusVsLowHp:0.12, executeThreshold:0.4 } },
+    killShot:{ desc:'7倍攻击,对残血目标造成更高伤害并在击杀后返还能量', cd:12, fx:{ bonusVsLowHp:0.8, executeThreshold:0.35, resourceGainOnKill:14 } },
+    bestialWrath:{ desc:'15秒攻击+40%,野兽之怒期间高倍率技能更狠' },
+    h_killCommand:{ desc:'6秒攻击+33%与暴伤+20%,适合开怪与Boss窗口' },
+    h_explosiveShot:{ desc:'10倍爆炸射击,对带钉刺目标额外增伤并溅射附近敌人', cd:14, fx:{ bonusPerDot:0.3, splashPct:0.35 } },
+  },
+  shaman: {
+    lightning:{ desc:'2倍闪电伤害,命中会为风暴打击积蓄雷霆', cd:4, fx:{ grantAura:{ key:'stormCharge', duration:12000, add:1, max:3 } } },
+    flameShock:{ desc:'3倍伤害并施加烈焰震击,点燃后续爆发', cd:6, fx:{ applyDotKey:'skill:flameShock', dotName:'烈焰震击', dotIcon:'🔥', dotPct:0.16, dotMs:7000 } },
+    earthShield:{ desc:'15秒防御+40%,并强化你的治疗波' },
+    chainLightning:{ desc:'4倍范围闪电伤害,雷霆充能会强化它', aoe:true, cd:10, fx:{ bonusPerAuraStack:{ key:'stormCharge', pct:0.18 }, consumeAura:{ key:'stormCharge', add:-1 } } },
+    healingWave:{ desc:'恢复35%生命,过量治疗会转成大地护盾', cd:12, fx:{ shieldFromOverhealPct:0.55, shieldBonusIfBuff:{ key:'earthShield', pct:0.2 } } },
+    bloodlust:{ desc:'15秒攻速+80%,让萨满进入狂风窗口' },
+    windfury:{ desc:'15秒攻速+60%,期间风暴打击会额外追击' },
+    s_bloodlust:{ desc:'6秒攻击+20%与攻速+20%,短爆发更集中' },
+    s_stormstrike:{ desc:'9倍风暴打击,受烈焰震击/风怒/雷霆充能共同强化', cd:12, fx:{ bonusPerDot:0.2, bonusIfBuff:{ windfury:0.4 }, bonusPerAuraStack:{ key:'stormCharge', pct:0.16 }, extraHitPctIfBuff:{ key:'windfury', pct:0.4 }, consumeAura:{ key:'stormCharge', all:true } } },
+  },
+  paladin: {
+    judgement:{ desc:'2倍神圣伤害并施加审判,为十字军与神圣风暴开路', cd:5, fx:{ applyTargetState:'judged', stateDurationMs:12000 } },
+    consecration:{ desc:'3倍范围神圣伤害,对被审判敌人额外提高伤害', aoe:true, cd:10, fx:{ bonusStates:{ judged:0.35 } } },
+    holyLight:{ desc:'恢复40%生命,过量治疗会化为圣光护盾', cd:12, fx:{ shieldFromOverhealPct:0.75 } },
+    crusader:{ desc:'3倍必暴,对被审判目标额外提高伤害并回复生命', cd:8, fx:{ bonusStates:{ judged:0.55 }, healFromDamagePct:0.22, consumeState:['judged'] } },
+    blessingKings:{ desc:'15秒全属性+20%,适合长线战斗' },
+    avengingWrath:{ desc:'15秒攻击+50%,配合审判窗口爆发' },
+    divineShield:{ desc:'15秒减伤80%,濒危时强保命' },
+    pa_avengingWrath:{ desc:'6秒攻击+33%与暴伤+20%,爆发更锐利' },
+    pa_flashLight:{ desc:'立即恢复40%生命,并留下一层护盾', cd:9, fx:{ shieldFromHealPct:0.3 } },
+    pa_holyWrath:{ desc:'9倍范围神圣风暴,对被审判敌人更狠', aoe:true, cd:16, fx:{ bonusStates:{ judged:0.45 } } },
+  },
+  warlock: {
+    shadowBolt:{ desc:'3倍暗影伤害,目标每多一种痛苦效果伤害越高', cd:5, fx:{ bonusPerDot:0.18 } },
+    immolate:{ desc:'3倍火焰伤害并施加献祭,和腐蚀术可同时存在', cd:6, fx:{ applyDotKey:'skill:immolate', dotName:'献祭', dotIcon:'🔥', dotPct:0.17, dotMs:7000 } },
+    corruption:{ desc:'3倍暗影伤害并施加腐蚀术,是术士循环的起点', cd:6, fx:{ applyDotKey:'skill:corruption', dotName:'腐蚀术', dotIcon:'🧿', dotPct:0.15, dotMs:8000 } },
+    drainLife:{ desc:'4倍吸取生命,低血时额外治疗并留下护盾', cd:12, fx:{ healFromDamagePct:0.35, healBonusIfSelfHpBelow:0.6, shieldFromDamagePct:0.12 } },
+    fear:{ desc:'3倍伤害并减速,让献祭与混乱之箭更容易打满', cd:10, fx:{ applyTargetState:'terror', stateDurationMs:6000 } },
+    chaosBolt:{ desc:'8倍混乱之箭,目标每多一种持续伤害额外增伤并引爆痛苦', cd:16, fx:{ bonusPerDot:0.26, consumeDots:true, splashPct:0.25 } },
+    incinerate:{ desc:'5倍烧尽,对痛苦缠身的目标额外提高伤害', cd:8, fx:{ bonusPerDot:0.22 } },
+    wl_darkSoul:{ desc:'6秒暴击+17与暴伤+34,非常适合多DOT爆发' },
+    wl_lifeTap:{ desc:'6秒吸血+20与攻击+13%,配合生命通道续航' },
+    wl_chaosBolt:{ desc:'10倍混乱之箭,必暴并引爆所有痛苦效果', cd:18, fx:{ bonusPerDot:0.32, consumeDots:true, splashPct:0.35 } },
+  },
+  druid: {
+    wrath:{ desc:'2倍自然伤害,对带月火术的目标额外提高伤害', cd:4, fx:{ bonusPerDot:0.2 } },
+    swipe:{ desc:'2倍范围横扫,对残血敌人额外提高伤害', aoe:true, cd:8, fx:{ bonusVsLowHp:0.22, executeThreshold:0.4 } },
+    rejuvenation:{ desc:'恢复35%生命,过量治疗会化为自然护盾', cd:10, fx:{ shieldFromOverhealPct:0.5 } },
+    moonfire:{ desc:'3倍伤害并施加月火术,是平衡与野性的共同起点', cd:6, fx:{ applyDotKey:'skill:moonfire', dotName:'月火术', dotIcon:'🌙', dotPct:0.16, dotMs:7000 } },
+    bite:{ desc:'4倍必暴,对带月火术或残血目标额外提高伤害', cd:10, fx:{ bonusPerDot:0.24, bonusVsLowHp:0.5, executeThreshold:0.35 } },
+    berserk:{ desc:'15秒攻击+40%攻速+30%,野性窗口全面强化' },
+    barkskin:{ desc:'15秒减伤60%,帮助德鲁伊稳住回复节奏' },
+    d_berserk:{ desc:'6秒攻击+20%与攻速+20%,适合短爆发' },
+    d_rejuv:{ desc:'立即恢复35%生命,并留下自然护盾', cd:8, fx:{ shieldFromHealPct:0.25 } },
+    d_ferociousBite:{ desc:'10倍凶猛撕咬,对残血与月火目标额外提高伤害', cd:14, fx:{ bonusPerDot:0.3, bonusVsLowHp:0.55, executeThreshold:0.35 } },
+  },
+};
+
+(function injectSkillReworks() {
+  if (typeof CLASSES === 'undefined') return;
+  for (const [clsKey, skills] of Object.entries(SKILL_REWORKS)) {
+    const cls = CLASSES[clsKey];
+    if (!cls || !cls.skills) continue;
+    for (const [skillKey, patch] of Object.entries(skills)) {
+      if (!cls.skills[skillKey]) continue;
+      Object.assign(cls.skills[skillKey], patch);
+    }
+  }
+})();
+
+const AUTO_DEFENSIVE_BUFFS = new Set(['shield','divine','bark','iceBarrier','earthShield','evasion','s_mitigate','s_barrier','sacredShield']);
+
+const SKILL_AI_OVERRIDES = {
+  warrior: {
+    battleShout:{ priorityTag:'buff', useIfBuffMissing:'battleShout', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
+    sunderArmor:{ priorityTag:'setup', applyTargetState:'sunder', useIfTargetMissing:'sunder', avoidIfTargetHpBelow:0.2 },
+    mortalStrike:{ priorityTag:'spender', useIfTargetHas:'sunder', preferOnBoss:true },
+    execute:{ priorityTag:'execute', useIfTargetHpBelow:0.35, preferOnBoss:true },
+    shieldWall:{ priorityTag:'defBuff', useIfSelfHpBelow:0.42 },
+    thunderClap:{ priorityTag:'aoe', minEnemies:3 },
+    sweepingStrikes:{ priorityTag:'buff', useIfBuffMissing:'battleShout', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
+    bladestorm:{ priorityTag:'aoe', minEnemies:3, preferOnBoss:true },
+    w_recklessness:{ priorityTag:'buff', useIfBuffMissing:'s_burst', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
+    w_ironwall:{ priorityTag:'defBuff', useIfSelfHpBelow:0.45 },
+  },
+  mage: {
+    fireball:{ priorityTag:'dot', applyTargetState:'dot', useIfTargetDotKeyMissing:'skill:fireball', avoidIfTargetHpBelow:0.18 },
+    pyroblast:{ priorityTag:'spender', useIfDotCountAtLeast:1, preferOnBoss:true },
+    frostbolt:{ priorityTag:'setup', applyTargetState:'slow', useIfTargetMissing:'slow', avoidIfTargetHpBelow:0.18 },
+    arcaneExplosion:{ priorityTag:'aoe', minEnemies:3 },
+    blizzard:{ priorityTag:'aoe', minEnemies:3, preferOnBoss:true },
+    iceBarrier:{ priorityTag:'defBuff', useIfSelfHpBelow:0.48 },
+    arcane:{ priorityTag:'builder' },
+    m_combustion:{ priorityTag:'buff', useIfBuffMissing:'s_empower', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
+    m_iceBlock:{ priorityTag:'defBuff', useIfSelfHpBelow:0.42 },
+    m_meteor:{ priorityTag:'spender', applyTargetState:null, useIfTargetMissing:null, useIfDotCountAtLeast:1, preferOnBoss:true },
+  },
+  priest: {
+    shield:{ priorityTag:'defBuff', useIfSelfHpBelow:0.78, useIfBuffMissing:'shield' },
+    heal:{ priorityTag:'heal', useIfSelfHpBelow:0.68 },
+    holyNova:{ priorityTag:'aoe', minEnemies:3, preferOnBoss:true },
+    shadowWord:{ priorityTag:'dot', applyTargetState:'dot', useIfTargetDotKeyMissing:'skill:shadowWord', avoidIfTargetHpBelow:0.18 },
+    mindBlast:{ priorityTag:'spender', useIfDotCountAtLeast:1, preferOnBoss:true },
+    p_pwShield:{ priorityTag:'defBuff', useIfSelfHpBelow:0.48 },
+    p_mindBlast:{ priorityTag:'spender', useIfDotCountAtLeast:1, preferOnBoss:true },
+  },
+  rogue: {
+    sinister:{ priorityTag:'builder' },
+    backstab:{ priorityTag:'strike', useIfTargetHas:'slow', preferOnBoss:true },
+    poison:{ priorityTag:'dot', applyTargetState:'dot', useIfTargetMissing:'dot', avoidIfTargetHpBelow:0.18 },
+    kidneyShot:{ priorityTag:'setup', applyTargetState:'slow', useIfTargetMissing:'slow', avoidIfTargetHpBelow:0.2 },
+    evasion:{ priorityTag:'defBuff', useIfSelfHpBelow:0.45 },
+    killingSpree:{ priorityTag:'spender', useIfTargetHas:'dot', preferOnBoss:true },
+    shadow:{ priorityTag:'buff', useIfBuffMissing:'shadowstep', preferOnBoss:true, avoidIfTargetHpBelow:0.22 },
+    r_evasion:{ priorityTag:'defBuff', useIfSelfHpBelow:0.45 },
+    r_bladeflurry:{ priorityTag:'buff', useIfBuffMissing:'s_frenzy', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
+    r_adrenaline:{ priorityTag:'buff', useIfBuffMissing:'s_haste', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
+    r_eviscerate:{ priorityTag:'spender', applyTargetState:null, useIfTargetMissing:null, useIfTargetHas:'dot', preferOnBoss:true },
+  },
+  hunter: {
+    arcaneShot:{ priorityTag:'builder' },
+    serpentSting:{ priorityTag:'dot', applyTargetState:'dot', useIfTargetDotKeyMissing:'skill:serpentSting', avoidIfTargetHpBelow:0.18 },
+    aimed:{ priorityTag:'spender', useIfDotCountAtLeast:1, preferOnBoss:true },
+    killShot:{ priorityTag:'execute', useIfTargetHpBelow:0.35, preferOnBoss:true },
+    multi:{ priorityTag:'aoe', minEnemies:3 },
+    rapidFire:{ priorityTag:'buff', useIfBuffMissing:'rapidFire', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
+    bestialWrath:{ priorityTag:'buff', useIfBuffMissing:'bestial', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
+    h_killCommand:{ priorityTag:'buff', useIfBuffMissing:'s_burst', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
+    h_feignDeath:{ priorityTag:'defBuff', useIfSelfHpBelow:0.45 },
+    h_rapidFire:{ priorityTag:'buff', useIfBuffMissing:'s_haste', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
+    h_explosiveShot:{ priorityTag:'spender', applyTargetState:null, useIfTargetMissing:null, useIfTargetDotKeyPresent:'skill:serpentSting', preferOnBoss:true },
+  },
+  shaman: {
+    earthShield:{ priorityTag:'defBuff', useIfSelfHpBelow:0.72, useIfBuffMissing:'earthShield' },
+    healingWave:{ priorityTag:'heal', useIfSelfHpBelow:0.68 },
+    flameShock:{ priorityTag:'dot', applyTargetState:'dot', useIfTargetDotKeyMissing:'skill:flameShock', avoidIfTargetHpBelow:0.18 },
+    chainLightning:{ priorityTag:'aoe', minEnemies:3 },
+    bloodlust:{ priorityTag:'buff', useIfBuffMissing:'bloodlust', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
+    windfury:{ priorityTag:'buff', useIfBuffMissing:'windfury', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
+    s_bloodlust:{ priorityTag:'buff', useIfBuffMissing:'s_frenzy', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
+    s_earthShield:{ priorityTag:'defBuff', useIfSelfHpBelow:0.48 },
+    s_healingTide:{ priorityTag:'heal', useIfSelfHpBelow:0.62, preferOnBoss:true },
+    lightning:{ priorityTag:'builder' },
+    s_stormstrike:{ priorityTag:'spender', useIfDotCountAtLeast:1, preferOnBoss:true },
+  },
+  paladin: {
+    judgement:{ priorityTag:'setup', applyTargetState:'judged', stateDurationMs:12000, useIfTargetMissing:'judged', avoidIfTargetHpBelow:0.2, preferOnBoss:true },
+    holyLight:{ priorityTag:'heal', useIfSelfHpBelow:0.68 },
+    divineShield:{ priorityTag:'defBuff', useIfSelfHpBelow:0.42 },
+    crusader:{ priorityTag:'spender', useIfTargetHas:'judged', preferOnBoss:true },
+    consecration:{ priorityTag:'aoe', minEnemies:3 },
+    blessingKings:{ priorityTag:'buff', useIfBuffMissing:'kings', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
+    avengingWrath:{ priorityTag:'buff', useIfBuffMissing:'bestial', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
+    pa_avengingWrath:{ priorityTag:'buff', useIfBuffMissing:'s_burst', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
+    pa_guardian:{ priorityTag:'defBuff', useIfSelfHpBelow:0.45 },
+    pa_flashLight:{ priorityTag:'heal', useIfSelfHpBelow:0.8, preferOnBoss:true },
+    pa_holyWrath:{ priorityTag:'aoe', minEnemies:3, preferOnBoss:true },
+  },
+  warlock: {
+    shadowBolt:{ priorityTag:'builder' },
+    corruption:{ priorityTag:'dot', applyTargetState:'dot', useIfTargetDotKeyMissing:'skill:corruption', avoidIfTargetHpBelow:0.18 },
+    immolate:{ priorityTag:'dot', applyTargetState:'dot', useIfTargetDotKeyMissing:'skill:immolate', avoidIfTargetHpBelow:0.18, preferOnBoss:true },
+    chaosBolt:{ priorityTag:'spender', useIfDotCountAtLeast:2, preferOnBoss:true },
+    drainLife:{ priorityTag:'heal', useIfSelfHpBelow:0.72, preferOnBoss:true },
+    incinerate:{ priorityTag:'strike', useIfDotCountAtLeast:1, preferOnBoss:true },
+    fear:{ priorityTag:'setup', applyTargetState:'slow', useIfTargetMissing:'slow', avoidIfTargetHpBelow:0.2 },
+    wl_demonSkin:{ priorityTag:'defBuff', useIfSelfHpBelow:0.48 },
+    wl_darkSoul:{ priorityTag:'buff', useIfBuffMissing:'s_empower', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
+    wl_lifeTap:{ priorityTag:'buff', useIfBuffMissing:'s_lifesurge', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
+    wl_chaosBolt:{ priorityTag:'spender', applyTargetState:null, useIfTargetMissing:null, useIfDotCountAtLeast:2, preferOnBoss:true },
+  },
+  druid: {
+    rejuvenation:{ priorityTag:'heal', useIfSelfHpBelow:0.78 },
+    barkskin:{ priorityTag:'defBuff', useIfSelfHpBelow:0.45 },
+    moonfire:{ priorityTag:'dot', applyTargetState:'dot', useIfTargetDotKeyMissing:'skill:moonfire', avoidIfTargetHpBelow:0.18 },
+    wrath:{ priorityTag:'spender', useIfDotCountAtLeast:1, preferOnBoss:true },
+    bite:{ priorityTag:'execute', useIfTargetHpBelow:0.35, preferOnBoss:true },
+    swipe:{ priorityTag:'aoe', minEnemies:3 },
+    berserk:{ priorityTag:'buff', useIfBuffMissing:'berserk', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
+    d_berserk:{ priorityTag:'buff', useIfBuffMissing:'s_frenzy', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
+    d_barkskin:{ priorityTag:'defBuff', useIfSelfHpBelow:0.45 },
+    d_rejuv:{ priorityTag:'heal', useIfSelfHpBelow:0.68, preferOnBoss:true },
+    d_ferociousBite:{ priorityTag:'execute', useIfTargetHpBelow:0.35, preferOnBoss:true },
+  },
+};
+
+function inferSkillAi(clsKey, skillKey, sk) {
+  const ai = {};
+  const text = `${sk?.name || ''} ${sk?.desc || ''}`;
+  if (sk.type === 'heal') {
+    ai.priorityTag = 'heal';
+    ai.useIfSelfHpBelow = sk.heal >= 0.45 ? 0.5 : sk.heal >= 0.35 ? 0.68 : 0.82;
+    ai.preferOnBoss = true;
+    return ai;
+  }
+  if (sk.type === 'buff') {
+    if (AUTO_DEFENSIVE_BUFFS.has(sk.buff) || /减伤|防御|护盾/.test(text)) {
+      ai.priorityTag = 'defBuff';
+      ai.useIfSelfHpBelow = 0.48;
+    } else {
+      ai.priorityTag = 'buff';
+      if (sk.buff) ai.useIfBuffMissing = sk.buff;
+      ai.preferOnBoss = true;
+      ai.avoidIfTargetHpBelow = 0.25;
+    }
+    return ai;
+  }
+  if (sk.dot) {
+    ai.priorityTag = 'dot';
+    ai.applyTargetState = 'dot';
+    ai.useIfTargetMissing = 'dot';
+    ai.avoidIfTargetHpBelow = 0.18;
+  } else if (sk.debuff === 'sunder' || /破甲/.test(text)) {
+    ai.priorityTag = 'setup';
+    ai.applyTargetState = 'sunder';
+    ai.useIfTargetMissing = 'sunder';
+    ai.avoidIfTargetHpBelow = 0.2;
+  } else if (sk.slow || /减速|冰冻|缠绕/.test(text)) {
+    ai.priorityTag = 'setup';
+    ai.applyTargetState = 'slow';
+    ai.useIfTargetMissing = 'slow';
+    ai.avoidIfTargetHpBelow = 0.2;
+  } else if (/斩杀|杀戮射击|暗言术·灭|死亡标记/.test(sk.name || '')) {
+    ai.priorityTag = 'execute';
+    ai.useIfTargetHpBelow = /杀戮射击/.test(sk.name || '') ? 0.4 : 0.35;
+    ai.preferOnBoss = true;
+  } else if (/范围|横扫|风暴|暴风雪|新星|多重|飓风|爆炸/.test(text)) {
+    ai.priorityTag = 'aoe';
+    ai.minEnemies = 3;
+    ai.preferOnBoss = true;
+  } else if ((sk.mul || 0) >= 6) {
+    ai.priorityTag = 'spender';
+    ai.preferOnBoss = true;
+    ai.avoidIfTargetHpBelow = 0.18;
+  } else if ((sk.mul || 0) >= 4) {
+    ai.priorityTag = 'strike';
+  } else {
+    ai.priorityTag = 'builder';
+  }
+  return ai;
+}
+
+(function injectSkillAi() {
+  if (typeof CLASSES === 'undefined') return;
+  for (const [clsKey, cls] of Object.entries(CLASSES)) {
+    if (!cls || !cls.skills) continue;
+    const overrides = SKILL_AI_OVERRIDES[clsKey] || {};
+    for (const [skillKey, sk] of Object.entries(cls.skills)) {
+      const base = inferSkillAi(clsKey, skillKey, sk);
+      sk.ai = Object.assign({}, base, sk.ai || {}, overrides[skillKey] || {});
     }
   }
 })();
