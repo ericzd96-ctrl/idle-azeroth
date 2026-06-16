@@ -424,6 +424,27 @@ function renderHero() {
   // 精通效果
   const specTree = state.specialization ? c.trees.find(t=>t.key===state.specialization) : null;
   $('mastery-desc').textContent = (typeof masteryDescText==='function') ? masteryDescText() : (specTree ? specTree.masteryDesc||'' : '未选择专精');
+
+  // 额外加成(来源汇总)
+  const srcs = state._statSources;
+  const total = srcs && srcs._total;
+  const bonusKeys = [
+    {key:'atkPct', label:'攻击', fmt:v => '+' + v.toFixed(1) + '%'},
+    {key:'hpPct',  label:'生命', fmt:v => '+' + v.toFixed(1) + '%'},
+    {key:'defPct', label:'防御', fmt:v => '+' + v.toFixed(1) + '%'},
+    {key:'spdPct', label:'攻速', fmt:v => '+' + v.toFixed(1) + '%'},
+    {key:'critdPct', label:'暴伤', fmt:v => '+' + v.toFixed(0) + '%'},
+  ];
+  const bonusEl = $('bonus-row');
+  if (bonusEl && total) {
+    const parts = bonusKeys.map(b => {
+      const v = total[b.key] || 0;
+      return `<span class="bonus-chip${v>0?' has':''}">${b.label} ${b.fmt(v)}</span>`;
+    });
+    bonusEl.innerHTML = parts.join('');
+  } else if (bonusEl) {
+    bonusEl.innerHTML = '<span class="muted" style="font-size:10px">暂无额外加成(装备/天赋/随从等可提供)</span>';
+  }
 }
 
 function renderEquipment() {
@@ -631,7 +652,64 @@ function renderShop() {
       <div class="muted">每点: 生命上限 +10 · 防御 +0.3<br>全职业通用生存属性</div>
     </div>
     <div class="muted" style="margin-top:8px">🎯 <b>当前主属性: ${primaryName}</b> — 每点主属性提供 1.5 攻击力</div>
+    ${renderSourceTable()}
   `;
+}
+
+/* ---------- 属性来源明细表(成长指南) ---------- */
+function renderSourceTable() {
+  const srcs = state._statSources;
+  if (!srcs) return '<div class="muted" style="margin-top:12px">暂无来源数据</div>';
+  const sourceOrder = ['天赋','成就','觉醒','生活','神器','坐骑','竞技场','被动','随从','装备'];
+  const statCols = [
+    {key:'atkPct', label:'攻击%', fmt:v => '+' + v.toFixed(1) + '%'},
+    {key:'hpPct',  label:'生命%', fmt:v => '+' + v.toFixed(1) + '%'},
+    {key:'defPct', label:'防御%', fmt:v => '+' + v.toFixed(1) + '%'},
+    {key:'spdPct', label:'攻速%', fmt:v => '+' + v.toFixed(1) + '%'},
+    {key:'critdPct', label:'暴伤%', fmt:v => '+' + v.toFixed(0) + '%'},
+    {key:'crit', label:'暴击', fmt:v => '+' + v.toFixed(1)},
+    {key:'leech', label:'吸血', fmt:v => '+' + v.toFixed(1)},
+    {key:'vers', label:'全能', fmt:v => '+' + v.toFixed(1)},
+    {key:'mastery', label:'精通', fmt:v => '+' + v.toFixed(1)},
+    {key:'haste', label:'极速', fmt:v => '+' + v.toFixed(1)},
+    {key:'regFlat', label:'回复', fmt:v => '+' + v.toFixed(0)},
+  ];
+  // 收集哪些列有数据
+  const activeCols = statCols.filter(col => {
+    for (const src of sourceOrder) if (srcs[src] && (srcs[src][col.key] || 0) !== 0) return true;
+    return (srcs._total && (srcs._total[col.key] || 0) !== 0);
+  });
+  if (activeCols.length === 0) return '';
+  let html = '<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:8px"><div style="font-weight:bold;margin-bottom:6px">📊 属性来源明细</div>';
+  html += '<div style="overflow-x:auto"><table class="src-table"><thead><tr><th>来源</th>';
+  for (const col of activeCols) html += `<th>${col.label}</th>`;
+  html += '</tr></thead><tbody>';
+  for (const srcName of sourceOrder) {
+    const d = srcs[srcName];
+    if (!d) continue;
+    // 检查是否有任何有效值
+    let hasVal = false;
+    for (const col of activeCols) { if ((d[col.key] || 0) !== 0) { hasVal = true; break; } }
+    if (!hasVal) continue;
+    html += `<tr><td class="src-name">${srcName}</td>`;
+    for (const col of activeCols) {
+      const v = d[col.key] || 0;
+      html += `<td class="${v>0?'pos':v<0?'neg':''}">${v!==0?col.fmt(v):'—'}</td>`;
+    }
+    html += '</tr>';
+  }
+  // 合计行
+  const total = srcs._total;
+  if (total) {
+    html += '<tr class="src-total"><td>合计</td>';
+    for (const col of activeCols) {
+      const v = total[col.key] || 0;
+      html += `<td class="${v>0?'pos':v<0?'neg':''}">${v!==0?col.fmt(v):'—'}</td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table></div></div>';
+  return html;
 }
 
 function renderSkills() {

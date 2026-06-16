@@ -24,6 +24,20 @@ function masteryDescText(){ const t=masterySpecType(); return t ? MASTERY_TYPE[t
 function recomputeStats() {
   const c = getCls(); if (!c) return;
   const lvl = state.hero.lvl; const base = c.baseStats;
+
+  // 来源追踪(供 UI 展示各来源贡献明细)
+  state._statSources = {};
+  let _srcSnap = {};
+  const _snapSrc = () => { _srcSnap = {atkPct, hpPct, defPct, spdPct, critdPct, crit:critFlat, leech, vers, mastery, haste, regFlat}; };
+  const _saveSrc = (name) => {
+    const cur = {atkPct, hpPct, defPct, spdPct, critdPct, crit:critFlat, leech, vers, mastery, haste, regFlat};
+    const d = {}; let has = false;
+    for (const k of Object.keys(_srcSnap)) {
+      const v = +(cur[k] - (_srcSnap[k]||0)).toFixed(1);
+      if (Math.abs(v) > 0.005) { d[k] = v; has = true; }
+    }
+    if (has) state._statSources[name] = d;
+  };
   let attrs = { str:0, agi:0, int:0, spi:0, sta:0 };
   for (const k of Object.keys(attrs)) attrs[k] = c.baseAttrs[k] + state.attrs[k];
 
@@ -34,6 +48,7 @@ function recomputeStats() {
   let costReduction=0, executeBonus=0, reflectDmg=0;
   let armorPen=0, dodge=0, stunChance=0;   // 趣味天赋:破甲/闪避/击晕
 
+  _snapSrc();
   for (const [treeKey, tals] of Object.entries(state.talents)) {
     for (const [tKey, rank] of Object.entries(tals)) {
       const tree = c.trees.find(t => t.key === treeKey); if (!tree) continue;
@@ -58,7 +73,9 @@ function recomputeStats() {
       }
     }
   }
+  _saveSrc('天赋');
   // 永久属性加成(成就奖励)— 接入与 talent.mod 同 schema
+  _snapSrc();
   if (typeof collectProgressionBonus === 'function') {
     const p = collectProgressionBonus();
     for (const [k, v] of Object.entries(p)) {
@@ -77,7 +94,9 @@ function recomputeStats() {
       else if (k==='executeBonus') executeBonus+=v; else if (k==='reflectDmg') reflectDmg+=v;
     }
   }
+  _saveSrc('成就');
   // 觉醒(光辉值)加成 — 同 schema 但额外有 xpMult/goldMult/dropMult 由 combat 单独读取
+  _snapSrc();
   if (typeof collectAscendMod === 'function') {
     const p = collectAscendMod();
     for (const [k, v] of Object.entries(p)) {
@@ -91,7 +110,9 @@ function recomputeStats() {
       // xpMult/goldMult/dropMult 在战斗中单独消费
     }
   }
+  _saveSrc('觉醒');
   // 生活技能 buff(食物/药水)— 同 schema,xpMult/goldMult/dropMult 由 combat 消费
+  _snapSrc();
   if (typeof collectLifeMod === 'function') {
     const p = collectLifeMod();
     for (const [k, v] of Object.entries(p)) {
@@ -102,7 +123,9 @@ function recomputeStats() {
       // xpMult/goldMult/dropMult 在 killMonster 消费
     }
   }
+  _saveSrc('生活');
   // 神器 — 同 schema,xpMult/goldMult/dropMult 由 combat 消费
+  _snapSrc();
   if (typeof collectArtifactMod === 'function') {
     const p = collectArtifactMod();
     for (const [k, v] of Object.entries(p)) {
@@ -118,7 +141,9 @@ function recomputeStats() {
       else if (k==='mastery') mastery+=v;
     }
   }
+  _saveSrc('神器');
   // 坐骑 — 同 schema
+  _snapSrc();
   if (typeof collectMountMod === 'function') {
     const p = collectMountMod();
     for (const [k, v] of Object.entries(p)) {
@@ -134,7 +159,9 @@ function recomputeStats() {
       else if (k==='mastery') mastery+=v;
     }
   }
+  _saveSrc('坐骑');
   // 竞技场(PvP 段位 + 荣誉商店)— 同 schema
+  _snapSrc();
   if (typeof collectArenaMod === 'function') {
     const p = collectArenaMod();
     for (const [k, v] of Object.entries(p)) {
@@ -150,7 +177,9 @@ function recomputeStats() {
       else if (k==='mastery') mastery+=v;
     }
   }
+  _saveSrc('竞技场');
   // 被动技能(按等级解锁)— 同 schema
+  _snapSrc();
   if (typeof collectPassiveMod === 'function') {
     const p = collectPassiveMod();
     for (const [k, v] of Object.entries(p)) {
@@ -166,7 +195,9 @@ function recomputeStats() {
       else if (k==='mastery') mastery+=v;
     }
   }
+  _saveSrc('被动');
   // 随从(专属/定位/收藏/羁绊)— 同 schema(额外含 regFlat)
+  _snapSrc();
   if (typeof collectCompanionMod === 'function') {
     const p = collectCompanionMod();
     for (const [k, v] of Object.entries(p)) {
@@ -183,6 +214,7 @@ function recomputeStats() {
       else if (k==='regFlat') regFlat+=v;
     }
   }
+  _saveSrc('随从');
   for (const k of Object.keys(attrs)) attrs[k] = Math.floor(attrs[k] * (1 + attrPct[k]/100));
   state._attrs = attrs;
 
@@ -195,6 +227,7 @@ function recomputeStats() {
   let critd = base.critd + critdPct; let spd = base.spd;
   let reg = base.reg + Math.floor(attrs.spi * 0.2) + regFlat;
 
+  _snapSrc();
   let equipAttrBonus = { str:0, agi:0, int:0, spi:0, sta:0 };
   let gearAttrPct = { str:0, agi:0, int:0, spi:0, sta:0 };  // 仅来自装备(词缀/宝石/附魔)的%
   for (const slotKey of SLOT_ORDER) {
@@ -249,6 +282,7 @@ function recomputeStats() {
     if (k === c.attackAttr) atk += delta * 1.5;
     if (k === 'sta') hpMax += delta * 10;
   }
+  _saveSrc('装备');
   atk = Math.floor(atk * (1 + atkPct/100)); hpMax = Math.floor(hpMax * (1 + hpPct/100));
   def = Math.floor(def * (1 + defPct/100));
   // 攻速稀有化:spdPct 的各来源数值已在 spd_tuning.js 加载期统一归一化为 30%(显示=实际),
@@ -317,6 +351,8 @@ function recomputeStats() {
   else if (_mspec==='critdAmp') critd += mastery*MASTERY_TYPE.critdAmp.per;
   else if (_mspec==='leechAmp') leech += mastery*MASTERY_TYPE.leechAmp.per;
 
+  // 保存来源汇总(供 UI 展示)— 注意:这些是 buff 前的基础百分比汇总
+  state._statSources._total = {atkPct, hpPct, defPct, spdPct, critdPct, crit:critFlat, leech, vers, mastery, haste, regFlat};
   state.hero.atk=atk; state.hero.def=def; state.hero.hpMax=hpMax;
   state.hero.mpMax=Math.max(50,mpMax); state.hero.crit=Math.min(crit,90);
   state.hero.critd=critd; state.hero.spd=Math.min(spd,2.5); state.hero.reg=reg;   // 攻速封顶下调 6→2.5(攻速稀有化)

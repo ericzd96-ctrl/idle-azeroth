@@ -596,3 +596,39 @@ button.legend:hover:not(:disabled) {
 .dm-total {
   text-align: center; margin-top: 2px; font-size: 10px;
 }
+
+/* ========== 额外加成(战斗属性下方) ========== */
+.bonus-row {
+  display: flex; flex-wrap: wrap; gap: 4px;
+}
+.bonus-chip {
+  display: inline-block; padding: 2px 8px; border-radius: 999px;
+  background: var(--panel-2); border: 1px solid var(--border);
+  font-size: 11px; color: var(--muted);
+}
+.bonus-chip.has {
+  color: var(--accent); border-color: rgba(110,231,183,.35);
+  background: rgba(110,231,183,.08);
+}
+
+/* ========== 属性来源明细表(成长指南) ========== */
+.src-table {
+  width: 100%; border-collapse: collapse; font-size: 11px;
+}
+.src-table th, .src-table td {
+  padding: 3px 7px; text-align: center; white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+.src-table th {
+  color: var(--muted); font-weight: bold; font-size: 10px;
+  background: var(--panel); position: sticky; top: 0;
+}
+.src-table .src-name {
+  text-align: left; font-weight: bold; color: var(--text);
+}
+.src-table .pos { color: var(--accent); }
+.src-table .neg { color: #ef4444; }
+.src-table .src-total td {
+  border-top: 2px solid var(--gold); font-weight: bold;
+  color: var(--gold);
+}
