@@ -2149,88 +2149,64 @@ const DUNGEONS = [{
   name: '熔火之心',
   icon: '🌋',
   reqLvl: 60,
-  waves: 10,
+  waves: 14,
     type: "raid",
   cd: 3600,
-  bosses: [{
-    name: '鲁西弗隆',
-    emoji: '😈',
-    wave: 3,
-    skills: [{
-      name: '末日诅咒',
-      icon: '😈',
-      desc: '3倍伤害',
-      type: 'dmg',
-      mul: 4,
-      cd: 14,
-      castTime: 1.5
-    }]
-  },{
-    name: '玛格曼达',
-    emoji: '🐶',
-    wave: 5,
-    skills: [{
-      name: '火焰吐息',
-      icon: '🔥',
-      desc: '3倍火焰伤害',
-      type: 'dmg',
-      mul: 5,
-      cd: 16,
-      castTime: 2
-    }],
-        passive: {dmgReduction:0.1}
-  },{
-    name: '加尔',
-    emoji: '🪨',
-    wave: 7,
-    skills: [{
-      name: '岩石粉碎',
-      icon: '🪨',
-      desc: '4倍伤害',
-      type: 'dmg',
-      mul: 4.5,
-      cd: 16,
-      castTime: 2
-    }],
-        passive: {dmgReduction:0.1}
-  },{
-    name: '迦顿男爵',
-    emoji: '🔥',
-    wave: 8,
-    skills: [{
-      name: '地狱火',
-      icon: '🔥',
-      desc: '3倍火焰伤害',
-      type: 'dmg',
-      mul: 6,
-      cd: 20,
-      castTime: 2.5
-    }],
-        passive: {dmgReduction:0.1}
-  },{
-    name: '拉格纳罗斯',
-    emoji: '🔥',
-    wave: 10,
-    skills: [{
-      name: '萨弗隆之怒',
-      icon: '🌋',
-      desc: '3倍火焰伤害',
-      type: 'dmg',
-      mul: 8,
-      cd: 24,
-      castTime: 3
-    },{
-      name: '熔岩喷涌',
-      icon: '🔥',
-      desc: '3倍AOE必暴',
-      type: 'dmg',
-      mul: 7,
-      alwaysCrit: true,
-      cd: 36,
-      castTime: 4
-    }],
-        passive: {dmgReduction:0.1}
-  }],
+  bosses: [
+        {
+          name: "鲁西弗隆",
+          emoji: "👹",
+          wave: 3,
+          skills: [
+            {name: "暗影冲击", icon: "🌑", desc: "4倍暗影伤害", type: "dmg", mul: 4, castTime: 2},
+            {name: "末日诅咒", icon: "🧿", desc: "5倍伤害+灼烧", type: "dmg", mul: 5, castTime: 3, dot: true}
+          ],
+          passive: {critChance: 0.15, dmgReduction: 0.15}
+        },
+        {
+          name: "玛格曼达",
+          emoji: "🐶",
+          wave: 6,
+          skills: [
+            {name: "火焰吐息", icon: "🔥", desc: "5倍火焰伤害+灼烧", type: "dmg", mul: 5, castTime: 2, dot: true},
+            {name: "恐惧咆哮", icon: "💢", desc: "4倍AOE+减速", type: "dmg", mul: 4, castTime: 3, slow: true}
+          ],
+          passive: {critChance: 0.1, dmgReduction: 0.1, atkBonus: 0.2}
+        },
+        {
+          name: "基赫纳斯",
+          emoji: "🔥",
+          wave: 8,
+          skills: [
+            {name: "火焰之雨", icon: "🌋", desc: "5倍AOE火焰伤害", type: "dmg", mul: 5, castTime: 3},
+            {name: "熔岩护盾", icon: "🛡️", desc: "4倍伤害+减伤", type: "dmg", mul: 4, castTime: 2}
+          ],
+          passive: {dodgeChance: 0.1, critChance: 0.1, dmgReduction: 0.2}
+        },
+        {
+          name: "加尔",
+          emoji: "🪨",
+          wave: 11,
+          skills: [
+            {name: "岩石投掷", icon: "🪨", desc: "5倍伤害", type: "dmg", mul: 5, castTime: 2},
+            {name: "地震", icon: "🌍", desc: "6倍AOE伤害", type: "dmg", mul: 6, castTime: 3},
+            {name: "岩浆爆发", icon: "🌋", desc: "7倍伤害+灼烧", type: "dmg", mul: 7, castTime: 3.5, dot: true}
+          ],
+          passive: {critChance: 0.15, dmgReduction: 0.2, atkBonus: 0.15}
+        },
+        {
+          name: "拉格纳罗斯",
+          emoji: "🔥",
+          wave: 14,
+          skills: [
+            {name: "萨弗拉斯之击", icon: "🔨", desc: "7倍火焰伤害", type: "dmg", mul: 7, castTime: 3},
+            {name: "熔岩爆发", icon: "🌋", desc: "8倍AOE+灼烧", type: "dmg", mul: 8, castTime: 3.5, dot: true},
+            {name: "火焰之子", icon: "🔥", desc: "6倍伤害+召唤", type: "dmg", mul: 6, castTime: 2.5},
+            {name: "炎魔之怒", icon: "💥", desc: "9倍AOE伤害", type: "dmg", mul: 9, castTime: 4}
+          ],
+          passive: {dodgeChance: 0.15, critChance: 0.25, dmgReduction: 0.25, atkBonus: 0.2}
+        }
+      ],
   desc: '萨弗隆元素领主的火焰之心'
 },{
   key: 'manatombs',
@@ -2297,75 +2273,54 @@ const DUNGEONS = [{
   name: '黑翼之巢',
   icon: '🐉',
   reqLvl: 65,
-  waves: 10,
+  waves: 12,
     type: "raid",
   cd: 4200,
-  bosses: [{
-    name: '狂野的拉佐格尔',
-    emoji: '🐉',
-    wave: 3,
-    skills: [{
-      name: '龙翼打击',
-      icon: '🐉',
-      desc: '3倍伤害',
-      type: 'dmg',
-      mul: 5,
-      cd: 16,
-      castTime: 2
-    }]
-  },{
-    name: '堕落的瓦拉斯塔兹',
-    emoji: '🐲',
-    wave: 5,
-    skills: [{
-      name: '暗影烈焰',
-      icon: '🔥',
-      desc: '3倍火焰伤害',
-      type: 'dmg',
-      mul: 6,
-      cd: 18,
-      castTime: 2.5
-    }],
-        passive: {dmgReduction:0.1}
-  },{
-    name: '克洛玛古斯',
-    emoji: '🐕',
-    wave: 7,
-    skills: [{
-      name: '时光扭曲',
-      icon: '⏳',
-      desc: '3倍伤害+减速',
-      type: 'dmg',
-      mul: 5,
-      slow: true,
-      cd: 16,
-      castTime: 2
-    }],
-        passive: {dmgReduction:0.1}
-  },{
-    name: '奈法利安',
-    emoji: '🐉',
-    wave: 10,
-    skills: [{
-      name: '暗影烈焰',
-      icon: '🐉',
-      desc: '3倍火焰伤害',
-      type: 'dmg',
-      mul: 8,
-      cd: 22,
-      castTime: 3
-    },{
-      name: '龙族之怒',
-      icon: '🐲',
-      desc: '3倍AOE必暴',
-      type: 'dmg',
-      mul: 7,
-      alwaysCrit: true,
-      cd: 34,
-      castTime: 4
-    }],
-        passive: {dmgReduction:0.1}
-  }],
+  bosses: [
+        {
+          name: "狂野的拉佐格尔",
+          emoji: "🐉",
+          wave: 3,
+          skills: [
+            {name: "龙息术", icon: "🔥", desc: "5倍火焰伤害", type: "dmg", mul: 5, castTime: 2},
+            {name: "扫尾", icon: "🌀", desc: "6倍AOE伤害", type: "dmg", mul: 6, castTime: 3}
+          ],
+          passive: {dodgeChance: 0.2, critChance: 0.15, dmgReduction: 0.1}
+        },
+        {
+          name: "勒什雷尔",
+          emoji: "🐲",
+          wave: 6,
+          skills: [
+            {name: "暗影烈焰", icon: "🔥", desc: "6倍暗影火焰伤害", type: "dmg", mul: 6, castTime: 2.5},
+            {name: "龙翼打击", icon: "💢", desc: "5倍AOE+减速", type: "dmg", mul: 5, castTime: 3, slow: true}
+          ],
+          passive: {critChance: 0.1, dmgReduction: 0.2, atkBonus: 0.15}
+        },
+        {
+          name: "克洛玛古斯",
+          emoji: "🐲",
+          wave: 9,
+          skills: [
+            {name: "时光扭曲", icon: "🌀", desc: "5倍伤害+减速", type: "dmg", mul: 5, castTime: 2.5, slow: true},
+            {name: "多种吐息", icon: "🌈", desc: "7倍AOE伤害", type: "dmg", mul: 7, castTime: 3.5},
+            {name: "龙血之怒", icon: "💢", desc: "8倍伤害", type: "dmg", mul: 8, castTime: 4}
+          ],
+          passive: {dodgeChance: 0.1, critChance: 0.2, dmgReduction: 0.2}
+        },
+        {
+          name: "奈法利安",
+          emoji: "🐉",
+          wave: 12,
+          skills: [
+            {name: "暗影烈焰", icon: "🔥", desc: "7倍暗影火焰伤害", type: "dmg", mul: 7, castTime: 3},
+            {name: "龙族召唤", icon: "🐲", desc: "8倍AOE伤害", type: "dmg", mul: 8, castTime: 4},
+            {name: "奈法利安之怒", icon: "💢", desc: "9倍伤害+恐惧", type: "dmg", mul: 9, castTime: 4},
+            {name: "黑龙之息", icon: "🔥", desc: "10倍AOE火焰伤害", type: "dmg", mul: 10, castTime: 5, dot: true}
+          ],
+          passive: {dodgeChance: 0.15, critChance: 0.25, dmgReduction: 0.25, atkBonus: 0.2}
+        }
+      ],
   desc: '黑龙王子的腐败实验场'
 },{
   key: 'steamvault',
@@ -2423,97 +2378,64 @@ const DUNGEONS = [{
   name: '纳克萨玛斯',
   icon: '☠️',
   reqLvl: 70,
-  waves: 12,
+  waves: 15,
     type: "raid",
   cd: 5400,
-  bosses: [{
-    name: '阿努布雷坎',
-    emoji: '🕷️',
-    wave: 3,
-    skills: [{
-      name: '虫群风暴',
-      icon: '🕷️',
-      desc: '3倍伤害',
-      type: 'dmg',
-      mul: 5,
-      cd: 16,
-      castTime: 2
-    }]
-  },{
-    name: '帕奇维克',
-    emoji: '🧟',
-    wave: 5,
-    skills: [{
-      name: '憎恶打击',
-      icon: '🧟',
-      desc: '3倍伤害+吸血',
-      type: 'dmg',
-      mul: 6,
-      lifeSteal: 0.3,
-      cd: 18,
-      castTime: 2.5
-    }],
-        passive: {dmgReduction:0.1}
-  },{
-    name: '塔迪乌斯',
-    emoji: '⚡',
-    wave: 8,
-    skills: [{
-      name: '闪电链',
-      icon: '⚡',
-      desc: '3倍自然伤害',
-      type: 'dmg',
-      mul: 6,
-      cd: 18,
-      castTime: 2.5
-    }],
-        passive: {dmgReduction:0.1}
-  },{
-    name: '萨菲隆',
-    emoji: '🐉',
-    wave: 10,
-    skills: [{
-      name: '冰霜吐息',
-      icon: '❄️',
-      desc: '3倍冰霜伤害',
-      type: 'dmg',
-      mul: 7,
-      cd: 22,
-      castTime: 3
-    },{
-      name: '冰霜光环',
-      icon: '🧊',
-      desc: '3倍AOE',
-      type: 'dmg',
-      mul: 6,
-      cd: 28,
-      castTime: 3
-    }],
-        passive: {dmgReduction:0.1}
-  },{
-    name: '克尔苏加德',
-    emoji: '☠️',
-    wave: 12,
-    skills: [{
-      name: '暗影裂隙',
-      icon: '☠️',
-      desc: '3倍暗影伤害',
-      type: 'dmg',
-      mul: 8,
-      cd: 24,
-      castTime: 3
-    },{
-      name: '冰霜陨石',
-      icon: '❄️',
-      desc: '3倍AOE必暴',
-      type: 'dmg',
-      mul: 9,
-      alwaysCrit: true,
-      cd: 40,
-      castTime: 4
-    }],
-        passive: {dmgReduction:0.1}
-  }],
+  bosses: [
+        {
+          name: "阿努布雷坎",
+          emoji: "🕷️",
+          wave: 3,
+          skills: [
+            {name: "穿刺", icon: "🗡️", desc: "5倍伤害", type: "dmg", mul: 5, castTime: 2},
+            {name: "虫群风暴", icon: "🦗", desc: "6倍AOE伤害", type: "dmg", mul: 6, castTime: 3}
+          ],
+          passive: {dodgeChance: 0.2, critChance: 0.15, dmgReduction: 0.1}
+        },
+        {
+          name: "瘟疫使者诺斯",
+          emoji: "☠️",
+          wave: 6,
+          skills: [
+            {name: "瘟疫", icon: "🦠", desc: "5倍伤害+灼烧", type: "dmg", mul: 5, castTime: 2.5, dot: true},
+            {name: "亡者诅咒", icon: "💀", desc: "6倍暗影伤害", type: "dmg", mul: 6, castTime: 3}
+          ],
+          passive: {critChance: 0.2, dmgReduction: 0.1, atkBonus: 0.1}
+        },
+        {
+          name: "肮脏的希尔盖",
+          emoji: "🧟",
+          wave: 9,
+          skills: [
+            {name: "疾病之云", icon: "☁️", desc: "6倍AOE+灼烧", type: "dmg", mul: 6, castTime: 3, dot: true},
+            {name: "天灾之握", icon: "💀", desc: "7倍伤害", type: "dmg", mul: 7, castTime: 3.5},
+            {name: "腐烂", icon: "🦠", desc: "6倍伤害+减速", type: "dmg", mul: 6, castTime: 3, slow: true}
+          ],
+          passive: {critChance: 0.15, dmgReduction: 0.2, atkBonus: 0.15}
+        },
+        {
+          name: "塔迪乌斯",
+          emoji: "⚡",
+          wave: 12,
+          skills: [
+            {name: "闪电链", icon: "⚡", desc: "7倍自然伤害", type: "dmg", mul: 7, castTime: 3},
+            {name: "极性转换", icon: "🔄", desc: "6倍AOE伤害", type: "dmg", mul: 6, castTime: 3}
+          ],
+          passive: {dodgeChance: 0.1, critChance: 0.25, dmgReduction: 0.15}
+        },
+        {
+          name: "克尔苏加德",
+          emoji: "💀",
+          wave: 15,
+          skills: [
+            {name: "冰霜冲击", icon: "❄️", desc: "8倍冰霜伤害", type: "dmg", mul: 8, castTime: 3},
+            {name: "暗影裂隙", icon: "🌑", desc: "9倍暗影伤害", type: "dmg", mul: 9, castTime: 4},
+            {name: "亡者大军", icon: "🧟", desc: "8倍AOE伤害", type: "dmg", mul: 8, castTime: 3.5},
+            {name: "巫妖之怒", icon: "👑", desc: "10倍伤害+灼烧", type: "dmg", mul: 10, castTime: 5, dot: true}
+          ],
+          passive: {dodgeChance: 0.2, critChance: 0.3, dmgReduction: 0.3, atkBonus: 0.25}
+        }
+      ],
   desc: '天灾军团的浮空堡垒'
 },{
   key: 'magister',
@@ -2580,66 +2502,54 @@ const DUNGEONS = [{
   name: '卡拉赞',
   icon: '🌌',
   reqLvl: 75,
-  waves: 10,
+  waves: 12,
     type: "raid",
   cd: 6000,
-  bosses: [{
-    name: '猎手阿图门',
-    emoji: '🐴',
-    wave: 2,
-    skills: [{
-      name: '暗影冲锋',
-      icon: '🐴',
-      desc: '3倍伤害',
-      type: 'dmg',
-      mul: 5,
-      cd: 16,
-      castTime: 2
-    }]
-  },{
-    name: '莫罗斯',
-    emoji: '👤',
-    wave: 5,
-    skills: [{
-      name: '暗杀',
-      icon: '🗡️',
-      desc: '3倍伤害+流血',
-      type: 'dmg',
-      mul: 5,
-      dot: true,
-      cd: 16,
-      castTime: 2
-    }],
-        passive: {dmgReduction:0.1}
-  },{
-    name: '馆长',
-    emoji: '🤖',
-    wave: 7,
-    skills: [{
-      name: '奥术充能',
-      icon: '⚡',
-      desc: '3倍奥术伤害',
-      type: 'dmg',
-      mul: 6,
-      cd: 20,
-      castTime: 2.5
-    }],
-        passive: {dmgReduction:0.1}
-  },{
-    name: '麦迪文',
-    emoji: '🔮',
-    wave: 10,
-    skills: [{
-      name: '奥术风暴',
-      icon: '🔮',
-      desc: '3倍奥术伤害',
-      type: 'dmg',
-      mul: 8,
-      cd: 24,
-      castTime: 3
-    }],
-        passive: {dmgReduction:0.1}
-  }],
+  bosses: [
+        {
+          name: "午夜",
+          emoji: "🐴",
+          wave: 3,
+          skills: [
+            {name: "冲锋", icon: "💨", desc: "5倍伤害", type: "dmg", mul: 5, castTime: 2},
+            {name: "暗影践踏", icon: "🌑", desc: "6倍AOE伤害", type: "dmg", mul: 6, castTime: 3}
+          ],
+          passive: {dodgeChance: 0.15, critChance: 0.1, atkBonus: 0.2}
+        },
+        {
+          name: "莫罗斯",
+          emoji: "🧟",
+          wave: 6,
+          skills: [
+            {name: "致残打击", icon: "🗡️", desc: "6倍伤害+减速", type: "dmg", mul: 6, castTime: 2.5, slow: true},
+            {name: "暗杀", icon: "🔪", desc: "7倍必暴伤害", type: "dmg", mul: 7, castTime: 3, alwaysCrit: true}
+          ],
+          passive: {dodgeChance: 0.15, critChance: 0.25, dmgReduction: 0.1}
+        },
+        {
+          name: "馆长",
+          emoji: "🤖",
+          wave: 9,
+          skills: [
+            {name: "奥术弹幕", icon: "🌀", desc: "6倍奥术伤害", type: "dmg", mul: 6, castTime: 2.5},
+            {name: "能量过载", icon: "⚡", desc: "7倍AOE伤害", type: "dmg", mul: 7, castTime: 3.5},
+            {name: "电弧", icon: "⚡", desc: "6倍伤害+减速", type: "dmg", mul: 6, castTime: 3, slow: true}
+          ],
+          passive: {dodgeChance: 0.1, critChance: 0.2, dmgReduction: 0.2}
+        },
+        {
+          name: "玛克扎尔王子",
+          emoji: "😈",
+          wave: 12,
+          skills: [
+            {name: "暗影新星", icon: "💥", desc: "7倍暗影AOE", type: "dmg", mul: 7, castTime: 3},
+            {name: "地狱火", icon: "🔥", desc: "8倍火焰伤害+灼烧", type: "dmg", mul: 8, castTime: 4, dot: true},
+            {name: "恐惧", icon: "👻", desc: "7倍伤害+减速", type: "dmg", mul: 7, castTime: 3, slow: true},
+            {name: "军团之怒", icon: "😈", desc: "9倍AOE伤害", type: "dmg", mul: 9, castTime: 4.5}
+          ],
+          passive: {dodgeChance: 0.15, critChance: 0.25, dmgReduction: 0.25, atkBonus: 0.2}
+        }
+      ],
   desc: '最后的守护者之塔'
 },{
   key: 'hol',
@@ -2771,129 +2681,118 @@ const DUNGEONS = [{
   name: '太阳之井',
   icon: '☀️',
   reqLvl: 80,
-  waves: 11,
+  waves: 12,
     type: "raid",
   cd: 7200,
-  bosses: [{
-    name: '卡雷苟斯',
-    emoji: '🐉',
-    wave: 3,
-    skills: [{
-      name: '奥术吐息',
-      icon: '🐉',
-      desc: '5.3倍奥术伤害',
-      type: 'dmg',
-      mul: 5.5,
-      cd: 16,
-      castTime: 2
-    }]
-  },{
-    name: '布鲁塔卢斯',
-    emoji: '😈',
-    wave: 5,
-    skills: [{
-      name: '流星',
-      icon: '☄️',
-      desc: '3倍火焰伤害',
-      type: 'dmg',
-      mul: 7,
-      cd: 20,
-      castTime: 2.5
-    }],
-        passive: {dmgReduction:0.1}
-  },{
-    name: '艾瑞达双子',
-    emoji: '👯',
-    wave: 8,
-    skills: [{
-      name: '暗影之怒',
-      icon: '😈',
-      desc: '3倍暗影伤害',
-      type: 'dmg',
-      mul: 7,
-      cd: 20,
-      castTime: 2.5
-    }],
-        passive: {dmgReduction:0.1}
-  },{
-    name: '基尔加丹',
-    emoji: '😈',
-    wave: 11,
-    skills: [{
-      name: '千魂之暗',
-      icon: '😈',
-      desc: '3倍暗影伤害',
-      type: 'dmg',
-      mul: 10,
-      cd: 26,
-      castTime: 4
-    },{
-      name: '末日决战',
-      icon: '💀',
-      desc: '12倍AOE必暴',
-      type: 'dmg',
-      mul: 12,
-      alwaysCrit: true,
-      cd: 44,
-      castTime: 5
-    }],
-        passive: {dmgReduction:0.1}
-  }],
+  bosses: [
+        {
+          name: "卡雷苟斯",
+          emoji: "🐉",
+          wave: 3,
+          skills: [
+            {name: "奥术吐息", icon: "🌀", desc: "6倍奥术伤害", type: "dmg", mul: 6, castTime: 2.5},
+            {name: "冰霜之触", icon: "❄️", desc: "7倍冰霜伤害", type: "dmg", mul: 7, castTime: 3}
+          ],
+          passive: {dodgeChance: 0.2, critChance: 0.2}
+        },
+        {
+          name: "布鲁塔卢斯",
+          emoji: "😈",
+          wave: 6,
+          skills: [
+            {name: "陨石打击", icon: "☄️", desc: "7倍火焰伤害", type: "dmg", mul: 7, castTime: 3},
+            {name: "燃烧", icon: "🔥", desc: "6倍AOE+灼烧", type: "dmg", mul: 6, castTime: 3, dot: true}
+          ],
+          passive: {critChance: 0.1, dmgReduction: 0.15, atkBonus: 0.25}
+        },
+        {
+          name: "穆鲁",
+          emoji: "🌑",
+          wave: 9,
+          skills: [
+            {name: "暗影之怒", icon: "💢", desc: "7倍暗影伤害", type: "dmg", mul: 7, castTime: 3},
+            {name: "负能量", icon: "🖤", desc: "8倍AOE伤害", type: "dmg", mul: 8, castTime: 4},
+            {name: "熵", icon: "🌀", desc: "7倍伤害+减速", type: "dmg", mul: 7, castTime: 3, slow: true}
+          ],
+          passive: {dodgeChance: 0.1, critChance: 0.25, dmgReduction: 0.2}
+        },
+        {
+          name: "基尔加丹",
+          emoji: "😈",
+          wave: 12,
+          skills: [
+            {name: "欺诈者之触", icon: "👿", desc: "8倍暗影伤害", type: "dmg", mul: 8, castTime: 3},
+            {name: "末日火雨", icon: "🌋", desc: "9倍AOE火焰伤害", type: "dmg", mul: 9, castTime: 4, dot: true},
+            {name: "黑暗", icon: "🌑", desc: "8倍伤害+减速", type: "dmg", mul: 8, castTime: 3.5, slow: true},
+            {name: "军团之怒", icon: "😈", desc: "10倍AOE伤害", type: "dmg", mul: 10, castTime: 5}
+          ],
+          passive: {dodgeChance: 0.2, critChance: 0.3, dmgReduction: 0.3, atkBonus: 0.25}
+        }
+      ],
   desc: '燃烧军团的入侵之门'
 },{
   key: 'ulduar',
   name: '奥杜尔',
   icon: '⚙️',
   reqLvl: 80,
-  waves: 11,
+  waves: 15,
     type: "raid",
   cd: 7200,
-  bosses: [{
-    name: '烈焰巨兽',
-    emoji: '🚂',
-    wave: 3,
-    skills: [{
-      name: '火焰喷射',
-      icon: '🚂',
-      desc: '3倍火焰伤害',
-      type: 'dmg',
-      mul: 6,
-      cd: 18,
-      castTime: 2.5
-    }]
-  },{
-    name: '钢铁议会',
-    emoji: '⚙️',
-    wave: 5,
-    skills: [{
-      name: '过载',
-      icon: '⚙️',
-      desc: '3倍伤害',
-      type: 'dmg',
-      mul: 7,
-      cd: 20,
-      castTime: 2.5
-    }],
-        passive: {dmgReduction:0.1}
-  },{
-    name: '芙蕾雅',
-    emoji: '🌿',
-    wave: 8,
-    skills: [{
-      name: '生命绽放',
-      icon: '🌿',
-      desc: '恢复25%HP',
-      type: 'heal',
-      heal: 0.25,
-      cd: 18,
-      castTime: 1.5
-    }],
-        passive: {dmgReduction:0.1}
-  },{
-    name: '尤格-萨隆',
-    emoji: '👁️',
-    wave: 11
-  }],
+  bosses: [
+        {
+          name: "烈焰巨兽",
+          emoji: "🤖",
+          wave: 3,
+          skills: [
+            {name: "火焰喷射", icon: "🔥", desc: "6倍火焰伤害", type: "dmg", mul: 6, castTime: 2.5},
+            {name: "炮击", icon: "💣", desc: "7倍AOE伤害", type: "dmg", mul: 7, castTime: 3.5}
+          ],
+          passive: {dmgReduction: 0.25, atkBonus: 0.15}
+        },
+        {
+          name: "XT-002拆解者",
+          emoji: "🤖",
+          wave: 6,
+          skills: [
+            {name: "重力炸弹", icon: "💣", desc: "7倍伤害", type: "dmg", mul: 7, castTime: 3},
+            {name: "拆解", icon: "🔧", desc: "6倍AOE+减速", type: "dmg", mul: 6, castTime: 3, slow: true}
+          ],
+          passive: {dodgeChance: 0.1, critChance: 0.2, dmgReduction: 0.2}
+        },
+        {
+          name: "钢铁议会",
+          emoji: "⚡",
+          wave: 9,
+          skills: [
+            {name: "闪电链", icon: "⚡", desc: "7倍自然伤害", type: "dmg", mul: 7, castTime: 3},
+            {name: "过载", icon: "💥", desc: "8倍AOE伤害", type: "dmg", mul: 8, castTime: 4}
+          ],
+          passive: {dodgeChance: 0.15, critChance: 0.25, dmgReduction: 0.15}
+        },
+        {
+          name: "维扎克斯将军",
+          emoji: "👹",
+          wave: 12,
+          skills: [
+            {name: "暗影撞击", icon: "🌑", desc: "8倍暗影伤害", type: "dmg", mul: 8, castTime: 3.5},
+            {name: "无面者之怒", icon: "💢", desc: "7倍AOE伤害", type: "dmg", mul: 7, castTime: 3},
+            {name: "虚空", icon: "🌌", desc: "8倍伤害+减速", type: "dmg", mul: 8, castTime: 4, slow: true}
+          ],
+          passive: {critChance: 0.2, dmgReduction: 0.2, atkBonus: 0.25}
+        },
+        {
+          name: "尤格萨隆",
+          emoji: "🐙",
+          wave: 15,
+          skills: [
+            {name: "精神鞭笞", icon: "🌀", desc: "8倍暗影伤害", type: "dmg", mul: 8, castTime: 3},
+            {name: "疯狂", icon: "👁️", desc: "9倍AOE+灼烧", type: "dmg", mul: 9, castTime: 4, dot: true},
+            {name: "千喉之兽", icon: "🐙", desc: "8倍伤害+减速", type: "dmg", mul: 8, castTime: 3.5, slow: true},
+            {name: "尤格萨隆之影", icon: "💀", desc: "10倍暗影AOE", type: "dmg", mul: 10, castTime: 5}
+          ],
+          passive: {dodgeChance: 0.2, critChance: 0.3, dmgReduction: 0.3, atkBonus: 0.25}
+        }
+      ],
   desc: '泰坦造物的禁地'
 },{
   key: 'forge',
@@ -2961,191 +2860,107 @@ const DUNGEONS = [{
   name: '红玉圣殿',
   icon: '💎',
   reqLvl: 80,
-  waves: 12,
+  waves: 9,
     type: "raid",
   cd: 9000,
-  bosses: [{
-    name: '巴尔萨鲁斯',
-    emoji: '🐉',
-    wave: 3,
-    skills: [{
-      name: '黄昏之火',
-      icon: '🐉',
-      desc: '3倍火焰伤害',
-      type: 'dmg',
-      mul: 6,
-      cd: 18,
-      castTime: 2.5
-    }]
-  },{
-    name: '扎里斯利安将军',
-    emoji: '🐉',
-    wave: 6,
-    skills: [{
-      name: '暗影之息',
-      icon: '🐉',
-      desc: '3倍暗影伤害',
-      type: 'dmg',
-      mul: 7,
-      cd: 20,
-      castTime: 2.5
-    }],
-        passive: {dmgReduction:0.1}
-  },{
-    name: '暮光龙·萨维安娜',
-    emoji: '🐉',
-    wave: 9,
-    skills: [{
-      name: '暮光烈焰',
-      icon: '🐉',
-      desc: '3倍火焰伤害',
-      type: 'dmg',
-      mul: 8,
-      cd: 24,
-      castTime: 3
-    },{
-      name: '暮光治愈',
-      icon: '💜',
-      desc: '恢复25%HP',
-      type: 'heal',
-      heal: 0.25,
-      cd: 22,
-      castTime: 1.5
-    }],
-        passive: {dmgReduction:0.1}
-  },{
-    name: '海里昂',
-    emoji: '🐉',
-    wave: 12,
-    skills: [{
-      name: '暮光切割',
-      icon: '🐉',
-      desc: '3倍伤害',
-      type: 'dmg',
-      mul: 10,
-      cd: 28,
-      castTime: 4
-    },{
-      name: '红玉之火',
-      icon: '💎',
-      desc: '3倍必暴',
-      type: 'dmg',
-      mul: 9,
-      alwaysCrit: true,
-      cd: 42,
-      castTime: 4
-    }],
-        passive: {dmgReduction:0.1}
-  }],
+  bosses: [
+        {
+          name: "萨维安娜·怒焰",
+          emoji: "🐉",
+          wave: 3,
+          skills: [
+            {name: "火焰之息", icon: "🔥", desc: "6倍火焰伤害+灼烧", type: "dmg", mul: 6, castTime: 2.5, dot: true},
+            {name: "龙翼打击", icon: "💢", desc: "7倍AOE伤害", type: "dmg", mul: 7, castTime: 3.5}
+          ],
+          passive: {critChance: 0.2, dmgReduction: 0.2}
+        },
+        {
+          name: "巴尔萨鲁斯",
+          emoji: "🐲",
+          wave: 6,
+          skills: [
+            {name: "暗影烈焰", icon: "🔥", desc: "7倍暗影火焰伤害", type: "dmg", mul: 7, castTime: 3},
+            {name: "暮光之息", icon: "🌑", desc: "8倍AOE伤害", type: "dmg", mul: 8, castTime: 4},
+            {name: "暮光屏障", icon: "🛡️", desc: "6倍伤害+减伤", type: "dmg", mul: 6, castTime: 3}
+          ],
+          passive: {critChance: 0.15, dmgReduction: 0.2, atkBonus: 0.25}
+        },
+        {
+          name: "海里昂",
+          emoji: "🐉",
+          wave: 9,
+          skills: [
+            {name: "暮光切割", icon: "🌗", desc: "8倍暗影伤害", type: "dmg", mul: 8, castTime: 3},
+            {name: "虚空之息", icon: "🌌", desc: "9倍AOE+灼烧", type: "dmg", mul: 9, castTime: 4, dot: true},
+            {name: "暮光毁灭", icon: "💥", desc: "10倍AOE伤害", type: "dmg", mul: 10, castTime: 5}
+          ],
+          passive: {dodgeChance: 0.15, critChance: 0.3, dmgReduction: 0.25, atkBonus: 0.2}
+        }
+      ],
   desc: '红龙军团的暮光试炼'
 },{
   key: 'icc',
   name: '冰冠堡垒',
   icon: '❄️',
   reqLvl: 80,
-  waves: 14,
+  waves: 15,
     type: "raid",
   cd: 10800,
-  bosses: [{
-    name: '玛洛加尔领主',
-    emoji: '🦴',
-    wave: 3,
-    skills: [{
-      name: '骨刺',
-      icon: '🦴',
-      desc: '3倍伤害',
-      type: 'dmg',
-      mul: 6,
-      cd: 18,
-      castTime: 2.5
-    }]
-  },{
-    name: '死亡使者萨鲁法尔',
-    emoji: '💀',
-    wave: 5,
-    skills: [{
-      name: '死亡使者之怒',
-      icon: '💀',
-      desc: '3倍暗影伤害',
-      type: 'dmg',
-      mul: 7,
-      cd: 20,
-      castTime: 2.5
-    }],
-        passive: {dmgReduction:0.1}
-  },{
-    name: '普崔塞德教授',
-    skills: [{
-      name: '毒气弹',
-      icon: '🧪',
-      desc: '3倍伤害+中毒',
-      type: 'dmg',
-      mul: 7,
-      dot: true,
-      cd: 20
-    }],
-    emoji: '🧪',
-    wave: 7
-  },{
-    name: '鲜血女王兰娜瑟尔',
-    skills: [{
-      name: '鲜血之咬',
-      icon: '🧛‍♀️',
-      desc: '3倍伤害+吸血50%',
-      type: 'dmg',
-      mul: 8,
-      lifeSteal: 0.5,
-      cd: 22
-    }],
-    emoji: '🧛‍♀️',
-    wave: 9
-  },{
-    name: '辛达苟萨',
-    emoji: '🐉',
-    wave: 11,
-    skills: [{
-      name: '冰霜吐息',
-      icon: '❄️',
-      desc: '3倍冰霜伤害',
-      type: 'dmg',
-      mul: 10,
-      cd: 26,
-      castTime: 4
-    },{
-      name: '冰墓',
-      icon: '❄️',
-      desc: '3倍AOE必暴',
-      type: 'dmg',
-      mul: 8,
-      alwaysCrit: true,
-      cd: 38,
-      castTime: 4
-    }],
-        passive: {dmgReduction:0.1}
-  },{
-    name: '巫妖王',
-    emoji: '☠️',
-    wave: 14,
-    skills: [{
-      name: '霜之哀伤',
-      icon: '☠️',
-      desc: '12倍暗影冰霜',
-      type: 'dmg',
-      mul: 12,
-      cd: 30,
-      castTime: 5
-    },{
-      name: '亡者大军',
-      icon: '🧟',
-      desc: '3倍AOE必暴',
-      type: 'dmg',
-      mul: 10,
-      alwaysCrit: true,
-      cd: 48,
-      castTime: 5
-    }],
-        passive: {dmgReduction:0.1}
-  }],
+  bosses: [
+        {
+          name: "玛洛加尔领主",
+          emoji: "💀",
+          wave: 3,
+          skills: [
+            {name: "骨刺", icon: "🦴", desc: "6倍伤害", type: "dmg", mul: 6, castTime: 2.5},
+            {name: "白骨风暴", icon: "💀", desc: "7倍AOE伤害", type: "dmg", mul: 7, castTime: 3.5}
+          ],
+          passive: {critChance: 0.2, dmgReduction: 0.2}
+        },
+        {
+          name: "死亡使者萨鲁法尔",
+          emoji: "💀",
+          wave: 6,
+          skills: [
+            {name: "鲜血之力", icon: "🩸", desc: "7倍伤害+吸血30%", type: "dmg", mul: 7, castTime: 3, lifeSteal: 0.3},
+            {name: "死亡之握", icon: "👊", desc: "6倍伤害+减速", type: "dmg", mul: 6, castTime: 3, slow: true}
+          ],
+          passive: {critChance: 0.2, dmgReduction: 0.1, atkBonus: 0.25}
+        },
+        {
+          name: "普崔塞德教授",
+          emoji: "🧪",
+          wave: 9,
+          skills: [
+            {name: "瘟疫爆发", icon: "🦠", desc: "7倍AOE+灼烧", type: "dmg", mul: 7, castTime: 3.5, dot: true},
+            {name: "突变", icon: "🧬", desc: "8倍伤害", type: "dmg", mul: 8, castTime: 3}
+          ],
+          passive: {dodgeChance: 0.1, critChance: 0.25, dmgReduction: 0.2}
+        },
+        {
+          name: "辛达苟萨",
+          emoji: "🐉",
+          wave: 12,
+          skills: [
+            {name: "冰霜吐息", icon: "❄️", desc: "8倍冰霜伤害+减速", type: "dmg", mul: 8, castTime: 3, slow: true},
+            {name: "冰霜之墓", icon: "🧊", desc: "7倍AOE伤害", type: "dmg", mul: 7, castTime: 3.5},
+            {name: "冰冷之握", icon: "💀", desc: "7倍伤害+减速", type: "dmg", mul: 7, castTime: 3, slow: true}
+          ],
+          passive: {dodgeChance: 0.2, critChance: 0.2, dmgReduction: 0.25}
+        },
+        {
+          name: "巫妖王",
+          emoji: "👑",
+          wave: 15,
+          skills: [
+            {name: "霜之哀伤", icon: "🗡️", desc: "9倍伤害+吸血30%", type: "dmg", mul: 9, castTime: 3, lifeSteal: 0.3},
+            {name: "亡者大军", icon: "🧟", desc: "10倍AOE伤害", type: "dmg", mul: 10, castTime: 4},
+            {name: "污染", icon: "☠️", desc: "8倍AOE+灼烧", type: "dmg", mul: 8, castTime: 3.5, dot: true},
+            {name: "巫妖王之怒", icon: "👑", desc: "12倍AOE暗影伤害", type: "dmg", mul: 12, castTime: 6}
+          ],
+          passive: {dodgeChance: 0.25, critChance: 0.35, dmgReduction: 0.35, atkBonus: 0.3}
+        }
+      ],
   desc: '巫妖王的最终堡垒'
 }];
 
