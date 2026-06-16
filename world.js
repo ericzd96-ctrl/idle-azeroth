@@ -205,7 +205,10 @@ function showDungeonFail() {
     <div class="muted" style="margin-top:8px">已获取的装备保留, 返回主城修整后再战!</div>
   `;
   $('modal-dungeon-fail').classList.add('show');
-  log(`💀 副本失败, 保留了 ${allLoot.length} 件装备`, 'bad');
+  // 失败也计算CD,防止无限刷前几波BOSS
+  if (!state.dungeonCd) state.dungeonCd = {};
+  state.dungeonCd[dg.key] = Date.now() + (dg.cd || 600) * 1000;
+  log(`💀 副本失败, 保留了 ${allLoot.length} 件装备 (CD已启动)`, 'bad');
   leaveDungeon();
 }
 

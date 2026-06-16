@@ -1182,7 +1182,7 @@ function compDowned(){return (state._compDownUntil||0)>Date.now();}
 /* 随从当前可否被怪攻击:出战、存活、未阵亡 */
 function companionTargetable(){return !!getActiveCompanion()&&(state._compHp||0)>0&&!compDowned();}
 /* 按定位的吸引仇恨概率:坦克多、治疗少、输出居中 */
-function compAggroChance(){const comp=getActiveCompanion();if(!comp)return 0;const tpl=COMPANIONS.find(c=>c.key===comp.key);const role=tpl&&tpl.role;return role==='tank'?0.45:role==='heal'?0.15:0.20;}
+function compAggroChance(){const comp=getActiveCompanion();if(!comp)return 0;const tpl=COMPANIONS.find(c=>c.key===comp.key);const role=tpl&&tpl.role;return role==='tank'?0.75:role==='heal'?0.15:0.20;}
 /* 随从倒下:清血、进入15秒复活计时 */
 function downCompanion(now){
   state._compHp=0;state._compDownUntil=now+15000;
