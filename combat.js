@@ -804,7 +804,7 @@ function tickBattle(now){
     if(dg)bossData=(dg.bosses||[]).find(b=>b.name===mon.bossName);
     if(!bossData){const map=MAPS.find(m=>m.key===state.currentMap);if(map?.boss)bossData=map.boss;}
     const skillCd=((bossData?.skills||[])[bossSkillIdx%(bossData?.skills||[]).length])?.cd||10;
-    if(bossData?.skills?.length&&now-lastBossSkill>skillCd*1000){const sk=bossData.skills[bossSkillIdx%bossData.skills.length];let castTime=sk.castTime!==undefined?sk.castTime:2;const instant=mon.instantCast&&Math.random()<0.35;if(instant)castTime=0;casting={isBoss:true,bossName:mon.bossName,icon:sk.icon,type:sk.type,heal:sk.heal,mul:sk.mul,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,startTime:now,duration:castTime*1000};log('💀 '+mon.bossName+(instant?' 瞬发 ':' 开始施放 ')+sk.name+'!'+(instant?'(无法打断)':''),'bad');lastBossSkill=now;bossSkillIdx++;}}
+    if(bossData?.skills?.length&&now-lastBossSkill>skillCd*1000){const sk=bossData.skills[bossSkillIdx%bossData.skills.length];let castTime=sk.castTime!==undefined?sk.castTime:2;const instant=mon.instantCast&&Math.random()<0.35;if(instant)castTime=0;casting={isBoss:true,bossName:mon.bossName,icon:sk.icon,type:sk.type,heal:sk.heal,mul:sk.mul,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,startTime:now,duration:castTime*1000};log('💀 '+mon.bossName+(instant?' 瞬发 ':' 开始施放 ')+sk.name+'!'+(instant?'(无法打断)':''),'bad');bossSkillIdx++;}}
   if(state.hp<=0)onHeroDeath();
 }
 
@@ -1084,10 +1084,10 @@ function tickCast(now){
           if(wasCasting.dot){applyHeroDebuff('burn',6000,{dps:Math.max(1,Math.floor(taken*0.12))});log('☠️ 你陷入了'+(wasCasting.icon||'')+'持续伤害!','bad');}
           else if(wasCasting.slow){applyHeroDebuff('chill',4000);log('❄️ 你被减速了!','bad');}
           else{applyHeroDebuff('vulnerable',5000);log('🩸 你被打成了易伤(受到伤害+20%,5秒)','bad');}
-          if(state.hp<=0)onHeroDeath();}}
+          if(state.hp<=0)onHeroDeath();}
+        lastBossSkill=now;}}
     }else{castSkill(wasCasting.skillKey,wasCasting.manual);}
   }
-}
 function castSkill(skillKey,manual){
   const c=getCls();const sk=c.skills[skillKey];if(!sk)return;
   if(!state.unlockedSkills[skillKey]){if(manual)log('技能未解锁','bad');return;}
