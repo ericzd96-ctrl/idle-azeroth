@@ -252,6 +252,7 @@ function recomputeStats() {
 
   const primary = attrs[c.attackAttr];
   let atk = base.atk + primary * 1.5 + (lvl-1) * 2;
+  let equipAtk = 0;   // 装备攻击(不受 atkPct 加成)
   let def = base.def + Math.floor(attrs.sta * 0.3) + (lvl-1) * 1;
   let hpMax = base.hpMax + attrs.sta * 10 + (lvl-1) * 12;
   let mpMax = (c.resKey === 'rage' || c.resKey === 'energy') ? 100 : base.mpMax + attrs.int * 5 + (lvl-1) * 5;
@@ -267,14 +268,14 @@ function recomputeStats() {
     // 用 collectItemBonuses 收集"基础+词缀+宝石+附魔"的总加成
     const b = (typeof collectItemBonuses === 'function') ? collectItemBonuses(it) : null;
     if (b) {
-      // 直接属性
-      atk+=b.atk; def+=b.def; hpMax+=b.hp; crit+=b.crit;
+      // 直接属性(装备攻/防/血不受百分比加成)
+      equipAtk+=b.atk; def+=b.def; hpMax+=b.hp; crit+=b.crit;
       critd+=b.critd; spd+=b.spd; reg+=b.reg;
       leech+=b.leech; vers+=b.vers; mastery+=b.mastery; haste+=b.haste||0;
-      // 5维度属性 (并算上主属性加攻击/耐力加生命)
+      // 5维度属性 (并算上主属性加攻击/耐力加生命,装备主属性也不受百分比加成)
       for (const ak of ['str','agi','int','spi','sta']) {
         equipAttrBonus[ak] += b[ak];
-        if (ak === c.attackAttr) atk += b[ak] * 1.5;
+        if (ak === c.attackAttr) equipAtk += b[ak] * 1.5;
         if (ak === 'sta') hpMax += b[ak] * 10;
       }
       // 词缀/附魔/宝石带来的百分比与额外
@@ -289,13 +290,13 @@ function recomputeStats() {
     } else {
       // 回退: 老逻辑(不依赖 enhance.js)
       for (const [k, v] of Object.entries(it.stats)) {
-        if (k==='atk') atk+=v; else if (k==='def') def+=v;
+        if (k==='atk') equipAtk+=v; else if (k==='def') def+=v;
         else if (k==='hp') hpMax+=v; else if (k==='crit') crit+=v;
         else if (k==='critd') critd+=v; else if (k==='spd') spd+=v;
         else if (k==='reg') reg+=v;
         else if (['str','agi','int','spi','sta'].includes(k)) {
           equipAttrBonus[k]+=v;
-          if (k === c.attackAttr) atk += v * 1.5;
+          if (k === c.attackAttr) equipAtk += v * 1.5;
           if (k === 'sta') hpMax += v * 10;
         }
         else if (k==='leech') leech+=v; else if (k==='vers') vers+=v;
@@ -304,18 +305,18 @@ function recomputeStats() {
     }
   }
   for (const k of Object.keys(attrs)) attrs[k] += (equipAttrBonus[k] || 0);
-  // 装备来源的属性百分比(在已加上装备实数后再乘),并把增量补到 atk/hpMax
+  // 装备来源的属性百分比(在已加上装备实数后再乘),并把增量补到 equipAtk(不受atkPct加成)
   for (const k of ['str','agi','int','spi','sta']) {
     if (!gearAttrPct[k]) continue;
     const before = attrs[k];
     const after = Math.floor(before * (1 + gearAttrPct[k]/100));
     const delta = after - before;
     attrs[k] = after;
-    if (k === c.attackAttr) atk += delta * 1.5;
+    if (k === c.attackAttr) equipAtk += delta * 1.5;
     if (k === 'sta') hpMax += delta * 10;
   }
   _saveSrc('装备');
-  atk = Math.floor(atk * (1 + atkPct/100)); hpMax = Math.floor(hpMax * (1 + hpPct/100));
+  atk = Math.floor(atk * (1 + atkPct/100)) + equipAtk; hpMax = Math.floor(hpMax * (1 + hpPct/100));
   def = Math.floor(def * (1 + defPct/100));
   // 攻速稀有化:spdPct 的各来源数值已在 spd_tuning.js 加载期统一归一化为 30%(显示=实际),
   // 故此处按面值应用即可,不再隐藏缩放。技能增益(风怒/嗜血等)走下方 state.buffs 独立乘法。
