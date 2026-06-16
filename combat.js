@@ -868,9 +868,15 @@ function onMonsterDeath(mon){
   if(typeof progressionOnKill==='function') progressionOnKill(mon);
   // 坐骑掉落钩子(副本/大秘境 BOSS)
   if(mon.isBoss&&(state.mode==='dungeon'||state.mode==='mythic')&&typeof mountOnDungeonBossKill==='function') mountOnDungeonBossKill();
-  // 掉率受声望加成 (一次性提升)
-  const adjDrop=(mon.isBoss&&state.mode==='dungeon')?1:Math.min(1,mon.dropRate*bonus.dropMult*olp);   // 副本BOSS必掉1件其专属池装备(不吃越级惩罚)
-  if(Math.random()<adjDrop){const dKey=mon.fromDungeon?((state.dungeonState||state.mythicState)?.key):null;const it=rollItem(mon.maxRarity,mon.lvl,dKey,mon.isBoss?mon.bossName:null);if((state.mode==='dungeon'||state.mode==='mythic')&&(state.dungeonState||state.mythicState))(state.dungeonState||state.mythicState).loot.push(it);addToInventory(it);if(typeof eventsOnItemGet==='function') eventsOnItemGet(it);if(it.rarity==='legend'&&typeof progressionOnLegendary==='function') progressionOnLegendary();const c=it.rarity==='legend'?'legend':(it.rarity==='epic'?'epic':'loot');log('🎁 掉落 ['+it.rarityName+'] '+it.name,c);}
+  // 掉率受声望加成 (一次性提升), 副本/大秘境BOSS必掉1件
+  const adjDrop=(mon.isBoss&&(state.mode==='dungeon'||state.mode==='mythic'))?1:Math.min(1,mon.dropRate*bonus.dropMult*olp);
+  if(Math.random()<adjDrop){
+    const dKey=mon.fromDungeon?((state.dungeonState||state.mythicState)?.key):null;
+    const it=mon._isRaid
+      ? rollItemOfRarity('epic',mon.lvl)   // 团本:必紫(橙装走下方额外掉落)
+      : rollItem(mon.maxRarity,mon.lvl,dKey,mon.isBoss?mon.bossName:null);
+    if((state.mode==='dungeon'||state.mode==='mythic')&&(state.dungeonState||state.mythicState))(state.dungeonState||state.mythicState).loot.push(it);addToInventory(it);if(typeof eventsOnItemGet==='function') eventsOnItemGet(it);if(it.rarity==='legend'&&typeof progressionOnLegendary==='function') progressionOnLegendary();const c=it.rarity==='legend'?'legend':(it.rarity==='epic'?'epic':'loot');log('🎁 掉落 ['+it.rarityName+'] '+it.name,c);
+  }
   // 团本最终BOSS额外低概率掉落橙装
   if(mon._isRaidFinal&&Math.random()<0.08){const dKey2=mon.fromDungeon?((state.dungeonState||state.mythicState)?.key):null;const legend=rollItem('legend',mon.lvl,dKey2,mon.bossName);addToInventory(legend);log('🎉 团本最终BOSS额外掉落 ['+legend.rarityName+'] '+legend.name,'legend');if(typeof progressionOnLegendary==='function') progressionOnLegendary();}
   // 世界Boss 击杀
