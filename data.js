@@ -1168,7 +1168,7 @@ const DUNGEONS = [{
       mul: 2.5,
       cd: 10,
       castTime: 1
-    }],
+    , dot: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '塔格尔·邪炉',
@@ -1191,7 +1191,7 @@ const DUNGEONS = [{
       mul: 4,
       cd: 20,
       castTime: 2
-    }],
+    , dot: true}],
         passive: {dmgReduction:0.1}
   }],
   desc: '奥格瑞玛地下的火焰洞穴'
@@ -1214,7 +1214,7 @@ const DUNGEONS = [{
       mul: 2.5,
       cd: 10,
       castTime: 1
-    }],
+    , stun: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '斯尼德',
@@ -1228,7 +1228,7 @@ const DUNGEONS = [{
       mul: 3,
       cd: 12,
       castTime: 1
-    },{
+    , stun: true},{
       name: '伐木机撞击',
       icon: '🚜',
       desc: '3倍伤害',
@@ -1250,7 +1250,7 @@ const DUNGEONS = [{
       mul: 2.5,
       cd: 10,
       castTime: 1
-    },{
+    , weaken: true},{
       name: '烟雾弹',
       icon: '💨',
       desc: '降低命中10秒',
@@ -1297,7 +1297,7 @@ const DUNGEONS = [{
       mul: 3.5,
       cd: 14,
       castTime: 1.5
-    }],
+    , stun: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '梦魇之王',
@@ -1311,7 +1311,7 @@ const DUNGEONS = [{
       mul: 4.5,
       cd: 16,
       castTime: 2
-    },{
+    , weaken: true},{
       name: '恐惧咆哮',
       icon: '👻',
       desc: '3倍伤害+减速',
@@ -1357,7 +1357,7 @@ const DUNGEONS = [{
       mul: 3,
       cd: 12,
       castTime: 1
-    }],
+    , stun: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '阿库麦尔',
@@ -1371,7 +1371,7 @@ const DUNGEONS = [{
       mul: 4,
       cd: 14,
       castTime: 1.5
-    },{
+    , weaken: true},{
       name: '暗潮',
       icon: '🌊',
       desc: '3倍AOE',
@@ -1379,7 +1379,7 @@ const DUNGEONS = [{
       mul: 3,
       cd: 18,
       castTime: 1.5
-    }],
+    , aoe: true}],
         passive: {dmgReduction:0.1}
   }],
   desc: '佐拉姆海岸下的远古神殿'
@@ -1417,7 +1417,7 @@ const DUNGEONS = [{
       mul: 3.5,
       cd: 14,
       castTime: 1.5
-    }],
+    , weaken: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '阿鲁高',
@@ -1431,7 +1431,7 @@ const DUNGEONS = [{
       mul: 4.5,
       cd: 16,
       castTime: 2
-    },{
+    , weaken: true},{
       name: '召唤狼人',
       icon: '🐺',
       desc: '3倍伤害',
@@ -1462,7 +1462,7 @@ const DUNGEONS = [{
       mul: 3,
       cd: 12,
       castTime: 1
-    }],
+    , stun: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '群体打击者9-60',
@@ -1476,7 +1476,7 @@ const DUNGEONS = [{
       mul: 3.5,
       cd: 14,
       castTime: 1.5
-    }],
+    , stun: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '机械师瑟玛普拉格',
@@ -1490,7 +1490,7 @@ const DUNGEONS = [{
       mul: 4,
       cd: 16,
       castTime: 1.5
-    },{
+    , stun: true},{
       name: '自爆机器人',
       icon: '💣',
       desc: '3倍伤害',
@@ -1521,7 +1521,7 @@ const DUNGEONS = [{
       mul: 3,
       cd: 12,
       castTime: 1
-    }],
+    , stun: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '阿格姆',
@@ -1535,7 +1535,7 @@ const DUNGEONS = [{
       mul: 2,
       cd: 14,
       castTime: 1
-    }],
+    , spdBuff: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '卡尔加·刺肋',
@@ -1581,7 +1581,7 @@ const DUNGEONS = [{
       mul: 3,
       cd: 10,
       castTime: 1
-    }],
+    , stun: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '赫洛德',
@@ -1595,7 +1595,7 @@ const DUNGEONS = [{
       mul: 4,
       cd: 14,
       castTime: 1.5
-    }],
+    , stun: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '奥法师杜安',
@@ -1609,7 +1609,7 @@ const DUNGEONS = [{
       mul: 4,
       cd: 14,
       castTime: 1.5
-    }],
+    , aoe: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '莫格莱尼',
@@ -1632,7 +1632,7 @@ const DUNGEONS = [{
       alwaysCrit: true,
       cd: 26,
       castTime: 2.5
-    }],
+    , weaken: true}],
         passive: {dmgReduction:0.1}
   }],
   desc: '狂热的圣光信徒'
@@ -1670,7 +1670,7 @@ const DUNGEONS = [{
       mul: 3.5,
       cd: 14,
       castTime: 1.5
-    }],
+    , dot: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '巫妖寒冰之王',
@@ -1684,7 +1684,7 @@ const DUNGEONS = [{
       mul: 4.5,
       cd: 16,
       castTime: 2
-    },{
+    , slow: true},{
       name: '冰霜新星',
       icon: '💠',
       desc: '3倍AOE+减速',
@@ -1745,7 +1745,7 @@ const DUNGEONS = [{
       mul: 5,
       cd: 18,
       castTime: 2
-    },{
+    , weaken: true},{
       name: '岩石风暴',
       icon: '🪨',
       desc: '3倍AOE',
@@ -1753,7 +1753,7 @@ const DUNGEONS = [{
       mul: 6,
       cd: 24,
       castTime: 3
-    }],
+    , aoe: true}],
         passive: {dmgReduction:0.1}
   }],
   desc: '泰坦遗迹中的土灵密室'
@@ -1776,7 +1776,7 @@ const DUNGEONS = [{
       mul: 3.5,
       cd: 14,
       castTime: 1.5
-    }],
+    , weaken: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '工匠吉兹洛克',
@@ -1813,7 +1813,7 @@ const DUNGEONS = [{
       mul: 6,
       cd: 26,
       castTime: 3
-    }],
+    , aoe: true}],
         passive: {dmgReduction:0.1}
   }],
   desc: '半人马与土元素的腐化神殿'
@@ -1836,7 +1836,7 @@ const DUNGEONS = [{
       mul: 3.5,
       cd: 14,
       castTime: 1.5
-    }],
+    , weaken: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '乌克兹·沙顶',
@@ -1864,7 +1864,7 @@ const DUNGEONS = [{
       mul: 5,
       cd: 18,
       castTime: 2
-    },{
+    , weaken: true},{
       name: '巫毒诅咒',
       icon: '💀',
       desc: '3倍必暴+流血',
@@ -1897,7 +1897,7 @@ const DUNGEONS = [{
       mul: 3.5,
       cd: 14,
       castTime: 1.5
-    }],
+    , weaken: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '德姆塞卡尔',
@@ -1911,7 +1911,7 @@ const DUNGEONS = [{
       mul: 4.5,
       cd: 16,
       castTime: 2
-    }],
+    , dot: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '伊兰尼库斯之影',
@@ -1933,7 +1933,7 @@ const DUNGEONS = [{
       mul: 7,
       cd: 26,
       castTime: 3
-    }],
+    , weaken: true}],
         passive: {dmgReduction:0.1}
   }],
   desc: '悲伤沼泽水下的绿龙神殿'
@@ -1970,7 +1970,7 @@ const DUNGEONS = [{
       mul: 5,
       cd: 18,
       castTime: 2
-    }],
+    , weaken: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '拉斯·弗罗斯特维斯帕',
@@ -1984,7 +1984,7 @@ const DUNGEONS = [{
       mul: 6,
       cd: 20,
       castTime: 2.5
-    },{
+    , slow: true},{
       name: '死灵诅咒',
       icon: '💀',
       desc: '3倍必暴',
@@ -1993,7 +1993,7 @@ const DUNGEONS = [{
       alwaysCrit: true,
       cd: 28,
       castTime: 2.5
-    }],
+    , weaken: true}],
         passive: {dmgReduction:0.1}
   }],
   desc: '死灵术士的禁忌学府'
@@ -2030,7 +2030,7 @@ const DUNGEONS = [{
       mul: 4.5,
       cd: 16,
       castTime: 2
-    }],
+    , dot: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '弗莱拉斯大使',
@@ -2044,7 +2044,7 @@ const DUNGEONS = [{
       mul: 5,
       cd: 18,
       castTime: 2
-    }],
+    , dot: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '达格兰·索瑞森大帝',
@@ -2058,7 +2058,7 @@ const DUNGEONS = [{
       mul: 7,
       cd: 22,
       castTime: 3
-    },{
+    , dot: true},{
       name: '熔火之心',
       icon: '🌋',
       desc: '3倍AOE',
@@ -2066,7 +2066,7 @@ const DUNGEONS = [{
       mul: 6,
       cd: 30,
       castTime: 3
-    }],
+    , dot: true}],
         passive: {dmgReduction:0.1}
   }],
   desc: '黑铁矮人的熔火帝国'
@@ -2104,7 +2104,7 @@ const DUNGEONS = [{
       mul: 5,
       cd: 16,
       castTime: 2
-    }],
+    , dot: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '巴纳扎尔',
@@ -2118,7 +2118,7 @@ const DUNGEONS = [{
       mul: 5,
       cd: 18,
       castTime: 2
-    }],
+    , weaken: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '瑞文戴尔男爵',
@@ -2132,7 +2132,7 @@ const DUNGEONS = [{
       mul: 6,
       cd: 20,
       castTime: 2.5
-    },{
+    , weaken: true},{
       name: '亡灵大军',
       icon: '🧟',
       desc: '3倍AOE',
@@ -2140,7 +2140,7 @@ const DUNGEONS = [{
       mul: 7,
       cd: 30,
       castTime: 3
-    }],
+    , aoe: true}],
         passive: {dmgReduction:0.1}
   }],
   desc: '被天灾军团毁灭的人类城市'
@@ -2241,7 +2241,7 @@ const DUNGEONS = [{
       mul: 4.5,
       cd: 16,
       castTime: 2
-    }],
+    , stun: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '节点亲王沙法尔',
@@ -2255,7 +2255,7 @@ const DUNGEONS = [{
       mul: 5,
       cd: 18,
       castTime: 2
-    },{
+    , weaken: true},{
       name: '能量虚空',
       icon: '⚡',
       desc: '3倍必暴',
@@ -2341,7 +2341,7 @@ const DUNGEONS = [{
       mul: 4.5,
       cd: 14,
       castTime: 1.5
-    }],
+    , dot: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '机械师斯蒂里格',
@@ -2355,7 +2355,7 @@ const DUNGEONS = [{
       mul: 5,
       cd: 16,
       castTime: 2
-    }],
+    , aoe: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '督军卡利瑟里斯',
@@ -2369,7 +2369,7 @@ const DUNGEONS = [{
       mul: 6,
       cd: 20,
       castTime: 2.5
-    }],
+    , weaken: true}],
         passive: {dmgReduction:0.1}
   }],
   desc: '盘牙水库的蒸汽密室'
@@ -2456,7 +2456,7 @@ const DUNGEONS = [{
       mul: 5,
       cd: 16,
       castTime: 2
-    }],
+    , dot: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '女祭司德莉希亚',
@@ -2484,7 +2484,7 @@ const DUNGEONS = [{
       mul: 8,
       cd: 22,
       castTime: 3
-    },{
+    , dot: true},{
       name: '炎爆术',
       icon: '☄️',
       desc: '3倍必暴',
@@ -2493,7 +2493,7 @@ const DUNGEONS = [{
       alwaysCrit: true,
       cd: 36,
       castTime: 4
-    }],
+    , dot: true}],
         passive: {dmgReduction:0.1}
   }],
   desc: '血精灵王子的最后堡垒'
@@ -2570,7 +2570,7 @@ const DUNGEONS = [{
       mul: 5,
       cd: 14,
       castTime: 2
-    }],
+    , stun: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '沃尔坎',
@@ -2584,7 +2584,7 @@ const DUNGEONS = [{
       mul: 6,
       cd: 18,
       castTime: 2.5
-    }],
+    , dot: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '洛肯',
@@ -2598,7 +2598,7 @@ const DUNGEONS = [{
       mul: 8,
       cd: 22,
       castTime: 3
-    },{
+    , stun: true},{
       name: '雷霆万钧',
       icon: '⛈️',
       desc: '3倍AOE必暴',
@@ -2607,7 +2607,7 @@ const DUNGEONS = [{
       alwaysCrit: true,
       cd: 32,
       castTime: 3
-    }],
+    , stun: true}],
         passive: {dmgReduction:0.1}
   }],
   desc: '奥杜尔的泰坦闪电圣殿'
@@ -2644,7 +2644,7 @@ const DUNGEONS = [{
       mul: 5.5,
       cd: 16,
       castTime: 2
-    }],
+    , weaken: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '纯洁者耶德瑞克',
@@ -2658,7 +2658,7 @@ const DUNGEONS = [{
       mul: 6,
       cd: 18,
       castTime: 2.5
-    }],
+    , stun: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '银白十字军冠军',
@@ -2813,7 +2813,7 @@ const DUNGEONS = [{
       mul: 6,
       cd: 18,
       castTime: 2.5
-    }],
+    , weaken: true}],
         passive: {dmgReduction:0.1}
   },{
     name: '灵魂吞噬者',
@@ -2842,7 +2842,7 @@ const DUNGEONS = [{
       mul: 10,
       cd: 28,
       castTime: 4
-    },{
+    , weaken: true},{
       name: '灵魂风暴',
       icon: '💀',
       desc: '3倍AOE必暴',
@@ -2851,7 +2851,7 @@ const DUNGEONS = [{
       alwaysCrit: true,
       cd: 40,
       castTime: 4
-    }],
+    , aoe: true}],
         passive: {dmgReduction:0.1}
   }],
   desc: '冰冠堡垒的亡灵熔炉'
