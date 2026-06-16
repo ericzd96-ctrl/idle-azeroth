@@ -1078,7 +1078,7 @@ function collectCompanionMod(){
       for(const[k,v]of Object.entries(tpl.bonus||{}))out[k]=(out[k]||0)+v*starF;
       const role=(typeof ROLE_BONUS==='object')&&ROLE_BONUS[tpl.role];
       if(role)for(const[k,v]of Object.entries(role))out[k]=(out[k]||0)+v;}}
-  const owned=state.companions.length;out.atkPct+=owned*0.3;out.hpPct+=owned*0.3;   // 收藏被动
+  const owned=state.companions.length;out.atkPct+=owned*0.15;out.hpPct+=owned*0.15;   // 收藏被动
   if(typeof COMPANION_BONDS!=='undefined'){const ks=new Set(state.companions.map(c=>c.key));
     for(const b of COMPANION_BONDS){if(b.keys.every(k=>ks.has(k)))for(const[k,v]of Object.entries(b.mod))out[k]=(out[k]||0)+v;}}
   return out;

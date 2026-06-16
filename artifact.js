@@ -29,10 +29,10 @@ const ARTIFACTS = {
 /* 神器天赋节点(共 12,3 树 × 4)*/
 const ARTIFACT_TRAITS = [
   // 攻势
-  { key:'edgeOfWar',    tree:'offense', name:'战意之刃',  desc:'攻击 +2%/阶',  mod:{atkPct:2},          maxRank:3 },
+  { key:'edgeOfWar',    tree:'offense', name:'战意之刃',  desc:'攻击 +1%/阶',  mod:{atkPct:1},          maxRank:3 },
   { key:'lethalStrike', tree:'offense', name:'致命强袭',  desc:'精通 +3%/阶',  mod:{mastery:3},         maxRank:3, prereq:'edgeOfWar' },
   { key:'frenzy',       tree:'offense', name:'狂怒涌动',  desc:'攻速 +3%/阶',  mod:{spdPct:3},          maxRank:3, prereq:'lethalStrike' },
-  { key:'wrathSurge',   tree:'offense', name:'怒火奔流',  desc:'攻击 +3%/阶',  mod:{atkPct:3},          maxRank:3, prereq:'frenzy' },
+  { key:'wrathSurge',   tree:'offense', name:'怒火奔流',  desc:'攻击 +2%/阶',  mod:{atkPct:2},          maxRank:3, prereq:'frenzy' },
   // 守护
   { key:'ironBody',     tree:'defense', name:'铁躯',      desc:'生命 +3%/阶',  mod:{hpPct:3},           maxRank:3 },
   { key:'guardingAura', tree:'defense', name:'护体光环',  desc:'防御 +4%/阶',  mod:{defPct:4},          maxRank:3, prereq:'ironBody' },
@@ -53,9 +53,9 @@ const ARTIFACT_TREES = {
 
 /* 里程碑 — 神器自身的觉醒(独立于光辉值) */
 const ARTIFACT_MILESTONES = [
-  { lvl:10, name:'觉醒', desc:'+5% 全部基础属性',        mod:{atkPct:5, hpPct:5, defPct:5} },
-  { lvl:25, name:'共鸣', desc:'+8% 攻击/生命', mod:{atkPct:8, hpPct:8} },
-  { lvl:45, name:'神格', desc:'+15% 全属性, +5 精通',   mod:{atkPct:15, hpPct:15, defPct:15, mastery:5} },
+  { lvl:10, name:'觉醒', desc:'+4% 全部基础属性',        mod:{atkPct:4, hpPct:5, defPct:5} },
+  { lvl:25, name:'共鸣', desc:'+6% 攻击/生命', mod:{atkPct:6, hpPct:8} },
+  { lvl:45, name:'神格', desc:'+11% 全属性, +5 精通',   mod:{atkPct:11, hpPct:15, defPct:15, mastery:5} },
 ];
 
 /* ---------- 工具 ---------- */
@@ -153,7 +153,7 @@ function artifactReset() {
 /* ---------- 收集加成 (供 recomputeStats 调用) ---------- */
 function collectArtifactMod() {
   ensureArtifactState();
-  const out = { atkPct:0, hpPct:0, defPct:0, critdPct:0, spdPct:0,
+  const out = { atkPct:1, hpPct:0, defPct:0, critdPct:0, spdPct:0,
                 crit:0, leech:0, vers:0, mastery:0,
                 xpMult:0, goldMult:0, dropMult:0 };
   if (!artifactUnlocked()) return out;
