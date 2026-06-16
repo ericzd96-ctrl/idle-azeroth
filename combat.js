@@ -6,7 +6,7 @@
 const MASTERY_TYPE = {
   dmgAmp:    { per:0.6,  fmt:n=>`造成的伤害 +${(n*0.6).toFixed(1)}%` },
   dotAmp:    { per:1.2,  fmt:n=>`持续伤害(灼烧/中毒/流血)效果 +${(n*1.2).toFixed(0)}%` },
-  leechAmp:  { per:0.6,  fmt:n=>`普攻吸血效果 +${(n*0.6*0.5).toFixed(1)}%` },
+  leechAmp:  { per:0.3,  fmt:n=>`普攻吸血效果 +${(n*0.3*0.5).toFixed(1)}%` },
   dr:        { per:0.25, fmt:n=>`受到的伤害 -${Math.min(30,n*0.25).toFixed(1)}%` },
   healAmp:   { per:0.8,  fmt:n=>`治疗/护盾量 +${(n*0.8).toFixed(0)}%` },
   critdAmp:  { per:1.5,  fmt:n=>`暴击伤害 +${(n*1.5).toFixed(0)}%` },
@@ -899,21 +899,21 @@ function rollItemOfRarity(rarityKey,fromLvl){
 function finishItem(item,slotKey,rarity,power,extraStats){
   const slot=SLOT_INFO[slotKey];
   const lvlBonus=1+power*0.01; // 等级越高属性越多(2026-06-16 0.02→0.01:压平后期二次膨胀)
-  const baseVal={atk:Math.floor((3+power*1.0)*lvlBonus),def:Math.floor((2+power*0.55)*lvlBonus),hp:Math.floor((12+power*5)*lvlBonus),crit:1+power*0.1,critd:6+power*0.6,reg:1+power*0.2,str:Math.floor((1.5+power*0.4)*lvlBonus),agi:Math.floor((1.5+power*0.4)*lvlBonus),int:Math.floor((1.5+power*0.4)*lvlBonus),spi:Math.floor((1+power*0.35)*lvlBonus),sta:Math.floor((1.5+power*0.4)*lvlBonus),leech:0.5+power*0.06,vers:0.5+power*0.06,mastery:1+power*0.12};
+  const baseVal={atk:Math.floor((3+power*1.0)*lvlBonus),def:Math.floor((2+power*0.55)*lvlBonus),hp:Math.floor((12+power*5)*lvlBonus),crit:1+power*0.1,critd:6+power*0.6,reg:1+power*0.2,str:Math.floor((1.5+power*0.4)*lvlBonus),agi:Math.floor((1.5+power*0.4)*lvlBonus),int:Math.floor((1.5+power*0.4)*lvlBonus),spi:Math.floor((1+power*0.35)*lvlBonus),sta:Math.floor((1.5+power*0.4)*lvlBonus),leech:0.5+power*0.06,vers:0.5+power*0.06,haste:0.5+power*0.06};
   const primary=slot.mainStat;let pv=baseVal[primary]*rarity.mult;
   item.stats[primary]=Math.max(1,Math.floor(pv));
   const bonusCount={common:1,uncommon:2,rare:3,epic:4,legend:5}[rarity.key];
-  // 吸血/全能/暴击/暴伤已从常规副属池移除,改为下方"惊喜副属性"
-  const possible=['atk','def','hp','reg','str','agi','int','spi','sta','mastery'].filter(k=>k!==primary);
+  // 吸血/全能/暴击/暴伤/极速/精通已从常规副属池移除,改为下方"惊喜副属性"
+  const possible=['atk','def','hp','reg','str','agi','int','spi','sta'].filter(k=>k!==primary);
   for(let i=0;i<bonusCount;i++){const k=possible.splice(rng(0,possible.length-1),1)[0];if(!k)break;item.stats[k]=Math.max(1,Math.floor(baseVal[k]*0.7*rarity.mult));}
-  // 副属性(暴击/暴伤/吸血/全能/极速)只能来自下方"惊喜roll",不从命名装/池子的预设 stats 注入
-  const SURPRISE_KEYS=['crit','critd','critdPct','leech','vers','haste'];
+  // 副属性(暴击/暴伤/吸血/全能/极速/精通)只能来自下方"惊喜roll",不从命名装/池子的预设 stats 注入
+  const SURPRISE_KEYS=['crit','critd','critdPct','leech','vers','haste','mastery'];
   if(extraStats){for(const[k,v]of Object.entries(extraStats)){if(SURPRISE_KEYS.includes(k))continue;item.stats[k]=(item.stats[k]||0)+Math.max(1,Math.floor(baseVal[k]*0.5*v*rarity.mult));}}
   // ---- 惊喜副属性 ----
   // 仅蓝装(rare)以上才可能出现,各自独立低概率,不占常规副属分配(额外附加),可同时出现也可能都不出现。
-  // 数值随品质 蓝/紫/橙:吸血/全能/极速/暴击 = 1/2/4;暴伤倍率更高 = 3/6/12。
+  // 数值随品质 蓝/紫/橙:吸血/全能/极速/暴击/精通 = 1/2/4;暴伤倍率更高 = 3/6/12。
   const SURPRISE_CHANCE=0.22;   // 每个惊喜副属独立出现概率(可调:越小越稀有)
-  const SURPRISE={leech:{rare:1,epic:2,legend:4},vers:{rare:1,epic:2,legend:4},haste:{rare:1,epic:2,legend:4},crit:{rare:1,epic:2,legend:4},critd:{rare:3,epic:6,legend:12}};
+  const SURPRISE={leech:{rare:1,epic:2,legend:4},vers:{rare:1,epic:2,legend:4},haste:{rare:1,epic:2,legend:4},mastery:{rare:1,epic:2,legend:4},crit:{rare:1,epic:2,legend:4},critd:{rare:3,epic:6,legend:12}};
   for(const sk in SURPRISE){const v=SURPRISE[sk][rarity.key];if(v&&Math.random()<SURPRISE_CHANCE)item.stats[sk]=(item.stats[sk]||0)+v;}
   item.reqLvl=Math.max(1,Math.floor(power*0.9));item.sell=Math.floor(10*rarity.mult*(1+power*0.5));
   if(typeof enhanceItemOnCreate==='function') enhanceItemOnCreate(item,rarity,power);

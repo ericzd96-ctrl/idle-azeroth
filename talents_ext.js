@@ -13,16 +13,16 @@
 
   // 攻击向进阶池(含挪来的:武器大师/致命精准/渴血/全能/精通)
   const OFFENSE = [
-    { name:'武器大师', desc:'攻击 +6%/层',            max:5, mod:{atkPct:6} },
+    { name:'武器大师', desc:'攻击 +2%/层',            max:5, mod:{atkPct:2} },
     { name:'致命精准', desc:'暴击 +2%/层 · 暴伤 +6%/层', max:5, mod:{crit:2, critdPct:6} },
     { name:'疾风步',   desc:'攻速 +5%/层',            max:5, mod:{spdPct:5} },
     { name:'连击',     desc:'攻击有 3%/层 几率额外攻击一次', max:5, mod:{extraAtk:3} },
     { name:'破甲',     desc:'攻击无视目标 4%/层 护甲',  max:5, mod:{armorPen:4} },
-    { name:'狂暴',     desc:'攻击 +8%/层 · 攻速 +3%/层', max:3, mod:{atkPct:8, spdPct:3} },
+    { name:'狂暴',     desc:'攻击 +3%/层 · 攻速 +3%/层', max:3, mod:{atkPct:3, spdPct:3} },
     { name:'处决精通', desc:'斩杀加成 +6%/层',         max:3, mod:{executeBonus:6} },
     { name:'震慑打击', desc:'攻击有 1%/层 几率击晕敌人1.5秒', max:3, mod:{stunChance:1} },
-    { name:'精通·攻', desc:'精通 +4%/层',            max:3, mod:{mastery:4} },
-    { name:'战争领主', desc:'攻击 +12%/层 · 暴伤 +10%/层 · 精通 +5%/层', max:3, mod:{atkPct:12, critdPct:10, mastery:5} },
+    { name:'精通·攻', desc:'精通 +2%/层',            max:3, mod:{mastery:2} },
+    { name:'战争领主', desc:'攻击 +2%/层 · 暴伤 +10%/层 · 精通 +2%/层', max:3, mod:{atkPct:5, critdPct:10, mastery:3} },
   ];
   // 防御向进阶池(含挪来的:钢铁之躯/全能宗师/精通)
   const DEFENSE = [
@@ -34,8 +34,8 @@
     { name:'守护',     desc:'防御 +8%/层',            max:3, mod:{defPct:8} },
     { name:'韧性',     desc:'生命 +5%/层 · 全能 +2%/层', max:3, mod:{hpPct:5, vers:2} },
     { name:'节能',     desc:'技能减耗 +4%/层',         max:3, mod:{costReduction:4} },
-    { name:'精通·守', desc:'精通 +4%/层 · 防御 +4%/层', max:3, mod:{mastery:4, defPct:4} },
-    { name:'不灭壁垒', desc:'生命 +12%/层 · 防御 +10%/层 · 精通 +5%/层', max:3, mod:{hpPct:12, defPct:10, mastery:5} },
+    { name:'精通·守', desc:'精通 +2%/层 · 防御 +4%/层', max:3, mod:{mastery:2, defPct:4} },
+    { name:'不灭壁垒', desc:'生命 +12%/层 · 防御 +10%/层 · 精通 +2%/层', max:3, mod:{hpPct:12, defPct:10, mastery:3} },
   ];
 
   function treeRole(tree) {

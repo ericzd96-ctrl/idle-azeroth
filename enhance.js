@@ -17,8 +17,7 @@ const AFFIX_POOL = [
   { key:'swift',     name:'疾风的',    mod:'spdPct',       tierVals:[[2,4],[4,7],[7,12]] },
   { key:'sturdy',    name:'坚韧的',    mod:'hpPct',        tierVals:[[2,4],[4,8],[8,14]] },
   { key:'fortified', name:'壁垒的',    mod:'defPct',       tierVals:[[2,5],[5,10],[10,16]] },
-  // 吸血(vampiric)/全能(versatile)词缀已移除 —— 这两项改为只通过"惊喜副属性"在蓝装以上低概率出现(见 combat.js finishItem)
-  { key:'masterful', name:'精通的',    mod:'mastery',      tierVals:[[2,4],[4,8],[8,14]] },
+  // 吸血(vampiric)/全能(versatile)/精通(masterful)词缀已移除 —— 这三项改为只通过"惊喜副属性"在蓝装以上低概率出现(见 combat.js finishItem)
   { key:'quick',     name:'急速的',    mod:'cdReduction',  tierVals:[[1,3],[3,5],[5,8]] },
   { key:'efficient', name:'节能的',    mod:'costReduction',tierVals:[[2,4],[4,7],[7,12]] },
   { key:'piercing',  name:'锐利的',    mod:'extraAtk',     tierVals:[[1,3],[3,5],[5,9]] },
@@ -66,9 +65,9 @@ const GEM_TYPES = {
   red_t1:    { name:'粗糙红宝石',  color:'red',    tier:1, stats:{atk:8} },
   red_t2:    { name:'精致红宝石',  color:'red',    tier:2, stats:{atk:18} },
   red_t3:    { name:'华丽红宝石',  color:'red',    tier:3, stats:{atk:36} },
-  yellow_t1: { name:'粗糙黄玉',    color:'yellow', tier:1, stats:{mastery:4} },
-  yellow_t2: { name:'精致黄玉',    color:'yellow', tier:2, stats:{mastery:8} },
-  yellow_t3: { name:'华丽黄玉',    color:'yellow', tier:3, stats:{mastery:14} },
+  yellow_t1: { name:'粗糙黄玉',    color:'yellow', tier:1, stats:{haste:1} },
+  yellow_t2: { name:'精致黄玉',    color:'yellow', tier:2, stats:{haste:2} },
+  yellow_t3: { name:'华丽黄玉',    color:'yellow', tier:3, stats:{haste:4} },
   blue_t1:   { name:'粗糙蓝宝石',  color:'blue',   tier:1, stats:{hp:40} },
   blue_t2:   { name:'精致蓝宝石',  color:'blue',   tier:2, stats:{hp:90} },
   blue_t3:   { name:'华丽蓝宝石',  color:'blue',   tier:3, stats:{hp:180} },
@@ -82,18 +81,18 @@ const SOCKET_MATCH_BONUS = 0.25;
 const ENCHANT_POOL = {
   weapon: [
     { key:'wpn_atk',  name:'攻击之力',   mod:{atkPct:6},      cost:{gold:500,essence:3} },
-    { key:'wpn_mst',  name:'通晓',       mod:{mastery:8},     cost:{gold:500,essence:3} },
+    { key:'wpn_hst',  name:'急速',       mod:{haste:2},     cost:{gold:500,essence:3} },
     { key:'wpn_spd',  name:'迅捷打击',   mod:{spdPct:5},      cost:{gold:500,essence:3} },
     { key:'wpn_pow',  name:'强攻',       mod:{atkPct:9},      cost:{gold:800,essence:5} },
   ],
   helmet: [
     { key:'hlm_int',  name:'智慧',       mod:{intPct:6},      cost:{gold:300,essence:2} },
     { key:'hlm_sta',  name:'坚毅',       mod:{staPct:6},      cost:{gold:300,essence:2} },
-    { key:'hlm_mst',  name:'通晓',       mod:{mastery:12},    cost:{gold:500,essence:3} },
+    { key:'hlm_vers', name:'全能',       mod:{vers:2},     cost:{gold:500,essence:3} },
   ],
   shoulder: [
     { key:'sh_atk',   name:'力量',       mod:{atkPct:5},      cost:{gold:300,essence:2} },
-    { key:'sh_mst',   name:'通晓',       mod:{mastery:8},     cost:{gold:400,essence:3} },
+    { key:'sh_leech', name:'吸血',       mod:{leech:2},     cost:{gold:400,essence:3} },
   ],
   armor: [
     { key:'arm_hp',   name:'生命',       mod:{hpPct:8},       cost:{gold:400,essence:3} },
@@ -101,7 +100,7 @@ const ENCHANT_POOL = {
     { key:'arm_sta',  name:'坚韧',       mod:{staPct:6},      cost:{gold:600,essence:4} },
   ],
   gloves: [
-    { key:'glv_mst',  name:'通晓',       mod:{mastery:8},     cost:{gold:300,essence:2} },
+    { key:'glv_hst',  name:'急速',       mod:{haste:2},     cost:{gold:300,essence:2} },
     { key:'glv_extra',name:'连击',       mod:{extraAtk:4},    cost:{gold:500,essence:3} },
   ],
   belt: [
@@ -114,17 +113,17 @@ const ENCHANT_POOL = {
   ],
   boots: [
     { key:'bts_spd',  name:'疾步',       mod:{spdPct:5},      cost:{gold:300,essence:2} },
-    { key:'bts_mst',  name:'灵敏',       mod:{mastery:8},     cost:{gold:400,essence:3} },
+    { key:'bts_vers', name:'全能',       mod:{vers:2},      cost:{gold:400,essence:3} },
   ],
   ring: [
     { key:'rng_atk',  name:'威能',       mod:{atkPct:5},      cost:{gold:400,essence:3} },
-    { key:'rng_mst',  name:'锐利',       mod:{mastery:8},     cost:{gold:400,essence:3} },
+    { key:'rng_hst',  name:'急速',       mod:{haste:2},     cost:{gold:400,essence:3} },
     { key:'rng_cost', name:'节能',       mod:{costReduction:5},cost:{gold:500,essence:4} },
   ],
   trinket: [
     { key:'tkt_pow',  name:'狠毒',       mod:{atkPct:6},      cost:{gold:400,essence:3} },
     { key:'tkt_hp',   name:'通才',       mod:{hpPct:8},       cost:{gold:600,essence:4} },
-    { key:'tkt_mst',  name:'宗师',       mod:{mastery:10},    cost:{gold:600,essence:4} },
+    { key:'tkt_vers', name:'全能',       mod:{vers:3},     cost:{gold:600,essence:4} },
   ],
 };
 
