@@ -475,9 +475,9 @@ function renderInventory() {
   state.inventory = state.inventory.filter(it => SLOT_INFO[it.slot]);
   $('inv-count').textContent = state.inventory.length;
 
-  // 按品质排序: 传说 > 史诗 > 精良 > 优秀 > 普通
+  // 按品质→等级排序: 传说>史诗>精良>优秀>普通, 同品质高等级优先
   const rarityOrder = ['legend','epic','rare','uncommon','common'];
-  state.inventory.sort((a,b) => rarityOrder.indexOf(a.rarity) - rarityOrder.indexOf(b.rarity));
+  state.inventory.sort((a,b) => rarityOrder.indexOf(a.rarity) - rarityOrder.indexOf(b.rarity) || (b.reqLvl||0) - (a.reqLvl||0));
 
   // 高亮自动售卖按钮
   const asVal = state.autoSellRarity || 'off';
