@@ -635,7 +635,7 @@ const CLASSES = {
       chaosBolt:  {name:'混乱之箭', icon:'☄️', desc:'8倍攻击,无视防御', mp:55, type:'dmg', mul:8, alwaysCrit:true, unlockLvl:48,castTime:3},
       incinerate: {name:'烧尽',     icon:'🔥', desc:'3倍攻击伤害', mp:50, type:'dmg', mul:5,castTime:2},
     },
-      shadowFury:{name:"暗影之怒",icon:"💢",desc:"3倍范围伤害+减速",mp:42,type:"dmg",mul:5,slow:true,unlockLvl:44},
+      shadowFury:{name:"暗影之怒",icon:"💢",desc:"3倍范围伤害+减速",mp:42,type:"dmg",mul:5,slow:true,unlockLvl:44,weaken:true},
       soulFire:{name:"灵魂之火",icon:"💀",desc:"3倍伤害,必暴",mp:55,type:"dmg",mul:8,alwaysCrit:true,unlockLvl:62},
 
       unstableAffliction:{name:'痛苦无常',icon:'💜', desc:'3倍攻击,持续痛苦', mp:38, type:'dmg', mul:4, dot:true, unlockLvl:36,castTime:1.5},
@@ -785,7 +785,7 @@ const MAPS = [
     ],
     boss:{ name:'霍格', emoji:'🐗', lvl:12, desc:'臭名昭著的豺狼人头目',
       passive:{dmgReduction:0.05},
-      skills:[{name:"猛击",icon:"💥",desc:"2.5倍伤害",type:"dmg",mul:2.5,castTime:1}] } },
+      skills:[{name:"猛击",icon:"💥",desc:"2.5倍伤害",type:"dmg",mul:2.5,castTime:1,stun:true}] } },
   { key:'tirisfal', name:'提瑞斯法林地', icon:'⚰️', faction:'部落', lvlRange:[1,10],
     desc:'被遗忘者的家园,瘟疫笼罩的故土',
     sub:[
@@ -805,7 +805,7 @@ const MAPS = [
     ],
     boss:{ name:'战丸', emoji:'🦂', lvl:12, desc:'剃刀岭的野兽王',
       passive:{atkBonus:0.15},
-      skills:[{name:"野兽冲锋",icon:"🐗",desc:"3倍伤害",type:"dmg",mul:3,castTime:1.5}] } },
+      skills:[{name:"野兽冲锋",icon:"🐗",desc:"3倍伤害",type:"dmg",mul:3,castTime:1.5,stun:true}] } },
   { key:'westfall', name:'西部荒野', icon:'🌾', faction:'联盟', lvlRange:[10,20],
     desc:'被迪菲亚兄弟会占据的农场',
     sub:[
@@ -815,7 +815,7 @@ const MAPS = [
     ],
     boss:{ name:'莫斯虎尔的复仇之灵', emoji:'⚓', lvl:22, desc:'湮灭海湾的鬼船船长',
       passive:{dodgeChance:0.15,critChance:0.1},
-      skills:[{name:"幽灵炮击",icon:"💣",desc:"3倍伤害",type:"dmg",mul:3,castTime:2},{name:"诅咒",icon:"🧿",desc:"3.5倍暗影伤害",type:"dmg",mul:3.5,slow:true,castTime:2}] } },
+      skills:[{name:"幽灵炮击",icon:"💣",desc:"3倍伤害",type:"dmg",mul:3,castTime:2},{name:"诅咒",icon:"🧿",desc:"3.5倍暗影伤害",type:"dmg",mul:3.5,slow:true,castTime:2,weaken:true}] } },
   { key:'silverpine', name:'银松森林', icon:'🌲', faction:'部落', lvlRange:[10,20],
     desc:'被狼人诅咒的腐朽森林',
     sub:[
@@ -825,7 +825,7 @@ const MAPS = [
     ],
     boss:{ name:'阿鲁高的侍从', emoji:'🧙', lvl:22, desc:'狼人法师的随从',
       passive:{critChance:0.2},
-      skills:[{name:"暗影箭",icon:"🌑",desc:"3倍暗影伤害",type:"dmg",mul:3,castTime:1.5},{name:"召唤狼人",icon:"🐺",desc:"4倍伤害",type:"dmg",mul:4,castTime:2.5}] } },
+      skills:[{name:"暗影箭",icon:"🌑",desc:"3倍暗影伤害",type:"dmg",mul:3,castTime:1.5},{name:"召唤狼人",icon:"🐺",desc:"4倍伤害",type:"dmg",mul:4,castTime:2.5,stun:true}] } },
   { key:'redridge', name:'赤脊山', icon:'⛰️', faction:'联盟', lvlRange:[15,25],
     desc:'通往黑石塔的边境之地',
     sub:[
@@ -872,7 +872,7 @@ const MAPS = [
     ],
     boss:{ name:'千针石林之沙', emoji:'🦖', lvl:37, desc:'沙漠暴龙之首',
       passive:{atkBonus:0.2,dmgReduction:0.05},
-      skills:[{name:"沙尘吐息",icon:"🏜️",desc:"3.5倍伤害",type:"dmg",mul:3.5,castTime:1.5},{name:"尾扫",icon:"🦖",desc:"4倍伤害",type:"dmg",mul:4,castTime:2}] } },
+      skills:[{name:"沙尘吐息",icon:"🏜️",desc:"3.5倍伤害",type:"dmg",mul:3.5,castTime:1.5},{name:"尾扫",icon:"🦖",desc:"4倍伤害",type:"dmg",mul:4,castTime:2,stun:true}] } },
   { key:'stranglethorn', name:'荆棘谷', icon:'🌴', faction:'中立', lvlRange:[30,45],
     desc:'巨魔与丛林兽充斥的热带丛林',
     sub:[
@@ -883,8 +883,8 @@ const MAPS = [
     boss:{ name:'加兹瑞拉', emoji:'🐍', lvl:47, desc:'荆棘谷的传奇海蛇',
       passive:{dodgeChance:0.15,critChance:0.2,
       passive:{dodgeChance:0.15,critChance:0.2},
-      skills:[{name:"潮汐波",icon:"🌊",desc:"4倍伤害",type:"dmg",mul:4,castTime:2},{name:"闪电吐息",icon:"⚡",desc:"5倍自然伤害",type:"dmg",mul:5,castTime:3}] },
-      skills:[{name:"潮汐波",icon:"🌊",desc:"4倍伤害",type:"dmg",mul:4,castTime:2},{name:"闪电吐息",icon:"⚡",desc:"5倍自然伤害",type:"dmg",mul:5,castTime:3}] } },
+      skills:[{name:"潮汐波",icon:"🌊",desc:"4倍伤害",type:"dmg",mul:4,castTime:2},{name:"闪电吐息",icon:"⚡",desc:"5倍自然伤害",type:"dmg",mul:5,castTime:3,stun:true}] },
+      skills:[{name:"潮汐波",icon:"🌊",desc:"4倍伤害",type:"dmg",mul:4,castTime:2},{name:"闪电吐息",icon:"⚡",desc:"5倍自然伤害",type:"dmg",mul:5,castTime:3,stun:true}] } },
   { key:'searing', name:'灼热峡谷', icon:'🔥', faction:'中立', lvlRange:[40,50],
     desc:'黑铁矮人盘踞的火焰地带',
     sub:[
@@ -893,7 +893,7 @@ const MAPS = [
     ],
     boss:{ name:'黑石氏族督军', emoji:'👹', lvl:52, desc:'黑石氏族的暴君',
       passive:{atkBonus:0.2,dmgReduction:0.1},
-      skills:[{name:"战争践踏",icon:"🦶",desc:"4倍伤害+减速",type:"dmg",mul:4,slow:true,castTime:2},{name:"旋风斩",icon:"🌀",desc:"5倍AOE伤害",type:"dmg",mul:5,castTime:3}] } },
+      skills:[{name:"战争践踏",icon:"🦶",desc:"4倍伤害+减速",type:"dmg",mul:4,slow:true,castTime:2,stun:true},{name:"旋风斩",icon:"🌀",desc:"5倍AOE伤害",type:"dmg",mul:5,castTime:3,stun:true}] } },
   { key:'burning', name:'燃烧平原', icon:'🌋', faction:'中立', lvlRange:[45,55],
     desc:'通往火源之界的炽热焦土',
     sub:[
@@ -920,7 +920,7 @@ const MAPS = [
     ],
     boss:{ name:'鲁卡安', emoji:'👁️', lvl:62, desc:'希利苏斯的禁忌之眼',
       passive:{dodgeChance:0.2,critChance:0.2,stunChance:0.1},
-      skills:[{name:"暗影凝视",icon:"👁️",desc:"5倍暗影伤害",type:"dmg",mul:5,castTime:2},{name:"精神鞭笞",icon:"🌀",desc:"6倍伤害+减速",type:"dmg",mul:6,slow:true,castTime:3},{name:'克苏恩之眼',icon:'👁️',desc:'6倍暗影伤害+恐惧',type:'dmg',mul:6,castTime:3}] } },
+      skills:[{name:"暗影凝视",icon:"👁️",desc:"5倍暗影伤害",type:"dmg",mul:5,castTime:2,weaken:true},{name:"精神鞭笞",icon:"🌀",desc:"6倍伤害+减速",type:"dmg",mul:6,slow:true,castTime:3,stun:true},{name:'克苏恩之眼',icon:'👁️',desc:'6倍暗影伤害+恐惧',type:'dmg',mul:6,castTime:3}] } },
   { key:'eastern_plague', name:'东瘟疫之地', icon:'☠️', faction:'中立', lvlRange:[55,60],
     desc:'被天灾军团彻底污染的死亡之地',
     sub:[
@@ -938,7 +938,7 @@ const MAPS = [
     ],
     boss:{ name:'玛瑟里顿', emoji:'😈', lvl:65, desc:'被囚禁的暗影议会成员',
       passive:{atkBonus:0.25,critChance:0.2,dmgReduction:0.1,dodgeChance:0.15},
-      skills:[{name:"地狱火",icon:"😈",desc:"6倍火焰伤害+灼烧",type:"dmg",mul:6,dot:true,castTime:2.5},{name:"暗影之怒",icon:"💢",desc:"7倍暗影伤害",type:"dmg",mul:7,castTime:3.5},{name:'深渊咆哮',icon:'👹',desc:'7倍伤害+减速',type:'dmg',mul:7,slow:true,castTime:3}] } },
+      skills:[{name:"地狱火",icon:"😈",desc:"6倍火焰伤害+灼烧",type:"dmg",mul:6,dot:true,castTime:2.5},{name:"暗影之怒",icon:"💢",desc:"7倍暗影伤害",type:"dmg",mul:7,castTime:3.5,weaken:true},{name:'深渊咆哮',icon:'👹',desc:'7倍伤害+减速',type:'dmg',mul:7,slow:true,castTime:3}] } },
   { key:'nagrand', name:'纳格兰', icon:'🦬', faction:'外域', lvlRange:[64,68],
     desc:'飘浮岛屿的草原,玛瑟里顿的故乡',
     sub:[
@@ -947,7 +947,7 @@ const MAPS = [
     ],
     boss:{ name:'邦多', emoji:'👹', lvl:70, desc:'纳格兰食人魔之王',
       passive:{atkBonus:0.2,dmgReduction:0.15,dodgeChance:0.1,stunChance:0.1},
-      skills:[{name:"粉碎打击",icon:"🔨",desc:"5倍伤害",type:"dmg",mul:5,castTime:2},{name:"狂暴冲锋",icon:"👹",desc:"6倍伤害",type:"dmg",mul:6,castTime:3},{name:'食人魔之锤',icon:'🔨',desc:'7倍伤害',type:'dmg',mul:7,castTime:3},{name:'战争咆哮',icon:'💢',desc:'6倍AOE+减速',type:'dmg',mul:6,slow:true,castTime:3}] } },
+      skills:[{name:"粉碎打击",icon:"🔨",desc:"5倍伤害",type:"dmg",mul:5,castTime:2},{name:"狂暴冲锋",icon:"👹",desc:"6倍伤害",type:"dmg",mul:6,castTime:3,stun:true},{name:'食人魔之锤',icon:'🔨',desc:'7倍伤害',type:'dmg',mul:7,castTime:3},{name:'战争咆哮',icon:'💢',desc:'6倍AOE+减速',type:'dmg',mul:6,slow:true,castTime:3}] } },
   { key:'shadowmoon', name:'影月谷', icon:'🌑', faction:'外域', lvlRange:[67,70],
     desc:'伊利丹的黑暗神殿所在',
     sub:[
@@ -974,7 +974,7 @@ const MAPS = [
     ],
     boss:{ name:'索林姆', emoji:'⚡', lvl:82, desc:'雷电之王',
       passive:{critChance:0.3,dmgReduction:0.15,dodgeChance:0.15,stunChance:0.15,atkBonus:0.1},
-      skills:[{name:"雷霆之怒",icon:"⚡",desc:"7倍自然伤害",type:"dmg",mul:7,castTime:2.5},{name:"闪电风暴",icon:"🌩️",desc:"8倍AOE伤害",type:"dmg",mul:8,castTime:4},{name:'雷霆万钧',icon:'⚡',desc:'8倍自然伤害',type:'dmg',mul:8,castTime:3},{name:'风暴之锤',icon:'🔨',desc:'7倍伤害+击晕',type:'dmg',mul:7,castTime:3},{name:'雷神之怒',icon:'🌩️',desc:'9倍AOE伤害',type:'dmg',mul:9,castTime:4}] } },
+      skills:[{name:"雷霆之怒",icon:"⚡",desc:"7倍自然伤害",type:"dmg",mul:7,castTime:2.5,stun:true},{name:"闪电风暴",icon:"🌩️",desc:"8倍AOE伤害",type:"dmg",mul:8,castTime:4,stun:true},{name:'雷霆万钧',icon:'⚡',desc:'8倍自然伤害',type:'dmg',mul:8,castTime:3},{name:'风暴之锤',icon:'🔨',desc:'7倍伤害+击晕',type:'dmg',mul:7,castTime:3},{name:'雷神之怒',icon:'🌩️',desc:'9倍AOE伤害',type:'dmg',mul:9,castTime:4}] } },
   { key:'icecrown', name:'冰冠冰川', icon:'🏰', faction:'诺森德', lvlRange:[78,80],
     desc:'巫妖王的领地,天灾军团总部',
     sub:[
@@ -983,7 +983,7 @@ const MAPS = [
     ],
     boss:{ name:'阿尔萨斯·巫妖王', emoji:'☠️', lvl:83, desc:'寒冰之王,游戏终极BOSS' ,
       passive:{dmgReduction:0.25,critChance:0.3,dodgeChance:0.2,atkBonus:0.2,leech:0.15},
-      skills:[{name:"霜之哀伤",icon:"🗡️",desc:"7倍伤害+吸血30%",type:"dmg",mul:7,lifeSteal:0.3,castTime:2},{name:"死亡缠绕",icon:"💀",desc:"8倍暗影伤害",type:"dmg",mul:8,castTime:3},{name:"寒冰风暴",icon:"❄️",desc:"8倍AOE+减速",type:"dmg",mul:8,slow:true,castTime:3.5},{name:"亡者大军",icon:"🧟",desc:"9倍伤害",type:"dmg",mul:9,castTime:4},{name:"巫妖王之怒",icon:"👑",desc:"10倍AOE暗影伤害",type:"dmg",mul:10,castTime:5}] } },
+      skills:[{name:"霜之哀伤",icon:"🗡️",desc:"7倍伤害+吸血30%",type:"dmg",mul:7,lifeSteal:0.3,castTime:2},{name:"死亡缠绕",icon:"💀",desc:"8倍暗影伤害",type:"dmg",mul:8,castTime:3},{name:"寒冰风暴",icon:"❄️",desc:"8倍AOE+减速",type:"dmg",mul:8,slow:true,castTime:3.5},{name:"亡者大军",icon:"🧟",desc:"9倍伤害",type:"dmg",mul:9,castTime:4,stun:true},{name:"巫妖王之怒",icon:"👑",desc:"10倍AOE暗影伤害",type:"dmg",mul:10,castTime:5}] } },
   { key:'lochmodan', name:'洛克莫丹', icon:'🏔️', faction:'联盟', lvlRange:[10,18],
     desc:'丹莫罗之外的雪山湖泊',
     sub:[
@@ -1010,7 +1010,7 @@ const MAPS = [
     ],
     boss:{ name:'托尔贝恩', emoji:'👻', lvl:42, desc:'激流堡的亡灵王子' ,
       passive:{dmgReduction:0.15,atkBonus:0.1},
-      skills:[{name:"托尔贝恩之锤",icon:"🔨",desc:"3.5倍伤害",type:"dmg",mul:3.5,castTime:2},{name:"雷霆一击",icon:"⚡",desc:"4倍伤害+减速",type:"dmg",mul:4,slow:true,castTime:2.5}] } },
+      skills:[{name:"托尔贝恩之锤",icon:"🔨",desc:"3.5倍伤害",type:"dmg",mul:3.5,castTime:2},{name:"雷霆一击",icon:"⚡",desc:"4倍伤害+减速",type:"dmg",mul:4,slow:true,castTime:2.5,stun:true}] } },
   { key:'desolace', name:'凄凉之地', icon:'💀', faction:'中立', lvlRange:[35,45],
     desc:'半人马与燃烧军团肆虐的荒芜之地',
     sub:[
@@ -1019,7 +1019,7 @@ const MAPS = [
     ],
     boss:{ name:'瑟莱德丝公主', emoji:'👹', lvl:47, desc:'玛拉顿的腐化之源' ,
       passive:{dodgeChance:0.1,critChance:0.15},
-      skills:[{name:"腐化",icon:"👹",desc:"4倍伤害+中毒",type:"dmg",mul:4,dot:true,castTime:2},{name:"地震",icon:"🌍",desc:"5倍AOE伤害",type:"dmg",mul:5,castTime:3}] } },
+      skills:[{name:"腐化",icon:"👹",desc:"4倍伤害+中毒",type:"dmg",mul:4,dot:true,castTime:2},{name:"地震",icon:"🌍",desc:"5倍AOE伤害",type:"dmg",mul:5,castTime:3,stun:true,slow:true}] } },
   { key:'feralas', name:'菲拉斯', icon:'🌴', faction:'中立', lvlRange:[40,50],
     desc:'羽月要塞所在的远古丛林',
     sub:[
@@ -1053,7 +1053,7 @@ const MAPS = [
     ],
     boss:{ name:'辛达苟萨', emoji:'🐉', lvl:78, desc:'冰霜女王,阿尔萨斯的龙骨巨龙' ,
       passive:{dmgReduction:0.2,critChance:0.2,dodgeChance:0.15,atkBonus:0.1},
-      skills:[{name:"冰霜吐息",icon:"❄️",desc:"6倍冰霜伤害+减速",type:"dmg",mul:6,slow:true,castTime:2},{name:"冰霜之墓",icon:"🧊",desc:"7倍伤害",type:"dmg",mul:7,castTime:3},{name:"尾击",icon:"🐉",desc:"8倍AOE伤害",type:"dmg",mul:8,castTime:3.5},{name:"冰冷之握",icon:"💀",desc:"8倍伤害+减速",type:"dmg",mul:8,slow:true,castTime:4}] } },
+      skills:[{name:"冰霜吐息",icon:"❄️",desc:"6倍冰霜伤害+减速",type:"dmg",mul:6,slow:true,castTime:2},{name:"冰霜之墓",icon:"🧊",desc:"7倍伤害",type:"dmg",mul:7,castTime:3,slow:true},{name:"尾击",icon:"🐉",desc:"8倍AOE伤害",type:"dmg",mul:8,castTime:3.5,stun:true},{name:"冰冷之握",icon:"💀",desc:"8倍伤害+减速",type:"dmg",mul:8,slow:true,castTime:4}] } },
   { key:'stonetalon', name:'石爪山脉', icon:'⛰️', faction:'部落', lvlRange:[15,25],
     desc:'贫瘠之地以西的崇山峻岭',
     sub:[
@@ -1071,7 +1071,7 @@ const MAPS = [
     ],
     boss:{ name:'赫洛德', emoji:'⚔️', lvl:32, desc:'血色十字军的狂热勇士' ,
       passive:{atkBonus:0.15,critChance:0.1},
-      skills:[{name:"旋风斩",icon:"🌀",desc:"3.5倍AOE伤害",type:"dmg",mul:3.5,castTime:2},{name:"狂热",icon:"🔥",desc:"3倍伤害+攻速提升",type:"dmg",mul:3,castTime:1.5}] } },
+      skills:[{name:"旋风斩",icon:"🌀",desc:"3.5倍AOE伤害",type:"dmg",mul:3.5,castTime:2,stun:true},{name:"狂热",icon:"🔥",desc:"3倍伤害+攻速提升",type:"dmg",mul:3,castTime:1.5,spdBuff:true}] } },
   { key:'dustwallow', name:'尘泥沼泽', icon:'🌫️', faction:'中立', lvlRange:[35,45],
     desc:'塞拉摩以南的阴暗沼泽,黑龙巢穴所在',
     sub:[
@@ -1080,7 +1080,7 @@ const MAPS = [
     ],
     boss:{ name:'奥妮克希亚', emoji:'🐲', lvl:47, desc:'黑龙公主,塞拉摩的阴影' ,
       passive:{dmgReduction:0.15,critChance:0.2},
-      skills:[{name:"龙息术",icon:"🔥",desc:"4.5倍火焰伤害",type:"dmg",mul:4.5,castTime:2},{name:"扫尾",icon:"🐉",desc:"5倍AOE伤害",type:"dmg",mul:5,castTime:3}] } },
+      skills:[{name:"龙息术",icon:"🔥",desc:"4.5倍火焰伤害",type:"dmg",mul:4.5,castTime:2,dot:true},{name:"扫尾",icon:"🐉",desc:"5倍AOE伤害",type:"dmg",mul:5,castTime:3,stun:true}] } },
   { key:'blasted', name:'诅咒之地', icon:'🌑', faction:'中立', lvlRange:[50,60],
     desc:'黑暗之门所在的焦土,恶魔横行',
     sub:[
@@ -1125,7 +1125,7 @@ const MAPS = [
     ],
     boss:{ name:'掠夺者因格瓦尔', emoji:'👤', lvl:75, desc:'乌特加德的维库之王' ,
       passive:{atkBonus:0.2,critChance:0.2,dmgReduction:0.15,dodgeChance:0.1},
-      skills:[{name:"黑暗斩击",icon:"🗡️",desc:"6倍伤害",type:"dmg",mul:6,castTime:2},{name:"暗影之怒",icon:"💢",desc:"7倍AOE伤害",type:"dmg",mul:7,castTime:3},{name:"掠夺",icon:"👹",desc:"7倍伤害+吸血30%",type:"dmg",mul:7,lifeSteal:0.3,castTime:3},{name:"天灾之握",icon:"💀",desc:"8倍暗影伤害",type:"dmg",mul:8,castTime:4}] } },
+      skills:[{name:"黑暗斩击",icon:"🗡️",desc:"6倍伤害",type:"dmg",mul:6,castTime:2,weaken:true},{name:"暗影之怒",icon:"💢",desc:"7倍AOE伤害",type:"dmg",mul:7,castTime:3,weaken:true},{name:"掠夺",icon:"👹",desc:"7倍伤害+吸血30%",type:"dmg",mul:7,lifeSteal:0.3,castTime:3},{name:"天灾之握",icon:"💀",desc:"8倍暗影伤害",type:"dmg",mul:8,castTime:4,weaken:true}] } },
   { key:'grizzly', name:'灰熊丘陵', icon:'🐻', faction:'诺森德', lvlRange:[73,77],
     desc:'诺森德的原始森林,熊怪与狼群的领地',
     sub:[
@@ -1134,7 +1134,7 @@ const MAPS = [
     ],
     boss:{ name:'达克萨隆巨熊', emoji:'🐻', lvl:79, desc:'灰熊丘陵的远古巨熊之灵' ,
       passive:{atkBonus:0.25,dmgReduction:0.2,critChance:0.15,dodgeChance:0.1},
-      skills:[{name:"熊之怒",icon:"🐻",desc:"6倍伤害",type:"dmg",mul:6,castTime:2},{name:"横扫",icon:"🐾",desc:"7倍AOE伤害",type:"dmg",mul:7,castTime:3},{name:"狂暴",icon:"💢",desc:"7倍伤害+吸血20%",type:"dmg",mul:7,lifeSteal:0.2,castTime:3},{name:"巨熊之握",icon:"🐻",desc:"8倍伤害+减速",type:"dmg",mul:8,slow:true,castTime:4}] } },
+      skills:[{name:"熊之怒",icon:"🐻",desc:"6倍伤害",type:"dmg",mul:6,castTime:2},{name:"横扫",icon:"🐾",desc:"7倍AOE伤害",type:"dmg",mul:7,castTime:3},{name:"狂暴",icon:"💢",desc:"7倍伤害+吸血20%",type:"dmg",mul:7,lifeSteal:0.2,castTime:3,spdBuff:true},{name:"巨熊之握",icon:"🐻",desc:"8倍伤害+减速",type:"dmg",mul:8,slow:true,castTime:4}] } },
   { key:'sholazar', name:'索拉查盆地', icon:'🌴', faction:'诺森德', lvlRange:[75,78],
     desc:'诺森德的热带奇迹,泰坦生态实验场',
     sub:[
@@ -3346,6 +3346,6 @@ const COMPANION_BONDS=[
   {name:"白银之手",   keys:["fordring","maraad"],         mod:{hpPct:6,defPct:4},  desc:"提里奥 + 玛拉达尔"},
 ];
 function compQuality(tpl){ return COMPANION_QUALITY.find(q=>q.key===(tpl&&tpl.quality)) || COMPANION_QUALITY[0]; }
-const COMPANIONS=[{key:"fordring",name:"提里奥·弗丁",emoji:"👴",role:"tank",desc:"白银之手大领主",skills:[{name:"圣光审判",icon:"⚖️",desc:"2倍伤害,回复5%HP",type:"dmg",mul:2,heal:0.05,cd:10},{name:"圣盾守护",icon:"🛡️",desc:"8秒减伤40%",type:"buff",buff:"shield",cd:22},{name:"灰烬觉醒",icon:"✨",desc:"3倍伤害",type:"dmg",mul:4,cd:20},{name:"圣疗术",icon:"💚",desc:"恢复25%HP",type:"heal",heal:0.25,cd:30}]},{key:"varian",name:"瓦里安·乌瑞恩",emoji:"👑",role:"tank",desc:"暴风城国王",skills:[{name:"冲锋",icon:"💨",desc:"2倍伤害",type:"dmg",mul:2,cd:6},{name:"破甲",icon:"🔨",desc:"3倍伤害降防",type:"dmg",mul:3,cd:12},{name:"剑刃风暴",icon:"🌀",desc:"3倍伤害",type:"dmg",mul:5,cd:25},{name:"怒吼",icon:"📯",desc:"10秒攻击+15%",type:"buff",buff:"battleShout",cd:30}]},{key:"thrall",name:"萨尔",emoji:"👊",role:"tank",desc:"部落大酋长",skills:[{name:"闪电箭",icon:"⚡",desc:"2倍伤害",type:"dmg",mul:2,cd:6},{name:"大地之盾",icon:"🪨",desc:"8秒防御+40%",type:"buff",buff:"earthShield",cd:20},{name:"雷霆风暴",icon:"⛈️",desc:"3倍伤害",type:"dmg",mul:4,cd:18},{name:"治疗波",icon:"🌊",desc:"恢复20%HP",type:"heal",heal:0.2,cd:25}]},{key:"illidan",name:"伊利丹·怒风",emoji:"😈",role:"dps",desc:"背叛者",skills:[{name:"恶魔之咬",icon:"🦷",desc:"3倍伤害",type:"dmg",mul:3,cd:8},{name:"眼棱",icon:"👁️",desc:"3倍必暴",type:"dmg",mul:3,alwaysCrit:true,cd:16},{name:"恶魔变形",icon:"😈",desc:"10秒攻击+30%",type:"buff",buff:"bestial",cd:28},{name:"混沌打击",icon:"💥",desc:"3倍伤害",type:"dmg",mul:5,cd:24}]},{key:"arthas",name:"阿尔萨斯",emoji:"⚔️",role:"dps",desc:"洛丹伦王子",skills:[{name:"死亡缠绕",icon:"💀",desc:"3倍伤害吸血20%",type:"dmg",mul:3,lifeSteal:0.2,cd:10},{name:"凛风冲击",icon:"❄️",desc:"3倍伤害",type:"dmg",mul:3,cd:14},{name:"亡者大军",icon:"🧟",desc:"3倍伤害",type:"dmg",mul:5,cd:22},{name:"巫妖之怒",icon:"☠️",desc:"10秒攻速+40%",type:"buff",buff:"rapidFire",cd:30}]},{key:"jaina",name:"吉安娜",emoji:"🧙‍♀️",role:"dps",desc:"肯瑞托大法师",skills:[{name:"寒冰箭",icon:"❄️",desc:"2倍伤害减速",type:"dmg",mul:2,cd:7},{name:"冰霜新星",icon:"💠",desc:"3倍伤害",type:"dmg",mul:3,cd:15},{name:"暴风雪",icon:"🌨️",desc:"3倍伤害",type:"dmg",mul:4,cd:20},{name:"奥术智慧",icon:"📖",desc:"10秒攻击+20%",type:"buff",buff:"battleShout",cd:28}]},{key:"sylvanas",name:"希尔瓦娜斯",emoji:"🏹",role:"dps",desc:"黑暗游侠",skills:[{name:"暗影箭",icon:"🏹",desc:"2倍伤害",type:"dmg",mul:2,cd:7},{name:"毒蛇射击",icon:"🐍",desc:"3倍中毒",type:"dmg",mul:3,dot:true,cd:12},{name:"黑暗之怒",icon:"🌑",desc:"3倍伤害",type:"dmg",mul:4,cd:18},{name:"亡灵意志",icon:"💀",desc:"10秒吸血+10%",type:"buff",buff:"shadowstep",cd:26}]},{key:"anduin",name:"安度因·乌瑞恩",emoji:"✝️",role:"heal",desc:"暴风城王子",skills:[{name:"惩击",icon:"✨",desc:"2倍伤害",type:"dmg",mul:2,cd:6},{name:"治疗术",icon:"💚",desc:"恢复30%HP",type:"heal",heal:0.3,cd:14},{name:"真言术盾",icon:"🛡️",desc:"8秒防御+30%",type:"buff",buff:"shield",cd:20},{name:"神圣赞美诗",icon:"🎵",desc:"恢复40%HP",type:"heal",heal:0.4,cd:28}]},{key:"tyrande",name:"泰兰德·语风",emoji:"🌙",role:"heal",desc:"月之女祭司",skills:[{name:"月火术",icon:"🌙",desc:"2倍伤害",type:"dmg",mul:2,cd:8},{name:"治疗之触",icon:"🌿",desc:"恢复25%HP",type:"heal",heal:0.25,cd:12},{name:"星陨术",icon:"🌟",desc:"3倍伤害",type:"dmg",mul:3,cd:18},{name:"宁静",icon:"🍃",desc:"恢复35%HP",type:"heal",heal:0.35,cd:26}]},{key:"malfurion",name:"玛法里奥·怒风",emoji:"🍂",role:"heal",desc:"大德鲁伊",skills:[{name:"愤怒",icon:"🌿",desc:"2倍伤害",type:"dmg",mul:2,cd:6},{name:"回春术",icon:"🌱",desc:"恢复20%HP",type:"heal",heal:0.2,cd:10},{name:"树皮术",icon:"🪵",desc:"8秒防御+35%",type:"buff",buff:"bark",cd:18},{name:"自然之力",icon:"🌳",desc:"恢复35%HP",type:"heal",heal:0.35,cd:24}]}];
+const COMPANIONS=[{key:"fordring",name:"提里奥·弗丁",emoji:"👴",role:"tank",desc:"白银之手大领主",skills:[{name:"圣光审判",icon:"⚖️",desc:"2倍伤害,回复5%HP",type:"dmg",mul:2,heal:0.05,cd:10},{name:"圣盾守护",icon:"🛡️",desc:"8秒减伤40%",type:"buff",buff:"shield",cd:22},{name:"灰烬觉醒",icon:"✨",desc:"3倍伤害",type:"dmg",mul:4,cd:20},{name:"圣疗术",icon:"💚",desc:"恢复25%HP",type:"heal",heal:0.25,cd:30}]},{key:"varian",name:"瓦里安·乌瑞恩",emoji:"👑",role:"tank",desc:"暴风城国王",skills:[{name:"冲锋",icon:"💨",desc:"2倍伤害",type:"dmg",mul:2,cd:6},{name:"破甲",icon:"🔨",desc:"3倍伤害降防",type:"dmg",mul:3,cd:12},{name:"剑刃风暴",icon:"🌀",desc:"3倍伤害",type:"dmg",mul:5,cd:25},{name:"怒吼",icon:"📯",desc:"10秒攻击+15%",type:"buff",buff:"battleShout",cd:30}]},{key:"thrall",name:"萨尔",emoji:"👊",role:"tank",desc:"部落大酋长",skills:[{name:"闪电箭",icon:"⚡",desc:"2倍伤害",type:"dmg",mul:2,cd:6},{name:"大地之盾",icon:"🪨",desc:"8秒防御+40%",type:"buff",buff:"earthShield",cd:20},{name:"雷霆风暴",icon:"⛈️",desc:"3倍伤害",type:"dmg",mul:4,cd:18},{name:"治疗波",icon:"🌊",desc:"恢复20%HP",type:"heal",heal:0.2,cd:25}]},{key:"illidan",name:"伊利丹·怒风",emoji:"😈",role:"dps",desc:"背叛者",skills:[{name:"恶魔之咬",icon:"🦷",desc:"3倍伤害",type:"dmg",mul:3,cd:8},{name:"眼棱",icon:"👁️",desc:"3倍必暴",type:"dmg",mul:3,alwaysCrit:true,cd:16},{name:"恶魔变形",icon:"😈",desc:"10秒攻击+30%",type:"buff",buff:"bestial",cd:28},{name:"混沌打击",icon:"💥",desc:"3倍伤害",type:"dmg",mul:5,cd:24}]},{key:"arthas",name:"阿尔萨斯",emoji:"⚔️",role:"dps",desc:"洛丹伦王子",skills:[{name:"死亡缠绕",icon:"💀",desc:"3倍伤害吸血20%",type:"dmg",mul:3,lifeSteal:0.2,cd:10},{name:"凛风冲击",icon:"❄️",desc:"3倍伤害",type:"dmg",mul:3,cd:14},{name:"亡者大军",icon:"🧟",desc:"3倍伤害",type:"dmg",mul:5,cd:22,stun:true},{name:"巫妖之怒",icon:"☠️",desc:"10秒攻速+40%",type:"buff",buff:"rapidFire",cd:30}]},{key:"jaina",name:"吉安娜",emoji:"🧙‍♀️",role:"dps",desc:"肯瑞托大法师",skills:[{name:"寒冰箭",icon:"❄️",desc:"2倍伤害减速",type:"dmg",mul:2,cd:7,slow:true},{name:"冰霜新星",icon:"💠",desc:"3倍伤害",type:"dmg",mul:3,cd:15,slow:true},{name:"暴风雪",icon:"🌨️",desc:"3倍伤害",type:"dmg",mul:4,cd:20},{name:"奥术智慧",icon:"📖",desc:"10秒攻击+20%",type:"buff",buff:"battleShout",cd:28}]},{key:"sylvanas",name:"希尔瓦娜斯",emoji:"🏹",role:"dps",desc:"黑暗游侠",skills:[{name:"暗影箭",icon:"🏹",desc:"2倍伤害",type:"dmg",mul:2,cd:7},{name:"毒蛇射击",icon:"🐍",desc:"3倍中毒",type:"dmg",mul:3,dot:true,cd:12},{name:"黑暗之怒",icon:"🌑",desc:"3倍伤害",type:"dmg",mul:4,cd:18},{name:"亡灵意志",icon:"💀",desc:"10秒吸血+10%",type:"buff",buff:"shadowstep",cd:26}]},{key:"anduin",name:"安度因·乌瑞恩",emoji:"✝️",role:"heal",desc:"暴风城王子",skills:[{name:"惩击",icon:"✨",desc:"2倍伤害",type:"dmg",mul:2,cd:6},{name:"治疗术",icon:"💚",desc:"恢复30%HP",type:"heal",heal:0.3,cd:14},{name:"真言术盾",icon:"🛡️",desc:"8秒防御+30%",type:"buff",buff:"shield",cd:20},{name:"神圣赞美诗",icon:"🎵",desc:"恢复40%HP",type:"heal",heal:0.4,cd:28}]},{key:"tyrande",name:"泰兰德·语风",emoji:"🌙",role:"heal",desc:"月之女祭司",skills:[{name:"月火术",icon:"🌙",desc:"2倍伤害",type:"dmg",mul:2,cd:8},{name:"治疗之触",icon:"🌿",desc:"恢复25%HP",type:"heal",heal:0.25,cd:12},{name:"星陨术",icon:"🌟",desc:"3倍伤害",type:"dmg",mul:3,cd:18},{name:"宁静",icon:"🍃",desc:"恢复35%HP",type:"heal",heal:0.35,cd:26}]},{key:"malfurion",name:"玛法里奥·怒风",emoji:"🍂",role:"heal",desc:"大德鲁伊",skills:[{name:"愤怒",icon:"🌿",desc:"2倍伤害",type:"dmg",mul:2,cd:6},{name:"回春术",icon:"🌱",desc:"恢复20%HP",type:"heal",heal:0.2,cd:10},{name:"树皮术",icon:"🪵",desc:"8秒防御+35%",type:"buff",buff:"bark",cd:18},{name:"自然之力",icon:"🌳",desc:"恢复35%HP",type:"heal",heal:0.35,cd:24}]}];
 
 

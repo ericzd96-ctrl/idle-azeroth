@@ -748,7 +748,8 @@ function tickBattle(now){
   for(const m of state.currentMonsters){
     if(m.hp<=0)continue;
     if(m.stunUntil&&m.stunUntil>now)continue;   // 被英雄击晕的敌人无法攻击
-    let interval=(m.atkInterval||(m.isBoss?1400:1700))/spdMul;
+    const spdBuffed=m.spdBuffUntil&&m.spdBuffUntil>now;
+    let interval=(m.atkInterval||(m.isBoss?1400:1700))/spdMul/(spdBuffed?1.5:1);
     if(m.slowUntil&&m.slowUntil>now)interval=Math.floor(interval*1.5);
     const last=m._lastAtk||0;
     if(!(now-last>interval||now-last>6000))continue;   // 还没到这只怪的下一次出手
@@ -805,7 +806,7 @@ function tickBattle(now){
     if(!bossData){const map=MAPS.find(m=>m.key===state.currentMap);if(map?.boss)bossData=map.boss;}
     const rawCd=((bossData?.skills||[])[bossSkillIdx%(bossData?.skills||[]).length])?.cd||10;
     const skillCd=Math.max(3,Math.floor(rawCd*0.6));   // CD加速40%,但最低3秒间隔
-    if(bossData?.skills?.length&&now-lastBossSkill>skillCd*1000){const sk=bossData.skills[bossSkillIdx%bossData.skills.length];let castTime=sk.castTime!==undefined?sk.castTime:2;const instant=mon.instantCast&&Math.random()<0.35;if(instant)castTime=0;casting={isBoss:true,bossName:mon.bossName,icon:sk.icon,type:sk.type,heal:sk.heal,mul:sk.mul,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,startTime:now,duration:castTime*1000};log('💀 '+mon.bossName+(instant?' 瞬发 ':' 开始施放 ')+sk.name+'!'+(instant?'(无法打断)':''),'bad');lastBossSkill=now;bossSkillIdx++;}}
+    if(bossData?.skills?.length&&now-lastBossSkill>skillCd*1000){const sk=bossData.skills[bossSkillIdx%bossData.skills.length];let castTime=sk.castTime!==undefined?sk.castTime:2;const instant=mon.instantCast&&Math.random()<0.35;if(instant)castTime=0;casting={isBoss:true,bossName:mon.bossName,icon:sk.icon,type:sk.type,heal:sk.heal,mul:sk.mul,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,startTime:now,duration:castTime*1000};log('💀 '+mon.bossName+(instant?' 瞬发 ':' 开始施放 ')+sk.name+'!'+(instant?'(无法打断)':''),'bad');lastBossSkill=now;bossSkillIdx++;}}
   if(state.hp<=0)onHeroDeath();
 }
 
@@ -1081,10 +1082,14 @@ function tickCast(now){
           state.hp-=taken;showFloat($('hero-emoji'),'💀'+wasCasting.icon+'-'+taken,'#ff4444');
           if(typeof passiveOnTakeDamage==='function')passiveOnTakeDamage(mon,taken);
           if(wasCasting.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(taken*wasCasting.lifeSteal));
-          // 技能特效
-          if(wasCasting.dot){applyHeroDebuff('burn',6000,{dps:Math.max(1,Math.floor(taken*0.12))});log('☠️ 你陷入了'+(wasCasting.icon||'')+'持续伤害!','bad');}
-          else if(wasCasting.slow){applyHeroDebuff('chill',4000);log('❄️ 你被减速了!','bad');}
-          else{applyHeroDebuff('vulnerable',5000);log('🩸 你被打成了易伤(受到伤害+20%,5秒)','bad');}
+          // 技能特效(可同时触发多个)
+          if(wasCasting.dot){applyHeroDebuff('burn',6000,{dps:Math.max(1,Math.floor(taken*0.12))});log('☠️ '+mon.bossName+'的'+(wasCasting.icon||'')+'让你中毒了!','bad');}
+          if(wasCasting.slow){applyHeroDebuff('chill',5000);log('❄️ '+mon.bossName+'的'+(wasCasting.icon||'')+'减速了你!','bad');}
+          if(wasCasting.stun){state.heroStunUntil=now+2000;showFloat($('hero-emoji'),'💫眩晕','#fde047');log('💫 '+mon.bossName+'的'+(wasCasting.icon||'')+'击晕了你!','bad');}
+          if(wasCasting.weaken){applyHeroDebuff('weaken',5000);log('💔 '+mon.bossName+'的'+(wasCasting.icon||'')+'削弱了你!','bad');}
+          if(wasCasting.sunder){applyHeroDebuff('vulnerable',5000);log('🩸 '+mon.bossName+'的'+(wasCasting.icon||'')+'打出了易伤!','bad');}
+          if(wasCasting.spdBuff){mon.spdBuffUntil=now+8000;log('⚡ '+mon.bossName+'攻速提升了!','bad');}
+          if(!wasCasting.dot&&!wasCasting.slow&&!wasCasting.stun&&!wasCasting.weaken&&!wasCasting.sunder){applyHeroDebuff('vulnerable',5000);log('🩸 你被打成了易伤!','bad');}
           if(state.hp<=0)onHeroDeath();}}}
     }else{castSkill(wasCasting.skillKey,wasCasting.manual);}
   }
