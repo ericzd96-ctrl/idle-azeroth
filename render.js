@@ -90,37 +90,44 @@ function renderBuffBar() {
   }).join('');
 }
 function attachFocusBossHover(focus) {
-  const nameEl = $('mon-name'); if (!nameEl) return;
-  if (focus && focus.bossName && state.mode === 'dungeon' && state.dungeonState) {
-    const dgKey = state.dungeonState.key;
-    const loot = DUNGEON_LOOT[dgKey];
-    nameEl.style.cursor = 'help'; nameEl.style.color = 'var(--legend)';
-    nameEl.onmouseenter = function(e) {
-      const power = dgKey ? (DUNGEONS.find(d=>d.key===dgKey)?.reqLvl||focus.lvl)+5 : focus.lvl+5;
-      const dg2 = DUNGEONS.find(d=>d.key===dgKey);
-      const bossData2 = (dg2?.bosses||[]).find(b=>b.name===focus.bossName);
-      const skillTxt = bossData2?.skills ? bossData2.skills.map(s=>`${s.icon}${s.name}(${s.desc},${s.castTime||0}s读条)`).join(' · ') : '';
-      let html = `<div style="font-weight:bold;margin-bottom:4px">👑 ${focus.bossName} (掉率100%)</div>`;
-      if (skillTxt) html += `<div style="color:#ff4444;font-size:10px;margin-bottom:4px">${skillTxt}</div>`;
-      if (loot?.bosses?.[focus.bossName]) {
-        const pool = loot.bosses[focus.bossName];
-        const itemRate = Math.floor(100 / pool.length);
-        for (const it of pool) {
-          const r = RARITY.find(r=>r.key===it.rarity);
-          const scaledStats = scaleLootStats(it.stats||{}, it.rarity, power);
-          const statsText = Object.entries(scaledStats).map(([k,v])=>fmtMod(k, v)).join(' ');
-          html += `<div class="${r?.cls||''}" style="font-size:11px;margin:1px 0">${r?.name?.[0]||'?'} ${it.name} ~${itemRate}% <span style="opacity:.5">${statsText}</span></div>`;
-        }
-      } else { html += '<div class="muted">精良~史诗品质装备</div>'; }
-      const tip = $('compare-tip');
-      tip.querySelector('.compare-head').innerHTML = html;
-      tip.querySelector('.compare-body').innerHTML = '';
-      tip.style.display = 'block';
-      positionTip(tip, e);
-    };
-    nameEl.onmouseleave = hideLootTip;
-    nameEl.onmousemove = (e) => positionTip($('compare-tip'), e);
+  const emojiEl = $('mon-emoji'); if (!emojiEl) return;
+  if (!focus || !focus.isBoss) return;
+
+  // 获取BOSS数据(地图/副本/大秘境)
+  let bossData = null;
+  if (state.mode === 'boss') {
+    const map = getMap();
+    if (map?.boss) bossData = map.boss;
+  } else if (state.mode === 'dungeon' || state.mode === 'mythic') {
+    const dg = DUNGEONS.find(d=>d.key===(state.dungeonState||state.mythicState)?.key);
+    if (dg) bossData = (dg.bosses||[]).find(b=>b.name===focus.bossName);
   }
+
+  if (!bossData) return;
+  emojiEl.style.cursor = 'help';
+  emojiEl.onmouseenter = function(e) {
+    let html = '<b>'+focus.name+' Lv.'+focus.lvl+'</b>';
+    if (bossData.skills) {
+      html += '<div style="margin-top:3px;color:#fbbf24">技能:</div>';
+      bossData.skills.forEach(s => html += '<div>'+s.icon+' '+s.name+' — '+s.desc+' ('+(s.castTime||0)+'s读条)</div>');
+    }
+    if (bossData.passive) {
+      html += '<div style="margin-top:3px;color:#6ee7b7">被动:</div>';
+      const p = bossData.passive;
+      if (p.dodgeChance) html += '<div>💨 闪避 +'+(p.dodgeChance*100)+'%</div>';
+      if (p.critChance) html += '<div>💥 暴击 +'+(p.critChance*100)+'%</div>';
+      if (p.dmgReduction) html += '<div>🛡️ 减伤 +'+(p.dmgReduction*100)+'%</div>';
+      if (p.atkBonus) html += '<div>⚔️ 攻击 +'+(p.atkBonus*100)+'%</div>';
+      if (p.leech) html += '<div>🩸 吸血 +'+(p.leech*100)+'%</div>';
+    }
+    const tip = $('compare-tip');
+    tip.querySelector('.compare-head').innerHTML = html;
+    tip.querySelector('.compare-body').innerHTML = '';
+    tip.style.display = 'block';
+    positionTip(tip, e);
+  };
+  emojiEl.onmouseleave = hideLootTip;
+  emojiEl.onmousemove = (e) => positionTip($('compare-tip'), e);
 }
 function renderMonList() {
   const wrap = $('mon-list'); if (!wrap) return;
@@ -259,34 +266,7 @@ function updateBattleVisuals() {
     const map = getMap();
     $('h-zone').textContent = `${map.icon} ${map.name} · ⚔️BOSS战`;
     $('zone-name').textContent = `⚔️ ${map.icon} ${map.name} · BOSS战`;
-    // BOSS名悬浮显示技能/被动
-    $('progress-text').innerHTML = `<b class=\"boss-tip\" style=\"cursor:help;border-bottom:1px dotted var(--muted)\">${map.boss.name}</b>`;
-    const bossTip = $('progress-text').querySelector('.boss-tip');
-    if (bossTip && map.boss.skills) {
-      bossTip.addEventListener('mouseenter', e => {
-        let tip = '<b>'+map.boss.emoji+' '+map.boss.name+' Lv.'+map.boss.lvl+'</b>';
-        if (map.boss.skills) {
-          tip += '<div style=\"margin-top:3px;color:#fbbf24\">技能:</div>';
-          map.boss.skills.forEach(s => tip += '<div>'+s.icon+' '+s.name+' — '+s.desc+' ('+(s.castTime||0)+'s读条)</div>');
-        }
-        if (map.boss.passive) {
-          tip += '<div style=\"margin-top:3px;color:#6ee7b7\">被动:</div>';
-          const p = map.boss.passive;
-          if (p.dodgeChance) tip += '<div>💨 闪避 +'+(p.dodgeChance*100)+'%</div>';
-          if (p.critChance) tip += '<div>💥 暴击 +'+(p.critChance*100)+'%</div>';
-          if (p.dmgReduction) tip += '<div>🛡️ 减伤 +'+(p.dmgReduction*100)+'%</div>';
-          if (p.atkBonus) tip += '<div>⚔️ 攻击 +'+(p.atkBonus*100)+'%</div>';
-          if (p.leech) tip += '<div>🩸 吸血 +'+(p.leech*100)+'%</div>';
-        }
-        const tipEl = $('compare-tip');
-        tipEl.querySelector('.compare-head').innerHTML = tip;
-        tipEl.querySelector('.compare-body').innerHTML = '';
-        tipEl.style.display = 'block';
-        positionTip(tipEl, e);
-      });
-      bossTip.addEventListener('mouseleave', () => { $('compare-tip').style.display = 'none'; });
-      bossTip.addEventListener('mousemove', e => positionTip($('compare-tip'), e));
-    }
+    $('progress-text').innerHTML = `<b>${map.boss.name}</b>`;
   } else if (state.mode === 'dungeon') {
     const dg = DUNGEONS.find(d => d.key === state.dungeonState.key);
     if (!dg) return;
