@@ -1,0 +1,28 @@
+# 备份
+_balance_bak/
+*.bak
+
+# 构建产物(dist是旧版副本)
+dist/
+
+# 压缩包
+*.zip
+
+# 截图/临时
+QQ_*.png
+
+# 一次性修复脚本
+fix_hero.js
+clean_fix.js
+fix_lines.js
+inj2.js
+combat_clean.js
+test_data.js
+boss_skills.js
+
+# Claude Code 本地配置
+.claude/
+
+# OS
+Desktop.ini
+Thumbs.db

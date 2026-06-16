@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>艾泽拉斯放置勇者 · Idle Azeroth</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>⚔️ 艾泽拉斯放置勇者</h1>
+    <div class="head-stats">
+      <span id="h-name" style="cursor:pointer" title="切换角色">👤 <b>-</b></span>
+      <span>📍 <b id="h-zone">-</b></span>
+      <span>💰 <b id="h-gold">0</b></span>
+      <span>💎 <b id="h-gem">0</b></span>
+      <span>🎫 <b id="h-tickets">0</b></span>
+      <span>🐾 <b id="h-comp-tickets">0</b></span>
+      <span>🏅 <b id="h-honor">0</b></span>
+      <span title="塔币(无尽塔货币)">🪙 <b id="h-towercoin">0</b></span>
+      <span title="魔法精华(附魔/重铸材料)">✨ <b id="h-essence">0</b></span>
+      <span class="pill" id="h-clock">00:00</span>
+    </div>
+  </header>
+
+  <!-- Left: Hero panel -->
+  <section class="panel">
+    <h2>🧙 角色面板</h2>
+    <div class="row">
+      <span><span id="class-label" class="class-label">职业</span></span>
+      <b>Lv.<span id="s-lvl">1</span></b>
+    </div>
+    <div class="bar xp" style="margin:6px 0 8px"><i id="b-xp"></i><span id="t-xp">0/10</span></div>
+    <div class="bar hp" style="margin-bottom:4px"><i id="b-hp"></i><span id="t-hp"></span></div>
+    <div class="bar mp" style="margin-bottom:8px" id="b-mp-wrap"><i id="b-mp"></i><span id="t-mp"></span></div>
+
+    <h2>📊 基础属性</h2>
+    <div class="attr-grid">
+      <div class="attr-cell"><div class="v" id="a-str">0</div><div class="l">力量</div></div>
+      <div class="attr-cell"><div class="v" id="a-agi">0</div><div class="l">敏捷</div></div>
+      <div class="attr-cell"><div class="v" id="a-int">0</div><div class="l">智力</div></div>
+      <div class="attr-cell"><div class="v" id="a-spi">0</div><div class="l">精神</div></div>
+      <div class="attr-cell"><div class="v" id="a-sta">0</div><div class="l">耐力</div></div>
+    </div>
+    <h2 style="margin-top:10px">⚔️ 战斗属性</h2>
+    <div class="row"><span class="muted">攻击</span><b id="s-atk">0</b></div>
+    <div class="row"><span class="muted">防御</span><b id="s-def">0</b></div>
+    <div class="row"><span class="muted">暴击</span><b id="s-crit">5%</b></div>
+    <div class="row"><span class="muted">暴伤</span><b id="s-critd">150%</b></div>
+    <div class="row"><span class="muted">攻速</span><b id="s-spd">1.0/s</b></div>
+    <div class="row"><span class="muted">回复</span><b id="s-reg">1/s</b></div>
+
+    <h2 style="margin-top:10px">✨ 副属性</h2>
+    <div class="row"><span class="muted">吸血</span><b id="s-leech">0%</b></div>
+    <div class="row"><span class="muted">全能</span><b id="s-vers">0%</b></div>
+    <div class="row"><span class="muted">极速</span><b id="s-haste">0%</b></div>
+    <div class="row"><span class="muted">精通</span><b id="s-mastery">5</b></div>
+    <div class="muted" style="font-size:10px;margin-top:2px" id="mastery-desc">未选择专精</div>
+
+    <h2 style="margin-top:10px">🎒 装备</h2>
+    <div class="equip-grid" id="equip-grid"></div>
+  </section>
+
+  <!-- Center: Battle -->
+  <section>
+    <div class="stage" id="stage">
+      <div class="stage-info">
+        <span>📍 <b id="zone-name">-</b></span>
+        <span id="progress-text"></span>
+      </div>
+      <div class="arena" id="arena">
+        <div class="fighter">
+          <div class="emoji" id="hero-emoji">🧙</div>
+          <div class="name">你</div>
+          <div class="lvl">Lv.<span id="hero-lvl-tag">1</span></div>
+          <div class="bar hp" style="margin-top:6px"><i id="b-hp2"></i><span id="t-hp2"></span></div>
+        </div>
+        <div class="vs">⚔️</div>
+        <div class="mon-list" id="mon-list"></div>
+      </div>
+      <div class="buff-bar" id="buff-bar"></div>
+      <div id="cast-bar-wrap" style="visibility:hidden;margin:4px 14px 2px;min-height:26px">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:1px"><span id="cast-name"></span> <span id="cast-time"></span></div>
+        <div class="bar" style="height:10px;background:var(--panel-2)"><i id="b-cast" style="background:linear-gradient(90deg,#fbbf24,#f59e0b);height:100%;width:0%"></i></div>
+      </div>
+      <div id="comp-mini" style="display:none;margin:0 0 4px 14px;padding:4px 8px;background:var(--panel-2);border-radius:6px;font-size:10px;max-width:42%">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span id="comp-mini-name" style="cursor:pointer"></span>
+        </div>
+        <div class="bar hp"><i id="b-comp-hp"></i><span id="t-comp-hp"></span></div>
+        <div id="comp-skills" style="display:flex;gap:5px;flex-wrap:wrap;margin-top:3px"></div>
+      </div>
+      <div class="row" style="justify-content:center;gap:8px;flex-wrap:wrap">
+        <button id="btn-speed" title="战斗倍速">⏩ 1x</button>
+        <button id="btn-leave" class="success" style="display:none">🚪 离开</button>
+      </div>
+      <div class="skill-bar" id="skill-bar"></div>
+      <div class="log" id="log">
+        <div class="muted" style="text-align:center;padding:4px;font-size:10px">⚔️ 战斗日志</div>
+      </div>
+      <div class="dmg-meter" id="dmg-meter">
+        <div class="dm-head">
+          <span>📊 伤害统计</span>
+          <span class="dm-dps" id="dm-dps">DPS 0</span>
+          <button id="btn-dmg-reset" data-action="dmgreset" title="清零统计">重置</button>
+        </div>
+        <div class="dm-row"><span class="dm-lbl">🦸 英雄</span><div class="dm-bar"><i id="dm-hero-bar"></i></div><span class="dm-val" id="dm-hero-val">0</span></div>
+        <div class="dm-row"><span class="dm-lbl">🐾 随从</span><div class="dm-bar"><i id="dm-comp-bar" class="comp"></i></div><span class="dm-val" id="dm-comp-val">0</span></div>
+        <div class="dm-total muted" id="dm-total">总计 0 · 0s</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Right: tabs -->
+  <section class="panel">
+    <div class="tabs">
+      <div class="tab active" data-tab="map">🗺️</div>
+      <div class="tab" data-tab="inv">🎒</div>
+      <div class="tab" data-tab="shop">📊</div>
+      <div class="tab" data-tab="skill">📖</div>
+      <div class="tab" data-tab="talent">🌳</div>
+      <div class="tab" data-tab="companion">🐾</div>
+      <div class="tab" data-tab="dungeon">⚔️</div>
+      <div class="tab" data-tab="arena">🏟️</div>
+      <div class="tab" data-tab="artifact">🗡️</div>
+      <div class="tab" data-tab="life">🛠️</div>
+      <div class="tab" data-tab="progression">🏆</div>
+      <div class="tab" data-tab="events">🌟</div>
+      <div class="tab" data-tab="ascend">✨</div>
+    </div>
+
+    <div class="tab-panel active" id="tab-map">
+      <div class="muted" style="margin-bottom:6px">当前: <b id="cur-location">-</b></div>
+      <div class="map-list" id="map-list"></div>
+    </div>
+
+    <div class="tab-panel" id="tab-inv">
+      <div class="muted" style="margin-bottom:6px">背包 <span id="inv-count">0</span>/40</div>
+      <div id="inv-toolbar" style="margin-bottom:6px;display:flex;gap:4px;flex-wrap:wrap;align-items:center">
+        <span style="font-size:11px;color:var(--muted)">自动卖:</span>
+        <button data-action="autosell" data-rarity="off" id="btn-as-off">关闭</button>
+        <button data-action="autosell" data-rarity="common" id="btn-as-common">普通</button>
+        <button data-action="autosell" data-rarity="uncommon" id="btn-as-uncommon">优秀及以下</button>
+        <button data-action="autosell" data-rarity="rare" id="btn-as-rare">精良及以下</button>
+        <span style="flex-basis:100%"></span>
+        <button data-action="sellall" data-rarity="common">一键卖普通</button>
+        <button data-action="sellall" data-rarity="uncommon">一键卖优秀及以下</button>
+        <button data-action="sellall" data-rarity="rare">一键卖精良及以下</button>
+      </div>
+      <div class="inv-list" id="inv-list"></div>
+    </div>
+
+    <div class="tab-panel" id="tab-shop">
+      <div class="muted" style="margin-bottom:6px">📊 成长指南</div>
+      <div id="shop-list"></div>
+    </div>
+
+    <div class="tab-panel" id="tab-skill">
+      <div class="muted" style="margin-bottom:6px">职业技能(随等级解锁)
+        <label style="float:right">自动施法
+          <input type="checkbox" id="auto-sk" checked>
+        </label>
+      </div>
+      <div id="skill-list"></div>
+      <div id="passive-list"></div>
+    </div>
+
+    <div class="tab-panel" id="tab-talent">
+      <div class="muted" style="margin-bottom:6px">天赋点: <b id="talent-points">0</b>
+        <button class="danger" id="btn-reset-talents" style="float:right">洗点 50💎</button>
+      </div>
+      <div id="talent-list"></div>
+    </div>
+
+    <div class="tab-panel" id="tab-companion">
+      <div class="sub-tabs">
+        <span class="sub-tab active" data-cmpsub="comp">🐾 随从</span>
+        <span class="sub-tab" data-cmpsub="mount">🐎 坐骑</span>
+      </div>
+      <div id="companion-sub-comp">
+        <div style="display:flex;gap:4px;margin-bottom:8px">
+          <button class="gold" id="btn-draw">🎰 抽随从</button>
+          <span class="muted" style="font-size:11px" id="gem-cost"></span>
+        </div>
+        <div id="companion-list"></div>
+      </div>
+      <div id="companion-sub-mount" style="display:none">
+        <div id="mount-panel"></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-dungeon">
+      <div class="sub-tabs">
+        <span class="sub-tab active" data-dgsub="dungeon">⚔️ 副本</span>
+        <span class="sub-tab" data-dgsub="tower">⛰️ 无尽塔</span>
+      </div>
+      <div id="dungeon-sub-dungeon">
+        <div class="muted" style="margin-bottom:6px">挑战副本 BOSS,获取传说装备</div>
+        <div id="dungeon-list"></div>
+      </div>
+      <div id="dungeon-sub-tower" style="display:none">
+        <div id="tower-panel"></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-arena"></div>
+
+    <div class="tab-panel" id="tab-artifact"></div>
+
+    <div class="tab-panel" id="tab-life"></div>
+
+    <div class="tab-panel" id="tab-progression">
+      <div class="muted" style="margin-bottom:6px">成就 / 图鉴 / 声望</div>
+    </div>
+
+    <div class="tab-panel" id="tab-events">
+      <div class="muted" style="margin-bottom:6px">世界Boss / 日常 / 赛季</div>
+    </div>
+
+    <div class="tab-panel" id="tab-ascend">
+      <div class="muted" style="margin-bottom:6px">觉醒 / 光辉值</div>
+    </div>
+  </section>
+
+  <div class="footer-actions">
+    <button id="btn-save">💾 保存</button>
+    <button id="btn-export">📤 导出</button>
+    <button id="btn-import">📥 导入</button>
+    <button id="btn-reset" class="danger">♻️ 重新开始</button>
+  </div>
+</div>
+
+<!-- Travel -->
+<div class="modal-bg" id="modal-travel">
+  <div class="modal">
+    <h3>🐴 旅行中...</h3>
+    <div id="travel-text" class="muted" style="margin-bottom:10px"></div>
+    <div class="bar xp" style="margin:8px 0"><i id="b-travel"></i><span id="t-travel"></span></div>
+    <div class="muted" style="font-size:11px">马蹄声声,正在穿越艾泽拉斯...</div>
+  </div>
+</div>
+
+<!-- Faction selection -->
+<div class="modal-bg" id="modal-faction">
+  <div class="modal">
+    <h3>⚔️ 选择阵营</h3>
+    <div class="muted">你的选择将决定初始地图和可用种族</div>
+    <div class="faction-grid" id="faction-grid"></div>
+  </div>
+</div>
+
+<!-- Race selection -->
+<div class="modal-bg" id="modal-race">
+  <div class="modal">
+    <h3 id="race-title">选择种族</h3>
+    <div class="muted" id="race-desc">每个种族拥有独特的天赋加成</div>
+    <div class="race-grid" id="race-grid"></div>
+    <button class="primary" id="confirm-race" disabled>确认种族</button>
+  </div>
+</div>
+
+<!-- Class selection -->
+<div class="modal-bg" id="modal-class">
+  <div class="modal">
+    <h3>🏰 选择职业</h3>
+    <div class="muted">每个职业拥有独特的属性、技能与三大天赋树</div>
+    <div class="class-grid" id="class-grid"></div>
+    <button class="primary" id="confirm-class" disabled>确认职业</button>
+  </div>
+</div>
+
+<!-- Name input -->
+<div class="modal-bg" id="modal-name">
+  <div class="modal">
+    <h3>📝 为英雄命名</h3>
+    <div class="muted" id="name-summary"></div>
+    <input id="input-name" type="text" maxlength="8" placeholder="输入角色名(最多8字)" style="width:100%;padding:10px;margin:12px 0;background:var(--panel-2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:16px;text-align:center">
+    <button class="primary" id="confirm-name" disabled>踏上征程</button>
+  </div>
+</div>
+
+<!-- Equipment compare tooltip -->
+<div class="compare-tip" id="compare-tip" style="display:none">
+  <div class="compare-head"></div>
+  <div class="compare-body"></div>
+</div>
+
+<!-- Character list -->
+<div class="modal-bg" id="modal-charlist">
+  <div class="modal">
+    <h3>👥 角色列表</h3>
+    <div id="charlist-content" style="max-height:60vh;overflow-y:auto"></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="primary" id="btn-new-char">+ 新建角色</button>
+      <button data-modal-close="modal-charlist">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Offline -->
+<div class="modal-bg" id="modal-offline">
+  <div class="modal">
+    <h3>🌙 欢迎回来</h3>
+    <div id="offline-text" class="muted"></div>
+    <div id="offline-loot" style="margin:10px 0;text-align:left;font-size:13px"></div>
+    <button class="primary" data-modal-close="modal-offline">领取奖励</button>
+  </div>
+</div>
+
+<!-- Level up -->
+<div class="modal-bg" id="modal-levelup">
+  <div class="modal">
+    <h3>🎉 升级了!</h3>
+    <div id="levelup-text"></div>
+    <button class="success" data-modal-close="modal-levelup">继续冒险</button>
+  </div>
+</div>
+
+<!-- Dungeon failed -->
+<div class="modal-bg" id="modal-dungeon-fail">
+  <div class="modal">
+    <h3>💀 副本失败</h3>
+    <div id="dungeon-fail-text"></div>
+    <button class="danger" data-modal-close="modal-dungeon-fail">返回主城</button>
+  </div>
+</div>
+
+<!-- Dungeon clear -->
+<div class="modal-bg" id="modal-dungeon-clear">
+  <div class="modal">
+    <h3>🏆 副本通关!</h3>
+    <div id="dungeon-clear-text"></div>
+    <button class="gold" data-modal-close="modal-dungeon-clear">收下奖励</button>
+  </div>
+</div>
+
+<!-- Item detail (词缀/宝石/附魔/重铸) -->
+<div class="modal-bg" id="modal-item-detail">
+  <div class="modal" style="max-width:520px">
+    <div id="item-detail-body"></div>
+  </div>
+</div>
+
+<!-- Arena fight result -->
+<div class="modal-bg" id="modal-arena-result">
+  <div class="modal" style="max-width:400px">
+    <h3 id="arena-res-title">竞技场</h3>
+    <div class="arena-duel">
+      <div class="duel-side">
+        <div class="duel-emoji" id="arena-res-hero-emoji">🧙</div>
+        <div class="duel-name" id="arena-res-hero-name">你</div>
+        <div class="bar hp" style="margin:5px 0 3px"><i id="arena-res-hero-bar"></i></div>
+        <div class="muted" id="arena-res-hero-pow" style="font-size:10px"></div>
+      </div>
+      <div class="duel-vs">⚔️</div>
+      <div class="duel-side">
+        <div class="duel-emoji" id="arena-res-opp-emoji">👹</div>
+        <div class="duel-name" id="arena-res-opp-name">对手</div>
+        <div class="bar hp" style="margin:5px 0 3px"><i id="arena-res-opp-bar"></i></div>
+        <div class="muted" id="arena-res-opp-pow" style="font-size:10px"></div>
+      </div>
+    </div>
+    <div id="arena-res-reward" style="margin:10px 0;font-size:14px;line-height:1.6"></div>
+    <button class="primary" data-modal-close="modal-arena-result" id="arena-res-close">确定</button>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="icons.js"></script>
+<script src="talents_ext.js"></script>
+<script src="skills_ext.js"></script>
+<script src="companion_ext.js"></script>
+<script src="state.js"></script>
+<script src="enhance.js"></script>
+<script src="progression.js"></script>
+<script src="events.js"></script>
+<script src="ascend.js"></script>
+<script src="combat.js"></script>
+<script src="world.js"></script>
+<script src="tower.js"></script>
+<script src="life.js"></script>
+<script src="artifact.js"></script>
+<script src="mount.js"></script>
+<script src="arena.js"></script>
+<script src="passives.js"></script>
+<script src="spd_tuning.js"></script>
+<script src="render.js"></script>
+<script src="main.js"></script>
+</body>
+</html>

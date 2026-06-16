@@ -1,0 +1,1175 @@
+/* =========================================================
+   render.js — 选择性渲染(只重建脏面板),修复按钮点不响应
+   ----------------------------------------------------------
+   核心思路:
+   1) 动作触发 markDirty('xxx'),loop 中只重建该面板
+   2) 战斗血条/数字直接更新 textContent / style.width,不重建 DOM
+   3) BOSS/副本 CD 通过查找已有元素直接更新文本,不整列表重建
+   ========================================================= */
+
+/* ---------- 每帧轻量更新(不重建 DOM) ---------- */
+let attrTips = {};
+
+function setupAttrHover() {
+  document.querySelectorAll('.attr-cell').forEach(cell => {
+    cell.addEventListener('mouseenter', e => {
+      const vEl = cell.querySelector('.v');
+      const key = vEl ? vEl.id.replace('a-','') : null;
+      const html = attrTips[key];
+      if (!html) return;
+      const tip = $('compare-tip');
+      tip.querySelector('.compare-head').innerHTML = html;
+      tip.querySelector('.compare-body').innerHTML = '';
+      tip.style.display = 'block';
+      positionTip(tip, e);
+    });
+    cell.addEventListener('mouseleave', () => { $('compare-tip').style.display = 'none'; });
+    cell.addEventListener('mousemove', e => positionTip($('compare-tip'), e));
+  });
+}
+/* 竖排敌人列表:仅在敌群构成/焦点变化时重建 DOM(避免每帧重建破坏 hover/点击),
+   每帧只更新血条宽度与数字。焦点行带 legacy id(mon-emoji/mon-name/b-mhp/t-mhp)供 showFloat 锚定。 */
+let _monListSig = '';
+let skillDragging = false;   // 技能栏拖拽排序进行中(由 main.js 设置),期间不重建技能栏
+let _buffBarSig = '';        // 增益条内容签名,变化才重绘
+/* 当前职业的 buff 元信息(key→{icon,name,desc,dr}),从技能定义构建 */
+function buffMetaForClass() {
+  const c = getCls(); const map = {};
+  if (c) for (const sk of Object.values(c.skills)) {
+    if (sk.type === 'buff' && sk.buff) map[sk.buff] = { icon: sk.icon, name: sk.name, desc: sk.desc || '', dr: !!(typeof BUFF_FX==='object' && BUFF_FX[sk.buff] && BUFF_FX[sk.buff].dr) };
+  }
+  return map;
+}
+/* 焦点敌人当前的减益(debuff)列表 */
+function focusDebuffs(now) {
+  const mon = state.currentMonsters && state.currentMonsters[0];
+  if (!mon || mon.hp <= 0) return [];
+  const out = [];
+  if (mon.slowUntil > now)   out.push({ icon: '❄️', name: '减速',   desc: '攻击速度降低约33%', left: Math.ceil((mon.slowUntil - now) / 1000) });
+  if (mon.dot > 0 && mon.dotEnd > now) out.push({ icon: '🔥', name: '灼烧/中毒', desc: `每秒受到 ${fmt(mon.dot)} 持续伤害`, left: Math.ceil((mon.dotEnd - now) / 1000) });
+  if (mon.sunderUntil > now) out.push({ icon: '🔨', name: '破甲',   desc: '防御降低 30%', left: Math.ceil((mon.sunderUntil - now) / 1000) });
+  if (mon._arcaneShield > 0) out.push({ icon: '🔮', name: '法力护盾', desc: `吸收 ${fmt(mon._arcaneShield)} 点伤害`, left: 0 });
+  return out;
+}
+function renderBuffBar() {
+  const bar = $('buff-bar'); if (!bar) return;
+  const now = Date.now();
+  const meta = buffMetaForClass();
+  // 英雄增益
+  const buffs = [];
+  for (const k in (state.buffs || {})) {
+    const exp = state.buffs[k];
+    if (!(exp > now)) continue;
+    const m = meta[k] || { icon: '✨', name: k, desc: '', dr: false };
+    buffs.push({ kind: m.dr ? 'dr' : 'buff', icon: m.icon, name: m.name, desc: m.desc, left: Math.ceil((exp - now) / 1000) });
+  }
+  buffs.sort((a, b) => a.left - b.left);
+  // 焦点敌人减益
+  const debuffs = focusDebuffs(now).map(d => ({ kind: 'debuff', icon: d.icon, name: '敌·' + d.name, desc: d.desc, left: d.left }));
+  // 英雄身上的减益(boss 等施加)
+  const heroDe = [];
+  if (typeof DEBUFF_FX === 'object' && state.heroDebuffs) {
+    for (const k in state.heroDebuffs) {
+      const d = state.heroDebuffs[k]; if (!(d.expire > now)) continue;
+      const fx = DEBUFF_FX[k] || { name: k, icon: '☠️' };
+      let desc = fx.name;
+      if (k === 'burn') desc = `每秒受到 ${fmt(d.dps || 1)} 持续伤害`;
+      else if (fx.atkMul) desc = `攻击降低 ${Math.round((1 - fx.atkMul) * 100)}%`;
+      else if (fx.spdMul) desc = `攻速降低 ${Math.round((1 - fx.spdMul) * 100)}%`;
+      else if (fx.takenMul) desc = `受到伤害 +${Math.round((fx.takenMul - 1) * 100)}%`;
+      heroDe.push({ kind: 'self-de', icon: fx.icon, name: '你·' + fx.name, desc, left: Math.ceil((d.expire - now) / 1000) });
+    }
+  }
+  const all = buffs.concat(heroDe, debuffs);
+  const sig = all.map(b => b.kind + b.icon + b.left).join('|');
+  if (sig === _buffBarSig) return;   // 内容(含倒计时)没变就不重绘
+  _buffBarSig = sig;
+  bar.innerHTML = all.map(b => {
+    const tip = `${b.name}${b.desc ? ' · ' + b.desc : ''}${b.left > 0 ? ' · 剩余' + b.left + '秒' : ''}`;
+    return `<div class="buff-chip ${b.kind}" data-tip="${tip.replace(/"/g, '&quot;')}"><div class="b-ic">${b.icon}</div><div class="b-t">${b.left > 0 ? b.left + 's' : '∞'}</div></div>`;
+  }).join('');
+}
+function attachFocusBossHover(focus) {
+  const nameEl = $('mon-name'); if (!nameEl) return;
+  if (focus && focus.bossName && state.mode === 'dungeon' && state.dungeonState) {
+    const dgKey = state.dungeonState.key;
+    const loot = DUNGEON_LOOT[dgKey];
+    nameEl.style.cursor = 'help'; nameEl.style.color = 'var(--legend)';
+    nameEl.onmouseenter = function(e) {
+      const power = dgKey ? (DUNGEONS.find(d=>d.key===dgKey)?.reqLvl||focus.lvl)+5 : focus.lvl+5;
+      const dg2 = DUNGEONS.find(d=>d.key===dgKey);
+      const bossData2 = (dg2?.bosses||[]).find(b=>b.name===focus.bossName);
+      const skillTxt = bossData2?.skills ? bossData2.skills.map(s=>`${s.icon}${s.name}(${s.desc},${s.castTime||0}s读条)`).join(' · ') : '';
+      let html = `<div style="font-weight:bold;margin-bottom:4px">👑 ${focus.bossName} (掉率100%)</div>`;
+      if (skillTxt) html += `<div style="color:#ff4444;font-size:10px;margin-bottom:4px">${skillTxt}</div>`;
+      if (loot?.bosses?.[focus.bossName]) {
+        const pool = loot.bosses[focus.bossName];
+        const itemRate = Math.floor(100 / pool.length);
+        for (const it of pool) {
+          const r = RARITY.find(r=>r.key===it.rarity);
+          const scaledStats = scaleLootStats(it.stats||{}, it.rarity, power);
+          const statsText = Object.entries(scaledStats).map(([k,v])=>fmtMod(k, v)).join(' ');
+          html += `<div class="${r?.cls||''}" style="font-size:11px;margin:1px 0">${r?.name?.[0]||'?'} ${it.name} ~${itemRate}% <span style="opacity:.5">${statsText}</span></div>`;
+        }
+      } else { html += '<div class="muted">精良~史诗品质装备</div>'; }
+      const tip = $('compare-tip');
+      tip.querySelector('.compare-head').innerHTML = html;
+      tip.querySelector('.compare-body').innerHTML = '';
+      tip.style.display = 'block';
+      positionTip(tip, e);
+    };
+    nameEl.onmouseleave = hideLootTip;
+    nameEl.onmousemove = (e) => positionTip($('compare-tip'), e);
+  }
+}
+function renderMonList() {
+  const wrap = $('mon-list'); if (!wrap) return;
+  const alive = state.currentMonsters.filter(m => m.hp > 0);
+  if (alive.length === 0) { if (_monListSig !== '') { wrap.innerHTML = ''; _monListSig = ''; } return; }
+  const focus = state.currentMonsters[0];
+  const sig = alive.map(m => m._uid + (m === focus ? 'F' : '')).join('|');
+  if (sig !== _monListSig) {
+    _monListSig = sig;
+    wrap.innerHTML = alive.map(m => {
+      const isFocus = m === focus;
+      const seg = Array.from(m.name);
+      const emoji = seg[0], nm = seg.slice(1).join('') || '敌人';
+      return `<div class="mon-row${isFocus?' focus':''}" data-uid="${m._uid}">
+        <div class="m-emoji"${isFocus?' id="mon-emoji"':''}>${emoji}</div>
+        <div class="m-mid">
+          <div class="m-name"${isFocus?' id="mon-name"':''}>${nm}<span class="m-lvl">Lv.${m.lvl}</span><span class="m-debuffs"></span></div>
+          <div class="bar hp"><i${isFocus?' id="b-mhp"':''}></i><span${isFocus?' id="t-mhp"':''}></span></div>
+        </div>
+      </div>`;
+    }).join('');
+    attachFocusBossHover(focus);
+  }
+  // 每帧更新血条 + 减益小图标(按 uid 定位行)
+  const now = Date.now();
+  for (const m of alive) {
+    const row = wrap.querySelector(`[data-uid="${m._uid}"]`); if (!row) continue;
+    const fill = row.querySelector('.bar > i'); const txt = row.querySelector('.bar > span');
+    if (fill) fill.style.width = Math.max(0, m.hp / m.hpMax * 100) + '%';
+    if (txt) txt.textContent = `${fmt(Math.max(0, m.hp))}/${fmt(m.hpMax)}`;
+    const de = row.querySelector('.m-debuffs');
+    if (de) {
+      let s = '';
+      if (m.slowUntil > now)   s += `<span title="减速:攻速降低">❄️</span>`;
+      if (m.dot > 0 && m.dotEnd > now) s += `<span title="灼烧/中毒:每秒 ${fmt(m.dot)} 伤害">🔥</span>`;
+      if (m.sunderUntil > now) s += `<span title="破甲:防御降低30%">🔨</span>`;
+      if (m._arcaneShield > 0) s += `<span title="法力护盾:吸收 ${fmt(m._arcaneShield)} 伤害">🔮</span>`;
+      if (de.dataset.s !== s) { de.innerHTML = s; de.dataset.s = s; }
+    }
+  }
+}
+/* ---------- 伤害统计(战斗日志下方) ---------- */
+function updateDmgMeter() {
+  const heroDmg = (typeof dmgStats !== 'undefined') ? (dmgStats.hero || 0) : 0;
+  const compDmg = (typeof dmgStats !== 'undefined') ? (dmgStats.comp || 0) : 0;
+  const total = heroDmg + compDmg;
+  const elapsed = (typeof dmgStats !== 'undefined' && dmgStats.start)
+    ? Math.max(0.001, ((dmgStats.last || dmgStats.start) - dmgStats.start) / 1000)
+    : 0.001;
+  const dps = Math.round(total / elapsed);
+
+  // DPS 文本
+  const dpsEl = $('dm-dps');
+  if (dpsEl) dpsEl.textContent = 'DPS ' + fmt(dps);
+
+  // 英雄条
+  const heroBar = $('dm-hero-bar');
+  const heroVal = $('dm-hero-val');
+  if (heroBar && total > 0) heroBar.style.width = (heroDmg / total * 100) + '%';
+  else if (heroBar) heroBar.style.width = '0%';
+  if (heroVal) heroVal.textContent = fmt(heroDmg);
+
+  // 随从条
+  const compBar = $('dm-comp-bar');
+  const compVal = $('dm-comp-val');
+  if (compBar && total > 0) compBar.style.width = (compDmg / total * 100) + '%';
+  else if (compBar) compBar.style.width = '0%';
+  if (compVal) compVal.textContent = fmt(compDmg);
+
+  // 总计 + 时间
+  const totalEl = $('dm-total');
+  if (totalEl) totalEl.textContent = '总计 ' + fmt(total) + ' · ' + Math.floor(elapsed) + 's';
+}
+
+function updateBattleVisuals() {
+  if (!state.cls) return;
+  const c = getCls();
+  const h = state.hero;
+
+  // 头部 stats(便宜的文本更新)
+  const race = RACES[state.race];
+  const cls = getCls();
+  const accountTitle = (typeof account!=='undefined' && account?.title) || '';
+  const curTitle = accountTitle || state.title || '';
+  const titleHtml = curTitle ? `<span class="pill" style="background:var(--gold);color:#000;font-weight:bold" title="成就称号">${curTitle}</span> ` : '';
+  $('h-name').innerHTML = `${race?.icon||'👤'} <b>${state.name||'冒险者'}</b> ${titleHtml}<span class="pill">${classIcon(state.cls, 16, cls?.icon||'')} Lv.${state.hero.lvl}</span>`;
+  $('h-name').title = '点击切换角色';
+  $('h-gold').textContent = fmt(state.gold);
+  $('h-gem').textContent = fmt(state.gem);
+  $('h-tickets').textContent = fmt(state.tickets || 0);
+  $('h-comp-tickets').textContent = fmt(state.compTickets || 0);
+  $('h-honor').textContent = fmt(state.honor);
+  if ($('h-towercoin')) $('h-towercoin').textContent = fmt(state.towerCoin || 0);
+  if ($('h-essence')) $('h-essence').textContent = fmt(state.essence || 0);
+  if ($('btn-speed')) { const bs = state.battleSpeed || 1; const lbl = `⏩ ${bs}x`; if ($('btn-speed').textContent !== lbl) { $('btn-speed').textContent = lbl; $('btn-speed').classList.toggle('gold', bs > 1); } }
+
+  // XP / HP / 资源条
+  setBar($('b-xp'), h.lvl >= MAX_LEVEL ? 100 : h.xp / xpNeeded(h.lvl) * 100,
+    h.lvl >= MAX_LEVEL ? 'MAX' : `${fmt(h.xp)}/${fmt(xpNeeded(h.lvl))}`);
+  setBar($('b-hp'), state.hp/h.hpMax*100, `${fmt(state.hp)}/${fmt(h.hpMax)}`);
+  setBar($('b-hp2'), state.hp/h.hpMax*100, `${fmt(state.hp)}/${fmt(h.hpMax)}`);
+  setBar($('b-mp'), state.resource/state.resourceMax*100,
+    `${c.resource} ${fmt(state.resource)}/${fmt(state.resourceMax)}`);
+
+  // 怪物信息(竖排敌人列表)
+  renderMonList();
+
+  // 等级、英雄表情
+  $('s-lvl').textContent = h.lvl;
+  $('hero-lvl-tag').textContent = h.lvl;
+  // 战斗头像:用当前专精图标,未选专精回退职业 emoji(每帧调用,故按签名缓存,避免重建 <img> 闪烁)
+  const heEl = $('hero-emoji');
+  const avKey = state.specialization ? (state.cls + ':' + state.specialization) : ('emoji:' + state.cls);
+  if (heEl.dataset.av !== avKey) {
+    heEl.dataset.av = avKey;
+    heEl.innerHTML = state.specialization ? specIcon(state.cls, state.specialization, 56, c.emoji) : c.emoji;
+  }
+
+  // 关卡信息
+  if (state.mode === 'travel') {
+    const t = state.travel;
+    const map = MAPS.find(m => m.key === (t && t.mapKey));
+    $('h-zone').textContent = `🐴 旅行中...`;
+    $('zone-name').textContent = `🐴 前往 ${map ? map.icon + ' ' + map.name : '...'}`;
+    $('progress-text').innerHTML = `<b>正在骑马赶路...</b>`;
+  } else if (state.mode === 'world') {
+    const map = getMap();
+    const sub = map.sub[state.currentSubzone];
+    const subKey = `${state.currentMap}-${state.currentSubzone}`;
+    const subKills = state.subzoneKills[subKey] || 0;
+    const cleared = state.subzoneCleared[subKey];
+    $('h-zone').textContent = `${map.icon} ${map.name} · ${sub.name}`;
+    $('zone-name').textContent = `${map.icon} ${map.name} · ${sub.name} (Lv ${sub.lvl[0]}-${sub.lvl[1]})`;
+    $('progress-text').innerHTML = `探索进度 <b>${Math.min(subKills,50)}</b> / 50 ${cleared?'✅':''}`;
+  } else if (state.mode === 'boss') {
+    const map = getMap();
+    $('h-zone').textContent = `${map.icon} ${map.name} · ⚔️BOSS战`;
+    $('zone-name').textContent = `⚔️ ${map.icon} ${map.name} · BOSS战`;
+    $('progress-text').innerHTML = `<b>${map.boss.name}</b>`;
+  } else if (state.mode === 'dungeon') {
+    const dg = DUNGEONS.find(d => d.key === state.dungeonState.key);
+    if (!dg) return;
+    const bossList = dg.bosses || [];
+    const killedBosses = bossList.filter(b => b.wave < state.dungeonState.wave).length;
+    const curBoss = bossList.find(b => b.wave === state.dungeonState.wave);
+    const bossNames = bossList.map(b => b.name).join(' › ');
+    $('h-zone').textContent = `${dg.icon} ${dg.name}`;
+    $('zone-name').textContent = `${dg.icon} ${dg.name}`;
+    const bossTag = curBoss ? ` ⚔️<b style="color:var(--legend)">${curBoss.name}</b>` : '';
+    $('progress-text').innerHTML = `波次 ${state.dungeonState.wave}/${dg.waves} · BOSS ${killedBosses}/${bossList.length}${bossTag}`;
+  } else if (state.mode === 'mythic') {
+    const ms = state.mythicState;
+    const dg = DUNGEONS.find(d => d.key === ms.key);
+    if (!dg) return;
+    const bossList = dg.bosses || [];
+    const killedBosses = bossList.filter(b => b.wave < ms.wave).length;
+    const curBoss = bossList.find(b => b.wave === ms.wave);
+    const bossTag = curBoss ? ` ⚔️<b style="color:var(--legend)">${curBoss.name}</b>` : '';
+    const affixStr = (ms.affixes && ms.affixes.length > 0)
+      ? ' '+ms.affixes.map(a => `<span style="background:rgba(239,68,68,0.12);color:#f87171;padding:0 4px;border-radius:3px;font-size:10px;margin:0 1px;cursor:help"
+        onmouseenter="showAffixTip(event,'${a.icon} ${a.name}','${a.desc}')"
+        onmouseleave="hideAffixTip()">${a.icon}</span>`).join('')
+      : '';
+    $('h-zone').textContent = `🌟 大秘境 +${ms.level||state.mythicLevel}`;
+    $('zone-name').innerHTML = `🌟 大秘境 +${ms.level||state.mythicLevel} · ${dg.name}${affixStr}`;
+    $('progress-text').innerHTML = `波次 ${ms.wave}/${dg.waves} · BOSS ${killedBosses}/${bossList.length}${bossTag}`;
+  } else if (state.mode === 'tower') {
+    const ts = state.towerState;
+    if (ts) {
+      const type = (typeof towerMonsterType === 'function') ? towerMonsterType(ts.floor) : 'normal';
+      const typeTag = type==='boss'?' 👑BOSS':type==='elite'?' 🗡️精英':'';
+      $('h-zone').textContent = `⛰️ 无尽塔 · 第${ts.floor}层`;
+      $('zone-name').textContent = `⛰️ 无尽塔 · 第${ts.floor}层${typeTag}`;
+      $('progress-text').innerHTML = `本次 +${ts.coinThisRun||0}🪙 · 最高 ${state.tower?.highest||0} 层`;
+    }
+  }
+
+  // 随从显示(arena下方)
+  const comp=getActiveCompanion();
+  if(comp&&state.mode!=='travel'){
+    const tpl=COMPANIONS.find(c=>c.key===comp.key);
+    const q=(typeof compQuality==='function')?compQuality(tpl):{name:'',mult:1};
+    const st=computeCompanionStats();if(!st)return;
+    const compHp=state._compHp??st.hpMax;
+    const compDown=(state._compDownUntil||0)>Date.now();
+    const reviveLeft=compDown?Math.ceil(((state._compDownUntil)-Date.now())/1000):0;
+    $('comp-mini').style.display='';
+    $('comp-mini').style.opacity=compDown?'0.5':'1';
+    const statusTag=compDown?` · <span style="color:#fde047">💫倒下 ${reviveLeft}s</span>`:'';
+    $('comp-mini-name').innerHTML=`${tpl?.emoji||'🐾'} ${tpl?.name} · <span class="${q.cls||''}">${q.name}</span> ${'⭐'.repeat(comp.stars||1)} · 攻${fmt(st.atk)} 防${fmt(st.def)}${statusTag}`;
+    setBar($('b-comp-hp'),Math.max(0,compHp)/st.hpMax*100,compDown?`倒下 ${reviveLeft}s`:`${fmt(Math.max(0,compHp))}/${fmt(st.hpMax)}`);
+    // 随从技能 CD 展示:仅在随从/技能数变化时重建(避免每帧churn打断 title 悬浮),每帧只刷新剩余CD
+    const csEl=$('comp-skills');
+    if(csEl){
+      const sig=comp.key+':'+((st.skills&&st.skills.length)||0);
+      if(csEl._sig!==sig){
+        csEl._sig=sig;
+        csEl.innerHTML=((st.skills)||[]).map((s,i)=>{
+          const tip=`<b>${s.icon} ${s.name}</b><div>${s.desc||''}</div><div class="muted">冷却 ${s.cd||8}秒</div>`.replace(/"/g,'&quot;');
+          return `<span class="comp-cd-skill" data-i="${i}" data-tip="${tip}" style="font-size:13px;cursor:help">${s.icon}<sub class="cs-cd" style="font-size:9px;color:#fbbf24"></sub></span>`;
+        }).join('');
+      }
+      // 用自定义 #compare-tip 而非原生 title:原生 title 的悬浮计时会被每帧 CD/透明度更新打断,导致"偶尔不显示"
+      if(!csEl._tipBound){
+        csEl._tipBound=true;
+        const showTip=e=>{const sp=e.target.closest('.comp-cd-skill');if(!sp)return;const tip=$('compare-tip');if(!tip)return;tip.querySelector('.compare-head').innerHTML=sp.dataset.tip||'';tip.querySelector('.compare-body').innerHTML='';tip.style.display='block';positionTip(tip,e);};
+        csEl.addEventListener('mouseover',showTip);
+        csEl.addEventListener('mousemove',e=>{if(e.target.closest('.comp-cd-skill'))positionTip($('compare-tip'),e);});
+        csEl.addEventListener('mouseleave',()=>{const tip=$('compare-tip');if(tip)tip.style.display='none';});
+      }
+      // 每帧只在值变化时写 DOM(避免无谓 churn)
+      csEl.querySelectorAll('.comp-cd-skill').forEach(span=>{
+        const i=+span.dataset.i;const left=(typeof companionSkillCdLeft==='function')?companionSkillCdLeft(i):0;
+        const op=left>0?'0.45':'1';if(span.style.opacity!==op)span.style.opacity=op;
+        const sub=span.querySelector('.cs-cd');if(sub){const txt=left>0?Math.ceil(left/1000)+'s':'';if(sub.textContent!==txt)sub.textContent=txt;}
+      });
+    }
+    $('comp-mini-name').onmouseenter=function(e){
+      const html=`<b>${tpl?.emoji} ${tpl?.name}</b><div>${q.name} ${'⭐'.repeat(comp.stars||1)} · ${tpl?.role==='tank'?'🛡️坦克':tpl?.role==='heal'?'💚治疗':'⚔️输出'}</div>
+        <div>攻击${fmt(st.atk)} 防御${fmt(st.def)} 生命${fmt(st.hpMax)} 攻速${st.spd?.toFixed(2)}/s</div>
+        <div class="muted">参战属性=主角×${q.mult}(品质)×${(1+0.18*((comp.stars||1)-1)).toFixed(2)}(${comp.stars||1}★)</div>
+        <div class="muted">定位:${tpl?.role==='tank'?'🛡️坦克 防×1.5 攻×0.75':tpl?.role==='dps'?'⚔️输出 防×0.9 攻×1.1':'💚辅助 攻防不变'}</div>`;
+      const tip=$('compare-tip');tip.querySelector('.compare-head').innerHTML=html;tip.querySelector('.compare-body').innerHTML='';
+      tip.style.display='block';positionTip(tip,e);
+    };
+    $('comp-mini-name').onmouseleave=()=>{$('compare-tip').style.display='none'};
+    $('comp-mini-name').onmousemove=e=>positionTip($('compare-tip'),e);
+  }else{
+    $('comp-mini').style.display='none';
+  }
+
+  // 技能栏(只在dirty时重建, 否则只更新CD;拖拽排序进行中不重建以免打断)
+  if ((isDirty('stage') || isDirty('skills')) && !skillDragging) renderSkillBar();
+  else updateSkillBarCd();
+
+  // 增益图标条
+  renderBuffBar();
+
+  // stage 样式 / 离开按钮显隐
+  const stage = $('stage');
+  if (state.mode === 'world' || state.mode === 'travel') {
+    stage.classList.remove('dungeon');
+    $('btn-leave').style.display = 'none';
+  } else {
+    stage.classList.add('dungeon');
+    $('btn-leave').style.display = '';
+  }
+
+  // 伤害统计(每帧就地刷新)
+  updateDmgMeter();
+}
+
+/* ---------- 各面板的完整重建函数 ---------- */
+function renderHero() {
+  const c = getCls(); if (!c) return;
+  const h = state.hero;
+
+  $('class-label').innerHTML = `${classIcon(state.cls, 18, c.icon)} ${c.name}`;
+  $('class-label').style.background = c.color;
+  $('class-label').style.color = '#000';
+
+  // 资源条颜色
+  const wrap = $('b-mp-wrap');
+  wrap.classList.remove('mp','rage','energy');
+  if (c.resKey === 'rage') wrap.classList.add('rage');
+  else if (c.resKey === 'energy') wrap.classList.add('energy');
+  else wrap.classList.add('mp');
+
+  // 属性
+  const a = state._attrs || c.baseAttrs;
+  const isPrimary = c.attackAttr;
+  const atkFromPrimary = Math.floor((a[isPrimary]||0) * 1.5);
+  attrTips = {
+    str: `<b>力量 ${fmt(a.str)}</b><div>攻击力 +${isPrimary==='str'?atkFromPrimary:0}</div><div class="muted">战士/圣骑士主属性</div>`,
+    agi: `<b>敏捷 ${fmt(a.agi)}</b><div>攻击力 +${isPrimary==='agi'?atkFromPrimary:0}</div><div class="muted">盗贼/猎人/德鲁伊主属性</div>`,
+    int: `<b>智力 ${fmt(a.int)}</b><div>法力上限 +${(a.int||0)*5}</div><div>攻击力 +${isPrimary==='int'?atkFromPrimary:0}</div><div class="muted">法师/牧师/萨满/术士主属性</div>`,
+    spi: `<b>精神 ${fmt(a.spi)}</b><div>生命回复 +${Math.floor((a.spi||0)*0.2)}/秒</div><div>法力回复 +${Math.floor((a.spi||0)*0.3)}/秒</div>`,
+    sta: `<b>耐力 ${fmt(a.sta)}</b><div>生命上限 +${(a.sta||0)*10}</div><div>防御 +${Math.floor((a.sta||0)*0.3)}</div>`,
+  };
+  $('a-str').textContent = fmt(a.str);
+  $('a-agi').textContent = fmt(a.agi);
+  $('a-int').textContent = fmt(a.int);
+  $('a-spi').textContent = fmt(a.spi);
+  $('a-sta').textContent = fmt(a.sta);
+  // 战斗属性
+  $('s-atk').textContent = fmt(h.atk);
+  $('s-def').textContent = fmt(h.def);
+  $('s-crit').textContent = h.crit.toFixed(1)+'%';
+  $('s-critd').textContent = h.critd.toFixed(0)+'%';
+  $('s-spd').textContent = h.spd.toFixed(2)+'/s';
+  $('s-reg').textContent = fmt(h.reg)+'/s';
+
+  $('talent-points').textContent = state.talentPoints;
+
+  // 副属性
+  $('s-leech').textContent = ((state.hero.leech||0)*0.5).toFixed(1)+'%';   // 每点吸血=0.5%实际吸血
+  $('s-vers').textContent = (state.hero.vers||0).toFixed(1)+'%';
+  if ($('s-haste')) $('s-haste').textContent = (state.hero.haste||0).toFixed(1)+'%';
+  $('s-mastery').textContent = fmt(state.hero.mastery||0);
+
+  // 精通效果
+  const specTree = state.specialization ? c.trees.find(t=>t.key===state.specialization) : null;
+  $('mastery-desc').textContent = (typeof masteryDescText==='function') ? masteryDescText() : (specTree ? specTree.masteryDesc||'' : '未选择专精');
+}
+
+function renderEquipment() {
+  const eg = $('equip-grid');
+  eg.innerHTML = '';
+  for (const k of SLOT_ORDER) {
+    const it = state.equipped[k];
+    const div = document.createElement('div');
+    div.className = 'slot' + (it ? ' '+it.bcls : '');
+    div.dataset.slot = k;
+    if (it) {
+      const stats = Object.entries(it.stats).map(([sk,v])=>fmtMod(sk, v)).join(' ');
+      const extras = (typeof itemBonusSummary==='function') ? itemBonusSummary(it) : '';
+      div.innerHTML = `<div class="label">${SLOT_INFO[k].icon} ${SLOT_INFO[k].label}</div>
+        <div class="name ${it.cls}">${it.name}${extras}</div>
+        <div class="stats">${stats}${it.reqLvl?' · Lv.'+it.reqLvl:''}</div>`;
+      div.title = '点击查看详情/卸下';
+    } else {
+      div.innerHTML = `<div class="label">${SLOT_INFO[k].icon} ${SLOT_INFO[k].label}</div>
+        <div class="muted" style="font-size:11px">空</div>`;
+    }
+    eg.appendChild(div);
+  }
+}
+
+function renderInventory() {
+  // 清理槽位无效的物品
+  state.inventory = state.inventory.filter(it => SLOT_INFO[it.slot]);
+  $('inv-count').textContent = state.inventory.length;
+
+  // 按品质排序: 传说 > 史诗 > 精良 > 优秀 > 普通
+  const rarityOrder = ['legend','epic','rare','uncommon','common'];
+  state.inventory.sort((a,b) => rarityOrder.indexOf(a.rarity) - rarityOrder.indexOf(b.rarity));
+
+  // 高亮自动售卖按钮
+  const asVal = state.autoSellRarity || 'off';
+  ['off','common','uncommon','rare'].forEach(k => {
+    const btn = document.getElementById('btn-as-' + k);
+    if (btn) {
+      btn.classList.toggle('active', asVal === k);
+      if (asVal === k) { btn.style.background = 'var(--accent)'; btn.style.color = '#000'; btn.style.fontWeight = 'bold'; }
+      else { btn.style.background = ''; btn.style.color = ''; btn.style.fontWeight = ''; }
+    }
+  });
+
+  const il = $('inv-list');
+  il.innerHTML = '';
+  const tip = $('compare-tip');
+
+  for (const it of state.inventory) {
+    if (!SLOT_INFO[it.slot]) continue; // 跳过槽位无效的物品
+    const equipped = state.equipped[it.slot];
+    const stats = Object.entries(it.stats).map(([k,v])=>fmtMod(k, v)).join(' ');
+    const row = document.createElement('div');
+    row.className = 'inv-item ' + it.bcls;
+    row.dataset.id = it.id;
+    const extras = (typeof itemBonusSummary==='function') ? itemBonusSummary(it) : '';
+    row.innerHTML = `
+      <div class="info">
+        <div class="name ${it.cls}">${SLOT_INFO[it.slot].icon} ${it.name}${extras}</div>
+        <div class="stats">${stats}${it.reqLvl?" · Lv."+it.reqLvl:""}</div>
+      </div>
+      <div class="btns">
+        <button data-action="detail" data-id="${it.id}" title="详情/词缀/宝石/附魔">🔍</button>
+        <button class="primary" data-action="equip" data-id="${it.id}">装备</button>
+        <button data-action="sell" data-id="${it.id}">${it.sell}💰</button>
+      </div>`;
+
+    row.addEventListener('mouseenter', e => {
+      const diff = calcCompare(it, equipped);
+      tip.querySelector('.compare-head').innerHTML = `
+        <div>${SLOT_INFO[it.slot].icon} ${SLOT_INFO[it.slot].label} 对比</div>
+        <div class="name ${it.cls}" style="font-size:11px">🆕 ${it.name}</div>
+        ${equipped ? `<div class="name ${equipped.cls}" style="font-size:11px">📌 ${equipped.name}</div>` : '<div class="muted" style="font-size:11px">📌 当前栏位为空</div>'}
+      `;
+      tip.querySelector('.compare-body').innerHTML = diff;
+      tip.style.display = 'block';
+      positionTip(tip, e);
+    });
+    row.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+    row.addEventListener('mousemove', e => positionTip(tip, e));
+
+    il.appendChild(row);
+  }
+}
+
+function calcCompare(newItem, oldItem) {
+  const suf = (k) => isPercentStat(k) ? '%' : '';
+  if (!oldItem) {
+    let html = '<div class="muted" style="margin-bottom:4px">当前栏位为空,推荐装备</div>';
+    for (const [k, v] of Object.entries(newItem.stats)) {
+      html += `<div class="compare-up">${fmtStatName(k)}: +${v}${suf(k)}</div>`;
+    }
+    return html;
+  }
+  const allKeys = new Set([...Object.keys(newItem.stats), ...Object.keys(oldItem.stats)]);
+  let html = '';
+  for (const k of allKeys) {
+    const nv = newItem.stats[k] || 0;
+    const ov = oldItem.stats[k] || 0;
+    const diff = nv - ov;
+    const label = fmtStatName(k);
+    const sf = suf(k);
+    if (diff > 0) {
+      html += `<div class="compare-up">${label} +${diff}${sf}</div>`;
+    } else if (diff < 0) {
+      html += `<div class="compare-down">${label} ${diff}${sf}</div>`;
+    } else {
+      html += `<div class="compare-same">${label} =</div>`;
+    }
+  }
+  if (!html) html = '<div class="muted">无可比属性</div>';
+  return html;
+}
+
+function scaleLootStats(stats, rarityKey, power) {
+  const rarity = RARITY.find(r=>r.key===rarityKey);
+  const mult = rarity ? rarity.mult : 1;
+  const baseVal = {
+    atk:2+power*0.8, def:1+power*0.5, hp:8+power*4, crit:1+power*0.05,
+    critd:5+power*0.4, reg:1+power*0.1, str:1+power*0.4, agi:1+power*0.4,
+    int:1+power*0.4, spi:1+power*0.3, sta:1+power*0.4,
+    leech:0.5+power*0.04, vers:0.5+power*0.04, mastery:1+power*0.08,
+  };
+  const result = {};
+  for (const [k, v] of Object.entries(stats)) {
+    const bv = baseVal[k] || 1;
+    result[k] = Math.max(1, Math.floor(bv * 0.3 * v * mult));
+  }
+  return result;
+}
+
+function showLootTip(e, items, title) {
+  const tip = $('compare-tip');
+  let html = `<div style="font-weight:bold;margin-bottom:4px">${title||'掉落预览'}</div>`;
+  if (!items || items.length === 0) {
+    html += '<div class="muted">无专属掉落</div>';
+  } else {
+    for (const it of items) {
+      const r = RARITY.find(r=>r.key===it.rarity);
+      html += `<div class="${r?.cls||''}" style="font-size:11px;margin:1px 0">${r?.name?.[0]||'?'} ${it.name} <span style="opacity:.6">${(it.stats?Object.entries(it.stats).map(([k,v])=>fmtMod(k, v)).join(' '):'')}</span></div>`;
+    }
+  }
+  tip.querySelector('.compare-head').innerHTML = html;
+  tip.querySelector('.compare-body').innerHTML = '';
+  tip.style.display = 'block';
+  positionTip(tip, e);
+}
+function hideLootTip() { $('compare-tip').style.display = 'none'; }
+
+function positionTip(tip, e) {
+  let x = e.clientX + 16;
+  let y = e.clientY - 10;
+  if (x + 290 > window.innerWidth) x = e.clientX - 300;
+  if (y + tip.offsetHeight > window.innerHeight) y = window.innerHeight - tip.offsetHeight - 10;
+  tip.style.left = x + 'px';
+  tip.style.top = y + 'px';
+}
+
+function renderShop() {
+  const c = getCls();
+  const primary = c ? c.attackAttr : 'str';
+  const primaryName = fmtStatName(primary);
+  const ticketPrice = 50000;
+  const bulkPrice = 425000;
+  const compTicketPrice = 100000;
+  const compBulkPrice = 850000;
+  $('shop-list').innerHTML = `
+    <div style="margin-bottom:12px;padding:10px;background:var(--panel-2);border-radius:8px;border:1px solid var(--gold)">
+      <div style="font-weight:bold;margin-bottom:4px">🎫 通用券商店</div>
+      <div class="muted" style="margin-bottom:4px">地图BOSS和副本首次免费,冷却中用通用券跳过CD立即再战</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <button class="gold" data-action="buyticket" data-type="normal" data-amount="1" data-price="${ticketPrice}" ${state.gold < ticketPrice ? 'disabled' : ''}>
+          🎫×1 — ${ticketPrice}💰
+        </button>
+        <button class="gold" data-action="buyticket" data-type="normal" data-amount="10" data-price="${bulkPrice}" ${state.gold < bulkPrice ? 'disabled' : ''}>
+          🎫×10 — ${bulkPrice}💰 (85折)
+        </button>
+      </div>
+      <div style="font-weight:bold;margin-bottom:4px">🐾 随从券商店</div>
+      <div class="muted" style="margin-bottom:4px">抽取随从需要消耗随从券</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="gold" data-action="buyticket" data-type="comp" data-amount="1" data-price="${compTicketPrice}" ${state.gold < compTicketPrice ? 'disabled' : ''}>
+          🐾×1 — ${compTicketPrice}💰
+        </button>
+        <button class="gold" data-action="buyticket" data-type="comp" data-amount="10" data-price="${compBulkPrice}" ${state.gold < compBulkPrice ? 'disabled' : ''}>
+          🐾×10 — ${compBulkPrice}💰 (85折)
+        </button>
+      </div>
+    </div>
+    <div class="muted" style="margin-bottom:8px">📊 升级时全属性自动+1 · 装备和天赋为主要成长途径</div>
+    <div class="shop-item"><b>💪 力量 (STR)</b>
+      <div class="muted">每点: 攻击力 +${primary==='str'?'1.5':'0'} · ${primary==='str'?'<span style="color:var(--accent)">当前职业主属性</span>':'战士/圣骑士主属性'}</div>
+    </div>
+    <div class="shop-item"><b>🏃 敏捷 (AGI)</b>
+      <div class="muted">每点: 暴击率 +0.05% · 攻击力 +${primary==='agi'?'1.5':'0'}${primary==='agi'?' <span style="color:var(--accent)">(主属性)</span>':''}<br>盗贼/猎人/德鲁伊主属性</div>
+    </div>
+    <div class="shop-item"><b>📚 智力 (INT)</b>
+      <div class="muted">每点: 法力上限 +5 · 攻击力 +${primary==='int'?'1.5':'0'}${primary==='int'?' <span style="color:var(--accent)">(主属性)</span>':''}<br>法师/牧师/萨满/术士主属性</div>
+    </div>
+    <div class="shop-item"><b>🕯️ 精神 (SPI)</b>
+      <div class="muted">每点: 生命回复 +0.2/秒 · 法力回复 +0.3/秒<br>影响战斗中资源续航</div>
+    </div>
+    <div class="shop-item"><b>❤️ 耐力 (STA)</b>
+      <div class="muted">每点: 生命上限 +10 · 防御 +0.3<br>全职业通用生存属性</div>
+    </div>
+    <div class="muted" style="margin-top:8px">🎯 <b>当前主属性: ${primaryName}</b> — 每点主属性提供 1.5 攻击力</div>
+  `;
+}
+
+function renderSkills() {
+  const c = getCls(); if (!c) return;
+  const skl = $('skill-list');
+  skl.innerHTML = `<div class="muted" style="margin-bottom:6px;font-size:11px">技能栏 <b style="color:var(--accent)">${state.selectedSkills.length}</b>/8 · 点「选用」放入,满 8 个会顶替最早的</div>`;
+  for (const [skKey, sk] of Object.entries(c.skills)) {
+    const unlocked = !!state.unlockedSkills[skKey];
+    const isSel = state.selectedSkills.includes(skKey);
+    const cdSec = getSkillCd(sk);
+    const div = document.createElement('div');
+    div.className = 'skill-item';
+    div.style.borderColor = isSel ? 'var(--accent)' : '';
+    const lockInfo = sk.unlockLvl ? `(Lv.${sk.unlockLvl})` : '(天赋解锁)';
+    div.innerHTML = `
+      <div class="row">
+        <b style="color:${unlocked?'inherit':'var(--muted)'}">${sk.icon} ${sk.name}</b>
+        <span class="pill">${unlocked?'已解锁':lockInfo}</span>
+      </div>
+      <div class="muted">${sk.desc}</div>
+      <div class="row">
+        <span class="muted">${c.resource} ${sk.mp} · CD ${cdSec}秒</span>
+        ${unlocked ? `<button class="${isSel?'success':''}" data-action="selectskill" data-key="${skKey}">${isSel?'取消':'选用'}</button>` : ''}
+      </div>`;
+    skl.appendChild(div);
+  }
+}
+
+function getTalentRow(t, idx) {
+  if (t.req >= 66) return 10;
+  if (t.req >= 56) return 9;
+  if (t.req >= 46) return 8;
+  if (t.req >= 30) return 7;
+  if (t.req >= 28) return 6;
+  if (t.req >= 25) return 5;
+  if (t.req >= 22) return 5;
+  if (t.req >= 20) return 4;
+  if (t.req >= 18) return 4;
+  if (t.req >= 15) return 3;
+  if (t.req >= 10) return 2;
+  if (idx >= 4) return 2;
+  if (idx >= 2) return 1;
+  return 0;
+}
+const ROW_REQ = [0, 5, 10, 15, 20, 25, 28, 30, 46, 56, 66];
+
+function renderTalents() {
+  const c = getCls(); if (!c) return;
+  $('talent-points').textContent = state.talentPoints;
+  const rb = $('btn-reset-talents'); if (rb) rb.textContent = state.freeRespecUsed ? '洗点 50💎' : '洗点 (首次免费)';
+  const tl = $('talent-list');
+  tl.innerHTML = '';
+
+  // 专精选择横幅
+  const specBar = document.createElement('div');
+  specBar.style.cssText = 'display:flex;gap:4px;margin-bottom:8px';
+  for (const tree of c.trees) {
+    const isSpec = state.specialization === tree.key;
+    const btn = document.createElement('button');
+    btn.className = isSpec ? 'epic' : '';
+    btn.style.cssText = `flex:1;padding:8px 4px;font-size:13px;${isSpec?'font-weight:bold':''}`;
+    btn.innerHTML = `${specIcon(state.cls, tree.key, 18, tree.icon)} ${tree.name}`;
+    btn.addEventListener('click', () => {
+      if (state.specialization === tree.key) return; // 不能取消,只能切换
+      state.specialization = tree.key;
+      recomputeStats();
+      markDirty('talents', 'hero');
+    });
+    specBar.appendChild(btn);
+  }
+  tl.appendChild(specBar);
+
+  if (state.specialization) {
+    const specTree = c.trees.find(t=>t.key===state.specialization);
+    tl.appendChild(Object.assign(document.createElement('div'), {
+      className: 'muted',
+      style: 'text-align:center;margin-bottom:8px;font-size:11px',
+      innerHTML: `🎯 精通(${state.hero.mastery||0}): ${(typeof masteryDescText==='function')?masteryDescText():(specTree?.masteryDesc||'')}`
+    }));
+  }
+
+  // 渲染三棵树
+  for (const tree of c.trees) {
+    const isActive = tree.key === state.specialization;
+    if (state.specialization && !isActive) continue;   // 已选专精:仅显示该专精的天赋树
+    const sumInTree = Object.values(state.talents[tree.key] || {}).reduce((a,b)=>a+b, 0);
+    const treeDiv = document.createElement('div');
+    treeDiv.className = 'wow-tree' + (isActive ? ' active' : ' locked');
+
+    // 树头
+    const head = document.createElement('div');
+    head.className = 'wow-tree-head';
+    head.innerHTML = `<b>${specIcon(state.cls, tree.key, 18, tree.icon)} ${tree.name}</b><span class="pill">${sumInTree}</span>`;
+    treeDiv.appendChild(head);
+
+    if (!isActive && !state.specialization) {
+      // 未选专精: 提示
+      const hint = document.createElement('div');
+      hint.className = 'muted';
+      hint.style.cssText = 'text-align:center;padding:8px;font-size:11px';
+      hint.textContent = '请先选择专精';
+      treeDiv.appendChild(hint);
+    } else if (!isActive) {
+      // 其他专精: 灰色显示
+      const locked = document.createElement('div');
+      locked.className = 'muted';
+      locked.style.cssText = 'text-align:center;padding:6px;font-size:11px';
+      locked.textContent = '已选择其他专精';
+      treeDiv.appendChild(locked);
+    }
+
+    // 按行分组渲染天赋
+    const talentsByRow = {};
+    for (let i = 0; i < tree.talents.length; i++) {
+      const t = tree.talents[i];
+      const row = getTalentRow(t, i);
+      if (!talentsByRow[row]) talentsByRow[row] = [];
+      talentsByRow[row].push({...t, idx: i});
+    }
+
+    const maxRow = Math.max(...Object.keys(talentsByRow).map(Number));
+    for (let row = 0; row <= maxRow; row++) {
+      const rowTalents = talentsByRow[row] || [];
+      if (rowTalents.length === 0) continue;   // 跳过无天赋的空行(某些树有 req 断档,否则只渲染"需X点"标签=空内容)
+      const rowDiv = document.createElement('div');
+      rowDiv.className = 'wow-row';
+      rowDiv.dataset.row = row;
+
+      // 行标签
+      const rowLabel = document.createElement('div');
+      rowLabel.className = 'wow-row-label';
+      rowLabel.textContent = `需${ROW_REQ[row]}点`;
+      rowDiv.appendChild(rowLabel);
+
+      const nodes = document.createElement('div');
+      nodes.className = 'wow-nodes';
+
+      for (const t of rowTalents) {
+        const cur = isActive ? ((state.talents[tree.key]||{})[t.key] || 0) : 0;
+        const maxed = cur >= t.max;
+        const reqMet = isActive && (!t.req || sumInTree >= t.req);
+        const canBuy = isActive && !maxed && reqMet && state.talentPoints > 0;
+        const node = document.createElement('div');
+        node.className = 'wow-node' +
+          (maxed ? ' maxed' : '') +
+          (canBuy ? ' can-buy' : '') +
+          (!isActive ? ' inactive' : '') +
+          (!reqMet && isActive ? ' locked' : '');
+
+        node.innerHTML = `
+          <div class="wow-node-icon">${t.name[0]}</div>
+          <div class="wow-node-info">
+            <div class="wow-node-name">${t.name} <span class="ranks">${cur}/${t.max}</span></div>
+            <div class="wow-node-desc">${t.desc}</div>
+          </div>`;
+
+        if (canBuy) {
+          node.style.cursor = 'pointer';
+          node.addEventListener('click', () => buyTalent(tree.key, t.key));
+        }
+        nodes.appendChild(node);
+      }
+      rowDiv.appendChild(nodes);
+      treeDiv.appendChild(rowDiv);
+    }
+    tl.appendChild(treeDiv);
+  }
+}
+
+function renderSkillBar() {
+  const bar = $('skill-bar');
+  if (!bar) return;
+  const c = getCls(); if (!c) return;
+  const now = Date.now();
+
+  if (state.selectedSkills.length === 0) {
+    bar.innerHTML = '<div class="muted" style="font-size:11px;text-align:center;padding:4px">未选择技能(在技能面板点选)</div>';
+    return;
+  }
+
+  bar.innerHTML = state.selectedSkills.map(key => {
+    const sk = c.skills[key];
+    if (!sk) return '';
+    const cdEnd = state.skillCooldowns[key] || 0;
+    const cdLeft = Math.max(0, Math.ceil((cdEnd - now) / 1000));
+    const onCd = cdLeft > 0;
+    const hasMp = state.resource >= sk.mp;
+    return `<button class="skill-btn ${onCd?'on-cd':''}" data-skill="${key}" draggable="true" title="拖动可调整施法优先级"
+      style="${!onCd&&hasMp?'border-color:var(--accent)':''}">
+      <span>${sk.icon} ${sk.name}</span>
+      <span class="mp-cost">${sk.mp}${c.resKey==='rage'?'怒':c.resKey==='energy'?'能':'蓝'}</span>
+      ${onCd?`<div class="cd-overlay">${cdLeft}s</div>`:''}
+    </button>`;
+  }).join('');
+}
+
+function updateSkillBarCd() {
+  const bar = $('skill-bar'); if (!bar) return;
+  const now = Date.now();
+  bar.querySelectorAll('.skill-btn').forEach(btn => {
+    const key = btn.dataset.skill;
+    if (!key) return;
+    const cdEnd = state.skillCooldowns[key] || 0;
+    const cdLeft = Math.max(0, Math.ceil((cdEnd - now) / 1000));
+    const overlay = btn.querySelector('.cd-overlay');
+    if (cdLeft > 0) {
+      btn.classList.add('on-cd');
+      if (overlay) overlay.textContent = cdLeft + 's';
+      else { const d=document.createElement('div');d.className='cd-overlay';d.textContent=cdLeft+'s';btn.appendChild(d); }
+    } else {
+      btn.classList.remove('on-cd');
+      if (overlay) overlay.remove();
+    }
+  });
+}
+
+function renderMap() {
+  const mapCur = getMap();
+  if (mapCur) {
+    const subCur = mapCur.sub[state.currentSubzone];
+    $('cur-location').textContent = `${mapCur.icon} ${mapCur.name} · ${subCur.name} (Lv ${subCur.lvl[0]}-${subCur.lvl[1]})`;
+  }
+  const ml = $('map-list');
+  ml.innerHTML = '';
+  const sortedMaps = [...MAPS].sort((a, b) => {
+    const aMid = (a.lvlRange[0] + a.lvlRange[1]) / 2;
+    const bMid = (b.lvlRange[0] + b.lvlRange[1]) / 2;
+    const hl = state.hero.lvl;
+    const aFit = hl >= a.lvlRange[0] && hl <= a.lvlRange[1];
+    const bFit = hl >= b.lvlRange[0] && hl <= b.lvlRange[1];
+    if (aFit !== bFit) return aFit ? -1 : 1;
+    return Math.abs(hl - aMid) - Math.abs(hl - bMid);
+  });
+  for (const m of sortedMaps) {
+    const isCurrent = m.key === state.currentMap;
+    const tooHigh = state.hero.lvl < m.lvlRange[0] - 3;
+    const div = document.createElement('div');
+    div.className = 'map-item' + (isCurrent ? ' current' : '') + (tooHigh ? ' warn' : '');
+    div.dataset.mapKey = m.key;
+    let html = `
+      <div class="map-head">
+        <span class="mname">${m.icon} ${m.name}</span>
+        <span><span class="map-faction faction-${m.faction}">${m.faction}</span> <span class="pill">Lv ${m.lvlRange[0]}-${m.lvlRange[1]}</span></span>
+      </div>
+      <div class="map-desc">${m.desc}${tooHigh?' · ⚠️ 等级过低,小心怪物':''}</div>
+      <div class="sub-list">`;
+    m.sub.forEach((s, idx) => {
+      const subKey = `${m.key}-${idx}`;
+      const active = isCurrent && state.currentSubzone === idx && state.mode === 'world';
+      const cleared = state.subzoneCleared[subKey];
+      html += `<button class="sub-btn ${active?'active':''}" data-action="subzone" data-map="${m.key}" data-sub="${idx}">
+        ${cleared?'<span class="sub-cleared">✅ </span>':''}${s.name}
+        <span class="sub-lvl">Lv ${s.lvl[0]}-${s.lvl[1]}</span>
+      </button>`;
+    });
+    html += `</div>`;
+    const bCdEnd = state.bossCd[m.key] || 0;
+    const bCdLeft = Math.max(0, Math.ceil((bCdEnd - Date.now()) / 1000));
+    const bOnCd = bCdLeft > 0;
+    const bLvlOk = state.hero.lvl >= m.boss.lvl - 5;
+    const bCanFree = bLvlOk && !bOnCd && state.mode === 'world';
+    const bCanTicket = bLvlOk && bOnCd && state.tickets >= 1 && state.mode === 'world';
+    const canBoss = bCanFree || bCanTicket;
+    const bossText = !bLvlOk ? '等级不足'
+      : (!bOnCd ? '挑战(免费)'
+      : (bCanTicket ? `🎫挑战 (CD ${fmtCd(bCdLeft)})` : `CD ${fmtCd(bCdLeft)}`));
+    html += `
+      <div class="boss-row">
+        <div class="boss-info">
+          <div><span class="bname">⚔️ ${m.boss.emoji} ${m.boss.name}</span> <span class="pill">Lv ${m.boss.lvl}</span></div>
+          <div class="muted">${m.boss.desc}</div>
+        </div>
+        <button class="boss-btn ${canBoss?'epic':''}" data-action="boss" data-map="${m.key}" ${canBoss?'':'disabled'}>${bossText}</button>
+      </div>`;
+    div.innerHTML = html;
+    // BOSS按钮hover掉落预览
+    const bossBtn = div.querySelector('.boss-btn');
+    if (bossBtn) {
+      bossBtn.addEventListener('mouseenter', e => {
+        const bossDrops = [
+          {name:'💰 金币 ×'+(m.boss.lvl*30),rarity:'common',stats:{}},
+          {name:'✨ 经验 ×'+(m.boss.lvl*15),rarity:'common',stats:{}},
+          {name:'🎁 必掉 Lv.'+m.boss.lvl+' 蓝装 ×1',rarity:'rare',stats:{}},
+          {name:'🎉 15% 额外掉落 紫装 ×1',rarity:'epic',stats:{}},
+          {name:'💎 钻石 ×3~8',rarity:'rare',stats:{}},
+          {name:'📊 首次免费 · CD最高1小时 · CD中🎫跳过',rarity:'legend',stats:{}},
+        ];
+        showLootTip(e, bossDrops, `⚔️ ${m.boss.emoji} ${m.boss.name} 掉落`);
+      });
+      bossBtn.addEventListener('mousemove', e => positionTip($('compare-tip'), e));
+    }
+    ml.appendChild(div);
+  }
+}
+
+function roleTag(role){ return role==='tank'?'🛡️坦克':role==='heal'?'💚治疗':'⚔️输出'; }
+/* 随从技能 → 可悬浮小图标(指向看描述) */
+function compSkillChips(tpl){
+  return (tpl&&tpl.skills||[]).map(s=>{
+    const tip = `${s.icon} ${s.name} · ${s.desc||''} · 冷却 ${s.cd||8}秒`.replace(/"/g,'&quot;');
+    return `<span class="comp-skill" data-tip="${tip}">${s.icon}<span class="cs-name">${s.name}</span></span>`;
+  }).join('');
+}
+function renderCompanion() {
+  $('gem-cost').textContent = '(消耗1🐾随从券,稀有度越高越罕见)';
+  const cl = $('companion-list');
+  const owned = state.companions.length;
+  const bonds = (typeof activeCompanionBonds==='function') ? activeCompanionBonds() : [];
+  let html = '';
+
+  // ---- 收藏 / 羁绊概览 ----
+  html += `<div class="ascend-box">
+    <div style="font-weight:bold">🐾 随从收藏 <span class="muted" style="font-size:11px">${owned}/${COMPANIONS.length}</span></div>
+    <div class="muted" style="font-size:10px;margin-top:2px">收藏被动: 每随从 +0.3% 攻击/生命(当前 +${(owned*0.3).toFixed(1)}%)</div>`;
+  if (typeof COMPANION_BONDS!=='undefined' && COMPANION_BONDS.length) {
+    html += `<div class="detail-label" style="margin-top:6px">⚜️ 羁绊</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:2px">`;
+    for (const b of COMPANION_BONDS) {
+      const on = bonds.includes(b);
+      const modTxt = Object.entries(b.mod).map(([k,v])=>(typeof fmtMod==='function')?fmtMod(k,v):k+'+'+v).join(' ');
+      html += `<div class="muted" style="font-size:10px;opacity:${on?1:0.45}" title="${b.desc}">${on?'✅':'🔒'} ${b.name}: ${modTxt}</div>`;
+    }
+    html += `</div>`;
+  }
+  html += `</div>`;
+
+  // ---- 出战随从 ----
+  const act = getActiveCompanion();
+  if (act) {
+    const tpl = COMPANIONS.find(c=>c.key===act.key);
+    const q = compQuality(tpl);
+    const st = computeCompanionStats();
+    const role = (typeof ROLE_BONUS==='object'&&ROLE_BONUS[tpl?.role])||{};
+    const starF = 1+0.2*((act.stars||1)-1);
+    const ownTxt = Object.entries(tpl?.bonus||{}).map(([k,v])=>(typeof fmtMod==='function')?fmtMod(k,+(v*starF).toFixed(1)):k+'+'+v).join(' ');
+    const roleTxt = Object.entries(role).map(([k,v])=>(typeof fmtMod==='function')?fmtMod(k,v):k+'+'+v).join(' ');
+    html += `<div class="shop-item" style="border-color:var(--${q.cls==='r-legend'?'legend':q.cls==='r-epic'?'epic':'border'})">
+      <div class="row"><b>${tpl?.emoji} ${tpl?.name}</b><span class="pill" style="background:var(--accent);color:#000">出战中</span></div>
+      <div class="muted"><span class="${q.cls}">${q.name}</span> · ${'⭐'.repeat(act.stars||1)} · ${roleTag(tpl?.role)}</div>
+      <div class="muted" style="font-size:10px">参战属性: 攻${fmt(st?.atk||0)} 防${fmt(st?.def||0)} 血${fmt(st?.hpMax||0)}</div>
+      <div class="muted" style="font-size:10px;color:#6ee7b7">专属加成: ${ownTxt||'无'}</div>
+      <div class="muted" style="font-size:10px;color:#93c5fd">定位加成: ${roleTxt||'无'}</div>
+      <div class="comp-skills">${compSkillChips(tpl)}</div>
+      <button class="danger" data-action="unequipcomp" style="margin-top:4px">休息</button>
+    </div>`;
+  }
+
+  // ---- 已拥有随从(按品质降序)----
+  const qOrder = {orange:0,purple:1,blue:2,green:3,white:4};
+  const ownedList = state.companions.map((c,i)=>({c,i,tpl:COMPANIONS.find(t=>t.key===c.key)})).filter(x=>x.tpl);
+  ownedList.sort((a,b)=>(qOrder[compQuality(a.tpl).key]-qOrder[compQuality(b.tpl).key])||((b.c.stars||1)-(a.c.stars||1)));
+  for (const {c,i,tpl} of ownedList) {
+    if (act && i===state.activeCompanion) continue;
+    const q = compQuality(tpl);
+    const cost = getUpgradeCost(c);
+    const canUp = !cost.maxed && cost.have>=cost.need;
+    html += `<div class="shop-item">
+      <div class="row"><b>${tpl.emoji} ${tpl.name}</b><span class="${q.cls}">${q.name}·${tpl.skills.length}技</span></div>
+      <div class="muted" style="font-size:10px">${'⭐'.repeat(c.stars||1)} · ${roleTag(tpl.role)} · ${tpl.desc}</div>
+      <div class="comp-skills">${compSkillChips(tpl)}</div>
+      <div class="row">
+        <span class="muted" style="font-size:10px">碎片 ${cost.have}${cost.maxed?'':' / 升星需'+cost.need}</span>
+        <div style="display:flex;gap:3px">
+          <button class="primary" data-action="usecomp" data-idx="${i}">出战</button>
+          <button class="gold" data-action="upgradecomp" data-idx="${i}" ${canUp?'':'disabled'}>${cost.maxed?'满星 ⭐5':'升星 '+(c.stars||1)+'/5'}</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // ---- 图鉴:未获得(灰色)----
+  const ownedKeys = new Set(state.companions.map(c=>c.key));
+  const missing = COMPANIONS.filter(t=>!ownedKeys.has(t.key));
+  if (missing.length) {
+    missing.sort((a,b)=>qOrder[compQuality(a).key]-qOrder[compQuality(b).key]);
+    html += `<div class="detail-label" style="margin-top:6px">📖 未获得 (${missing.length})</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px">`;
+    for (const t of missing) {
+      const q = compQuality(t);
+      html += `<div title="${t.name} · ${q.name} · ${roleTag(t.role)} · ${t.desc}" style="opacity:.55;border:1px solid var(--border);border-left:3px solid var(--${q.cls==='r-legend'?'legend':q.cls==='r-epic'?'epic':'border'});border-radius:6px;padding:3px 5px;font-size:11px">
+        ${t.emoji} <span class="${q.cls}">${t.name}</span></div>`;
+    }
+    html += `</div>`;
+  }
+
+  if (owned===0 && missing.length===COMPANIONS.length) {
+    html += '<div class="muted" style="text-align:center;padding:14px">还没有随从,点击「抽随从」获取!</div>';
+  }
+  cl.innerHTML = html;
+}
+
+function renderDungeon() {
+  const dl = $('dungeon-list');
+  dl.innerHTML = '';
+  const sortedDungeons = [...DUNGEONS].sort((a, b) => {
+    const hl = state.hero.lvl;
+    const aDist = hl >= a.reqLvl ? hl - a.reqLvl : (a.reqLvl - hl) * 2;
+    const bDist = hl >= b.reqLvl ? hl - b.reqLvl : (b.reqLvl - hl) * 2;
+    return aDist - bDist;
+  });
+  for (const dg of sortedDungeons) {
+    const cdEnd = state.dungeonCd[dg.key] || 0;
+    const cdLeft = Math.max(0, Math.ceil((cdEnd - Date.now()) / 1000));
+    const onCd = cdLeft > 0;
+    const lvlOk = state.hero.lvl >= dg.reqLvl;
+    const canFree = lvlOk && !onCd && state.mode === 'world';
+    const canTicket = lvlOk && onCd && state.tickets >= 1 && state.mode === 'world';
+    const canEnter = canFree || canTicket;
+    const statusText = !lvlOk ? '等级不足'
+      : onCd ? `CD ${fmtCd(cdLeft)}${canTicket ? ' · 🎫跳过' : ''}`
+      : '可挑战(免费)';
+    const btnText = canFree ? '免费进入' : (canTicket ? '🎫进入' : '进入');
+    const div = document.createElement('div');
+    div.className = 'dungeon-item';
+    div.dataset.dungeonKey = dg.key;
+    div.innerHTML = `
+      <div class="row">
+        <span><span class="icon">${dg.icon}</span> <b>${dg.name}</b></span>
+        <span class="pill">Lv.${dg.reqLvl}</span>
+      </div>
+      <div class="muted">${dg.desc} · ${(dg.bosses||[]).length}个BOSS · ${((dg.bosses||[])[dg.bosses.length-1]||{}).name||'??'}</div>
+      <div class="row">
+        <span class="cd-display">${statusText}</span>
+        <button class="enter-btn ${canEnter?'epic':''}" data-action="enterdungeon" data-key="${dg.key}" ${canEnter?'':'disabled'}>${btnText}</button>
+      </div>`;
+    // 副本hover掉落预览 - 按BOSS分组展示
+    div.addEventListener('mouseenter', e => {
+      const loot = DUNGEON_LOOT[dg.key];
+      const power = dg.reqLvl + 5; // 副本等级的装备强度
+      let html = `<div style="font-weight:bold;margin-bottom:4px">${dg.icon} ${dg.name} (${(dg.bosses||[]).length}BOSS)</div>`;
+      if (loot?.bosses) {
+        for (const [bossName, items] of Object.entries(loot.bosses)) {
+          const bossData=(dg.bosses||[]).find(b=>b.name===bossName);
+          const skillInfo=bossData?.skills?bossData.skills.map(s=>`${s.icon}${s.name}(${s.desc},${s.castTime||0}秒读条)`).join(' · '):'';
+          html += `<div style="margin-top:4px;color:var(--legend);font-size:11px">👑 ${bossName} (必掉1件)${skillInfo?' · '+skillInfo:''}</div>`;
+          const tw = items.reduce((s,it)=>s+(RARITY.find(r=>r.key===it.rarity)?.weight||1),0);
+          for (const it of items) {
+            const r = RARITY.find(r=>r.key===it.rarity);
+            const itemRate = Math.round((r?.weight||1)/tw*100);   // 池内按稀有度加权的实际爆率
+            const scaledStats = scaleLootStats(it.stats||{}, it.rarity, power);
+            const statsText = Object.entries(scaledStats).map(([k,v])=>fmtMod(k, v)).join(' ');
+            html += `<div class="${r?.cls||''}" style="font-size:10px;margin:0 0 0 8px">${r?.name?.[0]||'?'} ${it.name} ${itemRate}% <span style="opacity:.5">${statsText}</span></div>`;
+          }
+        }
+      }
+      if (loot?.trash?.length) {
+        html += `<div style="margin-top:4px;color:var(--muted);font-size:10px">杂兵掉落 (35%掉率): ${loot.trash.map(it=>it.name).join(', ')}</div>`;
+      }
+      if (!loot) {
+        html += '<div class="muted">通用掉落池</div>';
+      }
+      const tip = $('compare-tip');
+      tip.querySelector('.compare-head').innerHTML = html;
+      tip.querySelector('.compare-body').innerHTML = '';
+      tip.style.display = 'block';
+      positionTip(tip, e);
+    });
+    div.addEventListener('mousemove', e => positionTip($('compare-tip'), e));
+    dl.appendChild(div);
+  }
+}
+
+/* ---------- 按钮状态就地更新(不重建 DOM) ---------- */
+function updateCdDisplays() {
+  document.querySelectorAll('.map-item').forEach(el => {
+    const key = el.dataset.mapKey;
+    const m = MAPS.find(x => x.key === key);
+    const btn = el.querySelector('.boss-btn');
+    if (!m || !btn) return;
+    const bCdLeft = Math.max(0, Math.ceil(((state.bossCd[key] || 0) - Date.now()) / 1000));
+    const bOnCd = bCdLeft > 0;
+    const bLvlOk = state.hero.lvl >= m.boss.lvl - 5;
+    const bCanFree = bLvlOk && !bOnCd && state.mode === 'world';
+    const bCanTicket = bLvlOk && bOnCd && state.tickets >= 1 && state.mode === 'world';
+    const canBoss = bCanFree || bCanTicket;
+    const newText = !bLvlOk ? '等级不足'
+      : (!bOnCd ? '挑战(免费)'
+      : (bCanTicket ? `🎫挑战 (CD ${fmtCd(bCdLeft)})` : `CD ${fmtCd(bCdLeft)}`));
+    if (btn.textContent !== newText) btn.textContent = newText;
+    btn.disabled = !canBoss;
+    btn.classList.toggle('epic', canBoss);
+  });
+  document.querySelectorAll('.dungeon-item').forEach(el => {
+    const key = el.dataset.dungeonKey;
+    const dg = DUNGEONS.find(d => d.key === key);
+    const btn = el.querySelector('.enter-btn');
+    const cdSpan = el.querySelector('.cd-display');
+    if (!dg || !btn) return;
+    const cdEnd = state.dungeonCd[key] || 0;
+    const cdLeft = Math.max(0, Math.ceil((cdEnd - Date.now()) / 1000));
+    const onCd = cdLeft > 0;
+    const lvlOk = state.hero.lvl >= dg.reqLvl;
+    const canFree = lvlOk && !onCd && state.mode === 'world';
+    const canTicket = lvlOk && onCd && state.tickets >= 1 && state.mode === 'world';
+    const canEnter = canFree || canTicket;
+    const statusText = !lvlOk ? '等级不足'
+      : onCd ? `CD ${fmtCd(cdLeft)}${canTicket ? ' · 🎫跳过' : ''}`
+      : '可挑战(免费)';
+    const btnText = canFree ? '免费进入' : (canTicket ? '🎫进入' : '进入');
+    if (cdSpan && cdSpan.textContent !== statusText) cdSpan.textContent = statusText;
+    if (btn.textContent !== btnText) btn.textContent = btnText;
+    btn.disabled = !canEnter;
+    btn.classList.toggle('epic', canEnter);
+  });
+}
+
+/* ---------- dirty 分发 ---------- */
+function processDirty() {
+  if (isDirty('all')) {
+    renderHero(); renderEquipment(); renderInventory();
+    renderShop(); renderSkills(); renderTalents();
+    if (typeof renderPassives==='function') renderPassives();
+    renderMap(); renderDungeon(); renderCompanion();
+    if (typeof renderProgression==='function') renderProgression();
+    if (typeof renderEvents==='function') renderEvents();
+    if (typeof renderAscend==='function') renderAscend();
+    if (typeof renderTowerPanel==='function') renderTowerPanel();
+    if (typeof renderLife==='function') renderLife();
+    if (typeof renderArtifact==='function') renderArtifact();
+    if (typeof renderMounts==='function') renderMounts();
+    if (typeof renderArena==='function') renderArena();
+    clearAllDirty();
+    return;
+  }
+  if (isDirty('hero'))      { renderHero();      clearDirty('hero'); }
+  if (isDirty('equipment')) { renderEquipment(); clearDirty('equipment'); }
+  if (isDirty('inventory')) { renderInventory(); clearDirty('inventory'); }
+  if (isDirty('shop'))      { renderShop();      clearDirty('shop'); }
+  if (isDirty('skills'))    { renderSkills(); if (typeof renderPassives==='function') renderPassives(); clearDirty('skills'); }
+  if (isDirty('talents'))   { renderTalents();   clearDirty('talents'); }
+  if (isDirty('map'))       { renderMap();       clearDirty('map'); }
+  if (isDirty('dungeon'))   { renderDungeon();   if (typeof renderTowerPanel==='function') renderTowerPanel(); clearDirty('dungeon'); }
+  if (isDirty('companion')) { renderCompanion(); clearDirty('companion'); }
+  if (isDirty('progression')&&typeof renderProgression==='function') { renderProgression(); clearDirty('progression'); }
+  if (isDirty('events')&&typeof renderEvents==='function') { renderEvents(); clearDirty('events'); }
+  if (isDirty('ascend')&&typeof renderAscend==='function') { renderAscend(); clearDirty('ascend'); }
+  if (isDirty('life')&&typeof renderLife==='function') { renderLife(); clearDirty('life'); }
+  if (isDirty('artifact')&&typeof renderArtifact==='function') { renderArtifact(); clearDirty('artifact'); }
+  if (isDirty('mount')&&typeof renderMounts==='function') { renderMounts(); clearDirty('mount'); }
+  if (isDirty('arena')&&typeof renderArena==='function') { renderArena(); clearDirty('arena'); }
+  if (isDirty('stage'))     { clearDirty('stage'); /* stage 信息已在 updateBattleVisuals 处理 */ }
+}
