@@ -104,16 +104,16 @@ const CLASSES = {
       bloodthirst:  {name:'嗜血', icon:'🩸', desc:'3倍攻击,吸血50%', mp:40, type:'dmg', mul:4, lifeSteal:0.5},
       execute:      {name:'斩杀', icon:'💀', desc:'3倍攻击,残血终结', mp:35, type:'dmg', mul:7, unlockLvl:42},
       sunderArmor:  {name:'破甲攻击', icon:'🔨', desc:'3倍攻击,降低敌人防御15秒', mp:28, type:'dmg', mul:3, debuff:'sunder', unlockLvl:30},
-      sweepingStrikes:{name:'横扫攻击',icon:'🌀', desc:'3倍攻击,范围横扫', mp:45, type:'dmg', mul:4, unlockLvl:56},
-      bladestorm:   {name:'剑刃风暴', icon:'🌪️', desc:'3倍攻击,毁灭旋风', mp:60, type:'dmg', mul:7, unlockLvl:72},
+      sweepingStrikes:{name:'横扫攻击',icon:'🌀', desc:'5倍攻击,范围横扫', mp:45, type:'dmg', mul:5, unlockLvl:56},
+      bladestorm:   {name:'剑刃风暴', icon:'🌪️', desc:'8倍攻击,毁灭旋风', mp:60, type:'dmg', mul:8, unlockLvl:72},
       shieldWall:   {name:'盾墙', icon:'🛡️', desc:'15秒减伤50%', mp:50, type:'buff', buff:'shield', duration:15000},
     },
-      shatteringThrow:{name:"碎裂投掷",icon:"🪓",desc:"3倍远程攻击,降低防御15秒",mp:35,type:"dmg",mul:3,unlockLvl:50},
+      shatteringThrow:{name:"碎裂投掷",icon:"🪓",desc:"3倍远程攻击,降低防御15秒",mp:35,type:"dmg",mul:4,unlockLvl:50},
       challengingShout:{name:"挑战怒吼",icon:"📯",desc:"10秒防御+30%,反伤+5%",mp:45,type:"buff",buff:"shield",duration:10000,unlockLvl:66},
 
       sunderArmor:  {name:'破甲攻击', icon:'🔨', desc:'3倍攻击,降低防御15秒', mp:28, type:'dmg', mul:3, unlockLvl:28},
-      sweepingStrikes:{name:'横扫攻击',icon:'🌀', desc:'3倍攻击,范围伤害', mp:45, type:'dmg', mul:4, unlockLvl:56},
-      bladestormUlt: {name:'剑刃风暴', icon:'🌪️', desc:'3倍攻击,毁灭旋风', mp:65, type:'dmg', mul:7, unlockLvl:74},
+      sweepingStrikes:{name:'横扫攻击',icon:'🌀', desc:'5倍攻击,范围伤害', mp:45, type:'dmg', mul:5, unlockLvl:56},
+      bladestormUlt: {name:'剑刃风暴', icon:'🌪️', desc:'8倍攻击,毁灭旋风', mp:65, type:'dmg', mul:8, unlockLvl:74},
     trees:[
       {key:'arms', name:'武器', icon:'⚔️', masteryDesc:'致死打击伤害 +2%/精通', talents:[
         {key:'致命武器_9afo', name:'致命武器', desc:'攻击 +1%/层', max:5, mod:{atkPct:1}},
@@ -183,14 +183,14 @@ const CLASSES = {
       fireball:     {name:'火球术',   icon:'🔥', desc:'3倍攻击,引燃灼烧', mp:25, type:'dmg', mul:3, dot:true,castTime:2.5},
       frostbolt:    {name:'寒冰箭',   icon:'❄️', desc:'3倍攻击,降低敌人攻速', mp:20, type:'dmg', mul:3, slow:true,castTime:2},
       iceBarrier:   {name:'寒冰护体', icon:'🧊', desc:'15秒防御+60%', mp:40, type:'buff', buff:'iceBarrier', duration:15000, unlockLvl:28,castTime:0},
-      pyroblast:    {name:'炎爆术',   icon:'☄️', desc:'3倍攻击,必定暴击', mp:50, type:'dmg', mul:6, alwaysCrit:true, unlockLvl:46,castTime:4},
+      pyroblast:    {name:'炎爆术',   icon:'☄️', desc:'7倍攻击,必定暴击', mp:50, type:'dmg', mul:7, alwaysCrit:true, unlockLvl:46,castTime:4},
       blizzard:     {name:'暴风雪',   icon:'🌨️', desc:'3倍攻击,毁灭风暴', mp:55, type:'dmg', mul:5,castTime:2},
     },
       mirrorImage:{name:"镜像",icon:"🪞",desc:"15秒攻击+30%",mp:40,type:"buff",buff:"bestial",duration:15000,unlockLvl:48},
-      slow:{name:"减速",icon:"🐌",desc:"3倍伤害,大幅减速",mp:30,type:"dmg",mul:3,slow:true,unlockLvl:62},
+      slow:{name:"减速",icon:"🐌",desc:"3倍伤害,大幅减速",mp:30,type:"dmg",mul:4,slow:true,unlockLvl:62},
 
       polymorph:    {name:'变形术',   icon:'🐑', desc:'3倍攻击,大幅减速', mp:30, type:'dmg', mul:3, slow:true, unlockLvl:35,castTime:1.5},
-      dragonBreath: {name:'龙息术',   icon:'🐲', desc:'3倍火焰伤害', mp:48, type:'dmg', mul:5, dot:true, unlockLvl:58,castTime:0},
+      dragonBreath: {name:'龙息术',   icon:'🐲', desc:'6倍火焰伤害', mp:48, type:'dmg', mul:6, dot:true, unlockLvl:58,castTime:0},
       timeWarp:     {name:'时间扭曲', icon:'⏳', desc:'15秒攻速+80%', mp:60, type:'buff', buff:'timeWarp', duration:15000, unlockLvl:76,castTime:0},
     trees:[
       {key:'arcane', name:'奥术', icon:'✨', masteryDesc:'暴风雪伤害 +3%/精通', talents:[
@@ -263,11 +263,11 @@ const CLASSES = {
       powerInfusion:{name:'能量灌注',icon:'💉', desc:'15秒攻速+50%', mp:45, type:'buff', buff:'windfury', duration:15000, unlockLvl:42,castTime:0},
       mindBlast:  {name:'心灵震爆', icon:'🌀', desc:'3倍攻击伤害', mp:40, type:'dmg', mul:4,castTime:1.5},
     },
-      shackleUndead:{name:"束缚亡灵",icon:"⛓️",desc:"3倍伤害,定身减速",mp:28,type:"dmg",mul:3,slow:true,unlockLvl:44},
-      holyFire:{name:"神圣之火",icon:"🔥",desc:"3倍伤害,持续灼烧",mp:38,type:"dmg",mul:4,dot:true,unlockLvl:60},
+      shackleUndead:{name:"束缚亡灵",icon:"⛓️",desc:"3倍伤害,定身减速",mp:28,type:"dmg",mul:4,slow:true,unlockLvl:44},
+      holyFire:{name:"神圣之火",icon:"🔥",desc:"3倍伤害,持续灼烧",mp:38,type:"dmg",mul:5,dot:true,unlockLvl:60},
 
       renew:        {name:'恢复',     icon:'🌱', desc:'恢复35%生命', mp:30, type:'heal', heal:0.35, unlockLvl:32,castTime:0},
-      shadowDeath:  {name:'暗言术·灭',icon:'💀', desc:'3倍暗影伤害', mp:45, type:'dmg', mul:6, unlockLvl:52,castTime:0},
+      shadowDeath:  {name:'暗言术·灭',icon:'💀', desc:'7倍暗影伤害', mp:45, type:'dmg', mul:7, unlockLvl:52,castTime:0},
       divineHymn:   {name:'神圣赞美诗',icon:'🎵', desc:'恢复50%生命', mp:60, type:'heal', heal:0.5, unlockLvl:72,castTime:2},
     trees:[
       {key:'discipline', name:'戒律', icon:'🕊️', masteryDesc:'真言术盾吸收量 +4%/精通', talents:[
@@ -338,15 +338,15 @@ const CLASSES = {
       poison:      {name:'毒刃',     icon:'🐍', desc:'3倍攻击,持续中毒', mp:25, type:'dmg', mul:3, dot:true},
       evasion:     {name:'闪避',     icon:'💨', desc:'15秒防御+40%', mp:30, type:'buff', buff:'evasion', duration:15000, unlockLvl:18},
       kidneyShot:  {name:'肾击',     icon:'👊', desc:'3倍攻击,降低敌人攻速', mp:32, type:'dmg', mul:4, slow:true, unlockLvl:32},
-      killingSpree:{name:'杀戮盛宴', icon:'💀', desc:'3倍攻击,必定暴击', mp:48, type:'dmg', mul:6, alwaysCrit:true, unlockLvl:48},
+      killingSpree:{name:'杀戮盛宴', icon:'💀', desc:'7倍攻击,必定暴击', mp:48, type:'dmg', mul:7, alwaysCrit:true, unlockLvl:48},
       shadow:      {name:'影遁',     icon:'👤', desc:'15秒攻击+50%', mp:50, type:'buff', buff:'shadowstep', duration:15000},
     },
       cloakOfShadows:{name:"暗影斗篷",icon:"🌑",desc:"12秒防御+30%",mp:30,type:"buff",buff:"evasion",duration:12000,unlockLvl:42},
-      garrote:{name:"绞喉",icon:"🪢",desc:"3倍伤害,沉默3秒",mp:38,type:"dmg",mul:4,unlockLvl:58},
+      garrote:{name:"绞喉",icon:"🪢",desc:"3倍伤害,沉默3秒",mp:38,type:"dmg",mul:5,unlockLvl:58},
 
       throw:        {name:'致命投掷', icon:'🎯', desc:'3倍远程攻击', mp:25, type:'dmg', mul:3, unlockLvl:28},
-      rupture:      {name:'割裂',     icon:'🩸', desc:'3倍攻击,持续流血', mp:32, type:'dmg', mul:3, dot:true, unlockLvl:50},
-      deathMark:    {name:'死亡标记', icon:'☠️', desc:'3倍必暴终结技', mp:55, type:'dmg', mul:7, alwaysCrit:true, unlockLvl:70},
+      rupture:      {name:'割裂',     icon:'🩸', desc:'4倍攻击,持续流血', mp:32, type:'dmg', mul:4, dot:true, unlockLvl:50},
+      deathMark:    {name:'死亡标记', icon:'☠️', desc:'8倍必暴终结技', mp:55, type:'dmg', mul:8, alwaysCrit:true, unlockLvl:70},
     trees:[
       {key:'assassination', name:'刺杀', icon:'🐍', masteryDesc:'毒刃持续伤害 +4%/精通', talents:[
         {key:'恶毒_yx0e', name:'恶毒', desc:'暴击 +1.5%/层', max:5, mod:{crit:1.5}},
@@ -415,15 +415,15 @@ const CLASSES = {
       rapidFire:    {name:'急速射击', icon:'⚡', desc:'15秒攻速+60%', mp:35, type:'buff', buff:'rapidFire', duration:15000, unlockLvl:25,castTime:0},
       aimed:        {name:'瞄准射击', icon:'🎯', desc:'3倍攻击,必定暴击', mp:35, type:'dmg', mul:4, alwaysCrit:true,castTime:2.5},
       multi:        {name:'多重射击', icon:'🎯', desc:'3倍攻击', mp:30, type:'dmg', mul:3,castTime:0},
-      killShot:     {name:'杀戮射击', icon:'💀', desc:'3倍攻击,残血斩杀', mp:42, type:'dmg', mul:6, unlockLvl:45,castTime:0},
+      killShot:     {name:'杀戮射击', icon:'💀', desc:'7倍攻击,残血斩杀', mp:42, type:'dmg', mul:7, unlockLvl:45,castTime:0},
       bestialWrath: {name:'狂野怒火', icon:'🦁', desc:'15秒攻击+40%', mp:50, type:'buff', buff:'bestial', duration:15000,castTime:0},
     },
       huntersMark:{name:"猎人印记",icon:"🎯",desc:"15秒降低敌人防御20%",mp:25,type:"dmg",mul:2,unlockLvl:40},
-      barrage:{name:"弹幕射击",icon:"💥",desc:"3倍范围伤害",mp:48,type:"dmg",mul:5,unlockLvl:60},
+      barrage:{name:"弹幕射击",icon:"💥",desc:"3倍范围伤害",mp:48,type:"dmg",mul:6,unlockLvl:60},
 
       explosiveShot:{name:'爆炸射击', icon:'💥', desc:'4倍火焰伤害', mp:32, type:'dmg', mul:4, dot:true, unlockLvl:38,castTime:0},
-      freezingTrap: {name:'冰冻陷阱', icon:'❄️', desc:'3倍攻击,冰冻减速', mp:25, type:'dmg', mul:3, slow:true, unlockLvl:52,castTime:0},
-      stampede:     {name:'万兽奔腾', icon:'🐾', desc:'3倍攻击,兽群践踏', mp:58, type:'dmg', mul:6, unlockLvl:74,castTime:0},
+      freezingTrap: {name:'冰冻陷阱', icon:'❄️', desc:'4倍攻击,冰冻减速', mp:25, type:'dmg', mul:4, slow:true, unlockLvl:52,castTime:0},
+      stampede:     {name:'万兽奔腾', icon:'🐾', desc:'7倍攻击,兽群践踏', mp:58, type:'dmg', mul:7, unlockLvl:74,castTime:0},
     trees:[
       {key:'bm', name:'兽王', icon:'🦁', masteryDesc:'狂野怒火攻击加成 +5%/精通', talents:[
         {key:'野性精神_kuxe', name:'野性精神', desc:'攻击 +1%/层', max:5, mod:{atkPct:1}},
@@ -496,11 +496,11 @@ const CLASSES = {
       windfury:       {name:'风怒武器',icon:'💨', desc:'15秒攻速+60%', mp:50, type:'buff', buff:'windfury', duration:15000,castTime:0},
     },
       hex:{name:"妖术",icon:"🐸",desc:"3倍伤害,变形减速",mp:32,type:"dmg",mul:3,slow:true,unlockLvl:42},
-      earthquake:{name:"地震术",icon:"🌍",desc:"3倍范围伤害+减速",mp:50,type:"dmg",mul:5,slow:true,unlockLvl:58},
+      earthquake:{name:"地震术",icon:"🌍",desc:"3倍范围伤害+减速",mp:50,type:"dmg",mul:6,slow:true,unlockLvl:58},
 
       lavaBurst:    {name:'熔岩爆裂', icon:'🌋', desc:'3倍火焰伤害,必暴', mp:42, type:'dmg', mul:5, alwaysCrit:true, unlockLvl:38,castTime:2},
       spiritLink:   {name:'灵魂链接', icon:'🔗', desc:'恢复30%生命,15秒减伤30%', mp:50, type:'heal', heal:0.3, unlockLvl:54,castTime:0},
-      thunderstorm: {name:'雷霆风暴', icon:'⛈️', desc:'3倍自然伤害', mp:58, type:'dmg', mul:6, unlockLvl:73,castTime:2},
+      thunderstorm: {name:'雷霆风暴', icon:'⛈️', desc:'7倍自然伤害', mp:58, type:'dmg', mul:7, unlockLvl:73,castTime:2},
     trees:[
       {key:'element', name:'元素', icon:'⚡', masteryDesc:'闪电链伤害 +4%/精通', talents:[
         {key:'元素专精_fgqo', name:'元素专精', desc:'智力 +5%/层', max:5, mod:{intPct:5}},
@@ -572,7 +572,7 @@ const CLASSES = {
       avengingWrath:{name:'复仇之怒',   icon:'😇', desc:'15秒攻击+50%', mp:50, type:'buff', buff:'bestial', duration:15000, unlockLvl:46,castTime:0},
       divineShield: {name:'圣盾术',     icon:'🛡️', desc:'15秒减伤80%', mp:60, type:'buff', buff:'divine', duration:15000,castTime:0},
     },
-      hammerOfRighteous:{name:"正义之锤",icon:"🔨",desc:"3倍远程神圣伤害",mp:30,type:"dmg",mul:3,unlockLvl:44},
+      hammerOfRighteous:{name:"正义之锤",icon:"🔨",desc:"3倍远程神圣伤害",mp:30,type:"dmg",mul:4,unlockLvl:44},
       flashOfLight:{name:"圣光闪现",icon:"💫",desc:"恢复25%生命",mp:25,type:"heal",heal:0.25,unlockLvl:55},
 
       holyWrath:    {name:'神圣愤怒', icon:'😡', desc:'3倍范围神圣伤害', mp:32, type:'dmg', mul:3, unlockLvl:30,castTime:0},
@@ -632,14 +632,14 @@ const CLASSES = {
       corruption: {name:'腐蚀术',   icon:'🧿', desc:'3倍攻击,持续腐蚀', mp:25, type:'dmg', mul:3, dot:true,castTime:0},
       drainLife:  {name:'生命分流', icon:'🩸', desc:'3倍攻击,吸血80%', mp:40, type:'dmg', mul:4, lifeSteal:0.8,castTime:2},
       fear:       {name:'恐惧',     icon:'👁️', desc:'3倍攻击,降低敌人攻速', mp:28, type:'dmg', mul:3, slow:true, unlockLvl:28,castTime:1.5},
-      chaosBolt:  {name:'混乱之箭', icon:'☄️', desc:'3倍攻击,无视防御', mp:55, type:'dmg', mul:7, alwaysCrit:true, unlockLvl:48,castTime:3},
+      chaosBolt:  {name:'混乱之箭', icon:'☄️', desc:'8倍攻击,无视防御', mp:55, type:'dmg', mul:8, alwaysCrit:true, unlockLvl:48,castTime:3},
       incinerate: {name:'烧尽',     icon:'🔥', desc:'3倍攻击伤害', mp:50, type:'dmg', mul:5,castTime:2},
     },
-      shadowFury:{name:"暗影之怒",icon:"💢",desc:"3倍范围伤害+减速",mp:42,type:"dmg",mul:4,slow:true,unlockLvl:44},
-      soulFire:{name:"灵魂之火",icon:"💀",desc:"3倍伤害,必暴",mp:55,type:"dmg",mul:7,alwaysCrit:true,unlockLvl:62},
+      shadowFury:{name:"暗影之怒",icon:"💢",desc:"3倍范围伤害+减速",mp:42,type:"dmg",mul:5,slow:true,unlockLvl:44},
+      soulFire:{name:"灵魂之火",icon:"💀",desc:"3倍伤害,必暴",mp:55,type:"dmg",mul:8,alwaysCrit:true,unlockLvl:62},
 
       unstableAffliction:{name:'痛苦无常',icon:'💜', desc:'3倍攻击,持续痛苦', mp:38, type:'dmg', mul:4, dot:true, unlockLvl:36,castTime:1.5},
-      inferno:      {name:'召唤地狱火',icon:'🔥', desc:'3倍范围火焰伤害', mp:55, type:'dmg', mul:6, unlockLvl:58,castTime:2.5},
+      inferno:      {name:'召唤地狱火',icon:'🔥', desc:'7倍范围火焰伤害', mp:55, type:'dmg', mul:7, unlockLvl:58,castTime:2.5},
       metamorphosis:{name:'恶魔变身', icon:'😈', desc:'20秒攻击+50%,吸血+15%', mp:70, type:'buff', buff:'demonForm', duration:20000, unlockLvl:78,castTime:0},
     trees:[
       {key:'affliction', name:'痛苦', icon:'🧿', masteryDesc:'腐蚀术持续伤害 +5%/精通', talents:[
@@ -716,7 +716,7 @@ const CLASSES = {
       wildGrowth:{name:"野性成长",icon:"🌺",desc:"恢复30%生命",mp:35,type:"heal",heal:0.3,unlockLvl:55},
 
       entanglingRoots:{name:'纠缠根须',icon:'🌿', desc:'3倍自然伤害,缠绕减速', mp:28, type:'dmg', mul:3, slow:true, unlockLvl:32,castTime:1.5},
-      hurricane:    {name:'飓风',     icon:'🌀', desc:'3倍自然范围伤害', mp:48, type:'dmg', mul:4, unlockLvl:56,castTime:2},
+      hurricane:    {name:'飓风',     icon:'🌀', desc:'5倍自然范围伤害', mp:48, type:'dmg', mul:5, unlockLvl:56,castTime:2},
       tranquility:  {name:'宁静',     icon:'🌟', desc:'恢复45%生命', mp:58, type:'heal', heal:0.45, unlockLvl:74,castTime:2.5},
     trees:[
       {key:'balance', name:'平衡', icon:'🌙', masteryDesc:'月火术持续伤害 +4%/精通', talents:[
