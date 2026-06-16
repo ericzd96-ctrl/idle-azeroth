@@ -30,7 +30,7 @@ const ARTIFACTS = {
 const ARTIFACT_TRAITS = [
   // 攻势
   { key:'edgeOfWar',    tree:'offense', name:'战意之刃',  desc:'攻击 +2%/阶',  mod:{atkPct:2},          maxRank:3 },
-  { key:'lethalStrike', tree:'offense', name:'致命强袭',  desc:'精通 +5%/阶',  mod:{mastery:5},         maxRank:3, prereq:'edgeOfWar' },
+  { key:'lethalStrike', tree:'offense', name:'致命强袭',  desc:'精通 +3%/阶',  mod:{mastery:3},         maxRank:3, prereq:'edgeOfWar' },
   { key:'frenzy',       tree:'offense', name:'狂怒涌动',  desc:'攻速 +3%/阶',  mod:{spdPct:3},          maxRank:3, prereq:'lethalStrike' },
   { key:'wrathSurge',   tree:'offense', name:'怒火奔流',  desc:'攻击 +3%/阶',  mod:{atkPct:3},          maxRank:3, prereq:'frenzy' },
   // 守护
@@ -42,7 +42,7 @@ const ARTIFACT_TRAITS = [
   { key:'insight',      tree:'mastery', name:'洞察奥义',  desc:'经验 +5%/阶',  mod:{xpMult:5},          maxRank:3 },
   { key:'wealth',       tree:'mastery', name:'敛财',      desc:'金币 +5%/阶',  mod:{goldMult:5},        maxRank:3, prereq:'insight' },
   { key:'fortune',      tree:'mastery', name:'幸运',      desc:'掉率 +5%/阶',  mod:{dropMult:5},        maxRank:3, prereq:'wealth' },
-  { key:'masteryFlow',  tree:'mastery', name:'精通融汇',  desc:'精通 +5/阶',   mod:{mastery:5},         maxRank:3, prereq:'fortune' },
+  { key:'masteryFlow',  tree:'mastery', name:'精通融汇',  desc:'精通 +3/阶',   mod:{mastery:3},         maxRank:3, prereq:'fortune' },
 ];
 
 const ARTIFACT_TREES = {
@@ -55,7 +55,7 @@ const ARTIFACT_TREES = {
 const ARTIFACT_MILESTONES = [
   { lvl:10, name:'觉醒', desc:'+5% 全部基础属性',        mod:{atkPct:5, hpPct:5, defPct:5} },
   { lvl:25, name:'共鸣', desc:'+8% 攻击/生命', mod:{atkPct:8, hpPct:8} },
-  { lvl:45, name:'神格', desc:'+15% 全属性, +10 精通',   mod:{atkPct:15, hpPct:15, defPct:15, mastery:10} },
+  { lvl:45, name:'神格', desc:'+15% 全属性, +5 精通',   mod:{atkPct:15, hpPct:15, defPct:15, mastery:5} },
 ];
 
 /* ---------- 工具 ---------- */
