@@ -2502,7 +2502,7 @@ const DUNGEONS = [{
   name: '卡拉赞',
   icon: '🌌',
   reqLvl: 75,
-  waves: 12,
+  waves: 14,
     type: "raid",
   cd: 6000,
   bosses: [
@@ -2515,6 +2515,16 @@ const DUNGEONS = [{
             {name: "暗影践踏", icon: "🌑", desc: "6倍AOE伤害", type: "dmg", mul: 6, castTime: 3, aoe: true}
           ],
           passive: {dodgeChance: 0.15, critChance: 0.1, atkBonus: 0.2}
+        },
+        {
+          name: "猎手阿图门",
+          emoji: "🧟",
+          wave: 4,
+          skills: [
+            {name: "暗影冲锋", icon: "🐴", desc: "5倍伤害+减速", type: "dmg", mul: 5, castTime: 2, slow: true},
+            {name: "诅咒", icon: "🧿", desc: "5倍暗影伤害", type: "dmg", mul: 5, castTime: 2.5, weaken: true}
+          ],
+          passive: {dodgeChance: 0.15, critChance: 0.2, atkBonus: 0.15}
         },
         {
           name: "莫罗斯",
@@ -2536,6 +2546,17 @@ const DUNGEONS = [{
             {name: "电弧", icon: "⚡", desc: "6倍伤害+减速", type: "dmg", mul: 6, castTime: 3, slow: true}
           ],
           passive: {dodgeChance: 0.1, critChance: 0.2, dmgReduction: 0.2}
+        },
+        {
+          name: "麦迪文",
+          emoji: "🔮",
+          wave: 11,
+          skills: [
+            {name: "奥术弹幕", icon: "🌀", desc: "7倍奥术伤害", type: "dmg", mul: 7, castTime: 3, weaken: true},
+            {name: "火焰之雨", icon: "🔥", desc: "8倍AOE+灼烧", type: "dmg", mul: 8, castTime: 4, aoe: true, dot: true},
+            {name: "乌鸦形态", icon: "🐦", desc: "6倍伤害+吸血25%", type: "dmg", mul: 6, castTime: 2.5, lifeSteal: 0.25}
+          ],
+          passive: {critChance: 0.3, dmgReduction: 0.2, dodgeChance: 0.15, atkBonus: 0.15}
         },
         {
           name: "玛克扎尔王子",
