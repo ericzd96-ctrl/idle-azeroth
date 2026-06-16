@@ -271,7 +271,7 @@ function recomputeStats() {
       // 直接属性(装备攻/防/血不受百分比加成)
       equipAtk+=b.atk; def+=b.def; hpMax+=b.hp; crit+=b.crit;
       critd+=b.critd; spd+=b.spd; reg+=b.reg;
-      leech+=b.leech; vers+=b.vers; mastery+=b.mastery; haste+=b.haste||0;
+      leech+=b.leech; vers+=b.vers; mastery+=b.mastery; haste+=b.haste||0; dodge+=b.dodge||0;
       // 5维度属性 (并算上主属性加攻击/耐力加生命,装备主属性也不受百分比加成)
       for (const ak of ['str','agi','int','spi','sta']) {
         equipAttrBonus[ak] += b[ak];
@@ -396,7 +396,7 @@ function recomputeStats() {
   state.hero.healBonus=Math.min(healBonus,50); state.hero.dotBonus=Math.min(dotBonus,50);
   state.hero.costReduction=Math.min(costReduction,30); state.hero.executeBonus=Math.min(executeBonus,40);
   state.hero.reflectDmg=Math.min(reflectDmg,20);
-  state.hero.armorPen=Math.min(armorPen,40); state.hero.dodge=Math.min(dodge,30); state.hero.stunChance=Math.min(stunChance,15);   // 趣味天赋封顶
+  state.hero.armorPen=Math.min(armorPen,40); state.hero.dodge=Math.min(dodge,30); state.hero.stunChance=Math.min(stunChance,15);
   state.hp=Math.min(state.hp,state.hero.hpMax); state.resourceMax=state.hero.mpMax;
   state.resource=Math.min(state.resource,state.resourceMax);
   markDirty('hero','equipment');
@@ -932,26 +932,27 @@ function rollItemOfRarity(rarityKey,fromLvl){
 function finishItem(item,slotKey,rarity,power,extraStats){
   const slot=SLOT_INFO[slotKey];
   const lvlBonus=1+power*0.01; // 等级越高属性越多(2026-06-16 0.02→0.01:压平后期二次膨胀)
-  const baseVal={atk:Math.floor((3+power*1.0)*lvlBonus),def:Math.floor((2+power*0.55)*lvlBonus),hp:Math.floor((12+power*5)*lvlBonus),crit:1+power*0.1,critd:6+power*0.6,reg:1+power*0.2,str:Math.floor((1.5+power*0.4)*lvlBonus),agi:Math.floor((1.5+power*0.4)*lvlBonus),int:Math.floor((1.5+power*0.4)*lvlBonus),spi:Math.floor((1+power*0.35)*lvlBonus),sta:Math.floor((1.5+power*0.4)*lvlBonus),leech:0.5+power*0.06,vers:0.5+power*0.06,haste:0.5+power*0.06};
+  const baseVal={atk:Math.floor((3+power*1.0)*lvlBonus),def:Math.floor((2+power*0.55)*lvlBonus),hp:Math.floor((12+power*5)*lvlBonus),crit:1+power*0.1,critd:6+power*0.6,reg:1+power*0.2,str:Math.floor((1.5+power*0.4)*lvlBonus),agi:Math.floor((1.5+power*0.4)*lvlBonus),int:Math.floor((1.5+power*0.4)*lvlBonus),spi:Math.floor((1+power*0.35)*lvlBonus),sta:Math.floor((1.5+power*0.4)*lvlBonus),leech:0.5+power*0.06,vers:0.5+power*0.06,haste:0.5+power*0.06,dodge:0.5+power*0.06};
   const primary=slot.mainStat;let pv=baseVal[primary]*rarity.mult;
   item.stats[primary]=Math.max(1,Math.floor(pv));
   const bonusCount={common:1,uncommon:2,rare:3,epic:4,legend:5}[rarity.key];
-  // 吸血/全能/暴击/暴伤/极速/精通已从常规副属池移除,改为下方"惊喜副属性"
+  // 吸血/全能/暴击/暴伤/极速/精通/闪避已从常规副属池移除,改为下方"惊喜副属性"
   const possible=['atk','def','hp','reg','str','agi','int','spi','sta'].filter(k=>k!==primary);
   for(let i=0;i<bonusCount;i++){const k=possible.splice(rng(0,possible.length-1),1)[0];if(!k)break;item.stats[k]=Math.max(1,Math.floor(baseVal[k]*0.7*rarity.mult));}
-  // 副属性(暴击/暴伤/吸血/全能/极速/精通)只能来自下方"惊喜roll",不从命名装/池子的预设 stats 注入
-  const SURPRISE_KEYS=['crit','critd','critdPct','leech','vers','haste','mastery'];
+  // 副属性只能来自下方"惊喜roll",不从命名装/池子的预设 stats 注入
+  const SURPRISE_KEYS=['crit','critd','critdPct','leech','vers','haste','mastery','dodge'];
   if(extraStats){for(const[k,v]of Object.entries(extraStats)){if(SURPRISE_KEYS.includes(k))continue;item.stats[k]=(item.stats[k]||0)+Math.max(1,Math.floor(baseVal[k]*0.5*v*rarity.mult));}}
   // ---- 惊喜副属性 ----
   // 仅蓝装(rare)以上才可能出现,各自独立低概率,不占常规副属分配(额外附加),可同时出现也可能都不出现。
-  // 数值随品质 蓝/紫/橙:吸血/全能/极速/暴击/精通 = 1/2/4;暴伤倍率更高 = 3/6/12。
-  const SURPRISE_CHANCE=0.15;   // 每个惊喜副属独立出现概率(可调:越小越稀有)
-  const SURPRISE={leech:{rare:1,epic:2,legend:4},vers:{rare:1,epic:2,legend:4},haste:{rare:1,epic:2,legend:4},mastery:{rare:1,epic:2,legend:4},crit:{rare:1,epic:2,legend:3},critd:{rare:3,epic:6,legend:12}};
+  // 数值随品质 蓝/紫/橙:吸血/全能/极速/暴击/精通/闪避 = 1/2/4;暴伤倍率更高 = 3/6/12。
+  const SURPRISE_CHANCE=0.15;
+  const SURPRISE={leech:{rare:1,epic:2,legend:4},vers:{rare:1,epic:2,legend:4},haste:{rare:1,epic:2,legend:4},mastery:{rare:1,epic:2,legend:4},dodge:{rare:1,epic:2,legend:4},crit:{rare:1,epic:2,legend:3},critd:{rare:3,epic:6,legend:12}};
   for(const sk in SURPRISE){const v=SURPRISE[sk][rarity.key];if(v&&Math.random()<SURPRISE_CHANCE)item.stats[sk]=(item.stats[sk]||0)+v;}
-  // 安全帽:暴击/暴伤/极速上限(防止任何路径溢出)
+  // 安全帽:暴击/暴伤/极速/闪避上限(防止任何路径溢出)
   if(item.stats.crit>4)item.stats.crit=4;
   if(item.stats.critd>12)item.stats.critd=12;
   if(item.stats.haste>4)item.stats.haste=4;
+  if(item.stats.dodge>4)item.stats.dodge=4;
   item.reqLvl=Math.max(1,Math.floor(power*0.9));item.sell=Math.floor(10*rarity.mult*(1+power*0.5));
   if(typeof enhanceItemOnCreate==='function') enhanceItemOnCreate(item,rarity,power);
   return item;

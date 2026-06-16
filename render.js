@@ -420,6 +420,7 @@ function renderHero() {
   $('s-vers').textContent = (state.hero.vers||0).toFixed(1)+'%';
   if ($('s-haste')) $('s-haste').textContent = (state.hero.haste||0).toFixed(1)+'%';
   $('s-mastery').textContent = fmt(state.hero.mastery||0);
+  if ($('s-dodge')) $('s-dodge').textContent = (state.hero.dodge||0).toFixed(1)+'%';
 
   // 精通效果
   const specTree = state.specialization ? c.trees.find(t=>t.key===state.specialization) : null;

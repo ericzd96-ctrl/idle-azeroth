@@ -27,7 +27,7 @@ const STAT_NAMES = {
   // 5 维度属性
   str:'力量', agi:'敏捷', int:'智力', spi:'精神', sta:'耐力',
   // 副属性
-  leech:'吸血', vers:'全能', mastery:'精通', haste:'极速',
+  leech:'吸血', vers:'全能', mastery:'精通', haste:'极速', dodge:'闪避',
   // 百分比类(显示时与基础同名,数值带 %)
   atkPct:'攻击', hpPct:'生命', defPct:'防御', spdPct:'攻速',
   critdPct:'暴伤', mpPct:'法力',
@@ -47,7 +47,7 @@ const PERCENT_STATS = new Set([
   'strPct','agiPct','intPct','spiPct','staPct',
   'cdReduction','costReduction','extraAtk',
   'healBonus','dotBonus','executeBonus','reflectDmg',
-  'crit','critd','vers','haste',
+  'crit','critd','vers','haste','dodge',
   'xpMult','goldMult','dropMult','buffDuration',
 ]);
 

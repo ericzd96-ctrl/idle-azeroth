@@ -178,7 +178,7 @@ function collectItemBonuses(item) {
     // 直接属性
     atk:0, def:0, hp:0, crit:0, critd:0, spd:0, reg:0,
     str:0, agi:0, int:0, spi:0, sta:0,
-    leech:0, vers:0, mastery:0, haste:0,
+    leech:0, vers:0, mastery:0, haste:0, dodge:0,
     // 百分比与额外
     atkPct:0, hpPct:0, defPct:0, spdPct:0, critdPct:0,
     strPct:0, agiPct:0, intPct:0, spiPct:0, staPct:0,
