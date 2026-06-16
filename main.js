@@ -15,6 +15,7 @@ let cdCounter = 0;
 let minuteCounter = 0;
 
 let _loopErrLogged = false;
+let _prevBuffs = '';   // 上帧活跃 buff 签名(检测过期)
 function loop() {
   try {
     if (state.cls) {
@@ -28,6 +29,14 @@ function loop() {
       tickCast(now);
       tickTravel(now);
       if (typeof tickLife==='function') tickLife(now);
+
+      // buff 过期检测: 上帧还在、本帧已消失 → 重算属性
+      const curBuffs = Object.keys(state.buffs||{}).filter(k=>state.buffs[k]>now).sort().join(',');
+      if (_prevBuffs !== curBuffs) {
+        if (_prevBuffs) recomputeStats();
+        _prevBuffs = curBuffs;
+      }
+
       updateBattleVisuals();
       processDirty();
 
