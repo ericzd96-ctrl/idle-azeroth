@@ -205,11 +205,10 @@ function setupDelegation() {
     lifeRoot.addEventListener('click', e => {
       const subBtn = e.target.closest('.sub-tab[data-lifesub]');
       if (subBtn) { lifeSubTab = subBtn.dataset.lifesub; renderLife(); return; }
-      const btn = e.target.closest('button[data-action]');
+      const btn = e.target.closest('[data-action]');
       if (!btn) return;
       const act = btn.dataset.action;
-      if (act === 'lifeStart')      { startLifeAction(btn.dataset.key); renderLife(); }
-      else if (act === 'lifeStop')  { stopLifeAction(); renderLife(); }
+      if (act === 'lifeSwitch')     { stopLifeAction(); startLifeAction(btn.dataset.key); renderLife(); }
       else if (act === 'lifeCraft') { lifeCraft(btn.dataset.key); renderLife(); }
     });
   }

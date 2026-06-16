@@ -127,7 +127,16 @@ function tickLife(now) {
       log(`${k} buff 已过期`, 'info');
     }
   }
-  if (!state.lifeAction) return;
+  // 自动采集:没有进行中的动作时,自动选等级最高的采集技能
+  if (!state.lifeAction) {
+    let bestKey = null, bestLvl = -1;
+    for (const [key, sk] of Object.entries(LIFE_SKILLS)) {
+      const s = state.life[key];
+      if (s.lvl > bestLvl) { bestLvl = s.lvl; bestKey = key; }
+    }
+    if (bestKey) startLifeAction(bestKey);
+    return;
+  }
   const la = state.lifeAction;
   if (now - la.lastYieldAt < LIFE_TICK_MS) return;
   const ticks = Math.floor((now - la.lastYieldAt) / LIFE_TICK_MS);
@@ -250,10 +259,9 @@ function renderLife() {
     if (la) {
       const sk = LIFE_SKILLS[la.type];
       const nextIn = Math.max(0, Math.ceil((la.lastYieldAt + LIFE_TICK_MS - now) / 1000));
-      html += `<div class="ascend-box" style="border:1px solid ${sk.color}">
-        <div style="color:${sk.color};font-weight:bold;font-size:13px">${profIcon(la.type, 18, sk.icon)} 进行中: ${sk.name}</div>
-        <div class="muted" style="font-size:11px;margin:4px 0">下一次产出: ${nextIn}s</div>
-        <button class="danger" data-action="lifeStop" style="width:100%;padding:6px">停止</button>
+      html += `<div class="ascend-box" style="border:1px solid ${sk.color};text-align:center">
+        <div style="color:${sk.color};font-weight:bold;font-size:13px">${profIcon(la.type, 18, sk.icon)} 采集中: ${sk.name}</div>
+        <div class="muted" style="font-size:11px;margin:4px 0">⏱ 下一次产出: ${nextIn}s · 点击下方技能卡片可切换</div>
       </div>`;
     }
     for (const [key, sk] of Object.entries(LIFE_SKILLS)) {
@@ -266,20 +274,20 @@ function renderLife() {
       const next = sk.tiers.find(t => s.lvl < t.minLvl);
       const unlockedTxt = unlocked.map(t => `${t.matIcon}${t.matName}`).join(' ');
       const nextTxt = next ? ` · 下一档 Lv.${next.minLvl}: ${next.matIcon}${next.matName}` : '';
-      html += `<div class="ascend-box" style="border-left:3px solid ${sk.color}">
+      html += `<div class="ascend-box" style="border-left:3px solid ${sk.color};cursor:pointer" data-action="lifeSwitch" data-key="${key}">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
           <b>${profIcon(key, 18, sk.icon)} ${sk.name} <span class="muted" style="font-size:11px">Lv.${s.lvl}</span></b>
           ${isActive
-            ? `<span class="pill" style="background:${sk.color};color:#000">进行中</span>`
-            : `<button class="${la?'':'success'}" data-action="lifeStart" data-key="${key}" ${la?'disabled':''} style="padding:4px 10px">开始</button>`}
+            ? `<span class="pill" style="background:${sk.color};color:#000">采集中</span>`
+            : `<span class="pill" style="background:var(--panel-2);color:var(--muted)">点击切换</span>`}
         </div>
         <div class="bar xp" style="margin:2px 0"><i style="width:${pct}%"></i><span>${s.lvl>=LIFE_MAX_LVL?'MAX':`${cur}/${need}`}</span></div>
         <div class="muted" style="font-size:10px;margin-top:2px">已解锁: ${unlockedTxt}${nextTxt}</div>
       </div>`;
     }
     html += `<div class="muted" style="font-size:10px;margin-top:6px;line-height:1.5">
-      ⏱ 每 30 秒产出一次 · 离线最多累计 ${LIFE_MAX_OFFLINE_TICKS*LIFE_TICK_MS/3600000} 小时<br>
-      🆙 等级 30/60 时产量 +1 · 同时只能进行 1 种技能
+      ⏱ 全自动采集 · 每 30 秒产出一次 · 离线最多累计 ${LIFE_MAX_OFFLINE_TICKS*LIFE_TICK_MS/3600000} 小时<br>
+      🆙 等级 30/60 时产量 +1 · 点击卡片切换采集技能
     </div>`;
   } else if (lifeSubTab === 'craft') {
     // 当前 buff 状态
