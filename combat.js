@@ -1086,7 +1086,7 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
       if(i!==undefined){const sk=st.skills[i];
         if(sk.type==='dmg'){const sd=calcDmg(st.atk*sk.mul,monArmor(mon),st.crit,st.critd,sk.alwaysCrit,mon.lvl,state.hero.lvl);mon.hp-=sd.dmg;trackDmg('comp',sd.dmg);showFloat($('mon-emoji'),st.emoji+sk.icon+'-'+sd.dmg,'#c0a0ff');if(sk.heal){state.hp=Math.min(state.hero.hpMax,state.hp+Math.floor(state.hero.hpMax*sk.heal));showFloat($('hero-emoji'),'+'+Math.floor(state.hero.hpMax*sk.heal),'#6ee7b7')}}
         else if(sk.type==='heal'){const h=Math.floor(state.hero.hpMax*sk.heal);state.hp=Math.min(state.hero.hpMax,state.hp+h);showFloat($('hero-emoji'),st.emoji+'+'+h,'#6ee7b7');log(st.emoji+' '+sk.name+'! +'+h+' 生命','good');}
-        else if(sk.type==='buff'){const dur=(sk.duration||15000)+(state.hero.buffDuration||0)*1000;state.buffs[sk.buff]=Date.now()+dur;}
+        else if(sk.type==='buff'){const dur=(sk.duration||15000)+(state.hero.buffDuration||0)*1000;state.buffs[sk.buff]=Date.now()+dur;recomputeStats();log(st.emoji+' '+sk.name+'!','good');}
         compSkillCd[i]=now+(sk.cd||COMP_SKILL_DEFAULT_CD)*1000;lastCompSkill=now;
       }
     }
