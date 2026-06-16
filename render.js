@@ -1032,7 +1032,8 @@ function renderMap() {
   const mapCur = getMap();
   if (mapCur) {
     const subCur = mapCur.sub[state.currentSubzone];
-    $('cur-location').textContent = `${mapCur.icon} ${mapCur.name} · ${subCur.name} (Lv ${subCur.lvl[0]}-${subCur.lvl[1]})`;
+    if (subCur) $('cur-location').textContent = `${mapCur.icon} ${mapCur.name} · ${subCur.name} (Lv ${subCur.lvl[0]}-${subCur.lvl[1]})`;
+    else $('cur-location').textContent = `${mapCur.icon} ${mapCur.name}`;
   }
   const ml = $('map-list');
   ml.innerHTML = '';
