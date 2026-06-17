@@ -314,7 +314,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   }
   .tabs::-webkit-scrollbar { display: none; }
   .tab {
-    flex: 0 0 auto; min-width: 56px; padding: 8px 6px;
+    flex: 0 0 auto; min-width: 56px; min-height: 44px; padding: 8px 6px;
     font-size: 11px; border-radius: 10px;
   }
   body.mobile-ui .side-panel .tab-panel { display: none !important; }
@@ -324,6 +324,8 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
     left: 8px; right: 8px; bottom: 66px;
     max-height: min(62vh, 560px);
     overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
     padding: 12px;
     border-radius: 14px;
     border: 1px solid var(--border);
@@ -349,7 +351,6 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   body.mobile-ui .skill-btn {
     min-width: 0;
     width: 100%;
-    padding: 6px 6px;
   }
   body.mobile-ui .compare-tip {
     min-width: 0;
@@ -375,7 +376,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   body.mobile-ui .sub-btn {
-    min-width: 0;
+    min-width: 0; min-height: 44px;
     width: 100%;
   }
   body.mobile-ui .footer-actions {
@@ -481,7 +482,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   }
   .tabs { gap: 4px; }
   .tab {
-    min-width: 50px;
+    min-width: 50px; min-height: 44px;
     padding: 7px 5px;
     font-size: 10px;
     border-radius: 8px;
@@ -502,9 +503,9 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   .skill-btn .sk-name { font-size: 10px; }
   .skill-btn .sk-cd,
   .skill-btn .mp-cost { font-size: 9px; }
-  .equip-grid,
-  .tier-list,
-  .stat-list { grid-template-columns: 1fr; }
+  body.mobile-ui .equip-grid,
+  body.mobile-ui .tier-list,
+  body.mobile-ui .stat-list { grid-template-columns: 1fr; }
   .slot { min-height: 52px; }
   .inv-item,
   .shop-item,
@@ -528,7 +529,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
     gap: 4px;
   }
   .sub-btn {
-    min-width: 0;
+    min-width: 0; min-height: 44px;
     font-size: 10px;
     padding: 4px 3px;
   }
@@ -540,20 +541,6 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   .modal {
     padding: 14px;
     border-radius: 12px;
-  }
-  .wow-row {
-    flex-direction: column;
-    gap: 4px;
-  }
-  .wow-row-label {
-    width: auto;
-    min-width: 0;
-    text-align: left;
-    padding-top: 0;
-  }
-  .wow-node {
-    min-width: 0;
-    width: 100%;
   }
 }
 

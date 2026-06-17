@@ -492,6 +492,7 @@ function showAffixTip(e, name, desc) {
   positionTip(tip, e);
 }
 function hideAffixTip() {
+  if (typeof _tipPinned !== 'undefined' && _tipPinned) return;
   $('compare-tip').style.display = 'none';
 }
 

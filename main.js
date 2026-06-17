@@ -14,6 +14,7 @@ let secondsCounter = 0;
 let cdCounter = 0;
 let minuteCounter = 0;
 let mobilePanelOpen = false;
+let _lastMobile = null;
 
 let _loopErrLogged = false;
 let _prevBuffs = '';   // 上帧活跃 buff 签名(检测过期)
@@ -30,7 +31,9 @@ function updateHeroMobileToggle() {
 
 function setMobilePanelOpen(open) {
   mobilePanelOpen = !!open;
-  document.body.classList.toggle('mobile-panel-open', mobilePanelOpen && isMobileLayout());
+  const isOpen = mobilePanelOpen && isMobileLayout();
+  document.body.classList.toggle('mobile-panel-open', isOpen);
+  document.body.style.overflow = isOpen ? 'hidden' : '';
 }
 
 function focusHeroPanel() {
@@ -44,6 +47,8 @@ function focusHeroPanel() {
 
 function applyResponsiveLayout() {
   const mobile = isMobileLayout();
+  if (mobile === _lastMobile) return;
+  _lastMobile = mobile;
   document.body.classList.toggle('mobile-ui', mobile);
   if (mobile) {
     if (!document.body.dataset.heroMobileInit) {
@@ -207,8 +212,8 @@ function setupDelegation() {
   });
 
   // 掉落预览tip离开容器时隐藏
-  $('map-list').addEventListener('mouseleave', () => { $('compare-tip').style.display = 'none'; });
-  $('dungeon-list').addEventListener('mouseleave', () => { $('compare-tip').style.display = 'none'; });
+  $('map-list').addEventListener('mouseleave', () => { if (typeof _tipPinned !== 'undefined' && !_tipPinned) $('compare-tip').style.display = 'none'; });
+  $('dungeon-list').addEventListener('mouseleave', () => { if (typeof _tipPinned !== 'undefined' && !_tipPinned) $('compare-tip').style.display = 'none'; });
 
   // 地图(子区域 / BOSS 挑战)
   $('map-list').addEventListener('click', e => {
@@ -332,7 +337,13 @@ function setupDelegation() {
       positionTip(tip, e);
     });
     bb.addEventListener('mousemove', e => { if (tip.style.display === 'block') positionTip(tip, e); });
-    bb.addEventListener('mouseout', e => { if (!e.relatedTarget || !e.relatedTarget.closest || !e.relatedTarget.closest('.buff-chip')) tip.style.display = 'none'; });
+    bb.addEventListener('mouseout', e => { if ((typeof _tipPinned === 'undefined' || !_tipPinned) && (!e.relatedTarget || !e.relatedTarget.closest || !e.relatedTarget.closest('.buff-chip'))) tip.style.display = 'none'; });
+    // 触屏点击固定
+    bb.addEventListener('click', e => {
+      const chip = e.target.closest('.buff-chip'); if (!chip) return;
+      if (typeof _tipPinned !== 'undefined' && _tipPinned && _tipPinnedOwner === chip) { if (typeof unpinTip === 'function') unpinTip(); }
+      else { if (typeof _tipPinned !== 'undefined' && _tipPinned) { if (typeof unpinTip === 'function') unpinTip(); } tip.querySelector('.compare-head').textContent = chip.dataset.tip || ''; tip.querySelector('.compare-body').innerHTML = ''; tip.style.display = 'block'; positionTip(tip, e); if (typeof _tipPinned !== 'undefined') { _tipPinned = true; _tipPinnedOwner = chip; } }
+    });
   })();
 
   // 技能栏拖拽排序(顺序 = 自动施法优先级)
@@ -404,7 +415,13 @@ function setupDelegation() {
       positionTip(tip, e);
     });
     root.addEventListener('mousemove', e => { if (tip.style.display === 'block' && e.target.closest('.comp-skill')) positionTip(tip, e); });
-    root.addEventListener('mouseout', e => { const sk = e.target.closest('.comp-skill'); if (sk && (!e.relatedTarget || !e.relatedTarget.closest || !e.relatedTarget.closest('.comp-skill'))) tip.style.display = 'none'; });
+    root.addEventListener('mouseout', e => { const sk = e.target.closest('.comp-skill'); if (sk && (typeof _tipPinned === 'undefined' || !_tipPinned) && (!e.relatedTarget || !e.relatedTarget.closest || !e.relatedTarget.closest('.comp-skill'))) tip.style.display = 'none'; });
+    // 触屏点击固定
+    root.addEventListener('click', e => {
+      const sk = e.target.closest('.comp-skill'); if (!sk) return;
+      if (typeof _tipPinned !== 'undefined' && _tipPinned && _tipPinnedOwner === sk) { if (typeof unpinTip === 'function') unpinTip(); }
+      else { if (typeof _tipPinned !== 'undefined' && _tipPinned) { if (typeof unpinTip === 'function') unpinTip(); } tip.querySelector('.compare-head').innerHTML = sk.dataset.tip || ''; tip.querySelector('.compare-body').innerHTML = ''; tip.style.display = 'block'; positionTip(tip, e); if (typeof _tipPinned !== 'undefined') { _tipPinned = true; _tipPinnedOwner = sk; } }
+    });
   })();
   // 自动施法
   $('auto-sk').addEventListener('change', e => { state.autoSkill = e.target.checked; });
@@ -511,12 +528,20 @@ function setupMainButtons() {
   const heroScrollBtn = $('btn-scroll-hero');
   if (heroScrollBtn) heroScrollBtn.addEventListener('click', focusHeroPanel);
   const mobileBackdrop = $('mobile-panel-backdrop');
-  if (mobileBackdrop) mobileBackdrop.addEventListener('click', () => setMobilePanelOpen(false));
+  if (mobileBackdrop) mobileBackdrop.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(x => x.classList.remove('active'));
+    setMobilePanelOpen(false);
+  });
 
   // Tabs
   document.querySelectorAll('.tab').forEach(t => {
     t.addEventListener('click', () => {
       if (isMobileLayout() && t.dataset.tab === 'hero') {
+        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        $('tab-' + t.dataset.tab).classList.add('active');
         focusHeroPanel();
         return;
       }

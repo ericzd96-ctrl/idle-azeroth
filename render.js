@@ -10,9 +10,34 @@
 /* ---------- 每帧轻量更新(不重建 DOM) ---------- */
 let attrTips = {};
 
+/* ---------- 触屏 Tooltip 固定/取消 ---------- */
+let _tipPinned = false;
+let _tipPinnedOwner = null;
+
+function unpinTip() {
+  _tipPinned = false;
+  _tipPinnedOwner = null;
+  const tip = document.getElementById('compare-tip');
+  if (tip) tip.style.display = 'none';
+}
+
+function addTouchPin(el, showFn) {
+  el.addEventListener('click', e => {
+    e.stopPropagation();
+    if (_tipPinned && _tipPinnedOwner === el) {
+      unpinTip();
+    } else {
+      if (_tipPinned) unpinTip();
+      showFn(e);
+      _tipPinned = true;
+      _tipPinnedOwner = el;
+    }
+  });
+}
+
 function setupAttrHover() {
   document.querySelectorAll('.attr-cell').forEach(cell => {
-    cell.addEventListener('mouseenter', e => {
+    const showFn = e => {
       const vEl = cell.querySelector('.v');
       const key = vEl ? vEl.id.replace('a-','') : null;
       const html = attrTips[key];
@@ -22,9 +47,11 @@ function setupAttrHover() {
       tip.querySelector('.compare-body').innerHTML = '';
       tip.style.display = 'block';
       positionTip(tip, e);
-    });
-    cell.addEventListener('mouseleave', () => { $('compare-tip').style.display = 'none'; });
+    };
+    cell.addEventListener('mouseenter', showFn);
+    cell.addEventListener('mouseleave', () => { if (!_tipPinned) { $('compare-tip').style.display = 'none'; } });
     cell.addEventListener('mousemove', e => positionTip($('compare-tip'), e));
+    addTouchPin(cell, showFn);
   });
 }
 /* 竖排敌人列表:仅在敌群构成/焦点变化时重建 DOM(避免每帧重建破坏 hover/点击),
@@ -216,7 +243,7 @@ function attachFocusBossHover(focus) {
   const hasMobSkills = !!(focus._monSkills?.length || focus._monSkill || focus._monSupportSkills?.length);
   if (!bossData && !hasMobSkills) return;
   emojiEl.style.cursor = 'help';
-  emojiEl.onmouseenter = function(e) {
+  const showFocusTip = function(e) {
     let html = '<b>'+focus.name+' Lv.'+focus.lvl+'</b>';
     if (bossData?.skills) {
       html += '<div style=\"margin-top:3px;color:#fbbf24\">技能:</div>';
@@ -254,8 +281,10 @@ function attachFocusBossHover(focus) {
     tip.style.display = 'block';
     positionTip(tip, e);
   };
-  emojiEl.onmouseleave = hideLootTip;
+  emojiEl.onmouseenter = showFocusTip;
+  emojiEl.onmouseleave = () => { if (!_tipPinned) hideLootTip(); };
   emojiEl.onmousemove = (e) => positionTip($('compare-tip'), e);
+  addTouchPin(emojiEl, showFocusTip);
 }
 function renderMonList() {
   const wrap = $('mon-list'); if (!wrap) return;
@@ -500,7 +529,13 @@ function updateBattleVisuals() {
         const showTip=e=>{const sp=e.target.closest('.comp-cd-skill,.comp-cd-passive');if(!sp)return;const tip=$('compare-tip');if(!tip)return;tip.querySelector('.compare-head').innerHTML=sp.dataset.tip||'';tip.querySelector('.compare-body').innerHTML='';tip.style.display='block';positionTip(tip,e);};
         csEl.addEventListener('mouseover',showTip);
         csEl.addEventListener('mousemove',e=>{if(e.target.closest('.comp-cd-skill,.comp-cd-passive'))positionTip($('compare-tip'),e);});
-        csEl.addEventListener('mouseleave',()=>{const tip=$('compare-tip');if(tip)tip.style.display='none';});
+        csEl.addEventListener('mouseleave',()=>{if(!_tipPinned){const tip=$('compare-tip');if(tip)tip.style.display='none';}});
+        csEl.addEventListener('click', e => {
+          const sp = e.target.closest('.comp-cd-skill,.comp-cd-passive');
+          if (!sp) return;
+          if (_tipPinned && _tipPinnedOwner === sp) { unpinTip(); }
+          else { if (_tipPinned) unpinTip(); showTip(e); _tipPinned = true; _tipPinnedOwner = sp; }
+        });
       }
       // 每帧只在值变化时写 DOM(避免无谓 churn)
       csEl.querySelectorAll('.comp-cd-skill').forEach(span=>{
@@ -509,7 +544,8 @@ function updateBattleVisuals() {
         const sub=span.querySelector('.cs-cd');if(sub){const txt=left>0?Math.ceil(left/1000)+'s':'';if(sub.textContent!==txt)sub.textContent=txt;}
       });
     }
-    $('comp-mini-name').onmouseenter=function(e){
+    const compMiniName = $('comp-mini-name');
+    const showCompDetail = function(e){
       const nowTs = Date.now();
       const compBuffs = [];
       if (state._compBuffs) {
@@ -541,8 +577,10 @@ function updateBattleVisuals() {
       const tip=$('compare-tip');tip.querySelector('.compare-head').innerHTML=html;tip.querySelector('.compare-body').innerHTML='';
       tip.style.display='block';positionTip(tip,e);
     };
-    $('comp-mini-name').onmouseleave=()=>{$('compare-tip').style.display='none'};
-    $('comp-mini-name').onmousemove=e=>positionTip($('compare-tip'),e);
+    compMiniName.onmouseenter = showCompDetail;
+    compMiniName.onmouseleave = () => { if (!_tipPinned) $('compare-tip').style.display = 'none'; };
+    compMiniName.onmousemove = e => positionTip($('compare-tip'), e);
+    addTouchPin(compMiniName, showCompDetail);
   }else{
     $('comp-mini').style.display='none';
   }
@@ -709,7 +747,7 @@ function renderInventory() {
         <button data-action="sell" data-id="${it.id}">${it.sell}💰</button>
       </div>`;
 
-    row.addEventListener('mouseenter', e => {
+    const showCompare = e => {
       const diff = calcCompare(it, equipped);
       tip.querySelector('.compare-head').innerHTML = `
         <div>${SLOT_INFO[it.slot].icon} ${SLOT_INFO[it.slot].label} 对比</div>
@@ -719,9 +757,11 @@ function renderInventory() {
       tip.querySelector('.compare-body').innerHTML = diff;
       tip.style.display = 'block';
       positionTip(tip, e);
-    });
-    row.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+    };
+    row.addEventListener('mouseenter', showCompare);
+    row.addEventListener('mouseleave', () => { if (!_tipPinned) tip.style.display = 'none'; });
     row.addEventListener('mousemove', e => positionTip(tip, e));
+    addTouchPin(row, showCompare);
 
     il.appendChild(row);
   }
@@ -789,13 +829,19 @@ function showLootTip(e, items, title) {
   tip.style.display = 'block';
   positionTip(tip, e);
 }
-function hideLootTip() { $('compare-tip').style.display = 'none'; }
+function hideLootTip() { if (!_tipPinned) $('compare-tip').style.display = 'none'; }
 
 function positionTip(tip, e) {
   let x = e.clientX + 16;
   let y = e.clientY - 10;
-  if (x + 290 > window.innerWidth) x = e.clientX - 300;
-  if (y + tip.offsetHeight > window.innerHeight) y = window.innerHeight - tip.offsetHeight - 10;
+  const tipW = tip.offsetWidth || 290;
+  if (x + tipW + 10 > window.innerWidth) {
+    x = Math.max(8, e.clientX - tipW - 16);
+  }
+  if (y + tip.offsetHeight > window.innerHeight) {
+    y = window.innerHeight - tip.offsetHeight - 10;
+  }
+  if (y < 8) y = 8;
   tip.style.left = x + 'px';
   tip.style.top = y + 'px';
 }
@@ -1193,7 +1239,7 @@ function renderMap() {
     const nameEl = div.querySelector('.boss-name-tip');
     if (nameEl && m.boss.skills) {
       nameEl.style.cursor = 'help';
-      nameEl.addEventListener('mouseenter', e => {
+      const showBossTip = e => {
         let tip = '<b>'+m.boss.emoji+' '+m.boss.name+' Lv.'+m.boss.lvl+'</b>';
         if (m.boss.skills) {
           tip += '<div style=\"margin-top:3px;color:#fbbf24\">技能:</div>';
@@ -1216,14 +1262,16 @@ function renderMap() {
         tipEl.querySelector('.compare-body').innerHTML = '';
         tipEl.style.display = 'block';
         positionTip(tipEl, e);
-      });
-      nameEl.addEventListener('mouseleave', () => { $('compare-tip').style.display = 'none'; });
+      };
+      nameEl.addEventListener('mouseenter', showBossTip);
+      nameEl.addEventListener('mouseleave', () => { if (!_tipPinned) $('compare-tip').style.display = 'none'; });
       nameEl.addEventListener('mousemove', e => positionTip($('compare-tip'), e));
+      addTouchPin(nameEl, showBossTip);
     }
     // BOSS按钮hover掉落预览
     const bossBtn = div.querySelector('.boss-btn');
     if (bossBtn) {
-      bossBtn.addEventListener('mouseenter', e => {
+      const showBossLoot = e => {
         const isHighBoss=m.boss.lvl>=60;
         const bossDrops = [
           {name:'💰 金币 ×'+(m.boss.lvl*30),rarity:'common',stats:{}},
@@ -1238,8 +1286,10 @@ function renderMap() {
           {name:'📊 首次免费 · CD最高1小时 · CD中🎫跳过',rarity:'legend',stats:{}},
         ];
         showLootTip(e, bossDrops, `⚔️ ${m.boss.emoji} ${m.boss.name} 掉落`);
-      });
+      };
+      bossBtn.addEventListener('mouseenter', showBossLoot);
       bossBtn.addEventListener('mousemove', e => positionTip($('compare-tip'), e));
+      addTouchPin(bossBtn, showBossLoot);
     }
     ml.appendChild(div);
   }
@@ -1465,7 +1515,7 @@ function renderDungeon() {
         <button class="enter-btn ${canEnter?'epic':''}" data-action="enterdungeon" data-key="${dg.key}" ${canEnter?'':'disabled'}>${btnText}</button>
       </div>`;
     // 副本hover掉落预览 - 按BOSS分组展示
-    div.addEventListener('mouseenter', e => {
+    const showDungeonLoot = e => {
       const loot = DUNGEON_LOOT[dg.key];
       const power = dg.reqLvl + 5;
       const isRaid = dg.type === 'raid';
@@ -1509,8 +1559,11 @@ function renderDungeon() {
       tip.querySelector('.compare-body').innerHTML = '';
       tip.style.display = 'block';
       positionTip(tip, e);
-    });
+    };
+    div.addEventListener('mouseenter', showDungeonLoot);
+    div.addEventListener('mouseleave', () => { if (!_tipPinned) $('compare-tip').style.display = 'none'; });
     div.addEventListener('mousemove', e => positionTip($('compare-tip'), e));
+    addTouchPin(div, showDungeonLoot);
     dl.appendChild(div);
   }
 }
@@ -1595,3 +1648,11 @@ function processDirty() {
   if (isDirty('arena')&&typeof renderArena==='function') { renderArena(); clearDirty('arena'); }
   if (isDirty('stage'))     { clearDirty('stage'); /* stage 信息已在 updateBattleVisuals 处理 */ }
 }
+
+/* 全局点击关闭已固定的 tooltip(触屏场景) */
+document.addEventListener('click', e => {
+  if (!_tipPinned || !_tipPinnedOwner) return;
+  if (!_tipPinnedOwner.contains(e.target)) {
+    unpinTip();
+  }
+});
