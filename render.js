@@ -196,14 +196,19 @@ function renderBuffBar() {
       heroDe.push({ kind: 'self-de', icon: fx.icon, name: '你·' + fx.name, desc, left: Math.ceil((d.expire - now) / 1000) });
     }
   }
-  const all = buffs.concat(heroDe, enemyBuffs, debuffs);
-  const sig = all.map(b => b.kind + (b.name || '') + b.left).join('|');
+  const selfStates = buffs.concat(heroDe);
+  const enemyStates = enemyBuffs.concat(debuffs);
+  const sig = selfStates.concat([{ kind:'split', name:'|' }], enemyStates).map(b => b.kind + (b.name || '') + (b.left || 0)).join('|');
   if (sig === _buffBarSig) return;   // 内容(含倒计时)没变就不重绘
   _buffBarSig = sig;
-  bar.innerHTML = all.map(b => {
-    const tip = `${b.name}${b.desc ? ' · ' + b.desc : ''}${b.left > 0 ? ' · 剩余' + b.left + '秒' : ''}`;
-    return `<div class="buff-chip ${b.kind}" data-tip="${tip.replace(/"/g, '&quot;')}"><div class="b-ic">${statusIconHtml(b.name?.replace(/^敌·|^你·/, ''), b.icon, 16)}</div><div class="b-t">${b.left > 0 ? b.left + 's' : '∞'}</div></div>`;
-  }).join('');
+  const renderGroup = (title, cls, items, emptyText) => {
+    const body = items.length ? items.map(b => {
+      const tip = `${b.name}${b.desc ? ' · ' + b.desc : ''}${b.left > 0 ? ' · 剩余' + b.left + '秒' : ''}`;
+      return `<div class="buff-chip ${b.kind}" data-tip="${tip.replace(/"/g, '&quot;')}"><div class="b-ic">${statusIconHtml(b.name?.replace(/^敌·|^你·/, ''), b.icon, 16)}</div><div class="b-t">${b.left > 0 ? b.left + 's' : '∞'}</div></div>`;
+    }).join('') : `<div class="buff-empty">${emptyText}</div>`;
+    return `<div class="buff-side ${cls}"><div class="buff-side-title">${title}</div><div class="buff-side-list">${body}</div></div>`;
+  };
+  bar.innerHTML = renderGroup('你', 'self', selfStates, '暂无状态') + renderGroup('敌', 'enemy', enemyStates, '暂无状态');
 }
 function effectTags(s) {
   const t = [];
@@ -1007,8 +1012,8 @@ function renderSourceTable() {
     return (srcs._total && (srcs._total[col.key] || 0) !== 0);
   });
   if (activeCols.length === 0) return '';
-  let html = '<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:8px"><div style="font-weight:bold;margin-bottom:6px">📊 属性来源明细</div>';
-  html += '<div style="overflow-x:auto"><table class="src-table"><thead><tr><th>来源</th>';
+  let html = '<div class="src-panel"><div class="src-panel-title">📊 属性来源明细</div>';
+  html += '<div class="src-scroll"><table class="src-table"><thead><tr><th>来源</th>';
   for (const col of activeCols) html += `<th>${col.label}</th>`;
   html += '</tr></thead><tbody>';
   for (const srcName of sourceOrder) {

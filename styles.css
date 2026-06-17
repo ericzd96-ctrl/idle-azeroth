@@ -149,7 +149,40 @@ h1 {
 .mon-row .bar { height: 12px; margin-top: 3px; }
 .mon-row .bar > span { font-size: 10px; line-height: 12px; }
 /* 增益图标条 */
-.buff-bar { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; min-height: 24px; margin: 2px 14px; }
+.buff-bar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  min-height: 24px;
+  margin: 2px 14px;
+}
+.buff-side {
+  min-width: 0;
+  background: rgba(15,23,42,.45);
+  border: 1px solid rgba(148,163,184,.18);
+  border-radius: 8px;
+  padding: 4px 6px;
+}
+.buff-side.self { box-shadow: inset 0 0 0 1px rgba(34,197,94,.08); }
+.buff-side.enemy { box-shadow: inset 0 0 0 1px rgba(239,68,68,.08); }
+.buff-side-title {
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 4px;
+  letter-spacing: .4px;
+}
+.buff-side-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 24px;
+}
+.buff-empty {
+  font-size: 10px;
+  color: var(--muted);
+  opacity: .75;
+  padding: 3px 0;
+}
 .buff-chip {
   display: inline-flex; flex-direction: column; align-items: center; line-height: 1;
   padding: 2px 4px; border-radius: 6px; background: rgba(34,197,94,.12);
@@ -499,9 +532,12 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   .mon-row .m-name .m-lvl,
   .mon-row .m-debuffs { font-size: 9px; }
   .buff-bar {
-    gap: 3px;
+    grid-template-columns: 1fr;
+    gap: 4px;
     margin: 2px 4px;
   }
+  .buff-side { padding: 4px 5px; }
+  .buff-side-title { font-size: 9px; margin-bottom: 3px; }
   .buff-chip {
     padding: 2px 3px;
     border-radius: 5px;
@@ -966,12 +1002,34 @@ button.legend:hover:not(:disabled) {
 }
 
 /* ========== 属性来源明细表(成长指南) ========== */
+.src-panel {
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+.src-panel-title {
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+.src-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
 .src-table {
-  width: 100%; border-collapse: collapse; font-size: 11px;
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  table-layout: fixed;
 }
 .src-table th, .src-table td {
   padding: 3px 7px; text-align: center; white-space: nowrap;
   border-bottom: 1px solid var(--border);
+  min-width: 58px;
 }
 .src-table th {
   color: var(--muted); font-weight: bold; font-size: 10px;
@@ -979,6 +1037,11 @@ button.legend:hover:not(:disabled) {
 }
 .src-table .src-name {
   text-align: left; font-weight: bold; color: var(--text);
+  min-width: 72px;
+  position: sticky;
+  left: 0;
+  background: var(--panel-2);
+  z-index: 1;
 }
 .src-table .pos { color: var(--accent); }
 .src-table .neg { color: #ef4444; }
