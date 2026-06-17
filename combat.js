@@ -417,7 +417,7 @@ function spreadDotFromMonster(mon, ratio, dotMs){
   }
   showFloat($('mon-emoji'), '☠️蔓延', '#c084fc');
 }
-function healHeroAmount(amount, icon, color){
+function healHeroAmount(amount, icon, color, source, skillLabel){
   amount = Math.max(0, Math.floor(amount || 0));
   if(amount <= 0) return { applied:0, overheal:0 };
   amount = Math.max(0, Math.floor(amount * heroDebuffHealMult()));
@@ -426,6 +426,7 @@ function healHeroAmount(amount, icon, color){
   state.hp = Math.min(state.hero.hpMax, state.hp + amount);
   const applied = state.hp - before;
   const overheal = Math.max(0, amount - applied);
+  if(applied > 0) trackHeal(source || 'hero', applied, skillLabel);
   if(applied > 0) showFloat($('hero-emoji'), (icon || '') + '+' + applied, color || '#6ee7b7');
   return { applied, overheal };
 }
@@ -1863,7 +1864,7 @@ function applyCompanionBuffEffects(stats){
   }
   return stats;
 }
-function healCompanionAmount(amount, icon, color){
+function healCompanionAmount(amount, icon, color, source, skillLabel){
   const st = computeCompanionStats();
   if(!st || compDowned()) return { applied:0, overheal:0 };
   amount = Math.max(0, Math.floor((amount || 0) * companionDebuffHealMult()));
@@ -1872,6 +1873,7 @@ function healCompanionAmount(amount, icon, color){
   state._compHp = Math.min(st.hpMax, before + amount);
   const applied = state._compHp - before;
   const overheal = Math.max(0, amount - applied);
+  if(applied > 0) trackHeal(source || 'comp', applied, skillLabel);
   if(applied > 0) showFloat($('comp-mini'), (icon || '') + '+' + applied, color || '#6ee7b7');
   markDirty('companion');
   return { applied, overheal };
@@ -1962,23 +1964,20 @@ function applyCompanionSupportSkill(sk, st, now){
   const targetMode = companionSkillTarget(sk);
   const applyHealPct = pct => {
     if(!(pct > 0)) return;
-    if(targetMode === 'companion') healCompanionAmount(Math.floor(st.hpMax * pct), st.emoji, '#6ee7b7');
+    if(targetMode === 'companion') healCompanionAmount(Math.floor(st.hpMax * pct), st.emoji, '#6ee7b7', 'comp', (st.emoji || '🐾') + (sk.name || '支援治疗'));
     else if(targetMode === 'hero') {
       const amt = Math.floor(state.hero.hpMax * pct);
-      state.hp = Math.min(state.hero.hpMax, state.hp + amt);
-      showFloat($('hero-emoji'), st.emoji + '+' + amt, '#6ee7b7');
+      healHeroAmount(amt, st.emoji, '#6ee7b7', 'comp', (st.emoji || '🐾') + (sk.name || '支援治疗'));
     } else if(targetMode === 'both') {
       const heroAmt = Math.floor(state.hero.hpMax * pct);
-      state.hp = Math.min(state.hero.hpMax, state.hp + heroAmt);
-      showFloat($('hero-emoji'), st.emoji + '+' + heroAmt, '#6ee7b7');
-      healCompanionAmount(Math.floor(st.hpMax * pct), st.emoji, '#6ee7b7');
+      healHeroAmount(heroAmt, st.emoji, '#6ee7b7', 'comp', (st.emoji || '🐾') + (sk.name || '支援治疗'));
+      healCompanionAmount(Math.floor(st.hpMax * pct), st.emoji, '#6ee7b7', 'comp', (st.emoji || '🐾') + (sk.name || '支援治疗'));
     } else {
       const t = companionHealTarget();
-      if(t === 'companion') healCompanionAmount(Math.floor(st.hpMax * pct), st.emoji, '#6ee7b7');
+      if(t === 'companion') healCompanionAmount(Math.floor(st.hpMax * pct), st.emoji, '#6ee7b7', 'comp', (st.emoji || '🐾') + (sk.name || '支援治疗'));
       else {
         const amt = Math.floor(state.hero.hpMax * pct);
-        state.hp = Math.min(state.hero.hpMax, state.hp + amt);
-        showFloat($('hero-emoji'), st.emoji + '+' + amt, '#6ee7b7');
+        healHeroAmount(amt, st.emoji, '#6ee7b7', 'comp', (st.emoji || '🐾') + (sk.name || '支援治疗'));
       }
     }
   };
@@ -2767,7 +2766,7 @@ function castSkill(skillKey,manual){
   }else if(sk.type==='heal'){
     const healMult=1+(state.hero.healBonus||0)/100;
     const h=Math.floor(state.hero.hpMax*sk.heal*healMult);
-    const hr=healHeroAmount(h, sk.icon, '#6ee7b7');
+    const hr=healHeroAmount(h, sk.icon, '#6ee7b7', 'hero', sk.icon+sk.name);
     log(sk.icon+' '+sk.name+'!恢复 '+hr.applied+' 生命','good');
     applySkillHealEffects(skillKey, sk, hr.applied, hr.overheal);
     processTalentAfterHeal(skillKey, hr.applied, hr.overheal);
@@ -2781,10 +2780,11 @@ function doInterrupt(){if(!casting){log('没有正在施放的法术','info');re
 /* ---------- 随从 ---------- */
 let lastCompAtk=0,lastCompSkill=0,compSkillIdx=0,lastCompRegen=0;
 /* ---------- 伤害统计(战斗日志下面的伤害条) ---------- */
-let dmgStats={hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,kills:0,heroSkills:{},compSkills:{}};
+let dmgStats={hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,heroHeal:0,compHeal:0,heroHealMax:0,compHealMax:0,heroHealSkills:{},compHealSkills:{},kills:0,heroSkills:{},compSkills:{}};
 function trackDmg(src,amt,isCrit,skillLabel){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;dmgStats[src]=(dmgStats[src]||0)+amt;const maxKey=src==='hero'?'heroMax':'compMax';if(amt>dmgStats[maxKey])dmgStats[maxKey]=amt;const hitKey=src==='hero'?'heroHits':'compHits';dmgStats[hitKey]=(dmgStats[hitKey]||0)+1;if(isCrit){const critKey=src==='hero'?'heroCrits':'compCrits';dmgStats[critKey]=(dmgStats[critKey]||0)+1;}if(skillLabel){const skKey=src==='hero'?'heroSkills':'compSkills';dmgStats[skKey][skillLabel]=(dmgStats[skKey][skillLabel]||0)+amt;}}
+function trackHeal(src,amt,skillLabel){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;const totalKey=src==='hero'?'heroHeal':'compHeal';const maxKey=src==='hero'?'heroHealMax':'compHealMax';const skKey=src==='hero'?'heroHealSkills':'compHealSkills';dmgStats[totalKey]=(dmgStats[totalKey]||0)+amt;if(amt>(dmgStats[maxKey]||0))dmgStats[maxKey]=amt;if(skillLabel)dmgStats[skKey][skillLabel]=(dmgStats[skKey][skillLabel]||0)+amt;}
 function trackKill(){dmgStats.kills=(dmgStats.kills||0)+1;}
-function resetDmgStats(){dmgStats={hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,kills:0,heroSkills:{},compSkills:{}};if(typeof markDirty==='function')markDirty('stage');}
+function resetDmgStats(){dmgStats={hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,heroHeal:0,compHeal:0,heroHealMax:0,compHealMax:0,heroHealSkills:{},compHealSkills:{},kills:0,heroSkills:{},compSkills:{}};if(typeof markDirty==='function')markDirty('stage');}
 let compSkillCd={};   // 随从每个技能的独立冷却就绪时间戳(键=技能下标;_owner 记录当前随从,换随从自动重置)
 const COMP_SKILL_DEFAULT_CD=8;   // 随从技能默认CD(秒,技能未写 cd 时)
 const COMPANION_COMBAT_QUALITY = { white:0.55, green:0.72, blue:0.90, purple:1.05, orange:1.18 };
@@ -2851,11 +2851,10 @@ function applyCompanionSignatureHit(sig, st, mon, dmgDone, now){
   }
   if(sig.healPctHero){
     const amt = Math.floor(state.hero.hpMax * sig.healPctHero);
-    state.hp = Math.min(state.hero.hpMax, state.hp + amt);
-    showFloat($('hero-emoji'), (sig.icon || '✨') + '+' + amt, '#6ee7b7');
+    healHeroAmount(amt, sig.icon || '✨', '#6ee7b7', 'comp', (sig.icon || '✨') + (sig.name || '专属治疗'));
     note = note || '回响治疗';
   }
-  if(sig.healPctComp) healCompanionAmount(Math.floor(st.hpMax * sig.healPctComp), sig.icon || st.emoji, '#6ee7b7');
+  if(sig.healPctComp) healCompanionAmount(Math.floor(st.hpMax * sig.healPctComp), sig.icon || st.emoji, '#6ee7b7', 'comp', (sig.icon || st.emoji || '🐾') + (sig.name || '专属治疗'));
   if(sig.shieldPctHero) addTalentShield(Math.floor(state.hero.hpMax * sig.shieldPctHero), true);
   if(sig.shieldPctComp) addCompanionBarrier(Math.floor(st.hpMax * sig.shieldPctComp), sig.icon || '🛡️', '#93c5fd');
   if(sig.dotPct && !note) note = '附加持续伤害';
@@ -2998,23 +2997,23 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
             const healTarget = companionSkillTarget(sk) === 'hero' ? 'hero' : companionSkillTarget(sk) === 'companion' ? 'companion' : companionHealTarget();
             if(healTarget==='companion'){
               const healAmt=Math.floor(st.hpMax*sk.heal*COMPANION_HEAL_SCALE);
-              healCompanionAmount(healAmt,st.emoji,'#6ee7b7');
+              healCompanionAmount(healAmt,st.emoji,'#6ee7b7','comp',st.emoji+sk.name);
             } else {
               const healAmt=Math.floor(state.hero.hpMax*sk.heal*COMPANION_HEAL_SCALE);
-              state.hp=Math.min(state.hero.hpMax,state.hp+healAmt); showFloat($('hero-emoji'),'+'+healAmt,'#6ee7b7');
+              healHeroAmount(healAmt, st.emoji, '#6ee7b7', 'comp', st.emoji+sk.name);
             }
           }
-          if(sk.lifeSteal) healCompanionAmount(Math.floor(sd.dmg*sk.lifeSteal), '🩸', '#6ee7b7');
+          if(sk.lifeSteal) healCompanionAmount(Math.floor(sd.dmg*sk.lifeSteal), '🩸', '#6ee7b7', 'comp', '🩸'+sk.name);
         }
         else if(sk.type==='heal'){
           const healTarget = companionSkillTarget(sk) === 'hero' ? 'hero' : companionSkillTarget(sk) === 'companion' ? 'companion' : companionHealTarget();
           if(healTarget==='companion'){
             const h=Math.floor(st.hpMax*sk.heal*COMPANION_HEAL_SCALE);
-            const hr=healCompanionAmount(h, st.emoji, '#6ee7b7'); log(st.emoji+' '+sk.name+'! 为随从恢复 '+hr.applied+' 生命','good');
+            const hr=healCompanionAmount(h, st.emoji, '#6ee7b7', 'comp', st.emoji+sk.name); log(st.emoji+' '+sk.name+'! 为随从恢复 '+hr.applied+' 生命','good');
           }
           else {
             const h=Math.floor(state.hero.hpMax*sk.heal*COMPANION_HEAL_SCALE);
-            state.hp=Math.min(state.hero.hpMax,state.hp+h);showFloat($('hero-emoji'),st.emoji+'+'+h,'#6ee7b7');log(st.emoji+' '+sk.name+'! +'+h+' 生命','good');
+            const hr=healHeroAmount(h, st.emoji, '#6ee7b7', 'comp', st.emoji+sk.name);log(st.emoji+' '+sk.name+'! +'+hr.applied+' 生命','good');
           }
           applyCompanionSupportSkill(sk, st, now);
         }

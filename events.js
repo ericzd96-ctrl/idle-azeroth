@@ -55,6 +55,7 @@ function challengeWorldBoss(key) {
   state._currentWBoss = key;
   state.currentMonsters = [];
   state.hp = state.hero.hpMax; state.resource = state.resourceMax;
+  if (typeof resetDmgStats === 'function') resetDmgStats();
   // 生成怪物对象
   const baseHp = Math.floor((100 + wb.lvl*wb.lvl*6.0) * wb.hpMul);
   const baseAtk = Math.floor((8 + wb.lvl*3.0) * wb.atkMul);

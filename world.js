@@ -45,6 +45,7 @@ function switchSubzone(mapKey, subIdx) {
   if (mapKey === state.currentMap) {
     state.currentSubzone = subIdx;
     state.currentMonsters = [];
+    if (typeof resetDmgStats === 'function') resetDmgStats();
     spawnMonster();
     const sub = map.sub[subIdx];
     log(`📍 移动到 ${map.icon} ${map.name} · ${sub.name}`, 'info');
@@ -84,6 +85,7 @@ function tickTravel(now) {
     state.currentMap = t.mapKey;
     state.currentSubzone = t.subIdx;
     state.travel = null;
+    if (typeof resetDmgStats === 'function') resetDmgStats();
     spawnMonster();
     const map = MAPS.find(m => m.key === t.mapKey);
     const sub = map.sub[t.subIdx];
@@ -112,6 +114,7 @@ function challengeBoss(mapKey) {
   state.currentMonsters = [];
   state.hp = state.hero.hpMax;
   state.resource = state.resourceMax;
+  if (typeof resetDmgStats === 'function') resetDmgStats();
   spawnZoneBoss();
   markDirty('map', 'stage');
 }
@@ -135,6 +138,7 @@ function enterDungeon(key) {
   state.dungeonState = { key, wave: 1, loot: [] };
   state.hp = state.hero.hpMax;
   state.resource = state.resourceMax;
+  if (typeof resetDmgStats === 'function') resetDmgStats();
   spawnDungeonMonster();
   markDirty('dungeon', 'stage');
 }
@@ -513,6 +517,7 @@ function enterMythic() {
     lastVolcanic: 0, lastAfflicted: 0, lastArcane: 0 };
   state.hp = state.hero.hpMax;
   state.resource = state.resourceMax;
+  if (typeof resetDmgStats === 'function') resetDmgStats();
   spawnDungeonMonster();
   const affixStr = affixes.map(a => a.icon + a.name).join(' ');
   log(`🌟 进入大秘境 +${selLvl} [${dg.name}] (×${scale.toFixed(1)}) 词缀: ${affixStr}`, 'legend');

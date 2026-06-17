@@ -364,6 +364,9 @@ function updateDmgMeter() {
   const heroDmg = (typeof dmgStats !== 'undefined') ? (dmgStats.hero || 0) : 0;
   const compDmg = (typeof dmgStats !== 'undefined') ? (dmgStats.comp || 0) : 0;
   const total = heroDmg + compDmg;
+  const heroHeal = (typeof dmgStats !== 'undefined') ? (dmgStats.heroHeal || 0) : 0;
+  const compHeal = (typeof dmgStats !== 'undefined') ? (dmgStats.compHeal || 0) : 0;
+  const healTotal = heroHeal + compHeal;
   const elapsed = (typeof dmgStats !== 'undefined' && dmgStats.start)
     ? Math.max(0.001, ((dmgStats.last || dmgStats.start) - dmgStats.start) / 1000)
     : 0.001;
@@ -389,7 +392,6 @@ function updateDmgMeter() {
 
   // 总计 + 时间
   const totalEl = $('dm-total');
-  if (totalEl) totalEl.textContent = '总计 ' + fmt(total) + ' · ' + Math.floor(elapsed) + 's';
 
   // 最高伤害
   const maxEl = $('dm-max-hit');
@@ -397,6 +399,14 @@ function updateDmgMeter() {
     const hm = (typeof dmgStats !== 'undefined') ? (dmgStats.heroMax || 0) : 0;
     const cm = (typeof dmgStats !== 'undefined') ? (dmgStats.compMax || 0) : 0;
     maxEl.textContent = (hm || cm) ? `🦸${fmt(hm)}  🐾${fmt(cm)}` : '-';
+  }
+  const healEl = $('dm-heal-total');
+  if (healEl) healEl.textContent = (heroHeal || compHeal) ? `🦸${fmt(heroHeal)}  🐾${fmt(compHeal)}` : '-';
+  const maxHealEl = $('dm-max-heal');
+  if (maxHealEl) {
+    const hm = (typeof dmgStats !== 'undefined') ? (dmgStats.heroHealMax || 0) : 0;
+    const cm = (typeof dmgStats !== 'undefined') ? (dmgStats.compHealMax || 0) : 0;
+    maxHealEl.textContent = (hm || cm) ? `🦸${fmt(hm)}  🐾${fmt(cm)}` : '-';
   }
 
   // 暴击率
@@ -443,6 +453,36 @@ function updateDmgMeter() {
     } else {
       sdEl.style.display = 'none';
     }
+  }
+  const shEl = $('dm-heal-breakdown');
+  if (shEl) {
+    const hs = (typeof dmgStats !== 'undefined' && dmgStats.heroHealSkills) ? dmgStats.heroHealSkills : {};
+    const cs = (typeof dmgStats !== 'undefined' && dmgStats.compHealSkills) ? dmgStats.compHealSkills : {};
+    const allSkills = [];
+    for (const [name, heal] of Object.entries(hs)) allSkills.push({ name, heal, src: '🦸' });
+    for (const [name, heal] of Object.entries(cs)) allSkills.push({ name, heal, src: '🐾' });
+    allSkills.sort((a, b) => b.heal - a.heal);
+    const top = allSkills.slice(0, 5);
+    if (top.length > 0) {
+      shEl.style.display = 'block';
+      const maxHeal = top[0].heal;
+      shEl.innerHTML = top.map(s => {
+        const pct = maxHeal > 0 ? Math.round(s.heal / maxHeal * 100) : 0;
+        return `<div style="display:flex;align-items:center;gap:4px;font-size:10px;margin-bottom:2px">
+          <span style="width:14px;flex-shrink:0">${s.src}</span>
+          <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name}</span>
+          <span style="width:52px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums;color:#6ee7b7">${fmt(s.heal)}</span>
+          <span style="width:36px;flex-shrink:0;background:var(--panel);height:6px;border-radius:3px;overflow:hidden"><i style="display:block;height:100%;width:${pct}%;background:linear-gradient(90deg,#10b981,#6ee7b7);border-radius:3px"></i></span>
+        </div>`;
+      }).join('');
+    } else {
+      shEl.style.display = 'none';
+    }
+  }
+  if (totalEl) {
+    let text = '总伤 ' + fmt(total) + ' · ' + Math.floor(elapsed) + 's';
+    if (healTotal > 0) text += ' · 总疗 ' + fmt(healTotal);
+    totalEl.textContent = text;
   }
 }
 
