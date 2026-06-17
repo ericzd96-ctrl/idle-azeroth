@@ -371,7 +371,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   }
   body.mobile-ui .wow-nodes { width: 100%; }
   body.mobile-ui .wow-node {
-    min-width: 0; width: 100%; min-height: 44px;
+    flex: 1 1 0; min-width: 0; min-height: 44px;
     padding: 6px 10px; gap: 8px;
   }
   body.mobile-ui .wow-node-icon { width: 32px; height: 32px; font-size: 14px; }
