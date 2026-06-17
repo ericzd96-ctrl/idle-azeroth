@@ -1285,7 +1285,7 @@ function pickMonSupportSkill(name, kind, lvl, isBoss){
 }
 
 function makeMonster(name,lvl,isBoss,maxRarity){
-  const hp=Math.floor((100+lvl*lvl*6.0)*(isBoss?15:1));
+  const hp=Math.floor((100+lvl*lvl*9.0)*(isBoss?18:1));
   const kind=isBoss?null:mobKind(name);   // boss 走自己的被动,小怪用身份技能
   const msList=pickMonSkills(name, kind, lvl, 1);
   const supportSkills=buildMonsterSupportPool(name, kind, lvl, isBoss, 1);
@@ -1375,7 +1375,7 @@ function spawnDungeonMonster(){
   const monSkills = !isBoss ? pickMonSkills(name, null, power, trashDamageSkillCount) : [];
   state.currentMonsters.push({name,isBoss,bossName:isBoss?boss.name:null,
     lvl:Math.max(1,Math.floor(power*1.05)),
-    hpMax:Math.floor((100+power*power*5.0)*(isBoss?14:4.0)*scale),hp:Math.floor((100+power*power*5.0)*(isBoss?14:4.0)*scale),
+    hpMax:Math.floor((100+power*power*7.5)*(isBoss?17:4.0)*scale),hp:Math.floor((100+power*power*7.5)*(isBoss?17:4.0)*scale),
     atk:Math.floor((10+power*3.2)*(isBoss?2.0:1.6)*scale),def:Math.floor((3+power*1.5)*(isBoss?1.5:1.6)*scale),
     baseGold:Math.floor(10+power*3),baseXp:Math.floor(35+power*5),
     goldReward:Math.floor((10+power*3)*(isBoss?15:1.5)*scale),honorReward:isBoss?Math.floor(25+power*2.5):2,

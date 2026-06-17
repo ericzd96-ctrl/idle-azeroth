@@ -119,8 +119,8 @@ function spawnTowerMonster() {
   state.currentMonsters.push({
     name, isBoss,
     lvl,
-    hpMax: Math.floor((100 + lvl*lvl*5.5) * hpMul * scale),
-    hp:    Math.floor((100 + lvl*lvl*5.5) * hpMul * scale),
+    hpMax: Math.floor((100 + lvl*lvl*8.0) * hpMul * scale),
+    hp:    Math.floor((100 + lvl*lvl*8.0) * hpMul * scale),
     atk:   Math.floor((10 + lvl*3.0) * atkMul * scale),
     def:   Math.floor((3 + lvl*1.4) * defMul * scale),
     baseGold: Math.floor(10 + lvl*3),
