@@ -240,7 +240,7 @@ const TALENT_AURA_LIBRARY = {
         { name:'血之渴望', extra:'击杀敌人后，恢复 5% 生命并回复 10 点资源。', fx:{ type:'onKill', healPct:0.05, resource:10 } },
       ],
       prot: [
-        { name:'圣盾', extra:'施放盾墙后，获得 6 秒【震荡护卫】。', fx:{ type:'afterSkill', skill:'shieldWall', aura:'prot_thunder', cooldown:8000 } },
+        { name:'盾牌专精', extra:'施放盾墙后，获得 6 秒【震荡护卫】。', fx:{ type:'afterSkill', skill:'shieldWall', aura:'prot_thunder', cooldown:8000 } },
         { name:'炽热防御者', extra:'你受到首领伤害降低 10%。', fx:{ type:'vsBoss', takenPct:10 } },
       ],
     },
@@ -370,7 +370,7 @@ const TALENT_AURA_LIBRARY = {
       ],
       prot: [
         { name:'预判', extra:'你受到首领伤害降低 6%。', fx:{ type:'vsBoss', takenPct:6 } },
-        { name:'正义之怒', extra:'生命低于 45% 时，获得 6% 最大生命护盾，35秒冷却。', fx:{ type:'lowHp', threshold:0.45, cooldown:35000, shieldPct:0.06 } },
+        { name:'战意之怒', extra:'生命低于 45% 时，获得 6% 最大生命护盾，35秒冷却。', fx:{ type:'lowHp', threshold:0.45, cooldown:35000, shieldPct:0.06 } },
       ],
     },
     mage: {
@@ -393,7 +393,7 @@ const TALENT_AURA_LIBRARY = {
         { name:'意志之力', extra:'生命低于 45% 时，获得 6% 最大生命护盾，35秒冷却。', fx:{ type:'lowHp', threshold:0.45, cooldown:35000, shieldPct:0.06 } },
       ],
       holy: [
-        { name:'神恩', extra:'施放治疗术、恢复或圣光术后，回复 6 点资源。', fx:{ type:'afterSkill', skill:['heal','renew','holyLight'], resource:6 } },
+        { name:'神恩', extra:'施放治疗术、恢复或神圣赞美诗后，回复 6 点资源。', fx:{ type:'afterSkill', skill:['heal','renew','divineHymn'], resource:6 } },
         { name:'圣洁', extra:'生命低于 45% 时，恢复 5% 最大生命，35秒冷却。', fx:{ type:'lowHp', threshold:0.45, cooldown:35000, healPct:0.05 } },
       ],
       shadow: [

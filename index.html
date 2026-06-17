@@ -25,8 +25,11 @@
   </header>
 
   <!-- Left: Hero panel -->
-  <section class="panel">
-    <h2>🧙 角色面板</h2>
+  <section class="panel hero-panel" id="hero-panel">
+    <div class="hero-panel-head">
+      <h2>🧙 角色面板</h2>
+      <button id="btn-hero-collapse" class="hero-mobile-toggle" type="button">展开</button>
+    </div>
     <div class="row">
       <span><span id="class-label" class="class-label">职业</span></span>
       <b>Lv.<span id="s-lvl">1</span></b>
@@ -34,7 +37,7 @@
     <div class="bar xp" style="margin:6px 0 8px"><i id="b-xp"></i><span id="t-xp">0/10</span></div>
     <div class="bar hp" style="margin-bottom:4px"><i id="b-hp"></i><span id="t-hp"></span></div>
     <div class="bar mp" style="margin-bottom:8px" id="b-mp-wrap"><i id="b-mp"></i><span id="t-mp"></span></div>
-
+    <div id="hero-panel-details">
     <h2>📊 基础属性</h2>
     <div class="attr-grid">
       <div class="attr-cell"><div class="v" id="a-str">0</div><div class="l">力量</div></div>
@@ -64,10 +67,11 @@
 
     <h2 style="margin-top:10px">🎒 装备</h2>
     <div class="equip-grid" id="equip-grid"></div>
+    </div>
   </section>
 
   <!-- Center: Battle -->
-  <section>
+  <section id="battle-panel">
     <div class="stage" id="stage">
       <div class="stage-info">
         <span>📍 <b id="zone-name">-</b></span>
@@ -117,8 +121,9 @@
   </section>
 
   <!-- Right: tabs -->
-  <section class="panel">
+  <section class="panel side-panel" id="side-panel">
     <div class="tabs">
+      <div class="tab" data-tab="hero">🧙</div>
       <div class="tab active" data-tab="map">🗺️</div>
       <div class="tab" data-tab="inv">🎒</div>
       <div class="tab" data-tab="shop">📊</div>
@@ -132,6 +137,13 @@
       <div class="tab" data-tab="progression">🏆</div>
       <div class="tab" data-tab="events">🌟</div>
       <div class="tab" data-tab="ascend">✨</div>
+    </div>
+
+    <div class="tab-panel" id="tab-hero">
+      <div class="mobile-hero-placeholder">
+        <div class="muted" style="margin-bottom:6px">角色详情请查看上方角色面板</div>
+        <button class="primary" id="btn-scroll-hero" type="button">查看角色面板</button>
+      </div>
     </div>
 
     <div class="tab-panel active" id="tab-map">
@@ -238,6 +250,7 @@
     <button id="btn-reset" class="danger">♻️ 重新开始</button>
   </div>
 </div>
+<div id="mobile-panel-backdrop"></div>
 
 <!-- Travel -->
 <div class="modal-bg" id="modal-travel">

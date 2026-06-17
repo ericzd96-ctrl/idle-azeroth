@@ -476,7 +476,8 @@ function updateBattleVisuals() {
     $('comp-mini').style.display='';
     $('comp-mini').style.opacity=compDown?'0.5':'1';
     const statusTag=compDown?` · <span style="color:#fde047">💫倒下 ${reviveLeft}s</span>`:'';
-    $('comp-mini-name').innerHTML=`${tpl?.emoji||'🐾'} ${tpl?.name} · <span class="${q.cls||''}">${q.name}</span> ${'⭐'.repeat(comp.stars||1)} · 攻${fmt(st.atk)} 防${fmt(st.def)}${statusTag}`;
+    const sigBadge = tpl?.signature ? ` · <span style="color:#fcd34d">${tpl.signature.icon||'✨'}专属</span>` : '';
+    $('comp-mini-name').innerHTML=`${tpl?.emoji||'🐾'} ${tpl?.name} · <span class="${q.cls||''}">${q.name}</span> ${'⭐'.repeat(comp.stars||1)}${sigBadge} · 攻${fmt(st.atk)} 防${fmt(st.def)}${statusTag}`;
     setBar($('b-comp-hp'),Math.max(0,compHp)/st.hpMax*100,compDown?`倒下 ${reviveLeft}s`:`${fmt(Math.max(0,compHp))}/${fmt(st.hpMax)}`);
     // 随从技能 CD 展示:仅在随从/技能数变化时重建(避免每帧churn打断 title 悬浮),每帧只刷新剩余CD
     const csEl=$('comp-skills');
@@ -484,17 +485,21 @@ function updateBattleVisuals() {
       const sig=comp.key+':'+((st.skills&&st.skills.length)||0);
       if(csEl._sig!==sig){
         csEl._sig=sig;
-        csEl.innerHTML=((st.skills)||[]).map((s,i)=>{
-          const tip=`<b>${s.icon} ${s.name}</b><div>${s.desc||''}</div><div class="muted">冷却 ${s.cd||8}秒</div>`.replace(/"/g,'&quot;');
-          return `<span class="comp-cd-skill" data-i="${i}" data-tip="${tip}" style="font-size:13px;cursor:help">${s.icon}<sub class="cs-cd" style="font-size:9px;color:#fbbf24"></sub></span>`;
+        const passiveSig = tpl?.signature?.mode==='passive'
+          ? `<span class="comp-cd-passive" data-tip="${companionSkillTipHtml(Object.assign({_signature:true}, tpl.signature)).replace(/"/g,'&quot;')}" style="font-size:13px;cursor:help;color:#fcd34d">${tpl.signature.icon||'✨'}</span>`
+          : '';
+        csEl.innerHTML=passiveSig+((st.skills)||[]).map((s,i)=>{
+          const tip=companionSkillTipHtml(s).replace(/"/g,'&quot;');
+          const color = s._signature ? 'color:#fcd34d;' : '';
+          return `<span class="comp-cd-skill" data-i="${i}" data-tip="${tip}" style="font-size:13px;cursor:help;${color}">${s.icon}<sub class="cs-cd" style="font-size:9px;color:#fbbf24"></sub></span>`;
         }).join('');
       }
       // 用自定义 #compare-tip 而非原生 title:原生 title 的悬浮计时会被每帧 CD/透明度更新打断,导致"偶尔不显示"
       if(!csEl._tipBound){
         csEl._tipBound=true;
-        const showTip=e=>{const sp=e.target.closest('.comp-cd-skill');if(!sp)return;const tip=$('compare-tip');if(!tip)return;tip.querySelector('.compare-head').innerHTML=sp.dataset.tip||'';tip.querySelector('.compare-body').innerHTML='';tip.style.display='block';positionTip(tip,e);};
+        const showTip=e=>{const sp=e.target.closest('.comp-cd-skill,.comp-cd-passive');if(!sp)return;const tip=$('compare-tip');if(!tip)return;tip.querySelector('.compare-head').innerHTML=sp.dataset.tip||'';tip.querySelector('.compare-body').innerHTML='';tip.style.display='block';positionTip(tip,e);};
         csEl.addEventListener('mouseover',showTip);
-        csEl.addEventListener('mousemove',e=>{if(e.target.closest('.comp-cd-skill'))positionTip($('compare-tip'),e);});
+        csEl.addEventListener('mousemove',e=>{if(e.target.closest('.comp-cd-skill,.comp-cd-passive'))positionTip($('compare-tip'),e);});
         csEl.addEventListener('mouseleave',()=>{const tip=$('compare-tip');if(tip)tip.style.display='none';});
       }
       // 每帧只在值变化时写 DOM(避免无谓 churn)
@@ -505,10 +510,34 @@ function updateBattleVisuals() {
       });
     }
     $('comp-mini-name').onmouseenter=function(e){
+      const nowTs = Date.now();
+      const compBuffs = [];
+      if (state._compBuffs) {
+        for (const [k, expire] of Object.entries(state._compBuffs)) {
+          if (!(expire > nowTs)) continue;
+          const fx = (typeof BUFF_FX === 'object' && BUFF_FX[k]) ? BUFF_FX[k] : null;
+          compBuffs.push((fx?.icon || '✨') + (fx?.name || k) + ' ' + Math.ceil((expire - nowTs) / 1000) + 's');
+        }
+      }
+      const compDebuffs = [];
+      if (typeof DEBUFF_FX === 'object' && state._compDebuffs) {
+        for (const k in state._compDebuffs) {
+          const d = state._compDebuffs[k];
+          if (!(d.expire > nowTs)) continue;
+          const fx = DEBUFF_FX[k]; if (!fx) continue;
+          compDebuffs.push((fx.icon || '☠️') + fx.name + ' ' + Math.ceil((d.expire - nowTs) / 1000) + 's');
+        }
+      }
+      const compBarrier = state._compBarrier || 0;
+      const sig = tpl?.signature;
       const html=`<b>${tpl?.emoji} ${tpl?.name}</b><div>${q.name} ${'⭐'.repeat(comp.stars||1)} · ${tpl?.role==='tank'?'🛡️坦克':tpl?.role==='heal'?'💚治疗':'⚔️输出'}</div>
         <div>攻击${fmt(st.atk)} 防御${fmt(st.def)} 生命${fmt(st.hpMax)} 攻速${st.spd?.toFixed(2)}/s</div>
-        <div class="muted">参战属性=主角×${q.mult}(品质)×${(1+0.18*((comp.stars||1)-1)).toFixed(2)}(${comp.stars||1}★)</div>
-        <div class="muted">定位:${tpl?.role==='tank'?'🛡️坦克 防×1.5 攻×0.75':tpl?.role==='dps'?'⚔️输出 防×0.9 攻×1.1':'💚辅助 攻防不变'}</div>`;
+        <div class="muted">参战强度已按品质、星级与定位折算</div>
+        <div class="muted">定位:${tpl?.role==='tank'?'🛡️坦克 负责扛压/控场':tpl?.role==='dps'?'⚔️输出 均衡承伤/技能爆发':'💚辅助 更强续航/净化/护持'}</div>
+        ${sig?`<div style="color:#fcd34d">专属技: ${sig.icon||'✨'} ${sig.name} · ${sig.desc||''}${sig.mode==='passive'?' (被动)':''}</div>`:''}
+        ${compBarrier>0?`<div style="color:#93c5fd">护盾: ${fmt(compBarrier)}</div>`:''}
+        ${compBuffs.length?`<div>增益: ${compBuffs.join(' · ')}</div>`:''}
+        ${compDebuffs.length?`<div style="color:#fca5a5">减益: ${compDebuffs.join(' · ')}</div>`:''}`;
       const tip=$('compare-tip');tip.querySelector('.compare-head').innerHTML=html;tip.querySelector('.compare-body').innerHTML='';
       tip.style.display='block';positionTip(tip,e);
     };
@@ -1217,11 +1246,89 @@ function renderMap() {
 }
 
 function roleTag(role){ return role==='tank'?'🛡️坦克':role==='heal'?'💚治疗':'⚔️输出'; }
+function compPct(v){
+  const n = (v || 0) * 100;
+  return (Math.round(n * 10) / 10).toFixed(n % 1 ? 1 : 0).replace(/\.0$/,'');
+}
+function compSecs(ms){
+  const s = (ms || 0) / 1000;
+  return (Math.round(s * 10) / 10).toFixed(s % 1 ? 1 : 0).replace(/\.0$/,'');
+}
+function compBuffName(buff){
+  if (!buff) return '';
+  if (typeof BUFF_LABELS === 'object' && BUFF_LABELS[buff]?.name) return BUFF_LABELS[buff].name;
+  if (typeof BUFF_FX === 'object' && BUFF_FX[buff]?.name) return BUFF_FX[buff].name;
+  return buff;
+}
+function compBuffDesc(buff){
+  if (!buff) return '';
+  if (typeof BUFF_LABELS === 'object' && BUFF_LABELS[buff]?.desc) return BUFF_LABELS[buff].desc;
+  if (typeof BUFF_FX === 'object' && BUFF_FX[buff]?.desc) return BUFF_FX[buff].desc;
+  return '';
+}
+function compStateName(stateKey){
+  const map = {
+    marked:'破绽标记', opened:'破绽', shocked:'感电', chilled:'寒霜侵袭', frozenMark:'冰寒印记',
+    hunted:'猎物印记', rooted:'纠缠印记', arcaneMark:'奥术印记', charmed:'心智裂痕',
+    blighted:'瘟疫缠身', torment:'痛苦印记'
+  };
+  return map[stateKey] || stateKey || '';
+}
+function compHealScale(v){
+  const scale = (typeof COMPANION_HEAL_SCALE === 'number') ? COMPANION_HEAL_SCALE : 1;
+  return v * scale;
+}
+function companionSkillTipHtml(sk){
+  if (!sk) return '';
+  const lines = [];
+  if (sk.type === 'dmg' && sk.mul) lines.push(`${sk.mul}倍伤害`);
+  if (sk.alwaysCrit) lines.push('本次必定暴击');
+  if (sk.dot || sk.dotPct) lines.push(`每秒造成本次伤害的${compPct(sk.dotPct || 0.12)}%，持续${compSecs(sk.dotMs || 6000)}秒`);
+  if (sk.slow) lines.push(`减速 ${compSecs(sk.slowMs || 4000)}秒`);
+  if (sk.stun) lines.push(`击晕 ${compSecs(sk.stunMs || 1500)}秒`);
+  if (sk.debuff === 'sunder' || /破甲/.test(sk.name || '')) lines.push(`破甲 ${compSecs(sk.sunderMs || 15000)}秒（目标防御降低30%）`);
+  if (sk.stateKey) lines.push(`施加 ${compStateName(sk.stateKey)} ${compSecs(sk.stateMs || 9000)}秒`);
+  if (sk.splashPct) lines.push(`对其他敌人溅射 ${compPct(sk.splashPct)}% 伤害`);
+  if (sk.aoePct) lines.push(`额外波及其他敌人 ${compPct(sk.aoePct)}% 伤害`);
+  if (sk.executeBonus) lines.push(`对 ${compPct(sk.executeThreshold || 0.35)}% 以下目标额外 +${compPct(sk.executeBonus)}% 伤害`);
+  if (sk.bonusVsBoss) lines.push(`对Boss额外 +${compPct(sk.bonusVsBoss)}% 伤害`);
+  if (sk.bonusVsDot) lines.push(`对持续伤害目标额外 +${compPct(sk.bonusVsDot)}% 伤害`);
+  if (sk.bonusVsSlow) lines.push(`对减速目标额外 +${compPct(sk.bonusVsSlow)}% 伤害`);
+  if (sk.bonusVsSunder) lines.push(`对破甲目标额外 +${compPct(sk.bonusVsSunder)}% 伤害`);
+  if (sk.bonusVsState) lines.push(`对${compStateName(sk.bonusVsState)}目标额外 +${compPct(sk.bonusStatePct || 0.3)}% 伤害`);
+  if (sk.buffAmp?.key) lines.push(`自身处于${compBuffName(sk.buffAmp.key)}时额外 +${compPct(sk.buffAmp.pct || 0)}% 伤害`);
+  if (sk.heal) lines.push(`额外回复 ${compPct(compHealScale(sk.heal))}% 最大生命`);
+  if (sk.healPct) lines.push(`立即回复 ${compPct(sk.healPct)}% 最大生命`);
+  if (sk.shieldPct) lines.push(`施加 ${compPct(sk.shieldPct)}% 最大生命护盾`);
+  if (sk.healPctHero) lines.push(`为主角回复 ${compPct(sk.healPctHero)}% 最大生命`);
+  if (sk.healPctComp) lines.push(`为随从回复 ${compPct(sk.healPctComp)}% 最大生命`);
+  if (sk.shieldPctHero) lines.push(`为主角施加 ${compPct(sk.shieldPctHero)}% 最大生命护盾`);
+  if (sk.shieldPctComp) lines.push(`为随从施加 ${compPct(sk.shieldPctComp)}% 最大生命护盾`);
+  if (sk.cleanse) lines.push('净化 1 个减益效果');
+  if (sk.lifeSteal) lines.push(`按伤害回复 ${compPct(sk.lifeSteal)}% 生命`);
+  if (sk.buff) {
+    const desc = compBuffDesc(sk.buff);
+    lines.push(`${compBuffName(sk.buff)}${desc ? `：${desc}` : ''}`);
+  }
+  if (sk.duration) lines.push(`持续 ${compSecs(sk.duration)}秒`);
+  if (sk.buffTarget === 'hero') lines.push('效果目标：主角');
+  else if (sk.buffTarget === 'companion') lines.push('效果目标：随从');
+  else if (sk.buffTarget === 'both') lines.push('效果目标：主角和随从');
+  else if (sk.healTarget === 'hero') lines.push('治疗目标：主角');
+  else if (sk.healTarget === 'companion') lines.push('治疗目标：随从');
+  else if (sk.healTarget === 'both') lines.push('治疗目标：主角和随从');
+  else if (sk.healTarget === 'smart') lines.push('治疗目标：自动选择血量更危险的一方');
+  const mode = sk._signature ? (sk.mode === 'passive' ? '专属被动' : '专属主动') : (sk.type === 'buff' ? '辅助技能' : sk.type === 'heal' ? '治疗技能' : '伤害技能');
+  const cdText = sk.mode === 'passive' ? mode : `${mode} · 冷却 ${sk.cd || 8}秒`;
+  return `<b>${sk.icon || '✨'} ${sk.name}</b><div>${sk.desc || ''}</div>${lines.map(x=>`<div class="muted">${x}</div>`).join('')}<div class="muted">${cdText}</div>`;
+}
 /* 随从技能 → 可悬浮小图标(指向看描述) */
 function compSkillChips(tpl){
-  return (tpl&&tpl.skills||[]).map(s=>{
-    const tip = `${s.icon} ${s.name} · ${s.desc||''} · 冷却 ${s.cd||8}秒`.replace(/"/g,'&quot;');
-    return `<span class="comp-skill" data-tip="${tip}">${s.icon}<span class="cs-name">${s.name}</span></span>`;
+  const skills = ((tpl&&tpl.skills)||[]).slice();
+  if (tpl?.signature) skills.push(Object.assign({_signature:true}, tpl.signature));
+  return skills.map(s=>{
+    const tip = companionSkillTipHtml(s).replace(/"/g,'&quot;');
+    return `<span class="comp-skill${s._signature?' sig':''}" data-tip="${tip}">${s.icon}<span class="cs-name">${s.name}</span></span>`;
   }).join('');
 }
 function renderCompanion() {
@@ -1234,7 +1341,7 @@ function renderCompanion() {
   // ---- 收藏 / 羁绊概览 ----
   html += `<div class="ascend-box">
     <div style="font-weight:bold">🐾 随从收藏 <span class="muted" style="font-size:11px">${owned}/${COMPANIONS.length}</span></div>
-    <div class="muted" style="font-size:10px;margin-top:2px">收藏被动: 每随从 +0.3% 攻击/生命(当前 +${(owned*0.3).toFixed(1)}%)</div>`;
+    <div class="muted" style="font-size:10px;margin-top:2px">收藏被动: 每随从 +0.05%攻击 / +0.08%生命 (当前 +${Math.min(owned*0.05,1.2).toFixed(2)}% / +${Math.min(owned*0.08,1.8).toFixed(2)}%)</div>`;
   if (typeof COMPANION_BONDS!=='undefined' && COMPANION_BONDS.length) {
     html += `<div class="detail-label" style="margin-top:6px">⚜️ 羁绊</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:2px">`;
     for (const b of COMPANION_BONDS) {
@@ -1262,6 +1369,7 @@ function renderCompanion() {
       <div class="muted" style="font-size:10px">参战属性: 攻${fmt(st?.atk||0)} 防${fmt(st?.def||0)} 血${fmt(st?.hpMax||0)}</div>
       <div class="muted" style="font-size:10px;color:#6ee7b7">专属加成: ${ownTxt||'无'}</div>
       <div class="muted" style="font-size:10px;color:#93c5fd">定位加成: ${roleTxt||'无'}</div>
+      ${tpl?.signature?`<div class="muted" style="font-size:10px;color:#fcd34d">专属技: ${tpl.signature.icon||'✨'} ${tpl.signature.name}${tpl.signature.mode==='passive'?' [被动]':''}</div>`:''}
       <div class="comp-skills">${compSkillChips(tpl)}</div>
       <button class="danger" data-action="unequipcomp" style="margin-top:4px">休息</button>
     </div>`;
@@ -1276,9 +1384,11 @@ function renderCompanion() {
     const q = compQuality(tpl);
     const cost = getUpgradeCost(c);
     const canUp = !cost.maxed && cost.have>=cost.need;
+    const skillCount = (tpl.skills?.length||0) + (tpl.signature && tpl.signature.mode !== 'passive' ? 1 : 0);
     html += `<div class="shop-item">
-      <div class="row"><b>${tpl.emoji} ${tpl.name}</b><span class="${q.cls}">${q.name}·${tpl.skills.length}技</span></div>
+      <div class="row"><b>${tpl.emoji} ${tpl.name}</b><span class="${q.cls}">${q.name}·${skillCount}技</span></div>
       <div class="muted" style="font-size:10px">${'⭐'.repeat(c.stars||1)} · ${roleTag(tpl.role)} · ${tpl.desc}</div>
+      ${tpl.signature?`<div class="muted" style="font-size:10px;color:#fcd34d">专属技: ${tpl.signature.icon||'✨'} ${tpl.signature.name}${tpl.signature.mode==='passive'?' [被动]':''}</div>`:''}
       <div class="comp-skills">${compSkillChips(tpl)}</div>
       <div class="row">
         <span class="muted" style="font-size:10px">碎片 ${cost.have}${cost.maxed?'':' / 升星需'+cost.need}</span>

@@ -13,9 +13,51 @@ let elapsedSec = 0;
 let secondsCounter = 0;
 let cdCounter = 0;
 let minuteCounter = 0;
+let mobilePanelOpen = false;
 
 let _loopErrLogged = false;
 let _prevBuffs = '';   // 上帧活跃 buff 签名(检测过期)
+
+function isMobileLayout() {
+  return window.innerWidth <= 920;
+}
+
+function updateHeroMobileToggle() {
+  const btn = $('btn-hero-collapse');
+  if (!btn) return;
+  btn.textContent = document.body.classList.contains('hero-collapsed') ? '展开' : '收起';
+}
+
+function setMobilePanelOpen(open) {
+  mobilePanelOpen = !!open;
+  document.body.classList.toggle('mobile-panel-open', mobilePanelOpen && isMobileLayout());
+}
+
+function focusHeroPanel() {
+  const hero = $('hero-panel');
+  if (!hero) return;
+  document.body.classList.remove('hero-collapsed');
+  updateHeroMobileToggle();
+  setMobilePanelOpen(false);
+  hero.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function applyResponsiveLayout() {
+  const mobile = isMobileLayout();
+  document.body.classList.toggle('mobile-ui', mobile);
+  if (mobile) {
+    if (!document.body.dataset.heroMobileInit) {
+      document.body.dataset.heroMobileInit = '1';
+      document.body.classList.add('hero-collapsed');
+    }
+  } else {
+    setMobilePanelOpen(false);
+    document.body.classList.remove('hero-collapsed');
+    delete document.body.dataset.heroMobileInit;
+  }
+  updateHeroMobileToggle();
+}
+
 function loop() {
   try {
     if (state.cls) {
@@ -26,7 +68,6 @@ function loop() {
 
       tickBattle(now);
       tickCompanion(now);
-      tickCast(now);
       tickTravel(now);
       if (typeof tickLife==='function') tickLife(now);
 
@@ -38,6 +79,7 @@ function loop() {
       }
 
       updateBattleVisuals();
+      tickCast(now);
       processDirty();
 
       // CD 文本每秒就地刷新
@@ -356,7 +398,7 @@ function setupDelegation() {
     const tip = $('compare-tip');
     root.addEventListener('mouseover', e => {
       const sk = e.target.closest('.comp-skill'); if (!sk) return;
-      tip.querySelector('.compare-head').textContent = sk.dataset.tip || '';
+      tip.querySelector('.compare-head').innerHTML = sk.dataset.tip || '';
       tip.querySelector('.compare-body').innerHTML = '';
       tip.style.display = 'block';
       positionTip(tip, e);
@@ -459,9 +501,30 @@ function setupMainButtons() {
     if (typeof resetDmgStats === 'function') resetDmgStats();
   });
 
+  const heroCollapseBtn = $('btn-hero-collapse');
+  if (heroCollapseBtn) {
+    heroCollapseBtn.addEventListener('click', () => {
+      document.body.classList.toggle('hero-collapsed');
+      updateHeroMobileToggle();
+    });
+  }
+  const heroScrollBtn = $('btn-scroll-hero');
+  if (heroScrollBtn) heroScrollBtn.addEventListener('click', focusHeroPanel);
+  const mobileBackdrop = $('mobile-panel-backdrop');
+  if (mobileBackdrop) mobileBackdrop.addEventListener('click', () => setMobilePanelOpen(false));
+
   // Tabs
   document.querySelectorAll('.tab').forEach(t => {
     t.addEventListener('click', () => {
+      if (isMobileLayout() && t.dataset.tab === 'hero') {
+        focusHeroPanel();
+        return;
+      }
+      const alreadyActive = t.classList.contains('active');
+      if (isMobileLayout() && alreadyActive && mobilePanelOpen) {
+        setMobilePanelOpen(false);
+        return;
+      }
       document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
       document.querySelectorAll('.tab-panel').forEach(x => x.classList.remove('active'));
       t.classList.add('active');
@@ -474,6 +537,7 @@ function setupMainButtons() {
       if(t.dataset.tab==='life'&&typeof renderLife==='function') renderLife();
       if(t.dataset.tab==='artifact'&&typeof renderArtifact==='function') renderArtifact();
       if(t.dataset.tab==='arena'&&typeof renderArena==='function') renderArena();
+      if (isMobileLayout()) setMobilePanelOpen(true);
     });
   });
 
@@ -740,6 +804,7 @@ function setupCharListEvents() {
 
 /* ---------- 启动 ---------- */
 function boot() {
+  applyResponsiveLayout();
   setupDelegation();
   setupMainButtons();
   setupCharListEvents();
@@ -766,4 +831,5 @@ function boot() {
 }
 
 window.addEventListener('DOMContentLoaded', boot);
+window.addEventListener('resize', applyResponsiveLayout);
 window.addEventListener('beforeunload', saveState);

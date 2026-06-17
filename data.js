@@ -153,20 +153,20 @@ const CLASSES = {
         {key:'坚韧_axub', name:'坚韧', desc:'生命 +5%/层', max:5, mod:{hpPct:5}},
         {key:'预判_ndzh', name:'预判', desc:'防御 +5%/层', max:5, mod:{defPct:5}},
         {key:'壁垒_ov99', name:'壁垒', desc:'耐力 +5%/层', max:3, mod:{staPct:5}},
-        {key:'圣化之地_lwk5', name:'圣化之地', desc:'反伤 +2%/层', max:5, mod:{reflectDmg:2}},
-        {key:'正义之怒_lzx6', name:'正义之怒', desc:'全能 +2%/层', max:3, mod:{vers:2}},
-        {key:'圣盾术_slst', name:'圣盾术', desc:'解锁: 圣盾术', max:1, req:10, unlockSkill:'divineShield'},
+        {key:'圣化之地_lwk5', name:'震荡之地', desc:'反伤 +2%/层', max:5, mod:{reflectDmg:2}},
+        {key:'正义之怒_lzx6', name:'战意之怒', desc:'全能 +2%/层', max:3, mod:{vers:2}},
+        {key:'圣盾术_slst', name:'盾墙', desc:'解锁: 盾墙', max:1, req:10, unlockSkill:'shieldWall'},
         {key:'炽热防御者_sh4j', name:'炽热防御者', desc:'防御 +8%/层', max:5, req:15, mod:{defPct:8}},
         {key:'守护者_157k', name:'守护者', desc:'耐力 +6%/层 · 全能 +2%/层', max:5, req:18, mod:{staPct:6,vers:2}},
-        {key:'圣盾_467q', name:'圣盾', desc:'防御 +6%/层 · 反伤 +2%/层', max:3, req:22, mod:{defPct:6,reflectDmg:2}},
+        {key:'圣盾_467q', name:'盾牌专精', desc:'防御 +6%/层 · 反伤 +2%/层', max:3, req:22, mod:{defPct:6,reflectDmg:2}},
         {key:'铁壁_j6ev', name:'铁壁', desc:'防御 +7%/层 · 生命 +3%/层', max:5, req:25, mod:{defPct:7,hpPct:3}},
-        {key:'圣光壁垒_3f09', name:'圣光壁垒', desc:'生命 +6%/层 · 全能 +3%/层', max:5, req:28, mod:{hpPct:6,vers:3}},
+        {key:'圣光壁垒_3f09', name:'钢铁壁垒', desc:'生命 +6%/层 · 全能 +3%/层', max:5, req:28, mod:{hpPct:6,vers:3}},
         {key:'守护_2cm4', name:'守护', desc:'防御 +8%/层 · 反伤 +3%/层', max:5, req:30, mod:{defPct:8,reflectDmg:3}},
         {key:'防护大师_ccej', name:'防护大师', desc:'技能CD +5%/层 · 防御 +5%/层', max:3, req:33, mod:{cdReduction:5,defPct:5}},
         {key:'防护宗师_k7w0', name:'防护宗师', desc:'生命 +10%/层 · 精通 +2%/层', max:3, req:36, mod:{hpPct:10,mastery:2}}
       ,
 {key:'tal_pomgzm', name:'铜墙铁壁', desc:'防御 +8%/层 · 生命 +5%/层', max:5,req:38,mod:{defPct:8,hpPct:5}},{key:'tal_7f5oiq', name:'坚不可摧', desc:'耐力 +8%/层 · 反伤 +5%/层', max:5,req:42,mod:{staPct:8,reflectDmg:5}},{key:'tal_ikwcqv', name:'战神', desc:'生命 +12%/层 · 全能 +6%/层 · 精通 +2%/层', max:3,req:45,mod:{hpPct:12,vers:6,mastery:2}},
-{key:'tal_b0z1v9', name:'壁垒', desc:'防御 +8%/层 · 生命 +5%/层', max:5,req:38,mod:{defPct:8,hpPct:5}},{key:'tal_tjz4f9', name:'审判之盾', desc:'反伤 +6%/层 · 耐力 +6%/层', max:5,req:42,mod:{reflectDmg:6,staPct:6}},{key:'tal_05he3a', name:'守护天使', desc:'防御 +12%/层 · 生命 +8%/层 · 精通 +2%/层', max:3,req:45,mod:{defPct:12,hpPct:8,mastery:2}}]},
+{key:'tal_b0z1v9', name:'壁垒', desc:'防御 +8%/层 · 生命 +5%/层', max:5,req:38,mod:{defPct:8,hpPct:5}},{key:'tal_tjz4f9', name:'盾牌反震', desc:'反伤 +6%/层 · 耐力 +6%/层', max:5,req:42,mod:{reflectDmg:6,staPct:6}},{key:'tal_05he3a', name:'钢铁守护者', desc:'防御 +12%/层 · 生命 +8%/层 · 精通 +2%/层', max:3,req:45,mod:{defPct:12,hpPct:8,mastery:2}}]},
     ],
   },
 
@@ -293,7 +293,7 @@ const CLASSES = {
         {key:'圣化_n8vy', name:'圣化', desc:'回复 +2%/层', max:3, mod:{regFlat:2}},
         {key:'神恩_3h1q', name:'神恩', desc:'治疗 +5%/层', max:5, mod:{healBonus:5}},
         {key:'圣洁_7zvz', name:'圣洁', desc:'全能 +2%/层', max:3, mod:{vers:2}},
-        {key:'圣光术_0ynh', name:'圣光术', desc:'解锁: 圣光术', max:1, req:10, unlockSkill:'holyLight'},
+        {key:'圣光术_0ynh', name:'治疗术', desc:'解锁: 治疗术', max:1, req:10, unlockSkill:'heal'},
         {key:'圣光信标_49vd', name:'圣光信标', desc:'生命 +6%/层', max:5, req:15, mod:{hpPct:6}},
         {key:'圣光辐射_uwtw', name:'圣光辐射', desc:'生命 +4%/层 · 治疗 +5%/层', max:5, req:18, mod:{hpPct:4,healBonus:5}},
         {key:'守护之魂_3pgg', name:'守护之魂', desc:'防御 +5%/层 · 治疗 +4%/层', max:3, req:22, mod:{defPct:5,healBonus:4}},
@@ -773,6 +773,20 @@ const CLASSES = {
     ],
   },
 };
+
+// 把误挂在职业对象顶层的技能条目并回 skills 表,避免天赋/自动施法引用到“看得见却用不了”的技能
+(function normalizeClassSkills(){
+  for (const cls of Object.values(CLASSES || {})) {
+    if (!cls || typeof cls !== 'object') continue;
+    if (!cls.skills) cls.skills = {};
+    for (const [key, value] of Object.entries(cls)) {
+      if (key === 'skills' || key === 'trees') continue;
+      if (!value || typeof value !== 'object' || Array.isArray(value)) continue;
+      if (!value.name || !value.icon || !value.type) continue;
+      if (!cls.skills[key]) cls.skills[key] = value;
+    }
+  }
+})();
 
 /* ---------- 艾泽拉斯地图(20 张真实地图) ---------- */
 const MAPS = [

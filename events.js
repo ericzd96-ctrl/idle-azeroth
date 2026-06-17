@@ -81,7 +81,9 @@ function challengeWorldBoss(key) {
       ? buildMonsterSupportPool(wb.name, null, wb.lvl, true, wb.supportCount || 4)
       : [],
     _supportSkillCooldowns:{},
-    _lastSupportSkill:Date.now()-4000
+    _lastSupportSkill:Date.now()-4000,
+    _lastTrick:0,
+    _nextTrickAt:Date.now()+8000
   });
   log(`⚔️ 挑战世界BOSS [${wb.name}]!`, 'epic');
   markDirty('stage','events');
