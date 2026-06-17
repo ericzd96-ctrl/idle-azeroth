@@ -2390,6 +2390,13 @@ function onMonsterDeath(mon){
   if(mon._isRaidFinal&&Math.random()<0.08){const dKey2=mon.fromDungeon?((state.dungeonState||state.mythicState)?.key):null;const legend=rollItem('legend',mon.lvl,dKey2,mon.bossName);addToInventory(legend);log('🎉 团本最终BOSS额外掉落 ['+legend.rarityName+'] '+legend.name,'legend');if(typeof progressionOnLegendary==='function') progressionOnLegendary();}
   // 世界Boss 击杀
   if(mon.isWorldBoss){if(typeof onWorldBossKill==='function') onWorldBossKill(mon);return;}
+  if(mon._summoned){
+    const di = state.currentMonsters.indexOf(mon);
+    if(di >= 0) state.currentMonsters.splice(di, 1);
+    focusHighestThreat();
+    markDirty('stage');
+    return;
+  }
   if(state.mode==='dungeon'){const ds=state.dungeonState;const dg=DUNGEONS.find(d=>d.key===ds.key);const lastBoss=(dg.bosses||[])[dg.bosses.length-1];ds.wave+=1;if(lastBoss&&ds.wave>lastBoss.wave){onDungeonClear(dg);return;}spawnDungeonMonster();}
   else if(state.mode==='mythic'){const ms=state.mythicState;const dg=DUNGEONS.find(d=>d.key===ms.key);const lastBoss=(dg.bosses||[])[dg.bosses.length-1];if(mon.isBoss)onMythicBossKill();ms.wave+=1;if(lastBoss&&ms.wave>lastBoss.wave){onMythicClear();return;}spawnDungeonMonster();}
   else if(state.mode==='tower'){if(typeof onTowerMonsterKill==='function') onTowerMonsterKill(mon);}
