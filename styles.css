@@ -369,9 +369,9 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
     text-align: left; padding-top: 0; padding-left: 4px;
     font-size: 11px; font-weight: bold; line-height: 28px;
   }
-  body.mobile-ui .wow-nodes { width: 100%; }
+  body.mobile-ui .wow-nodes { width: 100%; display: flex; flex-wrap: wrap; }
   body.mobile-ui .wow-node {
-    flex: 1 1 0; min-width: 0; min-height: 44px;
+    flex: 1 1 auto; min-width: 44%; min-height: 44px;
     padding: 6px 10px; gap: 8px;
   }
   body.mobile-ui .wow-node-icon { width: 32px; height: 32px; font-size: 14px; }
