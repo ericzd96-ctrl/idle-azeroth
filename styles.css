@@ -361,7 +361,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   body.mobile-ui .wow-tree-head { gap: 6px; }
   body.mobile-ui .wow-tree-head b { font-size: 12px; }
   body.mobile-ui .wow-row {
-    flex-direction: column;
+    flex-direction: column; align-items: stretch;
     gap: 4px;
   }
   body.mobile-ui .wow-row-label {
