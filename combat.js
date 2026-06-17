@@ -2033,6 +2033,7 @@ function reapDeadMonsters(){
   while(guard++<16){
     const dead=state.currentMonsters.find(m=>m.hp<=0);
     if(!dead)break;
+    if(typeof trackKill==='function')trackKill();
     const i=state.currentMonsters.indexOf(dead);
     if(i!==0){state.currentMonsters.splice(i,1);state.currentMonsters.unshift(dead);} // 满足 onMonsterDeath 的 [0]===mon 守卫
     onMonsterDeath(dead);
@@ -2147,9 +2148,9 @@ function tickBattle(now){
       else { actualDmg -= mon._arcaneShield; mon._arcaneShield = 0; }
     }
     {const dr=monsterDamageReduction(mon, now);if(dr&&actualDmg>0)actualDmg=Math.max(1,Math.floor(actualDmg*(1-dr)));}   // 怪物减伤
-    mon.hp-=actualDmg;trackDmg('hero',actualDmg);
+    mon.hp-=actualDmg;trackDmg('hero',actualDmg,d.crit&&!dodged);
     if(typeof progressionOnDamage==='function') progressionOnDamage(actualDmg);
-    if(!dodged&&state.hero.extraAtk>0&&Math.random()*100<state.hero.extraAtk){const d2=calcDmg(ap,heroTargetDef(mon),state.hero.crit,state.hero.critd,false,mon.lvl,state.hero.lvl);let dd2=d2.dmg;const dr=monsterDamageReduction(mon, now);if(dr)dd2=Math.max(1,Math.floor(dd2*(1-dr)));mon.hp-=dd2;trackDmg('hero',dd2);showFloat($('mon-emoji'),'🎯+'+dd2,'#fbbf24');}
+    if(!dodged&&state.hero.extraAtk>0&&Math.random()*100<state.hero.extraAtk){const d2=calcDmg(ap,heroTargetDef(mon),state.hero.crit,state.hero.critd,false,mon.lvl,state.hero.lvl);let dd2=d2.dmg;const dr=monsterDamageReduction(mon, now);if(dr)dd2=Math.max(1,Math.floor(dd2*(1-dr)));mon.hp-=dd2;trackDmg('hero',dd2,d2.crit);showFloat($('mon-emoji'),'🎯+'+dd2,'#fbbf24');}
     showFloat($('mon-emoji'),dodged?'闪避':('-'+actualDmg),dodged?'#9ca3af':(d.crit?'#fbbf24':'#fff'));
     {const me=$('mon-emoji');if(me){me.classList.add('shake');setTimeout(()=>{const e2=$('mon-emoji');if(e2)e2.classList.remove('shake');},200);}}
     if(!dodged&&typeof passiveOnHit==='function')passiveOnHit(mon,actualDmg,ap);
@@ -2726,7 +2727,7 @@ function castSkill(skillKey,manual){
         const d=calcDmg(state.hero.atk*sk.mul*cb*talentDamageMult(target,skillKey)*rt.mult,heroTargetDef(target),state.hero.crit,state.hero.critd,forceCrit,target.lvl,state.hero.lvl);
         let dd=d.dmg;
         {const dr=monsterDamageReduction(target, now);if(dr)dd=Math.max(1,Math.floor(dd*(1-dr)));}
-        target.hp-=dd;dmgDone+=dd;trackDmg('hero',dd);
+        target.hp-=dd;dmgDone+=dd;trackDmg('hero',dd,d.crit);
         if(d.crit||forceCrit)processTalentOnCrit(target,dd,{skillKey});
         if(sk.lifeSteal){const heal=Math.floor(dd*sk.lifeSteal);healHeroAmount(heal,'🩸','#6ee7b7');}
         if(sk.slow)target.slowUntil=Date.now()+4000;
@@ -2744,7 +2745,7 @@ function castSkill(skillKey,manual){
       const d=calcDmg(state.hero.atk*sk.mul*cb*talentDamageMult(mon,skillKey)*rt.mult,heroTargetDef(mon),state.hero.crit,state.hero.critd,forceCrit,mon.lvl,state.hero.lvl);
       let dd=d.dmg;
       {const dr=monsterDamageReduction(mon, now);if(dr)dd=Math.max(1,Math.floor(dd*(1-dr)));}
-      mon.hp-=dd;dmgDone=dd;trackDmg('hero',dd);
+      mon.hp-=dd;dmgDone=dd;trackDmg('hero',dd,d.crit);
       showFloat($('mon-emoji'),'-'+dd,forceCrit?'#fbbf24':'#a335ee');
       log(sk.icon+' '+sk.name+'! '+dd+' 伤害'+(forceCrit?' (必暴)':''),'good');
       if(d.crit||forceCrit)processTalentOnCrit(mon,dd,{skillKey});
@@ -2773,9 +2774,10 @@ function doInterrupt(){if(!casting){log('没有正在施放的法术','info');re
 /* ---------- 随从 ---------- */
 let lastCompAtk=0,lastCompSkill=0,compSkillIdx=0,lastCompRegen=0;
 /* ---------- 伤害统计(战斗日志下面的伤害条) ---------- */
-let dmgStats={hero:0,comp:0,start:0,last:0};
-function trackDmg(src,amt){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;dmgStats[src]=(dmgStats[src]||0)+amt;}
-function resetDmgStats(){dmgStats={hero:0,comp:0,start:0,last:0};if(typeof markDirty==='function')markDirty('stage');}
+let dmgStats={hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,kills:0};
+function trackDmg(src,amt,isCrit){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;dmgStats[src]=(dmgStats[src]||0)+amt;const maxKey=src==='hero'?'heroMax':'compMax';if(amt>dmgStats[maxKey])dmgStats[maxKey]=amt;const hitKey=src==='hero'?'heroHits':'compHits';dmgStats[hitKey]=(dmgStats[hitKey]||0)+1;if(isCrit){const critKey=src==='hero'?'heroCrits':'compCrits';dmgStats[critKey]=(dmgStats[critKey]||0)+1;}}
+function trackKill(){dmgStats.kills=(dmgStats.kills||0)+1;}
+function resetDmgStats(){dmgStats={hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,kills:0};if(typeof markDirty==='function')markDirty('stage');}
 let compSkillCd={};   // 随从每个技能的独立冷却就绪时间戳(键=技能下标;_owner 记录当前随从,换随从自动重置)
 const COMP_SKILL_DEFAULT_CD=8;   // 随从技能默认CD(秒,技能未写 cd 时)
 const COMPANION_COMBAT_QUALITY = { white:0.55, green:0.72, blue:0.90, purple:1.05, orange:1.18 };
@@ -2966,7 +2968,7 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
   if((state._compStunUntil||0)>now) return;
   const mon=state.currentMonsters[0];if(!mon)return;
   if(compSkillCd._owner!==comp.key)compSkillCd={_owner:comp.key};   // 换随从:重置技能冷却
-  const interval=1000/(st.spd||0.5);if((state._compDisarmUntil||0)<=now&&(now-lastCompAtk>interval||now-lastCompAtk>5000)){let cm=state.currentMonsters[0];if(cm&&cm.hp>0){const cd=calcDmg(st.atk,monArmor(cm),st.crit,st.critd,false,cm.lvl,state.hero.lvl);cm.hp-=cd.dmg;trackDmg('comp',cd.dmg);showFloat($('mon-emoji'),st.emoji+'-'+cd.dmg,'#a0d0ff');applyCompanionSignatureHit(companionSignature(tpl), st, cm, cd.dmg, now);}lastCompAtk=now;
+  const interval=1000/(st.spd||0.5);if((state._compDisarmUntil||0)<=now&&(now-lastCompAtk>interval||now-lastCompAtk>5000)){let cm=state.currentMonsters[0];if(cm&&cm.hp>0){const cd=calcDmg(st.atk,monArmor(cm),st.crit,st.critd,false,cm.lvl,state.hero.lvl);cm.hp-=cd.dmg;trackDmg('comp',cd.dmg,cd.crit);showFloat($('mon-emoji'),st.emoji+'-'+cd.dmg,'#a0d0ff');applyCompanionSignatureHit(companionSignature(tpl), st, cm, cd.dmg, now);}lastCompAtk=now;
     // 技能:每个技能按自己的 cd 独立冷却,就绪即放(GCD 2秒,避免一次性全放;优先治疗>buff>伤害)
     if((state._compSilenceUntil||0)<=now&&now-lastCompSkill>2000){
       const ready=[];for(let i=0;i<st.skills.length;i++){if((compSkillCd[i]||0)<=now)ready.push(i);}
@@ -2975,7 +2977,7 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
       if(i!==undefined){const sk=st.skills[i];
         if(sk.type==='dmg'){
           const dmgMult = companionSkillDamageMult(sk, mon, now);
-          const sd=calcDmg(st.atk*sk.mul*dmgMult,monArmor(mon),st.crit,st.critd,sk.alwaysCrit,mon.lvl,state.hero.lvl);mon.hp-=sd.dmg;trackDmg('comp',sd.dmg);showFloat($('mon-emoji'),st.emoji+sk.icon+'-'+sd.dmg,'#c0a0ff');
+          const sd=calcDmg(st.atk*sk.mul*dmgMult,monArmor(mon),st.crit,st.critd,sk.alwaysCrit,mon.lvl,state.hero.lvl);mon.hp-=sd.dmg;trackDmg('comp',sd.dmg,sd.crit);showFloat($('mon-emoji'),st.emoji+sk.icon+'-'+sd.dmg,'#c0a0ff');
           const dotPct = sk.dotPct || (sk.dot ? 0.12 : 0);
           if(dotPct > 0) applyMonsterDot(mon,`comp:${comp.key}:${i}`,Math.max(1,Math.floor(sd.dmg*dotPct)),sk.dotMs||6000,{icon:sk.icon,name:sk.name,source:st.name});
           if(sk.slow) mon.slowUntil=Math.max(mon.slowUntil||0,Date.now()+(sk.slowMs||4000));

@@ -363,6 +363,33 @@ function updateDmgMeter() {
   // 总计 + 时间
   const totalEl = $('dm-total');
   if (totalEl) totalEl.textContent = '总计 ' + fmt(total) + ' · ' + Math.floor(elapsed) + 's';
+
+  // 最高伤害
+  const maxEl = $('dm-max-hit');
+  if (maxEl) {
+    const hm = (typeof dmgStats !== 'undefined') ? (dmgStats.heroMax || 0) : 0;
+    const cm = (typeof dmgStats !== 'undefined') ? (dmgStats.compMax || 0) : 0;
+    maxEl.textContent = (hm || cm) ? `🦸${fmt(hm)}  🐾${fmt(cm)}` : '-';
+  }
+
+  // 暴击率
+  const critEl = $('dm-crit-rate');
+  if (critEl) {
+    const hc = (typeof dmgStats !== 'undefined') ? (dmgStats.heroCrits || 0) : 0;
+    const cc = (typeof dmgStats !== 'undefined') ? (dmgStats.compCrits || 0) : 0;
+    const hh = (typeof dmgStats !== 'undefined') ? (dmgStats.heroHits || 0) : 0;
+    const ch = (typeof dmgStats !== 'undefined') ? (dmgStats.compHits || 0) : 0;
+    const hRate = hh > 0 ? Math.round(hc / hh * 100) : 0;
+    const cRate = ch > 0 ? Math.round(cc / ch * 100) : 0;
+    critEl.textContent = (hh || ch) ? `🦸${hRate}%  🐾${cRate}%` : '-';
+  }
+
+  // 击杀数
+  const killsEl = $('dm-kills');
+  if (killsEl) {
+    const k = (typeof dmgStats !== 'undefined') ? (dmgStats.kills || 0) : 0;
+    killsEl.textContent = String(k);
+  }
 }
 
 function updateBattleVisuals() {
