@@ -441,6 +441,11 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   body.mobile-ui .wow-node-icon { width: 32px; height: 32px; font-size: 14px; }
   body.mobile-ui .wow-node-name { font-size: 12px; }
   body.mobile-ui .wow-node-desc { font-size: 10px; white-space: normal; }
+  /* 属性来源表:移动端缩小 */
+  body.mobile-ui .src-table { font-size: 9px; }
+  body.mobile-ui .src-table th, body.mobile-ui .src-table td { padding: 2px 4px; min-width: 36px; }
+  body.mobile-ui .src-table .src-name { min-width: 44px; font-size: 9px; }
+  body.mobile-ui .src-table th { font-size: 8px; }
   body.mobile-ui .sub-list {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
