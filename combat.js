@@ -2778,14 +2778,14 @@ function trackDmg(src,amt){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.
 function resetDmgStats(){dmgStats={hero:0,comp:0,start:0,last:0};if(typeof markDirty==='function')markDirty('stage');}
 let compSkillCd={};   // 随从每个技能的独立冷却就绪时间戳(键=技能下标;_owner 记录当前随从,换随从自动重置)
 const COMP_SKILL_DEFAULT_CD=8;   // 随从技能默认CD(秒,技能未写 cd 时)
-const COMPANION_COMBAT_QUALITY = { white:0.42, green:0.56, blue:0.72, purple:0.88, orange:1.00 };
+const COMPANION_COMBAT_QUALITY = { white:0.55, green:0.72, blue:0.90, purple:1.05, orange:1.18 };
 const COMPANION_ROLE_PROFILE = {
-  tank: { atk:0.58, def:1.22, hp:0.58, spd:0.66, reg:0.52, critd:0.74 },
-  dps:  { atk:0.80, def:0.76, hp:0.44, spd:0.69, reg:0.36, critd:0.88 },
-  heal: { atk:0.56, def:0.84, hp:0.50, spd:0.68, reg:0.48, critd:0.78 },
+  tank: { atk:0.65, def:1.30, hp:0.68, spd:0.72, reg:0.60, critd:0.78 },
+  dps:  { atk:0.90, def:0.80, hp:0.52, spd:0.75, reg:0.42, critd:0.92 },
+  heal: { atk:0.65, def:0.90, hp:0.58, spd:0.74, reg:0.58, critd:0.82 },
 };
-const COMPANION_STAR_GROWTH = 0.10;   // 每星成长从 18% 下调到 10%
-const COMPANION_HEAL_SCALE = 0.72;    // 随从治疗统一收口,避免后期奶量失控
+const COMPANION_STAR_GROWTH = 0.13;   // 每星成长
+const COMPANION_HEAL_SCALE = 0.88;    // 随从治疗统一收口
 function companionSkillCdLeft(i){ return Math.max(0, ((compSkillCd&&compSkillCd[i])||0) - Date.now()); }   // 供 UI 显示剩余CD(毫秒)
 function getActiveCompanion(){if(state.activeCompanion<0||!state.companions[state.activeCompanion])return null;return state.companions[state.activeCompanion];}
 function companionSignature(tpl){ return tpl?.signature || null; }
