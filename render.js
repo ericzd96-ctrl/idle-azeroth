@@ -297,8 +297,9 @@ function renderMonList() {
       const isFocus = m === focus;
       const seg = Array.from(m.name);
       const emoji = seg[0], nm = seg.slice(1).join('') || '敌人';
+      const monIconHtml = (typeof entityIcon === 'function') ? entityIcon(nm, 28, emoji) : emoji;
       return `<div class="mon-row${isFocus?' focus':''}" data-uid="${m._uid}">
-        <div class="m-emoji"${isFocus?' id="mon-emoji"':''}>${emoji}</div>
+        <div class="m-emoji"${isFocus?' id="mon-emoji"':''}>${monIconHtml}</div>
         <div class="m-mid">
           <div class="m-name"${isFocus?' id="mon-name"':''}>${nm}<span class="m-lvl">Lv.${m.lvl}</span><span class="m-debuffs"></span></div>
           <div class="bar hp"><i${isFocus?' id="b-mhp"':''}></i><span${isFocus?' id="t-mhp"':''}></span></div>
@@ -461,7 +462,9 @@ function updateBattleVisuals() {
   const avKey = state.specialization ? (state.cls + ':' + state.specialization) : ('emoji:' + state.cls);
   if (heEl.dataset.av !== avKey) {
     heEl.dataset.av = avKey;
-    heEl.innerHTML = state.specialization ? specIcon(state.cls, state.specialization, 56, c.emoji) : c.emoji;
+    heEl.innerHTML = state.specialization
+      ? specIcon(state.cls, state.specialization, 56, c.icon)
+      : classIcon(state.cls, 56, c.icon);
   }
 
   // 关卡信息
@@ -559,8 +562,9 @@ function updateBattleVisuals() {
     $('comp-mini').style.display='';
     $('comp-mini').style.opacity=compDown?'0.5':'1';
     const statusTag=compDown?` · <span style="color:#fde047">💫倒下 ${reviveLeft}s</span>`:'';
-    const sigBadge = tpl?.signature ? ` · <span style="color:#fcd34d">${tpl.signature.icon||'✨'}专属</span>` : '';
-    $('comp-mini-name').innerHTML=`${tpl?.emoji||'🐾'} ${tpl?.name} · <span class="${q.cls||''}">${q.name}</span> ${'⭐'.repeat(comp.stars||1)}${sigBadge} · 攻${fmt(st.atk)} 防${fmt(st.def)}${statusTag}`;
+    const sigBadge = tpl?.signature ? ` · <span style="color:#fcd34d">${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')}专属</span>` : '';
+    const compIconHtml = (typeof entityIcon === 'function') ? entityIcon(tpl?.name, 18, tpl?.emoji || '🐾') : (tpl?.emoji || '🐾');
+    $('comp-mini-name').innerHTML=`${compIconHtml} ${tpl?.name} · <span class="${q.cls||''}">${q.name}</span> ${'⭐'.repeat(comp.stars||1)}${sigBadge} · 攻${fmt(st.atk)} 防${fmt(st.def)}${statusTag}`;
     setBar($('b-comp-hp'),Math.max(0,compHp)/st.hpMax*100,compDown?`倒下 ${reviveLeft}s`:`${fmt(Math.max(0,compHp))}/${fmt(st.hpMax)}`);
     // 随从技能 CD 展示:仅在随从/技能数变化时重建(避免每帧churn打断 title 悬浮),每帧只刷新剩余CD
     const csEl=$('comp-skills');
@@ -569,12 +573,13 @@ function updateBattleVisuals() {
       if(csEl._sig!==sig){
         csEl._sig=sig;
         const passiveSig = tpl?.signature?.mode==='passive'
-          ? `<span class="comp-cd-passive" data-tip="${companionSkillTipHtml(Object.assign({_signature:true}, tpl.signature)).replace(/"/g,'&quot;')}" style="font-size:13px;cursor:help;color:#fcd34d">${tpl.signature.icon||'✨'}</span>`
+          ? `<span class="comp-cd-passive" data-tip="${companionSkillTipHtml(Object.assign({_signature:true}, tpl.signature)).replace(/"/g,'&quot;')}" style="font-size:13px;cursor:help;color:#fcd34d">${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 16, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')}</span>`
           : '';
         csEl.innerHTML=passiveSig+((st.skills)||[]).map((s,i)=>{
           const tip=companionSkillTipHtml(s).replace(/"/g,'&quot;');
           const color = s._signature ? 'color:#fcd34d;' : '';
-          return `<span class="comp-cd-skill" data-i="${i}" data-tip="${tip}" style="font-size:13px;cursor:help;${color}">${s.icon}<sub class="cs-cd" style="font-size:9px;color:#fbbf24"></sub></span>`;
+          const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(s.name, 16, s.icon) : s.icon;
+          return `<span class="comp-cd-skill" data-i="${i}" data-tip="${tip}" style="font-size:13px;cursor:help;${color}">${skillIconHtml}<sub class="cs-cd" style="font-size:9px;color:#fbbf24"></sub></span>`;
         }).join('');
       }
       // 用自定义 #compare-tip 而非原生 title:原生 title 的悬浮计时会被每帧 CD/透明度更新打断,导致"偶尔不显示"
@@ -620,11 +625,12 @@ function updateBattleVisuals() {
       }
       const compBarrier = state._compBarrier || 0;
       const sig = tpl?.signature;
-      const html=`<b>${tpl?.emoji} ${tpl?.name}</b><div>${q.name} ${'⭐'.repeat(comp.stars||1)} · ${tpl?.role==='tank'?'🛡️坦克':tpl?.role==='heal'?'💚治疗':'⚔️输出'}</div>
+      const compIconHtml = (typeof entityIcon === 'function') ? entityIcon(tpl?.name, 18, tpl?.emoji || '🐾') : (tpl?.emoji || '🐾');
+      const html=`<b>${compIconHtml} ${tpl?.name}</b><div>${q.name} ${'⭐'.repeat(comp.stars||1)} · ${tpl?.role==='tank'?'🛡️坦克':tpl?.role==='heal'?'💚治疗':'⚔️输出'}</div>
         <div>攻击${fmt(st.atk)} 防御${fmt(st.def)} 生命${fmt(st.hpMax)} 攻速${st.spd?.toFixed(2)}/s</div>
         <div class="muted">参战强度已按品质、星级与定位折算</div>
         <div class="muted">定位:${tpl?.role==='tank'?'🛡️坦克 负责扛压/控场':tpl?.role==='dps'?'⚔️输出 均衡承伤/技能爆发':'💚辅助 更强续航/净化/护持'}</div>
-        ${sig?`<div style="color:#fcd34d">专属技: ${sig.icon||'✨'} ${sig.name} · ${sig.desc||''}${sig.mode==='passive'?' (被动)':''}</div>`:''}
+        ${sig?`<div style="color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(sig.name, 14, sig.icon||'✨') : (sig.icon||'✨')} ${sig.name} · ${sig.desc||''}${sig.mode==='passive'?' (被动)':''}</div>`:''}
         ${compBarrier>0?`<div style="color:#93c5fd">护盾: ${fmt(compBarrier)}</div>`:''}
         ${compBuffs.length?`<div>增益: ${compBuffs.join(' · ')}</div>`:''}
         ${compDebuffs.length?`<div style="color:#fca5a5">减益: ${compDebuffs.join(' · ')}</div>`:''}`;
@@ -740,18 +746,19 @@ function renderEquipment() {
   eg.innerHTML = '';
   for (const k of SLOT_ORDER) {
     const it = state.equipped[k];
+    const slotIconHtml = (typeof slotIcon === 'function') ? slotIcon(k, 16, SLOT_INFO[k].icon) : SLOT_INFO[k].icon;
     const div = document.createElement('div');
     div.className = 'slot' + (it ? ' '+it.bcls : '');
     div.dataset.slot = k;
     if (it) {
       const stats = Object.entries(it.stats).map(([sk,v])=>fmtMod(sk, v)).join(' ');
       const extras = (typeof itemBonusSummary==='function') ? itemBonusSummary(it) : '';
-      div.innerHTML = `<div class="label">${SLOT_INFO[k].icon} ${SLOT_INFO[k].label}</div>
+      div.innerHTML = `<div class="label">${slotIconHtml} ${SLOT_INFO[k].label}</div>
         <div class="name ${it.cls}">${it.name}${extras}</div>
         <div class="stats">${stats}${it.reqLvl?' · Lv.'+it.reqLvl:''}</div>`;
       div.title = '点击查看详情/卸下';
     } else {
-      div.innerHTML = `<div class="label">${SLOT_INFO[k].icon} ${SLOT_INFO[k].label}</div>
+      div.innerHTML = `<div class="label">${slotIconHtml} ${SLOT_INFO[k].label}</div>
         <div class="muted" style="font-size:11px">空</div>`;
     }
     eg.appendChild(div);
@@ -790,9 +797,10 @@ function renderInventory() {
     row.className = 'inv-item ' + it.bcls;
     row.dataset.id = it.id;
     const extras = (typeof itemBonusSummary==='function') ? itemBonusSummary(it) : '';
+    const slotIconHtml = (typeof slotIcon === 'function') ? slotIcon(it.slot, 16, SLOT_INFO[it.slot].icon) : SLOT_INFO[it.slot].icon;
     row.innerHTML = `
       <div class="info">
-        <div class="name ${it.cls}">${SLOT_INFO[it.slot].icon} ${it.name}${extras}</div>
+        <div class="name ${it.cls}">${slotIconHtml} ${it.name}${extras}</div>
         <div class="stats">${stats}${it.reqLvl?" · Lv."+it.reqLvl:""}</div>
       </div>
       <div class="btns">
@@ -804,7 +812,7 @@ function renderInventory() {
     const showCompare = e => {
       const diff = calcCompare(it, equipped);
       tip.querySelector('.compare-head').innerHTML = `
-        <div>${SLOT_INFO[it.slot].icon} ${SLOT_INFO[it.slot].label} 对比</div>
+        <div>${slotIconHtml} ${SLOT_INFO[it.slot].label} 对比</div>
         <div class="name ${it.cls}" style="font-size:11px">🆕 ${it.name}</div>
         ${equipped ? `<div class="name ${equipped.cls}" style="font-size:11px">📌 ${equipped.name}</div>` : '<div class="muted" style="font-size:11px">📌 当前栏位为空</div>'}
       `;
@@ -1023,9 +1031,10 @@ function renderSkills() {
     const lockInfo = sk.unlockLvl ? `(Lv.${sk.unlockLvl})` : '(天赋解锁)';
     const baseDesc = sk._baseDesc || sk.desc || '';
     const detailDesc = sk._detailDesc || '';
+    const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, sk.icon) : sk.icon;
     div.innerHTML = `
       <div class="row">
-        <b style="color:${unlocked?'inherit':'var(--muted)'}">${sk.icon} ${sk.name}</b>
+        <b style="color:${unlocked?'inherit':'var(--muted)'}">${skillIconHtml} ${sk.name}</b>
         <span class="pill">${unlocked?'已解锁':lockInfo}</span>
       </div>
       <div class="muted">${baseDesc}</div>
@@ -1200,9 +1209,10 @@ function renderSkillBar() {
     const baseDesc = sk._baseDesc || sk.desc || '';
     const detailDesc = sk._detailDesc ? `\n联动: ${sk._detailDesc}` : '';
     const tip = `${sk.name} · ${baseDesc}${detailDesc}\n${c.resource} ${sk.mp} · CD ${getSkillCd(sk)}秒`.replace(/"/g, '&quot;');
+    const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, sk.icon) : sk.icon;
     return `<button class="skill-btn ${onCd?'on-cd':''}" data-skill="${key}" draggable="true" title="${tip}"
       style="${!onCd&&hasMp?'border-color:var(--accent)':''}">
-      <span>${sk.icon} ${sk.name}</span>
+      <span>${skillIconHtml} ${sk.name}</span>
       <span class="mp-cost">${sk.mp}${c.resKey==='rage'?'怒':c.resKey==='energy'?'能':'蓝'}</span>
       ${onCd?`<div class="cd-overlay">${cdLeft}s</div>`:''}
     </button>`;
@@ -1253,6 +1263,7 @@ function renderMap() {
     const div = document.createElement('div');
     div.className = 'map-item' + (isCurrent ? ' current' : '') + (tooHigh ? ' warn' : '');
     div.dataset.mapKey = m.key;
+    const bossPanelIcon = (typeof entityIcon === 'function') ? entityIcon(m.boss.name, 18, m.boss.emoji) : m.boss.emoji;
     let html = `
       <div class="map-head">
         <span class="mname">${m.icon} ${m.name}</span>
@@ -1283,7 +1294,7 @@ function renderMap() {
     html += `
       <div class="boss-row">
         <div class="boss-info">
-          <div><span class="bname boss-name-tip" data-bosskey="${m.key}">⚔️ ${m.boss.emoji} ${m.boss.name}</span> <span class="pill">Lv ${m.boss.lvl}</span></div>
+          <div><span class="bname boss-name-tip" data-bosskey="${m.key}">${bossPanelIcon} ${m.boss.name}</span> <span class="pill">Lv ${m.boss.lvl}</span></div>
           <div class="muted">${m.boss.desc}</div>
         </div>
         <button class="boss-btn ${canBoss?'epic':''}" data-action="boss" data-map="${m.key}" ${canBoss?'':'disabled'}>${bossText}</button>
@@ -1294,12 +1305,13 @@ function renderMap() {
     if (nameEl && m.boss.skills) {
       nameEl.style.cursor = 'help';
       const showBossTip = e => {
-        let tip = '<b>'+m.boss.emoji+' '+m.boss.name+' Lv.'+m.boss.lvl+'</b>';
+        let tip = '<b>'+bossPanelIcon+' '+m.boss.name+' Lv.'+m.boss.lvl+'</b>';
         if (m.boss.skills) {
           tip += '<div style=\"margin-top:3px;color:#fbbf24\">技能:</div>';
           m.boss.skills.forEach(s => {
             const tags = effectTags(s);
-            tip += '<div>'+s.icon+' '+s.name+' — '+s.desc+' ('+(s.castTime||0)+'s读条)'+(tags.length?' <span style=\"color:#fbbf24;font-size:10px\">'+tags.join(' ')+'</span>':'')+'</div>';
+            const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(s.name, 16, s.icon) : s.icon;
+            tip += '<div>'+skillIconHtml+' '+s.name+' — '+s.desc+' ('+(s.castTime||0)+'s读条)'+(tags.length?' <span style=\"color:#fbbf24;font-size:10px\">'+tags.join(' ')+'</span>':'')+'</div>';
           });
         }
         if (m.boss.passive) {
@@ -1339,7 +1351,7 @@ function renderMap() {
           {name:'💎 钻石 ×3~8',rarity:'rare',stats:{}},
           {name:'📊 首次免费 · CD最高1小时 · CD中🎫跳过',rarity:'legend',stats:{}},
         ];
-        showLootTip(e, bossDrops, `⚔️ ${m.boss.emoji} ${m.boss.name} 掉落`);
+        showLootTip(e, bossDrops, `${bossPanelIcon} ${m.boss.name} 掉落`);
       };
       bossBtn.addEventListener('mouseenter', showBossLoot);
       bossBtn.addEventListener('mousemove', e => positionTip($('compare-tip'), e));
@@ -1384,6 +1396,7 @@ function compHealScale(v){
 }
 function companionSkillTipHtml(sk){
   if (!sk) return '';
+  const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, sk.icon || '✨') : (sk.icon || '✨');
   const lines = [];
   if (sk.type === 'dmg' && sk.mul) lines.push(`${sk.mul}倍伤害`);
   if (sk.alwaysCrit) lines.push('本次必定暴击');
@@ -1424,7 +1437,7 @@ function companionSkillTipHtml(sk){
   else if (sk.healTarget === 'smart') lines.push('治疗目标：自动选择血量更危险的一方');
   const mode = sk._signature ? (sk.mode === 'passive' ? '专属被动' : '专属主动') : (sk.type === 'buff' ? '辅助技能' : sk.type === 'heal' ? '治疗技能' : '伤害技能');
   const cdText = sk.mode === 'passive' ? mode : `${mode} · 冷却 ${sk.cd || 8}秒`;
-  return `<b>${sk.icon || '✨'} ${sk.name}</b><div>${sk.desc || ''}</div>${lines.map(x=>`<div class="muted">${x}</div>`).join('')}<div class="muted">${cdText}</div>`;
+  return `<b>${skillIconHtml} ${sk.name}</b><div>${sk.desc || ''}</div>${lines.map(x=>`<div class="muted">${x}</div>`).join('')}<div class="muted">${cdText}</div>`;
 }
 /* 随从技能 → 可悬浮小图标(指向看描述) */
 function compSkillChips(tpl){
@@ -1432,7 +1445,8 @@ function compSkillChips(tpl){
   if (tpl?.signature) skills.push(Object.assign({_signature:true}, tpl.signature));
   return skills.map(s=>{
     const tip = companionSkillTipHtml(s).replace(/"/g,'&quot;');
-    return `<span class="comp-skill${s._signature?' sig':''}" data-tip="${tip}">${s.icon}<span class="cs-name">${s.name}</span></span>`;
+    const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(s.name, 16, s.icon) : s.icon;
+    return `<span class="comp-skill${s._signature?' sig':''}" data-tip="${tip}">${skillIconHtml}<span class="cs-name">${s.name}</span></span>`;
   }).join('');
 }
 function renderCompanion() {
@@ -1467,13 +1481,14 @@ function renderCompanion() {
     const starF = 1+0.2*((act.stars||1)-1);
     const ownTxt = Object.entries(tpl?.bonus||{}).map(([k,v])=>(typeof fmtMod==='function')?fmtMod(k,+(v*starF).toFixed(1)):k+'+'+v).join(' ');
     const roleTxt = Object.entries(role).map(([k,v])=>(typeof fmtMod==='function')?fmtMod(k,v):k+'+'+v).join(' ');
+    const compIconHtml = (typeof entityIcon === 'function') ? entityIcon(tpl?.name, 18, tpl?.emoji || '🐾') : (tpl?.emoji || '🐾');
     html += `<div class="shop-item" style="border-color:var(--${q.cls==='r-legend'?'legend':q.cls==='r-epic'?'epic':'border'})">
-      <div class="row"><b>${tpl?.emoji} ${tpl?.name}</b><span class="pill" style="background:var(--accent);color:#000">出战中</span></div>
+      <div class="row"><b>${compIconHtml} ${tpl?.name}</b><span class="pill" style="background:var(--accent);color:#000">出战中</span></div>
       <div class="muted"><span class="${q.cls}">${q.name}</span> · ${'⭐'.repeat(act.stars||1)} · ${roleTag(tpl?.role)}</div>
       <div class="muted" style="font-size:10px">参战属性: 攻${fmt(st?.atk||0)} 防${fmt(st?.def||0)} 血${fmt(st?.hpMax||0)}</div>
       <div class="muted" style="font-size:10px;color:#6ee7b7">专属加成: ${ownTxt||'无'}</div>
       <div class="muted" style="font-size:10px;color:#93c5fd">定位加成: ${roleTxt||'无'}</div>
-      ${tpl?.signature?`<div class="muted" style="font-size:10px;color:#fcd34d">专属技: ${tpl.signature.icon||'✨'} ${tpl.signature.name}${tpl.signature.mode==='passive'?' [被动]':''}</div>`:''}
+      ${tpl?.signature?`<div class="muted" style="font-size:10px;color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')} ${tpl.signature.name}${tpl.signature.mode==='passive'?' [被动]':''}</div>`:''}
       <div class="comp-skills">${compSkillChips(tpl)}</div>
       <button class="danger" data-action="unequipcomp" style="margin-top:4px">休息</button>
     </div>`;
@@ -1489,10 +1504,11 @@ function renderCompanion() {
     const cost = getUpgradeCost(c);
     const canUp = !cost.maxed && cost.have>=cost.need;
     const skillCount = (tpl.skills?.length||0) + (tpl.signature && tpl.signature.mode !== 'passive' ? 1 : 0);
+    const compIconHtml = (typeof entityIcon === 'function') ? entityIcon(tpl.name, 18, tpl.emoji) : tpl.emoji;
     html += `<div class="shop-item">
-      <div class="row"><b>${tpl.emoji} ${tpl.name}</b><span class="${q.cls}">${q.name}·${skillCount}技</span></div>
+      <div class="row"><b>${compIconHtml} ${tpl.name}</b><span class="${q.cls}">${q.name}·${skillCount}技</span></div>
       <div class="muted" style="font-size:10px">${'⭐'.repeat(c.stars||1)} · ${roleTag(tpl.role)} · ${tpl.desc}</div>
-      ${tpl.signature?`<div class="muted" style="font-size:10px;color:#fcd34d">专属技: ${tpl.signature.icon||'✨'} ${tpl.signature.name}${tpl.signature.mode==='passive'?' [被动]':''}</div>`:''}
+      ${tpl.signature?`<div class="muted" style="font-size:10px;color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')} ${tpl.signature.name}${tpl.signature.mode==='passive'?' [被动]':''}</div>`:''}
       <div class="comp-skills">${compSkillChips(tpl)}</div>
       <div class="row">
         <span class="muted" style="font-size:10px">碎片 ${cost.have}${cost.maxed?'':' / 升星需'+cost.need}</span>
@@ -1513,8 +1529,9 @@ function renderCompanion() {
       <div style="display:flex;flex-wrap:wrap;gap:4px">`;
     for (const t of missing) {
       const q = compQuality(t);
+      const compIconHtml = (typeof entityIcon === 'function') ? entityIcon(t.name, 16, t.emoji) : t.emoji;
       html += `<div title="${t.name} · ${q.name} · ${roleTag(t.role)} · ${t.desc}" style="opacity:.55;border:1px solid var(--border);border-left:3px solid var(--${q.cls==='r-legend'?'legend':q.cls==='r-epic'?'epic':'border'});border-radius:6px;padding:3px 5px;font-size:11px">
-        ${t.emoji} <span class="${q.cls}">${t.name}</span></div>`;
+        ${compIconHtml} <span class="${q.cls}">${t.name}</span></div>`;
     }
     html += `</div>`;
   }
@@ -1558,9 +1575,10 @@ function renderDungeon() {
     const div = document.createElement('div');
     div.className = 'dungeon-item';
     div.dataset.dungeonKey = dg.key;
+    const dungeonIconHtml = (typeof dungeonIcon === 'function') ? dungeonIcon(dg.key, dg.name, 18, dg.icon) : dg.icon;
     div.innerHTML = `
       <div class="row">
-        <span><span class="icon">${dg.icon}</span> <b>${dg.name}</b></span>
+        <span><span class="icon">${dungeonIconHtml}</span> <b>${dg.name}</b></span>
         <span class="pill">Lv.${dg.reqLvl}</span>
       </div>
       <div class="muted">${dg.type==='raid'?'<span style=\"color:#fbbf24\">[团本]</span> ':'<span style=\"color:#6ee7b7\">[5人本]</span> '}${dg.desc} · ${(dg.bosses||[]).length}个BOSS · 最终: ${((dg.bosses||[])[dg.bosses.length-1]||{}).name||'??'}${dg.type==='raid'?' · 掉落:紫装/最终橙':''}</div>
@@ -1574,7 +1592,7 @@ function renderDungeon() {
       const power = dg.reqLvl + 5;
       const isRaid = dg.type === 'raid';
       const lastBossName = (dg.bosses||[])[(dg.bosses||[]).length-1]?.name;
-      let html = `<div style=\"font-weight:bold;margin-bottom:4px\">${dg.icon} ${dg.name} (${(dg.bosses||[]).length}BOSS)${isRaid?' <span style=\"color:#a335ee\">[紫装]</span>':''}</div>`;
+      let html = `<div style=\"font-weight:bold;margin-bottom:4px\">${dungeonIconHtml} ${dg.name} (${(dg.bosses||[]).length}BOSS)${isRaid?' <span style=\"color:#a335ee\">[紫装]</span>':''}</div>`;
       if (loot?.bosses) {
         for (const bossData of (dg.bosses||[])) {
           const bossName = bossData.name;
@@ -1583,12 +1601,14 @@ function renderDungeon() {
             : loot.bosses[bossName];
           if (!items?.length) continue;
           const isFinal = bossName === lastBossName;
+          const bossIconHtml = (typeof entityIcon === 'function') ? entityIcon(bossName, 16, bossData.emoji || '👹') : (bossData.emoji || '👹');
           const skillInfo=bossData?.skills?bossData.skills.map(s=>{
             const t=effectTags(s);
-            return s.icon+s.name+(t.length?'['+t.join('')+']':'')+'('+s.desc+','+(s.castTime||0)+'s)';
+            const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(s.name, 14, s.icon) : s.icon;
+            return skillIconHtml+s.name+(t.length?'['+t.join('')+']':'')+'('+s.desc+','+(s.castTime||0)+'s)';
           }).join(' · '):'';
           const dropLabel = isRaid ? (isFinal ? '(必紫+8%橙)' : '(必紫)') : '(必掉1件)';
-          html += `<div style=\"margin-top:4px;color:var(--legend);font-size:11px\">👑 ${bossName} ${dropLabel}${skillInfo?' · '+skillInfo:''}</div>`;
+          html += `<div style=\"margin-top:4px;color:var(--legend);font-size:11px\">${bossIconHtml} ${bossName} ${dropLabel}${skillInfo?' · '+skillInfo:''}</div>`;
           const tw = items.reduce((s,it)=>s+(RARITY.find(r=>r.key===it.rarity)?.weight||1),0);
           for (const it of items) {
             let displayRarity = it.rarity;

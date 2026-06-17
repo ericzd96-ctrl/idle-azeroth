@@ -660,11 +660,12 @@ function showFactionSelection() {
   const grid = $('faction-grid');
   grid.innerHTML = '';
   for (const [key, f] of Object.entries(FACTIONS)) {
+    const facIconHtml = (typeof factionIcon === 'function') ? factionIcon(key, 52, f.icon) : f.icon;
     const card = document.createElement('div');
     card.className = 'class-card';
     card.style.cssText = 'flex:1;min-width:200px';
     card.innerHTML = `
-      <div class="icon" style="font-size:56px">${f.icon}</div>
+      <div class="icon" style="font-size:56px">${facIconHtml}</div>
       <div class="name" style="color:${f.color};font-size:20px">${f.name}</div>
       <div class="desc">${f.desc}</div>`;
     card.addEventListener('click', () => {
@@ -679,7 +680,8 @@ function showFactionSelection() {
 
 function showRaceSelection(factionKey) {
   const fac = FACTIONS[factionKey];
-  $('race-title').textContent = `${fac.icon} ${fac.name} — 选择种族`;
+  const facIconHtml = (typeof factionIcon === 'function') ? factionIcon(factionKey, 18, fac.icon) : fac.icon;
+  $('race-title').innerHTML = `${facIconHtml} ${fac.name} — 选择种族`;
   const grid = $('race-grid');
   grid.innerHTML = '';
   const raceList = Object.entries(RACES).filter(([,r]) => r.faction === factionKey);
@@ -687,11 +689,12 @@ function showRaceSelection(factionKey) {
   $('confirm-race').disabled = true;
   for (const [key, r] of raceList) {
     const bonusText = Object.entries(r.bonus).map(([k,v])=>fmtMod(k, v)).join(' ');
+    const raceIconHtml = (typeof raceIcon === 'function') ? raceIcon(key, 40, r.icon) : r.icon;
     const card = document.createElement('div');
     card.className = 'class-card';
     card.dataset.race = key;
     card.innerHTML = `
-      <div class="icon" style="font-size:40px">${r.icon}</div>
+      <div class="icon" style="font-size:40px">${raceIconHtml}</div>
       <div class="name">${r.name}</div>
       <div class="attr" style="color:var(--accent)">${bonusText}</div>
       <div class="desc">${r.desc}</div>`;
@@ -744,7 +747,8 @@ function showClassSelection() {
 function showNameInput() {
   const race = RACES[pendingRace];
   const cls = CLASSES[pendingClass];
-  $('name-summary').innerHTML = `${race.icon} ${race.name} · ${classIcon(pendingClass, 18, cls.icon)} ${cls.name}`;
+  const raceIconHtml = (typeof raceIcon === 'function') ? raceIcon(pendingRace, 18, race.icon) : race.icon;
+  $('name-summary').innerHTML = `${raceIconHtml} ${race.name} · ${classIcon(pendingClass, 18, cls.icon)} ${cls.name}`;
   const inp = $('input-name');
   inp.value = '';
   $('confirm-name').disabled = true;
@@ -777,10 +781,12 @@ function showCharacterList() {
   content.innerHTML = list.map(c => {
     const cls = c.cls ? CLASSES[c.cls] : null;
     const titleHtml = c.title ? `<span class="pill" style="background:var(--gold);color:#000;font-weight:bold;margin-left:4px">${c.title}</span>` : '';
+    const heroIconHtml = (typeof raceIcon === 'function' && c.race) ? raceIcon(c.race, 18, '👤') : ((typeof uiIcon === 'function') ? uiIcon('hero', 'sm', '角色') : '👤');
+    const goldIconHtml = (typeof uiIcon === 'function') ? uiIcon('gold', 'xs', '金币') : '💰';
     return `<div class="char-item ${c.active?'current':''}" style="display:flex;justify-content:space-between;align-items:center;padding:10px;margin-bottom:6px;background:var(--panel-2);border:1px solid ${c.active?'var(--accent)':'var(--border)'};border-radius:8px">
       <div>
-        <div style="font-weight:bold">👤 ${c.name} ${c.active?'<span class="pill" style="background:var(--accent);color:#000">当前</span>':''}${titleHtml}</div>
-        <div class="muted">${cls?classIcon(c.cls,16,cls.icon)+' '+cls.name:'无'} · Lv.${c.lvl} · 💰${fmt(c.gold)}</div>
+        <div style="font-weight:bold">${heroIconHtml} ${c.name} ${c.active?'<span class="pill" style="background:var(--accent);color:#000">当前</span>':''}${titleHtml}</div>
+        <div class="muted">${cls?classIcon(c.cls,16,cls.icon)+' '+cls.name:'无'} · Lv.${c.lvl} · ${goldIconHtml}${fmt(c.gold)}</div>
       </div>
       <div style="display:flex;gap:4px">
         <button class="primary" data-action="switchchar" data-idx="${c.index}" ${c.active?'disabled':''}>切换</button>

@@ -393,12 +393,15 @@ let progSubTab = 'ach'; // 'ach' | 'bes' | 'rep'
 function renderProgression() {
   accEns();
   const root = $('tab-progression'); if (!root) return;
+  const achTabIcon = (typeof symbolIcon === 'function') ? symbolIcon('🏆', 16, '成就', '🏆') : '🏆';
+  const besTabIcon = (typeof symbolIcon === 'function') ? symbolIcon('📖', 16, '图鉴', '📖') : '📖';
+  const repTabIcon = (typeof symbolIcon === 'function') ? symbolIcon('⚖️', 16, '声望', '⚖️') : '⚖️';
   // 子页签头
   const head = `
     <div class="sub-tabs">
-      <span class="sub-tab ${progSubTab==='ach'?'active':''}" data-sub="ach">🏆 成就</span>
-      <span class="sub-tab ${progSubTab==='bes'?'active':''}" data-sub="bes">📖 图鉴</span>
-      <span class="sub-tab ${progSubTab==='rep'?'active':''}" data-sub="rep">⚖️ 声望</span>
+      <span class="sub-tab ${progSubTab==='ach'?'active':''}" data-sub="ach">${achTabIcon} 成就</span>
+      <span class="sub-tab ${progSubTab==='bes'?'active':''}" data-sub="bes">${besTabIcon} 图鉴</span>
+      <span class="sub-tab ${progSubTab==='rep'?'active':''}" data-sub="rep">${repTabIcon} 声望</span>
     </div>`;
   let body = '';
   if (progSubTab === 'ach') body = renderAchSubtab();
@@ -419,9 +422,10 @@ function renderAchSubtab() {
   const curTitle = acc.title || state.title || '';
   let html = `<div class="prog-summary muted">已领取 <b>${claimedCount}</b> / ${totalCount} ${curTitle?' · 当前称号: <span style="color:var(--gold)">'+curTitle+'</span>':''}</div>`;
   if (titles.length) {
+    const crownIcon = (typeof symbolIcon === 'function') ? symbolIcon('👑', 16, '称号收藏', '👑') : '👑';
     html += `<div class="ascend-box" style="margin-bottom:8px">
       <div class="row" style="align-items:center;gap:6px;flex-wrap:wrap">
-        <b>👑 称号收藏</b>
+        <b>${crownIcon} 称号收藏</b>
         <span class="muted" style="font-size:11px">已拥有 ${titles.length} 个</span>
         <span style="flex:1"></span>
         <button data-action="cleartitle" ${curTitle?'':'disabled'}>隐藏称号</button>
@@ -458,8 +462,9 @@ function renderAchSubtab() {
         : completed
           ? `<button class="gold" data-action="claimach" data-key="${a.key}">领取</button>`
           : `<span class="muted" style="font-size:10px">${fmt(r.cur)}/${fmt(r.goal)}</span>`;
+      const achIconHtml = (typeof symbolIcon === 'function') ? symbolIcon(a.icon || '🏆', 22, a.name, a.icon || '🏆') : (a.icon || '🏆');
       html += `<div class="ach-item ${cls}">
-        <div class="ach-icon">${a.icon||'🏆'}</div>
+        <div class="ach-icon">${achIconHtml}</div>
         <div class="ach-main">
           <div class="ach-name">${a.name}</div>
           <div class="ach-rwd muted">${rwd.join(' · ')}</div>
@@ -502,7 +507,8 @@ function renderRepSubtab() {
   if (curFac) {
     const rep = acc.reputation[curFac]||0;
     const t = getRepTier(rep);
-    html += `<div class="prog-summary muted">当前地图势力: <b>${REPUTATION_FACTIONS[curFac]?.icon||''} ${curFac}</b> · 阶级 <span style="color:var(--gold)">${t.name}</span> · 加成: +${t.xpPct}%XP +${t.goldPct}%金币 +${t.dropPct}%掉率 +${t.dmgPct}%伤害 (所有角色合并)</div>`;
+    const curIcon = (typeof symbolIcon === 'function') ? symbolIcon(REPUTATION_FACTIONS[curFac]?.icon || '', 16, curFac, REPUTATION_FACTIONS[curFac]?.icon || '') : (REPUTATION_FACTIONS[curFac]?.icon || '');
+    html += `<div class="prog-summary muted">当前地图势力: <b>${curIcon} ${curFac}</b> · 阶级 <span style="color:var(--gold)">${t.name}</span> · 加成: +${t.xpPct}%XP +${t.goldPct}%金币 +${t.dropPct}%掉率 +${t.dmgPct}%伤害 (所有角色合并)</div>`;
   }
   html += '<div class="rep-list">';
   for (const [fac, info] of Object.entries(REPUTATION_FACTIONS)) {
@@ -512,9 +518,10 @@ function renderRepSubtab() {
     const pct = nxt ? ((rep - t.rep) / (nxt.rep - t.rep) * 100) : 100;
     const nxtTxt = nxt ? `→ ${nxt.name} (${fmt(rep)}/${fmt(nxt.rep)})` : '已满阶';
     const isCurrent = fac === curFac;
+    const facIconHtml = (typeof symbolIcon === 'function') ? symbolIcon(info.icon || '', 16, fac, info.icon || '') : (info.icon || '');
     html += `<div class="rep-item ${isCurrent?'cur':''}">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <span style="color:${info.color};font-weight:bold">${info.icon} ${fac}</span>
+        <span style="color:${info.color};font-weight:bold">${facIconHtml} ${fac}</span>
         <span style="color:var(--gold);font-size:11px">${t.name} ${nxtTxt}</span>
       </div>
       <div class="bar xp" style="height:7px;margin:3px 0"><i style="width:${pct}%;background:${info.color}"></i></div>
