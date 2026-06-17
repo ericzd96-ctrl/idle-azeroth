@@ -196,6 +196,10 @@ function renderBuffBar() {
       heroDe.push({ kind: 'self-de', icon: fx.icon, name: '你·' + fx.name, desc, left: Math.ceil((d.expire - now) / 1000) });
     }
   }
+  // 英雄硬控状态(击晕等直接读 timer,沉默/缴械同理)
+  if (state.heroStunUntil > now) heroDe.push({ kind:'self-de', icon:'💫', name:'你·眩晕', desc:'无法攻击与施法', left:Math.ceil((state.heroStunUntil-now)/1000) });
+  if (state.heroSilenceUntil > now) heroDe.push({ kind:'self-de', icon:'🔇', name:'你·沉默', desc:'无法施放技能', left:Math.ceil((state.heroSilenceUntil-now)/1000) });
+  if (state.heroDisarmUntil > now) heroDe.push({ kind:'self-de', icon:'⚔️❌', name:'你·缴械', desc:'无法普通攻击', left:Math.ceil((state.heroDisarmUntil-now)/1000) });
   const selfStates = buffs.concat(heroDe);
   const enemyStates = enemyBuffs.concat(debuffs);
   const sig = selfStates.concat([{ kind:'split', name:'|' }], enemyStates).map(b => b.kind + (b.name || '') + (b.left || 0)).join('|');
