@@ -123,6 +123,10 @@ function focusBuffs(now) {
   }
   return out;
 }
+function statusIconHtml(name, symbol, size) {
+  if (typeof statusIcon === 'function') return statusIcon(name, symbol, size || 16, symbol || name || '');
+  return symbol || name || '';
+}
 function renderBuffBar() {
   const bar = $('buff-bar'); if (!bar) return;
   const now = Date.now();
@@ -176,51 +180,51 @@ function renderBuffBar() {
     }
   }
   const all = buffs.concat(heroDe, enemyBuffs, debuffs);
-  const sig = all.map(b => b.kind + b.icon + b.left).join('|');
+  const sig = all.map(b => b.kind + (b.name || '') + b.left).join('|');
   if (sig === _buffBarSig) return;   // 内容(含倒计时)没变就不重绘
   _buffBarSig = sig;
   bar.innerHTML = all.map(b => {
     const tip = `${b.name}${b.desc ? ' · ' + b.desc : ''}${b.left > 0 ? ' · 剩余' + b.left + '秒' : ''}`;
-    return `<div class="buff-chip ${b.kind}" data-tip="${tip.replace(/"/g, '&quot;')}"><div class="b-ic">${b.icon}</div><div class="b-t">${b.left > 0 ? b.left + 's' : '∞'}</div></div>`;
+    return `<div class="buff-chip ${b.kind}" data-tip="${tip.replace(/"/g, '&quot;')}"><div class="b-ic">${statusIconHtml(b.name?.replace(/^敌·|^你·/, ''), b.icon, 16)}</div><div class="b-t">${b.left > 0 ? b.left + 's' : '∞'}</div></div>`;
   }).join('');
 }
 function effectTags(s) {
   const t = [];
-  if (s.aoe) t.push('💥AOE');
-  if (s.stun) t.push(s.stun===true?'💫眩晕2秒':'💫眩晕'+(s.stun/1000)+'秒');
-  if (s.slow) t.push('❄️减速5秒');
-  if (s.dot) t.push('☠️灼烧6秒');
-  if (s.weaken) t.push('💔削弱5秒');
-  if (s.sunder) t.push('🩸易伤5秒');
-  if (s.spdBuff) t.push('⚡自加速8秒');
-  if (s.heal) t.push(`💚恢复${Math.round((s.heal||0)*100)}%生命`);
-  if (s.healPct) t.push(`💚恢复${Math.round((s.healPct||0)*100)}%生命`);
-  if (s.atkBuffSecs) t.push(`📯攻击提高${Math.round(s.atkBuffPct||30)}%`);
-  if (s.defBuffSecs) t.push(`🪨防御提高${Math.round(s.defBuffPct||35)}%`);
-  if (s.drBuffSecs) t.push(`🛡️减伤提高${Math.round((s.drBuffPct||0.25)*100)}%`);
-  if (s.shieldPct) t.push(`🔮护盾${Math.round((s.shieldPct||0)*100)}%生命`);
-  if (s.critBuffSecs) t.push(`👁️暴击提高${Math.round(s.critBuffPct||35)}%`);
-  if (s.leechBuffSecs) t.push(`🩸吸血${Math.round(s.leechBuffPct||18)}%`);
-  if (s.summonCount) t.push(`👥召唤${s.summonCount}个援军`);
-  if (s.lifeSteal) t.push('🩸吸血'+Math.round(s.lifeSteal*100)+'%');
-  if (s.silence) t.push('🔇沉默');
-  if (s.disarm) t.push('⚔️❌缴械');
-  if (s.fear) t.push('👻恐惧');
-  if (s.freeze) t.push('🧊冰冻');
-  if (s.cripple) t.push('🦿残废');
-  if (s.decay) t.push('👴衰老');
-  if (s.wither) t.push('🥀生命枯萎');
-  if (s.manaDrain) t.push('💧魔力流失');
-  if (s.bomb) t.push('💣自爆印记');
-  if (s.plague) t.push('🦠暗影瘟疫');
-  if (s.bleed) t.push('🩸流血');
-  if (s.brittle) t.push('💥易爆');
-  if (s.soulDrain) t.push('🧛精力榨取');
-  if (s.soulLink) t.push('🔗灵魂链接');
-  if (s.revenge) t.push('🎯复仇标记');
-  if (s.frenzy) t.push('🤯狂乱');
-  if (s.decay2) t.push('🌑凋零');
-  if (s.mirror) t.push('🪞镜像');
+  if (s.aoe) t.push(`${statusIconHtml('易爆', '💥', 13)}AOE`);
+  if (s.stun) t.push(`${statusIconHtml('眩晕', '💫', 13)}眩晕${s.stun===true?'2秒':(s.stun/1000)+'秒'}`);
+  if (s.slow) t.push(`${statusIconHtml('减速', '❄️', 13)}减速5秒`);
+  if (s.dot) t.push(`${statusIconHtml('灼烧/中毒', '☠️', 13)}灼烧6秒`);
+  if (s.weaken) t.push(`${statusIconHtml('虚弱', '💔', 13)}削弱5秒`);
+  if (s.sunder) t.push(`${statusIconHtml('易伤', '🩸', 13)}易伤5秒`);
+  if (s.spdBuff) t.push(`${statusIconHtml('急速', '⚡', 13)}自加速8秒`);
+  if (s.heal) t.push(`${statusIconHtml('治疗', '💚', 13)}恢复${Math.round((s.heal||0)*100)}%生命`);
+  if (s.healPct) t.push(`${statusIconHtml('治疗', '💚', 13)}恢复${Math.round((s.healPct||0)*100)}%生命`);
+  if (s.atkBuffSecs) t.push(`${statusIconHtml('战斗怒吼', '📯', 13)}攻击提高${Math.round(s.atkBuffPct||30)}%`);
+  if (s.defBuffSecs) t.push(`${statusIconHtml('护盾', '🪨', 13)}防御提高${Math.round(s.defBuffPct||35)}%`);
+  if (s.drBuffSecs) t.push(`${statusIconHtml('减伤', '🛡️', 13)}减伤提高${Math.round((s.drBuffPct||0.25)*100)}%`);
+  if (s.shieldPct) t.push(`${statusIconHtml('护体屏障', '🔮', 13)}护盾${Math.round((s.shieldPct||0)*100)}%生命`);
+  if (s.critBuffSecs) t.push(`${statusIconHtml('致命专注', '👁️', 13)}暴击提高${Math.round(s.critBuffPct||35)}%`);
+  if (s.leechBuffSecs) t.push(`${statusIconHtml('生命洪流', '🩸', 13)}吸血${Math.round(s.leechBuffPct||18)}%`);
+  if (s.summonCount) t.push(`${statusIconHtml('召唤援军', '👥', 13)}召唤${s.summonCount}个援军`);
+  if (s.lifeSteal) t.push(`${statusIconHtml('生命洪流', '🩸', 13)}吸血${Math.round(s.lifeSteal*100)}%`);
+  if (s.silence) t.push(`${statusIconHtml('沉默', '🔇', 13)}沉默`);
+  if (s.disarm) t.push(`${statusIconHtml('缴械', '⚔️', 13)}缴械`);
+  if (s.fear) t.push(`${statusIconHtml('恐惧', '👻', 13)}恐惧`);
+  if (s.freeze) t.push(`${statusIconHtml('冻结', '🧊', 13)}冰冻`);
+  if (s.cripple) t.push(`${statusIconHtml('残废', '🦿', 13)}残废`);
+  if (s.decay) t.push(`${statusIconHtml('衰老', '👴', 13)}衰老`);
+  if (s.wither) t.push(`${statusIconHtml('凋零', '🥀', 13)}生命枯萎`);
+  if (s.manaDrain) t.push(`${statusIconHtml('奥术护壁', '💧', 13)}魔力流失`);
+  if (s.bomb) t.push(`${statusIconHtml('易爆', '💣', 13)}自爆印记`);
+  if (s.plague) t.push(`${statusIconHtml('凋零', '🦠', 13)}暗影瘟疫`);
+  if (s.bleed) t.push(`${statusIconHtml('流血', '🩸', 13)}流血`);
+  if (s.brittle) t.push(`${statusIconHtml('易爆', '💥', 13)}易爆`);
+  if (s.soulDrain) t.push(`${statusIconHtml('灵魂链接', '🧛', 13)}精力榨取`);
+  if (s.soulLink) t.push(`${statusIconHtml('灵魂链接', '🔗', 13)}灵魂链接`);
+  if (s.revenge) t.push(`${statusIconHtml('复仇标记', '🎯', 13)}复仇标记`);
+  if (s.frenzy) t.push(`${statusIconHtml('狂乱', '🤯', 13)}狂乱`);
+  if (s.decay2) t.push(`${statusIconHtml('凋零', '🌑', 13)}凋零`);
+  if (s.mirror) t.push(`${statusIconHtml('奥术护壁', '🪞', 13)}镜像`);
   return t;
 }
 function attachFocusBossHover(focus) {
@@ -318,17 +322,17 @@ function renderMonList() {
     const de = row.querySelector('.m-debuffs');
     if (de) {
       let s = '';
-      if (m.slowUntil > now)   s += `<span title="减速:攻速降低">❄️</span>`;
+      if (m.slowUntil > now)   s += `<span title="减速:攻速降低">${statusIconHtml('减速', '❄️', 13)}</span>`;
       if (typeof getMonsterDots === 'function') {
         const dots = getMonsterDots(m, now);
         if (dots.length) {
           const total = dots.reduce((sum, dot) => sum + (dot.dps || 0), 0);
           const names = dots.map(dot => `${dot.icon || '🔥'}${dot.name || '持续伤害'}:${fmt(dot.dps || 0)}/秒`).join(' · ');
-          s += `<span title="${names}">🔥${dots.length > 1 ? 'x' + dots.length : ''}:${fmt(total)}</span>`;
+          s += `<span title="${names}">${statusIconHtml(dots[0]?.name || '持续伤害', dots[0]?.icon || '🔥', 13)}${dots.length > 1 ? 'x' + dots.length : ''}:${fmt(total)}</span>`;
         }
-      } else if (m.dot > 0 && m.dotEnd > now) s += `<span title="灼烧/中毒:每秒 ${fmt(m.dot)} 伤害">🔥</span>`;
-      if (m.sunderUntil > now) s += `<span title="破甲:防御降低30%">🔨</span>`;
-      if (m._arcaneShield > 0) s += `<span title="法力护盾:吸收 ${fmt(m._arcaneShield)} 伤害">🔮</span>`;
+      } else if (m.dot > 0 && m.dotEnd > now) s += `<span title="灼烧/中毒:每秒 ${fmt(m.dot)} 伤害">${statusIconHtml('灼烧/中毒', '🔥', 13)}</span>`;
+      if (m.sunderUntil > now) s += `<span title="破甲:防御降低30%">${statusIconHtml('破甲', '🔨', 13)}</span>`;
+      if (m._arcaneShield > 0) s += `<span title="法力护盾:吸收 ${fmt(m._arcaneShield)} 伤害">${statusIconHtml('法力护盾', '🔮', 13)}</span>`;
       if (de.dataset.s !== s) { de.innerHTML = s; de.dataset.s = s; }
     }
   }
