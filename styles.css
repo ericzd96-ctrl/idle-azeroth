@@ -248,7 +248,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
 
 @media (max-width: 920px) {
   .wrap {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; min-width: 0;
     gap: 10px;
     padding: 12px 12px 88px;
   }
@@ -265,13 +265,13 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   body.mobile-ui .stage { min-width: 0; max-width: 100%; overflow: hidden; }
   header {
     position: sticky; top: 0; z-index: 30;
-    padding: 10px 12px;
+    padding: 10px 12px; min-width: 0;
     flex-direction: column; align-items: stretch; gap: 8px;
   }
   h1 { font-size: 16px; }
   .head-stats {
     gap: 8px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px;
-    scrollbar-width: none;
+    scrollbar-width: none; max-width: 100%;
   }
   .head-stats::-webkit-scrollbar { display: none; }
   .head-stats > span {
