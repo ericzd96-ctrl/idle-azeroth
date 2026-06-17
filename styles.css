@@ -26,9 +26,11 @@ html, body {
   color: var(--text);
   font-family: -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
   min-height: 100vh;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 .wrap {
-  max-width: 1240px; margin: 0 auto; padding: 16px;
+  width: min(100%, 1240px); max-width: 1240px; margin: 0 auto; padding: 16px;
   display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 12px;
 }
 header {
@@ -250,6 +252,17 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
     gap: 10px;
     padding: 12px 12px 88px;
   }
+  body.mobile-ui .wrap,
+  body.mobile-ui .panel,
+  body.mobile-ui #battle-panel,
+  body.mobile-ui #hero-panel,
+  body.mobile-ui #side-panel,
+  body.mobile-ui .stage,
+  body.mobile-ui .tab-panel,
+  body.mobile-ui .tab-panel.active {
+    min-width: 0;
+    max-width: 100%;
+  }
   header {
     position: sticky; top: 0; z-index: 30;
     padding: 10px 12px;
@@ -328,6 +341,43 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   }
   body.mobile-ui .equip-grid { grid-template-columns: 1fr 1fr; }
   body.mobile-ui .inv-list { max-height: none; }
+  body.mobile-ui .skill-bar {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    justify-content: stretch;
+  }
+  body.mobile-ui .skill-btn {
+    min-width: 0;
+    width: 100%;
+    padding: 6px 6px;
+  }
+  body.mobile-ui .compare-tip {
+    min-width: 0;
+    max-width: min(240px, calc(100vw - 16px));
+  }
+  body.mobile-ui .wow-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+  body.mobile-ui .wow-row-label {
+    width: auto;
+    min-width: 0;
+    text-align: left;
+    padding-top: 0;
+  }
+  body.mobile-ui .wow-nodes { width: 100%; }
+  body.mobile-ui .wow-node {
+    min-width: 0;
+    width: 100%;
+  }
+  body.mobile-ui .sub-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  body.mobile-ui .sub-btn {
+    min-width: 0;
+    width: 100%;
+  }
   body.mobile-ui .footer-actions {
     flex-wrap: wrap;
   }
@@ -445,7 +495,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
     border-radius: 12px;
   }
   .skill-btn {
-    min-width: 58px;
+    min-width: 0;
     padding: 6px 8px;
     font-size: 11px;
   }
@@ -474,18 +524,36 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
     flex-wrap: wrap;
     justify-content: flex-end;
   }
-  .subzones {
+  .sub-list {
     gap: 4px;
   }
   .sub-btn {
-    min-width: 62px;
+    min-width: 0;
     font-size: 10px;
     padding: 4px 3px;
+  }
+  .compare-tip {
+    min-width: 0;
+    max-width: calc(100vw - 12px);
   }
   .modal-bg { padding: 10px; }
   .modal {
     padding: 14px;
     border-radius: 12px;
+  }
+  .wow-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .wow-row-label {
+    width: auto;
+    min-width: 0;
+    text-align: left;
+    padding-top: 0;
+  }
+  .wow-node {
+    min-width: 0;
+    width: 100%;
   }
 }
 

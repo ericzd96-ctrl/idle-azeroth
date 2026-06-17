@@ -2819,6 +2819,11 @@ function applyCompanionSignatureHit(sig, st, mon, dmgDone, now){
   const comp = getActiveCompanion();
   const tpl = comp && COMPANIONS.find(c=>c.key===comp.key);
   let note = '';
+  if(sig.bonusVsState && monsterStateActive(mon, sig.bonusVsState)){
+    const extra = Math.max(1, Math.floor(dmgDone * (sig.bonusStatePct || 0.3)));
+    mon.hp -= extra; trackDmg('comp', extra); showFloat($('mon-emoji'), (sig.icon || '✨') + '-' + extra, '#fbbf24');
+    note = note || '追猎强化';
+  }
   if(sig.dotPct) applyMonsterDot(mon, `sig:${st.name}:${sig.name}`, Math.max(1, Math.floor(dmgDone * sig.dotPct)), sig.dotMs || 6000, { icon:sig.icon || '✨', name:sig.name, source:st.name });
   if(sig.slow) mon.slowUntil = Math.max(mon.slowUntil || 0, now + (sig.slowMs || 4000));
   if(sig.stun) mon.stunUntil = Math.max(mon.stunUntil || 0, now + (sig.stunMs || 1200));
@@ -2931,6 +2936,7 @@ function companionSkillPriority(sk, st, mon, now){
   if(sk.bonusVsSlow && mon?.slowUntil > now) score += 16;
   if(sk.bonusVsSunder && mon?.sunderUntil > now) score += 18;
   if(sk.bonusVsState && monsterStateActive(mon, sk.bonusVsState)) score += 18;
+  if(sk.bonusVsBoss && mon?.isBoss) score += 18;
   if(sk.splashPct || sk.aoePct) score += state.currentMonsters.filter(x=>x.hp>0).length >= 3 ? 18 : -6;
   if(mon?.isBoss) score += 10;
   if(mon && mon.hp > 0 && mon.hp <= mon.hpMax * (sk.executeThreshold || 0.35)) score += (sk.executeBonus ? 22 : (sk.alwaysCrit ? 12 : 6));

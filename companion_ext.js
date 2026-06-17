@@ -61,6 +61,23 @@
     { key:'kiljaeden',name:'基尔加丹', emoji:'😈', quality:'orange', role:'dps', desc:'欺诈者', bonus:{atkPct:8,critdPct:10,leech:5}, skills:[D('毁灭','💥','6倍伤害',6),D('黑暗之球','🟣','5倍灼烧',5,{dot:true}),D('痛苦','🔥','5倍伤害',5),B('燃烧军团','😈','berserk','攻击攻速'),D('虚空崩裂','🌌','6倍伤害',6)] },
   ];
   for (const c of add) if (!COMPANIONS.find(x => x.key === c.key)) COMPANIONS.push(c);
+  const reinforcements = [
+    { key:'garrosh', name:'加尔鲁什·地狱咆哮', emoji:'🩸', quality:'purple', role:'tank', desc:'钢铁部落的暴怒战帅', bonus:{hpPct:7,defPct:6,atkPct:3}, skills:[D('铁星猛砸','🪓','3.5倍伤害',3.5,{cd:8}),B('钢铁壁垒','🛡️','shield','8秒减伤',18),D('血吼裂地','🩸','4.5倍伤害',4.5,{cd:14}),H('战帅续战','❤️',0.16,22)] },
+    { key:'cairne', name:'凯恩·血蹄', emoji:'🐂', quality:'blue', role:'tank', desc:'雷霆崖的高山酋长', bonus:{hpPct:6,defPct:5}, skills:[D('战争践踏','🦬','3倍伤害',3,{cd:9}),B('先祖护佑','🪶','earthShield','8秒防御提升',18),H('大地母亲之赐','🌾',0.18,20)] },
+    { key:'bolvar', name:'伯瓦尔·弗塔根', emoji:'👑', quality:'purple', role:'tank', desc:'烈焰王座的灰烬守望者', bonus:{hpPct:7,defPct:5,vers:4}, skills:[D('炽焰审判','🔥','3倍伤害',3,{cd:8}),B('灰烬壁垒','🛡️','sacredShield','8秒神圣庇护',18),H('王者坚忍','💛',0.16,22),B('暴风城号令','📯','kings','8秒攻防提升',26)] },
+    { key:'chen', name:'陈·风暴烈酒', emoji:'🍺', quality:'blue', role:'tank', desc:'四处游历的熊猫酒仙', bonus:{hpPct:5,defPct:4,regFlat:3}, skills:[D('醉拳','🍺','3倍伤害',3,{cd:8}),B('活血酒','🫙','bark','8秒减伤与回复',18),H('酒雾调息','🌫️',0.16,20)] },
+    { key:'rehgar', name:'雷加·大地怒嚎', emoji:'⚡', quality:'purple', role:'heal', desc:'角斗场中走出的风暴萨满', bonus:{hpPct:5,regFlat:5,vers:4}, skills:[H('治疗链','🌊',0.18,12),B('英勇','⚡','windfury','10秒攻速提升',24),B('大地之盾','🪨','earthShield','8秒护持',18),D('闪电链','⛓️','3.5倍伤害',3.5,{cd:10})] },
+    { key:'velen', name:'先知维伦', emoji:'🌟', quality:'orange', role:'heal', desc:'德莱尼的先知与圣光引路人', bonus:{hpPct:8,regFlat:7,spi:3}, skills:[H('纳鲁赐福','🌟',0.24,12),B('圣光共鸣','✨','kings','10秒全队强化',22),B('群体屏障','🛡️','sacredShield','8秒防护',18),H('命运回溯','⏮️',0.32,24),D('神圣新星','💫','3.8倍伤害',3.8,{cd:11})] },
+    { key:'liadrin', name:'莉亚德琳', emoji:'🌞', quality:'purple', role:'heal', desc:'血骑士的炽热领袖', bonus:{hpPct:5,atkPct:3,regFlat:4}, skills:[D('公正圣印','⚖️','3倍伤害',3,{cd:8}),B('圣佑术','🟡','shield','8秒护盾',18),H('圣光灌注','🌞',0.18,14),B('银月战旗','🚩','battleShout','10秒攻击提升',24)] },
+    { key:'alexstrasza', name:'阿莱克丝塔萨', emoji:'🐉', quality:'orange', role:'heal', desc:'生命缚誓者与红龙女王', bonus:{hpPct:8,regFlat:8,spi:4}, skills:[H('生命脉冲','💗',0.22,10),D('红龙烈焰','🔥','4倍伤害',4,{cd:10}),B('龙眠庇护','🛡️','sacredShield','8秒厚重护盾',18),H('生命绽放','🌺',0.34,24),B('赐生龙息','🌈','kings','10秒全队强化',24)] },
+    { key:'cenarius', name:'塞纳留斯', emoji:'🌲', quality:'orange', role:'heal', desc:'半神森林之王', bonus:{hpPct:8,regFlat:6,vers:4}, skills:[D('根须缠绕','🌿','3.5倍伤害',3.5,{cd:9}),B('树皮庇护','🌳','bark','8秒减伤回复',18),H('自然绽放','🍃',0.22,12),B('野性赐福','🦌','kings','10秒攻防提升',24),D('星群坠落','🌠','4.8倍伤害',4.8,{cd:16})] },
+    { key:'khadgar', name:'卡德加', emoji:'📚', quality:'purple', role:'dps', desc:'艾泽拉斯的首席守护法师', bonus:{atkPct:5,crit:4,intPct:4}, skills:[D('奥术弹幕','✨','3.5倍伤害',3.5,{cd:8}),D('时间裂隙','⏳','4倍伤害',4,{cd:12}),B('时间扭曲','⌛','rapidFire','10秒加速',24),B('奥术智慧','📘','battleShout','10秒法能增幅',24)] },
+    { key:'maiev', name:'玛维·影歌', emoji:'🦉', quality:'purple', role:'dps', desc:'守望者领袖与黑暗追猎者', bonus:{atkPct:5,crit:5,spdPct:5}, skills:[D('影袭飞轮','🪃','3.5倍伤害',3.5,{cd:8}),D('复仇突刺','🔪','4倍伤害',4,{cd:12}),B('守望者追猎','👁️','rapidFire','10秒迅捷猎杀',22),D('禁锢匕雨','🌑','4.5倍伤害',4.5,{cd:16})] },
+    { key:'grommash', name:'格罗玛什·地狱咆哮', emoji:'🪓', quality:'orange', role:'dps', desc:'战歌氏族永不停息的怒潮', bonus:{atkPct:8,crit:5,critdPct:8}, skills:[D('血吼横扫','🪓','4.2倍伤害',4.2,{cd:8}),B('玛诺洛斯之血','🩸','berserk','10秒狂暴',20),D('地狱咆哮','😡','5倍伤害',5,{cd:14}),D('斩首','💀','6倍伤害',6,{cd:18}),H('狂战愈合','❤️',0.12,20)] },
+    { key:'voljin', name:'沃金', emoji:'🗿', quality:'blue', role:'dps', desc:'暗影猎手与部落之眼', bonus:{atkPct:4,crit:3,vers:3}, skills:[D('暗影猎箭','🏹','3倍伤害',3,{cd:8}),D('巫毒咒杀','🕯️','3.5倍伤害',3.5,{cd:11,dot:true}),B('巨魔再生','🧿','shadowstep','10秒吸血再生',20)] },
+    { key:'akama', name:'阿卡玛', emoji:'🗡️', quality:'blue', role:'dps', desc:'破碎者的沉默利刃', bonus:{atkPct:4,spdPct:4,crit:3}, skills:[D('影刃突袭','🗡️','3倍伤害',3,{cd:8}),D('灰舌连斩','🌑','3.8倍伤害',3.8,{cd:12}),B('破碎潜行','💨','rapidFire','10秒迅捷',22)] }
+  ];
+  for (const c of reinforcements) if (!COMPANIONS.find(x => x.key === c.key)) COMPANIONS.push(c);
 
   const byKey = key => COMPANIONS.find(c => c.key === key);
   const setComp = (key, patch) => { const c = byKey(key); if (c) Object.assign(c, patch); };
@@ -184,6 +201,20 @@
   setSig('anduin',      { mode:'passive', name:'圣光回响', icon:'✨', desc:'每次攻击都会为主角回响圣光,补血并加盾', healPctHero:0.03, shieldPctHero:0.03 });
   setSig('tyrande',     { type:'dmg', name:'艾露恩之怒', icon:'🌕', desc:'月神之怒精准坠落,高爆发并回护主角', mul:4.5, alwaysCrit:true, bonusVsDot:0.30, healPctHero:0.05, cd:20 });
   setSig('malfurion',   { mode:'passive', name:'梦境滋养', icon:'🌌', desc:'自然梦境不断滋养队伍,并强化自身回复', regMul:1.12, healPctHero:0.02, shieldPctHero:0.03 });
+  setSig('garrosh',     { type:'buff', name:'钢铁意志', icon:'🛡️', desc:'加尔鲁什举旗怒吼,为自己施加厚盾并强化主角输出', buff:'shield', buffTarget:'companion', duration:9000, shieldPctComp:0.12, healPctComp:0.06, cd:22 });
+  setSig('cairne',      { mode:'passive', name:'先祖丰饶', icon:'🌄', desc:'沉稳守望持续为队伍恢复,并让自己更厚重', hpMul:1.08, healPctHero:0.02, healPctComp:0.03, shieldPctComp:0.04 });
+  setSig('bolvar',      { type:'buff', name:'王城余烬', icon:'🔥', desc:'伯瓦尔燃起灰烬圣焰,为全队加盾并净化减益', buff:'sacredShield', buffTarget:'both', duration:8000, shieldPct:0.10, cleanse:true, cd:22 });
+  setSig('chen',        { type:'heal', name:'不息酒泉', icon:'🍶', desc:'豪饮之后回春,同时为主角与自己补血护盾', heal:0.12, healTarget:'both', shieldPct:0.06, cd:18 });
+  setSig('rehgar',      { mode:'passive', name:'野性灵魂', icon:'🐺', desc:'法术会留下感电印记,并不断强化主角攻速', stateKey:'shocked', stateMs:8000, shieldPctHero:0.03, spdMul:1.05 });
+  setSig('velen',       { type:'heal', name:'纳鲁圣约', icon:'🌠', desc:'强力圣疗同时为双方加盾并驱散减益', heal:0.20, healTarget:'both', shieldPct:0.10, cleanse:true, cd:20 });
+  setSig('liadrin',     { mode:'passive', name:'血骑士军势', icon:'🌞', desc:'持续鼓舞主角输出,并在攻击时回响圣光', atkMul:1.04, healPctHero:0.03, shieldPctHero:0.03 });
+  setSig('alexstrasza', { type:'heal', name:'生命缚誓', icon:'🐉', desc:'龙眠之息笼罩战场,重治疗并强化全队', heal:0.22, healTarget:'both', shieldPct:0.10, buff:'kings', buffTarget:'both', duration:9000, cd:22 });
+  setSig('cenarius',    { mode:'passive', name:'林地苏醒', icon:'🌲', desc:'根须与月辉不断滋养队伍,并让敌人更易受伤', healPctHero:0.02, healPctComp:0.03, stateKey:'rooted', stateMs:8000 });
+  setSig('khadgar',     { type:'buff', name:'守护者时序', icon:'⌛', desc:'扭转时流,强化双方攻速并让敌人进入奥术破绽', buff:'rapidFire', buffTarget:'both', duration:9000, stateKey:'arcaneMark', stateMs:9000, cd:20 });
+  setSig('maiev',       { mode:'passive', name:'守望绝罚', icon:'🦉', desc:'对被标记目标更凶狠,并在Boss战中持续追猎', bonusVsState:0.40, bonusVsBoss:0.12, stateKey:'hunted', stateMs:9000 });
+  setSig('grommash',    { mode:'passive', name:'战歌狂潮', icon:'🩸', desc:'越战越凶,对残血和Boss都更暴烈,并持续吸血', bonusVsBoss:0.12, executeBonus:0.28, executeThreshold:0.35, healPctComp:0.04 });
+  setSig('voljin',      { type:'dmg', name:'洛阿之眼', icon:'🪶', desc:'暗影猎神谕标记敌人,造成持续伤害并削弱其意志', mul:4.2, stateKey:'hunted', stateMs:9000, dotPct:0.14, dotMs:7000, weaken:true, cd:20 });
+  setSig('akama',       { mode:'passive', name:'灰舌伏击', icon:'🌑', desc:'攻击附带暗影斩痕,对被标记者追加更高伤害', dotPct:0.10, dotMs:7000, stateKey:'marked', stateMs:8000, bonusVsBoss:0.10 });
 
   // ---------- 让随从技能真正有“技能感” ----------
   setSkill('sw_guard','盾击',{ stun:true, stunMs:1200, debuff:'sunder', sunderMs:10000, desc:'2倍伤害并击晕1.2秒,附带短暂破甲' });
@@ -258,6 +289,62 @@
 
   setSkill('anduin','惩击',{ heal:0.08, shieldPct:0.04, desc:'惩击敌人并为主角补一点血和护盾' });
   setSkill('anduin','治疗术',{ cleanse:true, desc:'恢复30%生命并净化1个减益' });
+  setSkill('garrosh','铁星猛砸',{ sunder:true, stun:true, stunMs:1300, desc:'3.5倍伤害并击晕,附带破甲' });
+  setSkill('garrosh','钢铁壁垒',{ buffTarget:'companion', duration:9000, shieldPct:0.12, desc:'9秒减伤并获得12%生命护盾' });
+  setSkill('garrosh','血吼裂地',{ splashPct:0.40, executeBonus:0.25, executeThreshold:0.35, desc:'4.5倍伤害并溅射40%,对残血目标额外提高25%' });
+  setSkill('garrosh','战帅续战',{ healTarget:'companion', shieldPct:0.06, desc:'恢复16%生命并施加小护盾' });
+  setSkill('cairne','战争践踏',{ stun:true, stunMs:1600, aoePct:0.40, desc:'3倍伤害并击晕,溅射40%' });
+  setSkill('cairne','先祖护佑',{ buffTarget:'companion', duration:9000, shieldPct:0.10, healPct:0.05, desc:'9秒防御提升,并获得护盾与少量回复' });
+  setSkill('cairne','大地母亲之赐',{ healTarget:'both', cleanse:true, desc:'同时恢复双方生命并净化1个减益' });
+  setSkill('bolvar','炽焰审判',{ dotPct:0.12, dotMs:7000, desc:'3倍伤害并附加圣焰灼烧' });
+  setSkill('bolvar','灰烬壁垒',{ buffTarget:'companion', duration:9000, shieldPct:0.14, desc:'9秒厚盾庇护,更适合坦克承压' });
+  setSkill('bolvar','王者坚忍',{ healTarget:'companion', shieldPct:0.08, cleanse:true, desc:'恢复生命并净化自身减益,附带护盾' });
+  setSkill('bolvar','暴风城号令',{ buffTarget:'both', duration:10000, shieldPct:0.06, desc:'10秒全队攻防提升并获得小护盾' });
+  setSkill('chen','醉拳',{ weaken:true, desc:'3倍伤害并扰乱敌人攻势' });
+  setSkill('chen','活血酒',{ buffTarget:'companion', duration:9000, healPct:0.06, desc:'9秒减伤回复,并立刻恢复少量生命' });
+  setSkill('chen','酒雾调息',{ healTarget:'smart', cleanse:true, desc:'恢复生命并净化1个减益' });
+  setSkill('rehgar','治疗链',{ healTarget:'both', shieldPct:0.04, desc:'治疗会弹跳到双方,并附带小护盾' });
+  setSkill('rehgar','英勇',{ buffTarget:'both', duration:10000, desc:'10秒双方攻速全面提升' });
+  setSkill('rehgar','大地之盾',{ buffTarget:'hero', duration:9000, shieldPct:0.10, healPct:0.05, desc:'主角获得大地之盾与即时回复' });
+  setSkill('rehgar','闪电链',{ aoePct:0.45, slow:true, slowMs:3000, desc:'链状闪电造成45%溅射并减速' });
+  setSkill('velen','纳鲁赐福',{ healTarget:'smart', cleanse:true, shieldPct:0.08, desc:'强力治疗并净化减益,附带护盾' });
+  setSkill('velen','圣光共鸣',{ buffTarget:'both', duration:10000, healPct:0.05, desc:'10秒提升双方攻防并立刻回复生命' });
+  setSkill('velen','群体屏障',{ buffTarget:'both', duration:8000, shieldPct:0.12, desc:'双方同时获得厚重屏障' });
+  setSkill('velen','命运回溯',{ healTarget:'both', cleanse:true, shieldPct:0.08, desc:'同时大幅恢复双方生命并净化减益' });
+  setSkill('velen','神圣新星',{ aoePct:0.30, heal:0.06, healTarget:'hero', desc:'对敌溅射并顺带抚慰主角' });
+  setSkill('liadrin','公正圣印',{ bonusVsState:'judged', bonusStatePct:0.35, stateKey:'judged', stateMs:8000, desc:'3倍伤害并标记目标,后续技能更痛' });
+  setSkill('liadrin','圣佑术',{ buffTarget:'hero', duration:8000, shieldPct:0.10, desc:'主角获得圣佑与护盾' });
+  setSkill('liadrin','圣光灌注',{ healTarget:'smart', shieldPct:0.05, desc:'恢复生命并附带小护盾' });
+  setSkill('liadrin','银月战旗',{ buffTarget:'both', duration:10000, desc:'战旗鼓舞双方输出' });
+  setSkill('alexstrasza','生命脉冲',{ healTarget:'both', shieldPct:0.05, desc:'生命脉冲同时照拂双方' });
+  setSkill('alexstrasza','红龙烈焰',{ dotPct:0.16, dotMs:7000, aoePct:0.30, desc:'龙焰灼烧并带30%溅射' });
+  setSkill('alexstrasza','龙眠庇护',{ buffTarget:'both', duration:9000, shieldPct:0.12, desc:'双方获得厚重龙眠护盾' });
+  setSkill('alexstrasza','生命绽放',{ healTarget:'both', cleanse:true, desc:'大幅恢复双方生命并净化减益' });
+  setSkill('alexstrasza','赐生龙息',{ buffTarget:'both', duration:10000, healPct:0.06, desc:'全队强化并伴随生命气息回复' });
+  setSkill('cenarius','根须缠绕',{ cripple:true, stateKey:'rooted', stateMs:8000, desc:'根须缠绕敌人并留下8秒束缚' });
+  setSkill('cenarius','树皮庇护',{ buffTarget:'both', duration:9000, shieldPct:0.08, desc:'全队减伤并得到自然护盾' });
+  setSkill('cenarius','自然绽放',{ healTarget:'both', shieldPct:0.04, desc:'自然能量同时治疗双方' });
+  setSkill('cenarius','野性赐福',{ buffTarget:'both', duration:10000, desc:'野性赐福强化双方攻防' });
+  setSkill('cenarius','星群坠落',{ aoePct:0.45, bonusVsState:'rooted', bonusStatePct:0.30, desc:'星群轰炸并对束缚目标额外提高30%' });
+  setSkill('khadgar','奥术弹幕',{ stateKey:'arcaneMark', stateMs:8000, desc:'奥术弹幕留下8秒奥术印记' });
+  setSkill('khadgar','时间裂隙',{ bonusVsState:'arcaneMark', bonusStatePct:0.40, silence:true, silenceMs:1800, desc:'对奥术印记目标额外提高40%,并附带沉默' });
+  setSkill('khadgar','时间扭曲',{ buffTarget:'both', duration:10000, desc:'双方一同进入时流加速' });
+  setSkill('khadgar','奥术智慧',{ buffTarget:'hero', duration:10000, shieldPct:0.05, desc:'更偏向提升主角施法节奏,附带小护盾' });
+  setSkill('maiev','影袭飞轮',{ stateKey:'hunted', stateMs:9000, desc:'飞轮命中后留下守望者追猎印记' });
+  setSkill('maiev','复仇突刺',{ bonusVsState:'hunted', bonusStatePct:0.45, alwaysCrit:true, desc:'对追猎目标额外提高45%并稳定爆发' });
+  setSkill('maiev','守望者追猎',{ buffTarget:'companion', duration:10000, cleanse:true, desc:'提高自身追猎效率并净化减益' });
+  setSkill('maiev','禁锢匕雨',{ aoePct:0.40, cripple:true, desc:'匕雨横扫并使敌人残废' });
+  setSkill('grommash','血吼横扫',{ splashPct:0.45, desc:'横扫溅射45%伤害' });
+  setSkill('grommash','玛诺洛斯之血',{ buffTarget:'companion', duration:10000, healPct:0.05, desc:'狂暴强化自身并回复少量生命' });
+  setSkill('grommash','地狱咆哮',{ alwaysCrit:true, bonusVsBoss:0.20, desc:'更适合在Boss战中打出高爆发' });
+  setSkill('grommash','斩首',{ executeBonus:0.45, executeThreshold:0.35, desc:'对残血目标额外提高45%' });
+  setSkill('grommash','狂战愈合',{ healTarget:'companion', desc:'硬扛之后快速回一口血' });
+  setSkill('voljin','暗影猎箭',{ stateKey:'hunted', stateMs:9000, desc:'暗影猎箭标记目标9秒' });
+  setSkill('voljin','巫毒咒杀',{ dotPct:0.14, dotMs:7000, bonusVsState:'hunted', bonusStatePct:0.30, desc:'持续咒伤,对标记目标额外提高30%' });
+  setSkill('voljin','巨魔再生',{ buffTarget:'companion', duration:10000, healPct:0.06, desc:'强化再生与续航' });
+  setSkill('akama','影刃突袭',{ stateKey:'marked', stateMs:8000, desc:'影刃突袭留下8秒破绽' });
+  setSkill('akama','灰舌连斩',{ bonusVsState:'marked', bonusStatePct:0.35, splashPct:0.25, desc:'对破绽目标更痛,并带25%溅射' });
+  setSkill('akama','破碎潜行',{ buffTarget:'companion', duration:10000, cleanse:true, desc:'进入更灵动的潜行节奏并净化减益' });
   setSkill('anduin','真言术盾',{ shieldPct:0.14, desc:'施加真言术盾并获得14%生命值护盾' });
   setSkill('anduin','神圣赞美诗',{ shieldPct:0.08, cleanse:true, desc:'大治疗并追加护盾,同时净化减益' });
 
