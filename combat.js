@@ -1290,7 +1290,7 @@ function makeMonster(name,lvl,isBoss,maxRarity){
   const msList=pickMonSkills(name, kind, lvl, 1);
   const supportSkills=buildMonsterSupportPool(name, kind, lvl, isBoss, 1);
   const now = Date.now();
-  return {name,isBoss,lvl,hpMax:hp,hp,atk:Math.floor((8+lvl*3.0)*(isBoss?1.8:1)),
+  return {name,isBoss,lvl,hpMax:hp,hp,atk:Math.floor((8+lvl*3.0)*(isBoss?1.8:1)*1.2),
     def:Math.floor((3+lvl*1.3)*(isBoss?1.5:1)),baseGold:Math.floor(5+lvl*1.5),
     baseXp:Math.floor(30+lvl*5.0),goldReward:Math.floor((5+lvl*1.5)*(isBoss?18:1)),
     honorReward:isBoss?Math.floor(15+lvl*3):0,dropRate:isBoss?1.0:0.18,
@@ -1376,7 +1376,7 @@ function spawnDungeonMonster(){
   state.currentMonsters.push({name,isBoss,bossName:isBoss?boss.name:null,
     lvl:Math.max(1,Math.floor(power*1.05)),
     hpMax:Math.floor((100+power*power*7.5)*(isBoss?17:4.0)*scale),hp:Math.floor((100+power*power*7.5)*(isBoss?17:4.0)*scale),
-    atk:Math.floor((10+power*3.2)*(isBoss?2.0:1.6)*scale),def:Math.floor((3+power*1.5)*(isBoss?1.5:1.6)*scale),
+    atk:Math.floor((10+power*3.2)*(isBoss?2.0:1.6)*scale*1.1),def:Math.floor((3+power*1.5)*(isBoss?1.5:1.6)*scale),
     baseGold:Math.floor(10+power*3),baseXp:Math.floor(35+power*5),
     goldReward:Math.floor((10+power*3)*(isBoss?15:1.5)*scale),honorReward:isBoss?Math.floor(25+power*2.5):2,
     dropRate:isBoss?1.0:0.35,gemChance:isBoss?0.8:0.05,maxRarity:bossMaxRarity,fromDungeon:true,_uid:monUidSeq++,
