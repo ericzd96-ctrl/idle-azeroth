@@ -4,7 +4,7 @@
 
 const SAVE_KEY = 'idle_azeroth_save_v4';
 const MAX_LEVEL = 80;
-const XP_CURVE_MULT = 3.2;   // 升级所需经验倍率(放慢升级,目标满级≈12小时;越大越慢,可调)
+const XP_CURVE_MULT = 5.0;   // 升级所需经验倍率(放慢升级,目标满级≈19小时;越大越慢,可调)
 
 const SLOT_ORDER = ['weapon','helmet','shoulder','armor','gloves','belt','pants','boots','ring','trinket'];
 const SLOT_INFO = {
