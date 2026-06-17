@@ -430,7 +430,8 @@ function updateBattleVisuals() {
   const accountTitle = (typeof account!=='undefined' && account?.title) || '';
   const curTitle = accountTitle || state.title || '';
   const titleHtml = curTitle ? `<span class="pill" style="background:var(--gold);color:#000;font-weight:bold" title="成就称号">${curTitle}</span> ` : '';
-  $('h-name').innerHTML = `${race?.icon||'👤'} <b>${state.name||'冒险者'}</b> ${titleHtml}<span class="pill">${classIcon(state.cls, 16, cls?.icon||'')} Lv.${state.hero.lvl}</span>`;
+  const heroChip = (typeof uiIcon === 'function') ? uiIcon('hero', 'xs', '角色') : (race?.icon || '👤');
+  $('h-name').innerHTML = `${heroChip} <b>${state.name||'冒险者'}</b> ${titleHtml}<span class="pill">${classIcon(state.cls, 16, cls?.icon||'')} Lv.${state.hero.lvl}</span>`;
   $('h-name').title = '点击切换角色';
   $('h-gold').textContent = fmt(state.gold);
   $('h-gem').textContent = fmt(state.gem);

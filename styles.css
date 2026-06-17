@@ -40,10 +40,32 @@ header {
   padding: 10px 16px; border-radius: 12px; border: 1px solid var(--border);
 }
 h1 {
+  display: flex; align-items: center; gap: 10px;
   margin: 0; font-size: 18px; letter-spacing: 1px;
   background: linear-gradient(90deg, #fbbf24, #f59e0b, #ef4444);
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
+.ui-icon {
+  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  border-radius: 6px;
+  background: linear-gradient(180deg, var(--ui-icon-bg1, #314562), var(--ui-icon-bg2, #121b27));
+  border: 1px solid rgba(244, 211, 154, .42);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 0 0 1px rgba(10,13,24,.55);
+  vertical-align: middle;
+}
+.ui-icon svg {
+  width: 72%; height: 72%;
+  stroke: var(--ui-icon-fg, #f6d79a);
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ui-icon svg .fill { fill: var(--ui-icon-fg, #f6d79a); stroke: none; }
+.ui-label {
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.ui-label.compact { gap: 5px; }
 .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
 .panel h2 {
   font-size: 13px; margin: 0 0 10px; color: var(--muted); letter-spacing: 2px;
@@ -233,6 +255,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   background: var(--panel-2); border: 1px solid var(--border);
   border-radius: 6px; cursor: pointer; font-size: 12px;
   color: var(--muted); min-width: 50px;
+  display: flex; align-items: center; justify-content: center;
 }
 .tab.active { background: linear-gradient(180deg, #3b82f6, #1d4ed8); color: #fff; border-color: #1d4ed8; }
 .tab-panel { display: none; }
@@ -240,6 +263,11 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
 
 .head-stats { display: flex; gap: 12px; font-size: 12px; color: var(--muted); flex-wrap:wrap; }
 .head-stats b { color: var(--text); }
+.head-stats > span,
+.head-stats .pill {
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.head-stats .pill b { color: inherit; font-weight: 600; }
 
 #mobile-panel-backdrop {
   display: none; position: fixed; inset: 0; background: rgba(4, 6, 12, .62); z-index: 35;
@@ -659,6 +687,9 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   grid-column: 1 / -1; display: flex; justify-content: center;
   gap: 8px; margin-top: 4px; flex-wrap:wrap;
 }
+.footer-actions button {
+  display: inline-flex; align-items: center; gap: 6px;
+}
 .class-label { display:inline-block; padding:1px 8px; border-radius:4px; font-size:11px; font-weight:bold; }
 
 .compare-tip {
@@ -745,6 +776,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   cursor: pointer; padding: 4px 10px; border-radius: 16px;
   background: var(--panel-2); border: 1px solid var(--border);
   font-size: 12px; color: var(--muted); user-select: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
 }
 .sub-tab:hover { background: #2d345a; color: var(--text); }
 .sub-tab.active { background: var(--accent); color: #000; font-weight: bold; border-color: var(--accent); }
