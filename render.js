@@ -23,7 +23,6 @@ function unpinTip() {
 
 function addTouchPin(el, showFn) {
   el.addEventListener('click', e => {
-    e.stopPropagation();
     if (_tipPinned && _tipPinnedOwner === el) {
       unpinTip();
     } else {

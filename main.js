@@ -31,9 +31,7 @@ function updateHeroMobileToggle() {
 
 function setMobilePanelOpen(open) {
   mobilePanelOpen = !!open;
-  const isOpen = mobilePanelOpen && isMobileLayout();
-  document.body.classList.toggle('mobile-panel-open', isOpen);
-  document.body.style.overflow = isOpen ? 'hidden' : '';
+  document.body.classList.toggle('mobile-panel-open', mobilePanelOpen && isMobileLayout());
 }
 
 function focusHeroPanel() {
