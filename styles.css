@@ -333,6 +333,162 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   }
 }
 
+@media (max-width: 480px) {
+  .wrap {
+    max-width: 440px;
+    gap: 8px;
+    padding: 8px 8px 82px;
+  }
+  header {
+    padding: 8px 10px;
+    border-radius: 10px;
+  }
+  h1 {
+    font-size: 15px;
+    letter-spacing: 0;
+  }
+  .panel {
+    border-radius: 10px;
+    padding: 10px;
+  }
+  .panel h2 {
+    font-size: 12px;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .head-stats {
+    gap: 6px;
+    font-size: 11px;
+  }
+  .head-stats > span {
+    padding: 3px 7px;
+  }
+  #hero-panel {
+    top: 82px;
+    padding: 8px 10px;
+  }
+  .hero-mobile-toggle {
+    min-width: 48px;
+    padding: 3px 8px;
+    font-size: 10px;
+  }
+  .attr-grid { grid-template-columns: repeat(3, 1fr); }
+  .attr-cell {
+    font-size: 10px;
+    padding: 4px 2px;
+  }
+  .attr-cell .v { font-size: 12px; }
+  .stage {
+    padding: 10px;
+    border-radius: 10px;
+  }
+  .stage-info {
+    font-size: 10px;
+    margin-bottom: 4px;
+  }
+  .arena {
+    padding: 10px 0 8px;
+  }
+  .fighter { width: 43%; }
+  .fighter .emoji { font-size: 42px; }
+  .fighter .name {
+    font-size: 12px;
+    margin: 4px 0 3px;
+  }
+  .fighter .lvl { font-size: 10px; }
+  .vs { font-size: 16px; }
+  .mon-list {
+    width: 56%;
+    max-height: 168px;
+    gap: 4px;
+  }
+  .mon-row {
+    padding: 4px 6px;
+    gap: 6px;
+  }
+  .mon-row .m-emoji { font-size: 24px; }
+  .mon-row .m-name { font-size: 11px; }
+  .mon-row .m-name .m-lvl,
+  .mon-row .m-debuffs { font-size: 9px; }
+  .buff-bar {
+    gap: 3px;
+    margin: 2px 4px;
+  }
+  .buff-chip {
+    padding: 2px 3px;
+    border-radius: 5px;
+  }
+  .buff-chip .b-ic { font-size: 15px; }
+  .buff-chip .b-t { font-size: 8px; }
+  .log {
+    height: 108px;
+    font-size: 10px;
+    padding: 5px 6px;
+  }
+  #side-panel {
+    padding: 7px 8px calc(7px + env(safe-area-inset-bottom, 0px));
+    border-radius: 12px 12px 0 0;
+  }
+  .tabs { gap: 4px; }
+  .tab {
+    min-width: 50px;
+    padding: 7px 5px;
+    font-size: 10px;
+    border-radius: 8px;
+  }
+  body.mobile-ui.mobile-panel-open .side-panel .tab-panel.active {
+    left: 6px;
+    right: 6px;
+    bottom: 58px;
+    max-height: 58vh;
+    padding: 10px;
+    border-radius: 12px;
+  }
+  .skill-btn {
+    min-width: 58px;
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+  .skill-btn .sk-name { font-size: 10px; }
+  .skill-btn .sk-cd,
+  .skill-btn .mp-cost { font-size: 9px; }
+  .equip-grid,
+  .tier-list,
+  .stat-list { grid-template-columns: 1fr; }
+  .slot { min-height: 52px; }
+  .inv-item,
+  .shop-item,
+  .skill-item,
+  .talent-item,
+  .dungeon-item,
+  .map-item,
+  .wb-item,
+  .daily-item {
+    font-size: 11px;
+  }
+  .inv-item {
+    align-items: flex-start;
+  }
+  .inv-item .btns {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .subzones {
+    gap: 4px;
+  }
+  .sub-btn {
+    min-width: 62px;
+    font-size: 10px;
+    padding: 4px 3px;
+  }
+  .modal-bg { padding: 10px; }
+  .modal {
+    padding: 14px;
+    border-radius: 12px;
+  }
+}
+
 .modal-bg {
   position: fixed; inset: 0; background: rgba(0,0,0,.8);
   display: none; align-items: center; justify-content: center;
