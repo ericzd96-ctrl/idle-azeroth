@@ -390,6 +390,33 @@ function updateDmgMeter() {
     const k = (typeof dmgStats !== 'undefined') ? (dmgStats.kills || 0) : 0;
     killsEl.textContent = String(k);
   }
+
+  // 技能伤害分解
+  const sdEl = $('dm-skills-breakdown');
+  if (sdEl) {
+    const hs = (typeof dmgStats !== 'undefined' && dmgStats.heroSkills) ? dmgStats.heroSkills : {};
+    const cs = (typeof dmgStats !== 'undefined' && dmgStats.compSkills) ? dmgStats.compSkills : {};
+    const allSkills = [];
+    for (const [name, dmg] of Object.entries(hs)) allSkills.push({ name, dmg, src: '🦸' });
+    for (const [name, dmg] of Object.entries(cs)) allSkills.push({ name, dmg, src: '🐾' });
+    allSkills.sort((a, b) => b.dmg - a.dmg);
+    const top = allSkills.slice(0, 5);
+    if (top.length > 0) {
+      sdEl.style.display = 'block';
+      const maxDmg = top[0].dmg;
+      sdEl.innerHTML = top.map(s => {
+        const pct = maxDmg > 0 ? Math.round(s.dmg / maxDmg * 100) : 0;
+        return `<div style="display:flex;align-items:center;gap:4px;font-size:10px;margin-bottom:2px">
+          <span style="width:14px;flex-shrink:0">${s.src}</span>
+          <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name}</span>
+          <span style="width:52px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums">${fmt(s.dmg)}</span>
+          <span style="width:36px;flex-shrink:0;background:var(--panel);height:6px;border-radius:3px;overflow:hidden"><i style="display:block;height:100%;width:${pct}%;background:linear-gradient(90deg,#6366f1,#a78bfa);border-radius:3px"></i></span>
+        </div>`;
+      }).join('');
+    } else {
+      sdEl.style.display = 'none';
+    }
+  }
 }
 
 function updateBattleVisuals() {
