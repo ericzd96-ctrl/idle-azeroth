@@ -14,6 +14,23 @@ let attrTips = {};
 let _tipPinned = false;
 let _tipPinnedOwner = null;
 
+function classSkillEntriesSorted(cls) {
+  const entries = Object.entries((cls && cls.skills) || {});
+  const order = new Map(entries.map(([key], idx) => [key, idx]));
+  return entries.sort((a, b) => {
+    const sa = a[1] || {}, sb = b[1] || {};
+    const la = Number.isFinite(sa.unlockLvl) ? sa.unlockLvl : 9999;
+    const lb = Number.isFinite(sb.unlockLvl) ? sb.unlockLvl : 9999;
+    if (la !== lb) return la - lb;
+    return (order.get(a[0]) || 0) - (order.get(b[0]) || 0);
+  });
+}
+
+function hpWithShieldText(hp, hpMax, shield) {
+  const base = `${fmt(Math.max(0, hp))}/${fmt(hpMax)}`;
+  return shield > 0 ? `${base} +${fmt(shield)}盾` : base;
+}
+
 function unpinTip() {
   _tipPinned = false;
   _tipPinnedOwner = null;
@@ -61,7 +78,7 @@ let _buffBarSig = '';        // 增益条内容签名,变化才重绘
 /* 当前职业的 buff 元信息(key→{icon,name,desc,dr}),从技能定义构建 */
 function buffMetaForClass() {
   const c = getCls(); const map = {};
-  if (c) for (const sk of Object.values(c.skills)) {
+  if (c) for (const [, sk] of classSkillEntriesSorted(c)) {
     if (sk.type === 'buff' && sk.buff) map[sk.buff] = { icon: sk.icon, name: sk.name, desc: sk.desc || '', dr: !!(typeof BUFF_FX==='object' && BUFF_FX[sk.buff] && BUFF_FX[sk.buff].dr) };
   }
   return map;
@@ -318,7 +335,7 @@ function renderMonList() {
     const row = wrap.querySelector(`[data-uid="${m._uid}"]`); if (!row) continue;
     const fill = row.querySelector('.bar > i'); const txt = row.querySelector('.bar > span');
     if (fill) fill.style.width = Math.max(0, m.hp / m.hpMax * 100) + '%';
-    if (txt) txt.textContent = `${fmt(Math.max(0, m.hp))}/${fmt(m.hpMax)}`;
+    if (txt) txt.textContent = hpWithShieldText(m.hp, m.hpMax, Math.max(0, m._arcaneShield || 0));
     const de = row.querySelector('.m-debuffs');
     if (de) {
       let s = '';
@@ -450,8 +467,9 @@ function updateBattleVisuals() {
   // XP / HP / 资源条
   setBar($('b-xp'), h.lvl >= MAX_LEVEL ? 100 : h.xp / xpNeeded(h.lvl) * 100,
     h.lvl >= MAX_LEVEL ? 'MAX' : `${fmt(h.xp)}/${fmt(xpNeeded(h.lvl))}`);
-  setBar($('b-hp'), state.hp/h.hpMax*100, `${fmt(state.hp)}/${fmt(h.hpMax)}`);
-  setBar($('b-hp2'), state.hp/h.hpMax*100, `${fmt(state.hp)}/${fmt(h.hpMax)}`);
+  const heroShield = Math.max(0, state?.talentState?.shield || 0);
+  setBar($('b-hp'), state.hp/h.hpMax*100, hpWithShieldText(state.hp, h.hpMax, heroShield));
+  setBar($('b-hp2'), state.hp/h.hpMax*100, hpWithShieldText(state.hp, h.hpMax, heroShield));
   setBar($('b-mp'), state.resource/state.resourceMax*100,
     `${c.resource} ${fmt(state.resource)}/${fmt(state.resourceMax)}`);
 
@@ -569,7 +587,7 @@ function updateBattleVisuals() {
     const sigBadge = tpl?.signature ? ` · <span style="color:#fcd34d">${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')}专属</span>` : '';
     const compIconHtml = (typeof entityIcon === 'function') ? entityIcon(tpl?.name, 18, tpl?.emoji || '🐾') : (tpl?.emoji || '🐾');
     $('comp-mini-name').innerHTML=`${compIconHtml} ${tpl?.name} · <span class="${q.cls||''}">${q.name}</span> ${'⭐'.repeat(comp.stars||1)}${sigBadge} · 攻${fmt(st.atk)} 防${fmt(st.def)}${statusTag}`;
-    setBar($('b-comp-hp'),Math.max(0,compHp)/st.hpMax*100,compDown?`倒下 ${reviveLeft}s`:`${fmt(Math.max(0,compHp))}/${fmt(st.hpMax)}`);
+    setBar($('b-comp-hp'),Math.max(0,compHp)/st.hpMax*100,compDown?`倒下 ${reviveLeft}s`:hpWithShieldText(compHp, st.hpMax, Math.max(0, state._compBarrier || 0)));
     // 随从技能 CD 展示:仅在随从/技能数变化时重建(避免每帧churn打断 title 悬浮),每帧只刷新剩余CD
     const csEl=$('comp-skills');
     if(csEl){
@@ -1025,7 +1043,7 @@ function renderSkills() {
   const c = getCls(); if (!c) return;
   const skl = $('skill-list');
   skl.innerHTML = `<div class="muted" style="margin-bottom:6px;font-size:11px">技能栏 <b style="color:var(--accent)">${state.selectedSkills.length}</b>/8 · 点「选用」放入,满 8 个会顶替最早的</div>`;
-  for (const [skKey, sk] of Object.entries(c.skills)) {
+  for (const [skKey, sk] of classSkillEntriesSorted(c)) {
     const unlocked = !!state.unlockedSkills[skKey];
     const isSel = state.selectedSkills.includes(skKey);
     const cdSec = getSkillCd(sk);
