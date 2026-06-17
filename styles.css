@@ -443,8 +443,8 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   body.mobile-ui .wow-node-desc { font-size: 10px; white-space: normal; }
   /* 属性来源表:移动端缩小 */
   body.mobile-ui .src-table { font-size: 9px; }
-  body.mobile-ui .src-table th, body.mobile-ui .src-table td { padding: 2px 4px; min-width: 36px; }
-  body.mobile-ui .src-table .src-name { min-width: 44px; font-size: 9px; }
+  body.mobile-ui .src-table th, body.mobile-ui .src-table td { padding: 2px 4px; min-width: 32px; }
+  body.mobile-ui .src-table .src-name { min-width: 38px; font-size: 9px; }
   body.mobile-ui .src-table th { font-size: 8px; }
   body.mobile-ui .sub-list {
     display: grid;
@@ -1007,12 +1007,13 @@ button.legend:hover:not(:disabled) {
 }
 
 /* ========== 属性来源明细表(成长指南) ========== */
+.tab-panel.active { min-width: 0; }
+#shop-list { min-width: 0; overflow: hidden; }
 .src-panel {
   margin-top: 12px;
   border-top: 1px solid var(--border);
   padding-top: 8px;
-  min-width: 0;
-  max-width: 100%;
+  width: 100%; min-width: 0; max-width: 100%;
   overflow: hidden;
 }
 .src-panel-title {
@@ -1029,12 +1030,12 @@ button.legend:hover:not(:disabled) {
   min-width: 100%;
   border-collapse: collapse;
   font-size: 11px;
-  table-layout: fixed;
+  table-layout: auto;
 }
 .src-table th, .src-table td {
   padding: 3px 7px; text-align: center; white-space: nowrap;
   border-bottom: 1px solid var(--border);
-  min-width: 58px;
+  min-width: 52px;
 }
 .src-table th {
   color: var(--muted); font-weight: bold; font-size: 10px;
@@ -1042,7 +1043,7 @@ button.legend:hover:not(:disabled) {
 }
 .src-table .src-name {
   text-align: left; font-weight: bold; color: var(--text);
-  min-width: 72px;
+  min-width: 56px;
   position: sticky;
   left: 0;
   background: var(--panel-2);
