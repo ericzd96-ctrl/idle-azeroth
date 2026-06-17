@@ -31,7 +31,7 @@ html, body {
 }
 .wrap {
   width: min(100%, 1240px); max-width: 1240px; margin: 0 auto; padding: 16px;
-  display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 12px;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr); gap: 12px;
 }
 header {
   grid-column: 1 / -1;
@@ -312,7 +312,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
 
 @media (max-width: 920px) {
   .wrap {
-    grid-template-columns: 1fr; min-width: 0;
+    grid-template-columns: minmax(0, 1fr); min-width: 0;
     gap: 10px;
     padding: 12px 12px 88px;
   }
