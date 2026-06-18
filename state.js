@@ -543,17 +543,43 @@ function setBar(el, pct, text) {
   }
 }
 
+let _lastLogTs = 0;
+let _lastFloatTs = 0;
+let _activeFloatCount = 0;
+
+function isMobilePerfMode() {
+  return typeof window !== 'undefined' && window.innerWidth <= 920;
+}
+
+function inHeavyCombatMode() {
+  const mode = state && state.mode;
+  return mode === 'boss' || mode === 'dungeon' || mode === 'mythic' || mode === 'worldboss' || mode === 'tower';
+}
+
+function isImportantLog(text) {
+  return /击败|掉落|通关|失败|升级|升到|世界BOSS|世界Boss|史诗团本|获得随从|通用券|进入 \[|挑战 |探索完成|重新投入战斗|倒下|已完成|周宝箱|专属传说/.test(text || '');
+}
+
 function log(text, cls) {
   const logEl = $('log');
   if (!logEl) return;
+  const now = Date.now();
+  if (isMobilePerfMode() && inHeavyCombatMode() && !isImportantLog(text)) {
+    const gap = 220;
+    if (now - _lastLogTs < gap) return;
+  }
+  _lastLogTs = now;
   const el = document.createElement('div');
   el.className = 'l-' + (cls || 'info');
-  const t = new Date();
+  const t = new Date(now);
   const ts = String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0')+':'+String(t.getSeconds()).padStart(2,'0');
   el.textContent = ts + ' ' + text;
   logEl.appendChild(el);
-  while (logEl.children.length > 120) logEl.firstChild.remove();
-  logEl.scrollTop = logEl.scrollHeight;
+  const maxLogs = isMobilePerfMode() ? 70 : 120;
+  while (logEl.children.length > maxLogs) logEl.firstChild.remove();
+  if (!isMobilePerfMode() || !inHeavyCombatMode() || logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 80) {
+    logEl.scrollTop = logEl.scrollHeight;
+  }
 }
 
 function pickRarity(maxRarity) {
@@ -568,6 +594,16 @@ function pickRarity(maxRarity) {
 function showFloat(targetEl, text, color) {
   const stage = $('stage');
   if (!stage || !targetEl) return;
+  if (typeof document !== 'undefined' && document.hidden) return;
+  const mobile = isMobilePerfMode();
+  const now = Date.now();
+  const important = /晕|眩|沉默|缴械|恐惧|冻结|净化|归来|倒下|闪避|必暴|护盾|盾|召来|召唤|升级|掉落/.test(text || '');
+  if (mobile) {
+    const gap = important ? 80 : 150;
+    if (!important && now - _lastFloatTs < gap) return;
+    if (!important && _activeFloatCount >= 6) return;
+  }
+  _lastFloatTs = now;
   const rect = targetEl.getBoundingClientRect();
   const sRect = stage.getBoundingClientRect();
   const el = document.createElement('div');
@@ -577,7 +613,11 @@ function showFloat(targetEl, text, color) {
   el.style.left = (rect.left - sRect.left + rect.width/2 - 10) + 'px';
   el.style.top = (rect.top - sRect.top) + 'px';
   stage.appendChild(el);
-  setTimeout(() => el.remove(), 1000);
+  _activeFloatCount++;
+  setTimeout(() => {
+    el.remove();
+    _activeFloatCount = Math.max(0, _activeFloatCount - 1);
+  }, mobile ? 650 : 1000);
 }
 
 function closeModal(id) { $(id).classList.remove('show'); }
