@@ -3690,6 +3690,38 @@ function insertRaidBossBeforeFinal(dg, boss){
     dg.bosses = dg.bosses.filter(Boolean);
   }
 }
+function dungeonBossWavesInvalid(dg){
+  const bosses = dg?.bosses || [];
+  if(!bosses.length) return false;
+  let prev = 0;
+  for(const boss of bosses){
+    if(!Number.isFinite(boss.wave) || boss.wave <= prev) return true;
+    prev = boss.wave;
+  }
+  return !Number.isFinite(dg.waves) || dg.waves < prev;
+}
+function assignDungeonBossWaves(dg){
+  const bosses = dg?.bosses || [];
+  if(!bosses.length) return;
+  const totalWaves = Math.max(Number.isFinite(dg.waves) ? dg.waves : 0, bosses.length + 2);
+  if(bosses.length === 1){
+    bosses[0].wave = totalWaves;
+    dg.waves = totalWaves;
+    return;
+  }
+  let prev = 1;
+  const spread = Math.max(1, totalWaves - 2);
+  bosses.forEach((boss, idx) => {
+    if(idx === bosses.length - 1){
+      boss.wave = totalWaves;
+      return;
+    }
+    const target = Math.max(2, Math.round(((idx + 1) * spread) / bosses.length));
+    boss.wave = Math.min(totalWaves - 1, Math.max(prev + 1, target));
+    prev = boss.wave;
+  });
+  dg.waves = Math.max(totalWaves, bosses[bosses.length - 1].wave);
+}
 function normalizeBossContent(){
   for(const map of MAPS){
     if(!map.boss) continue;
@@ -3717,6 +3749,7 @@ function normalizeBossContent(){
       dg.waves = Math.max(dg.bosses[dg.bosses.length - 1]?.wave || dg.bosses.length, dg.bosses.length + 2);
     } else {
       enhanceBossCollection(dg.bosses, { kind:'dungeon', lvl:dg.reqLvl, finalAt:(dg.bosses.length - 1) });
+      if(dungeonBossWavesInvalid(dg)) assignDungeonBossWaves(dg);
     }
   }
 }
