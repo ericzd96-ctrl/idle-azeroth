@@ -159,8 +159,7 @@ h1 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
-  height: 60px;            /* 固定高度, 图多可内部滚动不撑开布局 */
-  overflow-y: auto;
+  min-height: 60px;        /* 最小高度保底, 容器始终存在不消失, 内容自然撑开 */
   margin: 2px 14px;
 }
 .buff-side {
@@ -547,8 +546,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   .buff-bar {
     grid-template-columns: 1fr;
     gap: 4px;
-    height: 112px;         /* 移动端两栏叠加1行chip高度, 图多可内部滚动 */
-    overflow-y: auto;
+    min-height: 60px;      /* 最小高度保底, 两栏骨架始终存在, 内容自然撑开不截断 */
     margin: 2px 4px;
   }
   .buff-side { padding: 4px 5px; }
