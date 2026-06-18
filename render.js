@@ -180,9 +180,7 @@ function renderBuffBar() {
   }
   buffs.sort((a, b) => a.left - b.left);
   const enemyBuffs = focusBuffs(now).map(b => ({ kind: 'enemy-buff', icon: b.icon, name: '敌·' + b.name, base: '敌·' + (b.base || b.name), stacks: b.stacks || 0, desc: b.desc, left: b.left }));
-  // 焦点敌人减益
   const debuffs = focusDebuffs(now).map(d => ({ kind: 'debuff', icon: d.icon, name: '敌·' + d.name, desc: d.desc, left: d.left }));
-  // 英雄身上的减益(boss 等施加)
   const heroDe = [];
   if (typeof DEBUFF_FX === 'object' && state.heroDebuffs) {
     for (const k in state.heroDebuffs) {
@@ -198,29 +196,84 @@ function renderBuffBar() {
       heroDe.push({ kind: 'self-de', icon: fx.icon, name: '你·' + fx.name, desc, left: Math.ceil((d.expire - now) / 1000) });
     }
   }
-  // 英雄硬控状态(击晕等直接读 timer,沉默/缴械同理)
   if (state.heroStunUntil > now) heroDe.push({ kind:'self-de', icon:'💫', name:'你·眩晕', desc:'无法攻击与施法', left:Math.ceil((state.heroStunUntil-now)/1000) });
   if (state.heroSilenceUntil > now) heroDe.push({ kind:'self-de', icon:'🔇', name:'你·沉默', desc:'无法施放技能', left:Math.ceil((state.heroSilenceUntil-now)/1000) });
   if (state.heroDisarmUntil > now) heroDe.push({ kind:'self-de', icon:'⚔️❌', name:'你·缴械', desc:'无法普通攻击', left:Math.ceil((state.heroDisarmUntil-now)/1000) });
   const selfStates = buffs.concat(heroDe);
   const enemyStates = enemyBuffs.concat(debuffs);
-  // 结构签名(不含倒计时/层数):只在 buff/debuff 增删时重建 DOM, 避免每帧 innerHTML 导致闪烁/发热
+
+  // 结构签名(不含倒计时/层数):只在增删时 diff 更新 DOM, 零 innerHTML
   const structSig = selfStates.concat([{ kind:'split', name:'|' }], enemyStates).map(b => b.kind + (b.base || b.name || '')).join('|');
-  if (structSig !== _buffBarStruct) {
+
+  // 首次或结构变化较大 → 全量重建(用 innerHTML 一次性初始化)
+  if (!bar.children.length || structSig !== _buffBarStruct) {
     _buffBarStruct = structSig;
-    const renderGroup = (title, cls, items, emptyText) => {
-      const body = items.length ? items.map(b => {
-        const tip = `${b.name}${b.desc ? ' · ' + b.desc : ''}${b.left > 0 ? ' · 剩余' + b.left + '秒' : ''}`;
-        return `<div class="buff-chip ${b.kind}" data-tip="${tip.replace(/"/g, '&quot;')}"><div class="b-ic">${statusIconHtml(b.name?.replace(/^敌·|^你·/, ''), b.icon, 16)}</div><div class="b-t">${b.left > 0 ? b.left + 's' : '∞'}</div><div class="b-s">${b.stacks > 1 ? b.stacks + '层' : ''}</div></div>`;
-      }).join('') : `<div class="buff-empty">${emptyText}</div>`;
-      return `<div class="buff-side ${cls}"><div class="buff-side-title">${title}</div><div class="buff-side-list">${body}</div></div>`;
-    };
-    bar.innerHTML = renderGroup('你', 'self', selfStates, '暂无状态') + renderGroup('敌', 'enemy', enemyStates, '暂无状态');
+    // 确保两栏容器存在
+    if (!bar.querySelector('.buff-side.self')) {
+      bar.innerHTML = '<div class="buff-side self"><div class="buff-side-title">你</div><div class="buff-side-list"></div></div><div class="buff-side enemy"><div class="buff-side-title">敌</div><div class="buff-side-list"></div></div>';
+    }
+    // 差分更新每个 side 的 chips
+    diffBuffSide(bar.querySelector('.buff-side.self .buff-side-list'), selfStates, '暂无状态');
+    diffBuffSide(bar.querySelector('.buff-side.enemy .buff-side-list'), enemyStates, '暂无状态');
   }
-  // 每帧就地更新倒计时 + 层数文本(不碰 DOM 结构, 消除闪烁)
+
+  // 每帧就地更新倒计时 + 层数文本(不碰 DOM 结构)
+  updateBuffChipTexts(bar, selfStates.concat(enemyStates));
+}
+
+/* 差分更新一个 buff-side-list: 按 key 增删 chip, 不重建已有 chip */
+function diffBuffSide(listEl, items, emptyText) {
+  const existing = new Map();
+  listEl.querySelectorAll('.buff-chip').forEach(chip => { existing.set(chip.dataset.key, chip); });
+  const desiredKeys = new Set();
+  const fragment = document.createDocumentFragment();
+
+  for (const b of items) {
+    const key = b.kind + '|' + (b.base || b.name || '');
+    desiredKeys.add(key);
+    let chip = existing.get(key);
+    if (chip) {
+      // 已有 chip 保留(移到 fragment 保持顺序)
+      fragment.appendChild(chip);
+      existing.delete(key);
+    } else {
+      // 新建 chip
+      chip = document.createElement('div');
+      chip.className = 'buff-chip ' + b.kind;
+      chip.dataset.key = key;
+      const tip = `${b.name}${b.desc ? ' · ' + b.desc : ''}${b.left > 0 ? ' · 剩余' + b.left + '秒' : ''}`;
+      chip.dataset.tip = tip.replace(/"/g, '&quot;');
+      const icDiv = document.createElement('div'); icDiv.className = 'b-ic';
+      icDiv.innerHTML = statusIconHtml(b.name?.replace(/^敌·|^你·/, ''), b.icon, 16);
+      chip.appendChild(icDiv);
+      const tDiv = document.createElement('div'); tDiv.className = 'b-t';
+      tDiv.textContent = b.left > 0 ? b.left + 's' : '∞';
+      chip.appendChild(tDiv);
+      const sDiv = document.createElement('div'); sDiv.className = 'b-s';
+      sDiv.textContent = b.stacks > 1 ? b.stacks + '层' : '';
+      chip.appendChild(sDiv);
+      fragment.appendChild(chip);
+    }
+  }
+  // 移除不再需要的 chip
+  existing.forEach(chip => chip.remove());
+  // 插入排序后的 chip
+  listEl.appendChild(fragment);
+
+  // 空状态文本
+  let emptyEl = listEl.querySelector('.buff-empty');
+  if (items.length === 0) {
+    if (!emptyEl) { emptyEl = document.createElement('div'); emptyEl.className = 'buff-empty'; listEl.appendChild(emptyEl); }
+    emptyEl.textContent = emptyText;
+  } else if (emptyEl) {
+    emptyEl.remove();
+  }
+}
+
+/* 每帧增量更新: 倒计时 + 层数 + tooltip */
+function updateBuffChipTexts(bar, allItems) {
   const allT = bar.querySelectorAll('.buff-chip .b-t');
   const allS = bar.querySelectorAll('.buff-chip .b-s');
-  const allItems = selfStates.concat(enemyStates);
   for (let i = 0; i < Math.min(allT.length, allItems.length); i++) {
     const txt = allItems[i].left > 0 ? allItems[i].left + 's' : '∞';
     if (allT[i].textContent !== txt) allT[i].textContent = txt;
@@ -228,6 +281,13 @@ function renderBuffBar() {
   for (let i = 0; i < Math.min(allS.length, allItems.length); i++) {
     const stxt = allItems[i].stacks > 1 ? allItems[i].stacks + '层' : '';
     if (allS[i].textContent !== stxt) allS[i].textContent = stxt;
+  }
+  // 同步更新 data-tip(只在内容变化时)
+  const chips = bar.querySelectorAll('.buff-chip');
+  for (let i = 0; i < Math.min(chips.length, allItems.length); i++) {
+    const b = allItems[i];
+    const tip = `${b.name}${b.desc ? ' · ' + b.desc : ''}${b.left > 0 ? ' · 剩余' + b.left + '秒' : ''}`.replace(/"/g, '&quot;');
+    if (chips[i].dataset.tip !== tip) chips[i].dataset.tip = tip;
   }
 }
 function effectTags(s) {

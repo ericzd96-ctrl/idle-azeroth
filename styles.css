@@ -154,7 +154,7 @@ h1 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
-  min-height: 24px;
+  min-height: 52px;       /* 固定最小高度, 防止出现/消失导致布局上移 */
   margin: 2px 14px;
 }
 .buff-side {
