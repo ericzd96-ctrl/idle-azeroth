@@ -137,6 +137,12 @@ function loop() {
 
 /* ---------- 事件代理:右侧 tab 各面板 ---------- */
 function setupDelegation() {
+  document.addEventListener('click', e => {
+    if (e.target.closest('[data-tip-close]') && typeof unpinTip === 'function') {
+      unpinTip();
+    }
+  });
+
   // 装备格:点击打开详情
   $('equip-grid').addEventListener('click', e => {
     if (e.target.closest('button')) return;

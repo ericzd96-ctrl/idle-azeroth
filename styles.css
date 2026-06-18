@@ -575,19 +575,40 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   body.mobile-ui .compare-tip.mobile-tip {
     left: 8px !important;
     right: 8px;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    top: auto !important;
     width: auto;
     max-width: none;
-    max-height: min(72vh, 520px);
-    padding: 10px 10px 12px;
+    min-height: min(34vh, 260px);
+    max-height: min(56vh, 520px);
+    padding: 8px 10px 12px;
     pointer-events: auto;
+    border-radius: 14px 14px 10px 10px;
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+    box-shadow: 0 -8px 28px rgba(0,0,0,.5);
+  }
+  body.mobile-ui .compare-tip.mobile-tip .compare-tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: -2px 0 8px;
+    position: sticky;
+    top: -8px;
+    z-index: 1;
+    padding: 4px 0 6px;
+    background: linear-gradient(180deg, rgba(19,23,38,.98) 0%, rgba(19,23,38,.94) 70%, rgba(19,23,38,0) 100%);
   }
   body.mobile-ui .compare-tip.mobile-tip .compare-head,
   body.mobile-ui .compare-tip.mobile-tip .compare-body {
     word-break: break-word;
+  }
+  body.mobile-ui .compare-tip.mobile-tip .compare-head {
+    margin-bottom: 8px;
+    padding-bottom: 8px;
   }
   body.mobile-ui .wow-tree { overflow: hidden; }
   body.mobile-ui .wow-tree-head { gap: 6px; }
@@ -997,6 +1018,21 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   border-radius: 10px; padding: 10px 12px; font-size: 12px;
   min-width: 200px; max-width: 280px;
   box-shadow: 0 4px 20px rgba(0,0,0,.6);
+}
+.compare-tools { display: none; }
+.compare-grab {
+  width: 42px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(148,163,184,.45);
+}
+.compare-close {
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 11px;
 }
 .compare-head { margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px dashed var(--border); }
 .compare-head .name { font-weight: bold; }

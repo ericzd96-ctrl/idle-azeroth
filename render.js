@@ -35,7 +35,12 @@ function unpinTip() {
   _tipPinned = false;
   _tipPinnedOwner = null;
   const tip = document.getElementById('compare-tip');
-  if (tip) tip.style.display = 'none';
+  if (tip) {
+    tip.style.display = 'none';
+    tip.classList.remove('mobile-tip');
+    tip.style.bottom = '';
+    delete tip.dataset.mobileOpened;
+  }
 }
 
 function addTouchPin(el, showFn) {
@@ -1173,13 +1178,18 @@ function positionTip(tip, e) {
   const mobile = typeof isMobileLayout === 'function' ? isMobileLayout() : (typeof window !== 'undefined' && window.innerWidth <= 768);
   if (mobile) {
     tip.classList.add('mobile-tip');
-    const safeTop = 10;
-    const maxTop = Math.max(safeTop, Math.floor(window.innerHeight * 0.14));
     tip.style.left = '8px';
-    tip.style.top = maxTop + 'px';
+    tip.style.top = 'auto';
+    tip.style.bottom = `calc(8px + env(safe-area-inset-bottom, 0px))`;
+    if (!tip.dataset.mobileOpened) {
+      tip.scrollTop = 0;
+      tip.dataset.mobileOpened = '1';
+    }
     return;
   }
   tip.classList.remove('mobile-tip');
+  tip.style.bottom = '';
+  delete tip.dataset.mobileOpened;
   let x = e.clientX + 16;
   let y = e.clientY - 10;
   const tipW = tip.offsetWidth || 290;
