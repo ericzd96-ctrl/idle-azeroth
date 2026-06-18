@@ -357,7 +357,7 @@ function showLevelUp() {
 
 /* ---------- 大秘境 ---------- */
 function getLv80Dungeons() {
-  return DUNGEONS.filter(d => d.reqLvl >= 80 && d.type !== 'raid' && !d.epicRaid);
+  return DUNGEONS.filter(d => d.reqLvl >= 80 && !d.epicRaid);
 }
 
 /* 大秘境专属传说装备(仅层数奖励获得) */
