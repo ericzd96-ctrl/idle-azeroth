@@ -159,7 +159,8 @@ h1 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
-  min-height: 52px;       /* 固定最小高度, 防止出现/消失导致布局上移 */
+  height: 52px;            /* 固定高度写死, 图标增减不影响页面布局 */
+  overflow: hidden;
   margin: 2px 14px;
 }
 .buff-side {
@@ -546,6 +547,8 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   .buff-bar {
     grid-template-columns: 1fr;
     gap: 4px;
+    height: 92px;          /* 移动端两栏叠加, 固定高度防止图标增减导致界面跳动 */
+    overflow: hidden;
     margin: 2px 4px;
   }
   .buff-side { padding: 4px 5px; }
