@@ -1357,6 +1357,9 @@ function overLevelPenalty(mon){
 }
 function spawnMonster(){
   initCompanionHp();state.currentMonsters=[];
+  // 新战斗清除护盾(随从/天赋)
+  state._compBarrier = 0;
+  if (state.talentState) state.talentState.shield = 0;
   if(state.mode==='travel')return;
   if(state.mode==='dungeon'||state.mode==='mythic')return spawnDungeonMonster();
   if(state.mode==='tower')return spawnTowerMonster();
