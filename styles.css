@@ -464,6 +464,33 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   body.mobile-ui .footer-actions {
     flex-wrap: wrap;
   }
+  body.mobile-ui .buff-bar {
+    height: 76px;
+    min-height: 76px;
+    max-height: 76px;
+    overflow: hidden;
+    align-items: stretch;
+  }
+  body.mobile-ui .buff-side {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+  body.mobile-ui .buff-side-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  body.mobile-ui .buff-side-list::-webkit-scrollbar { display: none; }
+  body.mobile-ui .buff-chip { flex: 0 0 auto; }
 }
 
 @media (max-width: 480px) {
@@ -544,12 +571,17 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   .mon-row .m-name .m-lvl,
   .mon-row .m-debuffs { font-size: 9px; }
   .buff-bar {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 4px;
-    min-height: 60px;      /* 最小高度保底, 两栏骨架始终存在, 内容自然撑开不截断 */
+    height: 70px;
+    min-height: 70px;
+    max-height: 70px;
     margin: 2px 4px;
   }
-  .buff-side { padding: 4px 5px; }
+  .buff-side {
+    padding: 4px 5px;
+    min-width: 0;
+  }
   .buff-side-title { font-size: 9px; margin-bottom: 3px; }
   .buff-chip {
     padding: 2px 3px;
