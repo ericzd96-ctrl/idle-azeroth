@@ -546,6 +546,7 @@ function setBar(el, pct, text) {
 let _lastLogTs = 0;
 let _lastFloatTs = 0;
 let _activeFloatCount = 0;
+let _impactSeq = 0;
 
 function isMobilePerfMode() {
   return typeof window !== 'undefined' && window.innerWidth <= 920;
@@ -558,6 +559,33 @@ function inHeavyCombatMode() {
 
 function isImportantLog(text) {
   return /击败|掉落|通关|失败|升级|升到|世界BOSS|世界Boss|史诗团本|获得随从|通用券|进入 \[|挑战 |探索完成|重新投入战斗|倒下|已完成|周宝箱|专属传说/.test(text || '');
+}
+
+function inferFloatVariant(text, opts) {
+  if (opts?.variant) return opts.variant;
+  const s = String(text || '');
+  if (/闪避|格挡|免疫/.test(s)) return 'avoid';
+  if (/眩晕|沉默|缴械|恐惧|冻结|残废|破甲|易伤|审判|破绽|净化|击晕|减速/.test(s)) return 'status';
+  if (/护盾|🛡️|🔮盾|盾/.test(s)) return /-/.test(s) ? 'shield-break' : 'shield';
+  if (/^\+/.test(s) || /💚|\+.*生命|治疗|回血|回响治疗/.test(s)) return 'heal';
+  if (/必暴|暴击|斩杀|重创/.test(s)) return 'crit';
+  if (/☠️|流血|中毒|灼烧|dot|DOT/i.test(s)) return 'dot';
+  if (/💀|释放了|高危|危险/.test(s)) return 'boss';
+  if (/✨|专属技|随从/.test(s)) return 'comp';
+  return 'hit';
+}
+
+function pulseCombatEl(targetEl, kind, duration) {
+  if (!targetEl) return;
+  const cls = `impact-${kind || 'hit'}`;
+  const token = `impact-${++_impactSeq}`;
+  targetEl.dataset.lastImpact = token;
+  targetEl.classList.remove('impact-hit','impact-crit','impact-heal','impact-shield','impact-danger','impact-bosscast','impact-comp');
+  void targetEl.offsetWidth;
+  targetEl.classList.add(cls);
+  setTimeout(() => {
+    if (targetEl.dataset.lastImpact === token) targetEl.classList.remove(cls);
+  }, duration || 280);
 }
 
 function log(text, cls) {
@@ -591,7 +619,7 @@ function pickRarity(maxRarity) {
   return RARITY[0];
 }
 
-function showFloat(targetEl, text, color) {
+function showFloat(targetEl, text, color, opts) {
   const stage = $('stage');
   if (!stage || !targetEl) return;
   if (typeof document !== 'undefined' && document.hidden) return;
@@ -607,17 +635,24 @@ function showFloat(targetEl, text, color) {
   const rect = targetEl.getBoundingClientRect();
   const sRect = stage.getBoundingClientRect();
   const el = document.createElement('div');
-  el.className = 'float-dmg';
+  const variant = inferFloatVariant(text, opts);
+  el.className = `float-dmg ${variant}`;
   el.style.color = color;
   el.textContent = text;
-  el.style.left = (rect.left - sRect.left + rect.width/2 - 10) + 'px';
-  el.style.top = (rect.top - sRect.top) + 'px';
+  const xOffset = opts?.x || 0;
+  const yOffset = opts?.y || 0;
+  el.style.left = (rect.left - sRect.left + rect.width/2 - 10 + xOffset) + 'px';
+  el.style.top = (rect.top - sRect.top + yOffset) + 'px';
+  if (opts?.scale) el.style.setProperty('--float-scale', String(opts.scale));
+  if (opts?.dx) el.style.setProperty('--float-dx', opts.dx + 'px');
+  if (opts?.dy) el.style.setProperty('--float-dy', opts.dy + 'px');
+  if (opts?.duration) el.style.setProperty('--float-duration', opts.duration + 'ms');
   stage.appendChild(el);
   _activeFloatCount++;
   setTimeout(() => {
     el.remove();
     _activeFloatCount = Math.max(0, _activeFloatCount - 1);
-  }, mobile ? 650 : 1000);
+  }, opts?.duration || (mobile ? 650 : 1000));
 }
 
 function closeModal(id) { $(id).classList.remove('show'); }
