@@ -1883,9 +1883,21 @@ function renderCompanion() {
   let html = '';
 
   // ---- 收藏 / 羁绊概览 ----
+  if(!state.compUniversalShards) state.compUniversalShards = {white:0,green:0,blue:0,purple:0,orange:0};
+  const univ = state.compUniversalShards;
+  const qLabel = {white:'白',green:'绿',blue:'蓝',purple:'紫',orange:'橙'};
+  const uniStr = ['white','green','blue','purple','orange'].map(k => univ[k] ? `${qLabel[k]}通用×${univ[k]}` : '').filter(Boolean).join(' ');
   html += `<div class="ascend-box">
     <div style="font-weight:bold">🐾 随从收藏 <span class="muted" style="font-size:11px">${owned}/${COMPANIONS.length}</span></div>
-    <div class="muted" style="font-size:10px;margin-top:2px">收藏被动: 每随从 +0.05%攻击 / +0.08%生命 (当前 +${Math.min(owned*0.05,1.2).toFixed(2)}% / +${Math.min(owned*0.08,1.8).toFixed(2)}%)</div>`;
+    <div class="muted" style="font-size:10px;margin-top:2px">收藏被动: 每随从 +0.05%攻击 / +0.08%生命 (当前 +${Math.min(owned*0.05,1.2).toFixed(2)}% / +${Math.min(owned*0.08,1.8).toFixed(2)}%)</div>
+    ${uniStr ? `<div class="muted" style="font-size:10px;margin-top:2px;color:#fbbf24">🔧 通用碎片: ${uniStr}</div>` : ''}`;
+  // 已满星品质提示
+  const ownedM = {}; for(const c of state.companions) ownedM[c.key] = c;
+  const fullQ = ['white','green','blue','purple','orange'].filter(qk => {
+    const ofQ = COMPANIONS.filter(t => compQuality(t).key === qk);
+    return ofQ.length && ofQ.every(t => { const c = ownedM[t.key]; return c && (c.stars||1) >= 5; });
+  });
+  if(fullQ.length) html += `<div class="muted" style="font-size:10px;margin-top:2px;color:var(--accent)">✅ 已满星品质: ${fullQ.map(k=>qLabel[k]).join(' ')} (不再抽到)</div>`;
   if (typeof COMPANION_BONDS!=='undefined' && COMPANION_BONDS.length) {
     html += `<div class="detail-label" style="margin-top:6px">⚜️ 羁绊</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:2px">`;
     for (const b of COMPANION_BONDS) {
@@ -1936,7 +1948,7 @@ function renderCompanion() {
       ${tpl.signature?`<div class="muted" style="font-size:10px;color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')} ${tpl.signature.name}${tpl.signature.mode==='passive'?' [被动]':''}</div>`:''}
       <div class="comp-skills">${compSkillChips(tpl)}</div>
       <div class="row">
-        <span class="muted" style="font-size:10px">碎片 ${cost.have}${cost.maxed?'':' / 升星需'+cost.need}</span>
+        <span class="muted" style="font-size:10px">可用碎片 ${cost.have}${cost.maxed?'':' / 升星需'+cost.need}${(state.compUniversalShards[q.key]||0)>0?' (含通用×'+state.compUniversalShards[q.key]+')':''}</span>
         <div style="display:flex;gap:3px">
           <button class="primary" data-action="usecomp" data-idx="${i}">出战</button>
           <button class="gold" data-action="upgradecomp" data-idx="${i}" ${canUp?'':'disabled'}>${cost.maxed?'满星 ⭐5':'升星 '+(c.stars||1)+'/5'}</button>

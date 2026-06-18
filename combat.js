@@ -3279,17 +3279,32 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
   }}
 function companionDraw(){
   if((state.compTickets||0)<1)return log('🐾随从券不足,去商店购买','bad');
-  state.compTickets-=1;
-  // 按"该随从所属品质权重"加权随机抽一个随从(品质=随从固定属性)
-  let total=0;const w=COMPANIONS.map(c=>{const x=compQuality(c).weight;total+=x;return x;});
-  let r=Math.random()*total;let tpl=COMPANIONS[0];
-  for(let i=0;i<COMPANIONS.length;i++){r-=w[i];if(r<=0){tpl=COMPANIONS[i];break;}}
+  // 初始化通用碎片
+  if(!state.compUniversalShards) state.compUniversalShards = {white:0,green:0,blue:0,purple:0,orange:0};
+  const univ = state.compUniversalShards;
+  // 过滤奖池: 某品质全部拥有且满星 → 排除
+  const qualityKeys = ['white','green','blue','purple','orange'];
+  const ownedMap = {}; for(const c of state.companions) ownedMap[c.key] = c;
+  const fullQuality = new Set();
+  for(const qk of qualityKeys){
+    const ofQ = COMPANIONS.filter(t => compQuality(t).key === qk);
+    if(ofQ.length && ofQ.every(t => { const c = ownedMap[t.key]; return c && (c.stars||1) >= 5; })){
+      fullQuality.add(qk);
+    }
+  }
+  const pool = COMPANIONS.filter(t => !fullQuality.has(compQuality(t).key));
+  if(!pool.length) return log('🎰 所有品质随从均已满星!','good');
+  // 加权随机
+  let total=0;const w=pool.map(c=>{const x=compQuality(c).weight;total+=x;return x;});
+  let r=Math.random()*total;let tpl=pool[0];
+  for(let i=0;i<pool.length;i++){r-=w[i];if(r<=0){tpl=pool[i];break;}}
   const q=compQuality(tpl);
   const existing=state.companions.find(c=>c.key===tpl.key);
   if(existing){
+    // 重复 → 获得该品质通用碎片
     const shards=({white:1,green:2,blue:3,purple:5,orange:8})[q.key]||1;
-    state.companionShards[tpl.key]=(state.companionShards[tpl.key]||0)+shards;
-    log(`🎰 抽到重复! ${tpl.emoji}${tpl.name}(${q.name})→+${shards}碎片`,'info');
+    univ[q.key] = (univ[q.key]||0) + shards;
+    log(`🎰 抽到重复! ${tpl.emoji}${tpl.name}(${q.name})→+${shards}${q.name}通用碎片 (共${univ[q.key]})`,'info');
   }else{
     state.companions.push({key:tpl.key,stars:1});
     log(`🎰 获得随从! ${tpl.emoji}${tpl.name}【${q.name}】`,(q.key==='orange'||q.key==='purple')?'legend':'good');
@@ -3301,14 +3316,28 @@ function upgradeCompanion(idx){
   const comp=state.companions[idx];if(!comp)return;
   const tpl=COMPANIONS.find(c=>c.key===comp.key);
   if((comp.stars||1)>=5)return log('已满星','bad');
-  const need=(comp.stars||1)*8;const have=state.companionShards[comp.key]||0;
+  const need=(comp.stars||1)*8;
+  const q = compQuality(tpl);
+  // 优先用该随从专属碎片, 不足时用通用碎片
+  if(!state.compUniversalShards) state.compUniversalShards = {white:0,green:0,blue:0,purple:0,orange:0};
+  const have = (state.companionShards[comp.key]||0) + (state.compUniversalShards[q.key]||0);
   if(have<need)return log(`碎片不足(${have}/${need})`,'bad');
-  state.companionShards[comp.key]-=need;comp.stars=(comp.stars||1)+1;
+  // 先扣专属碎片, 再扣通用
+  let remaining = need;
+  const specific = state.companionShards[comp.key]||0;
+  const deductSpecific = Math.min(specific, remaining);
+  state.companionShards[comp.key] = specific - deductSpecific;
+  remaining -= deductSpecific;
+  if(remaining > 0) state.compUniversalShards[q.key] -= remaining;
+  comp.stars=(comp.stars||1)+1;
   log(`⭐ ${tpl?.name} 升到 ${comp.stars} 星!`,'good');
   recomputeStats();markDirty('companion','hero');
 }
 function getUpgradeCost(comp){
   const stars=comp.stars||1;
-  if(stars>=5)return {type:'满星',need:0,have:state.companionShards[comp.key]||0,maxed:true};
-  return {type:'升星',need:stars*8,have:state.companionShards[comp.key]||0,maxed:false};
+  if(stars>=5)return {type:'满星',need:0,have:0,maxed:true};
+  const tpl = COMPANIONS.find(c=>c.key===comp.key);
+  const q = compQuality(tpl);
+  if(!state.compUniversalShards) state.compUniversalShards = {white:0,green:0,blue:0,purple:0,orange:0};
+  return {type:'升星',need:stars*8,have:(state.companionShards[comp.key]||0)+(state.compUniversalShards[q.key]||0),maxed:false};
 }
