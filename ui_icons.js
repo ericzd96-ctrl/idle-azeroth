@@ -455,6 +455,42 @@
     ,'生命通道':'spell_shadow_lifedrain'
     ,'奥术充能':'spell_arcane_blast'
     ,'雷霆充能':'spell_nature_lightningoverload'
+    ,'锋刃狂舞':'ability_rogue_slicedice'
+    ,'精神鞭笞':'spell_shadow_siphonmana'
+    ,'心智震爆':'spell_shadow_unholyfrenzy'
+    ,'幽灵步':'ability_rogue_shadowstep'
+    ,'烟雾弹':'ability_rogue_feigndeath'
+    ,'岩浆爆发':'spell_shaman_lavaburst'
+    ,'群星压顶':'spell_nature_starfall'
+    ,'魔藤乱舞':'spell_nature_stranglevines'
+    ,'野猪之魂':'ability_hunter_pet_boar'
+    ,'乌鸦形态':'ability_hunter_pet_vulture'
+    ,'沙暴':'spell_nature_cyclone'
+    ,'极性转换':'spell_arcane_blink'
+    ,'太阳耀斑':'spell_fire_burnout'
+    ,'湮灭光束':'spell_arcane_arcane01'
+    ,'无面者之怒':'spell_shadow_charm'
+    ,'奈法利安之怒':'ability_warrior_deathwish'
+    ,'索瑞森之怒':'ability_warrior_deathwish'
+    ,'兽王之怒':'ability_warrior_deathwish'
+    ,'盘牙之怒':'ability_warrior_deathwish'
+    ,'摩摩尔之怒':'ability_warrior_deathwish'
+    ,'鳄鱼之怒':'ability_warrior_deathwish'
+    ,'熊之怒':'ability_warrior_deathwish'
+    ,'祖尔法拉克之怒':'ability_warrior_deathwish'
+    ,'埃辛诺斯之刃':'ability_dualwield'
+    ,'暗杀':'ability_rogue_eviscerate'
+    ,'拆解':'ability_warrior_disarm'
+    ,'伐木机撞击':'ability_warrior_charge'
+    ,'负能量':'spell_shadow_shadowwordpain'
+    ,'冠军之击':'ability_warrior_decisivestrike'
+    ,'洛卡纳哈之灵':'spell_shadow_possession'
+    ,'欺诈者之触':'spell_shadow_possession'
+    ,'萨隆重压':'ability_warrior_savageblow'
+    ,'熵':'spell_shadow_shadowwordpain'
+    ,'碎裂':'spell_frost_frostblast'
+    ,'邪能碾压':'spell_shadow_summonfelhunter'
+    ,'沼泽陷阱':'spell_nature_stranglevines'
   };
 
   const SKILL_PATTERNS = [
@@ -462,31 +498,47 @@
     [/冰|霜|寒|雪|冻/i, 'spell_frost_frostbolt02'],
     [/奥术|法能|法力|虚空|星界|秘法/i, 'spell_arcane_blast'],
     [/暗影|灵魂|痛苦|死亡|恐惧|凋零|瘟疫|诅咒|黑暗/i, 'spell_shadow_shadowwordpain'],
+    [/潮|汐|海|水流|暗潮/i, 'spell_frost_summonwaterelemental'],
     [/雷|电|风暴|闪电|风怒/i, 'spell_nature_lightning'],
     [/治疗|回春|圣疗|恢复|生命|治愈|宁静|赐福/i, 'spell_nature_healingtouch'],
     [/盾|护壁|屏障|庇护|守护|护体/i, 'spell_holy_powerwordshield'],
     [/审判|圣印|神圣|圣光/i, 'spell_holy_holybolt'],
     [/背刺|影袭|伏击|割裂|毒刃|切割|猎杀/i, 'ability_rogue_ambush'],
+    [/撕咬|之咬|吞噬|撕裂|掠夺/i, 'ability_druid_ferociousbite'],
     [/斩|打击|横扫|劈|冲锋|践踏|碎骨|重殴|猛击/i, 'ability_warrior_savageblow'],
     [/箭|射击|猎|瞄准|钉刺/i, 'ability_hunter_focusedaim'],
     [/根须|树皮|自然|藤蔓|孢子|古树/i, 'spell_nature_starfall'],
+    [/荆棘/i, 'spell_nature_thorns'],
     [/龙|吐息/i, 'inv_misc_head_dragon_01'],
-    [/毒|蛇|蝎|蛛|瘴|腐蚀/i, 'ability_creature_poison_05'],
+    [/毒|蛇|蝎|蛛|瘴|腐蚀|腐化|腐烂|污染|疾病/i, 'ability_creature_poison_05'],
     [/血|吸血|鲜血|流血/i, 'spell_shadow_lifedrain02'],
-    [/吼|号令|鼓舞/i, 'ability_warrior_battleshout'],
+    [/吼|咆哮|嚎叫|号令|鼓舞/i, 'ability_warrior_battleshout'],
     [/护甲|铁壁|石肤|硬皮|壁垒|防御/i, 'ability_warrior_defensivestance'],
     [/愈合|自愈|回复|绽放/i, 'spell_holy_heal'],
     [/召唤|援军|同伴|守卫|亡者再起/i, 'spell_shadow_summonvoidwalker'],
     [/时间|扭曲|疾风|迅捷|冲动|急速/i, 'ability_rogue_sprint'],
     [/沉默|禁锢/i, 'spell_shadow_impphaseshift'],
     [/缴械|断筋|残废/i, 'ability_warrior_disarm'],
-    [/爆裂|爆炸|易爆|自爆/i, 'spell_fire_selfdestruct'],
+    [/爆裂|爆炸|易爆|自爆|炸弹|炮击|轰击|地精工程/i, 'spell_fire_selfdestruct'],
     [/观察|洞察|专注|标记|审视/i, 'ability_hunter_mastermarksman'],
     [/亡灵|白骨|巫妖|尸|复苏/i, 'spell_shadow_raisedead'],
+    [/之影|影子/i, 'spell_shadow_charm'],
     [/元素|涌现/i, 'spell_shaman_improvedstormstrike'],
+    [/过载|过充|充能/i, 'spell_nature_lightningoverload'],
+    [/共鸣|音爆|回响/i, 'spell_arcane_blast'],
     [/王者|王城|战歌|军势|号角|号令|意志|决意|威仪|降临|君临/i, 'ability_warrior_battleshout'],
     [/纳鲁|圣约|祷言|回响|回溯|微光|急救|酒泉|坚忍|母亲之赐/i, 'spell_holy_heal'],
     [/梦境|滋养|丰饶|林地|苏醒|艾露恩/i, 'spell_nature_starfall'],
+    [/梦魇|凝视|视线|古神低语|腹鸣|眼棱|眼|触须|千喉/i, 'spell_shadow_charm'],
+    [/暮光|深渊|军团|恶魔/i, 'spell_shadow_summonfelhunter'],
+    [/重力|引力|迁跃/i, 'spell_arcane_portalshattrath'],
+    [/石化|岩石|碎石|地陷|裂变|地裂|大地/i, 'spell_nature_earthquake'],
+    [/之锤|长矛|脊骨|勾链/i, 'ability_warrior_decisivestrike'],
+    [/之握|缚杀/i, 'spell_shadow_grimward'],
+    [/扫尾|尾扫|尾击/i, 'ability_druid_swipe'],
+    [/突变/i, 'ability_creature_disease_02'],
+    [/疯狂/i, 'spell_shadow_charm'],
+    [/处刑|处决|裁决|审讯|敕令|律令/i, 'ability_warrior_decisivestrike'],
     [/尖啸|海妖|诡计|背叛者|洛阿/i, 'spell_shadow_possession'],
     [/余烬|灰烬|凤凰|萨弗拉斯|熔岩/i, 'spell_fire_volcano']
   ];
