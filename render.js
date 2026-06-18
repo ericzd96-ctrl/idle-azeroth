@@ -1747,7 +1747,9 @@ function renderCompanion() {
 let dgFilter = 'all'; // 'all' | '5man' | 'raid'
 function renderDungeon() {
   const dl = $('dungeon-list');
-  dl.innerHTML = '';
+  const epicDl = $('epic-dungeon-list');
+  if (dl) dl.innerHTML = '';
+  if (epicDl) epicDl.innerHTML = '';
   // 更新按钮状态
   const btn5 = $('btn-dg-5man'), btnR = $('btn-dg-raid');
   if (btn5) { btn5.classList.toggle('active', dgFilter === 'all' || dgFilter === '5man'); }
@@ -1760,12 +1762,16 @@ function renderDungeon() {
     const aDist = hl >= a.reqLvl ? hl - a.reqLvl : (a.reqLvl - hl) * 2;
     const bDist = hl >= b.reqLvl ? hl - b.reqLvl : (b.reqLvl - hl) * 2;
     return aDist - bDist;
-  }).filter(dg => {
+  });
+  const normalDungeons = sortedDungeons.filter(dg => {
+    if (dg.epicRaid) return false;
     if (dgFilter === '5man') return dg.type !== 'raid';
     if (dgFilter === 'raid') return dg.type === 'raid';
     return true;
   });
-  for (const dg of sortedDungeons) {
+  const epicDungeons = sortedDungeons.filter(dg => !!dg.epicRaid);
+  const renderDungeonCard = (dg, target) => {
+    if (!target) return;
     const cdEnd = state.dungeonCd[dg.key] || 0;
     const cdLeft = Math.max(0, Math.ceil((cdEnd - Date.now()) / 1000));
     const onCd = cdLeft > 0;
@@ -1838,7 +1844,15 @@ function renderDungeon() {
     div.addEventListener('mouseleave', () => { if (!_tipPinned) $('compare-tip').style.display = 'none'; });
     div.addEventListener('mousemove', e => positionTip($('compare-tip'), e));
     addTouchPin(div, showDungeonLoot);
-    dl.appendChild(div);
+    target.appendChild(div);
+  };
+  for (const dg of normalDungeons) renderDungeonCard(dg, dl);
+  for (const dg of epicDungeons) renderDungeonCard(dg, epicDl);
+  if (dl && !normalDungeons.length) {
+    dl.innerHTML = '<div class="muted" style="text-align:center;padding:12px">当前筛选下暂无普通副本</div>';
+  }
+  if (epicDl && !epicDungeons.length) {
+    epicDl.innerHTML = '<div class="muted" style="text-align:center;padding:12px">暂无史诗团本</div>';
   }
 }
 

@@ -220,11 +220,21 @@
       </div>
       <div id="dungeon-sub-dungeon">
         <div class="muted" style="margin-bottom:6px">挑战副本 BOSS,获取传说装备</div>
+        <div class="sub-tabs" style="margin-bottom:6px">
+          <span class="sub-tab active" data-dgmode="normal"><span data-ui-icon="dungeon" data-ui-size="xs"></span>普通副本</span>
+          <span class="sub-tab" data-dgmode="epic"><span data-ui-icon="raid" data-ui-size="xs"></span>史诗团本</span>
+        </div>
+        <div id="dungeon-mode-normal">
         <div style="display:flex;gap:6px;margin-bottom:6px">
           <button id="btn-dg-5man" class="active" style="flex:1;padding:4px 8px;font-size:11px"><span data-ui-icon="dungeon" data-ui-size="xs"></span>5人本</button>
           <button id="btn-dg-raid" style="flex:1;padding:4px 8px;font-size:11px"><span data-ui-icon="raid" data-ui-size="xs"></span>团本</button>
         </div>
         <div id="dungeon-list"></div>
+        </div>
+        <div id="dungeon-mode-epic" style="display:none">
+          <div class="muted" style="margin-bottom:6px">80级史诗团本独立列表 · 高难度 · 必掉史诗紫装 / 全BOSS超低概率橙装</div>
+          <div id="epic-dungeon-list"></div>
+        </div>
       </div>
       <div id="dungeon-sub-tower" style="display:none">
         <div id="tower-panel"></div>

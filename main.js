@@ -227,6 +227,11 @@ function setupDelegation() {
     if (!btn) return;
     if (btn.dataset.action === 'enterdungeon') enterDungeon(btn.dataset.key);
   });
+  $('epic-dungeon-list').addEventListener('click', e => {
+    const btn = e.target.closest('button[data-action]');
+    if (!btn) return;
+    if (btn.dataset.action === 'enterdungeon') enterDungeon(btn.dataset.key);
+  });
 
   // 副本/无尽塔 子页切换
   $('tab-dungeon').addEventListener('click', e => {
@@ -237,6 +242,14 @@ function setupDelegation() {
       $('dungeon-sub-dungeon').style.display = key === 'dungeon' ? '' : 'none';
       $('dungeon-sub-tower').style.display = key === 'tower' ? '' : 'none';
       if (key === 'tower' && typeof renderTowerPanel === 'function') renderTowerPanel();
+      return;
+    }
+    const modeTab = e.target.closest('.sub-tab[data-dgmode]');
+    if (modeTab) {
+      const key = modeTab.dataset.dgmode;
+      document.querySelectorAll('#dungeon-sub-dungeon > .sub-tabs .sub-tab').forEach(x => x.classList.toggle('active', x.dataset.dgmode === key));
+      $('dungeon-mode-normal').style.display = key === 'normal' ? '' : 'none';
+      $('dungeon-mode-epic').style.display = key === 'epic' ? '' : 'none';
       return;
     }
     // 副本筛选按钮
