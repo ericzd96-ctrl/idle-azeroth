@@ -74,6 +74,8 @@ function setupAttrHover() {
    每帧只更新血条宽度与数字。焦点行带 legacy id(mon-emoji/mon-name/b-mhp/t-mhp)供 showFloat 锚定。 */
 let _monListSig = '';
 let skillDragging = false;   // 技能栏拖拽排序进行中(由 main.js 设置),期间不重建技能栏
+let _hNameLastSig = '';       // 英雄名签名, 避免每帧 innerHTML
+let _lastZoneSig = '';        // 关卡信息签名, 避免每帧 innerHTML
 let _buffBarStruct = '';     // 增益条结构签名(不含倒计时),变化才重建 DOM
 /* 当前职业的 buff 元信息(key→{icon,name,desc,dr}),从技能定义构建 */
 function buffMetaForClass() {
@@ -532,7 +534,7 @@ function updateDmgMeter() {
     killsEl.textContent = String(k);
   }
 
-  // 技能伤害分解
+  // 技能伤害分解(签名缓存避免每帧 innerHTML)
   const sdEl = $('dm-skills-breakdown');
   if (sdEl) {
     const hs = (typeof dmgStats !== 'undefined' && dmgStats.heroSkills) ? dmgStats.heroSkills : {};
@@ -542,20 +544,24 @@ function updateDmgMeter() {
     for (const [name, dmg] of Object.entries(cs)) allSkills.push({ name, dmg, src: '🐾' });
     allSkills.sort((a, b) => b.dmg - a.dmg);
     const top = allSkills.slice(0, 5);
-    if (top.length > 0) {
-      sdEl.style.display = 'block';
-      const maxDmg = top[0].dmg;
-      sdEl.innerHTML = top.map(s => {
-        const pct = maxDmg > 0 ? Math.round(s.dmg / maxDmg * 100) : 0;
-        return `<div style="display:flex;align-items:center;gap:4px;font-size:10px;margin-bottom:2px">
-          <span style="width:14px;flex-shrink:0">${s.src}</span>
-          <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name}</span>
-          <span style="width:52px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums">${fmt(s.dmg)}</span>
-          <span style="width:36px;flex-shrink:0;background:var(--panel);height:6px;border-radius:3px;overflow:hidden"><i style="display:block;height:100%;width:${pct}%;background:linear-gradient(90deg,#6366f1,#a78bfa);border-radius:3px"></i></span>
-        </div>`;
-      }).join('');
-    } else {
-      sdEl.style.display = 'none';
+    const sdSig = top.map(s => s.src + s.name + s.dmg).join('|');
+    if (sdSig !== sdEl._sig) {
+      sdEl._sig = sdSig;
+      if (top.length > 0) {
+        sdEl.style.display = 'block';
+        const maxDmg = top[0].dmg;
+        sdEl.innerHTML = top.map(s => {
+          const pct = maxDmg > 0 ? Math.round(s.dmg / maxDmg * 100) : 0;
+          return `<div style="display:flex;align-items:center;gap:4px;font-size:10px;margin-bottom:2px">
+            <span style="width:14px;flex-shrink:0">${s.src}</span>
+            <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name}</span>
+            <span style="width:52px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums">${fmt(s.dmg)}</span>
+            <span style="width:36px;flex-shrink:0;background:var(--panel);height:6px;border-radius:3px;overflow:hidden"><i style="display:block;height:100%;width:${pct}%;background:linear-gradient(90deg,#6366f1,#a78bfa);border-radius:3px"></i></span>
+          </div>`;
+        }).join('');
+      } else {
+        sdEl.style.display = 'none';
+      }
     }
   }
   const shEl = $('dm-heal-breakdown');
@@ -567,20 +573,24 @@ function updateDmgMeter() {
     for (const [name, heal] of Object.entries(cs)) allSkills.push({ name, heal, src: '🐾' });
     allSkills.sort((a, b) => b.heal - a.heal);
     const top = allSkills.slice(0, 5);
-    if (top.length > 0) {
-      shEl.style.display = 'block';
-      const maxHeal = top[0].heal;
-      shEl.innerHTML = top.map(s => {
-        const pct = maxHeal > 0 ? Math.round(s.heal / maxHeal * 100) : 0;
-        return `<div style="display:flex;align-items:center;gap:4px;font-size:10px;margin-bottom:2px">
-          <span style="width:14px;flex-shrink:0">${s.src}</span>
-          <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name}</span>
-          <span style="width:52px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums;color:#6ee7b7">${fmt(s.heal)}</span>
-          <span style="width:36px;flex-shrink:0;background:var(--panel);height:6px;border-radius:3px;overflow:hidden"><i style="display:block;height:100%;width:${pct}%;background:linear-gradient(90deg,#10b981,#6ee7b7);border-radius:3px"></i></span>
-        </div>`;
-      }).join('');
-    } else {
-      shEl.style.display = 'none';
+    const shSig = top.map(s => s.src + s.name + s.heal).join('|');
+    if (shSig !== shEl._sig) {
+      shEl._sig = shSig;
+      if (top.length > 0) {
+        shEl.style.display = 'block';
+        const maxHeal = top[0].heal;
+        shEl.innerHTML = top.map(s => {
+          const pct = maxHeal > 0 ? Math.round(s.heal / maxHeal * 100) : 0;
+          return `<div style="display:flex;align-items:center;gap:4px;font-size:10px;margin-bottom:2px">
+            <span style="width:14px;flex-shrink:0">${s.src}</span>
+            <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name}</span>
+            <span style="width:52px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums;color:#6ee7b7">${fmt(s.heal)}</span>
+            <span style="width:36px;flex-shrink:0;background:var(--panel);height:6px;border-radius:3px;overflow:hidden"><i style="display:block;height:100%;width:${pct}%;background:linear-gradient(90deg,#10b981,#6ee7b7);border-radius:3px"></i></span>
+          </div>`;
+        }).join('');
+      } else {
+        shEl.style.display = 'none';
+      }
     }
   }
   if (totalEl) {
@@ -595,14 +605,18 @@ function updateBattleVisuals() {
   const c = getCls();
   const h = state.hero;
 
-  // 头部 stats(便宜的文本更新)
+  // 头部 stats(签名缓存, 避免每帧 innerHTML)
   const race = RACES[state.race];
   const cls = getCls();
   const accountTitle = (typeof account!=='undefined' && account?.title) || '';
   const curTitle = accountTitle || state.title || '';
-  const titleHtml = curTitle ? `<span class="pill" style="background:var(--gold);color:#000;font-weight:bold" title="成就称号">${curTitle}</span> ` : '';
-  const heroChip = (typeof uiIcon === 'function') ? uiIcon('hero', 'xs', '角色') : (race?.icon || '👤');
-  $('h-name').innerHTML = `${heroChip} <b>${state.name||'冒险者'}</b> ${titleHtml}<span class="pill">${classIcon(state.cls, 16, cls?.icon||'')} Lv.${state.hero.lvl}</span>`;
+  const hNameSig = `${state.name}|${curTitle}|${state.cls}|${state.hero.lvl}`;
+  if (_hNameLastSig !== hNameSig) {
+    _hNameLastSig = hNameSig;
+    const titleHtml = curTitle ? `<span class="pill" style="background:var(--gold);color:#000;font-weight:bold" title="成就称号">${curTitle}</span> ` : '';
+    const heroChip = (typeof uiIcon === 'function') ? uiIcon('hero', 'xs', '角色') : (race?.icon || '👤');
+    $('h-name').innerHTML = `${heroChip} <b>${state.name||'冒险者'}</b> ${titleHtml}<span class="pill">${classIcon(state.cls, 16, cls?.icon||'')} Lv.${state.hero.lvl}</span>`;
+  }
   $('h-name').title = '点击切换角色';
   $('h-gold').textContent = fmt(state.gold);
   $('h-gem').textContent = fmt(state.gem);
@@ -638,7 +652,22 @@ function updateBattleVisuals() {
       : classIcon(state.cls, 56, c.icon);
   }
 
-  // 关卡信息
+  // 关卡信息(签名缓存, 避免每帧重建 DOM)
+  const zoneSig = (() => {
+    const base = `${state.mode}|${state.currentMap}|${state.currentSubzone}`;
+    if (state.mode === 'world') {
+      const sk = `${state.currentMap}-${state.currentSubzone}`;
+      return base + `|${state.subzoneKills[sk]||0}|${state.subzoneCleared[sk]||''}`;
+    }
+    if (state.mode === 'dungeon') return base + `|${state.dungeonState?.wave}|${state.dungeonState?.key}`;
+    if (state.mode === 'mythic') return base + `|${state.mythicState?.wave}|${state.mythicState?.key}|${state.mythicState?.level}`;
+    if (state.mode === 'tower') return base + `|${state.towerState?.floor}|${state.towerState?.coinThisRun}`;
+    if (state.mode === 'boss') return base;
+    if (state.mode === 'travel') return base + `|${state.travel?.mapKey}`;
+    return base;
+  })();
+  if (_lastZoneSig !== zoneSig) {
+    _lastZoneSig = zoneSig;
   if (state.mode === 'travel') {
     const t = state.travel;
     const map = MAPS.find(m => m.key === (t && t.mapKey));
@@ -718,6 +747,7 @@ function updateBattleVisuals() {
       $('h-zone').textContent = `⛰️ 无尽塔 · 第${ts.floor}层`;
       $('zone-name').textContent = `⛰️ 无尽塔 · 第${ts.floor}层${typeTag}`;
       $('progress-text').innerHTML = `本次 +${ts.coinThisRun||0}🪙 · 最高 ${state.tower?.highest||0} 层`;
+    }
     }
   }
 
