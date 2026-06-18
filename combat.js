@@ -163,20 +163,19 @@ function getMonsterDotDps(mon, now){
   ensureMonsterDots(mon, now);
   return mon && mon.dot > 0 ? mon.dot : 0;
 }
-function applyMonsterDot(mon, dotKey, dps, durMs, meta, stack){
+function applyMonsterDot(mon, dotKey, dps, durMs, meta){
   if(!mon || !(dps > 0)) return 0;
   const now = Date.now();
   ensureMonsterDots(mon, now);
   const key = dotKey || '_generic';
   const expire = now + (durMs || 5000);
   const prev = mon._dots[key];
-  const newDps = stack && prev ? (prev.dps || 0) + Math.floor(dps) : Math.max(prev?.dps || 0, Math.floor(dps));
   mon._dots[key] = {
     key,
     name: meta?.name || prev?.name || '持续伤害',
     icon: meta?.icon || prev?.icon || '🔥',
     source: meta?.source || prev?.source || key,
-    dps: newDps,
+    dps: Math.max(prev?.dps || 0, Math.floor(dps)),
     expire: Math.max(prev?.expire || 0, expire),
   };
   ensureMonsterDots(mon, now);
@@ -3058,7 +3057,7 @@ function applyCompanionSignatureHit(sig, st, mon, dmgDone, now){
     if(extra > 0){ mon.hp -= extra; trackDmg('comp', extra); showFloat($('mon-emoji'), (sig.icon || '✨') + '-' + extra, '#fbbf24'); }
     note = note || '追猎强化';
   }
-  if(sig.dotPct) applyMonsterDot(mon, `sig:${st.name}:${sig.name}`, Math.max(1, Math.floor(dmgDone * sig.dotPct)), sig.dotMs || 6000, { icon:sig.icon || '✨', name:sig.name, source:st.name }, !!sig.dotStack);
+  if(sig.dotPct) applyMonsterDot(mon, `sig:${st.name}:${sig.name}`, Math.max(1, Math.floor(dmgDone * sig.dotPct)), sig.dotMs || 6000, { icon:sig.icon || '✨', name:sig.name, source:st.name });
   if(sig.slow) mon.slowUntil = Math.max(mon.slowUntil || 0, now + (sig.slowMs || 4000));
   if(sig.stun) mon.stunUntil = Math.max(mon.stunUntil || 0, now + (sig.stunMs || 1200));
   if(sig.sunder) mon.sunderUntil = Math.max(mon.sunderUntil || 0, now + (sig.sunderMs || 12000));
