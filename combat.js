@@ -2887,7 +2887,7 @@ function tickCast(now){
     if(elapsed>=casting.duration){
       $('cast-bar-wrap').style.visibility='hidden';
       const wasCasting=casting;casting=null;
-      castSkill(bc.skillKey,bc.manual);
+      castSkill(wasCasting.skillKey,wasCasting.manual);
     }
   }
   // Boss施法
@@ -2908,7 +2908,7 @@ function tickCast(now){
       else if(bc.type==='buff'||bc.type==='support'||bc.type==='summon'){
         log(`💀 ${mon.bossName || mon.name} 释放了 ${bc.name}!`,'bad');
         showFloat($('mon-emoji'), (bc.icon || '✨') + bc.name + '!', '#fda4af');
-        applyMonsterSupportSkill(mon, wasCasting, now, { announce:false });
+        applyMonsterSupportSkill(mon, bc, now, { announce:false });
       } else{
         log(`💀 ${mon.bossName || mon.name} 释放了 ${bc.name}!`,'bad');
         showFloat($('mon-emoji'), (bc.icon || '✨') + bc.name + '!', '#fda4af');
@@ -2922,12 +2922,12 @@ function tickCast(now){
           processTalentLowHp(mon,now);
           if(typeof passiveOnTakeDamage==='function')passiveOnTakeDamage(mon,taken);
           if(bc.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(taken*bc.lifeSteal));
-          skillEffects(wasCasting,mon,taken,now);
+          skillEffects(bc,mon,taken,now);
           if(companionTargetable()){
             const cst=computeCompanionStats();
             const cd=calcDmg(rawAtk,cst?cst.def:mon.def,critRate,mon.critMult?mon.critMult*100:150,bc.alwaysCrit,state.hero.lvl,mon.lvl);
             const ct=applyCompanionDamage(cd.dmg,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ff9aa0',now});
-            skillEffects(wasCasting,mon,ct,now,{target:'companion'});}
+            skillEffects(bc,mon,ct,now,{target:'companion'});}
           if(state.hp<=0)onHeroDeath();
         }else if(companionTargetable()&&Math.random()<compAggroChance()){
           const cst=computeCompanionStats();
@@ -2935,7 +2935,7 @@ function tickCast(now){
           const ct=applyCompanionDamage(d2.dmg,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ff9aa0',now});
           if(bc.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(d2.dmg*bc.lifeSteal));
           log('🛡️ 随从替你承受了 '+bc.icon+'!','info');
-          skillEffects(wasCasting,mon,ct,now,{target:'companion'});
+          skillEffects(bc,mon,ct,now,{target:'companion'});
         }else{
           let taken=calcDmg(rawAtk,heroDefAgainst(mon),critRate,mon.critMult?mon.critMult*100:150,bc.alwaysCrit,state.hero.lvl,mon.lvl).dmg;
           taken=resolveMonsterDamageTaken(mon,taken);
@@ -2943,9 +2943,9 @@ function tickCast(now){
           processTalentLowHp(mon,now);
           if(typeof passiveOnTakeDamage==='function')passiveOnTakeDamage(mon,taken);
           if(bc.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(taken*bc.lifeSteal));
-          skillEffects(wasCasting,mon,taken,now);
-          if(state.hp<=0)onHeroDeath();}}
-    }else{castSkill(bc.skillKey,bc.manual);}}}
+          skillEffects(bc,mon,taken,now);
+          if(state.hp<=0)onHeroDeath();}}}}
+}
 function castSkill(skillKey,manual){
   const c=getCls();const sk=c.skills[skillKey];if(!sk)return;
   const ai=skillAiMeta(skillKey, sk);
