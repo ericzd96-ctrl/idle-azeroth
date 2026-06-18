@@ -471,6 +471,23 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
     overflow: hidden;
     align-items: stretch;
   }
+  body.mobile-ui #battle-panel,
+  body.mobile-ui .stage,
+  body.mobile-ui #buff-bar,
+  body.mobile-ui #cast-bar-wrap,
+  body.mobile-ui #comp-mini,
+  body.mobile-ui .skill-bar,
+  body.mobile-ui .log,
+  body.mobile-ui #dmg-meter {
+    overflow-anchor: none;
+  }
+  body.mobile-ui #buff-bar,
+  body.mobile-ui #cast-bar-wrap,
+  body.mobile-ui #comp-mini,
+  body.mobile-ui .log,
+  body.mobile-ui #dmg-meter {
+    contain: layout paint;
+  }
   body.mobile-ui .buff-side {
     display: flex;
     flex-direction: column;
@@ -582,6 +599,24 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
     padding: 4px 5px;
     min-width: 0;
   }
+  #cast-bar-wrap,
+  #comp-mini,
+  .log,
+  #dmg-meter {
+    margin-left: 4px !important;
+    margin-right: 4px !important;
+  }
+  #comp-mini {
+    max-width: none !important;
+    min-height: 58px;
+  }
+  #comp-skills {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+  #comp-skills::-webkit-scrollbar { display: none; }
   .buff-side-title { font-size: 9px; margin-bottom: 3px; }
   .buff-chip {
     padding: 2px 3px;
