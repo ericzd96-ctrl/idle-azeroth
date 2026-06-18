@@ -130,6 +130,8 @@ function focusBuffs(now) {
       out.push({
         icon: aura.icon || '⚡',
         name: (aura.name || key) + suffix,
+        base: (aura.name || key),
+        stacks: stacks > 1 ? stacks : 0,
         desc: aura.desc || '敌人获得了特殊技巧强化',
         left
       });
@@ -173,11 +175,11 @@ function renderBuffBar() {
       const left = aura.expire ? Math.ceil((aura.expire - now) / 1000) : 0;
       if (aura.expire && aura.expire <= now) continue;
       const stacks = aura.stacks > 1 ? ` · ${aura.stacks}层` : '';
-      buffs.push({ kind: 'buff', icon: m.icon || '✨', name: (m.name || k) + stacks, desc: m.desc || '', left });
+      buffs.push({ kind: 'buff', icon: m.icon || '✨', name: (m.name || k) + stacks, base: (m.name || k), stacks: aura.stacks > 1 ? aura.stacks : 0, desc: m.desc || '', left });
     }
   }
   buffs.sort((a, b) => a.left - b.left);
-  const enemyBuffs = focusBuffs(now).map(b => ({ kind: 'enemy-buff', icon: b.icon, name: '敌·' + b.name, desc: b.desc, left: b.left }));
+  const enemyBuffs = focusBuffs(now).map(b => ({ kind: 'enemy-buff', icon: b.icon, name: '敌·' + b.name, base: '敌·' + (b.base || b.name), stacks: b.stacks || 0, desc: b.desc, left: b.left }));
   // 焦点敌人减益
   const debuffs = focusDebuffs(now).map(d => ({ kind: 'debuff', icon: d.icon, name: '敌·' + d.name, desc: d.desc, left: d.left }));
   // 英雄身上的减益(boss 等施加)
@@ -202,25 +204,30 @@ function renderBuffBar() {
   if (state.heroDisarmUntil > now) heroDe.push({ kind:'self-de', icon:'⚔️❌', name:'你·缴械', desc:'无法普通攻击', left:Math.ceil((state.heroDisarmUntil-now)/1000) });
   const selfStates = buffs.concat(heroDe);
   const enemyStates = enemyBuffs.concat(debuffs);
-  // 结构签名(不含倒计时):只在 buff/debuff 增删时重建 DOM, 避免每帧 innerHTML 导致闪烁/发热
-  const structSig = selfStates.concat([{ kind:'split', name:'|' }], enemyStates).map(b => b.kind + (b.name || '')).join('|');
+  // 结构签名(不含倒计时/层数):只在 buff/debuff 增删时重建 DOM, 避免每帧 innerHTML 导致闪烁/发热
+  const structSig = selfStates.concat([{ kind:'split', name:'|' }], enemyStates).map(b => b.kind + (b.base || b.name || '')).join('|');
   if (structSig !== _buffBarStruct) {
     _buffBarStruct = structSig;
     const renderGroup = (title, cls, items, emptyText) => {
       const body = items.length ? items.map(b => {
         const tip = `${b.name}${b.desc ? ' · ' + b.desc : ''}${b.left > 0 ? ' · 剩余' + b.left + '秒' : ''}`;
-        return `<div class="buff-chip ${b.kind}" data-tip="${tip.replace(/"/g, '&quot;')}"><div class="b-ic">${statusIconHtml(b.name?.replace(/^敌·|^你·/, ''), b.icon, 16)}</div><div class="b-t">${b.left > 0 ? b.left + 's' : '∞'}</div></div>`;
+        return `<div class="buff-chip ${b.kind}" data-tip="${tip.replace(/"/g, '&quot;')}"><div class="b-ic">${statusIconHtml(b.name?.replace(/^敌·|^你·/, ''), b.icon, 16)}</div><div class="b-t">${b.left > 0 ? b.left + 's' : '∞'}</div><div class="b-s">${b.stacks > 1 ? b.stacks + '层' : ''}</div></div>`;
       }).join('') : `<div class="buff-empty">${emptyText}</div>`;
       return `<div class="buff-side ${cls}"><div class="buff-side-title">${title}</div><div class="buff-side-list">${body}</div></div>`;
     };
     bar.innerHTML = renderGroup('你', 'self', selfStates, '暂无状态') + renderGroup('敌', 'enemy', enemyStates, '暂无状态');
   }
-  // 每帧就地更新倒计时文本(不碰 DOM 结构, 消除闪烁)
+  // 每帧就地更新倒计时 + 层数文本(不碰 DOM 结构, 消除闪烁)
   const allT = bar.querySelectorAll('.buff-chip .b-t');
+  const allS = bar.querySelectorAll('.buff-chip .b-s');
   const allItems = selfStates.concat(enemyStates);
   for (let i = 0; i < Math.min(allT.length, allItems.length); i++) {
     const txt = allItems[i].left > 0 ? allItems[i].left + 's' : '∞';
     if (allT[i].textContent !== txt) allT[i].textContent = txt;
+  }
+  for (let i = 0; i < Math.min(allS.length, allItems.length); i++) {
+    const stxt = allItems[i].stacks > 1 ? allItems[i].stacks + '层' : '';
+    if (allS[i].textContent !== stxt) allS[i].textContent = stxt;
   }
 }
 function effectTags(s) {
@@ -331,7 +338,8 @@ function renderMonList() {
   // 战斗结束：全部清空
   if (all.length === 0) { if (_monListSig !== '') { wrap.innerHTML = ''; _monListSig = ''; } return; }
 
-  const focus = all[0];
+  // focus 优先取第一个活着的怪物，全死了则回退 all[0]（保留槽位）
+  const focus = all.find(m => m.hp > 0) || all[0];
   // 签名包含所有怪物(含死敌) — 死敌保留 DOM 防止布局塌缩上移
   const sig = all.map(m => m._uid + (m === focus ? 'F' : '') + (m.hp > 0 ? 'A' : 'D')).join('|');
   if (sig !== _monListSig) {

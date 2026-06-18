@@ -195,6 +195,7 @@ h1 {
 .buff-chip { cursor: help; }
 .buff-chip .b-ic { font-size: 17px; }
 .buff-chip .b-t { font-size: 9px; color: var(--muted); margin-top: 1px; }
+.buff-chip .b-s { font-size: 9px; color: var(--muted); margin-top: 1px; }
 /* 可拖拽技能按钮 */
 .skill-btn[draggable="true"] { cursor: grab; }
 .skill-btn.dragging { opacity: .4; }
@@ -550,6 +551,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   }
   .buff-chip .b-ic { font-size: 15px; }
   .buff-chip .b-t { font-size: 8px; }
+  .buff-chip .b-s { font-size: 8px; }
   .log {
     height: 108px;
     font-size: 10px;
