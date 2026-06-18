@@ -1837,6 +1837,82 @@ function renderCompanion() {
 }
 
 let dgFilter = 'all'; // 'all' | '5man' | 'raid'
+function buildDungeonInfoHtml(dg) {
+  if (!dg) return '<div class="muted">未找到副本信息</div>';
+  const power = dg.reqLvl + 5;
+  const isRaid = dg.type === 'raid';
+  const isEpicRaid = !!dg.epicRaid;
+  const lastBossName = (dg.bosses || [])[(dg.bosses || []).length - 1]?.name;
+  const dungeonIconHtml = (typeof dungeonIcon === 'function') ? dungeonIcon(dg.key, dg.name, 18, dg.icon) : dg.icon;
+  let html = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <div style="font-weight:700;font-size:16px">${dungeonIconHtml} ${dg.name}</div>
+      <div class="pill">Lv.${dg.reqLvl}</div>
+    </div>
+    <div class="muted" style="margin-bottom:10px;line-height:1.6">
+      ${isEpicRaid?'<span style="color:#fb7185">[史诗团本]</span> ':(isRaid?'<span style="color:#fbbf24">[团本]</span> ':'<span style="color:#6ee7b7">[5人本]</span> ')}
+      ${dg.desc}<br>
+      推荐波次: ${dg.waves || '?'} · BOSS数量: ${(dg.bosses || []).length}
+      ${dg.type==='raid'?(isEpicRaid?' · 掉落: 史诗级紫装 / 全BOSS超低概率橙装':' · 掉落: 常规团本装备 / 关底低概率橙武'):''}
+    </div>`;
+  for (const bossData of (dg.bosses || [])) {
+    const bossName = bossData.name;
+    const items = (typeof getDungeonBossLoot === 'function') ? getDungeonBossLoot(dg.key, bossName, state.cls) : [];
+    const isFinal = bossName === lastBossName;
+    const bossIconHtml = (typeof entityIcon === 'function') ? entityIcon(bossName, 16, bossData.emoji || '👹') : (bossData.emoji || '👹');
+    const dropLabel = isEpicRaid
+      ? `(必掉史诗紫装${isFinal ? '×2' : ''}${items.some(it => it.rarity === 'legend') ? ' · 含超低概率橙装' : ''})`
+      : (isRaid ? (isFinal ? '(常规团本装备 · 低概率橙武)' : '(常规团本装备)') : '(必掉1件)');
+    html += `
+      <div style="margin:10px 0 0;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.03)">
+        <div style="color:var(--legend);font-size:13px;font-weight:700;margin-bottom:6px">${bossIconHtml} ${bossName} ${dropLabel}</div>`;
+    if (bossData?.skills?.length) {
+      html += `<div style="margin:0 0 8px 8px">`;
+      bossData.skills.forEach(s => {
+        html += bossSkillLineHtml(s, { iconSize: 15, tagColor: '#fbbf24' });
+      });
+      html += `</div>`;
+    }
+    if (items?.length) {
+      const previewPool = items.filter(it => !it.lowChanceLegend);
+      const tw = Math.max(1, previewPool.reduce((sum, it) => sum + ((it.dropWeight) || (RARITY.find(r => r.key === it.rarity)?.weight || 1)), 0));
+      html += `<div style="display:flex;flex-direction:column;gap:4px">`;
+      for (const it of items) {
+        const r = RARITY.find(x => x.key === it.rarity);
+        const scaledStats = scaleLootStats(it.stats || {}, it.rarity, Math.max(power, isEpicRaid ? 90 : power));
+        const statsText = Object.entries(scaledStats).map(([k, v]) => fmtMod(k, v)).join(' ');
+        const itemRate = it.dropChance
+          ? `${Math.round(it.dropChance * 100)}%`
+          : `${Math.round((((it.dropWeight) || (RARITY.find(r2 => r2.key === it.rarity)?.weight || 1)) / tw) * 100)}%`;
+        const epicBadge = (typeof itemEpicRaidBadge === 'function') ? itemEpicRaidBadge(it, true) : '';
+        html += `<div class="${r?.cls || ''}" style="font-size:11px;line-height:1.5">${it.name}${epicBadge} <span style="opacity:.8">${itemRate}</span><br><span style="opacity:.55">${statsText}</span></div>`;
+      }
+      html += `</div>`;
+    } else {
+      html += `<div class="muted" style="font-size:11px">暂无可预览掉落</div>`;
+    }
+    html += `</div>`;
+  }
+  const trashPool = (typeof getDungeonTrashLoot === 'function')
+    ? getDungeonTrashLoot(dg.key, state.cls)
+    : ((DUNGEON_LOOT[dg.key] || DUNGEON_LOOT[(typeof baseDungeonKey === 'function' ? baseDungeonKey(dg.key) : dg.key)] || {}).trash || []);
+  if (trashPool?.length) {
+    html += `<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08);color:var(--muted);font-size:11px;line-height:1.6">
+      杂兵掉落 (35%掉率): ${trashPool.map(it => it.name).join('、')}
+    </div>`;
+  }
+  return html;
+}
+
+function openDungeonInfo(dungeonKey) {
+  const dg = DUNGEONS.find(x => x.key === dungeonKey);
+  const modal = $('modal-dungeon-info');
+  const body = $('dungeon-info-content');
+  if (!dg || !modal || !body) return;
+  body.innerHTML = buildDungeonInfoHtml(dg);
+  modal.classList.add('show');
+}
+
 function renderDungeon() {
   const dl = $('dungeon-list');
   const epicDl = $('epic-dungeon-list');
@@ -1888,56 +1964,11 @@ function renderDungeon() {
       <div class="muted">${isEpicRaid?'<span style="color:#fb7185">[史诗团本]</span> ':(dg.type==='raid'?'<span style=\"color:#fbbf24\">[团本]</span> ':'<span style=\"color:#6ee7b7\">[5人本]</span> ')}${dg.desc} · ${(dg.bosses||[]).length}个BOSS · 最终: ${((dg.bosses||[])[dg.bosses.length-1]||{}).name||'??'}${dg.type==='raid'?(isEpicRaid?' · 掉落:史诗级紫装/全BOSS超低概率橙装':' · 掉落:常规团本装备/关底低概率橙武'):''}</div>
       <div class="row">
         <span class="cd-display">${statusText}</span>
-        <button class="enter-btn ${canEnter?'epic':''}" data-action="enterdungeon" data-key="${dg.key}" ${canEnter?'':'disabled'}>${btnText}</button>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button style="padding:4px 8px;font-size:11px" data-action="dungeoninfo" data-key="${dg.key}">详情</button>
+          <button class="enter-btn ${canEnter?'epic':''}" data-action="enterdungeon" data-key="${dg.key}" ${canEnter?'':'disabled'}>${btnText}</button>
+        </div>
       </div>`;
-    // 副本hover掉落预览 - 按BOSS分组展示
-    const showDungeonLoot = e => {
-      const power = dg.reqLvl + 5;
-      const isRaid = dg.type === 'raid';
-      const lastBossName = (dg.bosses||[])[(dg.bosses||[]).length-1]?.name;
-      let html = `<div style=\"font-weight:bold;margin-bottom:4px\">${dungeonIconHtml} ${dg.name} (${(dg.bosses||[]).length}BOSS)${isRaid?(isEpicRaid?' <span style=\"color:#fb7185\">[史诗团本]</span>':' <span style=\"color:#a335ee\">[团本]</span>'):''}</div>`;
-      for (const bossData of (dg.bosses||[])) {
-        const bossName = bossData.name;
-        const items = (typeof getDungeonBossLoot === 'function') ? getDungeonBossLoot(dg.key, bossName, state.cls) : [];
-        if (!items?.length) continue;
-        const isFinal = bossName === lastBossName;
-        const bossIconHtml = (typeof entityIcon === 'function') ? entityIcon(bossName, 16, bossData.emoji || '👹') : (bossData.emoji || '👹');
-        const dropLabel = isEpicRaid
-          ? `(必掉史诗级紫装${isFinal?'×2':''} · ${Math.round((items.find(it=>it.rarity==='legend')?.dropChance||0.02)*100)}%橙装)`
-          : (isRaid ? (isFinal ? '(常规团本装备 · 6%橙色武器)' : '(常规团本装备)') : '(必掉1件)');
-        html += `<div style=\"margin-top:4px;color:var(--legend);font-size:11px\">${bossIconHtml} ${bossName} ${dropLabel}</div>`;
-        if (bossData?.skills?.length) {
-          html += `<div style="margin:2px 0 0 8px">`;
-          bossData.skills.forEach(s => {
-            html += bossSkillLineHtml(s, { iconSize:14, tagColor:'#fbbf24' });
-          });
-          html += `</div>`;
-        }
-        const previewPool = items.filter(it => !it.lowChanceLegend);
-        const tw = Math.max(1, previewPool.reduce((s,it)=>s+((it.dropWeight)|| (RARITY.find(r=>r.key===it.rarity)?.weight||1)),0));
-        for (const it of items) {
-          const r = RARITY.find(r=>r.key===it.rarity);
-          const scaledStats = scaleLootStats(it.stats||{}, it.rarity, Math.max(power, isEpicRaid ? 90 : power));
-          const statsText = Object.entries(scaledStats).map(([k,v])=>fmtMod(k, v)).join(' ');
-          const itemRate = it.dropChance ? `${Math.round(it.dropChance*100)}%` : `${Math.round((((it.dropWeight)|| (RARITY.find(r2=>r2.key===it.rarity)?.weight||1))/tw)*100)}%`;
-          const epicBadge = (typeof itemEpicRaidBadge === 'function') ? itemEpicRaidBadge(it, true) : '';
-          html += `<div class=\"${r?.cls||''}\" style=\"font-size:10px;margin:0 0 0 8px\">${it.name}${epicBadge} ${itemRate} <span style=\"opacity:.5\">${statsText}</span></div>`;
-        }
-      }
-      const trashPool = (typeof getDungeonTrashLoot === 'function') ? getDungeonTrashLoot(dg.key, state.cls) : ((DUNGEON_LOOT[dg.key]||DUNGEON_LOOT[(typeof baseDungeonKey==='function'?baseDungeonKey(dg.key):dg.key)]||{}).trash||[]);
-      if (trashPool?.length) {
-        html += `<div style=\"margin-top:4px;color:var(--muted);font-size:10px\">杂兵掉落 (35%掉率): ${trashPool.map(it=>it.name).join(', ')}</div>`;
-      }
-      const tip = $('compare-tip');
-      tip.querySelector('.compare-head').innerHTML = html;
-      tip.querySelector('.compare-body').innerHTML = '';
-      tip.style.display = 'block';
-      positionTip(tip, e);
-    };
-    div.addEventListener('mouseenter', showDungeonLoot);
-    div.addEventListener('mouseleave', () => { if (!_tipPinned) $('compare-tip').style.display = 'none'; });
-    div.addEventListener('mousemove', e => positionTip($('compare-tip'), e));
-    addTouchPin(div, showDungeonLoot);
     target.appendChild(div);
   };
   for (const dg of normalDungeons) renderDungeonCard(dg, dl);

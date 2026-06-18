@@ -249,11 +249,13 @@ function setupDelegation() {
     const btn = e.target.closest('button[data-action]');
     if (!btn) return;
     if (btn.dataset.action === 'enterdungeon') enterDungeon(btn.dataset.key);
+    else if (btn.dataset.action === 'dungeoninfo' && typeof openDungeonInfo === 'function') openDungeonInfo(btn.dataset.key);
   });
   $('epic-dungeon-list').addEventListener('click', e => {
     const btn = e.target.closest('button[data-action]');
     if (!btn) return;
     if (btn.dataset.action === 'enterdungeon') enterDungeon(btn.dataset.key);
+    else if (btn.dataset.action === 'dungeoninfo' && typeof openDungeonInfo === 'function') openDungeonInfo(btn.dataset.key);
   });
 
   // 副本/无尽塔 子页切换
