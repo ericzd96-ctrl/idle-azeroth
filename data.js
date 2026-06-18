@@ -3974,9 +3974,63 @@ const EPIC_RAID_SET_THEME = {
   ruby:{ tier:'T10.5', name:'红玉圣殿', short:'暮光' },
   icc:{ tier:'T10', name:'冰冠堡垒', short:'冰冠' },
 };
+const EPIC_RAID_SET_LABELS = {
+  mc:{
+    warrior:'力量', mage:'奥术师', priest:'预言', rogue:'夜幕杀手', hunter:'巨人追猎者',
+    shaman:'大地之怒', paladin:'秩序之源', warlock:'恶魔之心', druid:'塞纳里奥',
+  },
+  bwl:{
+    warrior:'愤怒', mage:'灵风', priest:'卓越', rogue:'血牙', hunter:'巨龙追猎者',
+    shaman:'无尽风暴', paladin:'审判', warlock:'复仇', druid:'怒风',
+  },
+  aq40:{
+    warrior:'征服者', mage:'神秘', priest:'神谕者', rogue:'死亡执行者', hunter:'攻击者',
+    shaman:'风暴召唤者', paladin:'复仇者', warlock:'厄运召唤者', druid:'起源',
+  },
+  naxx:{
+    warrior:'无畏', mage:'霜火', priest:'信仰', rogue:'骨镰', hunter:'地穴追猎者',
+    shaman:'碎地者', paladin:'救赎', warlock:'瘟疫之心', druid:'梦游者',
+  },
+  karazhan:{
+    warrior:'战神', mage:'奥尔多', priest:'化身', rogue:'虚空刀锋', hunter:'恶魔追猎者',
+    shaman:'飓风', paladin:'秩序', warlock:'虚空之心', druid:'玛洛恩',
+  },
+  ssc:{
+    warrior:'毁灭者', mage:'风暴', priest:'神使', rogue:'死亡阴影', hunter:'裂隙追猎者',
+    shaman:'灾变', paladin:'晶铸', warlock:'腐蚀者', druid:'诺达希尔',
+  },
+  tk:{
+    warrior:'毁灭者', mage:'风暴', priest:'神使', rogue:'死亡阴影', hunter:'裂隙追猎者',
+    shaman:'灾变', paladin:'晶铸', warlock:'腐蚀者', druid:'诺达希尔',
+  },
+  hyjal:{
+    warrior:'冲锋', mage:'霜火', priest:'赦免', rogue:'杀戮者', hunter:'戈隆追猎者',
+    shaman:'天击', paladin:'光明使者', warlock:'凶星', druid:'雷霆之心',
+  },
+  bt:{
+    warrior:'冲锋', mage:'霜火', priest:'赦免', rogue:'杀戮者', hunter:'戈隆追猎者',
+    shaman:'天击', paladin:'光明使者', warlock:'凶星', druid:'雷霆之心',
+  },
+  sunwell:{
+    warrior:'冲锋圣装', mage:'霜火圣装', priest:'赦免圣装', rogue:'杀戮者圣装', hunter:'戈隆追猎者圣装',
+    shaman:'天击圣装', paladin:'光明使者圣装', warlock:'凶星圣装', druid:'雷霆之心圣装',
+  },
+  ulduar:{
+    warrior:'破城者', mage:'肯瑞托', priest:'圣灵', rogue:'恐怖之刃', hunter:'天灾追猎者',
+    shaman:'世界击碎者', paladin:'庇护', warlock:'死亡使者', druid:'夜歌',
+  },
+  ruby:{
+    warrior:'伊米亚之王', mage:'鲜血法师', priest:'赤红侍僧', rogue:'影刃', hunter:'安卡哈血猎手',
+    shaman:'霜巫', paladin:'光誓', warlock:'黑暗教团', druid:'树纹',
+  },
+  icc:{
+    warrior:'伊米亚之王', mage:'鲜血法师', priest:'赤红侍僧', rogue:'影刃', hunter:'安卡哈血猎手',
+    shaman:'霜巫', paladin:'光誓', warlock:'黑暗教团', druid:'树纹',
+  },
+};
 const EPIC_RAID_CLASS_SET_NAMES = {
-  warrior:'战铠', mage:'法袍', priest:'圣服', rogue:'影皮', hunter:'猎装',
-  shaman:'战衣', paladin:'圣铠', warlock:'魔装', druid:'自然战衣',
+  warrior:'战铠', mage:'法袍', priest:'圣服', rogue:'影衣', hunter:'猎装',
+  shaman:'战衣', paladin:'圣铠', warlock:'魔装', druid:'法衣',
 };
 const EPIC_RAID_SET_SLOT_ROTATION = ['pants','helmet','shoulder','gloves','armor','boots','belt','ring','trinket','weapon'];
 const EPIC_RAID_OFFPIECE_ROTATION = ['ring','boots','belt','trinket','shoulder','gloves','armor','pants','helmet','weapon'];
@@ -4015,10 +4069,11 @@ function epicRaidSupportAttr(clsKey) {
   if (clsKey === 'druid') return 'spi';
   return 'sta';
 }
+function epicRaidSetLabel(baseKey, clsKey) {
+  return EPIC_RAID_SET_LABELS[baseKey]?.[clsKey] || `${raidTheme(baseKey).tier}${EPIC_RAID_CLASS_SET_NAMES[clsKey] || '战衣'}`;
+}
 function makeEpicRaidSetName(baseKey, clsKey, slotKey) {
-  const theme = raidTheme(baseKey);
-  const setName = EPIC_RAID_CLASS_SET_NAMES[clsKey] || '战衣';
-  return `${theme.short}${theme.tier}${setName}${SLOT_INFO[slotKey]?.label || slotKey}·史诗级`;
+  return `${epicRaidSetLabel(baseKey, clsKey)}${SLOT_INFO[slotKey]?.label || slotKey}·史诗级`;
 }
 function makeEpicRaidOffpieceName(baseKey, bossName, slotKey) {
   const theme = raidTheme(baseKey);
@@ -4104,7 +4159,7 @@ function makeEpicRaidSetItem(baseKey, bossName, bossIndex, clsKey) {
     rarity: 'epic',
     epicRaid: true,
     setKey: `${baseKey}:${clsKey}`,
-    setName: `${raidTheme(baseKey).tier}${EPIC_RAID_CLASS_SET_NAMES[clsKey] || '战衣'}`,
+    setName: epicRaidSetLabel(baseKey, clsKey),
     dropWeight: 52,
     stats: makeEpicRaidSetStats(slotKey, clsKey, bossIndex),
   };
