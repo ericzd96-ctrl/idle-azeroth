@@ -452,7 +452,7 @@ function renderItemDetail(itemId) {
   const titleHtml = `
     <div class="detail-head ${it.bcls}">
       <div class="name ${it.cls}" style="font-size:18px">${SLOT_INFO[it.slot].icon} ${it.name}</div>
-      <div class="muted" style="font-size:11px">${SLOT_INFO[it.slot].label} · [${it.rarityName}]${it.epicRaid?' · <span style="color:'+(it.rarity==='legend'?'#ff8000':'#a335ee')+'">[史诗团本]</span>':''}${it.reqLvl?' · Lv.'+it.reqLvl:''}${found.source==='equip'?' · <span style="color:var(--accent)">已装备</span>':''}</div>
+      <div class="muted" style="font-size:11px">${SLOT_INFO[it.slot].label} · [${it.rarityName}]${it.epicRaid?' · <span style="color:#22c55e">[史诗团本]</span>':''}${it.reqLvl?' · Lv.'+it.reqLvl:''}${found.source==='equip'?' · <span style="color:var(--accent)">已装备</span>':''}</div>
     </div>`;
   // 基础属性
   const baseStats = Object.entries(it.stats||{}).map(([k,v])=>`<div class="stat-row">${fmtStatName(k)} <b>+${v}${isPercentStat(k)?'%':''}</b></div>`).join('');
@@ -549,9 +549,9 @@ function renderItemDetail(itemId) {
 /* 给装备/背包tooltip额外信息 (在 render.js 使用) */
 function itemEpicRaidBadge(item, compact) {
   if (!item || !item.epicRaid) return '';
-  const color = item.rarity === 'legend' ? '#ff8000' : '#a335ee';
-  const border = item.rarity === 'legend' ? 'rgba(255,128,0,.45)' : 'rgba(163,53,238,.45)';
-  const glow = item.rarity === 'legend' ? 'rgba(255,128,0,.18)' : 'rgba(163,53,238,.18)';
+  const color = '#22c55e';
+  const border = 'rgba(34,197,94,.45)';
+  const glow = 'rgba(34,197,94,.18)';
   const label = compact ? '[史诗团本]' : '[史诗团本]';
   return ` <span style="font-size:10px;color:${color};border:1px solid ${border};background:${glow};border-radius:999px;padding:0 6px;white-space:nowrap">${label}</span>`;
 }
