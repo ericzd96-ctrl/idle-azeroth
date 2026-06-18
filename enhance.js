@@ -396,7 +396,7 @@ function rerollItemFully(itemId) {
     }
   }
   const costText = `${cost.gold}💰${cost.essence ? ` + ${cost.essence}✨` : ''}`;
-  if (!confirm(`洗练 [${it.name}]？\n将消耗 ${costText}\n会重新生成基础属性、词缀、宝石孔，并清除附魔。\n已镶嵌的宝石会返还到背包。`)) return;
+  if (!confirm(`重洗 [${it.name}]？\n将消耗 ${costText}\n会重掷基础数值、词缀和宝石孔，并清除附魔。\n已镶嵌的宝石会返还到背包。`)) return;
   state.gold -= cost.gold;
   state.essence -= cost.essence;
   const returns = [];
@@ -438,7 +438,7 @@ function rerollItemFully(itemId) {
   it.fullRerolls = preserved.fullRerolls;
   syncItemIdentity(it);
   const returnedText = returns.length ? `，返还宝石 ${returns.join(' / ')}` : '';
-  log(`🎲 洗练完成 [${it.name}]${returnedText}`,'good');
+  log(`🎲 重洗完成 [${it.name}]${returnedText}`,'good');
   recomputeStats();
   markDirty('inventory','equipment','hero');
   renderItemDetail(itemId);
@@ -668,7 +668,7 @@ function renderItemDetail(itemId) {
   const matsHtml = `<div class="muted" style="font-size:11px">材料: ✨ <b>${state.essence}</b> 魔法精华</div>`;
   // 动作栏
   const actions = `
-    <button data-action="rerollitem" data-id="${it.id}" title="洗练: ${fullRerollCost.gold}💰${fullRerollCost.essence?` + ${fullRerollCost.essence}精华`:''}">🎲 洗练 ${fullRerollCost.gold}💰${fullRerollCost.essence?` ${fullRerollCost.essence}✨`:''}</button>
+    <button data-action="rerollitem" data-id="${it.id}" title="重洗整件装备: ${fullRerollCost.gold}💰${fullRerollCost.essence?` + ${fullRerollCost.essence}精华`:''}">🎲 重洗 ${fullRerollCost.gold}💰${fullRerollCost.essence?` ${fullRerollCost.essence}✨`:''}</button>
     ${found.source==='inv' ? `<button class="primary" data-action="equipfromdetail" data-id="${it.id}">装备</button>` : ''}
     ${found.source==='equip' ? `<button class="danger" data-action="unequipfromdetail" data-id="${it.id}">卸下</button>` : ''}
     ${found.source==='inv' ? `<button class="danger" data-action="disassemble" data-id="${it.id}">🔧 分解</button>` : ''}
@@ -693,7 +693,7 @@ function renderItemDetail(itemId) {
       <div class="detail-label">✨ 附魔 ${matsHtml}</div>
       ${enchantHtml}
     </div>
-    <div class="muted" style="font-size:11px;line-height:1.5;margin-top:-2px;margin-bottom:8px">洗练会重置这件装备的基础属性、词缀、宝石孔与附魔，相当于重新掉落一次；已镶嵌宝石会自动返还。</div>
+    <div class="muted" style="font-size:11px;line-height:1.5;margin-top:-2px;margin-bottom:8px">重洗会重掷这件装备的基础数值、词缀和宝石孔，并清除附魔，相当于把同一件装备重新掉落一次；已镶嵌宝石会自动返还。</div>
     <div class="detail-actions">${actions}</div>`;
 }
 
