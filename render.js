@@ -395,16 +395,26 @@ function renderMonList() {
   const wrap = $('mon-list'); if (!wrap) return;
   const all = state.currentMonsters || [];
 
-  // 战斗结束：全部清空
-  if (all.length === 0) { if (_monListSig !== '') { wrap.innerHTML = ''; _monListSig = ''; } return; }
+  // 始终渲染至少4个槽位, 超出则全部显示(召唤物), 死敌保留槽位不删除
+  const SLOTS = 4;
+  const slotCount = Math.max(SLOTS, all.length);
+  const slots = [];
+  for (let i = 0; i < slotCount; i++) slots.push(i < all.length ? all[i] : null);
 
-  // focus 优先取第一个活着的怪物，全死了则回退 all[0]（保留槽位）
-  const focus = all.find(m => m.hp > 0) || all[0];
-  // 签名包含所有怪物(含死敌) — 死敌保留 DOM 防止布局塌缩上移
-  const sig = all.map(m => m._uid + (m === focus ? 'F' : '') + (m.hp > 0 ? 'A' : 'D')).join('|');
+  // focus 优先第一个活着的怪物
+  const focus = all.find(m => m.hp > 0) || all[0] || null;
+
+  // 签名: 槽位内容(含空槽)
+  const sig = slots.map((m, i) => m ? m._uid + (m === focus ? 'F' : '') + (m.hp > 0 ? 'A' : 'D') : 'E' + i).join('|');
   if (sig !== _monListSig) {
     _monListSig = sig;
-    wrap.innerHTML = all.map(m => {
+    wrap.innerHTML = slots.map((m, i) => {
+      if (!m) {
+        return `<div class="mon-row mon-placeholder" data-slot="${i}">
+          <div class="m-emoji">—</div>
+          <div class="m-mid"><div class="m-name">—</div><div class="bar hp"><i style="width:0%"></i><span>—</span></div></div>
+        </div>`;
+      }
       const isFocus = m === focus;
       const isDead = m.hp <= 0;
       const seg = Array.from(m.name);
@@ -418,10 +428,10 @@ function renderMonList() {
         </div>
       </div>`;
     }).join('');
-    attachFocusBossHover(focus);
+    if (focus) attachFocusBossHover(focus);
   }
 
-  // 每帧更新血条 + 存活状态 + 减益小图标(按 uid 定位行)
+  // 每帧更新血条 + 存活状态 + 减益(仅真实怪物槽位)
   const now = Date.now();
   for (const m of all) {
     const row = wrap.querySelector(`[data-uid="${m._uid}"]`); if (!row) continue;
