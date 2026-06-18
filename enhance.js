@@ -426,7 +426,6 @@ function rerollItemFully(itemId) {
     _baseExtraStats: JSON.parse(JSON.stringify(extraStats || {})),
     _rollPower: power,
     _rollSlot: it.slot,
-    _rollProfileKeys: Array.isArray(it._rollProfileKeys) && it._rollProfileKeys.length ? it._rollProfileKeys.slice() : Object.keys(it.stats || {}),
     fullRerolls: (it.fullRerolls || 0) + 1,
   };
   for (const key of Object.keys(it)) delete it[key];
