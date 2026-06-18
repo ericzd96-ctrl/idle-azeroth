@@ -172,7 +172,7 @@ function onDungeonClear(dg) {
   const uniqueLoot = allLoot.filter(it => { const k = it.id; if (seen.has(k)) return false; seen.add(k); return true; });
 
   const lootHtml = uniqueLoot.length > 0
-    ? uniqueLoot.map(it => `<div style="font-size:11px">　<span class="${it.cls}">[${it.rarityName}] ${it.name}</span></div>`).join('')
+    ? uniqueLoot.map(it => `<div style="font-size:11px">　<span class="${it.cls}">${it.name}${typeof itemEpicRaidBadge==='function'?itemEpicRaidBadge(it,true):''}</span></div>`).join('')
     : '<div class="muted">　无</div>';
 
   $('dungeon-clear-text').innerHTML = `
@@ -198,7 +198,7 @@ function showDungeonFail() {
   if (!dg) return;
   const allLoot = ds.loot || [];
   const lootHtml = allLoot.length > 0
-    ? allLoot.map(it => `<div style="font-size:11px">　<span class="${it.cls}">[${it.rarityName}] ${it.name}</span></div>`).join('')
+    ? allLoot.map(it => `<div style="font-size:11px">　<span class="${it.cls}">${it.name}${typeof itemEpicRaidBadge==='function'?itemEpicRaidBadge(it,true):''}</span></div>`).join('')
     : '<div class="muted">　无</div>';
   $('dungeon-fail-text').innerHTML = `
     <div style="font-size:18px;margin:8px 0">💀 ${dg.name} 挑战失败</div>
@@ -339,7 +339,7 @@ function showOfflineModal(dt, kills, gold, xp, drops) {
     <div>💰 +${gold} 金币</div>
     <div>✨ +${xp} 经验</div>
     <div>🎁 ${drops.length} 件装备</div>
-    ${drops.slice(0,5).map(it => `<div style="font-size:11px">　<span class="${it.cls}">[${it.rarityName}] ${it.name}</span></div>`).join('')}
+    ${drops.slice(0,5).map(it => `<div style="font-size:11px">　<span class="${it.cls}">${it.name}${typeof itemEpicRaidBadge==='function'?itemEpicRaidBadge(it,true):''}</span></div>`).join('')}
   `;
   $('modal-offline').classList.add('show');
 }
@@ -610,7 +610,7 @@ function onMythicClear() {
   const seen = new Set();
   const uniqueLoot = allLoot.filter(it => { const k = it.id; if (seen.has(k)) return false; seen.add(k); return true; });
   const lootHtml = uniqueLoot.length > 0
-    ? uniqueLoot.map(it => `<div style="font-size:11px">　<span class="${it.cls}">[${it.rarityName}] ${it.name}${it.mythicUnique?' 🌟':''}</span></div>`).join('')
+    ? uniqueLoot.map(it => `<div style="font-size:11px">　<span class="${it.cls}">${it.name}${typeof itemEpicRaidBadge==='function'?itemEpicRaidBadge(it,true):''}${it.mythicUnique?' 🌟':''}</span></div>`).join('')
     : '<div class="muted">　无</div>';
 
   const gemReward = rng(10, 25);
@@ -642,7 +642,7 @@ function onMythicFail() {
   const failLevel = ms.level || state.mythicLevel || 1;
   const allLoot = ms.loot || [];
   const lootHtml = allLoot.length > 0
-    ? allLoot.map(it => `<div style="font-size:11px">　<span class="${it.cls}">[${it.rarityName}] ${it.name}</span></div>`).join('')
+    ? allLoot.map(it => `<div style="font-size:11px">　<span class="${it.cls}">${it.name}${typeof itemEpicRaidBadge==='function'?itemEpicRaidBadge(it,true):''}</span></div>`).join('')
     : '<div class="muted">　无</div>';
   $('dungeon-fail-text').innerHTML = `
     <div style="font-size:18px;margin:8px 0">💀 大秘境 +${failLevel} 失败</div>

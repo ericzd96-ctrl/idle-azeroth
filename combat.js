@@ -2401,7 +2401,7 @@ function onMonsterDeath(mon){
     const it=(mon._isRaid && dKey)
       ? rollItem('epic',mon.lvl,dKey,mon.isBoss?mon.bossName:null,{ exactRarity: !!mon._isEpicRaid })
       : rollItem(mon.maxRarity,mon.lvl,dKey,mon.isBoss?mon.bossName:null);
-    if((state.mode==='dungeon'||state.mode==='mythic')&&(state.dungeonState||state.mythicState))(state.dungeonState||state.mythicState).loot.push(it);addToInventory(it);if(typeof eventsOnItemGet==='function') eventsOnItemGet(it);if(it.rarity==='legend'&&typeof progressionOnLegendary==='function') progressionOnLegendary();const c=it.rarity==='legend'?'legend':(it.rarity==='epic'?'epic':'loot');log('🎁 掉落 ['+it.rarityName+'] '+it.name+(it.epicRaid?' [史诗团本]':''),c);
+    if((state.mode==='dungeon'||state.mode==='mythic')&&(state.dungeonState||state.mythicState))(state.dungeonState||state.mythicState).loot.push(it);addToInventory(it);if(typeof eventsOnItemGet==='function') eventsOnItemGet(it);if(it.rarity==='legend'&&typeof progressionOnLegendary==='function') progressionOnLegendary();const c=it.rarity==='legend'?'legend':(it.rarity==='epic'?'epic':'loot');log('🎁 掉落 '+it.name+(it.epicRaid?' [史诗团本]':''),c);
   }
   if(mon._isRaid && mon.fromDungeon){
     const dKey2=(state.dungeonState||state.mythicState)?.key;
@@ -2411,7 +2411,7 @@ function onMonsterDeath(mon){
         if((state.dungeonState||state.mythicState)) (state.dungeonState||state.mythicState).loot.push(extraEpic);
         addToInventory(extraEpic);
         if(typeof eventsOnItemGet==='function') eventsOnItemGet(extraEpic);
-        log('🎁 史诗团本尾王额外掉落 ['+extraEpic.rarityName+'] '+extraEpic.name+' [史诗团本]','epic');
+        log('🎁 史诗团本尾王额外掉落 '+extraEpic.name+' [史诗团本]','epic');
       }
       const dg2=DUNGEONS.find(d=>d.key===dKey2);
       const bossCount=Math.max(1,dg2?.bosses?.length||1);
@@ -2421,14 +2421,14 @@ function onMonsterDeath(mon){
         const legend=rollItem('legend',mon.lvl,dKey2,mon.bossName,{ exactRarity:true });
         if((state.dungeonState||state.mythicState)) (state.dungeonState||state.mythicState).loot.push(legend);
         addToInventory(legend);
-        log('🎉 史诗团本BOSS额外掉落 ['+legend.rarityName+'] '+legend.name+' [史诗团本]', 'legend');
+        log('🎉 史诗团本BOSS额外掉落 '+legend.name+' [史诗团本]', 'legend');
         if(typeof progressionOnLegendary==='function') progressionOnLegendary();
       }
     }else if(mon._isRaidFinal&&Math.random()<0.06){
       const legend=rollItem('legend',mon.lvl,dKey2,mon.bossName,{ exactRarity:true });
       if((state.dungeonState||state.mythicState)) (state.dungeonState||state.mythicState).loot.push(legend);
       addToInventory(legend);
-      log('🎉 团本关底BOSS额外掉落 ['+legend.rarityName+'] '+legend.name,'legend');
+      log('🎉 团本关底BOSS额外掉落 '+legend.name,'legend');
       if(typeof progressionOnLegendary==='function') progressionOnLegendary();
     }
   }
@@ -2447,12 +2447,12 @@ function onMonsterDeath(mon){
   else if(state.mode==='boss'){if(mon.isBoss){const map=getMap();log('👑 '+map.boss.name+' 已被击败!','legend');
     if(map.boss.lvl>=60){
       // 60+ BOSS: 必爆紫装 + 15%概率橙装
-      const purple=rollItemOfRarity('epic',mon.lvl);addToInventory(purple);if(typeof eventsOnItemGet==='function')eventsOnItemGet(purple);log('🎁 必掉 ['+purple.rarityName+'] '+purple.name,'epic');
-      if(Math.random()<0.15){const orange=rollItemOfRarity('legend',mon.lvl);addToInventory(orange);if(typeof eventsOnItemGet==='function')eventsOnItemGet(orange);log('🎉 额外掉落 ['+orange.rarityName+'] '+orange.name,'legend');}
+      const purple=rollItemOfRarity('epic',mon.lvl);addToInventory(purple);if(typeof eventsOnItemGet==='function')eventsOnItemGet(purple);log('🎁 必掉 '+purple.name,'epic');
+      if(Math.random()<0.15){const orange=rollItemOfRarity('legend',mon.lvl);addToInventory(orange);if(typeof eventsOnItemGet==='function')eventsOnItemGet(orange);log('🎉 额外掉落 '+orange.name,'legend');}
     }else{
       // 60以下: 必爆蓝装 + 15%概率紫装
-      const blue=rollItemOfRarity('rare',mon.lvl);addToInventory(blue);if(typeof eventsOnItemGet==='function')eventsOnItemGet(blue);log('🎁 必掉 ['+blue.rarityName+'] '+blue.name,'loot');
-      if(Math.random()<0.15){const purple=rollItemOfRarity('epic',mon.lvl);addToInventory(purple);if(typeof eventsOnItemGet==='function')eventsOnItemGet(purple);log('🎉 额外掉落 ['+purple.rarityName+'] '+purple.name,'epic');}
+      const blue=rollItemOfRarity('rare',mon.lvl);addToInventory(blue);if(typeof eventsOnItemGet==='function')eventsOnItemGet(blue);log('🎁 必掉 '+blue.name,'loot');
+      if(Math.random()<0.15){const purple=rollItemOfRarity('epic',mon.lvl);addToInventory(purple);if(typeof eventsOnItemGet==='function')eventsOnItemGet(purple);log('🎉 额外掉落 '+purple.name,'epic');}
     }
     state.mode='world';markDirty('map');}spawnMonster();}
   else{const subKey=state.currentMap+'-'+state.currentSubzone;state.subzoneKills[subKey]=(state.subzoneKills[subKey]||0)+1;if(state.subzoneKills[subKey]===50&&!state.subzoneCleared[subKey]){state.subzoneCleared[subKey]=true;const map=getMap();const sub=map.sub[state.currentSubzone];state.gold+=sub.lvl[1]*30;log('🌟 ['+sub.name+'] 探索完成! +'+sub.lvl[1]*30+'💰','epic');const it3=rollItem('rare',sub.lvl[1],state.currentMap);addToInventory(it3);if(typeof eventsOnItemGet==='function') eventsOnItemGet(it3);if(typeof eventsOnSubzoneClear==='function') eventsOnSubzoneClear();if(typeof progressionOnSubzoneClear==='function') progressionOnSubzoneClear(state.currentMap,state.currentSubzone);markDirty('map');}
