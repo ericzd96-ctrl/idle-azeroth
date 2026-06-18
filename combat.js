@@ -302,12 +302,10 @@ function calcSkillRuntimeBonus(skillKey, sk, mon, now){
 function applySkillFollowupDamage(mon, amount, icon, color){
   amount = Math.max(0, Math.floor(amount || 0));
   if(!mon || mon.hp <= 0 || amount <= 0) return 0;
-  if(mon._arcaneShield > 0){
-    if(amount <= mon._arcaneShield){ mon._arcaneShield -= amount; amount = 0; }
-    else { amount -= mon._arcaneShield; mon._arcaneShield = 0; }
-  }
-    const dr = monsterDamageReduction(mon, now);
-    if(dr && amount > 0) amount = Math.max(1, Math.floor(amount * (1 - dr)));
+  const shieldResult = absorbMonsterBarrier(mon, amount, icon || '🛡️');
+  amount = shieldResult.remaining;
+  const dr = monsterDamageReduction(mon, now);
+  if(dr && amount > 0) amount = Math.max(1, Math.floor(amount * (1 - dr)));
   if(amount <= 0) return 0;
   mon.hp -= amount;
   trackDmg('hero', amount);
@@ -531,10 +529,7 @@ function runTalentAction(fx, mon, value, ctx, now){
   if(fx.nextSkillCrit) grantNextSkillCrit(fx.nextSkillCrit);
   if(fx.extraHitMul && mon && mon.hp > 0){
     let extra = Math.max(1, Math.floor((value || state.hero.atk) * fx.extraHitMul));
-    if(mon._arcaneShield > 0){
-      if(extra <= mon._arcaneShield){ mon._arcaneShield -= extra; extra = 0; }
-      else { extra -= mon._arcaneShield; mon._arcaneShield = 0; }
-    }
+    extra = absorbMonsterBarrier(mon, extra, fx.icon || '🛡️').remaining;
     const dr = monsterDamageReduction(mon, now);
     if(dr && extra > 0) extra = Math.max(1, Math.floor(extra * (1 - dr)));
     if(extra > 0){
@@ -1235,6 +1230,23 @@ function supportSkillsByNames(names, lvl){
   const level = Math.max(1, lvl || 1);
   return (names || []).map(supportSkillByName).filter(sk => sk && level >= (sk.minLvl || 1));
 }
+function supportSkillIsHealing(sk){
+  return !!sk && (sk.healPct || 0) > 0;
+}
+function clampBossSupportSkills(skills, maxHealing){
+  const out = [];
+  let healingCount = 0;
+  for(const sk of (skills || [])){
+    if(!sk) continue;
+    if(supportSkillIsHealing(sk)){
+      if(healingCount >= Math.max(0, maxHealing || 0)) continue;
+      healingCount++;
+    }
+    if(out.some(x => x.name === sk.name)) continue;
+    out.push(sk);
+  }
+  return out;
+}
 function buildSupportSkillCandidatePool(name, kind, lvl, isBoss){
   const tags = mobSkillTags(name, kind, !!isBoss);
   const level = Math.max(1, lvl || 1);
@@ -1296,15 +1308,16 @@ function buildMonsterSupportPool(name, kind, lvl, isBoss, desiredCount){
     return pickMonSupportSkills(name, kind, lvl, count, false);
   }
   const pkg = inferBossSupportPackage(name);
-  let pool = supportSkillsByNames(BOSS_SUPPORT_PACKAGES[pkg], lvl).slice(0, count);
+  let pool = clampBossSupportSkills(supportSkillsByNames(BOSS_SUPPORT_PACKAGES[pkg], lvl), 1).slice(0, count);
   if(pool.length < count){
     const bonus = pickMonSupportSkills(name, kind, lvl, count, true);
     for(const sk of bonus){
       if(pool.length >= count) break;
+      if(supportSkillIsHealing(sk) && pool.some(supportSkillIsHealing)) continue;
       if(!pool.some(x => x.name === sk.name)) pool.push(sk);
     }
   }
-  return pool;
+  return clampBossSupportSkills(pool, 1);
 }
 function pickMonSupportSkill(name, kind, lvl, isBoss){
   return pickMonSupportSkills(name, kind, lvl, 1, isBoss)[0] || null;
@@ -1476,6 +1489,28 @@ function bossTrickList(bossData){
     if(Array.isArray(sk?.tricks) && sk.tricks.length) skillTricks.push(...sk.tricks);
   }
   return skillTricks;
+}
+function syncMonsterShieldAura(mon){
+  if(!mon) return;
+  if((mon._arcaneShield || 0) > 0){
+    setMonsterTrickAura(mon, 'shield', { name:'护盾', icon:'🛡️', desc:'' }, 0, { desc:`护盾吸收 ${fmt(mon._arcaneShield)} 点伤害` });
+  }else if(mon._trickAuras){
+    delete mon._trickAuras.shield;
+  }
+}
+function absorbMonsterBarrier(mon, amount, icon){
+  amount = Math.max(0, Math.floor(amount || 0));
+  if(!mon || amount <= 0) return { remaining:0, absorbed:0 };
+  if(!(mon._arcaneShield > 0)) return { remaining:amount, absorbed:0 };
+  const absorbed = Math.min(mon._arcaneShield, amount);
+  mon._arcaneShield -= absorbed;
+  const remaining = amount - absorbed;
+  if(absorbed > 0){
+    showFloat($('mon-emoji'), (icon || '🛡️') + '-' + absorbed, '#93c5fd', { variant:'shield-break', scale:1.02 });
+    if(typeof pulseCombatEl === 'function') pulseCombatEl($('mon-emoji'), 'shield', 260);
+  }
+  syncMonsterShieldAura(mon);
+  return { remaining, absorbed };
 }
 function getMonsterBossData(mon){
   if(!mon || !mon.isBoss) return null;
@@ -1688,7 +1723,7 @@ function applyMonsterSupportSkill(mon, skill, now, opts){
   if(skill.shieldPct){
     const shield = Math.max(1, Math.floor(mon.hpMax * skill.shieldPct));
     mon._arcaneShield = (mon._arcaneShield || 0) + shield;
-    setMonsterTrickAura(mon, 'shield', skill, 0, { desc:`护盾吸收 ${fmt(mon._arcaneShield)} 点伤害` });
+    syncMonsterShieldAura(mon);
     showFloat($('mon-emoji'), '🛡️+' + shield, '#93c5fd', { variant:'shield', scale:1.04 });
     if(typeof pulseCombatEl === 'function') pulseCombatEl($('mon-emoji'), 'shield', 260);
     used = true;
@@ -2025,7 +2060,9 @@ function applyCompanionSplash(mon, dmg, pct, icon, color){
   if(pct <= 0 || !Array.isArray(state.currentMonsters)) return;
   for(const target of state.currentMonsters){
     if(target === mon || target.hp <= 0) continue;
-    const splash = Math.max(1, Math.floor(dmg * pct));
+    let splash = Math.max(1, Math.floor(dmg * pct));
+    splash = absorbMonsterBarrier(target, splash, icon || '💥').remaining;
+    if(splash <= 0) continue;
     target.hp -= splash;
     trackDmg('comp', splash);
     showFloat($('mon-emoji'), (icon || '💥') + '-' + splash, color || '#fca5a5');
@@ -2213,14 +2250,11 @@ function tickBattle(now){
     let actualDmg = d.dmg;
     const dodged = mon.dodgeChance && Math.random() < mon.dodgeChance;   // BOSS 闪避
     if (dodged) actualDmg = 0;
-    if (!dodged && mon._arcaneShield > 0) {
-      if (actualDmg <= mon._arcaneShield) { mon._arcaneShield -= actualDmg; actualDmg = 0; }
-      else { actualDmg -= mon._arcaneShield; mon._arcaneShield = 0; }
-    }
+    if (!dodged) actualDmg = absorbMonsterBarrier(mon, actualDmg, d.crit ? '💥' : '⚔️').remaining;
     {const dr=monsterDamageReduction(mon, now);if(dr&&actualDmg>0)actualDmg=Math.max(1,Math.floor(actualDmg*(1-dr)));}   // 怪物减伤
     mon.hp-=actualDmg;trackDmg('hero',actualDmg,d.crit&&!dodged,'⚔️普攻');
     if(typeof progressionOnDamage==='function') progressionOnDamage(actualDmg);
-    if(!dodged&&state.hero.extraAtk>0&&Math.random()*100<state.hero.extraAtk){const d2=calcDmg(ap,heroTargetDef(mon),state.hero.crit,state.hero.critd,false,mon.lvl,state.hero.lvl);let dd2=d2.dmg;const dr=monsterDamageReduction(mon, now);if(dr)dd2=Math.max(1,Math.floor(dd2*(1-dr)));mon.hp-=dd2;trackDmg('hero',dd2,d2.crit);showFloat($('mon-emoji'),'🎯+'+dd2,'#fbbf24',{variant:d2.crit?'crit':'hit',scale:d2.crit?1.18:1.02});}
+    if(!dodged&&state.hero.extraAtk>0&&Math.random()*100<state.hero.extraAtk){const d2=calcDmg(ap,heroTargetDef(mon),state.hero.crit,state.hero.critd,false,mon.lvl,state.hero.lvl);let dd2=absorbMonsterBarrier(mon, d2.dmg, '🎯').remaining;const dr=monsterDamageReduction(mon, now);if(dr&&dd2>0)dd2=Math.max(1,Math.floor(dd2*(1-dr)));mon.hp-=dd2;trackDmg('hero',dd2,d2.crit);showFloat($('mon-emoji'),'🎯+'+dd2,'#fbbf24',{variant:d2.crit?'crit':'hit',scale:d2.crit?1.18:1.02});}
     showFloat($('mon-emoji'),dodged?'闪避':('-'+actualDmg),dodged?'#9ca3af':(d.crit?'#fbbf24':'#fff'),{variant:dodged?'avoid':(d.crit?'crit':'hit'),scale:d.crit?1.22:1});
     if(typeof pulseCombatEl === 'function') pulseCombatEl($('mon-emoji'), d.crit ? 'crit' : 'hit', d.crit ? 280 : 220);
     if(!dodged&&typeof passiveOnHit==='function')passiveOnHit(mon,actualDmg,ap);
@@ -2954,8 +2988,8 @@ function applyCompanionSignatureHit(sig, st, mon, dmgDone, now){
   const tpl = comp && COMPANIONS.find(c=>c.key===comp.key);
   let note = '';
   if(sig.bonusVsState && monsterStateActive(mon, sig.bonusVsState)){
-    const extra = Math.max(1, Math.floor(dmgDone * (sig.bonusStatePct || 0.3)));
-    mon.hp -= extra; trackDmg('comp', extra); showFloat($('mon-emoji'), (sig.icon || '✨') + '-' + extra, '#fbbf24');
+    const extra = absorbMonsterBarrier(mon, Math.max(1, Math.floor(dmgDone * (sig.bonusStatePct || 0.3))), sig.icon || '✨').remaining;
+    if(extra > 0){ mon.hp -= extra; trackDmg('comp', extra); showFloat($('mon-emoji'), (sig.icon || '✨') + '-' + extra, '#fbbf24'); }
     note = note || '追猎强化';
   }
   if(sig.dotPct) applyMonsterDot(mon, `sig:${st.name}:${sig.name}`, Math.max(1, Math.floor(dmgDone * sig.dotPct)), sig.dotMs || 6000, { icon:sig.icon || '✨', name:sig.name, source:st.name });
@@ -2965,13 +2999,13 @@ function applyCompanionSignatureHit(sig, st, mon, dmgDone, now){
   if(sig.stateKey) applyMonsterState(mon, sig.stateKey, sig.stateMs || 8000);
   if(sig.splashPct) applyCompanionSplash(mon, dmgDone, sig.splashPct, sig.icon || '💥', '#fca5a5');
   if(sig.executeBonus && mon.hp > 0 && mon.hp <= mon.hpMax * (sig.executeThreshold || 0.35)){
-    const extra = Math.max(1, Math.floor(dmgDone * sig.executeBonus));
-    mon.hp -= extra; trackDmg('comp', extra); showFloat($('mon-emoji'), (sig.icon || '✨') + '-' + extra, '#fbbf24');
+    const extra = absorbMonsterBarrier(mon, Math.max(1, Math.floor(dmgDone * sig.executeBonus)), sig.icon || '✨').remaining;
+    if(extra > 0){ mon.hp -= extra; trackDmg('comp', extra); showFloat($('mon-emoji'), (sig.icon || '✨') + '-' + extra, '#fbbf24'); }
     note = '斩杀强化';
   }
   if(sig.bonusVsBoss && mon.isBoss){
-    const extra = Math.max(1, Math.floor(dmgDone * sig.bonusVsBoss));
-    mon.hp -= extra; trackDmg('comp', extra); showFloat($('mon-emoji'), (sig.icon || '👑') + '-' + extra, '#fbbf24');
+    const extra = absorbMonsterBarrier(mon, Math.max(1, Math.floor(dmgDone * sig.bonusVsBoss)), sig.icon || '👑').remaining;
+    if(extra > 0){ mon.hp -= extra; trackDmg('comp', extra); showFloat($('mon-emoji'), (sig.icon || '👑') + '-' + extra, '#fbbf24'); }
     note = note || 'Boss压制';
   }
   if(sig.healPctHero){
@@ -3099,7 +3133,7 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
   if((state._compStunUntil||0)>now) return;
   const mon=state.currentMonsters[0];if(!mon)return;
   if(compSkillCd._owner!==comp.key)compSkillCd={_owner:comp.key};   // 换随从:重置技能冷却
-  const interval=1000/(st.spd||0.5);if((state._compDisarmUntil||0)<=now&&(now-lastCompAtk>interval||now-lastCompAtk>5000)){let cm=state.currentMonsters[0];if(cm&&cm.hp>0){const cd=calcDmg(st.atk,monArmor(cm),st.crit,st.critd,false,cm.lvl,state.hero.lvl);cm.hp-=cd.dmg;trackDmg('comp',cd.dmg,cd.crit,st.emoji+'普攻');showFloat($('mon-emoji'),st.emoji+'-'+cd.dmg,'#a0d0ff');applyCompanionSignatureHit(companionSignature(tpl), st, cm, cd.dmg, now);}lastCompAtk=now;
+  const interval=1000/(st.spd||0.5);if((state._compDisarmUntil||0)<=now&&(now-lastCompAtk>interval||now-lastCompAtk>5000)){let cm=state.currentMonsters[0];if(cm&&cm.hp>0){const cd=calcDmg(st.atk,monArmor(cm),st.crit,st.critd,false,cm.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(cm, cd.dmg, st.emoji).remaining;cm.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,cd.crit,st.emoji+'普攻');showFloat($('mon-emoji'),st.emoji+'-'+dealt,'#a0d0ff');}applyCompanionSignatureHit(companionSignature(tpl), st, cm, dealt, now);}lastCompAtk=now;
     // 技能:每个技能按自己的 cd 独立冷却,就绪即放(GCD 2秒,避免一次性全放;优先治疗>buff>伤害)
     if((state._compSilenceUntil||0)<=now&&now-lastCompSkill>2000){
       const ready=[];for(let i=0;i<st.skills.length;i++){if((compSkillCd[i]||0)<=now)ready.push(i);}
@@ -3108,16 +3142,16 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
       if(i!==undefined){const sk=st.skills[i];
         if(sk.type==='dmg'){
           const dmgMult = companionSkillDamageMult(sk, mon, now);
-          const sd=calcDmg(st.atk*sk.mul*dmgMult,monArmor(mon),st.crit,st.critd,sk.alwaysCrit,mon.lvl,state.hero.lvl);mon.hp-=sd.dmg;trackDmg('comp',sd.dmg,sd.crit,st.emoji+sk.name);showFloat($('mon-emoji'),st.emoji+sk.icon+'-'+sd.dmg,'#c0a0ff');
+          const sd=calcDmg(st.atk*sk.mul*dmgMult,monArmor(mon),st.crit,st.critd,sk.alwaysCrit,mon.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(mon, sd.dmg, sk.icon || st.emoji).remaining;mon.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,sd.crit,st.emoji+sk.name);showFloat($('mon-emoji'),st.emoji+sk.icon+'-'+dealt,'#c0a0ff');}
           const dotPct = sk.dotPct || (sk.dot ? 0.12 : 0);
-          if(dotPct > 0) applyMonsterDot(mon,`comp:${comp.key}:${i}`,Math.max(1,Math.floor(sd.dmg*dotPct)),sk.dotMs||6000,{icon:sk.icon,name:sk.name,source:st.name});
+          if(dotPct > 0) applyMonsterDot(mon,`comp:${comp.key}:${i}`,Math.max(1,Math.floor(dealt*dotPct)),sk.dotMs||6000,{icon:sk.icon,name:sk.name,source:st.name});
           if(sk.slow) mon.slowUntil=Math.max(mon.slowUntil||0,Date.now()+(sk.slowMs||4000));
           if(sk.stun) mon.stunUntil=Math.max(mon.stunUntil||0,Date.now()+(sk.stunMs||1500));
           if(sk.debuff==='sunder'||/破甲/.test(sk.name||'')) mon.sunderUntil=Math.max(mon.sunderUntil||0,Date.now()+(sk.sunderMs||15000));
           if(sk.stateKey) applyMonsterState(mon, sk.stateKey, sk.stateMs || 9000);
-          if(sk.splashPct) applyCompanionSplash(mon, sd.dmg, sk.splashPct, sk.icon || '💥', '#fca5a5');
-          if(sk.aoePct) applyCompanionSplash(mon, sd.dmg, sk.aoePct, sk.icon || '💥', '#fca5a5');
-          applyCompanionSignatureHit(companionSignature(tpl), st, mon, sd.dmg, now);
+          if(sk.splashPct) applyCompanionSplash(mon, dealt, sk.splashPct, sk.icon || '💥', '#fca5a5');
+          if(sk.aoePct) applyCompanionSplash(mon, dealt, sk.aoePct, sk.icon || '💥', '#fca5a5');
+          applyCompanionSignatureHit(companionSignature(tpl), st, mon, dealt, now);
           if(sk.heal){
             const healTarget = companionSkillTarget(sk) === 'hero' ? 'hero' : companionSkillTarget(sk) === 'companion' ? 'companion' : companionHealTarget();
             if(healTarget==='companion'){
@@ -3128,7 +3162,7 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
               healHeroAmount(healAmt, st.emoji, '#6ee7b7', 'comp', st.emoji+sk.name);
             }
           }
-          if(sk.lifeSteal) healCompanionAmount(Math.floor(sd.dmg*sk.lifeSteal), '🩸', '#6ee7b7', 'comp', '🩸'+sk.name);
+          if(sk.lifeSteal) healCompanionAmount(Math.floor(dealt*sk.lifeSteal), '🩸', '#6ee7b7', 'comp', '🩸'+sk.name);
         }
         else if(sk.type==='heal'){
           const healTarget = companionSkillTarget(sk) === 'hero' ? 'hero' : companionSkillTarget(sk) === 'companion' ? 'companion' : companionHealTarget();
