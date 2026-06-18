@@ -131,6 +131,7 @@ h1 {
 }
 .mon-row:hover { border-color: var(--muted); }
 .mon-row.focus { border-color: var(--legend); box-shadow: inset 0 0 0 1px var(--legend); }
+.mon-row.dead { opacity: .32; filter: grayscale(1); pointer-events: none; }
 .mon-row .m-emoji { font-size: 28px; line-height: 1; user-select: none; flex: 0 0 auto; }
 .mon-row.focus .m-emoji.shake { animation: shake .25s; }
 .mon-row .m-mid { flex: 1; min-width: 0; text-align: left; }

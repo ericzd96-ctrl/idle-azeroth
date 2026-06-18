@@ -74,7 +74,7 @@ function setupAttrHover() {
    每帧只更新血条宽度与数字。焦点行带 legacy id(mon-emoji/mon-name/b-mhp/t-mhp)供 showFloat 锚定。 */
 let _monListSig = '';
 let skillDragging = false;   // 技能栏拖拽排序进行中(由 main.js 设置),期间不重建技能栏
-let _buffBarSig = '';        // 增益条内容签名,变化才重绘
+let _buffBarStruct = '';     // 增益条结构签名(不含倒计时),变化才重建 DOM
 /* 当前职业的 buff 元信息(key→{icon,name,desc,dr}),从技能定义构建 */
 function buffMetaForClass() {
   const c = getCls(); const map = {};
@@ -202,17 +202,26 @@ function renderBuffBar() {
   if (state.heroDisarmUntil > now) heroDe.push({ kind:'self-de', icon:'⚔️❌', name:'你·缴械', desc:'无法普通攻击', left:Math.ceil((state.heroDisarmUntil-now)/1000) });
   const selfStates = buffs.concat(heroDe);
   const enemyStates = enemyBuffs.concat(debuffs);
-  const sig = selfStates.concat([{ kind:'split', name:'|' }], enemyStates).map(b => b.kind + (b.name || '') + (b.left || 0)).join('|');
-  if (sig === _buffBarSig) return;   // 内容(含倒计时)没变就不重绘
-  _buffBarSig = sig;
-  const renderGroup = (title, cls, items, emptyText) => {
-    const body = items.length ? items.map(b => {
-      const tip = `${b.name}${b.desc ? ' · ' + b.desc : ''}${b.left > 0 ? ' · 剩余' + b.left + '秒' : ''}`;
-      return `<div class="buff-chip ${b.kind}" data-tip="${tip.replace(/"/g, '&quot;')}"><div class="b-ic">${statusIconHtml(b.name?.replace(/^敌·|^你·/, ''), b.icon, 16)}</div><div class="b-t">${b.left > 0 ? b.left + 's' : '∞'}</div></div>`;
-    }).join('') : `<div class="buff-empty">${emptyText}</div>`;
-    return `<div class="buff-side ${cls}"><div class="buff-side-title">${title}</div><div class="buff-side-list">${body}</div></div>`;
-  };
-  bar.innerHTML = renderGroup('你', 'self', selfStates, '暂无状态') + renderGroup('敌', 'enemy', enemyStates, '暂无状态');
+  // 结构签名(不含倒计时):只在 buff/debuff 增删时重建 DOM, 避免每帧 innerHTML 导致闪烁/发热
+  const structSig = selfStates.concat([{ kind:'split', name:'|' }], enemyStates).map(b => b.kind + (b.name || '')).join('|');
+  if (structSig !== _buffBarStruct) {
+    _buffBarStruct = structSig;
+    const renderGroup = (title, cls, items, emptyText) => {
+      const body = items.length ? items.map(b => {
+        const tip = `${b.name}${b.desc ? ' · ' + b.desc : ''}${b.left > 0 ? ' · 剩余' + b.left + '秒' : ''}`;
+        return `<div class="buff-chip ${b.kind}" data-tip="${tip.replace(/"/g, '&quot;')}"><div class="b-ic">${statusIconHtml(b.name?.replace(/^敌·|^你·/, ''), b.icon, 16)}</div><div class="b-t">${b.left > 0 ? b.left + 's' : '∞'}</div></div>`;
+      }).join('') : `<div class="buff-empty">${emptyText}</div>`;
+      return `<div class="buff-side ${cls}"><div class="buff-side-title">${title}</div><div class="buff-side-list">${body}</div></div>`;
+    };
+    bar.innerHTML = renderGroup('你', 'self', selfStates, '暂无状态') + renderGroup('敌', 'enemy', enemyStates, '暂无状态');
+  }
+  // 每帧就地更新倒计时文本(不碰 DOM 结构, 消除闪烁)
+  const allT = bar.querySelectorAll('.buff-chip .b-t');
+  const allItems = selfStates.concat(enemyStates);
+  for (let i = 0; i < Math.min(allT.length, allItems.length); i++) {
+    const txt = allItems[i].left > 0 ? allItems[i].left + 's' : '∞';
+    if (allT[i].textContent !== txt) allT[i].textContent = txt;
+  }
 }
 function effectTags(s) {
   const t = [];
@@ -317,18 +326,23 @@ function attachFocusBossHover(focus) {
 }
 function renderMonList() {
   const wrap = $('mon-list'); if (!wrap) return;
-  const alive = state.currentMonsters.filter(m => m.hp > 0);
-  if (alive.length === 0) { if (_monListSig !== '') { wrap.innerHTML = ''; _monListSig = ''; } return; }
-  const focus = state.currentMonsters[0];
-  const sig = alive.map(m => m._uid + (m === focus ? 'F' : '')).join('|');
+  const all = state.currentMonsters || [];
+
+  // 战斗结束：全部清空
+  if (all.length === 0) { if (_monListSig !== '') { wrap.innerHTML = ''; _monListSig = ''; } return; }
+
+  const focus = all[0];
+  // 签名包含所有怪物(含死敌) — 死敌保留 DOM 防止布局塌缩上移
+  const sig = all.map(m => m._uid + (m === focus ? 'F' : '') + (m.hp > 0 ? 'A' : 'D')).join('|');
   if (sig !== _monListSig) {
     _monListSig = sig;
-    wrap.innerHTML = alive.map(m => {
+    wrap.innerHTML = all.map(m => {
       const isFocus = m === focus;
+      const isDead = m.hp <= 0;
       const seg = Array.from(m.name);
       const emoji = seg[0], nm = seg.slice(1).join('') || '敌人';
       const monIconHtml = (typeof entityIcon === 'function') ? entityIcon(nm, 28, emoji) : emoji;
-      return `<div class="mon-row${isFocus?' focus':''}" data-uid="${m._uid}">
+      return `<div class="mon-row${isFocus?' focus':''}${isDead?' dead':''}" data-uid="${m._uid}">
         <div class="m-emoji"${isFocus?' id="mon-emoji"':''}>${monIconHtml}</div>
         <div class="m-mid">
           <div class="m-name"${isFocus?' id="mon-name"':''}>${nm}<span class="m-lvl">Lv.${m.lvl}</span><span class="m-debuffs"></span></div>
@@ -338,29 +352,37 @@ function renderMonList() {
     }).join('');
     attachFocusBossHover(focus);
   }
-  // 每帧更新血条 + 减益小图标(按 uid 定位行)
+
+  // 每帧更新血条 + 存活状态 + 减益小图标(按 uid 定位行)
   const now = Date.now();
-  for (const m of alive) {
+  for (const m of all) {
     const row = wrap.querySelector(`[data-uid="${m._uid}"]`); if (!row) continue;
+    const isDead = m.hp <= 0;
+    row.classList.toggle('dead', isDead);
+
     const fill = row.querySelector('.bar > i'); const txt = row.querySelector('.bar > span');
-    if (fill) fill.style.width = Math.max(0, m.hp / m.hpMax * 100) + '%';
-    if (txt) txt.textContent = hpWithShieldText(m.hp, m.hpMax, Math.max(0, m._arcaneShield || 0));
+    if (fill) fill.style.width = isDead ? '0%' : Math.max(0, m.hp / m.hpMax * 100) + '%';
+    if (txt) txt.textContent = isDead ? '已击败' : hpWithShieldText(m.hp, m.hpMax, Math.max(0, m._arcaneShield || 0));
+
     const de = row.querySelector('.m-debuffs');
-    if (de) {
-      let s = '';
-      if (m.slowUntil > now)   s += `<span title="减速:攻速降低">${statusIconHtml('减速', '❄️', 13)}</span>`;
-      if (typeof getMonsterDots === 'function') {
-        const dots = getMonsterDots(m, now);
-        if (dots.length) {
-          const total = dots.reduce((sum, dot) => sum + (dot.dps || 0), 0);
-          const names = dots.map(dot => `${dot.icon || '🔥'}${dot.name || '持续伤害'}:${fmt(dot.dps || 0)}/秒`).join(' · ');
-          s += `<span title="${names}">${statusIconHtml(dots[0]?.name || '持续伤害', dots[0]?.icon || '🔥', 13)}${dots.length > 1 ? 'x' + dots.length : ''}:${fmt(total)}</span>`;
-        }
-      } else if (m.dot > 0 && m.dotEnd > now) s += `<span title="灼烧/中毒:每秒 ${fmt(m.dot)} 伤害">${statusIconHtml('灼烧/中毒', '🔥', 13)}</span>`;
-      if (m.sunderUntil > now) s += `<span title="破甲:防御降低30%">${statusIconHtml('破甲', '🔨', 13)}</span>`;
-      if (m._arcaneShield > 0) s += `<span title="法力护盾:吸收 ${fmt(m._arcaneShield)} 伤害">${statusIconHtml('法力护盾', '🔮', 13)}</span>`;
-      if (de.dataset.s !== s) { de.innerHTML = s; de.dataset.s = s; }
+    if (!de) continue;
+    if (isDead) {
+      if (de.dataset.s !== '') { de.innerHTML = ''; de.dataset.s = ''; }
+      continue;
     }
+    let s = '';
+    if (m.slowUntil > now)   s += `<span title="减速:攻速降低">${statusIconHtml('减速', '❄️', 13)}</span>`;
+    if (typeof getMonsterDots === 'function') {
+      const dots = getMonsterDots(m, now);
+      if (dots.length) {
+        const total = dots.reduce((sum, dot) => sum + (dot.dps || 0), 0);
+        const names = dots.map(dot => `${dot.icon || '🔥'}${dot.name || '持续伤害'}:${fmt(dot.dps || 0)}/秒`).join(' · ');
+        s += `<span title="${names}">${statusIconHtml(dots[0]?.name || '持续伤害', dots[0]?.icon || '🔥', 13)}${dots.length > 1 ? 'x' + dots.length : ''}:${fmt(total)}</span>`;
+      }
+    } else if (m.dot > 0 && m.dotEnd > now) s += `<span title="灼烧/中毒:每秒 ${fmt(m.dot)} 伤害">${statusIconHtml('灼烧/中毒', '🔥', 13)}</span>`;
+    if (m.sunderUntil > now) s += `<span title="破甲:防御降低30%">${statusIconHtml('破甲', '🔨', 13)}</span>`;
+    if (m._arcaneShield > 0) s += `<span title="法力护盾:吸收 ${fmt(m._arcaneShield)} 伤害">${statusIconHtml('法力护盾', '🔮', 13)}</span>`;
+    if (de.dataset.s !== s) { de.innerHTML = s; de.dataset.s = s; }
   }
 }
 /* ---------- 伤害统计(战斗日志下方) ---------- */
