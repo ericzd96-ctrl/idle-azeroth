@@ -361,27 +361,102 @@ function bossSkillLineHtml(s, opts) {
     ${tagHtml}
   </div>`;
 }
+function fmtPctValue(v, digits) {
+  return `${Number(v || 0).toFixed(digits == null ? 1 : digits)}%`;
+}
+function heroUnitTipHtml() {
+  const cls = getCls();
+  const hero = state.hero || {};
+  const shield = Math.max(0, state?.talentState?.shield || 0);
+  const activeSets = (typeof getActiveSetBonuses === 'function' ? getActiveSetBonuses() : [])
+    .filter(x => x && x.active)
+    .map(x => {
+      const effect = Object.entries(x.mod || {}).map(([k, v]) => fmtMod(k, v)).join(' · ');
+      return `✓ ${x.name} ${x.pieces}件: ${effect}`;
+    });
+  const activeSetHtml = activeSets.length
+    ? `<div style="margin-top:4px;color:#86efac">套装: ${activeSets.join('<br>')}</div>`
+    : `<div class="muted" style="margin-top:4px">当前没有已激活套装效果</div>`;
+  return `<b>${state.name || '冒险者'}${cls ? ` · ${cls.name}` : ''}</b>
+    <div>生命 ${hpWithShieldText(state.hp || 0, hero.hpMax || 0, shield)} · 资源 ${fmt(state.resource || 0)}/${fmt(state.resourceMax || 0)}</div>
+    <div>攻击 ${fmt(hero.atk || 0)} · 防御 ${fmt(hero.def || 0)} · 攻速 ${(hero.spd || 0).toFixed(2)}/s</div>
+    <div>暴击 ${fmtPctValue(hero.crit || 0, 1)} · 暴伤 ${fmtPctValue(hero.critd || 0, 0)} · 吸血 ${fmtPctValue(hero.leech || 0, 1)}</div>
+    <div>全能 ${fmtPctValue(hero.vers || 0, 1)} · 极速 ${fmtPctValue(hero.haste || 0, 1)} · 精通 ${fmt(hero.mastery || 0)}</div>
+    ${activeSetHtml}`;
+}
+function monsterUnitTipHtml(mon, bossData) {
+  if (!mon) return '<b>敌人</b>';
+  const now = Date.now();
+  const shield = Math.max(0, mon._arcaneShield || 0);
+  const atk = typeof monsterAttackValue === 'function' ? monsterAttackValue(mon, now) : (mon.atk || 0);
+  const def = typeof monArmor === 'function' ? monArmor(mon) : (mon.def || 0);
+  const crit = typeof monsterCritRate === 'function' ? monsterCritRate(mon, now) : (mon.critChance ? mon.critChance * 100 : 5);
+  const dr = typeof monsterDamageReduction === 'function' ? monsterDamageReduction(mon, now) : (mon.dmgReduction || 0);
+  const leech = typeof monsterLeechRate === 'function' ? monsterLeechRate(mon, now) : (mon.lifeSteal || 0);
+  const spdMul = typeof monsterSpeedMult === 'function' ? monsterSpeedMult(mon, now) : 1;
+  const battleSpd = state.battleSpeed || 1;
+  const interval = ((mon.atkInterval || (mon.isBoss ? 1400 : 1700)) / battleSpd / Math.max(0.01, spdMul));
+  const aps = Math.max(0.1, 1000 / Math.max(1, interval));
+  const sourceLine = mon._summoned ? `<div class="muted">由 ${mon._summonerName || '敌人'} 召唤</div>` : '';
+  const passiveTags = [];
+  if (bossData?.passive?.dodgeChance) passiveTags.push(`闪避 ${fmtPctValue((bossData.passive.dodgeChance || 0) * 100, 0)}`);
+  if (bossData?.passive?.critChance) passiveTags.push(`暴击 ${fmtPctValue((bossData.passive.critChance || 0) * 100, 0)}`);
+  if (bossData?.passive?.atkBonus) passiveTags.push(`攻击 ${fmtPctValue((bossData.passive.atkBonus || 0) * 100, 0)}`);
+  if (bossData?.passive?.dmgReduction) passiveTags.push(`减伤 ${fmtPctValue((bossData.passive.dmgReduction || 0) * 100, 0)}`);
+  const passiveHtml = passiveTags.length ? `<div class="muted">被动: ${passiveTags.join(' · ')}</div>` : '';
+  return `<b>${mon.name} · Lv.${mon.lvl}</b>
+    ${sourceLine}
+    <div>生命 ${hpWithShieldText(mon.hp || 0, mon.hpMax || 0, shield)}</div>
+    <div>攻击 ${fmt(atk)} · 防御 ${fmt(def)} · 攻速 ${aps.toFixed(2)}/s</div>
+    <div>暴击 ${fmtPctValue(crit, 0)} · 减伤 ${fmtPctValue(dr * 100, 0)} · 吸血 ${fmtPctValue(leech * 100, 0)}</div>
+    ${passiveHtml}`;
+}
+function lookupMonsterBossData(mon) {
+  if (!mon) return null;
+  if (state.mode === 'boss') {
+    const map = getMap();
+    return map?.boss || null;
+  }
+  if (state.mode === 'worldboss') {
+    if (typeof WORLD_BOSSES !== 'undefined') return WORLD_BOSSES.find(b => b.key === mon.wbKey) || null;
+    return null;
+  }
+  if (state.mode === 'dungeon' || state.mode === 'mythic') {
+    const dg = DUNGEONS.find(d=>d.key===(state.dungeonState||state.mythicState)?.key);
+    if (dg) return (dg.bosses||[]).find(b=>b.name===mon.bossName);
+  }
+  return null;
+}
+function bindUnitTip(el, htmlBuilder) {
+  if (!el || typeof htmlBuilder !== 'function') return;
+  const showTip = e => {
+    const tip = $('compare-tip');
+    if (!tip) return;
+    tip.querySelector('.compare-head').innerHTML = htmlBuilder() || '';
+    tip.querySelector('.compare-body').innerHTML = '';
+    tip.style.display = 'block';
+    positionTip(tip, e);
+  };
+  el.onmouseenter = showTip;
+  el.onmouseleave = () => { if (!_tipPinned) hideLootTip(); };
+  el.onmousemove = e => positionTip($('compare-tip'), e);
+  addTouchPin(el, showTip);
+}
 function attachFocusBossHover(focus) {
   const emojiEl = $('mon-emoji'); if (!emojiEl) return;
   if (!focus) return;
 
   // 获取BOSS数据(地图/副本/大秘境)
-  let bossData = null;
-  if (state.mode === 'boss') {
-    const map = getMap();
-    if (map?.boss) bossData = map.boss;
-  } else if (state.mode === 'worldboss') {
-    if (typeof WORLD_BOSSES !== 'undefined') bossData = WORLD_BOSSES.find(b => b.key === focus.wbKey) || null;
-  } else if (state.mode === 'dungeon' || state.mode === 'mythic') {
-    const dg = DUNGEONS.find(d=>d.key===(state.dungeonState||state.mythicState)?.key);
-    if (dg) bossData = (dg.bosses||[]).find(b=>b.name===focus.bossName);
-  }
+  let bossData = lookupMonsterBossData(focus);
 
   const hasMobSkills = !!(focus._monSkills?.length || focus._monSkill || focus._monSupportSkills?.length);
-  if (!bossData && !hasMobSkills) return;
+  if (!bossData && !hasMobSkills) {
+    bindUnitTip(emojiEl, () => monsterUnitTipHtml(focus, null));
+    return;
+  }
   emojiEl.style.cursor = 'help';
   const showFocusTip = function(e) {
-    let html = '<b>'+focus.name+' Lv.'+focus.lvl+'</b>';
+    let html = monsterUnitTipHtml(focus, bossData);
     if (bossData?.skills) {
       html += '<div style=\"margin-top:3px;color:#fbbf24\">技能:</div>';
       bossData.skills.forEach(s => {
@@ -469,6 +544,13 @@ function renderMonList() {
         </div>
       </div>`;
     }).join('');
+    for (const m of all) {
+      const row = wrap.querySelector(`[data-uid="${m._uid}"]`);
+      if (!row) continue;
+      bindUnitTip(row, () => monsterUnitTipHtml(m, lookupMonsterBossData(m)));
+      const iconEl = row.querySelector('.m-emoji');
+      if (iconEl) bindUnitTip(iconEl, () => monsterUnitTipHtml(m, lookupMonsterBossData(m)));
+    }
     if (focus) attachFocusBossHover(focus);
   }
 
@@ -908,10 +990,17 @@ function updateBattleVisuals() {
       const tip=$('compare-tip');tip.querySelector('.compare-head').innerHTML=html;tip.querySelector('.compare-body').innerHTML='';
       tip.style.display='block';positionTip(tip,e);
     };
+    const compMini = $('comp-mini');
     compMiniName.onmouseenter = showCompDetail;
     compMiniName.onmouseleave = () => { if (!_tipPinned) $('compare-tip').style.display = 'none'; };
     compMiniName.onmousemove = e => positionTip($('compare-tip'), e);
     addTouchPin(compMiniName, showCompDetail);
+    if (compMini) {
+      compMini.onmouseenter = showCompDetail;
+      compMini.onmouseleave = () => { if (!_tipPinned) $('compare-tip').style.display = 'none'; };
+      compMini.onmousemove = e => positionTip($('compare-tip'), e);
+      addTouchPin(compMini, showCompDetail);
+    }
   }else{
     $('comp-mini').style.display='none';
     _compMiniHeadSig = '';
@@ -1030,6 +1119,7 @@ function renderHero() {
       : '<div class="muted" style="font-size:11px">未装备套装部件</div>';
     setPanel.innerHTML = gateHtml + setHtml;
   }
+  bindUnitTip($('hero-emoji'), heroUnitTipHtml);
 }
 
 function renderEquipment() {

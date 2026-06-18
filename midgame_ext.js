@@ -286,18 +286,25 @@
   function renderSetPanelHtml() {
     const counts = getEquippedSetCounts();
     const entries = Object.values(counts);
-    if (!entries.length) return '<div class="muted" style="font-size:11px">未装备套装部件</div>';
+    if (!entries.length) return '<div class="muted" style="font-size:11px">未装备套装部件</div><div class="muted" style="font-size:10px;margin-top:4px">套装在 2 件 / 4 件时会激活额外特效，中期副本和后期团本都能围绕它做成长路线。</div>';
+    const totalMod = collectSetBonusMod();
+    const summary = Object.entries(totalMod)
+      .filter(([, v]) => !!v)
+      .map(([k, v]) => fmtMod(k, v))
+      .join(' · ');
     return entries.map(info => {
       const effects = (info.effects || []).map(effect => {
         const on = info.count >= effect.pieces;
         const desc = Object.entries(effect.mod || {}).map(([k, v]) => fmtMod(k, v)).join(' · ');
         return `<div class="${on?'pos':'muted'}" style="font-size:10px;margin-top:2px">${on?'✓':'○'} ${effect.pieces}件: ${desc}</div>`;
       }).join('');
+      const itemLines = (info.items || []).map(name => `<span class="pill" style="font-size:10px">${name}</span>`).join(' ');
       return `<div style="border:1px solid var(--border);border-radius:8px;padding:6px;background:var(--panel-2);margin-top:4px">
         <div style="font-weight:700">${info.name} <span class="muted" style="font-size:10px">(${info.count}/${info.pieces || 4})</span></div>
+        <div class="muted" style="font-size:10px;margin-top:3px;line-height:1.5">已装备: ${itemLines || '—'}</div>
         ${effects}
       </div>`;
-    }).join('');
+    }).join('') + (summary ? `<div style="margin-top:6px;padding:6px 8px;border:1px solid rgba(74,222,128,.22);border-radius:8px;background:rgba(34,197,94,.08);font-size:10px;line-height:1.5"><b style="color:#86efac">当前生效总览</b><div class="muted" style="margin-top:2px">${summary}</div></div>` : '');
   }
 
   function repLineKey(fac, repReq) { return `${fac}:${repReq}`; }
