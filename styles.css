@@ -1019,11 +1019,26 @@ button.legend:hover:not(:disabled) {
 .src-panel-title {
   font-weight: bold;
   margin-bottom: 6px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.src-panel-title::-webkit-details-marker {
+  display: none;
+}
+.src-panel[open] .src-panel-title {
+  margin-bottom: 8px;
 }
 .src-scroll {
   max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
+  max-height: 260px;
 }
 .src-table {
   width: max-content;

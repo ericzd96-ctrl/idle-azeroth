@@ -1360,6 +1360,7 @@ function spawnDungeonMonster(){
   state.currentMonsters=[];const ds=state.dungeonState||state.mythicState;if(!ds)return;
   const dg=DUNGEONS.find(d=>d.key===ds.key);if(!dg)return;
   const boss=(dg.bosses||[]).find(b=>b.wave===ds.wave);const isBoss=!!boss;
+  const isEpicRaid=!!dg.epicRaid;
   const power=dg.reqLvl+(isBoss?3:0);
   const scale=ds.scale||1;
   // 小怪名与副本对应:用本副本 BOSS 的 emoji + 角色词(让副本小怪有辨识度)
@@ -1375,18 +1376,29 @@ function spawnDungeonMonster(){
   const bossSupportSkillCount = isBoss ? (boss.supportCount || (isRaid ? (isFinalBoss ? 4 : 2) : (isFinalBoss ? 2 : 1))) : 0;
   const monSkills = !isBoss ? pickMonSkills(name, null, power, trashDamageSkillCount) : [];
   state.currentMonsters.push({name,isBoss,bossName:isBoss?boss.name:null,
-    lvl:Math.max(1,Math.floor(power*1.05)),
+    lvl:isEpicRaid ? 80 : Math.max(1,Math.floor(power*1.05)),
     hpMax:Math.floor((100+power*power*7.5)*(isBoss?17:4.0)*scale),hp:Math.floor((100+power*power*7.5)*(isBoss?17:4.0)*scale),
     atk:Math.floor((10+power*3.2)*(isBoss?2.0:1.6)*scale*1.1),def:Math.floor((3+power*1.5)*(isBoss?1.5:1.6)*scale),
     baseGold:Math.floor(10+power*3),baseXp:Math.floor(35+power*5),
     goldReward:Math.floor((10+power*3)*(isBoss?15:1.5)*scale),honorReward:isBoss?Math.floor(25+power*2.5):2,
     dropRate:isBoss?1.0:0.35,gemChance:isBoss?0.8:0.05,maxRarity:bossMaxRarity,fromDungeon:true,_uid:monUidSeq++,
     _dots:{},_dotLegacyImported:true,_lastDotTick:0,
-    _isRaidFinal:isRaid&&isFinalBoss,_isRaid:isRaid,
+    _isRaidFinal:isRaid&&isFinalBoss,_isRaid:isRaid,_isEpicRaid:isEpicRaid,
     _monSkills:isBoss?[]:monSkills,_monSkill:isBoss?null:(monSkills[0]||null),_monSupportSkills:buildMonsterSupportPool(isBoss?boss.name:name,null,power,isBoss,isBoss?bossSupportSkillCount:trashSupportSkillCount),_supportSkillCooldowns:{},_lastSupportSkill:Date.now()-rng(3000,9000),_lastSkill:Date.now()-rng(1000,4000),_lastTrick:0,_nextTrickAt:isBoss?(Date.now()+8000+rng(0,2500)):0,
     atkInterval:(isBoss?1400:1700)+rng(-200,200),_lastAtk:Date.now()-rng(0,1200)});
   // 大秘境词缀:修改怪物属性
   const mon = state.currentMonsters[state.currentMonsters.length-1];
+  if (isEpicRaid) {
+    const hpMult = isBoss ? (isFinalBoss ? 2.45 : 2.1) : 1.72;
+    const atkMult = isBoss ? (isFinalBoss ? 1.85 : 1.62) : 1.38;
+    const defMult = isBoss ? (isFinalBoss ? 1.72 : 1.48) : 1.26;
+    mon.hpMax = Math.floor(mon.hpMax * hpMult);
+    mon.hp = mon.hpMax;
+    mon.atk = Math.floor(mon.atk * atkMult);
+    mon.def = Math.floor(mon.def * defMult);
+    mon.goldReward = Math.floor(mon.goldReward * (isBoss ? 1.5 : 1.25));
+    mon.baseXp = Math.floor(mon.baseXp * (isBoss ? 1.45 : 1.2));
+  }
   // 副本/大秘境 BOSS 被动:优先读数据中的passive,否则用默认
   if (isBoss) {
     mon.dodgeChance=0; mon.critChance=0; mon.critMult=2.0; mon.stunChance=0; mon.instantCast=true;
@@ -1701,6 +1713,8 @@ function monsterArmorPenRate(mon){
   if(!mon) return 0;
   let rate = 0;
   if(mon.isWorldBoss) rate = 0.26;
+  else if(mon.isBoss && mon._isEpicRaid) rate = mon._isRaidFinal ? 0.40 : 0.34;
+  else if(mon._isEpicRaid) rate = 0.18;
   else if(mon.isBoss && mon.fromDungeon) rate = mon._isRaid ? (mon._isRaidFinal ? 0.32 : 0.26) : 0.20;
   else if(mon.isBoss) rate = 0.16;
   else if(mon.fromDungeon) rate = mon._isRaid ? 0.12 : 0.08;
@@ -1726,6 +1740,8 @@ function heroVersDamageReductionRate(mon){
 function heroPassiveRegenMult(mon){
   if(!mon || mon.hp <= 0) return 1;
   if(mon.isWorldBoss) return 0.42;
+  if(mon.isBoss && mon._isEpicRaid) return mon._isRaidFinal ? 0.30 : 0.36;
+  if(mon._isEpicRaid) return 0.58;
   if(mon.isBoss && mon.fromDungeon) return mon._isRaid ? 0.48 : 0.58;
   if(mon.isBoss) return 0.62;
   if(mon.fromDungeon) return mon._isRaid ? 0.72 : 0.82;
@@ -1736,6 +1752,8 @@ function monsterDamageFloor(mon, amount, opts){
   let floor = 0;
   const hpMax = Math.max(1, state.hero.hpMax || 1);
   if(mon.isWorldBoss) floor = hpMax * 0.028 + mon.lvl * 3;
+  else if(mon.isBoss && mon._isEpicRaid) floor = hpMax * (mon._isRaidFinal ? 0.036 : 0.029) + mon.lvl * 2.8;
+  else if(mon._isEpicRaid) floor = hpMax * 0.010 + mon.lvl * 1.0;
   else if(mon.isBoss && mon.fromDungeon) floor = hpMax * (mon._isRaidFinal ? 0.024 : (mon._isRaid ? 0.019 : 0.015)) + mon.lvl * 2.2;
   else if(mon.isBoss) floor = hpMax * 0.013 + mon.lvl * 1.5;
   else if(mon.fromDungeon) floor = hpMax * (mon._isRaid ? 0.007 : 0.004) + mon.lvl * 0.7;
@@ -2380,13 +2398,40 @@ function onMonsterDeath(mon){
   const adjDrop=(mon.isBoss&&(state.mode==='dungeon'||state.mode==='mythic'))?1:Math.min(1,mon.dropRate*bonus.dropMult*olp);
   if(Math.random()<adjDrop){
     const dKey=mon.fromDungeon?((state.dungeonState||state.mythicState)?.key):null;
-    const it=mon._isRaid
-      ? rollItemOfRarity('epic',mon.lvl)   // 团本:必紫(橙装走下方额外掉落)
+    const it=(mon._isRaid && dKey)
+      ? rollItem('epic',mon.lvl,dKey,mon.isBoss?mon.bossName:null,{ exactRarity: !!mon._isEpicRaid })
       : rollItem(mon.maxRarity,mon.lvl,dKey,mon.isBoss?mon.bossName:null);
     if((state.mode==='dungeon'||state.mode==='mythic')&&(state.dungeonState||state.mythicState))(state.dungeonState||state.mythicState).loot.push(it);addToInventory(it);if(typeof eventsOnItemGet==='function') eventsOnItemGet(it);if(it.rarity==='legend'&&typeof progressionOnLegendary==='function') progressionOnLegendary();const c=it.rarity==='legend'?'legend':(it.rarity==='epic'?'epic':'loot');log('🎁 掉落 ['+it.rarityName+'] '+it.name,c);
   }
-  // 团本最终BOSS额外低概率掉落橙装
-  if(mon._isRaidFinal&&Math.random()<0.08){const dKey2=mon.fromDungeon?((state.dungeonState||state.mythicState)?.key):null;const legend=rollItem('legend',mon.lvl,dKey2,mon.bossName);addToInventory(legend);log('🎉 团本最终BOSS额外掉落 ['+legend.rarityName+'] '+legend.name,'legend');if(typeof progressionOnLegendary==='function') progressionOnLegendary();}
+  if(mon._isRaid && mon.fromDungeon){
+    const dKey2=(state.dungeonState||state.mythicState)?.key;
+    if(mon._isEpicRaid){
+      if(mon._isRaidFinal){
+        const extraEpic=rollItem('epic',mon.lvl,dKey2,mon.bossName,{ exactRarity:true });
+        if((state.dungeonState||state.mythicState)) (state.dungeonState||state.mythicState).loot.push(extraEpic);
+        addToInventory(extraEpic);
+        if(typeof eventsOnItemGet==='function') eventsOnItemGet(extraEpic);
+        log('🎁 史诗团本尾王额外掉落 ['+extraEpic.rarityName+'] '+extraEpic.name,'epic');
+      }
+      const dg2=DUNGEONS.find(d=>d.key===dKey2);
+      const bossCount=Math.max(1,dg2?.bosses?.length||1);
+      const bossIndex=Math.max(0,(dg2?.bosses||[]).findIndex(b=>b.name===mon.bossName));
+      const legendChance=typeof epicRaidLegendChance==='function' ? epicRaidLegendChance(bossIndex,bossCount) : 0.02;
+      if(Math.random()<legendChance){
+        const legend=rollItem('legend',mon.lvl,dKey2,mon.bossName,{ exactRarity:true });
+        if((state.dungeonState||state.mythicState)) (state.dungeonState||state.mythicState).loot.push(legend);
+        addToInventory(legend);
+        log('🎉 史诗团本BOSS额外掉落 ['+legend.rarityName+'] '+legend.name, 'legend');
+        if(typeof progressionOnLegendary==='function') progressionOnLegendary();
+      }
+    }else if(mon._isRaidFinal&&Math.random()<0.06){
+      const legend=rollItem('legend',mon.lvl,dKey2,mon.bossName,{ exactRarity:true });
+      if((state.dungeonState||state.mythicState)) (state.dungeonState||state.mythicState).loot.push(legend);
+      addToInventory(legend);
+      log('🎉 团本关底BOSS额外掉落 ['+legend.rarityName+'] '+legend.name,'legend');
+      if(typeof progressionOnLegendary==='function') progressionOnLegendary();
+    }
+  }
   // 世界Boss 击杀
   if(mon.isWorldBoss){if(typeof onWorldBossKill==='function') onWorldBossKill(mon);return;}
   if(mon._summoned){
@@ -2488,17 +2533,34 @@ function genName(slotKey,rarity){
   return choice(wowAdj[rarity.key])+SLOT_INFO[slotKey].label;
 }
 function getPoolStatBonus(slotKey,rarityKey){const pool=ITEM_POOLS[slotKey]?.[rarityKey];if(pool&&pool.length>0)return pool[rng(0,pool.length-1)].stats||{};return{};}
-function rollItem(maxRarity,fromLvl,dungeonKey,bossName){
+function rollItem(maxRarity,fromLvl,dungeonKey,bossName,opts){
   const slotKey=choice(SLOT_ORDER);const slot=SLOT_INFO[slotKey];const rarity=pickRarity(maxRarity);
   const ds=state.dungeonState||state.mythicState;
   const power=(fromLvl||state.hero.lvl)+(ds?2:0);
-  if(dungeonKey){const loot=DUNGEON_LOOT[dungeonKey];if(loot){let lootPool;if(bossName&&loot.bosses)lootPool=(typeof getDungeonBossLoot==='function'?getDungeonBossLoot(dungeonKey,bossName):loot.bosses[bossName])||loot.trash||[];else if(ds&&state.currentMonsters[0]&&state.currentMonsters[0].isBoss&&state.currentMonsters[0].bossName&&loot.bosses)lootPool=(typeof getDungeonBossLoot==='function'?getDungeonBossLoot(dungeonKey,state.currentMonsters[0].bossName):loot.bosses[state.currentMonsters[0].bossName])||loot.trash||[];else if(ds&&state.currentMonsters[0]&&state.currentMonsters[0].isBoss)lootPool=loot.boss||[];else lootPool=loot.trash||[];   // 杂兵只从杂兵池掉(BOSS专属装备只能由对应BOSS掉,不再从BOSS池偷)
-  if(lootPool.length>0){
+  if(dungeonKey){
+    let lootPool=[];
+    if(typeof getDungeonBossLoot==='function'){
+      if(bossName) lootPool=getDungeonBossLoot(dungeonKey,bossName,state.cls,{ rarityKey:maxRarity, exactRarity:!!opts?.exactRarity })||[];
+      else if(ds&&state.currentMonsters[0]&&state.currentMonsters[0].isBoss&&state.currentMonsters[0].bossName) lootPool=getDungeonBossLoot(dungeonKey,state.currentMonsters[0].bossName,state.cls,{ rarityKey:maxRarity, exactRarity:!!opts?.exactRarity })||[];
+      else if(typeof getDungeonTrashLoot==='function') lootPool=getDungeonTrashLoot(dungeonKey,state.cls,{ rarityKey:maxRarity, exactRarity:!!opts?.exactRarity })||[];
+    } else {
+      const loot=DUNGEON_LOOT[dungeonKey];
+      if(loot){
+        if(bossName&&loot.bosses)lootPool=loot.bosses[bossName]||loot.trash||[];
+        else if(ds&&state.currentMonsters[0]&&state.currentMonsters[0].isBoss&&state.currentMonsters[0].bossName&&loot.bosses)lootPool=loot.bosses[state.currentMonsters[0].bossName]||loot.trash||[];
+        else if(ds&&state.currentMonsters[0]&&state.currentMonsters[0].isBoss)lootPool=loot.boss||[];
+        else lootPool=loot.trash||[];
+      }
+    }
+    if(lootPool.length>0){
     // 池内按"品质稀有度"加权挑一件(越稀有越少出),实现"必掉、但爆哪件看各装备爆率"
-    let __tw=0;for(const p of lootPool)__tw+=(RARITY.find(r=>r.key===p.rarity)?.weight||1);
+    let __tw=0;for(const p of lootPool)__tw+=(p.dropWeight||RARITY.find(r=>r.key===p.rarity)?.weight||1);
     let __r=Math.random()*__tw;let pick=lootPool[lootPool.length-1];
-    for(const p of lootPool){__r-=(RARITY.find(r=>r.key===p.rarity)?.weight||1);if(__r<=0){pick=p;break;}}
-    const pickRarity=RARITY.find(r=>r.key===pick.rarity)||rarity;const poolItem={id:itemIdSeq++,slot:pick.slot||slotKey,name:pick.name,rarity:pick.rarity,rarityName:pickRarity.name,cls:pickRarity.cls,bcls:pickRarity.bcls,stats:{},sell:0};return finishItem(poolItem,pick.slot||slotKey,pickRarity,power,pick.stats||{});}}}
+    for(const p of lootPool){__r-=(p.dropWeight||RARITY.find(r=>r.key===p.rarity)?.weight||1);if(__r<=0){pick=p;break;}}
+    const pickRarity=RARITY.find(r=>r.key===pick.rarity)||rarity;
+    const poolItem={id:itemIdSeq++,slot:pick.slot||slotKey,name:pick.name,rarity:pick.rarity,rarityName:pickRarity.name,cls:pickRarity.cls,bcls:pickRarity.bcls,stats:{},sell:0,epicRaid:!!pick.epicRaid,setKey:pick.setKey,setName:pick.setName};
+    return finishItem(poolItem,pick.slot||slotKey,pickRarity,power,pick.stats||{});
+  }}
   const item={id:itemIdSeq++,slot:slotKey,name:genName(slotKey,rarity),rarity:rarity.key,rarityName:rarity.name,cls:rarity.cls,bcls:rarity.bcls,stats:{},sell:0};
   const poolStats=getPoolStatBonus(slotKey,rarity.key);return finishItem(item,slotKey,rarity,power,poolStats);
 }
@@ -2528,6 +2590,13 @@ function finishItem(item,slotKey,rarity,power,extraStats){
   const SURPRISE_CHANCE=0.15;
   const SURPRISE={leech:{rare:1,epic:2,legend:4},vers:{rare:1,epic:2,legend:4},haste:{rare:1,epic:2,legend:4},mastery:{rare:1,epic:2,legend:4},dodge:{rare:1,epic:2,legend:4},crit:{rare:1,epic:2,legend:3},critd:{rare:3,epic:6,legend:12}};
   for(const sk in SURPRISE){const v=SURPRISE[sk][rarity.key];if(v&&Math.random()<SURPRISE_CHANCE)item.stats[sk]=(item.stats[sk]||0)+v;}
+  if(item.epicRaid){
+    const mult=item.rarity==='legend'?1.18:1.28;
+    for(const [k,v] of Object.entries(item.stats||{})){
+      if(typeof v==='number') item.stats[k]=Math.max(1,Math.floor(v*mult));
+    }
+    if(!/史诗级$/.test(item.name) && item.rarity==='epic') item.name += '·史诗级';
+  }
   // 安全帽:暴击/暴伤/极速/闪避上限(防止任何路径溢出)
   if(item.stats.crit>4)item.stats.crit=4;
   if(item.stats.critd>12)item.stats.critd=12;

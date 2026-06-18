@@ -3444,12 +3444,15 @@ const DUNGEON_LOOT_ALIASES = {
   ulduar: { 'XT-002拆解者':'芙蕾雅', '维扎克斯将军':'芙蕾雅', '尤格萨隆':'尤格-萨隆' },
   ruby: { '萨维安娜·怒焰':'暮光龙·萨维安娜' },
 };
-function getDungeonBossLoot(dungeonKey, bossName) {
+function getBaseDungeonBossLoot(dungeonKey, bossName) {
   const loot = DUNGEON_LOOT[dungeonKey];
   if (!loot || !loot.bosses || !bossName) return null;
   const alias = DUNGEON_LOOT_ALIASES[dungeonKey]?.[bossName];
   return loot.bosses[bossName] || (alias ? loot.bosses[alias] : null) || null;
 }
+function baseDungeonKey(dungeonKey) { return String(dungeonKey || '').replace(/_epic$/, ''); }
+function isEpicRaidKey(dungeonKey) { return /_epic$/.test(String(dungeonKey || '')); }
+function getDungeonDef(dungeonKey) { return DUNGEONS.find(d => d.key === dungeonKey) || null; }
 const WORLD_BOSS_SKILLSETS = {
   deathwing: {
     passive:{ dmgReduction:0.35, critChance:0.28, dodgeChance:0.12, atkBonus:0.28, leech:0.12, stunChance:0.18 },
@@ -3955,6 +3958,269 @@ function extendDungeonCatalog(){
   normalizeBossContent();
 }
 extendDungeonCatalog();
+
+const EPIC_RAID_SET_THEME = {
+  mc:{ tier:'T1', name:'熔火之心', short:'熔火' },
+  bwl:{ tier:'T2', name:'黑翼之巢', short:'黑翼' },
+  aq40:{ tier:'T2.5', name:'安其拉神殿', short:'其拉' },
+  naxx:{ tier:'T3', name:'纳克萨玛斯', short:'天灾' },
+  karazhan:{ tier:'T4', name:'卡拉赞', short:'守护者' },
+  ssc:{ tier:'T5', name:'毒蛇神殿', short:'盘牙' },
+  tk:{ tier:'T5', name:'风暴要塞', short:'风暴' },
+  hyjal:{ tier:'T6', name:'海加尔山', short:'海加尔' },
+  bt:{ tier:'T6', name:'黑暗神殿', short:'黑暗' },
+  sunwell:{ tier:'T6.5', name:'太阳之井', short:'日灼' },
+  ulduar:{ tier:'T8', name:'奥杜尔', short:'泰坦' },
+  ruby:{ tier:'T10.5', name:'红玉圣殿', short:'暮光' },
+  icc:{ tier:'T10', name:'冰冠堡垒', short:'冰冠' },
+};
+const EPIC_RAID_CLASS_SET_NAMES = {
+  warrior:'战铠', mage:'法袍', priest:'圣服', rogue:'影皮', hunter:'猎装',
+  shaman:'战衣', paladin:'圣铠', warlock:'魔装', druid:'自然战衣',
+};
+const EPIC_RAID_SET_SLOT_ROTATION = ['pants','helmet','shoulder','gloves','armor','boots','belt','ring','trinket','weapon'];
+const EPIC_RAID_OFFPIECE_ROTATION = ['ring','boots','belt','trinket','shoulder','gloves','armor','pants','helmet','weapon'];
+const EPIC_RAID_LEGEND_SLOT_ROTATION = ['pants','helmet','shoulder','gloves','armor','boots','belt','ring','trinket','weapon'];
+
+function lootRarityRank(key) {
+  const idx = RARITY.findIndex(r => r.key === key);
+  return idx < 0 ? 0 : idx;
+}
+function filterLootByRarity(pool, rarityKey, exactRarity) {
+  if (!Array.isArray(pool) || !pool.length || !rarityKey) return Array.isArray(pool) ? pool.slice() : [];
+  const rank = lootRarityRank(rarityKey);
+  return pool.filter(it => exactRarity ? it.rarity === rarityKey : lootRarityRank(it.rarity) <= rank);
+}
+function cloneLootItem(item) {
+  return Object.assign({}, item, { stats: Object.assign({}, item?.stats || {}) });
+}
+function currentLootClassKey(clsKey) {
+  if (clsKey && CLASSES[clsKey]) return clsKey;
+  if (typeof state !== 'undefined' && state?.cls && CLASSES[state.cls]) return state.cls;
+  return 'warrior';
+}
+function raidTheme(baseKey) {
+  return EPIC_RAID_SET_THEME[baseKey] || { tier:'T?', name:baseKey, short:baseKey };
+}
+function epicRaidKey(baseKey) { return `${baseKey}_epic`; }
+function isEpicRaidDungeon(dungeonKey) {
+  const dg = getDungeonDef(dungeonKey);
+  return !!(dg && dg.epicRaid);
+}
+function epicRaidPrimaryAttr(clsKey) {
+  return CLASSES[clsKey]?.attackAttr || 'str';
+}
+function epicRaidSupportAttr(clsKey) {
+  if (['mage','priest','shaman','warlock'].includes(clsKey)) return 'spi';
+  if (clsKey === 'druid') return 'spi';
+  return 'sta';
+}
+function makeEpicRaidSetName(baseKey, clsKey, slotKey) {
+  const theme = raidTheme(baseKey);
+  const setName = EPIC_RAID_CLASS_SET_NAMES[clsKey] || '战衣';
+  return `${theme.short}${theme.tier}${setName}${SLOT_INFO[slotKey]?.label || slotKey}·史诗级`;
+}
+function makeEpicRaidOffpieceName(baseKey, bossName, slotKey) {
+  const theme = raidTheme(baseKey);
+  return `${bossName}的${theme.short}${SLOT_INFO[slotKey]?.label || slotKey}·史诗级`;
+}
+function makeEpicRaidLegendName(baseKey, bossName, slotKey) {
+  const theme = raidTheme(baseKey);
+  return `${bossName}的${theme.short}传说${SLOT_INFO[slotKey]?.label || slotKey}`;
+}
+function makeNormalRaidLegendWeaponName(baseKey, bossName) {
+  const theme = raidTheme(baseKey);
+  return `${bossName}的${theme.short}传说武器`;
+}
+function makeEpicRaidSetStats(slotKey, clsKey, bossIndex) {
+  const primary = epicRaidPrimaryAttr(clsKey);
+  const support = epicRaidSupportAttr(clsKey);
+  const core = {
+    weapon:{ atk:5, [primary]:4, sta:3 },
+    helmet:{ def:5, [primary]:3, sta:3 },
+    shoulder:{ atk:4, [primary]:3, sta:2 },
+    armor:{ def:6, [primary]:4, sta:4 },
+    gloves:{ atk:4, [primary]:3, sta:2 },
+    belt:{ def:4, [primary]:3, sta:2 },
+    pants:{ hp:5, [primary]:4, sta:4 },
+    boots:{ def:4, [primary]:3, sta:3 },
+    ring:{ atk:3, [primary]:4, sta:2 },
+    trinket:{ hp:4, [primary]:4, sta:3 },
+  }[slotKey] || { atk:4, [primary]:3, sta:2 };
+  const stats = Object.assign({}, core);
+  if (support !== 'sta' && !stats[support]) stats[support] = 2 + (bossIndex % 2);
+  else stats.sta = (stats.sta || 0) + 1;
+  return stats;
+}
+function makeEpicRaidOffpieceStats(slotKey, clsKey, bossIndex) {
+  const primary = epicRaidPrimaryAttr(clsKey);
+  const support = epicRaidSupportAttr(clsKey);
+  const core = {
+    ring:{ [primary]:4, sta:2, atk:2 },
+    boots:{ def:4, [primary]:3, sta:2 },
+    belt:{ def:4, [primary]:3, sta:2 },
+    trinket:{ hp:4, [primary]:4, sta:2 },
+    shoulder:{ atk:4, [primary]:3, sta:2 },
+    gloves:{ atk:4, [primary]:3, sta:2 },
+    armor:{ def:5, [primary]:3, sta:3 },
+    pants:{ hp:4, [primary]:3, sta:3 },
+    helmet:{ def:4, [primary]:3, sta:3 },
+    weapon:{ atk:5, [primary]:4, sta:2 },
+  }[slotKey] || { atk:4, [primary]:3, sta:2 };
+  const stats = Object.assign({}, core);
+  if (support !== 'sta' && bossIndex % 2 === 0) stats[support] = Math.max(stats[support] || 0, 2);
+  return stats;
+}
+function makeEpicRaidLegendStats(slotKey, clsKey, bossIndex, bossCount) {
+  const primary = epicRaidPrimaryAttr(clsKey);
+  const support = epicRaidSupportAttr(clsKey);
+  const scale = 1 + Math.min(0.4, bossIndex / Math.max(1, bossCount - 1) * 0.4);
+  const base = {
+    weapon:{ atk:8, [primary]:6, sta:4 },
+    helmet:{ def:7, [primary]:5, sta:4 },
+    shoulder:{ atk:6, [primary]:5, sta:4 },
+    armor:{ def:8, [primary]:6, sta:5 },
+    gloves:{ atk:6, [primary]:5, sta:4 },
+    belt:{ def:6, [primary]:5, sta:4 },
+    pants:{ hp:7, [primary]:6, sta:5 },
+    boots:{ def:6, [primary]:5, sta:4 },
+    ring:{ atk:5, [primary]:6, sta:4 },
+    trinket:{ hp:6, [primary]:6, sta:4 },
+  }[slotKey] || { atk:6, [primary]:5, sta:4 };
+  const stats = {};
+  for (const [k, v] of Object.entries(base)) stats[k] = Math.max(1, Math.floor(v * scale));
+  if (support !== 'sta') stats[support] = Math.max(stats[support] || 0, 3 + Math.floor(scale));
+  return stats;
+}
+function epicRaidLegendChance(bossIndex, bossCount) {
+  const ratio = bossCount <= 1 ? 1 : (bossIndex / (bossCount - 1));
+  return +(0.01 + ratio * 0.03).toFixed(3);
+}
+function makeEpicRaidSetItem(baseKey, bossName, bossIndex, clsKey) {
+  const slotKey = EPIC_RAID_SET_SLOT_ROTATION[bossIndex % EPIC_RAID_SET_SLOT_ROTATION.length];
+  return {
+    name: makeEpicRaidSetName(baseKey, clsKey, slotKey),
+    slot: slotKey,
+    rarity: 'epic',
+    epicRaid: true,
+    setKey: `${baseKey}:${clsKey}`,
+    setName: `${raidTheme(baseKey).tier}${EPIC_RAID_CLASS_SET_NAMES[clsKey] || '战衣'}`,
+    dropWeight: 52,
+    stats: makeEpicRaidSetStats(slotKey, clsKey, bossIndex),
+  };
+}
+function makeEpicRaidOffpiece(baseKey, bossName, bossIndex, clsKey) {
+  const slotKey = EPIC_RAID_OFFPIECE_ROTATION[bossIndex % EPIC_RAID_OFFPIECE_ROTATION.length];
+  return {
+    name: makeEpicRaidOffpieceName(baseKey, bossName, slotKey),
+    slot: slotKey,
+    rarity: 'epic',
+    epicRaid: true,
+    dropWeight: 38,
+    stats: makeEpicRaidOffpieceStats(slotKey, clsKey, bossIndex),
+  };
+}
+function makeEpicRaidLegendItem(baseKey, bossName, bossIndex, bossCount, clsKey) {
+  const slotKey = EPIC_RAID_LEGEND_SLOT_ROTATION[bossIndex % EPIC_RAID_LEGEND_SLOT_ROTATION.length];
+  return {
+    name: makeEpicRaidLegendName(baseKey, bossName, slotKey),
+    slot: slotKey,
+    rarity: 'legend',
+    epicRaid: true,
+    dropChance: epicRaidLegendChance(bossIndex, bossCount),
+    dropWeight: 1,
+    stats: makeEpicRaidLegendStats(slotKey, clsKey, bossIndex, bossCount),
+  };
+}
+function makeNormalRaidFinalWeapon(baseKey, bossName, clsKey) {
+  const primary = epicRaidPrimaryAttr(clsKey);
+  return {
+    name: makeNormalRaidLegendWeaponName(baseKey, bossName),
+    slot: 'weapon',
+    rarity: 'legend',
+    dropChance: 0.06,
+    dropWeight: 1,
+    stats: { atk:7, [primary]:5, sta:3 },
+  };
+}
+function getEpicRaidBossLoot(dungeonKey, bossName, clsKey, options) {
+  const baseKey = baseDungeonKey(dungeonKey);
+  const dg = getDungeonDef(dungeonKey) || getDungeonDef(baseKey);
+  if (!dg || !bossName) return [];
+  const bosses = dg.bosses || [];
+  const bossIndex = Math.max(0, bosses.findIndex(b => b.name === bossName));
+  const classKey = currentLootClassKey(clsKey);
+  const pool = [
+    makeEpicRaidSetItem(baseKey, bossName, bossIndex, classKey),
+    makeEpicRaidOffpiece(baseKey, bossName, bossIndex, classKey),
+    makeEpicRaidLegendItem(baseKey, bossName, bossIndex, bosses.length, classKey),
+  ];
+  return filterLootByRarity(pool, options?.rarityKey, options?.exactRarity);
+}
+function getNormalRaidBossLoot(dungeonKey, bossName, clsKey, options) {
+  const baseKey = baseDungeonKey(dungeonKey);
+  const dg = getDungeonDef(baseKey);
+  if (!dg || !bossName) return [];
+  const raw = (getBaseDungeonBossLoot(baseKey, bossName) || []).map(cloneLootItem);
+  const finalBossName = dg.bosses?.[dg.bosses.length - 1]?.name;
+  const isFinal = bossName === finalBossName;
+  let pool = raw.filter(it => it.rarity !== 'legend');
+  if (isFinal) {
+    let legendWeapons = raw.filter(it => it.rarity === 'legend' && it.slot === 'weapon');
+    if (!legendWeapons.length) legendWeapons = [makeNormalRaidFinalWeapon(baseKey, bossName, clsKey)];
+    legendWeapons = legendWeapons.map(it => Object.assign(cloneLootItem(it), { lowChanceLegend:true, dropChance: it.dropChance || 0.06 }));
+    if (options?.rarityKey === 'legend') return filterLootByRarity(legendWeapons, options.rarityKey, options.exactRarity);
+    if (!options?.rarityKey) pool = pool.concat(legendWeapons);
+  }
+  return filterLootByRarity(pool, options?.rarityKey, options?.exactRarity);
+}
+function getDungeonTrashLoot(dungeonKey, clsKey, options) {
+  const baseKey = baseDungeonKey(dungeonKey);
+  const loot = DUNGEON_LOOT[baseKey] || DUNGEON_LOOT[dungeonKey];
+  const pool = (loot?.trash || []).map(cloneLootItem);
+  return filterLootByRarity(pool, options?.rarityKey, options?.exactRarity);
+}
+function getDungeonBossLoot(dungeonKey, bossName, clsKey, options) {
+  if (isEpicRaidDungeon(dungeonKey) || isEpicRaidKey(dungeonKey)) {
+    return getEpicRaidBossLoot(dungeonKey, bossName, clsKey, options);
+  }
+  const dg = getDungeonDef(baseDungeonKey(dungeonKey));
+  if (dg?.type === 'raid') return getNormalRaidBossLoot(dungeonKey, bossName, clsKey, options);
+  const basePool = (getBaseDungeonBossLoot(baseDungeonKey(dungeonKey), bossName) || []).map(cloneLootItem);
+  return filterLootByRarity(basePool, options?.rarityKey, options?.exactRarity);
+}
+function createEpicRaidCatalog() {
+  const baseRaids = DUNGEONS.filter(d => d.type === 'raid' && !d.epicRaid);
+  for (const base of baseRaids) {
+    const key = epicRaidKey(base.key);
+    if (DUNGEONS.some(d => d.key === key)) continue;
+    const clone = JSON.parse(JSON.stringify(base));
+    clone.key = key;
+    clone.baseKey = base.key;
+    clone.name = `${base.name}·史诗`;
+    clone.desc = `80级史诗团本 · ${base.name} 的极限难度版本`;
+    clone.reqLvl = 80;
+    clone.cd = Math.max(base.cd || 0, 1500);
+    clone.epicRaid = true;
+    clone.bosses = (clone.bosses || []).map((boss, idx, arr) => {
+      boss.supportCount = Math.max(boss.supportCount || 0, idx === arr.length - 1 ? 4 : 2);
+      boss.passive = Object.assign({}, boss.passive || {}, {
+        dmgReduction: Math.max(boss.passive?.dmgReduction || 0, idx === arr.length - 1 ? 0.26 : 0.18),
+        critChance: Math.max(boss.passive?.critChance || 0, idx === arr.length - 1 ? 0.28 : 0.18),
+        atkBonus: Math.max(boss.passive?.atkBonus || 0, idx === arr.length - 1 ? 0.32 : 0.18),
+      });
+      boss.skills = (boss.skills || []).map(sk => {
+        const out = Object.assign({}, sk);
+        if (typeof out.mul === 'number') out.mul = +(out.mul + (idx === arr.length - 1 ? 2.5 : 1.5)).toFixed(1);
+        if (typeof out.castTime === 'number') out.castTime = +(out.castTime + 0.2).toFixed(1);
+        return out;
+      });
+      return boss;
+    });
+    DUNGEONS.push(clone);
+  }
+}
+createEpicRaidCatalog();
 /* ========== COMPANIONS(2026-06-15 大修)==========
    品质=按背景设定固定(不可升级),技能数=品质等级(白1→橙5)
    mult=战力系数(越稀有越强),weight=抽卡权重,starsMax=可升星上限 */

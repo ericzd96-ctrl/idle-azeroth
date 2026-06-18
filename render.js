@@ -1056,7 +1056,7 @@ function renderSourceTable() {
     return (srcs._total && (srcs._total[col.key] || 0) !== 0);
   });
   if (activeCols.length === 0) return '';
-  let html = '<div class="src-panel"><div class="src-panel-title">📊 属性来源明细</div>';
+  let html = `<details class="src-panel"><summary class="src-panel-title">📊 属性来源明细 <span class="muted">(共${activeCols.length}项, 点击展开)</span></summary>`;
   html += '<div class="src-scroll"><table class="src-table"><thead><tr><th>来源</th>';
   for (const col of activeCols) html += `<th>${col.label}</th>`;
   html += '</tr></thead><tbody>';
@@ -1084,7 +1084,7 @@ function renderSourceTable() {
     }
     html += '</tr>';
   }
-  html += '</tbody></table></div></div>';
+  html += '</tbody></table></div></details>';
   return html;
 }
 
@@ -1623,6 +1623,9 @@ function renderDungeon() {
   if (btnR) { btnR.classList.toggle('active', dgFilter === 'all' || dgFilter === 'raid'); }
   const sortedDungeons = [...DUNGEONS].sort((a, b) => {
     const hl = state.hero.lvl;
+    const aBase = (typeof baseDungeonKey === 'function') ? baseDungeonKey(a.key) : a.key;
+    const bBase = (typeof baseDungeonKey === 'function') ? baseDungeonKey(b.key) : b.key;
+    if (aBase === bBase && !!a.epicRaid !== !!b.epicRaid) return a.epicRaid ? 1 : -1;
     const aDist = hl >= a.reqLvl ? hl - a.reqLvl : (a.reqLvl - hl) * 2;
     const bDist = hl >= b.reqLvl ? hl - b.reqLvl : (b.reqLvl - hl) * 2;
     return aDist - bDist;
@@ -1639,6 +1642,7 @@ function renderDungeon() {
     const canFree = lvlOk && !onCd && state.mode === 'world';
     const canTicket = lvlOk && onCd && state.tickets >= 1 && state.mode === 'world';
     const canEnter = canFree || canTicket;
+    const isEpicRaid = !!dg.epicRaid;
     const statusText = !lvlOk ? '等级不足'
       : onCd ? `CD ${fmtCd(cdLeft)}${canTicket ? ' · 🎫跳过' : ''}`
       : '可挑战(免费)';
@@ -1652,52 +1656,45 @@ function renderDungeon() {
         <span><span class="icon">${dungeonIconHtml}</span> <b>${dg.name}</b></span>
         <span class="pill">Lv.${dg.reqLvl}</span>
       </div>
-      <div class="muted">${dg.type==='raid'?'<span style=\"color:#fbbf24\">[团本]</span> ':'<span style=\"color:#6ee7b7\">[5人本]</span> '}${dg.desc} · ${(dg.bosses||[]).length}个BOSS · 最终: ${((dg.bosses||[])[dg.bosses.length-1]||{}).name||'??'}${dg.type==='raid'?' · 掉落:紫装/最终橙':''}</div>
+      <div class="muted">${isEpicRaid?'<span style="color:#fb7185">[史诗团本]</span> ':(dg.type==='raid'?'<span style=\"color:#fbbf24\">[团本]</span> ':'<span style=\"color:#6ee7b7\">[5人本]</span> ')}${dg.desc} · ${(dg.bosses||[]).length}个BOSS · 最终: ${((dg.bosses||[])[dg.bosses.length-1]||{}).name||'??'}${dg.type==='raid'?(isEpicRaid?' · 掉落:史诗级紫装/全BOSS超低概率橙装':' · 掉落:常规团本装备/关底低概率橙武'):''}</div>
       <div class="row">
         <span class="cd-display">${statusText}</span>
         <button class="enter-btn ${canEnter?'epic':''}" data-action="enterdungeon" data-key="${dg.key}" ${canEnter?'':'disabled'}>${btnText}</button>
       </div>`;
     // 副本hover掉落预览 - 按BOSS分组展示
     const showDungeonLoot = e => {
-      const loot = DUNGEON_LOOT[dg.key];
       const power = dg.reqLvl + 5;
       const isRaid = dg.type === 'raid';
       const lastBossName = (dg.bosses||[])[(dg.bosses||[]).length-1]?.name;
-      let html = `<div style=\"font-weight:bold;margin-bottom:4px\">${dungeonIconHtml} ${dg.name} (${(dg.bosses||[]).length}BOSS)${isRaid?' <span style=\"color:#a335ee\">[紫装]</span>':''}</div>`;
-      if (loot?.bosses) {
-        for (const bossData of (dg.bosses||[])) {
-          const bossName = bossData.name;
-          const items = (typeof getDungeonBossLoot === 'function')
-            ? getDungeonBossLoot(dg.key, bossName)
-            : loot.bosses[bossName];
-          if (!items?.length) continue;
-          const isFinal = bossName === lastBossName;
-          const bossIconHtml = (typeof entityIcon === 'function') ? entityIcon(bossName, 16, bossData.emoji || '👹') : (bossData.emoji || '👹');
-          const skillInfo=bossData?.skills?bossData.skills.map(s=>{
-            const t=effectTags(s);
-            const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(s.name, 14, s.icon) : s.icon;
-            return skillIconHtml+s.name+(t.length?'['+t.join('')+']':'')+'('+s.desc+','+(s.castTime||0)+'s)';
-          }).join(' · '):'';
-          const dropLabel = isRaid ? (isFinal ? '(必紫+8%橙)' : '(必紫)') : '(必掉1件)';
-          html += `<div style=\"margin-top:4px;color:var(--legend);font-size:11px\">${bossIconHtml} ${bossName} ${dropLabel}${skillInfo?' · '+skillInfo:''}</div>`;
-          const tw = items.reduce((s,it)=>s+(RARITY.find(r=>r.key===it.rarity)?.weight||1),0);
-          for (const it of items) {
-            let displayRarity = it.rarity;
-            if (isRaid && (displayRarity === 'common' || displayRarity === 'uncommon')) displayRarity = 'rare';
-            if (isRaid && displayRarity === 'rare') displayRarity = 'epic';
-            const r = RARITY.find(r=>r.key===displayRarity);
-            const itemRate = Math.round((RARITY.find(r2=>r2.key===it.rarity)?.weight||1)/tw*100);
-            const scaledStats = scaleLootStats(it.stats||{}, displayRarity, power);
-            const statsText = Object.entries(scaledStats).map(([k,v])=>fmtMod(k, v)).join(' ');
-            html += `<div class=\"${r?.cls||''}\" style=\"font-size:10px;margin:0 0 0 8px\">${r?.name?.[0]||'?'} ${it.name} ${itemRate}% <span style=\"opacity:.5\">${statsText}</span></div>`;
-          }
+      let html = `<div style=\"font-weight:bold;margin-bottom:4px\">${dungeonIconHtml} ${dg.name} (${(dg.bosses||[]).length}BOSS)${isRaid?(isEpicRaid?' <span style=\"color:#fb7185\">[史诗团本]</span>':' <span style=\"color:#a335ee\">[团本]</span>'):''}</div>`;
+      for (const bossData of (dg.bosses||[])) {
+        const bossName = bossData.name;
+        const items = (typeof getDungeonBossLoot === 'function') ? getDungeonBossLoot(dg.key, bossName, state.cls) : [];
+        if (!items?.length) continue;
+        const isFinal = bossName === lastBossName;
+        const bossIconHtml = (typeof entityIcon === 'function') ? entityIcon(bossName, 16, bossData.emoji || '👹') : (bossData.emoji || '👹');
+        const skillInfo=bossData?.skills?bossData.skills.map(s=>{
+          const t=effectTags(s);
+          const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(s.name, 14, s.icon) : s.icon;
+          return skillIconHtml+s.name+(t.length?'['+t.join('')+']':'')+'('+s.desc+','+(s.castTime||0)+'s)';
+        }).join(' · '):'';
+        const dropLabel = isEpicRaid
+          ? `(必掉史诗级紫装${isFinal?'×2':''} · ${Math.round((items.find(it=>it.rarity==='legend')?.dropChance||0.02)*100)}%橙装)`
+          : (isRaid ? (isFinal ? '(常规团本装备 · 6%橙色武器)' : '(常规团本装备)') : '(必掉1件)');
+        html += `<div style=\"margin-top:4px;color:var(--legend);font-size:11px\">${bossIconHtml} ${bossName} ${dropLabel}${skillInfo?' · '+skillInfo:''}</div>`;
+        const previewPool = items.filter(it => !it.lowChanceLegend);
+        const tw = Math.max(1, previewPool.reduce((s,it)=>s+((it.dropWeight)|| (RARITY.find(r=>r.key===it.rarity)?.weight||1)),0));
+        for (const it of items) {
+          const r = RARITY.find(r=>r.key===it.rarity);
+          const scaledStats = scaleLootStats(it.stats||{}, it.rarity, Math.max(power, isEpicRaid ? 90 : power));
+          const statsText = Object.entries(scaledStats).map(([k,v])=>fmtMod(k, v)).join(' ');
+          const itemRate = it.dropChance ? `${Math.round(it.dropChance*100)}%` : `${Math.round((((it.dropWeight)|| (RARITY.find(r2=>r2.key===it.rarity)?.weight||1))/tw)*100)}%`;
+          html += `<div class=\"${r?.cls||''}\" style=\"font-size:10px;margin:0 0 0 8px\">${r?.name?.[0]||'?'} ${it.name} ${itemRate} <span style=\"opacity:.5\">${statsText}</span></div>`;
         }
       }
-      if (loot?.trash?.length) {
-        html += `<div style=\"margin-top:4px;color:var(--muted);font-size:10px\">杂兵掉落 (35%掉率): ${loot.trash.map(it=>it.name).join(', ')}</div>`;
-      }
-      if (!loot) {
-        html += '<div class=\"muted\">' + (isRaid ? '团本紫装掉落池' : '通用掉落池') + '</div>';
+      const trashPool = (typeof getDungeonTrashLoot === 'function') ? getDungeonTrashLoot(dg.key, state.cls) : ((DUNGEON_LOOT[dg.key]||DUNGEON_LOOT[(typeof baseDungeonKey==='function'?baseDungeonKey(dg.key):dg.key)]||{}).trash||[]);
+      if (trashPool?.length) {
+        html += `<div style=\"margin-top:4px;color:var(--muted);font-size:10px\">杂兵掉落 (35%掉率): ${trashPool.map(it=>it.name).join(', ')}</div>`;
       }
       const tip = $('compare-tip');
       tip.querySelector('.compare-head').innerHTML = html;
