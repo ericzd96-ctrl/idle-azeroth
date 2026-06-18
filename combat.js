@@ -2595,7 +2595,6 @@ function finishItem(item,slotKey,rarity,power,extraStats){
     for(const [k,v] of Object.entries(item.stats||{})){
       if(typeof v==='number') item.stats[k]=Math.max(1,Math.floor(v*mult));
     }
-    if(!/史诗级$/.test(item.name) && item.rarity==='epic') item.name += '·史诗级';
   }
   // 安全帽:暴击/暴伤/极速/闪避上限(防止任何路径溢出)
   if(item.stats.crit>4)item.stats.crit=4;

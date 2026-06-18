@@ -4028,27 +4028,6 @@ const EPIC_RAID_SET_LABELS = {
     shaman:'霜巫', paladin:'光誓', warlock:'黑暗教团', druid:'树纹',
   },
 };
-const EPIC_RAID_CLASS_SET_NAMES = {
-  warrior:'战铠', mage:'法袍', priest:'圣服', rogue:'影衣', hunter:'猎装',
-  shaman:'战衣', paladin:'圣铠', warlock:'魔装', druid:'法衣',
-};
-const EPIC_RAID_RELIC_WORDS = {
-  mc:'熔火', bwl:'黑翼', aq40:'其拉', naxx:'天灾', karazhan:'守护者',
-  ssc:'深潮', tk:'逐星', hyjal:'世界树', bt:'伊利达雷', sunwell:'日灼',
-  ulduar:'泰坦', ruby:'暮光', icc:'冰封',
-};
-const EPIC_RAID_SLOT_ALIASES = {
-  weapon:{ off:'战刃', legend:'神兵', normalLegend:'神兵' },
-  helmet:{ off:'头冠', legend:'王冠', normalLegend:'王冠' },
-  shoulder:{ off:'肩甲', legend:'肩铠', normalLegend:'肩甲' },
-  armor:{ off:'胸甲', legend:'胸铠', normalLegend:'胸甲' },
-  gloves:{ off:'护手', legend:'之握', normalLegend:'护手' },
-  belt:{ off:'束带', legend:'束腰', normalLegend:'束带' },
-  pants:{ off:'腿甲', legend:'腿铠', normalLegend:'腿甲' },
-  boots:{ off:'战靴', legend:'战靴', normalLegend:'战靴' },
-  ring:{ off:'指环', legend:'指环', normalLegend:'指环' },
-  trinket:{ off:'徽记', legend:'徽记', normalLegend:'徽记' },
-};
 const EPIC_RAID_SET_SLOT_ROTATION = ['pants','helmet','shoulder','gloves','armor','boots','belt','ring','trinket','weapon'];
 const EPIC_RAID_OFFPIECE_ROTATION = ['ring','boots','belt','trinket','shoulder','gloves','armor','pants','helmet','weapon'];
 const EPIC_RAID_LEGEND_SLOT_ROTATION = ['pants','helmet','shoulder','gloves','armor','boots','belt','ring','trinket','weapon'];
@@ -4087,28 +4066,38 @@ function epicRaidSupportAttr(clsKey) {
   return 'sta';
 }
 function epicRaidSetLabel(baseKey, clsKey) {
-  return EPIC_RAID_SET_LABELS[baseKey]?.[clsKey] || `${raidTheme(baseKey).tier}${EPIC_RAID_CLASS_SET_NAMES[clsKey] || '战衣'}`;
+  return EPIC_RAID_SET_LABELS[baseKey]?.[clsKey] || `${raidTheme(baseKey).tier}${clsKey || ''}`;
 }
-function raidRelicWord(baseKey) {
-  return EPIC_RAID_RELIC_WORDS[baseKey] || raidTheme(baseKey).short || baseKey;
-}
-function slotAlias(slotKey, kind) {
-  return EPIC_RAID_SLOT_ALIASES[slotKey]?.[kind] || SLOT_INFO[slotKey]?.label || slotKey;
-}
-function bossNameStem(bossName) {
-  return String(bossName || '').replace(/[·\s]/g, '');
+function findRaidReferenceItem(baseKey, bossName, slotKey, rarityKey) {
+  const bossPool = (getBaseDungeonBossLoot(baseKey, bossName) || []).map(cloneLootItem);
+  const raidBosses = Object.values(DUNGEON_LOOT[baseKey]?.bosses || {}).flat().map(cloneLootItem);
+  const search = (pool, exactSlot, exactRarity) => pool.find(it => (!exactSlot || it.slot === slotKey) && (!exactRarity || it.rarity === rarityKey));
+  return search(bossPool, true, true)
+    || search(bossPool, true, false)
+    || search(bossPool, false, true)
+    || search(raidBosses, true, true)
+    || search(raidBosses, true, false)
+    || search(raidBosses, false, true)
+    || bossPool[0]
+    || raidBosses[0]
+    || null;
 }
 function makeEpicRaidSetName(baseKey, clsKey, slotKey) {
-  return `${epicRaidSetLabel(baseKey, clsKey)}${SLOT_INFO[slotKey]?.label || slotKey}·史诗级`;
+  return `史诗·${epicRaidSetLabel(baseKey, clsKey)}${SLOT_INFO[slotKey]?.label || slotKey}`;
 }
 function makeEpicRaidOffpieceName(baseKey, bossName, slotKey) {
-  return `${bossNameStem(bossName)}之${raidRelicWord(baseKey)}${slotAlias(slotKey, 'off')}·史诗级`;
+  const ref = findRaidReferenceItem(baseKey, bossName, slotKey, 'epic') || findRaidReferenceItem(baseKey, bossName, slotKey, 'rare');
+  return `史诗·${ref?.name || (bossName + (SLOT_INFO[slotKey]?.label || slotKey))}`;
 }
 function makeEpicRaidLegendName(baseKey, bossName, slotKey) {
-  return `${bossNameStem(bossName)}的${raidRelicWord(baseKey)}${slotAlias(slotKey, 'legend')}`;
+  const ref = findRaidReferenceItem(baseKey, bossName, slotKey, 'legend')
+    || findRaidReferenceItem(baseKey, bossName, slotKey, 'epic')
+    || findRaidReferenceItem(baseKey, bossName, slotKey, 'rare');
+  return `史诗·${ref?.name || (bossName + (SLOT_INFO[slotKey]?.label || slotKey))}`;
 }
 function makeNormalRaidLegendWeaponName(baseKey, bossName) {
-  return `${bossNameStem(bossName)}的${raidRelicWord(baseKey)}${slotAlias('weapon', 'normalLegend')}`;
+  const ref = findRaidReferenceItem(baseKey, bossName, 'weapon', 'legend');
+  return ref?.name || `${bossName}的传说武器`;
 }
 function makeEpicRaidSetStats(slotKey, clsKey, bossIndex) {
   const primary = epicRaidPrimaryAttr(clsKey);
