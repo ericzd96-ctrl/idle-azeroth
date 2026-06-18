@@ -2269,7 +2269,7 @@ function tickBattle(now){
     if(kindSkill)skillEffects(kindSkill,m,taken,now,{allowFallback:false});
     processTalentLowHp(m,now);
     totalDmg+=taken;
-    if(state.hero.reflectDmg>0){const reflect=Math.floor(d.dmg*state.hero.reflectDmg/100);m.hp-=reflect;}
+    if(state.hero.reflectDmg>0){const reflect=Math.min(m.hp,Math.floor(d.dmg*state.hero.reflectDmg/100));if(reflect>0){m.hp-=reflect;showFloat($('mon-emoji'),'🛡️'+reflect,'#fbbf24');trackDmg('hero',reflect,false,'反伤');}}
     if(typeof passiveOnTakeDamage==='function')passiveOnTakeDamage(m,taken);
     anyHit=true;
     // 双倍攻击技巧: 再来一刀
