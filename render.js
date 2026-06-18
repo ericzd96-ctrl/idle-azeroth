@@ -337,6 +337,25 @@ function effectTags(s) {
   if (s.mirror) t.push(`${statusIconHtml('奥术护壁', '🪞', 13)}镜像`);
   return t;
 }
+function bossSkillLineHtml(s, opts) {
+  const cfg = opts || {};
+  const iconSize = cfg.iconSize || 16;
+  const tagColor = cfg.tagColor || '#fbbf24';
+  const leadColor = cfg.leadColor || 'var(--text)';
+  const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(s.name, iconSize, s.icon) : (s.icon || '✨');
+  const tags = effectTags(s);
+  const title = `${skillIconHtml} ${s.name}`;
+  const castText = cfg.showCast === false ? '' : ` · ${(s.castTime || 0)}s读条`;
+  const desc = s.desc || ((s.mul || 1) + '倍伤害');
+  const tagHtml = tags.length
+    ? `<div style="margin-top:2px;color:${tagColor};font-size:10px;line-height:1.45;word-break:break-word">${tags.join(' · ')}</div>`
+    : '';
+  return `<div style="margin:3px 0 6px;padding-bottom:5px;border-bottom:1px dashed rgba(148,163,184,.18)">
+    <div style="color:${leadColor};line-height:1.5;word-break:break-word">${title}</div>
+    <div style="font-size:10px;color:var(--muted);line-height:1.45;word-break:break-word">${desc}${castText}</div>
+    ${tagHtml}
+  </div>`;
+}
 function attachFocusBossHover(focus) {
   const emojiEl = $('mon-emoji'); if (!emojiEl) return;
   if (!focus) return;
@@ -361,22 +380,19 @@ function attachFocusBossHover(focus) {
     if (bossData?.skills) {
       html += '<div style=\"margin-top:3px;color:#fbbf24\">技能:</div>';
       bossData.skills.forEach(s => {
-        const tags = effectTags(s);
-        html += '<div>'+s.icon+' '+s.name+' — '+s.desc+' ('+(s.castTime||0)+'s读条)'+(tags.length?' <span style=\"color:#fbbf24;font-size:10px\">'+tags.join(' ')+'</span>':'')+'</div>';
+        html += bossSkillLineHtml(s, { iconSize:16, tagColor:'#fbbf24' });
       });
     } else if (focus._monSkills?.length || focus._monSkill) {
       const skills = focus._monSkills?.length ? focus._monSkills : [focus._monSkill];
       html += '<div style=\"margin-top:3px;color:#fbbf24\">敌方技能:</div>';
       skills.forEach(s => {
-        const tags = effectTags(s);
-        html += '<div>'+s.icon+' '+s.name+' — '+(s.desc||((s.mul||1)+'倍伤害'))+(tags.length?' <span style=\"color:#fbbf24;font-size:10px\">'+tags.join(' ')+'</span>':'')+'</div>';
+        html += bossSkillLineHtml(s, { iconSize:16, tagColor:'#fbbf24' });
       });
     }
     if (focus._monSupportSkills && focus._monSupportSkills.length) {
       html += '<div style=\"margin-top:3px;color:#93c5fd\">支援技能包:</div>';
       focus._monSupportSkills.forEach(s => {
-        const tags = effectTags(s);
-        html += '<div>'+s.icon+' '+s.name+' — '+(s.desc||'支援技能')+(tags.length?' <span style=\"color:#93c5fd;font-size:10px\">'+tags.join(' ')+'</span>':'')+'</div>';
+        html += bossSkillLineHtml(s, { iconSize:16, tagColor:'#93c5fd', showCast:false });
       });
     }
     if (bossData?.passive) {
@@ -1569,9 +1585,7 @@ function renderMap() {
         if (m.boss.skills) {
           tip += '<div style=\"margin-top:3px;color:#fbbf24\">技能:</div>';
           m.boss.skills.forEach(s => {
-            const tags = effectTags(s);
-            const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(s.name, 16, s.icon) : s.icon;
-            tip += '<div>'+skillIconHtml+' '+s.name+' — '+s.desc+' ('+(s.castTime||0)+'s读条)'+(tags.length?' <span style=\"color:#fbbf24;font-size:10px\">'+tags.join(' ')+'</span>':'')+'</div>';
+            tip += bossSkillLineHtml(s, { iconSize:16, tagColor:'#fbbf24' });
           });
         }
         if (m.boss.passive) {
@@ -1868,15 +1882,17 @@ function renderDungeon() {
         if (!items?.length) continue;
         const isFinal = bossName === lastBossName;
         const bossIconHtml = (typeof entityIcon === 'function') ? entityIcon(bossName, 16, bossData.emoji || '👹') : (bossData.emoji || '👹');
-        const skillInfo=bossData?.skills?bossData.skills.map(s=>{
-          const t=effectTags(s);
-          const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(s.name, 14, s.icon) : s.icon;
-          return skillIconHtml+s.name+(t.length?'['+t.join('')+']':'')+'('+s.desc+','+(s.castTime||0)+'s)';
-        }).join(' · '):'';
         const dropLabel = isEpicRaid
           ? `(必掉史诗级紫装${isFinal?'×2':''} · ${Math.round((items.find(it=>it.rarity==='legend')?.dropChance||0.02)*100)}%橙装)`
           : (isRaid ? (isFinal ? '(常规团本装备 · 6%橙色武器)' : '(常规团本装备)') : '(必掉1件)');
-        html += `<div style=\"margin-top:4px;color:var(--legend);font-size:11px\">${bossIconHtml} ${bossName} ${dropLabel}${skillInfo?' · '+skillInfo:''}</div>`;
+        html += `<div style=\"margin-top:4px;color:var(--legend);font-size:11px\">${bossIconHtml} ${bossName} ${dropLabel}</div>`;
+        if (bossData?.skills?.length) {
+          html += `<div style="margin:2px 0 0 8px">`;
+          bossData.skills.forEach(s => {
+            html += bossSkillLineHtml(s, { iconSize:14, tagColor:'#fbbf24' });
+          });
+          html += `</div>`;
+        }
         const previewPool = items.filter(it => !it.lowChanceLegend);
         const tw = Math.max(1, previewPool.reduce((s,it)=>s+((it.dropWeight)|| (RARITY.find(r=>r.key===it.rarity)?.weight||1)),0));
         for (const it of items) {
