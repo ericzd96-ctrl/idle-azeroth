@@ -2973,8 +2973,8 @@ const COMPANION_ROLE_PROFILE = {
   heal: { atk:0.65, def:0.90, hp:0.58, spd:0.74, reg:0.58, critd:0.82 },
 };
 const COMPANION_STAR_GROWTH = 0.15;   // 每星成长
-const COMPANION_SKILL_DMG_BONUS = 1.30;  // 随从技能伤害全局加成
-const COMPANION_HEAL_SCALE = 1.14;        // 随从治疗统一收口(已+30%)
+const COMPANION_SKILL_DMG_BONUS = 1.43;  // 随从技能伤害全局加成
+const COMPANION_HEAL_SCALE = 1.25;        // 随从治疗统一收口
 function companionSkillCdLeft(i){ return Math.max(0, ((compSkillCd&&compSkillCd[i])||0) - Date.now()); }   // 供 UI 显示剩余CD(毫秒)
 function getActiveCompanion(){if(state.activeCompanion<0||!state.companions[state.activeCompanion])return null;return state.companions[state.activeCompanion];}
 function companionSignature(tpl){ return tpl?.signature || null; }
