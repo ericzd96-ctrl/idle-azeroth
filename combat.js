@@ -2632,6 +2632,39 @@ function syncItemIdSeq(){
   if (state.dungeonState && state.dungeonState.loot) scan(state.dungeonState.loot);
   itemIdSeq = maxId + 1;
 }
+function resolveItemTemplateStats(item){
+  if(!item) return {};
+  if(item._baseExtraStats) return JSON.parse(JSON.stringify(item._baseExtraStats));
+  const matchEntry = entry => {
+    if(!entry) return false;
+    return entry.name===item.name && (entry.slot||item.slot)===item.slot && (!item.rarity || entry.rarity===item.rarity);
+  };
+  const scanEntries = arr => {
+    if(!Array.isArray(arr)) return null;
+    for(const entry of arr){
+      if(matchEntry(entry)) return JSON.parse(JSON.stringify(entry.stats||{}));
+    }
+    return null;
+  };
+  const poolMatch = scanEntries(ITEM_POOLS?.[item.slot]?.[item.rarity]);
+  if(poolMatch) return poolMatch;
+  if(typeof DUNGEON_LOOT==='object'){
+    for(const loot of Object.values(DUNGEON_LOOT)){
+      if(!loot) continue;
+      const trashMatch = scanEntries(loot.trash);
+      if(trashMatch) return trashMatch;
+      const bossMatch = scanEntries(loot.boss);
+      if(bossMatch) return bossMatch;
+      if(loot.bosses){
+        for(const list of Object.values(loot.bosses)){
+          const entryMatch = scanEntries(list);
+          if(entryMatch) return entryMatch;
+        }
+      }
+    }
+  }
+  return {};
+}
 function genName(slotKey,rarity){
   const pool=ITEM_POOLS[slotKey]?.[rarity.key];if(pool&&pool.length>0)return pool[rng(0,pool.length-1)].name;
   const wowAdj={common:['粗糙的','破旧的','简陋的','磨损的'],uncommon:['坚实的','锋利的','迅捷的','闪光的'],rare:['秘银','黑曜石','寒冰','烈焰'],epic:['苍穹','深渊','龙鳞','奥金','暮光'],legend:['萨弗隆','霜之哀伤','灰烬使者','安杜尼苏斯','埃辛诺斯']};
@@ -2677,6 +2710,13 @@ function rollItemOfRarity(rarityKey,fromLvl){
   const poolStats=getPoolStatBonus(slotKey,rarity.key);return finishItem(item,slotKey,rarity,power,poolStats);
 }
 function finishItem(item,slotKey,rarity,power,extraStats){
+  item.slot=slotKey;
+  item.stats={};
+  item._rollSlot=slotKey;
+  item._rollPower=power;
+  item._baseExtraStats=JSON.parse(JSON.stringify(extraStats||{}));
+  if(typeof normalizeItemNameForSlot==='function') item.name=normalizeItemNameForSlot(item);
+  if(!item._baseName) item._baseName=item.name;
   const slot=SLOT_INFO[slotKey];
   const lvlBonus=1+power*0.01; // 等级越高属性越多(2026-06-16 0.02→0.01:压平后期二次膨胀)
   const baseVal={atk:Math.floor((3+power*1.0)*lvlBonus),def:Math.floor((2+power*0.55)*lvlBonus),hp:Math.floor((12+power*5)*lvlBonus),crit:1+power*0.1,critd:6+power*0.6,reg:1+power*0.2,str:Math.floor((1.5+power*0.4)*lvlBonus),agi:Math.floor((1.5+power*0.4)*lvlBonus),int:Math.floor((1.5+power*0.4)*lvlBonus),spi:Math.floor((1+power*0.35)*lvlBonus),sta:Math.floor((1.5+power*0.4)*lvlBonus),leech:0.5+power*0.06,vers:0.5+power*0.06,haste:0.5+power*0.06,dodge:0.5+power*0.06};
@@ -2711,12 +2751,13 @@ function finishItem(item,slotKey,rarity,power,extraStats){
   return item;
 }
 function addToInventory(item){
+  if(typeof syncItemIdentity==='function') syncItemIdentity(item);
   if(item.mythicUnique){state.inventory.push(item);markDirty('inventory');log('🌟 专属传说已入包: '+item.name+' (背包'+state.inventory.length+'件)','loot');return;}
   if(state.autoSellRarity){const itemIdx=RARITY.findIndex(r=>r.key===item.rarity);const sellIdx=RARITY.findIndex(r=>r.key===state.autoSellRarity);if(itemIdx<=sellIdx){state.gold+=item.sell;return;}}
   if(state.inventory.length>=40){state.gold+=item.sell;log('📦 背包已满,自动出售 '+item.name+' +'+item.sell+'💰','info');return;}
   state.inventory.push(item);markDirty('inventory');
 }
-function equipItem(itemId){const idx=state.inventory.findIndex(i=>i.id===itemId);if(idx<0)return;const item=state.inventory[idx];if(item.reqLvl&&state.hero.lvl<item.reqLvl){log('需要等级 Lv.'+item.reqLvl,'bad');return;}const prev=state.equipped[item.slot];state.equipped[item.slot]=item;state.inventory.splice(idx,1);if(prev)state.inventory.push(prev);recomputeStats();log('🎽 装备了 '+item.name,'good');markDirty('inventory','equipment','hero');}
+function equipItem(itemId){const idx=state.inventory.findIndex(i=>i.id===itemId);if(idx<0)return;const item=state.inventory[idx];if(typeof syncItemIdentity==='function') syncItemIdentity(item);if(item.reqLvl&&state.hero.lvl<item.reqLvl){log('需要等级 Lv.'+item.reqLvl,'bad');return;}const prev=state.equipped[item.slot];state.equipped[item.slot]=item;state.inventory.splice(idx,1);if(prev)state.inventory.push(prev);recomputeStats();log('🎽 装备了 '+item.name,'good');markDirty('inventory','equipment','hero');}
 function unequipItem(slotKey){const it=state.equipped[slotKey];if(!it)return;if(state.inventory.length>=40){log('背包已满','bad');return;}state.inventory.push(it);delete state.equipped[slotKey];recomputeStats();markDirty('inventory','equipment','hero');}
 function sellItem(itemId){const idx=state.inventory.findIndex(i=>i.id===itemId);if(idx<0)return;const item=state.inventory[idx];state.gold+=item.sell;state.inventory.splice(idx,1);markDirty('inventory');}
 function sellAllBelow(level){const levelIdx=['common','uncommon','rare','epic','legend'].indexOf(level);let total=0,n=0;state.inventory=state.inventory.filter(i=>{const idx=['common','uncommon','rare','epic','legend'].indexOf(i.rarity);if(idx<=levelIdx){total+=i.sell;n++;return false;}return true;});state.gold+=total;if(n)log('💰 出售 '+n+' 件 +'+total,'info');markDirty('inventory');}

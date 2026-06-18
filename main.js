@@ -184,6 +184,7 @@ function setupDelegation() {
     const id = parseInt(btn.dataset.id);
     const act = btn.dataset.action;
     if (act === 'reroll') rerollAffix(id, parseInt(btn.dataset.idx));
+    else if (act === 'rerollitem') rerollItemFully(id);
     else if (act === 'unsocket') removeGem(id, parseInt(btn.dataset.idx));
     else if (act === 'enchant') applyEnchant(id, btn.dataset.ekey);
     else if (act === 'disassemble') disassembleItem(id);

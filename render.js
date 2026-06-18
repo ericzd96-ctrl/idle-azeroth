@@ -1155,10 +1155,12 @@ function renderEquipment() {
     div.className = 'slot' + (it ? ' '+it.bcls : '');
     div.dataset.slot = k;
     if (it) {
+      if (typeof syncItemIdentity === 'function') syncItemIdentity(it);
       const stats = Object.entries(it.stats).map(([sk,v])=>fmtMod(sk, v)).join(' ');
       const extras = (typeof itemBonusSummary==='function') ? itemBonusSummary(it) : '';
+      const itemNameHtml = (typeof itemDisplayNameHtml === 'function') ? itemDisplayNameHtml(it,{slotBadge:true}) : it.name;
       div.innerHTML = `<div class="label">${slotIconHtml} ${SLOT_INFO[k].label}</div>
-        <div class="name ${it.cls}">${it.name}${extras}</div>
+        <div class="name ${it.cls}">${itemNameHtml}${extras}</div>
         <div class="stats">${stats}${it.reqLvl?' · Lv.'+it.reqLvl:''}</div>`;
       div.title = '点击查看详情/卸下';
     } else {
@@ -1195,6 +1197,7 @@ function renderInventory() {
 
   for (const it of state.inventory) {
     if (!SLOT_INFO[it.slot]) continue; // 跳过槽位无效的物品
+    if (typeof syncItemIdentity === 'function') syncItemIdentity(it);
     const equipped = state.equipped[it.slot];
     const stats = Object.entries(it.stats).map(([k,v])=>fmtMod(k, v)).join(' ');
     const row = document.createElement('div');
@@ -1202,10 +1205,11 @@ function renderInventory() {
     row.dataset.id = it.id;
     const extras = (typeof itemBonusSummary==='function') ? itemBonusSummary(it) : '';
     const slotIconHtml = (typeof slotIcon === 'function') ? slotIcon(it.slot, 16, SLOT_INFO[it.slot].icon) : SLOT_INFO[it.slot].icon;
+    const itemNameHtml = (typeof itemDisplayNameHtml === 'function') ? itemDisplayNameHtml(it,{slotBadge:true}) : it.name;
     row.innerHTML = `
       <div class="info">
-        <div class="name ${it.cls}">${slotIconHtml} ${it.name}${extras}</div>
-        <div class="stats">${stats}${it.reqLvl?" · Lv."+it.reqLvl:""}</div>
+        <div class="name ${it.cls}">${slotIconHtml} ${itemNameHtml}${extras}</div>
+        <div class="stats">${SLOT_INFO[it.slot].label} · ${stats}${it.reqLvl?" · Lv."+it.reqLvl:""}</div>
       </div>
       <div class="btns">
         <button data-action="detail" data-id="${it.id}" title="详情/词缀/宝石/附魔">🔍</button>
@@ -1215,10 +1219,12 @@ function renderInventory() {
 
     const showCompare = e => {
       const diff = calcCompare(it, equipped);
+      const newNameHtml = (typeof itemDisplayNameHtml === 'function') ? itemDisplayNameHtml(it,{slotBadge:true}) : it.name;
+      const oldNameHtml = equipped ? ((typeof itemDisplayNameHtml === 'function') ? itemDisplayNameHtml(equipped,{slotBadge:true}) : equipped.name) : '';
       tip.querySelector('.compare-head').innerHTML = `
         <div>${slotIconHtml} ${SLOT_INFO[it.slot].label} 对比</div>
-        <div class="name ${it.cls}" style="font-size:11px">🆕 ${it.name}</div>
-        ${equipped ? `<div class="name ${equipped.cls}" style="font-size:11px">📌 ${equipped.name}</div>` : '<div class="muted" style="font-size:11px">📌 当前栏位为空</div>'}
+        <div class="name ${it.cls}" style="font-size:11px">🆕 ${newNameHtml}</div>
+        ${equipped ? `<div class="name ${equipped.cls}" style="font-size:11px">📌 ${oldNameHtml}</div>` : '<div class="muted" style="font-size:11px">📌 当前栏位为空</div>'}
       `;
       tip.querySelector('.compare-body').innerHTML = diff;
       tip.style.display = 'block';
@@ -1288,7 +1294,9 @@ function showLootTip(e, items, title) {
     for (const it of items) {
       const r = RARITY.find(r=>r.key===it.rarity);
       const epicBadge = (typeof itemEpicRaidBadge === 'function') ? itemEpicRaidBadge(it, true) : '';
-      html += `<div class="${r?.cls||''}" style="font-size:11px;margin:1px 0">${it.name}${epicBadge} <span style="opacity:.6">${(it.stats?Object.entries(it.stats).map(([k,v])=>fmtMod(k, v)).join(' '):'')}</span></div>`;
+      if (typeof syncItemIdentity === 'function') syncItemIdentity(it);
+      const itemNameHtml = (typeof itemDisplayNameHtml === 'function') ? itemDisplayNameHtml(it,{slotBadge:true}) : it.name;
+      html += `<div class="${r?.cls||''}" style="font-size:11px;margin:1px 0">${itemNameHtml}${epicBadge} <span style="opacity:.6">${it.slot&&SLOT_INFO[it.slot]?SLOT_INFO[it.slot].label+' · ':''}${(it.stats?Object.entries(it.stats).map(([k,v])=>fmtMod(k, v)).join(' '):'')}</span></div>`;
     }
   }
   tip.querySelector('.compare-head').innerHTML = html;

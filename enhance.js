@@ -289,14 +289,158 @@ function collectEnchantBonuses(item) {
 
 /* ---------- 玩家操作 ---------- */
 function getItemById(id) {
-  for (const it of state.inventory) if (it.id === id) return { item:it, source:'inv' };
-  for (const k of SLOT_ORDER) { const it = state.equipped[k]; if (it && it.id === id) return { item:it, source:'equip', slot:k }; }
+  for (const it of state.inventory) if (it.id === id) { syncItemIdentity(it); return { item:it, source:'inv' }; }
+  for (const k of SLOT_ORDER) { const it = state.equipped[k]; if (it && it.id === id) { syncItemIdentity(it); return { item:it, source:'equip', slot:k }; } }
   return null;
 }
 
 function ensureMats() {
   if (typeof state.essence !== 'number') state.essence = 0;
   if (!state.gems) state.gems = {};
+}
+
+function estimateItemRollPower(item) {
+  if (!item) return Math.max(1, state?.hero?.lvl || 1);
+  if (typeof item._rollPower === 'number' && item._rollPower > 0) return item._rollPower;
+  const req = Math.max(1, item.reqLvl || state?.hero?.lvl || 1);
+  return Math.max(req, Math.ceil(req / 0.9));
+}
+
+function itemSlotLabel(itemOrSlot) {
+  const slotKey = typeof itemOrSlot === 'string' ? itemOrSlot : itemOrSlot?.slot;
+  return SLOT_INFO[slotKey]?.label || slotKey || '未知部位';
+}
+
+function normalizeItemNameForSlot(item) {
+  if (!item?.name || !item?.slot || !SLOT_INFO[item.slot]) return item?.name || '';
+  const targetLabel = SLOT_INFO[item.slot].label;
+  const knownLabels = SLOT_ORDER.map(k => SLOT_INFO[k]?.label).filter(Boolean).sort((a, b) => b.length - a.length);
+  let name = String(item.name).trim();
+  const wrongLabel = knownLabels.find(label => label !== targetLabel && name.includes(label));
+  if (wrongLabel) name = name.replace(wrongLabel, targetLabel);
+  return name;
+}
+
+function syncItemIdentity(item) {
+  if (!item || !SLOT_INFO[item.slot]) return item;
+  const normalized = normalizeItemNameForSlot(item);
+  if (normalized && item.name !== normalized) item.name = normalized;
+  if (!item._baseName) item._baseName = item.name;
+  if (!item._rollSlot) item._rollSlot = item.slot;
+  if (typeof item._rollPower !== 'number' || item._rollPower <= 0) item._rollPower = estimateItemRollPower(item);
+  if (typeof item._baseExtraStats === 'undefined') {
+    if (typeof resolveItemTemplateStats === 'function') item._baseExtraStats = resolveItemTemplateStats(item);
+    else item._baseExtraStats = {};
+  }
+  return item;
+}
+
+function itemSlotBadge(item, compact) {
+  if (!item?.slot || !SLOT_INFO[item.slot]) return '';
+  const label = compact ? itemSlotLabel(item) : `部位:${itemSlotLabel(item)}`;
+  return ` <span class="item-slot-tag">${label}</span>`;
+}
+
+function itemDisplayNameHtml(item, opts) {
+  if (!item) return '';
+  syncItemIdentity(item);
+  const options = Object.assign({ slotBadge:true }, opts || {});
+  return `${item.name}${options.slotBadge ? itemSlotBadge(item, true) : ''}`;
+}
+
+function renderItemSetEffectsHtml(item) {
+  if (!item?.setName) return '';
+  syncItemIdentity(item);
+  let equippedCount = 0;
+  if (typeof getEquippedSetCounts === 'function') {
+    equippedCount = getEquippedSetCounts()?.[item.setKey]?.count || 0;
+  } else {
+    equippedCount = Object.values(state.equipped || {}).filter(it => it?.setKey === item.setKey).length;
+  }
+  const effects = (item.setEffects || []).map(effect => {
+    const active = equippedCount >= effect.pieces;
+    const desc = Object.entries(effect.mod || {}).map(([k, v]) => fmtMod(k, v)).join(' · ');
+    return `<div class="${active ? 'pos' : 'muted'} set-effect-line">${active ? '✓' : '○'} ${effect.pieces}件: ${desc || '无额外效果'}</div>`;
+  }).join('');
+  return `
+    <div class="detail-section">
+      <div class="detail-label">🧩 套装效果</div>
+      <div style="font-weight:700">${item.setName} <span class="muted" style="font-size:11px">(${equippedCount}/${item.setPieces || 4})</span></div>
+      <div class="muted" style="font-size:11px;margin-top:4px">同系列装备凑齐 2 件 / 4 件后会激活以下效果：</div>
+      <div style="margin-top:4px">${effects || '<div class="muted" style="font-size:11px">该套装暂未配置额外效果</div>'}</div>
+    </div>`;
+}
+
+function getItemFullRerollCost(item) {
+  const rarityFactor = { common:0.8, uncommon:1.1, rare:1.5, epic:2.4, legend:4 }[item?.rarity] || 1.2;
+  const rerollCount = item?.fullRerolls || 0;
+  return {
+    gold: Math.max(120, Math.floor((item?.reqLvl || 1) * 18 * rarityFactor * (1 + rerollCount * 0.75))),
+    essence: Math.max(0, Math.floor(({ common:0, uncommon:0, rare:1, epic:3, legend:6 }[item?.rarity] || 1) * (1 + rerollCount * 0.5))),
+  };
+}
+
+function rerollItemFully(itemId) {
+  ensureMats();
+  const found = getItemById(itemId); if (!found) return;
+  const it = found.item;
+  syncItemIdentity(it);
+  const cost = getItemFullRerollCost(it);
+  if (state.gold < cost.gold) { log('💰 金币不足(' + cost.gold + ')', 'bad'); return; }
+  if (state.essence < cost.essence) { log('💎 魔法精华不足(' + cost.essence + ')', 'bad'); return; }
+  const returnKeys = [];
+  if (it.sockets) {
+    for (const sk of it.sockets) {
+      if (!sk.gem) continue;
+      returnKeys.push(sk.gem);
+    }
+  }
+  const costText = `${cost.gold}💰${cost.essence ? ` + ${cost.essence}✨` : ''}`;
+  if (!confirm(`洗练 [${it.name}]？\n将消耗 ${costText}\n会重新生成基础属性、词缀、宝石孔，并清除附魔。\n已镶嵌的宝石会返还到背包。`)) return;
+  state.gold -= cost.gold;
+  state.essence -= cost.essence;
+  const returns = [];
+  for (const gemKey of returnKeys) {
+    state.gems[gemKey] = (state.gems[gemKey] || 0) + 1;
+    returns.push(GEM_TYPES[gemKey]?.name || gemKey);
+  }
+  const rarity = RARITY.find(r => r.key === it.rarity) || RARITY[0];
+  const power = estimateItemRollPower(it);
+  const extraStats = typeof resolveItemTemplateStats === 'function' ? resolveItemTemplateStats(it) : (it._baseExtraStats || {});
+  const preserved = {
+    id: it.id,
+    slot: it.slot,
+    name: it._baseName || normalizeItemNameForSlot(it) || it.name,
+    rarity: it.rarity,
+    rarityName: it.rarityName,
+    cls: it.cls,
+    bcls: it.bcls,
+    sell: it.sell,
+    epicRaid: !!it.epicRaid,
+    setKey: it.setKey,
+    setName: it.setName,
+    setEffects: Array.isArray(it.setEffects) ? JSON.parse(JSON.stringify(it.setEffects)) : it.setEffects,
+    setPieces: it.setPieces,
+    reqLvl: it.reqLvl,
+    _baseName: it._baseName || it.name,
+    _baseExtraStats: JSON.parse(JSON.stringify(extraStats || {})),
+    _rollPower: power,
+    _rollSlot: it.slot,
+    fullRerolls: (it.fullRerolls || 0) + 1,
+  };
+  for (const key of Object.keys(it)) delete it[key];
+  Object.assign(it, preserved, { stats:{} });
+  delete it.affixes;
+  delete it.sockets;
+  delete it.enchant;
+  finishItem(it, it.slot, rarity, power, extraStats || {});
+  it.fullRerolls = preserved.fullRerolls;
+  syncItemIdentity(it);
+  const returnedText = returns.length ? `，返还宝石 ${returns.join(' / ')}` : '';
+  log(`🎲 洗练完成 [${it.name}]${returnedText}`,'good');
+  recomputeStats();
+  markDirty('inventory','equipment','hero');
+  renderItemDetail(itemId);
 }
 
 function rerollAffix(itemId, affixIdx) {
@@ -447,19 +591,16 @@ function renderItemDetail(itemId) {
   const found = getItemById(itemId);
   if (!found) { closeItemDetail(); return; }
   const it = found.item;
+  syncItemIdentity(it);
   const el = $('item-detail-body');
+  const fullRerollCost = getItemFullRerollCost(it);
   // 头部
   const titleHtml = `
     <div class="detail-head ${it.bcls}">
-      <div class="name ${it.cls}" style="font-size:18px">${SLOT_INFO[it.slot].icon} ${it.name}</div>
+      <div class="name ${it.cls}" style="font-size:18px">${SLOT_INFO[it.slot].icon} ${itemDisplayNameHtml(it,{slotBadge:true})}</div>
       <div class="muted" style="font-size:11px">${SLOT_INFO[it.slot].label} · [${it.rarityName}]${it.epicRaid?' · <span style="color:#22c55e">[史诗团本]</span>':''}${it.reqLvl?' · Lv.'+it.reqLvl:''}${found.source==='equip'?' · <span style="color:var(--accent)">已装备</span>':''}</div>
     </div>`;
-  const setHtml = it.setName ? `
-    <div class="detail-section">
-      <div class="detail-label">🧩 套装</div>
-      <div style="font-weight:700">${it.setName}</div>
-      ${(it.setEffects||[]).map(effect => `<div class="muted" style="font-size:11px;margin-top:3px">${effect.pieces}件: ${Object.entries(effect.mod||{}).map(([k,v])=>fmtMod(k,v)).join(' · ')}</div>`).join('')}
-    </div>` : '';
+  const setHtml = renderItemSetEffectsHtml(it);
   // 基础属性
   const baseStats = Object.entries(it.stats||{}).map(([k,v])=>`<div class="stat-row">${fmtStatName(k)} <b>+${v}${isPercentStat(k)?'%':''}</b></div>`).join('');
   // 词缀
@@ -526,6 +667,7 @@ function renderItemDetail(itemId) {
   const matsHtml = `<div class="muted" style="font-size:11px">材料: ✨ <b>${state.essence}</b> 魔法精华</div>`;
   // 动作栏
   const actions = `
+    <button data-action="rerollitem" data-id="${it.id}" title="洗练: ${fullRerollCost.gold}💰${fullRerollCost.essence?` + ${fullRerollCost.essence}精华`:''}">🎲 洗练 ${fullRerollCost.gold}💰${fullRerollCost.essence?` ${fullRerollCost.essence}✨`:''}</button>
     ${found.source==='inv' ? `<button class="primary" data-action="equipfromdetail" data-id="${it.id}">装备</button>` : ''}
     ${found.source==='equip' ? `<button class="danger" data-action="unequipfromdetail" data-id="${it.id}">卸下</button>` : ''}
     ${found.source==='inv' ? `<button class="danger" data-action="disassemble" data-id="${it.id}">🔧 分解</button>` : ''}
@@ -550,6 +692,7 @@ function renderItemDetail(itemId) {
       <div class="detail-label">✨ 附魔 ${matsHtml}</div>
       ${enchantHtml}
     </div>
+    <div class="muted" style="font-size:11px;line-height:1.5;margin-top:-2px;margin-bottom:8px">洗练会重置这件装备的基础属性、词缀、宝石孔与附魔，相当于重新掉落一次；已镶嵌宝石会自动返还。</div>
     <div class="detail-actions">${actions}</div>`;
 }
 
@@ -565,6 +708,7 @@ function itemEpicRaidBadge(item, compact) {
 
 function itemBonusSummary(item) {
   if (!item) return '';
+  syncItemIdentity(item);
   const parts = [];
   if (item.setName) parts.push('🧩');
   if (item.affixes && item.affixes.length) parts.push('🔮'+item.affixes.length);
