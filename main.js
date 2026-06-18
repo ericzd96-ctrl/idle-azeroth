@@ -374,7 +374,7 @@ function setupDelegation() {
     });
   })();
 
-  // 技能栏拖拽排序(顺序 = 自动施法优先级)
+  // 技能栏拖拽排序(仅影响手动快捷栏顺序)
   (() => {
     const sbar = $('skill-bar'); if (!sbar) return;
     let dragKey = null;

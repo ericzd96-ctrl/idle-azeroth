@@ -502,6 +502,17 @@ function autoSkillScore(skillKey, sk, mon, ctx){
   if((skillAiMeta(skillKey, sk).priorityTag === 'buff') && ctx.targetHpFrac < 0.35 && !mon.isBoss) score -= 8;
   return score;
 }
+function autoCastSkillEntries(cls){
+  if(!cls || !cls.skills) return [];
+  return Object.entries(cls.skills)
+    .filter(([skillKey, sk]) => !!state.unlockedSkills[skillKey] && sk && sk.type !== 'passive')
+    .sort((a, b) => {
+      const la = Number.isFinite(a[1]?.unlockLvl) ? a[1].unlockLvl : 9999;
+      const lb = Number.isFinite(b[1]?.unlockLvl) ? b[1].unlockLvl : 9999;
+      if (la !== lb) return la - lb;
+      return 0;
+    });
+}
 function runTalentAction(fx, mon, value, ctx, now){
   if(fx.aura) addTalentAura(fx.aura, true);
   if(fx.resource) grantTalentResource(fx.resource);
@@ -2182,17 +2193,17 @@ function tickBattle(now){
     if(!dodged&&state.hero.leech>0){const leechHeal=Math.floor(d.dmg*state.hero.leech*0.5/100);if(leechHeal>0){state.hp=Math.min(state.hero.hpMax,state.hp+leechHeal);showFloat($('hero-emoji'),'🩸+'+leechHeal,'#6ee7b7');}}   // 吸血:每点=0.5%实际吸取,有浮动数字可见
     lastHeroAtk=now;
     if(getCls().resKey==='rage')state.resource=Math.min(state.resourceMax,state.resource+(d.crit?12:8));
-    // 智能自动施法:GCD 节流避免一次性倾泻;残血治疗可无视GCD;焦点残血优先斩杀;敌群多优先AOE
-    if(state.autoSkill&&state.selectedSkills.length>0&&!casting){
+    // 智能自动施法:读取当前职业全部已解锁技能;技能栏仅作为手动快捷栏
+    if(state.autoSkill&&!casting){
       const now2=Date.now();const aliveN=getAliveMonsters().length;
       const hpFrac=state.hp/Math.max(1,state.hero.hpMax);
       const targetHpFrac=mon&&mon.hp>0?mon.hp/Math.max(1,mon.hpMax):1;
+      const autoSkills=autoCastSkillEntries(getCls());
       const ready=[];
-      for(let order=0;order<state.selectedSkills.length;order++){
-        const skKey=state.selectedSkills[order];
-        if(!state.unlockedSkills[skKey])continue;
+      for(let order=0;order<autoSkills.length;order++){
+        const [skKey, sk] = autoSkills[order];
         if(state.skillCooldowns[skKey]&&state.skillCooldowns[skKey]>now2)continue;
-        const sk=getCls().skills[skKey];if(!sk||sk.type==='interrupt')continue;
+        if(!sk||sk.type==='interrupt')continue;
         let cost=sk.mp;if(state.hero.costReduction>0)cost=Math.max(1,Math.floor(sk.mp*(1-state.hero.costReduction/100)));
         if(state.resource<cost)continue;
         const score=autoSkillScore(skKey,sk,mon,{now:now2,aliveN,hpFrac,targetHpFrac});

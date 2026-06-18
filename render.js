@@ -1268,7 +1268,7 @@ function renderSourceTable() {
 function renderSkills() {
   const c = getCls(); if (!c) return;
   const skl = $('skill-list');
-  skl.innerHTML = `<div class="muted" style="margin-bottom:6px;font-size:11px">技能栏 <b style="color:var(--accent)">${state.selectedSkills.length}</b>/8 · 点「选用」放入,满 8 个会顶替最早的</div>`;
+  skl.innerHTML = `<div class="muted" style="margin-bottom:6px;font-size:11px">手动技能栏 <b style="color:var(--accent)">${state.selectedSkills.length}</b>/8 · 自动施法会使用全部已解锁技能,这里仅影响手动快捷栏</div>`;
   for (const [skKey, sk] of classSkillEntriesSorted(c)) {
     const unlocked = !!state.unlockedSkills[skKey];
     const isSel = state.selectedSkills.includes(skKey);
@@ -1443,7 +1443,7 @@ function renderSkillBar() {
   const now = Date.now();
 
   if (state.selectedSkills.length === 0) {
-    bar.innerHTML = '<div class="muted" style="font-size:11px;text-align:center;padding:4px">未选择技能(在技能面板点选)</div>';
+    bar.innerHTML = '<div class="muted" style="font-size:11px;text-align:center;padding:4px">未设置手动技能栏(自动施法仍会使用全部已解锁技能)</div>';
     return;
   }
 
