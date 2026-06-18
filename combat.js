@@ -2928,9 +2928,10 @@ function tickCast(now){
     }else{castSkill(wasCasting.skillKey,wasCasting.manual);}
   }
 function castSkill(skillKey,manual){
-  const c=getCls();const sk=c.skills[skillKey];if(!sk)return;
+  console.log('[castSkill] called:',skillKey,'manual:',manual,'unlocked:',!!state.unlockedSkills[skillKey]);
+  const c=getCls();const sk=c.skills[skillKey];if(!sk){console.log('[castSkill] sk not found');return;}
   const ai=skillAiMeta(skillKey, sk);
-  if(!state.unlockedSkills[skillKey]){if(manual)log('技能未解锁','bad');return;}
+  if(!state.unlockedSkills[skillKey]){console.log('[castSkill] not unlocked');if(manual)log('技能未解锁','bad');return;}
   if(sk.type==='interrupt'){if(manual)doInterrupt();const cdSec=sk.cd||5;state.skillCooldowns[skillKey]=Date.now()+cdSec*1000/castSpeedMul();return;}
   const now=Date.now();
   if(state.skillCooldowns[skillKey]&&state.skillCooldowns[skillKey]>now){if(manual){const left=Math.ceil((state.skillCooldowns[skillKey]-now)/1000);log(sk.name+' 冷却中('+left+'秒)','bad');}return;}
