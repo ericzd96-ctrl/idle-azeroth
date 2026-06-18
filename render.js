@@ -1084,7 +1084,8 @@ function showLootTip(e, items, title) {
   } else {
     for (const it of items) {
       const r = RARITY.find(r=>r.key===it.rarity);
-      html += `<div class="${r?.cls||''}" style="font-size:11px;margin:1px 0">${r?.name?.[0]||'?'} ${it.name} <span style="opacity:.6">${(it.stats?Object.entries(it.stats).map(([k,v])=>fmtMod(k, v)).join(' '):'')}</span></div>`;
+      const epicBadge = (typeof itemEpicRaidBadge === 'function') ? itemEpicRaidBadge(it, true) : '';
+      html += `<div class="${r?.cls||''}" style="font-size:11px;margin:1px 0">${r?.name?.[0]||'?'} ${it.name}${epicBadge} <span style="opacity:.6">${(it.stats?Object.entries(it.stats).map(([k,v])=>fmtMod(k, v)).join(' '):'')}</span></div>`;
     }
   }
   tip.querySelector('.compare-head').innerHTML = html;
@@ -1819,7 +1820,8 @@ function renderDungeon() {
           const scaledStats = scaleLootStats(it.stats||{}, it.rarity, Math.max(power, isEpicRaid ? 90 : power));
           const statsText = Object.entries(scaledStats).map(([k,v])=>fmtMod(k, v)).join(' ');
           const itemRate = it.dropChance ? `${Math.round(it.dropChance*100)}%` : `${Math.round((((it.dropWeight)|| (RARITY.find(r2=>r2.key===it.rarity)?.weight||1))/tw)*100)}%`;
-          html += `<div class=\"${r?.cls||''}\" style=\"font-size:10px;margin:0 0 0 8px\">${r?.name?.[0]||'?'} ${it.name} ${itemRate} <span style=\"opacity:.5\">${statsText}</span></div>`;
+          const epicBadge = (typeof itemEpicRaidBadge === 'function') ? itemEpicRaidBadge(it, true) : '';
+          html += `<div class=\"${r?.cls||''}\" style=\"font-size:10px;margin:0 0 0 8px\">${r?.name?.[0]||'?'} ${it.name}${epicBadge} ${itemRate} <span style=\"opacity:.5\">${statsText}</span></div>`;
         }
       }
       const trashPool = (typeof getDungeonTrashLoot === 'function') ? getDungeonTrashLoot(dg.key, state.cls) : ((DUNGEON_LOOT[dg.key]||DUNGEON_LOOT[(typeof baseDungeonKey==='function'?baseDungeonKey(dg.key):dg.key)]||{}).trash||[]);

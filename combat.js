@@ -2401,7 +2401,7 @@ function onMonsterDeath(mon){
     const it=(mon._isRaid && dKey)
       ? rollItem('epic',mon.lvl,dKey,mon.isBoss?mon.bossName:null,{ exactRarity: !!mon._isEpicRaid })
       : rollItem(mon.maxRarity,mon.lvl,dKey,mon.isBoss?mon.bossName:null);
-    if((state.mode==='dungeon'||state.mode==='mythic')&&(state.dungeonState||state.mythicState))(state.dungeonState||state.mythicState).loot.push(it);addToInventory(it);if(typeof eventsOnItemGet==='function') eventsOnItemGet(it);if(it.rarity==='legend'&&typeof progressionOnLegendary==='function') progressionOnLegendary();const c=it.rarity==='legend'?'legend':(it.rarity==='epic'?'epic':'loot');log('🎁 掉落 ['+it.rarityName+'] '+it.name,c);
+    if((state.mode==='dungeon'||state.mode==='mythic')&&(state.dungeonState||state.mythicState))(state.dungeonState||state.mythicState).loot.push(it);addToInventory(it);if(typeof eventsOnItemGet==='function') eventsOnItemGet(it);if(it.rarity==='legend'&&typeof progressionOnLegendary==='function') progressionOnLegendary();const c=it.rarity==='legend'?'legend':(it.rarity==='epic'?'epic':'loot');log('🎁 掉落 ['+it.rarityName+'] '+it.name+(it.epicRaid?' [史诗团本]':''),c);
   }
   if(mon._isRaid && mon.fromDungeon){
     const dKey2=(state.dungeonState||state.mythicState)?.key;
@@ -2411,7 +2411,7 @@ function onMonsterDeath(mon){
         if((state.dungeonState||state.mythicState)) (state.dungeonState||state.mythicState).loot.push(extraEpic);
         addToInventory(extraEpic);
         if(typeof eventsOnItemGet==='function') eventsOnItemGet(extraEpic);
-        log('🎁 史诗团本尾王额外掉落 ['+extraEpic.rarityName+'] '+extraEpic.name,'epic');
+        log('🎁 史诗团本尾王额外掉落 ['+extraEpic.rarityName+'] '+extraEpic.name+' [史诗团本]','epic');
       }
       const dg2=DUNGEONS.find(d=>d.key===dKey2);
       const bossCount=Math.max(1,dg2?.bosses?.length||1);
@@ -2421,7 +2421,7 @@ function onMonsterDeath(mon){
         const legend=rollItem('legend',mon.lvl,dKey2,mon.bossName,{ exactRarity:true });
         if((state.dungeonState||state.mythicState)) (state.dungeonState||state.mythicState).loot.push(legend);
         addToInventory(legend);
-        log('🎉 史诗团本BOSS额外掉落 ['+legend.rarityName+'] '+legend.name, 'legend');
+        log('🎉 史诗团本BOSS额外掉落 ['+legend.rarityName+'] '+legend.name+' [史诗团本]', 'legend');
         if(typeof progressionOnLegendary==='function') progressionOnLegendary();
       }
     }else if(mon._isRaidFinal&&Math.random()<0.06){

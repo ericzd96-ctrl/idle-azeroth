@@ -452,7 +452,7 @@ function renderItemDetail(itemId) {
   const titleHtml = `
     <div class="detail-head ${it.bcls}">
       <div class="name ${it.cls}" style="font-size:18px">${SLOT_INFO[it.slot].icon} ${it.name}</div>
-      <div class="muted" style="font-size:11px">${SLOT_INFO[it.slot].label} · [${it.rarityName}]${it.reqLvl?' · Lv.'+it.reqLvl:''}${found.source==='equip'?' · <span style="color:var(--accent)">已装备</span>':''}</div>
+      <div class="muted" style="font-size:11px">${SLOT_INFO[it.slot].label} · [${it.rarityName}]${it.epicRaid?' · <span style="color:#fda4af">史诗团本</span>':''}${it.reqLvl?' · Lv.'+it.reqLvl:''}${found.source==='equip'?' · <span style="color:var(--accent)">已装备</span>':''}</div>
     </div>`;
   // 基础属性
   const baseStats = Object.entries(it.stats||{}).map(([k,v])=>`<div class="stat-row">${fmtStatName(k)} <b>+${v}${isPercentStat(k)?'%':''}</b></div>`).join('');
@@ -547,6 +547,12 @@ function renderItemDetail(itemId) {
 }
 
 /* 给装备/背包tooltip额外信息 (在 render.js 使用) */
+function itemEpicRaidBadge(item, compact) {
+  if (!item || !item.epicRaid) return '';
+  const label = compact ? '史诗团本' : '史诗团本掉落';
+  return ` <span style="font-size:10px;color:#fda4af;border:1px solid rgba(253,164,175,.4);border-radius:999px;padding:0 6px;white-space:nowrap">${label}</span>`;
+}
+
 function itemBonusSummary(item) {
   if (!item) return '';
   const parts = [];
@@ -556,5 +562,7 @@ function itemBonusSummary(item) {
     parts.push('💎'+filled+'/'+item.sockets.length);
   }
   if (item.enchant) parts.push('✨');
-  return parts.length ? ' <span class="muted" style="font-size:10px">'+parts.join(' ')+'</span>' : '';
+  const badge = itemEpicRaidBadge(item, true);
+  const partsHtml = parts.length ? ` <span class="muted" style="font-size:10px">${parts.join(' ')}</span>` : '';
+  return `${badge}${partsHtml}`;
 }

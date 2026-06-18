@@ -4083,17 +4083,17 @@ function findRaidReferenceItem(baseKey, bossName, slotKey, rarityKey) {
     || null;
 }
 function makeEpicRaidSetName(baseKey, clsKey, slotKey) {
-  return `史诗·${epicRaidSetLabel(baseKey, clsKey)}${SLOT_INFO[slotKey]?.label || slotKey}`;
+  return `${epicRaidSetLabel(baseKey, clsKey)}${SLOT_INFO[slotKey]?.label || slotKey}`;
 }
 function makeEpicRaidOffpieceName(baseKey, bossName, slotKey) {
   const ref = findRaidReferenceItem(baseKey, bossName, slotKey, 'epic') || findRaidReferenceItem(baseKey, bossName, slotKey, 'rare');
-  return `史诗·${ref?.name || (bossName + (SLOT_INFO[slotKey]?.label || slotKey))}`;
+  return ref?.name || (bossName + (SLOT_INFO[slotKey]?.label || slotKey));
 }
 function makeEpicRaidLegendName(baseKey, bossName, slotKey) {
   const ref = findRaidReferenceItem(baseKey, bossName, slotKey, 'legend')
     || findRaidReferenceItem(baseKey, bossName, slotKey, 'epic')
     || findRaidReferenceItem(baseKey, bossName, slotKey, 'rare');
-  return `史诗·${ref?.name || (bossName + (SLOT_INFO[slotKey]?.label || slotKey))}`;
+  return ref?.name || (bossName + (SLOT_INFO[slotKey]?.label || slotKey));
 }
 function makeNormalRaidLegendWeaponName(baseKey, bossName) {
   const ref = findRaidReferenceItem(baseKey, bossName, 'weapon', 'legend');
