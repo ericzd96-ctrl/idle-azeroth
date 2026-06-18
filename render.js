@@ -132,13 +132,29 @@ function focusBuffs(now) {
   if (!mon || mon.hp <= 0) return [];
   const out = [];
   if (mon._trickAuras) {
-    for (const [key, aura] of Object.entries(mon._trickAuras)) {
+    const auraMap = mon._trickAuras;
+    const activeKeys = [];
+    if (mon._trickAtkBuff > now) activeKeys.push('atk');
+    if ((mon._trickSpdBuff > now) || (mon.spdBuffUntil > now)) activeKeys.push('spd');
+    if (mon._trickDefBuff > now) activeKeys.push('def');
+    if (mon._monsterDrBuffUntil > now) activeKeys.push('dr');
+    if (mon._trickLeech > now) activeKeys.push('leech');
+    if (mon._trickCrit > now) activeKeys.push('crit');
+    if ((mon._nextAtkDouble || 0) > 0) activeKeys.push('nextDouble');
+    for (const key of Object.keys(auraMap)) {
+      const aura = auraMap[key];
       if (!aura) continue;
+      const shouldKeep =
+        key === 'shield' ? (mon._arcaneShield > 0) :
+        key === 'nextDouble' ? ((mon._nextAtkDouble || 0) > 0) :
+        activeKeys.includes(key);
+      if (!shouldKeep) {
+        delete auraMap[key];
+        continue;
+      }
       const stacks = key === 'nextDouble' ? (mon._nextAtkDouble || aura.stacks || 0) : (aura.stacks || 0);
-      const timed = aura.expire > now;
-      const stackActive = key === 'nextDouble' && stacks > 0;
-      if (!timed && !stackActive) continue;
-      const left = timed ? Math.ceil((aura.expire - now) / 1000) : 0;
+      const expire = key === 'spd' && mon.spdBuffUntil > now ? mon.spdBuffUntil : (aura.expire || 0);
+      const left = expire > now ? Math.ceil((expire - now) / 1000) : 0;
       const suffix = stacks > 1 ? ` · ${stacks}层` : '';
       out.push({
         icon: aura.icon || '⚡',
@@ -998,7 +1014,7 @@ function updateBattleVisuals() {
   }
 
   // 技能栏(只在dirty时重建, 否则只更新CD;拖拽排序进行中不重建以免打断)
-  if ((isDirty('stage') || isDirty('skills')) && !skillDragging) renderSkillBar();
+  if ((!$('skill-bar')?.children?.length || isDirty('skills')) && !skillDragging) renderSkillBar();
   else updateSkillBarCd();
 
   // 增益图标条
