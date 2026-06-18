@@ -1170,6 +1170,16 @@ function showLootTip(e, items, title) {
 function hideLootTip() { if (!_tipPinned) $('compare-tip').style.display = 'none'; }
 
 function positionTip(tip, e) {
+  const mobile = typeof isMobileLayout === 'function' ? isMobileLayout() : (typeof window !== 'undefined' && window.innerWidth <= 768);
+  if (mobile) {
+    tip.classList.add('mobile-tip');
+    const safeTop = 10;
+    const maxTop = Math.max(safeTop, Math.floor(window.innerHeight * 0.14));
+    tip.style.left = '8px';
+    tip.style.top = maxTop + 'px';
+    return;
+  }
+  tip.classList.remove('mobile-tip');
   let x = e.clientX + 16;
   let y = e.clientY - 10;
   const tipW = tip.offsetWidth || 290;

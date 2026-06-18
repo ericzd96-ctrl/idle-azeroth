@@ -572,6 +572,23 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
     min-width: 0;
     max-width: min(240px, calc(100vw - 16px));
   }
+  body.mobile-ui .compare-tip.mobile-tip {
+    left: 8px !important;
+    right: 8px;
+    width: auto;
+    max-width: none;
+    max-height: min(72vh, 520px);
+    padding: 10px 10px 12px;
+    pointer-events: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  body.mobile-ui .compare-tip.mobile-tip .compare-head,
+  body.mobile-ui .compare-tip.mobile-tip .compare-body {
+    word-break: break-word;
+  }
   body.mobile-ui .wow-tree { overflow: hidden; }
   body.mobile-ui .wow-tree-head { gap: 6px; }
   body.mobile-ui .wow-tree-head b { font-size: 12px; }
