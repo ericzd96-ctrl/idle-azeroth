@@ -627,6 +627,10 @@ function setupMainButtons() {
       if (btn.dataset.action === 'claimach') {
         claimAchievement(btn.dataset.key);
         renderProgression();
+      } else if (btn.dataset.action === 'claimrepline') {
+        if (typeof claimReputationLine === 'function' && claimReputationLine(btn.dataset.fac, parseInt(btn.dataset.rep, 10))) {
+          renderProgression();
+        }
       } else if (btn.dataset.action === 'equiptitle') {
         if (setActiveTitle(btn.dataset.title)) {
           log(`👑 已切换称号: ${btn.dataset.title}`, 'good');
@@ -676,9 +680,11 @@ function setupMainButtons() {
       if (!btn) return;
       const act = btn.dataset.action;
       if (act === 'challengewb') challengeWorldBoss(btn.dataset.key);
+      else if (act === 'challengerare' && typeof challengeRareElite === 'function') challengeRareElite(btn.dataset.key);
       else if (act === 'claimdaily') claimDaily(parseInt(btn.dataset.idx));
       else if (act === 'claimweekly') claimWeeklyChest();
       else if (act === 'exchangeshards') exchangeShards();
+      else if (act === 'claimbounty' && typeof claimBounty === 'function') claimBounty(parseInt(btn.dataset.idx, 10));
       renderEvents();
     });
   }

@@ -171,6 +171,33 @@ h1 {
 }
 .comp-skill .cs-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 64px; }
 .comp-skill:hover { border-color: var(--accent); color: var(--text); }
+.stage-gate-note {
+  margin-bottom: 6px;
+  padding: 6px 8px;
+  border: 1px solid rgba(245, 158, 11, .35);
+  border-left: 3px solid #f59e0b;
+  border-radius: 8px;
+  background: rgba(245, 158, 11, .08);
+  color: #fde68a;
+  font-size: 10px;
+  line-height: 1.45;
+}
+.dungeon-set-track {
+  margin: 0 0 10px;
+  padding: 7px 9px;
+  border: 1px solid rgba(56, 189, 248, .22);
+  border-radius: 8px;
+  background: rgba(56, 189, 248, .08);
+  color: #bfdbfe;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.dungeon-set-track.compact {
+  margin-top: 4px;
+  margin-bottom: 0;
+  padding: 5px 8px;
+  font-size: 10px;
+}
 .mon-row .bar { height: 12px; margin-top: 3px; }
 .mon-row .bar > span { font-size: 10px; line-height: 12px; }
 /* 增益图标条 */

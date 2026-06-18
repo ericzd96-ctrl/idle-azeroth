@@ -49,8 +49,9 @@ function challengeWorldBoss(key) {
   if (!worldBossReady(key)) { log('世界BOSS冷却中', 'bad'); return; }
   if (state.mode === 'travel') { log('正在旅行中', 'bad'); return; }
   if (state.mode !== 'world') { log('请先结束当前战斗', 'bad'); return; }
-  if (state.hero.lvl < 40) { log('需要等级 Lv.40+', 'bad'); return; }
   const wb = WORLD_BOSSES.find(b => b.key === key); if (!wb) return;
+  const minLvl = wb.minLvl || Math.max(1, wb.lvl - 5);
+  if (state.hero.lvl < minLvl) { log(`需要等级 Lv.${minLvl}+`, 'bad'); return; }
   state.mode = 'worldboss';
   state._currentWBoss = key;
   state.currentMonsters = [];

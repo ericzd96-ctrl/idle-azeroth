@@ -454,6 +454,12 @@ function renderItemDetail(itemId) {
       <div class="name ${it.cls}" style="font-size:18px">${SLOT_INFO[it.slot].icon} ${it.name}</div>
       <div class="muted" style="font-size:11px">${SLOT_INFO[it.slot].label} · [${it.rarityName}]${it.epicRaid?' · <span style="color:#22c55e">[史诗团本]</span>':''}${it.reqLvl?' · Lv.'+it.reqLvl:''}${found.source==='equip'?' · <span style="color:var(--accent)">已装备</span>':''}</div>
     </div>`;
+  const setHtml = it.setName ? `
+    <div class="detail-section">
+      <div class="detail-label">🧩 套装</div>
+      <div style="font-weight:700">${it.setName}</div>
+      ${(it.setEffects||[]).map(effect => `<div class="muted" style="font-size:11px;margin-top:3px">${effect.pieces}件: ${Object.entries(effect.mod||{}).map(([k,v])=>fmtMod(k,v)).join(' · ')}</div>`).join('')}
+    </div>` : '';
   // 基础属性
   const baseStats = Object.entries(it.stats||{}).map(([k,v])=>`<div class="stat-row">${fmtStatName(k)} <b>+${v}${isPercentStat(k)?'%':''}</b></div>`).join('');
   // 词缀
@@ -531,6 +537,7 @@ function renderItemDetail(itemId) {
       <div class="detail-label">📊 属性</div>
       <div class="stat-list">${baseStats||'<div class="muted">无</div>'}</div>
     </div>
+    ${setHtml}
     <div class="detail-section">
       <div class="detail-label">🔮 词缀</div>
       ${affixHtml}
@@ -559,6 +566,7 @@ function itemEpicRaidBadge(item, compact) {
 function itemBonusSummary(item) {
   if (!item) return '';
   const parts = [];
+  if (item.setName) parts.push('🧩');
   if (item.affixes && item.affixes.length) parts.push('🔮'+item.affixes.length);
   if (item.sockets && item.sockets.length) {
     const filled = item.sockets.filter(s=>s.gem).length;

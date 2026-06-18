@@ -1019,6 +1019,17 @@ function renderHero() {
   } else if (bonusEl) {
     bonusEl.innerHTML = '<span class="muted" style="font-size:10px">暂无额外加成(装备/天赋/随从等可提供)</span>';
   }
+  const setPanel = $('set-panel');
+  if (setPanel) {
+    const gate = (typeof currentXpGate === 'function') ? currentXpGate() : null;
+    const gateHtml = gate
+      ? `<div class="stage-gate-note"><b>阶段试炼:</b> 已卡在 Lv.${gate.level}，击败 <b>${gate.name}</b> 后继续获得经验</div>`
+      : '';
+    const setHtml = (typeof renderSetPanelHtml === 'function')
+      ? renderSetPanelHtml()
+      : '<div class="muted" style="font-size:11px">未装备套装部件</div>';
+    setPanel.innerHTML = gateHtml + setHtml;
+  }
 }
 
 function renderEquipment() {
@@ -1260,7 +1271,7 @@ function renderShop() {
 function renderSourceTable() {
   const srcs = state._statSources;
   if (!srcs) return '<div class="muted" style="margin-top:12px">暂无来源数据</div>';
-  const sourceOrder = ['天赋','成就','觉醒','生活','神器','坐骑','竞技场','被动','随从','装备','词缀','宝石','附魔'];
+  const sourceOrder = ['天赋','成就','觉醒','生活','神器','坐骑','竞技场','被动','随从','装备','词缀','宝石','附魔','套装'];
   const statCols = [
     {key:'atkPct', label:'攻击%', fmt:v => '+' + v.toFixed(1) + '%'},
     {key:'hpPct',  label:'生命%', fmt:v => '+' + v.toFixed(1) + '%'},
@@ -1744,7 +1755,7 @@ function compSkillChips(tpl){
   }).join('');
 }
 function renderCompanion() {
-  $('gem-cost').textContent = '(消耗1🐾随从券,稀有度越高越罕见)';
+  $('gem-cost').textContent = '(消耗1🐾随从券 · 全随从统一 5主动 + 1专属，品质/星级决定强度)';
   const cl = $('companion-list');
   const owned = state.companions.length;
   const bonds = (typeof activeCompanionBonds==='function') ? activeCompanionBonds() : [];
@@ -1778,7 +1789,7 @@ function renderCompanion() {
     const compIconHtml = (typeof entityIcon === 'function') ? entityIcon(tpl?.name, 18, tpl?.emoji || '🐾') : (tpl?.emoji || '🐾');
     html += `<div class="shop-item" style="border-color:var(--${q.cls==='r-legend'?'legend':q.cls==='r-epic'?'epic':'border'})">
       <div class="row"><b>${compIconHtml} ${tpl?.name}</b><span class="pill" style="background:var(--accent);color:#000">出战中</span></div>
-      <div class="muted"><span class="${q.cls}">${q.name}</span> · ${'⭐'.repeat(act.stars||1)} · ${roleTag(tpl?.role)}</div>
+      <div class="muted"><span class="${q.cls}">${q.name}</span> · ${'⭐'.repeat(act.stars||1)} · ${roleTag(tpl?.role)} · 5主动+1专属</div>
       <div class="muted" style="font-size:10px">参战属性: 攻${fmt(st?.atk||0)} 防${fmt(st?.def||0)} 血${fmt(st?.hpMax||0)}</div>
       <div class="muted" style="font-size:10px;color:#6ee7b7">专属加成: ${ownTxt||'无'}</div>
       <div class="muted" style="font-size:10px;color:#93c5fd">定位加成: ${roleTxt||'无'}</div>
@@ -1797,10 +1808,9 @@ function renderCompanion() {
     const q = compQuality(tpl);
     const cost = getUpgradeCost(c);
     const canUp = !cost.maxed && cost.have>=cost.need;
-    const skillCount = (tpl.skills?.length||0) + (tpl.signature && tpl.signature.mode !== 'passive' ? 1 : 0);
     const compIconHtml = (typeof entityIcon === 'function') ? entityIcon(tpl.name, 18, tpl.emoji) : tpl.emoji;
     html += `<div class="shop-item">
-      <div class="row"><b>${compIconHtml} ${tpl.name}</b><span class="${q.cls}">${q.name}·${skillCount}技</span></div>
+      <div class="row"><b>${compIconHtml} ${tpl.name}</b><span class="${q.cls}">${q.name} · 5主动+1专属</span></div>
       <div class="muted" style="font-size:10px">${'⭐'.repeat(c.stars||1)} · ${roleTag(tpl.role)} · ${tpl.desc}</div>
       ${tpl.signature?`<div class="muted" style="font-size:10px;color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')} ${tpl.signature.name}${tpl.signature.mode==='passive'?' [被动]':''}</div>`:''}
       <div class="comp-skills">${compSkillChips(tpl)}</div>
@@ -1844,6 +1854,16 @@ function buildDungeonInfoHtml(dg) {
   const isEpicRaid = !!dg.epicRaid;
   const lastBossName = (dg.bosses || [])[(dg.bosses || []).length - 1]?.name;
   const dungeonIconHtml = (typeof dungeonIcon === 'function') ? dungeonIcon(dg.key, dg.name, 18, dg.icon) : dg.icon;
+  const setTierInfo = (!isEpicRaid && typeof setBandForDungeon === 'function' && typeof setLabelForClass === 'function' && typeof setTierIndex === 'function')
+    ? (function getSetInfo() {
+        const band = setBandForDungeon(dg);
+        if (!band) return null;
+        return {
+          bandName: band.name,
+          setName: setLabelForClass(state.cls, Math.max(0, setTierIndex(dg))),
+        };
+      })()
+    : null;
   let html = `
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
       <div style="font-weight:700;font-size:16px">${dungeonIconHtml} ${dg.name}</div>
@@ -1855,6 +1875,9 @@ function buildDungeonInfoHtml(dg) {
       推荐波次: ${dg.waves || '?'} · BOSS数量: ${(dg.bosses || []).length}
       ${dg.type==='raid'?(isEpicRaid?' · 掉落: 史诗级紫装 / 全BOSS超低概率橙装':' · 掉落: 常规团本装备 / 关底低概率橙武'):''}
     </div>`;
+  if (setTierInfo) {
+    html += `<div class="dungeon-set-track"><b>当前职业套装目标:</b> ${setTierInfo.setName} · ${setTierInfo.bandName}阶段（2件/4件激活特效）</div>`;
+  }
   for (const bossData of (dg.bosses || [])) {
     const bossName = bossData.name;
     const items = (typeof getDungeonBossLoot === 'function') ? getDungeonBossLoot(dg.key, bossName, state.cls) : [];
@@ -1948,6 +1971,16 @@ function renderDungeon() {
     const canTicket = lvlOk && onCd && state.tickets >= 1 && state.mode === 'world';
     const canEnter = canFree || canTicket;
     const isEpicRaid = !!dg.epicRaid;
+    const setTierInfo = (!isEpicRaid && typeof setBandForDungeon === 'function' && typeof setLabelForClass === 'function' && typeof setTierIndex === 'function')
+      ? (function getSetInfo() {
+          const band = setBandForDungeon(dg);
+          if (!band) return null;
+          return {
+            setName: setLabelForClass(state.cls, Math.max(0, setTierIndex(dg))),
+            bandName: band.name,
+          };
+        })()
+      : null;
     const statusText = !lvlOk ? '等级不足'
       : onCd ? `CD ${fmtCd(cdLeft)}${canTicket ? ' · 🎫跳过' : ''}`
       : '可挑战(免费)';
@@ -1962,6 +1995,7 @@ function renderDungeon() {
         <span class="pill">Lv.${dg.reqLvl}</span>
       </div>
       <div class="muted">${isEpicRaid?'<span style="color:#fb7185">[史诗团本]</span> ':(dg.type==='raid'?'<span style=\"color:#fbbf24\">[团本]</span> ':'<span style=\"color:#6ee7b7\">[5人本]</span> ')}${dg.desc} · ${(dg.bosses||[]).length}个BOSS · 最终: ${((dg.bosses||[])[dg.bosses.length-1]||{}).name||'??'}${dg.type==='raid'?(isEpicRaid?' · 掉落:史诗级紫装/全BOSS超低概率橙装':' · 掉落:常规团本装备/关底低概率橙武'):''}</div>
+      ${setTierInfo ? `<div class="dungeon-set-track compact">当前职业套装: ${setTierInfo.setName} · ${setTierInfo.bandName}</div>` : ''}
       <div class="row">
         <span class="cd-display">${statusText}</span>
         <div style="display:flex;gap:6px;align-items:center">

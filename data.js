@@ -4322,7 +4322,7 @@ function createEpicRaidCatalog() {
 }
 createEpicRaidCatalog();
 /* ========== COMPANIONS(2026-06-15 大修)==========
-   品质=按背景设定固定(不可升级),技能数=品质等级(白1→橙5)
+   品质=按背景设定固定(不可升级),当前统一为 5主动 + 1专属
    mult=战力系数(越稀有越强),weight=抽卡权重,starsMax=可升星上限 */
 const COMPANION_QUALITY=[
   {key:"white", name:"普通", cls:"r-common",   mult:0.65, skills:1, weight:46, lore:"无名之辈 / 杂兵"},

@@ -1514,6 +1514,9 @@ function absorbMonsterBarrier(mon, amount, icon){
 }
 function getMonsterBossData(mon){
   if(!mon || !mon.isBoss) return null;
+  if(mon.isRareElite && typeof RARE_ELITES !== 'undefined'){
+    return RARE_ELITES.find(b => b.key === mon.rareKey) || null;
+  }
   if(mon.isWorldBoss && typeof WORLD_BOSSES !== 'undefined'){
     return WORLD_BOSSES.find(b => b.key === mon.wbKey) || null;
   }
@@ -2481,6 +2484,7 @@ function onMonsterDeath(mon){
   if(typeof progressionOnKill==='function') progressionOnKill(mon);
   // 坐骑掉落钩子(副本/大秘境 BOSS)
   if(mon.isBoss&&(state.mode==='dungeon'||state.mode==='mythic')&&typeof mountOnDungeonBossKill==='function') mountOnDungeonBossKill();
+  if(typeof midgameMountRollOnKill==='function') midgameMountRollOnKill(mon);
   // 掉率受声望加成 (一次性提升), 副本/大秘境BOSS必掉1件
   const adjDrop=(mon.isBoss&&(state.mode==='dungeon'||state.mode==='mythic'))?1:Math.min(1,mon.dropRate*bonus.dropMult*olp);
   if(Math.random()<adjDrop){
@@ -2521,6 +2525,7 @@ function onMonsterDeath(mon){
   }
   // 世界Boss 击杀
   if(mon.isWorldBoss){if(typeof onWorldBossKill==='function') onWorldBossKill(mon);return;}
+  if(mon.isRareElite){if(typeof onRareEliteKill==='function') onRareEliteKill(mon);return;}
   if(mon._summoned){
     const di = state.currentMonsters.indexOf(mon);
     if(di >= 0) state.currentMonsters.splice(di, 1);
@@ -2579,7 +2584,17 @@ function onHeroDeath(){
   if(state.mode==='mythic'){onMythicFail();return;}
   if(state.mode==='tower'){if(typeof onTowerFail==='function') onTowerFail(); spawnMonster(); return;}
   if(state.mode==='boss'){log('🚪 BOSS 战失败,撤退到主城','bad');state.mode='world';markDirty('map');}
-  if(state.mode==='worldboss'){log('💀 世界Boss 战失败! 还可再战(CD不重置)','bad');if(typeof leaveWorldBoss==='function')leaveWorldBoss();else{state.mode='world';state.currentMonsters=[];}markDirty('map','events');return;}
+  if(state.mode==='worldboss'){
+    if(state._currentRareElite && typeof leaveRareEliteEncounter==='function'){
+      log('💀 稀有精英挑战失败,撤回营地重整','bad');
+      leaveRareEliteEncounter();
+    }else{
+      log('💀 世界Boss 战失败! 还可再战(CD不重置)','bad');
+      if(typeof leaveWorldBoss==='function')leaveWorldBoss();else{state.mode='world';state.currentMonsters=[];}
+    }
+    markDirty('map','events');
+    return;
+  }
   spawnMonster();
 }
 
