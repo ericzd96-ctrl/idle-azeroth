@@ -27,6 +27,7 @@
     stats:'inv_misc_book_11',
     kills:'achievement_bg_kill_flag_carrier',
     mount:'ability_mount_ridinghorse',
+    heal:'spell_holy_heal',
     draw:'inv_misc_coin_01',
     raid:'achievement_boss_lichking',
     save:'inv_misc_note_01',
@@ -405,6 +406,55 @@
     ,'米莎突袭':'ability_hunter_beastcall'
     ,'越战越勇':'ability_warrior_deathwish'
     ,'地狱咆哮':'ability_warrior_deathwish'
+    ,'冲锋':'ability_warrior_charge'
+    ,'旋风斩':'ability_whirlwind'
+    ,'横扫打击':'ability_warrior_cleave'
+    ,'猛击':'ability_warrior_decisivestrike'
+    ,'盾击':'ability_warrior_shieldbash'
+    ,'断筋':'spell_frost_chainsofice'
+    ,'凿骨打击':'ability_warrior_punishingblow'
+    ,'雷霆一击':'ability_thunderclap'
+    ,'冰枪穿刺':'spell_frost_frostblast'
+    ,'寒冰新星':'spell_frost_frostnova'
+    ,'冰霜之握':'spell_frost_chainsofice'
+    ,'暗影箭':'spell_shadow_shadowbolt'
+    ,'暗影打击':'spell_shadow_shadowbolt'
+    ,'法力灼烧':'spell_shadow_manaburn'
+    ,'灵魂尖啸':'spell_shadow_deathscream'
+    ,'灵魂虹吸':'spell_shadow_lifedrain02'
+    ,'灵魂锁链':'spell_shadow_soulleech_3'
+    ,'虚空震击':'spell_arcane_blast'
+    ,'毒刃':'ability_rogue_dualweild'
+    ,'毒牙撕咬':'ability_hunter_pet_boar'
+    ,'麻痹毒针':'ability_creature_poison_05'
+    ,'腐毒感染':'ability_creature_poison_05'
+    ,'孢子侵染':'spell_nature_stranglevines'
+    ,'藤蔓缠绕':'spell_nature_stranglevines'
+    ,'枯萎诅咒':'spell_shadow_deathanddecay'
+    ,'凋零之触':'spell_shadow_deathanddecay'
+    ,'灼热之触':'spell_fire_burnout'
+    ,'烈焰冲击':'spell_fire_flameshock'
+    ,'熔岩爆裂':'spell_shaman_lavaburst'
+    ,'连环闪电':'spell_nature_chainlightning'
+    ,'静电震爆':'spell_nature_lightningoverload'
+    ,'尾击横扫':'ability_druid_swipe'
+    ,'龙翼震击':'inv_misc_head_dragon_01'
+    ,'复苏结界':'spell_holy_powerwordshield'
+    ,'钢铁壁垒':'ability_warrior_shieldwall'
+    ,'狂怒回复':'ability_warrior_focusedrage'
+    ,'燃烧':'spell_fire_sealoffire'
+    ,'奥术强化':'spell_nature_lightning'
+    ,'暗影形态':'spell_shadow_shadowform'
+    ,'神圣新星':'spell_holy_holynova'
+    ,'冲动':'spell_shadow_shadowworddominate'
+    ,'爆炸射击':'ability_hunter_explosiveshot'
+    ,'治疗之泉':'spell_nature_healingwavegreater'
+    ,'守护者':'spell_holy_ardentdefender'
+    ,'圣光闪现':'spell_holy_flashheal'
+    ,'黑暗灵魂':'spell_shadow_skull'
+    ,'生命通道':'spell_shadow_lifedrain'
+    ,'奥术充能':'spell_arcane_blast'
+    ,'雷霆充能':'spell_nature_lightningoverload'
   };
 
   const SKILL_PATTERNS = [
