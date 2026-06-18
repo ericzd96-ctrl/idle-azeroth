@@ -971,7 +971,7 @@ function recomputeStats() {
   state.hero.buffDuration=Math.min(buffDuration,15); state.hero.extraAtk=Math.min(extraAtk,25);
   state.hero.healBonus=Math.min(healBonus,50); state.hero.dotBonus=Math.min(dotBonus,50);
   state.hero.costReduction=Math.min(costReduction,30); state.hero.executeBonus=Math.min(executeBonus,40);
-  state.hero.reflectDmg=Math.min(reflectDmg,20);
+  state.hero.reflectDmg=reflectDmg;
   state.hero.armorPen=Math.min(armorPen,40); state.hero.dodge=Math.min(dodge,30); state.hero.stunChance=Math.min(stunChance,15);
   state._talentFx = talentFx;
   state.hp=Math.min(state.hp,state.hero.hpMax); state.resourceMax=state.hero.mpMax;
