@@ -77,6 +77,9 @@ let skillDragging = false;   // 技能栏拖拽排序进行中(由 main.js 设�
 let _hNameLastSig = '';       // 英雄名签名, 避免每帧 innerHTML
 let _lastZoneSig = '';        // 关卡信息签名, 避免每帧 innerHTML
 let _buffBarStruct = '';     // 增益条结构签名(不含倒计时),变化才重建 DOM
+let _lastMonListPaint = 0;
+let _lastBuffBarPaint = 0;
+let _lastDmgMeterPaint = 0;
 /* 当前职业的 buff 元信息(key→{icon,name,desc,dr}),从技能定义构建 */
 function buffMetaForClass() {
   const c = getCls(); const map = {};
@@ -604,6 +607,7 @@ function updateBattleVisuals() {
   if (!state.cls) return;
   const c = getCls();
   const h = state.hero;
+  const now = Date.now();
 
   // 头部 stats(签名缓存, 避免每帧 innerHTML)
   const race = RACES[state.race];
@@ -637,7 +641,11 @@ function updateBattleVisuals() {
     `${c.resource} ${fmt(state.resource)}/${fmt(state.resourceMax)}`);
 
   // 怪物信息(竖排敌人列表)
-  renderMonList();
+  const monPaintGap = isMobileLayout() ? 120 : 80;
+  if (now - _lastMonListPaint >= monPaintGap || isDirty('stage')) {
+    renderMonList();
+    _lastMonListPaint = now;
+  }
 
   // 等级、英雄表情
   $('s-lvl').textContent = h.lvl;
@@ -806,7 +814,7 @@ function updateBattleVisuals() {
     }
     const compMiniName = $('comp-mini-name');
     const showCompDetail = function(e){
-      const nowTs = Date.now();
+      const nowTs = now;
       const compBuffs = [];
       if (state._compBuffs) {
         for (const [k, expire] of Object.entries(state._compBuffs)) {
@@ -851,7 +859,11 @@ function updateBattleVisuals() {
   else updateSkillBarCd();
 
   // 增益图标条
-  renderBuffBar();
+  const buffPaintGap = isMobileLayout() ? 220 : 140;
+  if (now - _lastBuffBarPaint >= buffPaintGap || isDirty('stage') || isDirty('hero') || isDirty('companion')) {
+    renderBuffBar();
+    _lastBuffBarPaint = now;
+  }
 
   // stage 样式 / 离开按钮显隐
   const stage = $('stage');
@@ -864,7 +876,11 @@ function updateBattleVisuals() {
   }
 
   // 伤害统计(每帧就地刷新)
-  updateDmgMeter();
+  const meterPaintGap = isMobileLayout() ? 260 : 180;
+  if (now - _lastDmgMeterPaint >= meterPaintGap || isDirty('stage')) {
+    updateDmgMeter();
+    _lastDmgMeterPaint = now;
+  }
 }
 
 /* ---------- 各面板的完整重建函数 ---------- */

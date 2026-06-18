@@ -15,6 +15,7 @@ let cdCounter = 0;
 let minuteCounter = 0;
 let mobilePanelOpen = false;
 let _lastMobile = null;
+let _lastLoopRun = 0;
 
 let _loopErrLogged = false;
 let _prevBuffs = '';   // 上帧活跃 buff 签名(检测过期)
@@ -61,10 +62,26 @@ function applyResponsiveLayout() {
   updateHeroMobileToggle();
 }
 
+function targetFrameIntervalMs() {
+  const mobile = isMobileLayout();
+  const hidden = typeof document !== 'undefined' && document.hidden;
+  if (hidden) return mobile ? 600 : 300;
+  const mode = state?.mode || 'world';
+  const inCombat = mode === 'boss' || mode === 'dungeon' || mode === 'mythic' || mode === 'worldboss' || mode === 'tower';
+  if (mobile) return inCombat ? 50 : 90;
+  return inCombat ? 33 : 50;
+}
+
 function loop() {
   try {
+    const frameNow = Date.now();
+    if (frameNow - _lastLoopRun < targetFrameIntervalMs()) {
+      requestAnimationFrame(loop);
+      return;
+    }
+    _lastLoopRun = frameNow;
     if (state.cls) {
-      const now = Date.now();
+      const now = frameNow;
       const dt = (now - lastTickTime) / 1000;
       lastTickTime = now;
       elapsedSec += dt;

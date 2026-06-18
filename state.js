@@ -533,8 +533,14 @@ function fmtCd(seconds) {
 }
 
 function setBar(el, pct, text) {
-  el.style.width = Math.max(0, Math.min(100, pct)) + '%';
-  if (text && el.nextElementSibling) el.nextElementSibling.textContent = text;
+  const pctText = Math.max(0, Math.min(100, pct)) + '%';
+  if (el.dataset.w !== pctText) {
+    el.dataset.w = pctText;
+    el.style.width = pctText;
+  }
+  if (text && el.nextElementSibling && el.nextElementSibling.textContent !== text) {
+    el.nextElementSibling.textContent = text;
+  }
 }
 
 function log(text, cls) {
