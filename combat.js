@@ -1572,6 +1572,8 @@ function summonMonsterAlly(mon, skill, now){
     add.maxRarity = 'common';
     add._summoned = true;
     add._summonerId = mon._uid;
+    add._summonerName = mon.bossName || mon.name || '敌人';
+    add._summonerIsBoss = !!mon.isBoss;
     add._monSupportSkills = [];
     add._supportSkillCooldowns = {};
     state.currentMonsters.push(add);
@@ -1645,13 +1647,15 @@ function getReadyMonsterSupportSkill(mon, now){
   });
   return pickWeightedSkill(scored);
 }
-function applyMonsterSupportSkill(mon, skill, now){
+function applyMonsterSupportSkill(mon, skill, now, opts){
   if(!mon || !skill) return false;
   if(!mon._supportSkillCooldowns) mon._supportSkillCooldowns = {};
   mon._supportSkillCooldowns[skill.name] = now + (skill.cd || 14000);
   let used = false;
-  log(`${skill.icon || '✨'} ${mon.bossName || mon.name} 使用 ${skill.name}!`,'bad');
-  showFloat($('mon-emoji'), (skill.icon || '✨') + skill.name, '#93c5fd');
+  if(opts?.announce !== false){
+    log(`${skill.icon || '✨'} ${mon.bossName || mon.name} 释放了 ${skill.name}!`,'bad');
+    showFloat($('mon-emoji'), (skill.icon || '✨') + skill.name + '!', '#93c5fd');
+  }
   if(skill.healPct){
     const heal = Math.max(1, Math.floor(mon.hpMax * skill.healPct));
     mon.hp = Math.min(mon.hpMax, mon.hp + heal);
@@ -2750,8 +2754,12 @@ function tickCast(now){
       const critRate = monsterCritRate(mon, now);
       if(wasCasting.type==='heal'){const h=Math.floor(mon.hpMax*(wasCasting.heal||0.2));mon.hp=Math.min(mon.hpMax,mon.hp+h);showFloat($('mon-emoji'),'💚+'+h,'#6ee7b7');}
       else if(wasCasting.type==='buff'||wasCasting.type==='support'||wasCasting.type==='summon'){
-        applyMonsterSupportSkill(mon, wasCasting, now);
+        log(`💀 ${mon.bossName || mon.name} 释放了 ${wasCasting.name}!`,'bad');
+        showFloat($('mon-emoji'), (wasCasting.icon || '✨') + wasCasting.name + '!', '#fda4af');
+        applyMonsterSupportSkill(mon, wasCasting, now, { announce:false });
       } else{
+        log(`💀 ${mon.bossName || mon.name} 释放了 ${wasCasting.name}!`,'bad');
+        showFloat($('mon-emoji'), (wasCasting.icon || '✨') + wasCasting.name + '!', '#fda4af');
         const mul=wasCasting.mul||2;
         const rawAtk=Math.floor(monsterAttackValue(mon, now)*mul);
         if(wasCasting.aoe){

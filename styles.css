@@ -137,11 +137,25 @@ h1 {
 .mon-row.focus { border-color: var(--legend); box-shadow: inset 0 0 0 1px var(--legend); }
 .mon-row.dead { opacity: .32; filter: grayscale(1); pointer-events: none; }
 .mon-row.mon-placeholder { opacity: .18; pointer-events: none; }
-.mon-row .m-emoji { font-size: 28px; line-height: 1; user-select: none; flex: 0 0 auto; }
+.mon-row .m-emoji {
+  font-size: 28px; line-height: 1; user-select: none; flex: 0 0 auto;
+  border: 1px solid transparent; border-radius: 10px; padding: 2px;
+  background: rgba(15,23,42,.28);
+}
+.mon-row.summoned .m-emoji {
+  border-color: rgba(148,163,184,.7);
+  box-shadow: inset 0 0 0 1px rgba(148,163,184,.18);
+}
+.mon-row.summoned.boss-add .m-emoji {
+  border-color: rgba(168,85,247,.85);
+  box-shadow: inset 0 0 0 1px rgba(192,132,252,.28), 0 0 10px rgba(168,85,247,.18);
+}
 .mon-row.focus .m-emoji.shake { animation: shake .25s; }
 .mon-row .m-mid { flex: 1; min-width: 0; text-align: left; }
 .mon-row .m-name { font-size: 12px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mon-row .m-name .m-lvl { color: var(--muted); font-weight: normal; font-size: 10px; margin-left: 4px; }
+.mon-row .m-sub { font-size: 10px; color: #94a3b8; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mon-row.summoned.boss-add .m-sub { color: #c084fc; }
 .mon-row .m-debuffs { margin-left: 4px; font-size: 11px; letter-spacing: 1px; cursor: help; }
 /* 随从技能小图标(可悬浮看描述) */
 .comp-skills { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 2px; }
@@ -585,6 +599,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   }
   .mon-row .m-emoji { font-size: 24px; }
   .mon-row .m-name { font-size: 11px; }
+  .mon-row .m-sub { font-size: 9px; }
   .mon-row .m-name .m-lvl,
   .mon-row .m-debuffs { font-size: 9px; }
   .buff-bar {

@@ -402,6 +402,13 @@ function attachFocusBossHover(focus) {
 function renderMonList() {
   const wrap = $('mon-list'); if (!wrap) return;
   const all = state.currentMonsters || [];
+  const displayName = (raw) => {
+    const s = String(raw || '');
+    if (!s) return '敌人';
+    const arr = Array.from(s);
+    if (arr.length > 1 && /[^\u4e00-\u9fa5A-Za-z0-9]/.test(arr[0])) return arr.slice(1).join('') || s;
+    return s;
+  };
 
   // 始终渲染至少4个槽位, 超出则全部显示(召唤物), 死敌保留槽位不删除
   const SLOTS = 4;
@@ -426,12 +433,17 @@ function renderMonList() {
       const isFocus = m === focus;
       const isDead = m.hp <= 0;
       const seg = Array.from(m.name);
-      const emoji = seg[0], nm = seg.slice(1).join('') || '敌人';
+      const emoji = seg[0], nm = displayName(m.name);
       const monIconHtml = (typeof entityIcon === 'function') ? entityIcon(nm, 28, emoji) : emoji;
-      return `<div class="mon-row${isFocus?' focus':''}${isDead?' dead':''}" data-uid="${m._uid}">
+      const summonLine = m._summoned
+        ? `<div class="m-sub">由 ${displayName(m._summonerName || '敌人')} 召唤</div>`
+        : '';
+      const summonCls = m._summoned ? ` summoned${m._summonerIsBoss ? ' boss-add' : ''}` : '';
+      return `<div class="mon-row${isFocus?' focus':''}${isDead?' dead':''}${summonCls}" data-uid="${m._uid}">
         <div class="m-emoji"${isFocus?' id="mon-emoji"':''}>${monIconHtml}</div>
         <div class="m-mid">
           <div class="m-name"${isFocus?' id="mon-name"':''}>${nm}<span class="m-lvl">Lv.${m.lvl}</span><span class="m-debuffs"></span></div>
+          ${summonLine}
           <div class="bar hp"><i${isFocus?' id="b-mhp"':''}></i><span${isFocus?' id="t-mhp"':''}></span></div>
         </div>
       </div>`;
