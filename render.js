@@ -80,6 +80,8 @@ let _buffBarStruct = '';     // 增益条结构签名(不含倒计时),变化才
 let _lastMonListPaint = 0;
 let _lastBuffBarPaint = 0;
 let _lastDmgMeterPaint = 0;
+let _lastNonFocusMonPaint = 0;
+let _compMiniHeadSig = '';
 /* 当前职业的 buff 元信息(key→{icon,name,desc,dr}),从技能定义构建 */
 function buffMetaForClass() {
   const c = getCls(); const map = {};
@@ -438,14 +440,26 @@ function renderMonList() {
 
   // 每帧更新血条 + 存活状态 + 减益(仅真实怪物槽位)
   const now = Date.now();
+  const skipNonFocus = isMobileLayout() && (now - _lastNonFocusMonPaint < 220);
   for (const m of all) {
     const row = wrap.querySelector(`[data-uid="${m._uid}"]`); if (!row) continue;
+    const isFocusRow = m === focus;
+    if (!isFocusRow && skipNonFocus) continue;
     const isDead = m.hp <= 0;
     row.classList.toggle('dead', isDead);
 
     const fill = row.querySelector('.bar > i'); const txt = row.querySelector('.bar > span');
-    if (fill) fill.style.width = isDead ? '0%' : Math.max(0, m.hp / m.hpMax * 100) + '%';
-    if (txt) txt.textContent = isDead ? '已击败' : hpWithShieldText(m.hp, m.hpMax, Math.max(0, m._arcaneShield || 0));
+    if (fill) {
+      const width = isDead ? '0%' : Math.max(0, m.hp / m.hpMax * 100) + '%';
+      if (fill.dataset.w !== width) {
+        fill.dataset.w = width;
+        fill.style.width = width;
+      }
+    }
+    if (txt) {
+      const hpText = isDead ? '已击败' : hpWithShieldText(m.hp, m.hpMax, Math.max(0, m._arcaneShield || 0));
+      if (txt.textContent !== hpText) txt.textContent = hpText;
+    }
 
     const de = row.querySelector('.m-debuffs');
     if (!de) continue;
@@ -467,6 +481,7 @@ function renderMonList() {
     if (m._arcaneShield > 0) s += `<span title="法力护盾:吸收 ${fmt(m._arcaneShield)} 伤害">${statusIconHtml('法力护盾', '🔮', 13)}</span>`;
     if (de.dataset.s !== s) { de.innerHTML = s; de.dataset.s = s; }
   }
+  if (!skipNonFocus) _lastNonFocusMonPaint = now;
 }
 /* ---------- 伤害统计(战斗日志下方) ---------- */
 function updateDmgMeter() {
@@ -773,7 +788,21 @@ function updateBattleVisuals() {
     const statusTag=compDown?` · <span style="color:#fde047">💫倒下 ${reviveLeft}s</span>`:'';
     const sigBadge = tpl?.signature ? ` · <span style="color:#fcd34d">${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')}专属</span>` : '';
     const compIconHtml = (typeof entityIcon === 'function') ? entityIcon(tpl?.name, 18, tpl?.emoji || '🐾') : (tpl?.emoji || '🐾');
-    $('comp-mini-name').innerHTML=`${compIconHtml} ${tpl?.name} · <span class="${q.cls||''}">${q.name}</span> ${'⭐'.repeat(comp.stars||1)}${sigBadge} · 攻${fmt(st.atk)} 防${fmt(st.def)}${statusTag}`;
+    const compMiniName = $('comp-mini-name');
+    const headSig = [
+      tpl?.key || comp.key,
+      q.cls || '',
+      q.name || '',
+      comp.stars || 1,
+      fmt(st.atk),
+      fmt(st.def),
+      compDown ? `down:${reviveLeft}` : 'up',
+      !!tpl?.signature
+    ].join('|');
+    if (_compMiniHeadSig !== headSig && compMiniName) {
+      _compMiniHeadSig = headSig;
+      compMiniName.innerHTML=`${compIconHtml} ${tpl?.name} · <span class="${q.cls||''}">${q.name}</span> ${'⭐'.repeat(comp.stars||1)}${sigBadge} · 攻${fmt(st.atk)} 防${fmt(st.def)}${statusTag}`;
+    }
     setBar($('b-comp-hp'),Math.max(0,compHp)/st.hpMax*100,compDown?`倒下 ${reviveLeft}s`:hpWithShieldText(compHp, st.hpMax, Math.max(0, state._compBarrier || 0)));
     // 随从技能 CD 展示:仅在随从/技能数变化时重建(避免每帧churn打断 title 悬浮),每帧只刷新剩余CD
     const csEl=$('comp-skills');
@@ -812,7 +841,6 @@ function updateBattleVisuals() {
         const sub=span.querySelector('.cs-cd');if(sub){const txt=left>0?Math.ceil(left/1000)+'s':'';if(sub.textContent!==txt)sub.textContent=txt;}
       });
     }
-    const compMiniName = $('comp-mini-name');
     const showCompDetail = function(e){
       const nowTs = now;
       const compBuffs = [];
@@ -852,6 +880,7 @@ function updateBattleVisuals() {
     addTouchPin(compMiniName, showCompDetail);
   }else{
     $('comp-mini').style.display='none';
+    _compMiniHeadSig = '';
   }
 
   // 技能栏(只在dirty时重建, 否则只更新CD;拖拽排序进行中不重建以免打断)
