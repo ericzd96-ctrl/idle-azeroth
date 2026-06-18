@@ -178,7 +178,7 @@
   setSig('shaman_app',  { type:'dmg', name:'闪电链', icon:'⛓️', desc:'链状闪电轰击并感电周围敌人', mul:2.4, aoePct:0.40, slow:true, slowMs:3000, stateKey:'shocked', stateMs:8000, cd:16 });
   setSig('berserker',   { mode:'passive', name:'越战越勇', icon:'🩸', desc:'攻击时汲取少量生命,并对残血目标更凶狠', healPctComp:0.04, executeBonus:0.20, executeThreshold:0.35, atkMul:1.05 });
 
-  setSig('saurfang',    { mode:'passive', name:'鲜血印记', icon:'🩸', desc:'攻击附带流血,并持续回复自身生命', dotPct:0.10, dotMs:7000, healPctComp:0.03 });
+  setSig('saurfang',    { mode:'passive', name:'鲜血印记', icon:'🩸', desc:'攻击附带流血,可叠加并持续回复自身生命', dotPct:0.10, dotMs:7000, healPctComp:0.03, dotStack:true });
   setSig('muradin',     { type:'dmg', name:'山丘之力', icon:'⛰️', desc:'重锤坠地,击晕敌人并为自己加固护盾', mul:4.6, stun:true, stunMs:1800, shieldPctComp:0.06, cd:18 });
   setSig('maraad',      { mode:'passive', name:'纳鲁之光', icon:'🌟', desc:'每次攻击都会给主角带来微弱治疗与护盾', healPctHero:0.03, shieldPctHero:0.03 });
   setSig('rexxar',      { type:'dmg', name:'米莎突袭', icon:'🐻', desc:'米莎猛扑,击晕目标并带小范围冲撞', mul:4.2, stun:true, stunMs:1500, splashPct:0.25, cd:20 });
