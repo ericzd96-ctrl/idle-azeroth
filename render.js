@@ -110,6 +110,7 @@ function focusDebuffs(now) {
   if (typeof MONSTER_STATE_META === 'object' && mon._skillStates) {
     for (const [stateKey, expire] of Object.entries(mon._skillStates)) {
       if (!(expire > now)) continue;
+      if (stateKey === 'sunder') continue;
       const meta = MONSTER_STATE_META[stateKey] || { icon:'✨', name:stateKey, desc:'目标处于特殊状态' };
       out.push({
         icon: meta.icon || '✨',

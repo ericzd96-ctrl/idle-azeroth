@@ -356,6 +356,10 @@ function applySkillHealEffects(skillKey, sk, amount, overheal){
 }
 function applyMonsterState(mon, stateKey, durMs){
   if(!mon || !stateKey) return;
+  if(stateKey === 'sunder'){
+    mon.sunderUntil = Math.max(mon.sunderUntil || 0, Date.now() + (durMs || 15000));
+    return;
+  }
   if(!mon._skillStates) mon._skillStates = {};
   mon._skillStates[stateKey] = Date.now() + (durMs || 10000);
 }
