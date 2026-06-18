@@ -1816,7 +1816,7 @@ function companionSkillTipHtml(sk){
   if (!sk) return '';
   const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, sk.icon || '✨') : (sk.icon || '✨');
   const lines = [];
-  if (sk.type === 'dmg' && sk.mul) lines.push(`${sk.mul}倍伤害`);
+  if (sk.type === 'dmg' && sk.mul) { const effMul = sk.mul * ((typeof COMPANION_SKILL_DMG_BONUS === 'number') ? COMPANION_SKILL_DMG_BONUS : 1); lines.push(`${effMul.toFixed(1).replace(/\.0$/,'')}倍伤害`); }
   if (sk.alwaysCrit) lines.push('本次必定暴击');
   if (sk.dot || sk.dotPct) lines.push(`每秒造成本次伤害的${compPct(sk.dotPct || 0.12)}%，持续${compSecs(sk.dotMs || 6000)}秒`);
   if (sk.slow) lines.push(`减速 ${compSecs(sk.slowMs || 4000)}秒`);
