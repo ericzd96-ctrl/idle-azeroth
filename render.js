@@ -215,23 +215,13 @@ function renderBuffBar() {
   const selfStates = buffs.concat(heroDe);
   const enemyStates = enemyBuffs.concat(debuffs);
 
-  // 结构签名(不含倒计时/层数):只在增删时 diff 更新 DOM, 零 innerHTML
-  const structSig = selfStates.concat([{ kind:'split', name:'|' }], enemyStates).map(b => b.kind + (b.base || b.name || '')).join('|');
-
-  // 首次或结构变化较大 → 全量重建(用 innerHTML 一次性初始化)
-  if (!bar.children.length || structSig !== _buffBarStruct) {
-    _buffBarStruct = structSig;
-    // 确保两栏容器存在
-    if (!bar.querySelector('.buff-side.self')) {
-      bar.innerHTML = '<div class="buff-side self"><div class="buff-side-title">你</div><div class="buff-side-list"></div></div><div class="buff-side enemy"><div class="buff-side-title">敌</div><div class="buff-side-list"></div></div>';
-    }
-    // 差分更新每个 side 的 chips
-    diffBuffSide(bar.querySelector('.buff-side.self .buff-side-list'), selfStates, '暂无状态');
-    diffBuffSide(bar.querySelector('.buff-side.enemy .buff-side-list'), enemyStates, '暂无状态');
+  if (!bar.querySelector('.buff-side.self')) {
+    bar.innerHTML = '<div class="buff-side self"><div class="buff-side-title">你</div><div class="buff-side-list"></div></div><div class="buff-side enemy"><div class="buff-side-title">敌</div><div class="buff-side-list"></div></div>';
   }
-
-  // 每帧就地更新倒计时 + 层数文本(不碰 DOM 结构)
-  updateBuffChipTexts(bar, selfStates.concat(enemyStates));
+  diffBuffSide(bar.querySelector('.buff-side.self .buff-side-list'), selfStates, '暂无状态');
+  diffBuffSide(bar.querySelector('.buff-side.enemy .buff-side-list'), enemyStates, '暂无状态');
+  updateBuffChipTexts(bar.querySelector('.buff-side.self .buff-side-list'), selfStates);
+  updateBuffChipTexts(bar.querySelector('.buff-side.enemy .buff-side-list'), enemyStates);
 }
 
 /* 差分更新一个 buff-side-list: 按 key 增删 chip, 不重建已有 chip */
@@ -285,6 +275,8 @@ function diffBuffSide(listEl, items, emptyText) {
 
 /* 每帧增量更新: 倒计时 + 层数 + tooltip */
 function updateBuffChipTexts(bar, allItems) {
+  if (!bar) return;
+  const chips = Array.from(bar.querySelectorAll('.buff-chip'));
   const allT = bar.querySelectorAll('.buff-chip .b-t');
   const allS = bar.querySelectorAll('.buff-chip .b-s');
   for (let i = 0; i < Math.min(allT.length, allItems.length); i++) {
@@ -296,7 +288,6 @@ function updateBuffChipTexts(bar, allItems) {
     if (allS[i].textContent !== stxt) allS[i].textContent = stxt;
   }
   // 同步更新 data-tip(只在内容变化时)
-  const chips = bar.querySelectorAll('.buff-chip');
   for (let i = 0; i < Math.min(chips.length, allItems.length); i++) {
     const b = allItems[i];
     const tip = `${b.name}${b.desc ? ' · ' + b.desc : ''}${b.left > 0 ? ' · 剩余' + b.left + '秒' : ''}`.replace(/"/g, '&quot;');
