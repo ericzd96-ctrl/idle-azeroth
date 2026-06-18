@@ -623,10 +623,10 @@
     return name ? BASE + name + '.jpg' : '';
   }
 
-  function imgHtml(src, size, alt, fallback, cls) {
+  function imgHtml(src, size, alt, fallback, cls, loadingMode) {
     const px = normalizeSize(size);
     return `<span class="${cls || 'ui-icon wow-ico'}" style="width:${px}px;height:${px}px" title="${alt || ''}">
-      <img src="${src}" alt="${alt || ''}" loading="lazy"
+      <img src="${src}" alt="${alt || ''}" loading="${loadingMode || 'lazy'}" decoding="async"
         onerror="this.parentNode.replaceWith(document.createTextNode(this.dataset.fb||''))"
         data-fb="${(fallback || '').replace(/"/g, '&quot;')}">
     </span>`;
@@ -675,11 +675,13 @@
   };
 
   window.statusIcon = function (name, symbol, size, fallback) {
-    const viaSkill = name ? window.skillIcon(name, size, '') : '';
-    if (viaSkill && !viaSkill.includes('inv_misc_questionmark')) return viaSkill;
-    if (symbol && window.symbolIcon) {
-      const viaSymbol = window.symbolIcon(symbol, size, name || symbol, '');
-      if (viaSymbol && viaSymbol !== (symbol || '')) return viaSymbol;
+    const skillIconName = name ? resolveByPattern(name, SKILL_EXACT, SKILL_PATTERNS, '') : '';
+    if (skillIconName && skillIconName !== 'inv_misc_questionmark') {
+      return imgHtml(wowIconName(skillIconName), size, name || symbol || '', fallback || symbol || '', 'wow-inline-icon', 'eager');
+    }
+    const symbolIconName = symbol ? SYMBOL_ICON[symbol] : '';
+    if (symbolIconName) {
+      return imgHtml(wowIconName(symbolIconName), size, name || symbol || '', fallback || symbol || '', 'wow-inline-icon', 'eager');
     }
     return fallback || symbol || name || '';
   };

@@ -217,7 +217,24 @@ h1 {
 .buff-chip.debuff { background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.5); }
 .buff-chip.self-de { background: rgba(168,85,247,.15); border-color: rgba(168,85,247,.55); }
 .buff-chip { cursor: help; }
-.buff-chip .b-ic { font-size: 17px; }
+.buff-chip .b-ic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  font-size: 17px;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+.buff-chip .b-ic .wow-inline-icon,
+.buff-chip .b-ic .ui-icon {
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 100%;
+  min-height: 100%;
+  line-height: 0;
+}
 .buff-chip .b-t { font-size: 9px; color: var(--muted); margin-top: 1px; }
 .buff-chip .b-s { font-size: 9px; color: var(--muted); margin-top: 1px; }
 /* 可拖拽技能按钮 */
@@ -634,7 +651,20 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
     scrollbar-width: none;
   }
   body.mobile-ui .buff-side-list::-webkit-scrollbar { display: none; }
-  body.mobile-ui .buff-chip { flex: 0 0 auto; }
+  body.mobile-ui .buff-chip {
+    flex: 0 0 auto;
+    min-width: 38px;
+    padding: 3px 4px;
+  }
+  body.mobile-ui .buff-chip .b-ic {
+    width: 16px;
+    height: 16px;
+    font-size: 15px;
+  }
+  body.mobile-ui .buff-chip .b-t,
+  body.mobile-ui .buff-chip .b-s {
+    white-space: nowrap;
+  }
 }
 
 @media (max-width: 480px) {
@@ -750,7 +780,11 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
     padding: 2px 3px;
     border-radius: 5px;
   }
-  .buff-chip .b-ic { font-size: 15px; }
+  .buff-chip .b-ic {
+    width: 15px;
+    height: 15px;
+    font-size: 15px;
+  }
   .buff-chip .b-t { font-size: 8px; }
   .buff-chip .b-s { font-size: 8px; }
   .log {
