@@ -2973,7 +2973,8 @@ const COMPANION_ROLE_PROFILE = {
   heal: { atk:0.65, def:0.90, hp:0.58, spd:0.74, reg:0.58, critd:0.82 },
 };
 const COMPANION_STAR_GROWTH = 0.15;   // 每星成长
-const COMPANION_HEAL_SCALE = 0.88;    // 随从治疗统一收口
+const COMPANION_SKILL_DMG_BONUS = 1.30;  // 随从技能伤害全局加成
+const COMPANION_HEAL_SCALE = 1.14;        // 随从治疗统一收口(已+30%)
 function companionSkillCdLeft(i){ return Math.max(0, ((compSkillCd&&compSkillCd[i])||0) - Date.now()); }   // 供 UI 显示剩余CD(毫秒)
 function getActiveCompanion(){if(state.activeCompanion<0||!state.companions[state.activeCompanion])return null;return state.companions[state.activeCompanion];}
 function companionSignature(tpl){ return tpl?.signature || null; }
@@ -3162,7 +3163,7 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
       if(i!==undefined){const sk=st.skills[i];
         if(sk.type==='dmg'){
           const dmgMult = companionSkillDamageMult(sk, mon, now);
-          const sd=calcDmg(st.atk*sk.mul*dmgMult,monArmor(mon),st.crit,st.critd,sk.alwaysCrit,mon.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(mon, sd.dmg, sk.icon || st.emoji).remaining;mon.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,sd.crit,st.emoji+sk.name);showFloat($('mon-emoji'),st.emoji+sk.icon+'-'+dealt,'#c0a0ff');}
+          const sd=calcDmg(st.atk*sk.mul*dmgMult*COMPANION_SKILL_DMG_BONUS,monArmor(mon),st.crit,st.critd,sk.alwaysCrit,mon.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(mon, sd.dmg, sk.icon || st.emoji).remaining;mon.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,sd.crit,st.emoji+sk.name);showFloat($('mon-emoji'),st.emoji+sk.icon+'-'+dealt,'#c0a0ff');}
           const dotPct = sk.dotPct || (sk.dot ? 0.12 : 0);
           if(dotPct > 0) applyMonsterDot(mon,`comp:${comp.key}:${i}`,Math.max(1,Math.floor(dealt*dotPct)),sk.dotMs||6000,{icon:sk.icon,name:sk.name,source:st.name});
           if(sk.slow) mon.slowUntil=Math.max(mon.slowUntil||0,Date.now()+(sk.slowMs||4000));
