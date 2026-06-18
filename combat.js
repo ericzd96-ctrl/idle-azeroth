@@ -2710,6 +2710,7 @@ function rollItemOfRarity(rarityKey,fromLvl){
   const poolStats=getPoolStatBonus(slotKey,rarity.key);return finishItem(item,slotKey,rarity,power,poolStats);
 }
 function finishItem(item,slotKey,rarity,power,extraStats){
+  const profileKeys=Array.isArray(item._rollProfileKeys)?item._rollProfileKeys.slice():null;
   item.slot=slotKey;
   item.stats={};
   item._rollSlot=slotKey;
@@ -2725,7 +2726,19 @@ function finishItem(item,slotKey,rarity,power,extraStats){
   const bonusCount={common:1,uncommon:2,rare:3,epic:4,legend:5}[rarity.key];
   // 吸血/全能/暴击/暴伤/极速/精通/闪避已从常规副属池移除,改为下方"惊喜副属性"
   const possible=['atk','def','hp','reg','str','agi','int','spi','sta'].filter(k=>k!==primary);
-  for(let i=0;i<bonusCount;i++){const k=possible.splice(rng(0,possible.length-1),1)[0];if(!k)break;item.stats[k]=Math.max(1,Math.floor(baseVal[k]*0.7*rarity.mult));}
+  const preferredBonusKeys=(profileKeys||[]).filter(k=>k!==primary&&possible.includes(k));
+  const bonusKeys=[];
+  while(preferredBonusKeys.length&&bonusKeys.length<bonusCount){
+    const k=preferredBonusKeys.shift();
+    if(!bonusKeys.includes(k)) bonusKeys.push(k);
+  }
+  while(bonusKeys.length<bonusCount&&possible.length){
+    const idx=possible.findIndex(k=>!bonusKeys.includes(k));
+    const k=idx>=0?possible.splice(idx,1)[0]:possible.splice(rng(0,possible.length-1),1)[0];
+    if(!k)break;
+    if(!bonusKeys.includes(k)) bonusKeys.push(k);
+  }
+  for(const k of bonusKeys){if(!k)break;item.stats[k]=Math.max(1,Math.floor(baseVal[k]*0.7*rarity.mult));}
   // 副属性只能来自下方"惊喜roll",不从命名装/池子的预设 stats 注入
   const SURPRISE_KEYS=['crit','critd','critdPct','leech','vers','haste','mastery','dodge'];
   if(extraStats){for(const[k,v]of Object.entries(extraStats)){if(SURPRISE_KEYS.includes(k))continue;item.stats[k]=(item.stats[k]||0)+Math.max(1,Math.floor(baseVal[k]*0.5*v*rarity.mult));}}
@@ -2746,6 +2759,7 @@ function finishItem(item,slotKey,rarity,power,extraStats){
   if(item.stats.critd>12)item.stats.critd=12;
   if(item.stats.haste>4)item.stats.haste=4;
   if(item.stats.dodge>4)item.stats.dodge=4;
+  item._rollProfileKeys=Object.keys(item.stats);
   item.reqLvl=Math.max(1,Math.floor(power*0.9));item.sell=Math.floor(10*rarity.mult*(1+power*0.5));
   if(typeof enhanceItemOnCreate==='function') enhanceItemOnCreate(item,rarity,power);
   return item;
