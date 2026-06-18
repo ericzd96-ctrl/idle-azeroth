@@ -2806,7 +2806,12 @@ function skillEffects(wc,mon,taken,now,opts){
   if(wc.plague){applyDebuff('burn',6000,{dps:Math.max(1,Math.floor(taken*0.15))});log('🦠 '+enemyName+(wc.icon||'')+(target==='companion'?'散播了暗影瘟疫给随从!':'散播了暗影瘟疫!'),'bad');}
   if(wc.bleed){applyDebuff('burn',8000,{dps:Math.max(1,Math.floor(taken*0.1))});log('🩸 '+enemyName+(wc.icon||'')+(target==='companion'?'让随从流血了!':'让你流血了!'),'bad');}
   if(wc.brittle){applyDebuff('brittle',6000);log('💥 '+enemyName+(wc.icon||'')+(target==='companion'?'让随从变得易爆(下次受伤翻倍)!':'让你变得易爆(下次受伤翻倍)!'),'bad');}
-  if(wc.soulDrain){mon.lifeSteal=(mon.lifeSteal||0)+0.3;mon._trickLeech=now+8000;log('🧛 '+enemyName+(wc.icon||'')+(target==='companion'?'开始吸取随从的精力!':'开始吸取你的精力!'),'bad');}
+  if(wc.soulDrain){
+    mon._trickLeech=now+8000;
+    mon._trickLeechPct=Math.max(mon._trickLeechPct||0, 30);
+    setMonsterTrickAura(mon,'leech',wc,mon._trickLeech,{name:wc.name||'灵魂虹吸',desc:wc.desc||'短时间内获得吸血'});
+    log('🧛 '+enemyName+(wc.icon||'')+(target==='companion'?'开始吸取随从的精力!':'开始吸取你的精力!'),'bad');
+  }
   if(wc.soulLink){if(target==='companion')state._compSoulLinkUntil=now+8000;else state._soulLinkUntil=now+8000;applyDebuff('soulLink',8000);log('🔗 '+enemyName+(wc.icon||'')+(target==='companion'?'链接了随从的灵魂!':'链接了你的灵魂!'),'bad');}
   if(wc.revenge){applyDebuff('vulnerable',6000);log('🎯 '+enemyName+(wc.icon||'')+(target==='companion'?'标记了随从!':'标记了你!'),'bad');}
   if(wc.frenzy){

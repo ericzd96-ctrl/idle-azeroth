@@ -130,7 +130,20 @@ function focusDebuffs(now) {
 function focusBuffs(now) {
   const mon = state.currentMonsters && state.currentMonsters[0];
   if (!mon || mon.hp <= 0) return [];
-  const out = [];
+  const merged = new Map();
+  const pushBuff = (entry) => {
+    const key = `${entry.base || entry.name}|${entry.icon || ''}`;
+    const prev = merged.get(key);
+    if (!prev) {
+      merged.set(key, Object.assign({}, entry));
+      return;
+    }
+    prev.left = Math.max(prev.left || 0, entry.left || 0);
+    prev.stacks = (prev.stacks || 0) + (entry.stacks || 0);
+    if (entry.desc && prev.desc && prev.desc !== entry.desc) prev.desc += ` · ${entry.desc}`;
+    else if (entry.desc && !prev.desc) prev.desc = entry.desc;
+    if ((prev.icon || '') === '' && entry.icon) prev.icon = entry.icon;
+  };
   if (mon._trickAuras) {
     const auraMap = mon._trickAuras;
     const activeKeys = [];
@@ -156,7 +169,7 @@ function focusBuffs(now) {
       const expire = key === 'spd' && mon.spdBuffUntil > now ? mon.spdBuffUntil : (aura.expire || 0);
       const left = expire > now ? Math.ceil((expire - now) / 1000) : 0;
       const suffix = stacks > 1 ? ` · ${stacks}层` : '';
-      out.push({
+      pushBuff({
         icon: aura.icon || '⚡',
         name: (aura.name || key) + suffix,
         base: (aura.name || key),
@@ -167,9 +180,12 @@ function focusBuffs(now) {
     }
   }
   if (mon._arcaneShield > 0 && !(mon._trickAuras && mon._trickAuras.shield)) {
-    out.push({ icon:'🔮', name:'护体屏障', desc:`吸收 ${fmt(mon._arcaneShield)} 点伤害`, left:0 });
+    pushBuff({ icon:'🔮', name:'护体屏障', base:'护体屏障', desc:`吸收 ${fmt(mon._arcaneShield)} 点伤害`, left:0 });
   }
-  return out;
+  return Array.from(merged.values()).map(entry => {
+    const stacks = entry.stacks > 1 ? ` · ${entry.stacks}层` : '';
+    return Object.assign({}, entry, { name: (entry.base || entry.name) + stacks, stacks: entry.stacks || 0 });
+  });
 }
 function statusIconHtml(name, symbol, size) {
   if (typeof statusIcon === 'function') return statusIcon(name, symbol, size || 16, symbol || name || '');
