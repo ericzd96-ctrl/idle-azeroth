@@ -2808,6 +2808,14 @@ function sellAllBelow(level){const levelIdx=['common','uncommon','rare','epic','
 /* ---------- 技能 ---------- */
 let casting=null;
 let bossCasting=null;
+function hideHeroCastBar(){
+  const cb=document.getElementById('hero-cast-bar-wrap');
+  if(cb)cb.style.visibility='hidden';
+}
+function hideBossCastBar(){
+  const cb=document.getElementById('boss-cast-bar-wrap');
+  if(cb)cb.style.visibility='hidden';
+}
 /* 切换角色或重置时调用,清理 combat 模块变量,避免下个角色继承上一个的状态 */
 function resetCombatState(){
   casting=null;
@@ -2826,7 +2834,8 @@ function resetCombatState(){
   if(state){state._compHp=null;state._compDownUntil=0;}   // 随从血量/阵亡态:下个角色重新满血
   if(typeof resetDmgStats==='function')resetDmgStats();
   compSkillCd={};
-  const cb=document.getElementById('cast-bar-wrap');if(cb)cb.style.visibility='hidden';
+  hideHeroCastBar();
+  hideBossCastBar();
 }
 function hasteFactor(){return 1+((state.hero&&state.hero.haste)||0)/100;}        // 极速倍率(>=1):提攻速/读条/CD
 function castSpeedMul(){return (state.battleSpeed||1)*hasteFactor();}             // 读条速度&技能CD 提速 = 战斗倍速 × 极速
@@ -2835,8 +2844,7 @@ function getCastTime(sk){if(sk.type==='interrupt')return 0;if(sk.castTime!==unde
 function cancelHeroCast(){
   if(!casting) return;
   casting = null;
-  const cb = document.getElementById('cast-bar-wrap');
-  if(cb) cb.style.visibility = 'hidden';
+  hideHeroCastBar();
 }
 function getSkillCd(sk){let base;if(sk.cd)base=sk.cd;else if(sk.type==='buff')base=40;else if(sk.type==='heal')base=16;else{const mul=sk.mul||1;if(mul>=8)base=35;else if(mul>=6)base=24;else if(mul>=5)base=18;else if(mul>=4)base=13;else if(mul>=3)base=9;else base=7;}if(state.hero.cdReduction>0)base=Math.max(3,Math.floor(base*(1-state.hero.cdReduction/100)));return base;}
 function startCast(skillKey,manual){
@@ -2922,13 +2930,12 @@ function tickCast(now){
     const elapsed=now-casting.startTime;const pct=Math.min(100,elapsed/casting.duration*100);
     const remaining=Math.max(0,Math.ceil((casting.duration-elapsed)/1000));
     const c=getCls();const sk=c?.skills[casting.skillKey||''];
-    $('cast-bar-wrap').style.visibility='visible';
-    $('cast-name').textContent=(sk?.icon||'')+' '+(sk?.name||'施法中');
-    $('b-cast').style.background='linear-gradient(90deg,#fbbf24,#f59e0b)';
-    $('cast-time').textContent=remaining>0?remaining+'s':'';
-    $('b-cast').style.width=pct+'%';
+    $('hero-cast-bar-wrap').style.visibility='visible';
+    $('hero-cast-name').textContent=(sk?.icon||'')+' '+(sk?.name||'施法中');
+    $('hero-cast-time').textContent=remaining>0?remaining+'s':'';
+    $('hero-b-cast').style.width=pct+'%';
     if(elapsed>=casting.duration){
-      $('cast-bar-wrap').style.visibility='hidden';
+      hideHeroCastBar();
       const wasCasting=casting;casting=null;
       castSkill(wasCasting.skillKey,wasCasting.manual);
     }
@@ -2938,13 +2945,12 @@ function tickCast(now){
     if(!$('mon-emoji') && typeof renderMonList === 'function') renderMonList();
     const elapsed=now-bossCasting.startTime;const pct=Math.min(100,elapsed/bossCasting.duration*100);
     const remaining=Math.max(0,Math.ceil((bossCasting.duration-elapsed)/1000));
-    $('cast-bar-wrap').style.visibility='visible';
-    $('cast-name').textContent='💀 '+(bossCasting.bossName||'BOSS')+' - '+(bossCasting.icon||'');
-    $('b-cast').style.background='linear-gradient(90deg,#ef4444,#dc2626)';
-    $('cast-time').textContent=remaining>0?remaining+'s':'';
-    $('b-cast').style.width=pct+'%';
+    $('boss-cast-bar-wrap').style.visibility='visible';
+    $('boss-cast-name').textContent='💀 '+(bossCasting.bossName||'BOSS')+' - '+(bossCasting.icon||'');
+    $('boss-cast-time').textContent=remaining>0?remaining+'s':'';
+    $('boss-b-cast').style.width=pct+'%';
     if(elapsed>=bossCasting.duration){
-      $('cast-bar-wrap').style.visibility='hidden';
+      hideBossCastBar();
       const bc=bossCasting;bossCasting=null;const mon=state.currentMonsters[0];if(!mon||mon.hp<=0)return;
       const critRate = monsterCritRate(mon, now);
       if(bc.type==='heal'){const h=Math.floor(mon.hpMax*(bc.heal||0.2));mon.hp=Math.min(mon.hpMax,mon.hp+h);showMonsterFloat(mon,'💚+'+h,'#6ee7b7');}
@@ -3060,7 +3066,7 @@ function castSkill(skillKey,manual){
   else if(sk.type==='buff'){const dur=sk.duration+(state.hero.buffDuration||0)*1000;state.buffs[sk.buff]=Date.now()+dur;recomputeStats();log(sk.name+'!','good');}
   if(sk.type==='buff') processTalentAfterSkill(skillKey, sk, state.currentMonsters[0] || null, 0, { cost });
 }
-function doInterrupt(){if(!bossCasting){log('没有正在施放的法术','info');return;}const bossName=bossCasting.bossName||'BOSS';log('🦶 打断了 '+bossName+' 的 '+bossCasting.icon+' 施法!','good');$('cast-bar-wrap').style.visibility='hidden';bossCasting=null;}
+function doInterrupt(){if(!bossCasting){log('没有正在施放的法术','info');return;}const bossName=bossCasting.bossName||'BOSS';log('🦶 打断了 '+bossName+' 的 '+bossCasting.icon+' 施法!','good');hideBossCastBar();bossCasting=null;}
 
 /* ---------- 随从 ---------- */
 let lastCompAtk=0,lastCompSkill=0,compSkillIdx=0,lastCompRegen=0;
