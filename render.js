@@ -213,6 +213,12 @@ function symbolIconHtml(symbol, size, label, fallback) {
   if (typeof symbolIcon === 'function') return symbolIcon(symbol, size || 16, label || symbol || '', fallback || '');
   return symbol || fallback || label || '';
 }
+function companionIconHtml(tpl, size) {
+  if (!tpl) return '';
+  const fallback = tpl.iconName || tpl.emoji || 'ability_hunter_pet_wolf';
+  if (typeof entityIcon === 'function') return entityIcon(tpl.name, size || 18, fallback);
+  return tpl.emoji || '';
+}
 function renderBuffBar() {
   const bar = $('buff-bar'); if (!bar) return;
   const now = Date.now();
@@ -964,7 +970,7 @@ function updateBattleVisuals() {
     $('comp-mini').style.opacity=compDown?'0.5':'1';
     const statusTag=compDown?` · <span style="color:#fde047">💫倒下 ${reviveLeft}s</span>`:'';
     const sigBadge = tpl?.signature ? ` · <span style="color:#fcd34d">${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')}专属</span>` : '';
-    const compIconHtml = (typeof entityIcon === 'function') ? entityIcon(tpl?.name, 18, tpl?.emoji || '🐾') : (tpl?.emoji || '🐾');
+    const compIconHtml = companionIconHtml(tpl, 18);
     const compMiniName = $('comp-mini-name');
     const headSig = [
       tpl?.key || comp.key,
@@ -1040,7 +1046,7 @@ function updateBattleVisuals() {
       }
       const compBarrier = state._compBarrier || 0;
       const sig = tpl?.signature;
-      const compIconHtml = (typeof entityIcon === 'function') ? entityIcon(tpl?.name, 18, tpl?.emoji || '🐾') : (tpl?.emoji || '🐾');
+      const compIconHtml = companionIconHtml(tpl, 18);
       const html=`<b>${compIconHtml} ${tpl?.name}</b><div>${q.name} ${'⭐'.repeat(comp.stars||1)} · ${tpl?.role==='tank'?'🛡️坦克':tpl?.role==='heal'?'💚治疗':'⚔️输出'}</div>
         <div>攻击${fmt(st.atk)} 防御${fmt(st.def)} 生命${fmt(st.hpMax)} 攻速${st.spd?.toFixed(2)}/s</div>
         <div class="muted">参战强度已按品质、星级与定位折算</div>
@@ -1972,7 +1978,7 @@ function renderCompanion() {
     const starF = 1+0.2*((act.stars||1)-1);
     const ownTxt = Object.entries(tpl?.bonus||{}).map(([k,v])=>(typeof fmtMod==='function')?fmtMod(k,+(v*starF).toFixed(1)):k+'+'+v).join(' ');
     const roleTxt = Object.entries(role).map(([k,v])=>(typeof fmtMod==='function')?fmtMod(k,v):k+'+'+v).join(' ');
-    const compIconHtml = (typeof entityIcon === 'function') ? entityIcon(tpl?.name, 18, tpl?.emoji || '🐾') : (tpl?.emoji || '🐾');
+    const compIconHtml = companionIconHtml(tpl, 18);
     html += `<div class="shop-item" style="border-color:var(--${q.cls==='r-legend'?'legend':q.cls==='r-epic'?'epic':'border'})">
       <div class="row"><b>${compIconHtml} ${tpl?.name}</b><span class="pill" style="background:var(--accent);color:#000">出战中</span></div>
       <div class="muted"><span class="${q.cls}">${q.name}</span> · ${'⭐'.repeat(act.stars||1)} · ${roleTag(tpl?.role)} · 5主动+1专属</div>
@@ -1994,7 +2000,7 @@ function renderCompanion() {
     const q = compQuality(tpl);
     const cost = getUpgradeCost(c);
     const canUp = !cost.maxed && cost.have>=cost.need;
-    const compIconHtml = (typeof entityIcon === 'function') ? entityIcon(tpl.name, 18, tpl.emoji) : tpl.emoji;
+    const compIconHtml = companionIconHtml(tpl, 18);
     html += `<div class="shop-item">
       <div class="row"><b>${compIconHtml} ${tpl.name}</b><span class="${q.cls}">${q.name} · 5主动+1专属</span></div>
       <div class="muted" style="font-size:10px">${'⭐'.repeat(c.stars||1)} · ${roleTag(tpl.role)} · ${tpl.desc}</div>
@@ -2019,7 +2025,7 @@ function renderCompanion() {
       <div style="display:flex;flex-wrap:wrap;gap:4px">`;
     for (const t of missing) {
       const q = compQuality(t);
-      const compIconHtml = (typeof entityIcon === 'function') ? entityIcon(t.name, 16, t.emoji) : t.emoji;
+      const compIconHtml = companionIconHtml(t, 16);
       html += `<div title="${t.name} · ${q.name} · ${roleTag(t.role)} · ${t.desc}" style="opacity:.55;border:1px solid var(--border);border-left:3px solid var(--${q.cls==='r-legend'?'legend':q.cls==='r-epic'?'epic':'border'});border-radius:6px;padding:3px 5px;font-size:11px">
         ${compIconHtml} <span class="${q.cls}">${t.name}</span></div>`;
     }

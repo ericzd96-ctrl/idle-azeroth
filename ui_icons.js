@@ -800,9 +800,9 @@
   ];
 
   Object.assign(ENTITY_EXACT, {
-    '萨鲁法尔大王':'achievement_character_orc_male',
-    '死亡使者萨鲁法尔':'achievement_character_orc_male',
-    '萨鲁法尔':'achievement_character_orc_male'
+    '萨鲁法尔大王':'classicon_warrior',
+    '萨鲁法尔':'classicon_warrior',
+    '死亡使者萨鲁法尔':'warrior_skullbanner'
   });
 
   Object.assign(SKILL_EXACT, {
@@ -815,7 +815,18 @@
     '压制':'ability_meleedamage',
     '致死劈砍':'ability_warrior_savageblow',
     '致死打击':'ability_warrior_savageblow',
-    '战吼':'ability_warrior_battleshout'
+    '战吼':'ability_warrior_battleshout',
+    '盾墙':'ability_warrior_shieldwall',
+    '雷霆一击':'ability_thunderclap',
+    '强力一击':'ability_warrior_decisivestrike',
+    '重盾击':'ability_warrior_shieldbash',
+    '爆裂射击':'ability_hunter_explosiveshot',
+    '野兽狂怒':'ability_druid_ferociousbite',
+    '圣光审判':'spell_holy_righteousfury',
+    '圣盾':'spell_holy_blessingofprotection',
+    '法力梭镖':'spell_arcane_arcane01',
+    '蛊惑':'spell_shadow_possession',
+    '毁灭':'spell_fire_selfdestruct'
   });
 
   function normalizeSize(size) {

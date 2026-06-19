@@ -46,7 +46,7 @@
     { key:'berserker', name:'狂战士',    emoji:'😡', quality:'green', role:'dps',  desc:'嗜血的蛮族战士',   bonus:{atkPct:3}, skills:[B('鲁莽','💢','berserk','10秒攻击攻速'),D('顺劈','🌀','3倍伤害',3)] },
 
     // ---------- 蓝(中流砥柱,3技能)----------
-    { key:'saurfang', name:'萨鲁法尔大王', emoji:'🪓', quality:'blue', role:'dps', desc:'部落的荣耀老兵', bonus:{atkPct:4,critdPct:5}, skills:[D('致死劈砍','⚔️','3倍伤害',3),D('压制','💥','4倍伤害',4),B('战吼','📯','berserk','攻击攻速提升')] },
+    { key:'saurfang', name:'萨鲁法尔大王', emoji:'🪓', iconName:'classicon_warrior', quality:'blue', role:'dps', desc:'部落的荣耀老兵', bonus:{atkPct:4,critdPct:5}, skills:[D('致死劈砍','⚔️','3倍伤害',3),D('压制','💥','4倍伤害',4),B('战吼','📯','berserk','攻击攻速提升')] },
     { key:'muradin',  name:'穆拉丁·铜须', emoji:'🔨', quality:'blue', role:'tank', desc:'铁炉堡的山丘之王', bonus:{defPct:7,hpPct:5}, skills:[D('雷霆一击','⚡','3倍伤害',3),B('盾墙','🛡️','shield','减伤'),D('强力一击','💢','4倍伤害',4)] },
     { key:'maraad',   name:'大主教玛拉达尔', emoji:'🌟', quality:'blue', role:'heal', desc:'德莱尼的圣光使者', bonus:{hpPct:5,regFlat:4}, skills:[H('圣光术','✨',0.2,12),B('圣盾','🟡','sacredShield','防御回复'),D('圣光审判','⚖️','3倍伤害',3)] },
     { key:'rexxar',   name:'雷克萨', emoji:'🐗', quality:'blue', role:'dps', desc:'孤胆兽王', bonus:{atkPct:3,crit:3}, skills:[D('瞄准射击','🎯','3倍伤害',3),B('野兽狂怒','🐻','bestial','攻击提升'),D('爆裂射击','💥','4倍伤害',4)] },
