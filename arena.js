@@ -169,10 +169,14 @@ let _arenaAnim = null;
 function arenaShowResult(r) {
   const root = $('modal-arena-result'); if (!root) return;
   const c = (typeof getCls === 'function') ? getCls() : null;
-  $('arena-res-hero-emoji').textContent = (c && c.emoji) || '🧙';
+  $('arena-res-hero-emoji').innerHTML = (c && typeof classIcon === 'function')
+    ? classIcon(state.cls, 28, c.icon || c.emoji || '⚔️')
+    : ((c && c.emoji) || '🧙');
   $('arena-res-hero-name').textContent = state.name || '你';
   $('arena-res-hero-pow').textContent = '战力 ' + fmt(r.heroPow);
-  $('arena-res-opp-emoji').textContent = r.opp.icon;
+  $('arena-res-opp-emoji').innerHTML = (typeof symbolIcon === 'function')
+    ? symbolIcon(r.opp.icon, 28, r.opp.name, 'achievement_arena_3v3_9')
+    : r.opp.icon;
   $('arena-res-opp-name').textContent = r.opp.name;
   $('arena-res-opp-pow').textContent = '战力 ' + fmt(r.opp.power) + ' · 评分' + r.opp.rating;
 
@@ -272,7 +276,7 @@ function renderArena() {
   let html = `<div class="ascend-box">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <div style="font-weight:bold">🏟️ 竞技场 <span class="muted" style="font-size:11px">(每角色独立)</span></div>
-      <div style="font-size:22px">${tier.icon}</div>
+      <div style="font-size:22px">${typeof symbolIcon === 'function' ? symbolIcon(tier.icon, 22, tier.name, 'achievement_arena_3v3_9') : tier.icon}</div>
     </div>
     <div style="display:flex;align-items:baseline;gap:8px;margin:4px 0">
       <span style="font-size:20px;font-weight:bold;color:var(--accent)">${tier.name}</span>
@@ -282,7 +286,7 @@ function renderArena() {
     const span = nextTier.min - tier.min;
     const cur = a.rating - tier.min;
     const pct = span > 0 ? Math.min(100, cur / span * 100) : 0;
-    html += `<div class="bar xp" style="margin:4px 0"><i style="width:${pct}%"></i><span>距 ${nextTier.icon}${nextTier.name} 还需 ${nextTier.min - a.rating}</span></div>`;
+    html += `<div class="bar xp" style="margin:4px 0"><i style="width:${pct}%"></i><span>距 ${(typeof symbolIcon === 'function' ? symbolIcon(nextTier.icon, 14, nextTier.name, 'achievement_arena_3v3_9') : nextTier.icon)}${nextTier.name} 还需 ${nextTier.min - a.rating}</span></div>`;
   } else {
     html += `<div class="muted" style="font-size:11px;margin:4px 0">已达最高段位 ⚔️</div>`;
   }
@@ -297,7 +301,7 @@ function renderArena() {
   html += `<div class="ascend-box">
     <div class="detail-label">⚔️ 当前对手</div>
     <div style="display:flex;align-items:center;gap:10px;margin:4px 0">
-      <div style="font-size:30px">${opp.icon}</div>
+      <div style="font-size:30px">${typeof symbolIcon === 'function' ? symbolIcon(opp.icon, 30, opp.name, 'achievement_arena_3v3_9') : opp.icon}</div>
       <div style="flex:1">
         <div style="font-weight:bold">${opp.name}</div>
         <div class="muted" style="font-size:11px">评分 ${opp.rating}</div>
@@ -326,7 +330,7 @@ function renderArena() {
     html += `<div class="ascend-milestone ${lv>0?'reached':''}" style="padding:6px;margin-top:4px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
         <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
-          <div style="font-size:20px">${item.icon}</div>
+          <div style="font-size:20px">${typeof symbolIcon === 'function' ? symbolIcon(item.icon, 20, item.name, 'spell_holy_powerinfusion') : item.icon}</div>
           <div style="flex:1;min-width:0">
             <div style="font-weight:bold">${item.name} <span class="muted" style="font-size:10px">Lv.${lv}/${item.max}</span></div>
             <div class="muted" style="font-size:10px">${item.desc}</div>
@@ -347,7 +351,7 @@ function renderArena() {
     const isCur = t.key === tier.key;
     const tmod = Object.entries(t.mod||{}).map(([k,v]) => (typeof fmtMod==='function')?fmtMod(k,v):k+'+'+v).join(' · ') || '—';
     html += `<div style="display:flex;justify-content:space-between;gap:8px;padding:3px 0;opacity:${reached?1:0.5};${isCur?'font-weight:bold':''}">
-      <span style="white-space:nowrap">${t.icon} ${t.name} <span class="muted" style="font-size:10px">${t.min}+</span></span>
+      <span style="white-space:nowrap">${typeof symbolIcon === 'function' ? symbolIcon(t.icon, 16, t.name, 'achievement_arena_3v3_9') : t.icon} ${t.name} <span class="muted" style="font-size:10px">${t.min}+</span></span>
       <span class="muted" style="font-size:10px;text-align:right">${tmod}</span>
     </div>`;
   }

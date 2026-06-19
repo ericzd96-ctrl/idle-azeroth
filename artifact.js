@@ -178,8 +178,9 @@ function renderArtifact() {
   const root = $('tab-artifact'); if (!root) return;
   if (!state.cls) { root.innerHTML = '<div class="muted">先创建角色</div>'; return; }
   if (!artifactUnlocked()) {
+    const lockedIconHtml = (typeof symbolIcon === 'function') ? symbolIcon('🗡️', 28, '神器', 'inv_sword_39') : '🗡️';
     root.innerHTML = `<div class="ascend-box">
-      <div style="font-size:14px;font-weight:bold;text-align:center;margin:20px 0">🗡️ 神器尚未觉醒</div>
+      <div style="font-size:14px;font-weight:bold;text-align:center;margin:20px 0">${lockedIconHtml} 神器尚未觉醒</div>
       <div class="muted" style="text-align:center">需达到 Lv.${ARTIFACT_UNLOCK_LVL} 才能开启专属神器</div>
     </div>`;
     return;
@@ -190,24 +191,27 @@ function renderArtifact() {
   const pct = a.lvl >= ARTIFACT_MAX_LVL ? 100 : Math.floor(cur*100/need);
   const free = artifactPointsFree();
   const spent = artifactSpentPoints();
+  const artIconHtml = (typeof symbolIcon === 'function') ? symbolIcon(art.icon, 30, art.name, 'inv_sword_39') : art.icon;
+  const lightningIconHtml = (typeof statusIcon === 'function') ? statusIcon('神器能量', '⚡', 12, 'spell_arcane_arcanepotency') : '⚡';
 
   let html = `<div class="ascend-box" style="border:1px solid ${art.color}">
     <div style="display:flex;align-items:center;gap:8px">
-      <div style="font-size:30px">${art.icon}</div>
+      <div style="font-size:30px">${artIconHtml}</div>
       <div style="flex:1">
         <div style="font-weight:bold;color:${art.color}">${art.name}</div>
         <div class="muted" style="font-size:11px">神器 Lv.${a.lvl}/${ARTIFACT_MAX_LVL} · 可用 <b style="color:var(--accent)">${free}</b> 点 · 已加 ${spent}</div>
       </div>
     </div>
     <div class="bar xp" style="margin:6px 0"><i style="width:${pct}%;background:${art.color}"></i><span>${a.lvl>=ARTIFACT_MAX_LVL?'MAX':`${cur}/${need} AP`}</span></div>
-    <div class="muted" style="font-size:10px">⚡ 每杀敌获得 30% XP 作为 AP · <button class="danger" data-action="artifactReset" style="float:right;padding:2px 8px;font-size:11px">重置 100💎</button></div>
+    <div class="muted" style="font-size:10px">${lightningIconHtml} 每杀敌获得 30% XP 作为 AP · <button class="danger" data-action="artifactReset" style="float:right;padding:2px 8px;font-size:11px">重置 100💎</button></div>
   </div>`;
 
   // 3 树展开
   for (const [tKey, tree] of Object.entries(ARTIFACT_TREES)) {
     const traits = ARTIFACT_TRAITS.filter(t => t.tree === tKey);
+    const treeIconHtml = (typeof symbolIcon === 'function') ? symbolIcon(tree.icon, 16, tree.name, 'spell_holy_powerinfusion') : tree.icon;
     html += `<div class="ascend-box" style="border-left:3px solid ${tree.color}">
-      <div class="detail-label" style="color:${tree.color}">${tree.icon} ${tree.name}</div>`;
+      <div class="detail-label" style="color:${tree.color}">${treeIconHtml} ${tree.name}</div>`;
     for (const t of traits) {
       const rank = a.traits[t.key] || 0;
       const prereqOk = artifactPrereqMet(t);

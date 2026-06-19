@@ -346,10 +346,11 @@ function renderTowerPanel() {
       <div class="detail-label">塔商店 · 当前 🪙 ${state.towerCoin||0}</div>`;
     for (const item of TOWER_SHOP) {
       const can = (state.towerCoin||0) >= item.cost;
+      const towerItemIconHtml = (typeof symbolIcon === 'function') ? symbolIcon(item.icon, 16, item.name, 'spell_holy_powerinfusion') : item.icon;
       html += `<div class="ascend-milestone ${can?'reached':''}" style="padding:6px">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
-            <b>${item.icon} ${item.name}</b>
+            <b>${towerItemIconHtml} ${item.name}</b>
             <div class="muted" style="font-size:10px">${item.desc}</div>
           </div>
           <button class="${can?'gold':''}" data-action="towerBuy" data-key="${item.key}" ${can?'':'disabled'} style="padding:4px 10px">

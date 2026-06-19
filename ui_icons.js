@@ -72,22 +72,33 @@
   const SYMBOL_ICON = {
     '🎓':'achievement_level_10',
     '🎖️':'achievement_general',
+    '🎗️':'achievement_general',
+    '🥉':'achievement_arena_2v2_1',
     '🥈':'achievement_arena_2v2_7',
     '🥇':'achievement_arena_5v5_7',
     '🏆':'achievement_general_stayclassy',
+    '🏟️':'achievement_arena_3v3_9',
+    '🎫':'inv_misc_ticket_tarot_portal_01',
     '👑':'achievement_boss_lichking',
     '🗡️':'ability_rogue_eviscerate',
     '⚔️':'ability_warrior_savageblow',
+    '⚔️❌':'ability_warrior_disarm',
+    '⚒️':'spell_holy_holysmite',
+    '✋':'spell_holy_sealofprotection',
+    '✝️':'spell_holy_holybolt',
     '💀':'spell_shadow_raisedead',
     '☠️':'achievement_bg_kill_flag_carrier',
+    '☣️':'ability_creature_disease_02',
     '⚙️':'trade_engineering',
     '💥':'spell_fire_selfdestruct',
     '💢':'ability_warrior_decisivestrike',
     '⚡':'spell_nature_lightning',
     '🌩️':'spell_shaman_thunderstorm',
+    '⛈️':'spell_shaman_thunderstorm',
     '💫':'spell_frost_stun',
     '💚':'spell_holy_heal',
     '📯':'ability_warrior_battleshout',
+    '🎵':'spell_holy_holynova',
     '📣':'ability_hunter_beastcall',
     '🚩':'achievement_bg_returnxflags_def_wsg',
     '🪨':'spell_nature_skinofearth',
@@ -112,27 +123,143 @@
     '🪞':'spell_arcane_mirrorimage',
     '🥀':'spell_shadow_deathanddecay',
     '💔':'spell_shadow_cripple',
+    '❤️':'spell_holy_heal',
+    '❤️‍🔥':'ability_warrior_focusedrage',
     '🥶':'spell_frost_chainsofice',
     '💰':'inv_misc_coin_02',
     '💎':'inv_misc_gem_diamond_02',
+    '💍':'inv_jewelry_ring_62',
+    '💠':'inv_misc_gem_variety_01',
+    '🔷':'inv_misc_gem_sapphire_02',
+    '🔴':'inv_misc_gem_bloodstone_02',
+    '🔵':'inv_misc_gem_crystal_02',
+    '🟡':'inv_misc_gem_topaz_02',
+    '🟣':'inv_misc_gem_amethyst_02',
+    '🟧':'inv_misc_gem_ebondraenite_02',
+    '🟨':'inv_misc_gem_topaz_02',
+    '🟪':'inv_misc_gem_amethyst_02',
     '🔥':'spell_fire_fire',
+    '🌋':'spell_fire_volcano',
     '🌟':'spell_holy_divineillumination',
+    '⭐':'spell_holy_divineillumination',
     '🗺️':'inv_misc_map_01',
     '🌍':'achievement_worldevent_brewmaster',
     '🌎':'inv_misc_map_01',
+    '🌄':'inv_misc_map_01',
+    '🌅':'achievement_zone_sholazar_01',
+    '🌈':'spell_nature_starfall',
+    '🌊':'spell_frost_summonwaterelemental',
+    '🌌':'spell_arcane_portalshattrath',
+    '🌕':'spell_nature_starfall',
+    '🌗':'spell_nature_starfall',
+    '🌙':'spell_nature_starfall',
+    '🌠':'spell_arcane_starfire',
+    '🌧️':'spell_nature_cyclone',
+    '🌨️':'spell_frost_icestorm',
+    '🌪️':'spell_nature_cyclone',
+    '🌫️':'spell_shadow_charm',
+    '☀️':'spell_fire_fireball02',
+    '☁️':'spell_nature_cyclone',
+    '🌞':'spell_fire_fire',
+    '🌱':'spell_nature_naturetouchgrow',
+    '🌲':'spell_nature_starfall',
+    '🌳':'spell_nature_starfall',
+    '🌴':'spell_nature_starfall',
+    '🌵':'spell_nature_thorns',
+    '🌺':'spell_nature_naturetouchgrow',
+    '🌾':'spell_nature_naturetouchgrow',
     '🐉':'inv_misc_head_dragon_01',
+    '🐲':'inv_misc_head_dragon_black',
+    '🐺':'ability_hunter_pet_wolf',
+    '🐻':'ability_druid_catform',
+    '🐗':'ability_hunter_pet_boar',
+    '🐍':'ability_creature_poison_05',
+    '🐊':'ability_hunter_pet_crocolisk',
+    '🐙':'inv_misc_monstertentacle_01',
+    '🐟':'inv_misc_fish_18',
+    '🦀':'ability_hunter_pet_crab',
+    '🦂':'ability_creature_poison_06',
+    '🕷️':'ability_ghoulfrenzy',
+    '🕸️':'spell_nature_stranglevines',
+    '🐦':'ability_hunter_pet_vulture',
+    '🦅':'ability_hunter_pet_windserpent',
+    '🦇':'spell_shadow_possession',
+    '🐴':'ability_mount_ridinghorse',
+    '🐅':'ability_druid_dash',
+    '🐾':'ability_hunter_beastcall',
+    '🦴':'spell_shadow_raisedead',
+    '🦠':'ability_creature_disease_02',
+    '🧪':'inv_potion_155',
+    '🪝':'inv_misc_hook_01',
+    '🪓':'inv_axe_01',
+    '🔨':'inv_hammer_04',
+    '🏹':'ability_hunter_focusedaim',
+    '🔱':'spell_nature_lightning',
+    '🛡️':'ability_warrior_shieldwall',
+    '🧱':'spell_holy_devotionaura',
+    '🪄':'inv_staff_13',
+    '📕':'inv_misc_book_09',
+    '📖':'inv_misc_book_09',
+    '📘':'inv_misc_book_11',
+    '📚':'inv_misc_book_11',
+    '📿':'inv_jewelry_talisman_08',
+    '⛪':'spell_holy_holybolt',
     '🏰':'achievement_dungeon_naxxramas',
     '🏯':'achievement_dungeon_naxxramas',
-    '💍':'inv_jewelry_ring_62',
-    '💠':'inv_misc_gem_variety_01',
-    '✨':'spell_holy_powerinfusion',
-    '🪄':'inv_staff_13',
-    '♻️':'spell_magic_lesserinvisibilty',
+    '🏛️':'achievement_dungeon_ulduar_raildriver',
+    '🏘️':'inv_misc_map_01',
+    '🏜️':'achievement_zone_silithus_01',
+    '🏔️':'achievement_zone_stonetalon_01',
+    '⛰️':'achievement_zone_stonetalon_01',
+    '⛵':'ability_mount_gryphon_01',
+    '⚓':'inv_misc_enggizmos_21',
+    '⌛':'inv_misc_pocketwatch_01',
+    '⏳':'inv_misc_pocketwatch_01',
+    '🔧':'trade_engineering',
+    '🔌':'trade_engineering',
+    '🔒':'inv_misc_key_14',
+    '🔗':'spell_shadow_soulleech_3',
+    '🔄':'spell_magic_lesserinvisibilty',
     '🔁':'ability_rogue_sprint',
-    '📖':'inv_misc_book_09',
+    '♻️':'spell_magic_lesserinvisibilty',
+    '📦':'inv_crate_04',
+    '🔭':'inv_misc_spyglass_03',
+    '🛰️':'spell_arcane_portalshattrath',
+    '⚫':'spell_shadow_shadowwordpain',
+    '💜':'spell_shadow_lifedrain',
+    '💉':'inv_potion_51',
+    '💣':'spell_fire_selfdestruct',
+    '💧':'spell_arcane_blast',
+    '🧊':'spell_frost_frostnova',
+    '☄️':'spell_fire_meteorstorm',
+    '🌀':'spell_nature_cyclone',
+    '👻':'spell_shadow_possession',
+    '👁️':'spell_shadow_charm',
+    '👤':'ability_rogue_shadowstep',
+    '👥':'spell_shadow_summonvoidwalker',
+    '👊':'ability_warrior_punishingblow',
+    '👹':'achievement_character_orc_male',
+    '👺':'spell_shadow_summonfelhunter',
+    '👼':'spell_holy_guardianspirit',
+    '🤖':'trade_engineering',
+    '😈':'spell_shadow_summonfelhunter',
+    '😡':'ability_racial_bloodrage',
+    '😭':'spell_shadow_deathscream',
+    '🙏':'spell_holy_heal',
+    '🚂':'trade_engineering',
+    '🚜':'trade_engineering',
+    '🍃':'spell_nature_stranglevines',
+    '🍂':'spell_nature_rejuvenation',
+    '🌿':'spell_nature_naturetouchgrow',
+    '🍄':'ability_creature_disease_02',
+    '🍖':'inv_misc_food_15',
+    '🍲':'inv_misc_food_64',
+    '🍶':'inv_drink_13',
+    '🍺':'inv_drink_05',
+    '🏰':'achievement_dungeon_naxxramas',
+    '✨':'spell_holy_powerinfusion',
     '⚖️':'achievement_reputation_08',
     '🦁':'achievement_guildperk_everybodysfriend',
-    '🐺':'ability_hunter_pet_wolf',
     '🌿':'spell_nature_naturetouchgrow',
     '😈':'spell_shadow_summonfelhunter',
     '❄️':'spell_frost_frostbolt02',
@@ -703,6 +830,29 @@
     return fallbackName || '';
   }
 
+  function isIconName(value) {
+    return typeof value === 'string' && /^[a-z0-9_]+$/i.test(value) && value.includes('_');
+  }
+
+  function fallbackText(value) {
+    return isIconName(value) ? '' : (value || '');
+  }
+
+  function resolveSymbolIconName(symbol) {
+    if (!symbol) return '';
+    if (SYMBOL_ICON[symbol]) return SYMBOL_ICON[symbol];
+    return isIconName(symbol) ? symbol : '';
+  }
+
+  function resolveLabelIconName(label, defaultName) {
+    if (!label) return defaultName || '';
+    const skillIconName = resolveByPattern(label, SKILL_EXACT, SKILL_PATTERNS, '');
+    if (skillIconName && skillIconName !== 'inv_misc_questionmark') return skillIconName;
+    const entityIconName = resolveByPattern(label, ENTITY_EXACT, ENTITY_PATTERNS, '');
+    if (entityIconName && entityIconName !== 'inv_misc_questionmark') return entityIconName;
+    return defaultName || '';
+  }
+
   window.uiIcon = function (name, size, label) {
     const iconName = UI_ICON[name] || UI_ICON.battle;
     return imgHtml(wowIconName(iconName), size, label || name || '', '', 'ui-icon wow-ico');
@@ -715,36 +865,51 @@
   };
 
   window.skillIcon = function (skillName, size, fallback) {
-    const iconName = resolveByPattern(skillName, SKILL_EXACT, SKILL_PATTERNS, 'inv_misc_questionmark');
-    return imgHtml(wowIconName(iconName), size, skillName, fallback || '', 'wow-inline-icon');
+    const iconName =
+      resolveByPattern(skillName, SKILL_EXACT, SKILL_PATTERNS, '') ||
+      resolveSymbolIconName(fallback) ||
+      resolveLabelIconName(fallback, '') ||
+      'spell_holy_powerinfusion';
+    return imgHtml(wowIconName(iconName), size, skillName, fallbackText(fallback), 'wow-inline-icon');
   };
 
   window.entityIcon = function (entityName, size, fallback) {
-    const iconName = resolveByPattern(entityName, ENTITY_EXACT, ENTITY_PATTERNS, 'inv_misc_head_dragon_01');
-    return imgHtml(wowIconName(iconName), size, entityName, fallback || '', 'wow-inline-icon');
+    const iconName =
+      resolveByPattern(entityName, ENTITY_EXACT, ENTITY_PATTERNS, '') ||
+      resolveSymbolIconName(fallback) ||
+      resolveLabelIconName(entityName, '') ||
+      resolveLabelIconName(fallback, '') ||
+      'inv_misc_head_dragon_01';
+    return imgHtml(wowIconName(iconName), size, entityName, fallbackText(fallback), 'wow-inline-icon');
   };
 
   window.dungeonIcon = function (key, name, size, fallback) {
-    const iconName = DUNGEON_ICON[key] || resolveByPattern(name, ENTITY_EXACT, ENTITY_PATTERNS, 'achievement_dungeon_naxxramas');
-    return imgHtml(wowIconName(iconName), size, name || key, fallback || '', 'wow-inline-icon');
+    const iconName =
+      DUNGEON_ICON[key] ||
+      resolveSymbolIconName(fallback) ||
+      resolveLabelIconName(name, '') ||
+      'achievement_dungeon_naxxramas';
+    return imgHtml(wowIconName(iconName), size, name || key, fallbackText(fallback), 'wow-inline-icon');
   };
 
   window.symbolIcon = function (symbol, size, label, fallback) {
-    const iconName = SYMBOL_ICON[symbol];
-    if (!iconName) return fallback || symbol || '';
-    return imgHtml(wowIconName(iconName), size, label || symbol || '', fallback || symbol || '', 'wow-inline-icon');
+    const iconName =
+      resolveSymbolIconName(symbol) ||
+      resolveSymbolIconName(fallback) ||
+      resolveLabelIconName(label, '') ||
+      resolveLabelIconName(fallback, '') ||
+      'spell_holy_powerinfusion';
+    return imgHtml(wowIconName(iconName), size, label || symbol || '', fallbackText(fallback || symbol), 'wow-inline-icon');
   };
 
   window.statusIcon = function (name, symbol, size, fallback) {
-    const skillIconName = name ? resolveByPattern(name, SKILL_EXACT, SKILL_PATTERNS, '') : '';
-    if (skillIconName && skillIconName !== 'inv_misc_questionmark') {
-      return imgHtml(wowIconName(skillIconName), size, name || symbol || '', fallback || symbol || '', 'wow-inline-icon', 'eager');
-    }
-    const symbolIconName = symbol ? SYMBOL_ICON[symbol] : '';
-    if (symbolIconName) {
-      return imgHtml(wowIconName(symbolIconName), size, name || symbol || '', fallback || symbol || '', 'wow-inline-icon', 'eager');
-    }
-    return fallback || symbol || name || '';
+    const iconName =
+      resolveLabelIconName(name, '') ||
+      resolveSymbolIconName(symbol) ||
+      resolveSymbolIconName(fallback) ||
+      resolveLabelIconName(fallback, '') ||
+      'spell_holy_powerinfusion';
+    return imgHtml(wowIconName(iconName), size, name || symbol || '', fallbackText(fallback || symbol), 'wow-inline-icon', 'eager');
   };
 
   window.factionIcon = function (key, size, fallback) {

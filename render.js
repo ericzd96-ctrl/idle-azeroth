@@ -209,6 +209,10 @@ function statusIconHtml(name, symbol, size) {
   if (typeof statusIcon === 'function') return statusIcon(name, symbol, size || 16, symbol || name || '');
   return symbol || name || '';
 }
+function symbolIconHtml(symbol, size, label, fallback) {
+  if (typeof symbolIcon === 'function') return symbolIcon(symbol, size || 16, label || symbol || '', fallback || '');
+  return symbol || fallback || label || '';
+}
 function renderBuffBar() {
   const bar = $('buff-bar'); if (!bar) return;
   const now = Date.now();
@@ -851,25 +855,30 @@ function updateBattleVisuals() {
   if (state.mode === 'travel') {
     const t = state.travel;
     const map = MAPS.find(m => m.key === (t && t.mapKey));
-    $('h-zone').textContent = `🐴 旅行中...`;
-    $('zone-name').textContent = `🐴 前往 ${map ? map.icon + ' ' + map.name : '...'}`;
+    const travelIconHtml = (typeof uiIcon === 'function') ? uiIcon('travel', 'sm', '旅行') : '🐴';
+    const mapIconHtml = map ? symbolIconHtml(map.icon, 16, map.name, 'inv_misc_map_01') : '';
+    $('h-zone').innerHTML = `${travelIconHtml} 旅行中...`;
+    $('zone-name').innerHTML = `${travelIconHtml} 前往 ${map ? `${mapIconHtml} ${map.name}` : '...'}`;
     $('progress-text').innerHTML = `<b>正在骑马赶路...</b>`;
   } else if (state.mode === 'world') {
     const map = getMap();
     const sub = map.sub[state.currentSubzone];
-    if (!sub) { $('h-zone').textContent = `${map.icon} ${map.name}`; $('zone-name').textContent = `${map.icon} ${map.name}`; $('progress-text').innerHTML = ''; }
+    const mapIconHtml = symbolIconHtml(map.icon, 16, map.name, 'inv_misc_map_01');
+    if (!sub) { $('h-zone').innerHTML = `${mapIconHtml} ${map.name}`; $('zone-name').innerHTML = `${mapIconHtml} ${map.name}`; $('progress-text').innerHTML = ''; }
     else {
       const subKey = `${state.currentMap}-${state.currentSubzone}`;
       const subKills = state.subzoneKills[subKey] || 0;
       const cleared = state.subzoneCleared[subKey];
-      $('h-zone').textContent = `${map.icon} ${map.name} · ${sub.name}`;
-      $('zone-name').textContent = `${map.icon} ${map.name} · ${sub.name} (Lv ${sub.lvl[0]}-${sub.lvl[1]})`;
+      $('h-zone').innerHTML = `${mapIconHtml} ${map.name} · ${sub.name}`;
+      $('zone-name').innerHTML = `${mapIconHtml} ${map.name} · ${sub.name} (Lv ${sub.lvl[0]}-${sub.lvl[1]})`;
       $('progress-text').innerHTML = `探索进度 <b>${Math.min(subKills,50)}</b> / 50 ${cleared?'✅':''}`;
     }
   } else if (state.mode === 'boss') {
     const map = getMap();
-    $('h-zone').textContent = `${map.icon} ${map.name} · ⚔️BOSS战`;
-    $('zone-name').textContent = `⚔️ ${map.icon} ${map.name} · BOSS战`;
+    const mapIconHtml = symbolIconHtml(map.icon, 16, map.name, 'inv_misc_map_01');
+    const bossBattleIconHtml = statusIconHtml('Boss战', '⚔️', 16);
+    $('h-zone').innerHTML = `${mapIconHtml} ${map.name} · ${bossBattleIconHtml}BOSS战`;
+    $('zone-name').innerHTML = `${bossBattleIconHtml} ${mapIconHtml} ${map.name} · BOSS战`;
     $('progress-text').innerHTML = `<b>${map.boss.name}</b>`;
   } else if (state.mode === 'dungeon') {
     const dg = DUNGEONS.find(d => d.key === state.dungeonState.key);
@@ -879,16 +888,17 @@ function updateBattleVisuals() {
     const curBoss = bossList.find(b => b.wave === state.dungeonState.wave);
     const isRaid = dg.type === 'raid';
     const typeTag = isRaid ? '<span style=\"color:#fbbf24\">[团本]</span>' : '<span style=\"color:#6ee7b7\">[5人本]</span>';
-    $('h-zone').textContent = `${dg.icon} ${dg.name}`;
-    $('zone-name').innerHTML = `${dg.icon} ${dg.name} ${typeTag}`;
+    const dungeonIconHtml = (typeof dungeonIcon === 'function') ? dungeonIcon(dg.key, dg.name, 16, dg.icon) : dg.icon;
+    $('h-zone').innerHTML = `${dungeonIconHtml} ${dg.name}`;
+    $('zone-name').innerHTML = `${dungeonIconHtml} ${dg.name} ${typeTag}`;
     let bossExtra = '';
     if (curBoss?.passive) {
       const p = curBoss.passive;
       const tags = [];
-      if (p.dodgeChance) tags.push('💨闪避+'+(p.dodgeChance*100)+'%');
-      if (p.critChance) tags.push('💥暴击+'+(p.critChance*100)+'%');
-      if (p.dmgReduction) tags.push('🛡️减伤+'+(p.dmgReduction*100)+'%');
-      if (p.atkBonus) tags.push('⚔️攻击+'+(p.atkBonus*100)+'%');
+      if (p.dodgeChance) tags.push(`${statusIconHtml('闪避', '💨', 12)}闪避+${p.dodgeChance*100}%`);
+      if (p.critChance) tags.push(`${statusIconHtml('暴击', '💥', 12)}暴击+${p.critChance*100}%`);
+      if (p.dmgReduction) tags.push(`${statusIconHtml('减伤', '🛡️', 12)}减伤+${p.dmgReduction*100}%`);
+      if (p.atkBonus) tags.push(`${statusIconHtml('攻击', '⚔️', 12)}攻击+${p.atkBonus*100}%`);
       if (tags.length) bossExtra += ' <span style=\"font-size:10px;color:#6ee7b7\">'+tags.join(' ')+'</span>';
     }
     const bossTag = curBoss ? ` ⚔️<b style=\"color:var(--legend)\">${curBoss.name}</b>${bossExtra}` : '';
@@ -904,28 +914,30 @@ function updateBattleVisuals() {
     if (curBoss?.passive) {
       const p = curBoss.passive;
       const tags = [];
-      if (p.dodgeChance) tags.push('💨闪避+'+(p.dodgeChance*100)+'%');
-      if (p.critChance) tags.push('💥暴击+'+(p.critChance*100)+'%');
-      if (p.dmgReduction) tags.push('🛡️减伤+'+(p.dmgReduction*100)+'%');
-      if (p.atkBonus) tags.push('⚔️攻击+'+(p.atkBonus*100)+'%');
+      if (p.dodgeChance) tags.push(`${statusIconHtml('闪避', '💨', 12)}闪避+${p.dodgeChance*100}%`);
+      if (p.critChance) tags.push(`${statusIconHtml('暴击', '💥', 12)}暴击+${p.critChance*100}%`);
+      if (p.dmgReduction) tags.push(`${statusIconHtml('减伤', '🛡️', 12)}减伤+${p.dmgReduction*100}%`);
+      if (p.atkBonus) tags.push(`${statusIconHtml('攻击', '⚔️', 12)}攻击+${p.atkBonus*100}%`);
       if (tags.length) bossExtra += ' <span style=\"font-size:10px;color:#6ee7b7\">'+tags.join(' ')+'</span>';
     }
     const bossTag = curBoss ? ` ⚔️<b style="color:var(--legend)">${curBoss.name}</b>${bossExtra}` : '';
     const affixStr = (ms.affixes && ms.affixes.length > 0)
       ? ' '+ms.affixes.map(a => `<span style="background:rgba(239,68,68,0.12);color:#f87171;padding:0 4px;border-radius:3px;font-size:10px;margin:0 1px;cursor:help"
-        onmouseenter="showAffixTip(event,'${a.icon} ${a.name}','${a.desc}')"
-        onmouseleave="hideAffixTip()">${a.icon}</span>`).join('')
+        onmouseenter="showAffixTip(event,'${a.name}','${a.desc}')"
+        onmouseleave="hideAffixTip()">${symbolIconHtml(a.icon, 12, a.name, 'spell_holy_powerinfusion')}</span>`).join('')
       : '';
-    $('h-zone').textContent = `🌟 大秘境 +${ms.level||state.mythicLevel}`;
-    $('zone-name').innerHTML = `🌟 大秘境 +${ms.level||state.mythicLevel} · ${dg.name}${affixStr}`;
+    const mythicIconHtml = (typeof uiIcon === 'function') ? uiIcon('ascend', 'sm', '大秘境') : '🌟';
+    $('h-zone').innerHTML = `${mythicIconHtml} 大秘境 +${ms.level||state.mythicLevel}`;
+    $('zone-name').innerHTML = `${mythicIconHtml} 大秘境 +${ms.level||state.mythicLevel} · ${dg.name}${affixStr}`;
     $('progress-text').innerHTML = `波次 ${ms.wave}/${dg.waves} · BOSS ${killedBosses}/${bossList.length}${bossTag}`;
   } else if (state.mode === 'tower') {
     const ts = state.towerState;
     if (ts) {
       const type = (typeof towerMonsterType === 'function') ? towerMonsterType(ts.floor) : 'normal';
-      const typeTag = type==='boss'?' 👑BOSS':type==='elite'?' 🗡️精英':'';
-      $('h-zone').textContent = `⛰️ 无尽塔 · 第${ts.floor}层`;
-      $('zone-name').textContent = `⛰️ 无尽塔 · 第${ts.floor}层${typeTag}`;
+      const typeTag = type==='boss'?` ${symbolIconHtml('👑', 14, 'Boss', 'achievement_boss_lichking')}BOSS`:type==='elite'?` ${symbolIconHtml('🗡️', 14, '精英', 'ability_rogue_eviscerate')}精英`:'';
+      const towerIconHtml = symbolIconHtml('⛰️', 16, '无尽塔', 'achievement_dungeon_naxxramas');
+      $('h-zone').innerHTML = `${towerIconHtml} 无尽塔 · 第${ts.floor}层`;
+      $('zone-name').innerHTML = `${towerIconHtml} 无尽塔 · 第${ts.floor}层${typeTag}`;
       $('progress-text').innerHTML = `本次 +${ts.coinThisRun||0}🪙 · 最高 ${state.tower?.highest||0} 层`;
     }
     }
@@ -1690,8 +1702,9 @@ function renderMap() {
   const mapCur = getMap();
   if (mapCur) {
     const subCur = mapCur.sub[state.currentSubzone];
-    if (subCur) $('cur-location').textContent = `${mapCur.icon} ${mapCur.name} · ${subCur.name} (Lv ${subCur.lvl[0]}-${subCur.lvl[1]})`;
-    else $('cur-location').textContent = `${mapCur.icon} ${mapCur.name}`;
+    const mapCurIconHtml = symbolIconHtml(mapCur.icon, 16, mapCur.name, 'inv_misc_map_01');
+    if (subCur) $('cur-location').innerHTML = `${mapCurIconHtml} ${mapCur.name} · ${subCur.name} (Lv ${subCur.lvl[0]}-${subCur.lvl[1]})`;
+    else $('cur-location').innerHTML = `${mapCurIconHtml} ${mapCur.name}`;
   }
   const ml = $('map-list');
   ml.innerHTML = '';
@@ -1711,9 +1724,10 @@ function renderMap() {
     div.className = 'map-item' + (isCurrent ? ' current' : '') + (tooHigh ? ' warn' : '');
     div.dataset.mapKey = m.key;
     const bossPanelIcon = (typeof entityIcon === 'function') ? entityIcon(m.boss.name, 18, m.boss.emoji) : m.boss.emoji;
+    const mapIconHtml = symbolIconHtml(m.icon, 18, m.name, 'inv_misc_map_01');
     let html = `
       <div class="map-head">
-        <span class="mname">${m.icon} ${m.name}</span>
+        <span class="mname">${mapIconHtml} ${m.name}</span>
         <span><span class="map-faction faction-${m.faction}">${m.faction}</span> <span class="pill">Lv ${m.lvlRange[0]}-${m.lvlRange[1]}</span></span>
       </div>
       <div class="map-desc">${m.desc}${tooHigh?' · ⚠️ 等级过低,小心怪物':''}</div>
