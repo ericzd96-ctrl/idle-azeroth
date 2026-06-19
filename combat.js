@@ -1450,7 +1450,7 @@ function spawnDungeonMonster(){
   const monSkills = !isBoss ? pickMonSkills(name, null, power, trashDamageSkillCount) : [];
   state.currentMonsters.push({name,isBoss,bossName:isBoss?boss.name:null,
     lvl:isEpicRaid ? 80 : Math.max(1,Math.floor(power*1.05)),
-    hpMax:Math.floor((100+power*power*7.5)*(isBoss?17:4.0)*scale),hp:Math.floor((100+power*power*7.5)*(isBoss?17:4.0)*scale),
+    hpMax:Math.floor((100+power*power*7.5)*(isBoss?25.5:4.0)*scale),hp:Math.floor((100+power*power*7.5)*(isBoss?25.5:4.0)*scale),
     atk:Math.floor((10+power*3.2)*(isBoss?2.0:1.6)*scale*1.1),def:Math.floor((3+power*1.5)*(isBoss?1.5:1.6)*scale),
     baseGold:Math.floor(10+power*3),baseXp:Math.floor(35+power*5),
     goldReward:Math.floor((10+power*3)*(isBoss?15:1.5)*scale),honorReward:isBoss?Math.floor(25+power*2.5):2,
