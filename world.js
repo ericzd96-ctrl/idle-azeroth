@@ -175,18 +175,27 @@ function onDungeonClear(dg) {
   let firstClearHtml = '';
   if (firstClear) {
     state.dungeonFirstClear[dg.key] = true;
-    const fcRarity = (dg.type === 'raid' || dg.reqLvl >= 70) ? 'legend' : 'epic';
     const fcGem = 20 + dg.reqLvl;
     const fcEssence = Math.max(3, Math.floor(dg.reqLvl / 6));
-    let fcItem = null;
-    if (typeof rollItemOfRarity === 'function') { fcItem = rollItemOfRarity(fcRarity, dg.reqLvl); if (typeof addToInventory === 'function') addToInventory(fcItem); if (typeof eventsOnItemGet === 'function') eventsOnItemGet(fcItem); }
+    let fcItem = null, fcLegend = null;
+    if (typeof rollItemOfRarity === 'function') {
+      // 首通保底紫装(橙装很稀有,不保底);团本/80级首通有小概率额外掉橙
+      fcItem = rollItemOfRarity('epic', dg.reqLvl);
+      addToInventory(fcItem); if (typeof eventsOnItemGet === 'function') eventsOnItemGet(fcItem);
+      if ((dg.type === 'raid' || dg.reqLvl >= 70) && Math.random() < 0.12) {
+        fcLegend = rollItemOfRarity('legend', dg.reqLvl);
+        addToInventory(fcLegend); if (typeof eventsOnItemGet === 'function') eventsOnItemGet(fcLegend);
+        if (typeof progressionOnLegendary === 'function') progressionOnLegendary();
+      }
+    }
     state.gem += fcGem;
     if (typeof ensureMats === 'function') ensureMats();
     state.essence = (state.essence || 0) + fcEssence;
     firstClearHtml = `
       <div style="margin-top:10px;padding:8px;border:1px solid #f6c453;border-radius:6px;background:rgba(246,196,83,0.08)">
         <div style="color:#f6c453;font-weight:bold">🎉 首次通关奖励</div>
-        ${fcItem ? `<div style="font-size:12px">　保底装备 <span class="${fcItem.cls}">${fcItem.name}</span></div>` : ''}
+        ${fcItem ? `<div style="font-size:12px">　保底紫装 <span class="${fcItem.cls}">${fcItem.name}</span></div>` : ''}
+        ${fcLegend ? `<div style="font-size:12px">　🎉 幸运橙装 <span class="${fcLegend.cls}">${fcLegend.name}</span></div>` : ''}
         <div style="font-size:12px">　💎 钻石 +${fcGem} · ✨ 精华 +${fcEssence}</div>
       </div>`;
     log(`🎉 首次通关 ${dg.name}! 获得首通奖励`, 'legend');
@@ -477,8 +486,9 @@ function getDungeonAffixes(dg) {
   const count = reqLvl < 35 ? 1 : (dg.type === 'raid' || reqLvl >= 70) ? 3 : 2;
   let pool = MYTHIC_AFFIXES.slice();
   if (reqLvl < 50) pool = pool.filter(a => !['heArtless', 'ragingWinds'].includes(a.key));
-  // 按 key 生成稳定种子(同一副本词缀固定)
-  let seed = reqLvl * 97 + 13;
+  // 种子 = 当天 + 副本key:每本副本词缀按天刷新(同一天稳定,跨天重洗,避免老是那几个)
+  const day = Math.floor(Date.now() / 86400000);
+  let seed = (reqLvl * 97 + 13 + (day % 100000) * 1009) % 2147483647;
   const k = dg.key || '';
   for (let i = 0; i < k.length; i++) seed = (seed * 31 + k.charCodeAt(i)) % 2147483647;
   seed = seed || 1;
