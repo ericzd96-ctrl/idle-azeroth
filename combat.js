@@ -52,6 +52,20 @@ function masteryDmgMult(){ return 1 + masteryFor('dmgAmp')*MASTERY_TYPE.dmgAmp.p
 function masteryTakenMult(){ return 1 - Math.min(30, masteryFor('dr')*MASTERY_TYPE.dr.per)/100; } // 受击减伤(封顶30%)
 function masteryDescText(){ const t=masterySpecType(); return t ? MASTERY_TYPE[t].fmt(state.hero.mastery||0) : '未选择专精'; }
 
+function monsterFloatAnchor(mon){
+  if(mon && mon._uid != null && typeof document !== 'undefined'){
+    let iconEl = document.querySelector(`#mon-list [data-uid="${String(mon._uid).replace(/"/g, '\\"')}"] .m-emoji`);
+    if(!iconEl && typeof renderMonList === 'function'){
+      renderMonList();
+      iconEl = document.querySelector(`#mon-list [data-uid="${String(mon._uid).replace(/"/g, '\\"')}"] .m-emoji`);
+    }
+    if(iconEl) return iconEl;
+  }
+  return $('mon-emoji');
+}
+function showMonsterFloat(mon, text, color, opts){ showFloat(monsterFloatAnchor(mon), text, color, opts); }
+function pulseMonsterEl(mon, kind, duration){ if(typeof pulseCombatEl === 'function') pulseCombatEl(monsterFloatAnchor(mon), kind, duration); }
+
 /* ---------- 天赋特效运行时 ---------- */
 function talentAuraMeta(key){ return (typeof TALENT_AURA_LIBRARY === 'object' && TALENT_AURA_LIBRARY[key]) || null; }
 function talentFxList(){ return state._talentFx || []; }
@@ -309,7 +323,7 @@ function applySkillFollowupDamage(mon, amount, icon, color){
   if(amount <= 0) return 0;
   mon.hp -= amount;
   trackDmg('hero', amount);
-  showFloat($('mon-emoji'), (icon || '✨') + '-' + amount, color || '#fbbf24');
+  showMonsterFloat(mon, (icon || '✨') + '-' + amount, color || '#fbbf24');
   return amount;
 }
 function splashSkillDamage(sourceMon, amount, pct, icon){
@@ -420,7 +434,7 @@ function spreadDotFromMonster(mon, ratio, dotMs){
     const spread = Math.max(1, Math.floor((dot.dps || 0) * (ratio || 0.5)));
     applyMonsterDot(target, dot.key, spread, dotMs || Math.max(1000, (dot.expire || Date.now()) - Date.now()), { icon: dot.icon, name: dot.name, source: dot.source });
   }
-  showFloat($('mon-emoji'), '☠️蔓延', '#c084fc');
+  showMonsterFloat(mon, '☠️蔓延', '#c084fc');
 }
 function healHeroAmount(amount, icon, color, source, skillLabel){
   amount = Math.max(0, Math.floor(amount || 0));
@@ -451,7 +465,7 @@ function applyHeroDamage(amount, mon, opts){
   if(state._soulLinkUntil > now && mon && mon.hp > 0){
     const healBack = Math.max(1, Math.floor(taken * 0.25));
     mon.hp = Math.min(mon.hpMax, mon.hp + healBack);
-    showFloat($('mon-emoji'), '🔗+' + healBack, '#a78bfa');
+    showMonsterFloat(mon, '🔗+' + healBack, '#a78bfa');
   }
   if(opts?.show !== false){
     const text = typeof opts?.label === 'function' ? opts.label(taken) : (opts?.label || ('-' + taken));
@@ -535,13 +549,13 @@ function runTalentAction(fx, mon, value, ctx, now){
     if(extra > 0){
       mon.hp -= extra;
       trackDmg('hero', extra);
-      showFloat($('mon-emoji'), (fx.extraHitIcon || '⚔️') + '-' + extra, '#fbbf24');
+      showMonsterFloat(mon, (fx.extraHitIcon || '⚔️') + '-' + extra, '#fbbf24');
     }
   }
   if(fx.applyDotPct && mon && mon.hp > 0){
     const dot = Math.max(1, Math.floor((value || state.hero.atk) * fx.applyDotPct * (1 + (state.hero.dotBonus || 0)/100)));
     applyMonsterDot(mon, 'talent:' + talentProcKey(fx, 'dot'), dot, fx.dotMs || 5000, { icon: fx.dotIcon || '☠️', name: fx.dotName || '天赋持续伤害', source: fx.name || fx.key || 'talent' });
-    showFloat($('mon-emoji'), fx.dotIcon || '☠️', '#c084fc');
+    showMonsterFloat(mon, fx.dotIcon || '☠️', '#c084fc');
   }
   if(fx.spreadDotPct) spreadDotFromMonster(mon, fx.spreadDotPct, fx.dotMs || 5000);
   if(fx.resetSkill) resetSkillCooldown(fx.resetSkill, fx.resetPct || 1);
@@ -1509,8 +1523,8 @@ function absorbMonsterBarrier(mon, amount, icon){
   mon._arcaneShield -= absorbed;
   const remaining = amount - absorbed;
   if(absorbed > 0){
-    showFloat($('mon-emoji'), (icon || '🛡️') + '-' + absorbed, '#93c5fd', { variant:'shield-break', scale:1.02 });
-    if(typeof pulseCombatEl === 'function') pulseCombatEl($('mon-emoji'), 'shield', 260);
+    showMonsterFloat(mon, (icon || '🛡️') + '-' + absorbed, '#93c5fd', { variant:'shield-break', scale:1.02 });
+    pulseMonsterEl(mon, 'shield', 260);
   }
   syncMonsterShieldAura(mon);
   return { remaining, absorbed };
@@ -1716,22 +1730,22 @@ function applyMonsterSupportSkill(mon, skill, now, opts){
   let used = false;
   if(opts?.announce !== false){
     log(`${skill.icon || '✨'} ${mon.bossName || mon.name} 释放了 ${skill.name}!`,'bad');
-    showFloat($('mon-emoji'), (skill.icon || '✨') + skill.name + '!', '#93c5fd', { variant:'boss', scale:1.08 });
-    if(typeof pulseCombatEl === 'function') pulseCombatEl($('mon-emoji'), 'bosscast', 300);
+    showMonsterFloat(mon, (skill.icon || '✨') + skill.name + '!', '#93c5fd', { variant:'boss', scale:1.08 });
+    pulseMonsterEl(mon, 'bosscast', 300);
   }
   if(skill.healPct){
     const heal = Math.max(1, Math.floor(mon.hpMax * skill.healPct));
     mon.hp = Math.min(mon.hpMax, mon.hp + heal);
-    showFloat($('mon-emoji'), '💚+' + heal, '#6ee7b7', { variant:'heal', scale:1.05 });
-    if(typeof pulseCombatEl === 'function') pulseCombatEl($('mon-emoji'), 'heal', 240);
+    showMonsterFloat(mon, '💚+' + heal, '#6ee7b7', { variant:'heal', scale:1.05 });
+    pulseMonsterEl(mon, 'heal', 240);
     used = true;
   }
   if(skill.shieldPct){
     const shield = Math.max(1, Math.floor(mon.hpMax * skill.shieldPct));
     mon._arcaneShield = (mon._arcaneShield || 0) + shield;
     syncMonsterShieldAura(mon);
-    showFloat($('mon-emoji'), '🛡️+' + shield, '#93c5fd', { variant:'shield', scale:1.04 });
-    if(typeof pulseCombatEl === 'function') pulseCombatEl($('mon-emoji'), 'shield', 260);
+    showMonsterFloat(mon, '🛡️+' + shield, '#93c5fd', { variant:'shield', scale:1.04 });
+    pulseMonsterEl(mon, 'shield', 260);
     used = true;
   }
   if(skill.atkBuffSecs){
@@ -2010,7 +2024,7 @@ function applyCompanionDamage(amount, mon, opts){
   if((state._compSoulLinkUntil || 0) > now && mon && mon.hp > 0){
     const healBack = Math.max(1, Math.floor(taken * 0.25));
     mon.hp = Math.min(mon.hpMax, mon.hp + healBack);
-    showFloat($('mon-emoji'), '🔗+' + healBack, '#a78bfa');
+    showMonsterFloat(mon, '🔗+' + healBack, '#a78bfa');
   }
   if(opts?.show !== false){
     const text = typeof opts?.label === 'function' ? opts.label(taken) : (opts?.label || ('-' + taken));
@@ -2071,7 +2085,7 @@ function applyCompanionSplash(mon, dmg, pct, icon, color){
     if(splash <= 0) continue;
     target.hp -= splash;
     trackDmg('comp', splash);
-    showFloat($('mon-emoji'), (icon || '💥') + '-' + splash, color || '#fca5a5');
+    showMonsterFloat(other, (icon || '💥') + '-' + splash, color || '#fca5a5');
   }
 }
 function applyCompanionSupportSkill(sk, st, now){
@@ -2199,7 +2213,7 @@ function tickBattle(now){
   for(const m of state.currentMonsters){
     if(m.hp <= 0) continue;
     const dotDmg = tickMonsterDots(m, now, dotInterval);
-    if(dotDmg > 0 && m === mon) showFloat($('mon-emoji'), '☠️-' + dotDmg, '#f97316');
+    if(dotDmg > 0 && m === mon) showMonsterFloat(mon, '☠️-' + dotDmg, '#f97316');
   }
   // 英雄身上的灼烧/中毒(boss debuff)持续掉血
   {const bd=state.heroDebuffs&&state.heroDebuffs.burn;
@@ -2235,7 +2249,7 @@ function tickBattle(now){
       if (mod.arcane && mon.isBoss && now - (ms.lastArcane||0) > 15000) {
         ms.lastArcane = now;
         mon._arcaneShield = (mon._arcaneShield||0) + Math.floor(mon.hpMax * 0.15);
-        showFloat($('mon-emoji'), '🔮盾', '#a78bfa');
+        showMonsterFloat(mon, '🔮盾', '#a78bfa');
       }
     }
   }
@@ -2259,15 +2273,15 @@ function tickBattle(now){
     if (!dodged) actualDmg = absorbMonsterBarrier(mon, actualDmg, d.crit ? '💥' : '⚔️').remaining;
     {const dr=monsterDamageReduction(mon, now);if(dr&&actualDmg>0)actualDmg=Math.max(1,Math.floor(actualDmg*(1-dr)));}   // 怪物减伤
     mon.hp-=actualDmg;trackDmg('hero',actualDmg,d.crit&&!dodged,'⚔️普攻');
+    if(!dodged&&state.hero.extraAtk>0&&Math.random()*100<state.hero.extraAtk){const d2=calcDmg(ap,heroTargetDef(mon),state.hero.crit,state.hero.critd,false,mon.lvl,state.hero.lvl);let dd2=absorbMonsterBarrier(mon, d2.dmg, '🎯').remaining;const dr=monsterDamageReduction(mon, now);if(dr&&dd2>0)dd2=Math.max(1,Math.floor(dd2*(1-dr)));mon.hp-=dd2;trackDmg('hero',dd2,d2.crit);showMonsterFloat(mon,'🎯+'+dd2,'#fbbf24',{variant:d2.crit?'crit':'hit',scale:d2.crit?1.18:1.02});}
+    showMonsterFloat(mon,dodged?'闪避':('-'+actualDmg),dodged?'#9ca3af':(d.crit?'#fbbf24':'#fff'),{variant:dodged?'avoid':(d.crit?'crit':'hit'),scale:d.crit?1.22:1});
+    pulseMonsterEl(mon, d.crit ? 'crit' : 'hit', d.crit ? 280 : 220);
+    if(!dodged&&d.crit&&masteryFor('bleedOnCrit')>0){const bleed=Math.floor(actualDmg*masteryFor('bleedOnCrit')*MASTERY_TYPE.bleedOnCrit.per/100);if(bleed>0){applyMonsterDot(mon,'mastery:bleed',bleed,5000,{icon:'🩸',name:'流血',source:'mastery'});showMonsterFloat(mon,'🩸流血','#dc2626');}}   // 精通:暴击流血
+    if(!dodged&&state.hero.stunChance&&Math.random()*100<state.hero.stunChance){mon.stunUntil=now+1500;showMonsterFloat(mon,'💫击晕','#fde047');}   // 趣味天赋:几率击晕敌人
     if(typeof progressionOnDamage==='function') progressionOnDamage(actualDmg);
-    if(!dodged&&state.hero.extraAtk>0&&Math.random()*100<state.hero.extraAtk){const d2=calcDmg(ap,heroTargetDef(mon),state.hero.crit,state.hero.critd,false,mon.lvl,state.hero.lvl);let dd2=absorbMonsterBarrier(mon, d2.dmg, '🎯').remaining;const dr=monsterDamageReduction(mon, now);if(dr&&dd2>0)dd2=Math.max(1,Math.floor(dd2*(1-dr)));mon.hp-=dd2;trackDmg('hero',dd2,d2.crit);showFloat($('mon-emoji'),'🎯+'+dd2,'#fbbf24',{variant:d2.crit?'crit':'hit',scale:d2.crit?1.18:1.02});}
-    showFloat($('mon-emoji'),dodged?'闪避':('-'+actualDmg),dodged?'#9ca3af':(d.crit?'#fbbf24':'#fff'),{variant:dodged?'avoid':(d.crit?'crit':'hit'),scale:d.crit?1.22:1});
-    if(typeof pulseCombatEl === 'function') pulseCombatEl($('mon-emoji'), d.crit ? 'crit' : 'hit', d.crit ? 280 : 220);
     if(!dodged&&typeof passiveOnHit==='function')passiveOnHit(mon,actualDmg,ap);
     if(!dodged&&d.crit&&typeof passiveOnCrit==='function')passiveOnCrit(mon,actualDmg);
     if(!dodged&&d.crit)processTalentOnCrit(mon,actualDmg,{skillKey:null});
-    if(!dodged&&d.crit&&masteryFor('bleedOnCrit')>0){const bleed=Math.floor(actualDmg*masteryFor('bleedOnCrit')*MASTERY_TYPE.bleedOnCrit.per/100);if(bleed>0){applyMonsterDot(mon,'mastery:bleed',bleed,5000,{icon:'🩸',name:'流血',source:'mastery'});showFloat($('mon-emoji'),'🩸流血','#dc2626');}}   // 精通:暴击流血
-    if(!dodged&&state.hero.stunChance&&Math.random()*100<state.hero.stunChance){mon.stunUntil=now+1500;showFloat($('mon-emoji'),'💫击晕','#fde047');}   // 趣味天赋:几率击晕敌人
     if(!dodged&&state.hero.leech>0){const leechHeal=Math.floor(d.dmg*state.hero.leech*0.5/100);if(leechHeal>0){state.hp=Math.min(state.hero.hpMax,state.hp+leechHeal);showFloat($('hero-emoji'),'🩸+'+leechHeal,'#6ee7b7',{variant:'heal',scale:1.04});if(typeof pulseCombatEl === 'function') pulseCombatEl($('hero-emoji'),'heal',220);}}   // 吸血:每点=0.5%实际吸取,有浮动数字可见
     lastHeroAtk=now;
     if(getCls().resKey==='rage')state.resource=Math.min(state.resourceMax,state.resource+(d.crit?12:8));
@@ -2358,7 +2372,7 @@ function tickBattle(now){
     if(kindSkill)skillEffects(kindSkill,m,taken,now,{allowFallback:false});
     processTalentLowHp(m,now);
     totalDmg+=taken;
-    if(state.hero.reflectDmg>0){const reflect=Math.min(m.hp,Math.floor(d.dmg*state.hero.reflectDmg/100));if(reflect>0){m.hp-=reflect;showFloat($('mon-emoji'),'🛡️'+reflect,'#fbbf24');trackDmg('hero',reflect,false,'反伤');}}
+    if(state.hero.reflectDmg>0){const reflect=Math.min(m.hp,Math.floor(d.dmg*state.hero.reflectDmg/100));if(reflect>0){m.hp-=reflect;showMonsterFloat(m,'🛡️'+reflect,'#fbbf24');trackDmg('hero',reflect,false,'反伤');}}
     if(typeof passiveOnTakeDamage==='function')passiveOnTakeDamage(m,taken);
     anyHit=true;
     // 双倍攻击技巧: 再来一刀
@@ -2371,7 +2385,7 @@ function tickBattle(now){
   if(anyHit){
     if(typeof pulseCombatEl === 'function') pulseCombatEl($('hero-emoji'), totalDmg >= state.hero.hpMax * 0.14 ? 'danger' : 'hit', totalDmg >= state.hero.hpMax * 0.14 ? 300 : 220);
     const ls=monsterLeechRate(mon, now);
-    if(ls>0&&totalDmg>0){const heal=Math.floor(totalDmg*ls);mon.hp=Math.min(mon.hpMax,mon.hp+heal);showFloat($('mon-emoji'),'🩸+'+heal,'#ef4444');}
+    if(ls>0&&totalDmg>0){const heal=Math.floor(totalDmg*ls);mon.hp=Math.min(mon.hpMax,mon.hp+heal);showMonsterFloat(mon,'🩸+'+heal,'#ef4444');}
     lastMonAtk=now;
     if(getCls().resKey==='rage')state.resource=Math.min(state.resourceMax,state.resource+5);
   }
@@ -2904,14 +2918,14 @@ function tickCast(now){
       $('cast-bar-wrap').style.visibility='hidden';
       const bc=bossCasting;bossCasting=null;const mon=state.currentMonsters[0];if(!mon||mon.hp<=0)return;
       const critRate = monsterCritRate(mon, now);
-      if(bc.type==='heal'){const h=Math.floor(mon.hpMax*(bc.heal||0.2));mon.hp=Math.min(mon.hpMax,mon.hp+h);showFloat($('mon-emoji'),'💚+'+h,'#6ee7b7');}
+      if(bc.type==='heal'){const h=Math.floor(mon.hpMax*(bc.heal||0.2));mon.hp=Math.min(mon.hpMax,mon.hp+h);showMonsterFloat(mon,'💚+'+h,'#6ee7b7');}
       else if(bc.type==='buff'||bc.type==='support'||bc.type==='summon'){
         log(`💀 ${mon.bossName || mon.name} 释放了 ${bc.name}!`,'bad');
-        showFloat($('mon-emoji'), (bc.icon || '✨') + bc.name + '!', '#fda4af');
+        showMonsterFloat(mon, (bc.icon || '✨') + bc.name + '!', '#fda4af');
         applyMonsterSupportSkill(mon, bc, now, { announce:false });
       } else{
         log(`💀 ${mon.bossName || mon.name} 释放了 ${bc.name}!`,'bad');
-        showFloat($('mon-emoji'), (bc.icon || '✨') + bc.name + '!', '#fda4af');
+        showMonsterFloat(mon, (bc.icon || '✨') + bc.name + '!', '#fda4af');
         const mul=bc.mul||2;
         const rawAtk=Math.floor(monsterAttackValue(mon, now)*mul);
         if(bc.aoe){
@@ -2975,7 +2989,7 @@ function castSkill(skillKey,manual){
         const d=calcDmg(state.hero.atk*sk.mul*cb*talentDamageMult(target,skillKey)*rt.mult,heroTargetDef(target),state.hero.crit,state.hero.critd,forceCrit,target.lvl,state.hero.lvl);
         let dd=d.dmg;
         {const dr=monsterDamageReduction(target, now);if(dr)dd=Math.max(1,Math.floor(dd*(1-dr)));}
-        target.hp-=dd;dmgDone+=dd;trackDmg('hero',dd,d.crit,sk.icon+sk.name);
+        target.hp-=dd;dmgDone+=dd;trackDmg('hero',dd,d.crit,sk.icon+sk.name);showMonsterFloat(target,(sk.icon||'✨')+'-'+dd,d.crit?'#fbbf24':'#a335ee',{variant:d.crit?'crit':'hit',scale:d.crit?1.14:1});
         if(d.crit||forceCrit)processTalentOnCrit(target,dd,{skillKey});
         if(sk.lifeSteal){const heal=Math.floor(dd*sk.lifeSteal);healHeroAmount(heal,'🩸','#6ee7b7');}
         if(sk.slow)target.slowUntil=Date.now()+4000;
@@ -2986,7 +3000,7 @@ function castSkill(skillKey,manual){
       }
       log(sk.icon+' '+sk.name+'! AOE '+dmgDone+' 总伤害','good');
     }
-    else if(mon.dodgeChance&&Math.random()<mon.dodgeChance){showFloat($('mon-emoji'),'闪避','#9ca3af');log(sk.icon+' '+sk.name+' 被 '+mon.name+' 闪避!','bad');}
+    else if(mon.dodgeChance&&Math.random()<mon.dodgeChance){showMonsterFloat(mon,'闪避','#9ca3af',{variant:'avoid'});log(sk.icon+' '+sk.name+' 被 '+mon.name+' 闪避!','bad');}
     else{
       const rt=calcSkillRuntimeBonus(skillKey, sk, mon, now);
       const forceCrit = baseForceCrit || rt.forceCrit;
@@ -2994,7 +3008,7 @@ function castSkill(skillKey,manual){
       let dd=d.dmg;
       {const dr=monsterDamageReduction(mon, now);if(dr)dd=Math.max(1,Math.floor(dd*(1-dr)));}
       mon.hp-=dd;dmgDone=dd;trackDmg('hero',dd,d.crit,sk.icon+sk.name);
-      showFloat($('mon-emoji'),'-'+dd,forceCrit?'#fbbf24':'#a335ee');
+      showMonsterFloat(mon,(sk.icon||'✨')+'-'+dd,(d.crit||forceCrit)?'#fbbf24':'#a335ee',{variant:(d.crit||forceCrit)?'crit':'hit',scale:(d.crit||forceCrit)?1.16:1});
       log(sk.icon+' '+sk.name+'! '+dd+' 伤害'+(forceCrit?' (必暴)':''),'good');
       if(d.crit||forceCrit)processTalentOnCrit(mon,dd,{skillKey});
       if(sk.lifeSteal){const heal=Math.floor(dmgDone*sk.lifeSteal);healHeroAmount(heal,'🩸','#6ee7b7');}
@@ -3073,7 +3087,7 @@ function applyCompanionSignatureHit(sig, st, mon, dmgDone, now){
   let note = '';
   if(sig.bonusVsState && monsterStateActive(mon, sig.bonusVsState)){
     const extra = absorbMonsterBarrier(mon, Math.max(1, Math.floor(dmgDone * (sig.bonusStatePct || 0.3))), sig.icon || '✨').remaining;
-    if(extra > 0){ mon.hp -= extra; trackDmg('comp', extra); showFloat($('mon-emoji'), (sig.icon || '✨') + '-' + extra, '#fbbf24'); }
+    if(extra > 0){ mon.hp -= extra; trackDmg('comp', extra); showMonsterFloat(mon, (sig.icon || '✨') + '-' + extra, '#fbbf24'); }
     note = note || '追猎强化';
   }
   if(sig.dotPct) applyMonsterDot(mon, `sig:${st.name}:${sig.name}`, Math.max(1, Math.floor(dmgDone * sig.dotPct)), sig.dotMs || 6000, { icon:sig.icon || '✨', name:sig.name, source:st.name });
@@ -3084,12 +3098,12 @@ function applyCompanionSignatureHit(sig, st, mon, dmgDone, now){
   if(sig.splashPct) applyCompanionSplash(mon, dmgDone, sig.splashPct, sig.icon || '💥', '#fca5a5');
   if(sig.executeBonus && mon.hp > 0 && mon.hp <= mon.hpMax * (sig.executeThreshold || 0.35)){
     const extra = absorbMonsterBarrier(mon, Math.max(1, Math.floor(dmgDone * sig.executeBonus)), sig.icon || '✨').remaining;
-    if(extra > 0){ mon.hp -= extra; trackDmg('comp', extra); showFloat($('mon-emoji'), (sig.icon || '✨') + '-' + extra, '#fbbf24'); }
+    if(extra > 0){ mon.hp -= extra; trackDmg('comp', extra); showMonsterFloat(mon, (sig.icon || '✨') + '-' + extra, '#fbbf24'); }
     note = '斩杀强化';
   }
   if(sig.bonusVsBoss && mon.isBoss){
     const extra = absorbMonsterBarrier(mon, Math.max(1, Math.floor(dmgDone * sig.bonusVsBoss)), sig.icon || '👑').remaining;
-    if(extra > 0){ mon.hp -= extra; trackDmg('comp', extra); showFloat($('mon-emoji'), (sig.icon || '👑') + '-' + extra, '#fbbf24'); }
+    if(extra > 0){ mon.hp -= extra; trackDmg('comp', extra); showMonsterFloat(mon, (sig.icon || '👑') + '-' + extra, '#fbbf24'); }
     note = note || 'Boss压制';
   }
   if(sig.healPctHero){
@@ -3217,7 +3231,7 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
   if((state._compStunUntil||0)>now) return;
   const mon=state.currentMonsters[0];if(!mon)return;
   if(compSkillCd._owner!==comp.key)compSkillCd={_owner:comp.key};   // 换随从:重置技能冷却
-  const interval=1000/(st.spd||0.5);if((state._compDisarmUntil||0)<=now&&(now-lastCompAtk>interval||now-lastCompAtk>5000)){let cm=state.currentMonsters[0];if(cm&&cm.hp>0){const cd=calcDmg(st.atk,monArmor(cm),st.crit,st.critd,false,cm.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(cm, cd.dmg, st.emoji).remaining;cm.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,cd.crit,st.emoji+'普攻');showFloat($('mon-emoji'),st.emoji+'-'+dealt,'#a0d0ff');}applyCompanionSignatureHit(companionSignature(tpl), st, cm, dealt, now);}lastCompAtk=now;
+  const interval=1000/(st.spd||0.5);if((state._compDisarmUntil||0)<=now&&(now-lastCompAtk>interval||now-lastCompAtk>5000)){let cm=state.currentMonsters[0];if(cm&&cm.hp>0){const cd=calcDmg(st.atk,monArmor(cm),st.crit,st.critd,false,cm.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(cm, cd.dmg, st.emoji).remaining;cm.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,cd.crit,st.emoji+'普攻');showMonsterFloat(cm,st.emoji+'-'+dealt,'#a0d0ff',{variant:cd.crit?'crit':'comp',scale:cd.crit?1.12:1});}applyCompanionSignatureHit(companionSignature(tpl), st, cm, dealt, now);}lastCompAtk=now;
     // 技能:每个技能按自己的 cd 独立冷却,就绪即放(GCD 2秒,避免一次性全放;优先治疗>buff>伤害)
     if((state._compSilenceUntil||0)<=now&&now-lastCompSkill>2000){
       const ready=[];for(let i=0;i<st.skills.length;i++){if((compSkillCd[i]||0)<=now)ready.push(i);}
@@ -3226,7 +3240,7 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
       if(i!==undefined){const sk=st.skills[i];
         if(sk.type==='dmg'){
           const dmgMult = companionSkillDamageMult(sk, mon, now);
-          const sd=calcDmg(st.atk*sk.mul*dmgMult*COMPANION_SKILL_DMG_BONUS,monArmor(mon),st.crit,st.critd,sk.alwaysCrit,mon.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(mon, sd.dmg, sk.icon || st.emoji).remaining;mon.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,sd.crit,st.emoji+sk.name);showFloat($('mon-emoji'),st.emoji+sk.icon+'-'+dealt,'#c0a0ff');}
+          const sd=calcDmg(st.atk*sk.mul*dmgMult*COMPANION_SKILL_DMG_BONUS,monArmor(mon),st.crit,st.critd,sk.alwaysCrit,mon.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(mon, sd.dmg, sk.icon || st.emoji).remaining;mon.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,sd.crit,st.emoji+sk.name);showMonsterFloat(mon,st.emoji+sk.icon+'-'+dealt,'#c0a0ff',{variant:sd.crit?'crit':'comp',scale:sd.crit?1.12:1});}
           const dotPct = sk.dotPct || (sk.dot ? 0.12 : 0);
           if(dotPct > 0) applyMonsterDot(mon,`comp:${comp.key}:${i}`,Math.max(1,Math.floor(dealt*dotPct)),sk.dotMs||6000,{icon:sk.icon,name:sk.name,source:st.name});
           if(sk.slow) mon.slowUntil=Math.max(mon.slowUntil||0,Date.now()+(sk.slowMs||4000));
