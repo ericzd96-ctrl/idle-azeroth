@@ -852,10 +852,15 @@
 
   function resolveByPattern(name, exactMap, patterns, fallbackName) {
     if (!name) return fallbackName || '';
-    if (exactMap && exactMap[name]) return exactMap[name];
     const raw = String(name);
+    const normalized = raw
+      .replace(/<[^>]+>/g, '')
+      .replace(/^[^A-Za-z0-9\u4e00-\u9fa5]+/u, '')
+      .trim();
+    if (exactMap && exactMap[raw]) return exactMap[raw];
+    if (exactMap && exactMap[normalized]) return exactMap[normalized];
     for (const [re, icon] of (patterns || [])) {
-      if (re.test(raw)) return icon;
+      if (re.test(normalized || raw)) return icon;
     }
     return fallbackName || '';
   }
