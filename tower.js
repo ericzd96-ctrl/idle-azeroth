@@ -148,6 +148,7 @@ function enterTower() {
   state.tower.totalRuns = (state.tower.totalRuns || 0) + 1;
   state.hp = state.hero.hpMax;
   state.resource = state.resourceMax;
+  if (typeof clearAllBuffs === 'function') clearAllBuffs();
   spawnTowerMonster();
   log(`⛰️ 进入无尽塔,起始第 ${startFloor} 层`, 'legend');
   markDirty('dungeon', 'stage', 'hero');

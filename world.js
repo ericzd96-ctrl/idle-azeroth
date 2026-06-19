@@ -115,6 +115,7 @@ function challengeBoss(mapKey) {
   state.hp = state.hero.hpMax;
   state.resource = state.resourceMax;
   if (typeof resetDmgStats === 'function') resetDmgStats();
+  if (typeof clearAllBuffs === 'function') clearAllBuffs();
   spawnZoneBoss();
   markDirty('map', 'stage');
 }
@@ -139,6 +140,7 @@ function enterDungeon(key) {
   state.hp = state.hero.hpMax;
   state.resource = state.resourceMax;
   if (typeof resetDmgStats === 'function') resetDmgStats();
+  if (typeof clearAllBuffs === 'function') clearAllBuffs();
   spawnDungeonMonster();
   markDirty('dungeon', 'stage');
 }
@@ -581,6 +583,7 @@ function enterMythic() {
   state.hp = state.hero.hpMax;
   state.resource = state.resourceMax;
   if (typeof resetDmgStats === 'function') resetDmgStats();
+  if (typeof clearAllBuffs === 'function') clearAllBuffs();
   spawnDungeonMonster();
   const affixStr = affixes.map(a => a.icon + a.name).join(' ');
   log(`🌟 进入大秘境 +${selLvl} [${dg.name}] (×${scale.toFixed(1)}) 词缀: ${affixStr}`, 'legend');

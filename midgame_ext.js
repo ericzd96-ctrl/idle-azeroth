@@ -415,6 +415,7 @@
     state.hp = state.hero.hpMax;
     state.resource = state.resourceMax;
     if (typeof resetDmgStats === 'function') resetDmgStats();
+    if (typeof clearAllBuffs === 'function') clearAllBuffs();
     log(`🎯 发现稀有精英 [${def.name}]！`, 'epic');
     if (typeof markDirty === 'function') markDirty('events','stage');
   }

@@ -15,6 +15,18 @@ const BUFF_NAMES = {
   s_haste:       { icon:'💨', name:'急速',     desc:'攻速+33%' },
   s_lifesurge:   { icon:'🩸', name:'生命洪流', desc:'吸血+20·攻击+13%' },
   s_avatar:      { icon:'⚡', name:'天神下凡', desc:'攻+27%·防+20%·减伤13%' },
+  // 职业技能 buff (来自 skills_ext.js BUFF_FX / SKILL_AURA_LIBRARY)
+  w_reckless:    { icon:'😡', name:'鲁莽',     desc:'攻击+27%·暴伤+20' },
+  w_ironwall:    { icon:'🛡️', name:'钢铁壁垒', desc:'减伤30%·防御+27%' },
+  m_combust:     { icon:'🔥', name:'燃烧',     desc:'暴击+17·暴伤+34' },
+  m_iceblock:    { icon:'❄️', name:'寒冰护体', desc:'受到伤害-40%' },
+  p_voidform:    { icon:'🌑', name:'暗影形态', desc:'攻击+22%·暴击+10·暴伤+20' },
+  r_dance:       { icon:'🔪', name:'剑刃乱舞', desc:'攻击+20%·攻速+18%·暴伤+15' },
+  h_burst:       { icon:'🎯', name:'杀戮命令', desc:'攻击+28%·暴击+10·暴伤+22' },
+  sh_frenzy:     { icon:'⚡', name:'嗜血',     desc:'攻击+18%·攻速+25%' },
+  pa_wrath:      { icon:'⚖️', name:'复仇之怒', desc:'攻击+28%·暴击+12·暴伤+24' },
+  wl_dark:       { icon:'👁️', name:'黑暗灵魂', desc:'暴击+20·暴伤+38' },
+  d_zerk:        { icon:'🐻', name:'狂暴',     desc:'攻击+20%·攻速+20%·暴击+8' },
   // 硬编码 buff (效果已减1/3)
   shield:        { icon:'🛡️', name:'盾墙',     desc:'防御×1.33' },
   divine:        { icon:'✨', name:'神圣守护', desc:'防御×1.53' },
@@ -2637,11 +2649,18 @@ function onMonsterDeath(mon){
   // 导致鼠标悬停装备时按钮闪烁、点击落空。掉落时 addToInventory 已各自 markDirty。
 }
 
-function onHeroDeath(){
-  log('☠️ 你倒下了…','bad');state._compHp=null;state._compDownUntil=0;   // 复活后随从满血归来
+function clearAllBuffs(){
+  if(!state) return;
+  state.buffs = {};
+  state.talentAuras = {};
+  state.skillRuntime = { auras:{} };
   state.heroDebuffs = {};
   state._compDebuffs = {};
   state._compBuffs = {};
+}
+function onHeroDeath(){
+  log('☠️ 你倒下了…','bad');state._compHp=null;state._compDownUntil=0;   // 复活后随从满血归来
+  clearAllBuffs();
   state._compBarrier = 0;
   state.heroStunUntil = 0;
   state.heroSilenceUntil = 0;
@@ -2656,10 +2675,7 @@ function onHeroDeath(){
   state._brittleUntil = 0;
   state._soulLinkUntil = 0;
   state._decayUntil = 0;
-  state.talentAuras = {};
   state.talentState = { cds:{}, flags:{}, shield:0 };
-  state.skillRuntime = { auras:{} };
-  state.buffs = {};
   recomputeStats();
   const loss=Math.floor(state.gold*0.05);state.gold=Math.max(0,state.gold-loss);
   state.hp=state.hero.hpMax;state.resource=state.resourceMax;
@@ -2871,10 +2887,11 @@ function resetCombatState(){
   bossCasting=null;
   lastHeroAtk=0;lastMonAtk=0;lastRegen=0;dotTick=0;lastBossSkill=0;bossSkillIdx=0;burnTick=0;
   if(state){
-    state.heroDebuffs={};state.heroStunUntil=0;state.heroSilenceUntil=0;state.heroDisarmUntil=0;
-    state._compDebuffs={};state._compBuffs={};state._compBarrier=0;state._compStunUntil=0;state._compSilenceUntil=0;state._compDisarmUntil=0;state._compSoulLinkUntil=0;state._compFrenzyUntil=0;state._compDecayUntil=0;state._compLastDotTick=0;
+    clearAllBuffs();
+    state.heroStunUntil=0;state.heroSilenceUntil=0;state.heroDisarmUntil=0;
+    state._compBarrier=0;state._compStunUntil=0;state._compSilenceUntil=0;state._compDisarmUntil=0;state._compSoulLinkUntil=0;state._compFrenzyUntil=0;state._compDecayUntil=0;state._compLastDotTick=0;
     state._brittleUntil=0;state._soulLinkUntil=0;state._decayUntil=0;
-    state.talentAuras={};state.talentState={cds:{},flags:{},shield:0};state.skillRuntime={auras:{}};state.buffs={};
+    state.talentState={cds:{},flags:{},shield:0};
   }
   if(typeof lastCompAtk==='number')lastCompAtk=0;
   if(typeof lastCompSkill==='number')lastCompSkill=0;

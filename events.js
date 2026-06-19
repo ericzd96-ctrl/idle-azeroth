@@ -233,6 +233,7 @@ function challengeWorldBoss(key) {
   state.currentMonsters = [];
   state.hp = state.hero.hpMax; state.resource = state.resourceMax;
   if (typeof resetDmgStats === 'function') resetDmgStats();
+  if (typeof clearAllBuffs === 'function') clearAllBuffs();
   state.currentMonsters.push(buildWorldBossMonsterData(wb));
   log(`⚔️ 挑战世界BOSS [${wb.name}]!`, isApexWorldBoss(wb) ? 'legend' : 'epic');
   markDirty('stage','events');
