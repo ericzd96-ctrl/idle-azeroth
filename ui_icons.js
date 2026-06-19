@@ -1,5 +1,6 @@
 (function () {
-  const BASE = 'https://wow.zamimg.com/images/wow/icons/large/';
+  const BASE = 'assets/wow/ui/';       // 本地路径(优先)
+  const CDN_BASE = 'https://wow.zamimg.com/images/wow/icons/large/';   // CDN 兜底
   const UI_ICON = {
     battle:'ability_warrior_savageblow',
     hero:'achievement_level_10',
@@ -843,9 +844,11 @@
 
   function imgHtml(src, size, alt, fallback, cls, loadingMode) {
     const px = normalizeSize(size);
+    // 构造 CDN 兜底 URL (本地加载失败时尝试)
+    const cdnSrc = src.indexOf(CDN_BASE) === 0 ? src : src.replace(BASE, CDN_BASE);
     return `<span class="${cls || 'ui-icon wow-ico'}" style="width:${px}px;height:${px}px" title="${alt || ''}">
       <img src="${src}" alt="${alt || ''}" loading="${loadingMode || 'lazy'}" decoding="async"
-        onerror="this.parentNode.replaceWith(document.createTextNode(this.dataset.fb||''))"
+        onerror="var t=this;if(!t.dataset.tried){t.dataset.tried='1';t.src='${cdnSrc}';}else{t.parentNode.replaceWith(document.createTextNode(t.dataset.fb||''))}"
         data-fb="${(fallback || '').replace(/"/g, '&quot;')}">
     </span>`;
   }

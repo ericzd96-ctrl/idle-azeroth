@@ -1,0 +1,122 @@
+#!/bin/bash
+# 下载所有 WoW UI 图标到本地 assets/wow/ui/
+# 运行方式: bash download_icons.sh
+# 注意: 需要能访问 wow.zamimg.com 的网络环境
+
+BASE="https://wow.zamimg.com/images/wow/icons/large"
+DEST="assets/wow/ui"
+mkdir -p "$DEST"
+
+ICONS=(
+  # UI 图标
+  ability_backstab ability_criticalstrike ability_deathwing_bloodcorruption_death
+  ability_druid_barkskin ability_druid_catform ability_druid_challangingroar
+  ability_druid_dash ability_druid_ferociousbite ability_druid_lacerate
+  ability_druid_swipe ability_dualwield ability_ghoulfrenzy
+  ability_hunter_beastcall ability_hunter_explosiveshot ability_hunter_focusedaim
+  ability_hunter_mastermarksman ability_hunter_pet_boar ability_hunter_pet_crab
+  ability_hunter_pet_crocolisk ability_hunter_pet_vulture ability_hunter_pet_windserpent
+  ability_hunter_pet_wolf ability_hunter_quickshot ability_hunter_rapidkilling
+  ability_kick ability_mage_timewarp ability_meleedamage
+  ability_mount_ridinghorse ability_paladin_beaconoflight ability_paladin_blessedhands
+  ability_paladin_divinestorm ability_paladin_hammeroftherighteous ability_racial_bearform
+  ability_racial_bloodrage ability_rogue_ambush ability_rogue_dualweild
+  ability_rogue_eviscerate ability_rogue_feigndeath ability_rogue_findweakness
+  ability_rogue_garrote ability_rogue_kidneyshot ability_rogue_murderspree
+  ability_rogue_rupture ability_rogue_shadowstep ability_rogue_slicedice
+  ability_rogue_sprint ability_rogue_trip ability_thunderclap
+  ability_tracking ability_vanish ability_warlock_chaosbolt
+  ability_warrior_battleshout ability_warrior_charge ability_warrior_cleave
+  ability_warrior_deathwish ability_warrior_decisivestrike ability_warrior_defensivestance
+  ability_warrior_disarm ability_warrior_endlessrage ability_warrior_focusedrage
+  ability_warrior_punishingblow ability_warrior_savageblow ability_warrior_shatteringthrow
+  ability_warrior_shieldbash ability_warrior_shieldwall ability_warrior_sunder
+  ability_whirlwind
+  # 成就图标
+  achievement_bg_kill_flag_carrier achievement_bg_returnxflags_def_wsg
+  achievement_boss_cthun achievement_boss_illidan achievement_boss_ladyvashj
+  achievement_boss_lichking achievement_boss_sartharion_01 achievement_boss_yoggsaron_01
+  achievement_character_bloodelf_male achievement_character_draenei_male
+  achievement_character_dwarf_male achievement_character_gnome_male
+  achievement_character_human_male achievement_character_nightelf_male
+  achievement_character_orc_male achievement_character_tauren_male
+  achievement_character_troll_male achievement_character_undead_male
+  achievement_dungeon_naxxramas achievement_dungeon_ulduar_raildriver
+  achievement_general achievement_general_stayclassy achievement_guildperk_everybodysfriend
+  achievement_level_10 achievement_level_80 achievement_worldevent_brewmaster
+  achievement_arena_2v2_1 achievement_arena_2v2_7 achievement_arena_3v3_9
+  achievement_arena_5v5_7 achievement_pvp_a_16 achievement_reputation_08
+  achievement_zone_sholazar_01 achievement_zone_silithus_01 achievement_zone_stonetalon_01
+  # 物品图标
+  inv_axe_01 inv_belt_27 inv_boots_plate_04 inv_chest_plate04 inv_crate_04
+  inv_gauntlets_04 inv_hammer_04 inv_helmet_03 inv_jewelry_ring_62 inv_jewelry_talisman_08
+  inv_jewelry_talisman_11 inv_misc_bag_08 inv_misc_book_09 inv_misc_book_11 inv_misc_coin_01
+  inv_misc_coin_02 inv_misc_coin_18 inv_misc_enggizmos_21 inv_misc_fish_18 inv_misc_gem_amethyst_02
+  inv_misc_gem_bloodstone_02 inv_misc_gem_crystal_02 inv_misc_gem_diamond_02 inv_misc_gem_ebondraenite_02
+  inv_misc_gem_sapphire_02 inv_misc_gem_topaz_02 inv_misc_gem_variety_01 inv_misc_head_dragon_01
+  inv_misc_head_dragon_black inv_misc_head_orc_01 inv_misc_head_undead_01 inv_misc_hook_01
+  inv_misc_key_14 inv_misc_map_01 inv_misc_monstertentacle_01 inv_misc_note_01
+  inv_misc_pocketwatch_01 inv_misc_questionmark inv_misc_spyglass_03
+  inv_misc_ticket_tarot_portal_01 inv_ore_saronite_01 inv_pants_plate_17 inv_potion_51
+  inv_potion_155 inv_scroll_03 inv_scroll_05 inv_shoulder_29 inv_staff_13
+  inv_sword_27 inv_sword_39 inv_sword_48
+  # 法术图标
+  spell_arcane_arcanepotency spell_arcane_arcaneresilience spell_arcane_blast
+  spell_arcane_blink spell_arcane_mirrorimage spell_arcane_portaldarnassus
+  spell_arcane_portalorgrimmar spell_arcane_portalshattrath spell_arcane_portalstormwind
+  spell_arcane_prismaticcloak spell_arcane_starfire spell_fire_burnout spell_fire_fire
+  spell_fire_fireball02 spell_fire_firebolt02 spell_fire_flamebolt spell_fire_flameshock
+  spell_fire_immolation spell_fire_incinerate spell_fire_meteorstorm spell_fire_sealoffire
+  spell_fire_selfdestruct spell_fire_volcano spell_frost_chainsofice spell_frost_freezingbreath
+  spell_frost_frostblast spell_frost_frostbolt02 spell_frost_frostnova spell_frost_iceshock
+  spell_frost_icestorm spell_frost_stun spell_frost_summonwaterelemental
+  spell_holy_ardentdefender spell_holy_aspiration spell_holy_auraoflight
+  spell_holy_blessingofprotection spell_holy_crusaderstrike spell_holy_devotionaura
+  spell_holy_divineillumination spell_holy_flashheal spell_holy_guardianspirit
+  spell_holy_heal spell_holy_holybolt spell_holy_holynova spell_holy_holyprotection
+  spell_holy_holysmite spell_holy_innerfire spell_holy_magicalsentry spell_holy_powerinfusion
+  spell_holy_powerwordshield spell_holy_rebuke spell_holy_righteousfury
+  spell_holy_sealofprotection spell_holy_sealofwisdom spell_ice_lament
+  spell_magic_greaterblessingofkings spell_magic_lesserinvisibilty spell_magic_magearmor
+  spell_nature_bloodlust spell_nature_chainlightning spell_nature_cyclone spell_nature_earthquake
+  spell_nature_healingtouch spell_nature_healingwavegreater spell_nature_invisibilty
+  spell_nature_lifebloom spell_nature_lightning spell_nature_lightningoverload
+  spell_nature_magicimmunity spell_nature_naturetouchgrow spell_nature_rejuvenation
+  spell_nature_skinofearth spell_nature_sleep spell_nature_starfall spell_nature_stoneclawtotem
+  spell_nature_stoneskintotem spell_nature_stranglevines spell_nature_thorns
+  spell_nature_tranquility spell_nature_windfury spell_paladin_divinepurpose
+  spell_shadow_abominationexplosion spell_shadow_animatedead spell_shadow_charm
+  spell_shadow_cripple spell_shadow_curseofsargeras spell_shadow_deathanddecay
+  spell_shadow_deathcoil spell_shadow_deathscream spell_shadow_demonform
+  spell_shadow_detectlesserinvisibility spell_shadow_grimward spell_shadow_impphaseshift
+  spell_shadow_lifedrain spell_shadow_lifedrain02 spell_shadow_manaburn spell_shadow_metamorphosis
+  spell_shadow_mindrot spell_shadow_possession spell_shadow_rainoffire spell_shadow_raisedead
+  spell_shadow_shadowbolt spell_shadow_shadowform spell_shadow_shadowward
+  spell_shadow_shadowworddominate spell_shadow_shadowwordpain spell_shadow_siphonmana
+  spell_shadow_skull spell_shadow_soulleech_3 spell_shadow_summonfelguard
+  spell_shadow_summonfelhunter spell_shadow_summonvoidwalker spell_shadow_unholyfrenzy
+  spell_shaman_hex spell_shaman_improvedstormstrike spell_shaman_lavaburst
+  spell_shaman_thunderstorm trade_engineering
+  # 种族/职业头像
+  ability_creature_cursed_04 ability_creature_disease_02 ability_creature_poison_05
+  ability_creature_poison_06 ability_hunter_bestialdiscipline ability_hunter_camouflage
+  ability_mount_gryphon_01 ability_paladin_shieldofthetemplar ability_rogue_deadlybrew
+  ability_rogue_waylay ability_stealth ability_warrior_innerrage
+  inv_inscription_inkblack01 inv_misc_gem_pearl_01 inv_sword_39
+  spell_nature_healingwaygreater spell_nature_summonpet_01
+)
+
+COUNT=0
+TOTAL=${#ICONS[@]}
+for icon in "${ICONS[@]}"; do
+  URL="${BASE}/${icon}.jpg"
+  FILE="${DEST}/${icon}.jpg"
+  if [ -f "$FILE" ]; then
+    echo "[$((++COUNT))/$TOTAL] SKIP $icon.jpg (已存在)"
+  else
+    echo "[$((++COUNT))/$TOTAL] DOWNLOAD $icon.jpg"
+    curl -sSL --connect-timeout 10 -o "$FILE" "$URL" || echo "  FAILED: $icon"
+    sleep 0.1  # 避免被限速
+  fi
+done
+echo "完成! 共 $TOTAL 个图标 -> $DEST"
