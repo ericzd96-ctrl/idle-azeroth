@@ -48,7 +48,7 @@ h1 {
 .ui-icon {
   display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
   border-radius: 6px; overflow: hidden;
-  background: #06080f;
+  background: rgba(15, 23, 42, .12);
   border: 1px solid rgba(245, 208, 126, .38);
   box-shadow: 0 0 0 1px rgba(8, 12, 22, .72), 0 4px 10px rgba(0,0,0,.22);
   vertical-align: middle;
@@ -62,7 +62,7 @@ h1 {
   width: 18px; height: 18px; border-radius: 5px; overflow: hidden;
   border: 1px solid rgba(245, 208, 126, .35);
   box-shadow: 0 0 0 1px rgba(8, 12, 22, .65);
-  background: #06080f;
+  background: rgba(15, 23, 42, .12);
   vertical-align: middle;
 }
 .ui-label {

@@ -1,6 +1,7 @@
 (function () {
   const BASE = 'assets/wow/ui/';       // 本地路径(优先)
   const CDN_BASE = 'https://wow.zamimg.com/images/wow/icons/large/';   // CDN 兜底
+  const warmedUrls = new Set();
   const UI_ICON = {
     battle:'ability_warrior_savageblow',
     hero:'achievement_level_10',
@@ -839,16 +840,28 @@
   }
 
   function wowIconName(name) {
-    return name ? BASE + name + '.jpg' : '';
+    if (!name) return '';
+    const missing = typeof window !== 'undefined' && window.__wowMissingIcons && window.__wowMissingIcons[name];
+    return (missing ? CDN_BASE : BASE) + name + '.jpg';
+  }
+
+  function warmIconUrl(url) {
+    if (!url || warmedUrls.has(url) || typeof Image === 'undefined') return;
+    warmedUrls.add(url);
+    const img = new Image();
+    img.decoding = 'sync';
+    img.src = url;
   }
 
   function imgHtml(src, size, alt, fallback, cls, loadingMode) {
     const px = normalizeSize(size);
+    const iconKey = String(src || '').replace(BASE, '').replace(CDN_BASE, '').replace(/\.jpg$/i, '');
     // 构造 CDN 兜底 URL (本地加载失败时尝试)
     const cdnSrc = src.indexOf(CDN_BASE) === 0 ? src : src.replace(BASE, CDN_BASE);
+    warmIconUrl(src);
     return `<span class="${cls || 'ui-icon wow-ico'}" style="width:${px}px;height:${px}px" title="${alt || ''}">
-      <img src="${src}" alt="${alt || ''}" loading="${loadingMode || 'lazy'}" decoding="async"
-        onerror="var t=this;if(!t.dataset.tried){t.dataset.tried='1';t.src='${cdnSrc}';}else{t.parentNode.replaceWith(document.createTextNode(t.dataset.fb||''))}"
+      <img src="${src}" alt="${alt || ''}" loading="${loadingMode || 'eager'}" decoding="sync"
+        onerror="var t=this;window.__wowMissingIcons=window.__wowMissingIcons||{};window.__wowMissingIcons['${iconKey}']=1;if(!t.dataset.tried){t.dataset.tried='1';t.src='${cdnSrc}';}else{t.parentNode.replaceWith(document.createTextNode(t.dataset.fb||''))}"
         data-fb="${(fallback || '').replace(/"/g, '&quot;')}">
     </span>`;
   }
