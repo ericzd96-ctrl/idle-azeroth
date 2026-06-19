@@ -2351,9 +2351,9 @@ function tickBattle(now){
     if(!m.isBoss&&(m._monSkills?.length||m._monSkill)&&now-(m._lastSkill||0)>3000){
       m._lastSkill=now;const sk=getReadyMonsterCombatSkill(m, now);
       if(sk){
-      matk=Math.floor(matk*sk.mul);kindFloat=sk.icon+sk.name+'!';kindColor='#fbbf24';
+      matk=Math.floor(matk*sk.mul);kindFloat=sk.name+'!';kindColor='#fbbf24';
       kindSkill=sk;
-      kindLog=[sk.icon+' '+m.name+' 释放 '+sk.name+'!','bad'];
+      kindLog=[m.name+' 释放 '+sk.name+'!','bad'];
       m._lastSkillName = sk.name;
       }
     }
@@ -2825,7 +2825,7 @@ function startCast(skillKey,manual){
   if(state.skillCooldowns[skillKey]&&state.skillCooldowns[skillKey]>now){if(manual)log(sk.name+' 冷却中','bad');return;}
   let cost=sk.mp;if(state.hero.costReduction>0)cost=Math.max(1,Math.floor(sk.mp*(1-state.hero.costReduction/100)));
   if(state.resource<cost){if(manual)log(c.resource+'不足','bad');return;}
-  casting={skillKey,startTime:now,duration:castTime*1000/castSpeedMul(),manual:!!manual};log(sk.icon+' 施放 '+sk.name+'...','info');   // 读条受 倍速×极速 影响
+  casting={skillKey,startTime:now,duration:castTime*1000/castSpeedMul(),manual:!!manual};log('施放 '+sk.name+'...','info');   // 读条受 倍速×极速 影响
 }
 function skillEffects(wc,mon,taken,now,opts){
   const target = opts?.target === 'companion' ? 'companion' : 'hero';
@@ -3005,9 +3005,9 @@ function castSkill(skillKey,manual){
         if(applyState) applyMonsterState(target, applyState, ai.stateDurationMs || 10000);
         applySkillHitEffects(skillKey, sk, target, dd, { now, isAOE:true });
       }
-      log(sk.icon+' '+sk.name+'! AOE '+dmgDone+' 总伤害','good');
+      log(sk.name+'! AOE '+dmgDone+' 总伤害','good');
     }
-    else if(mon.dodgeChance&&Math.random()<mon.dodgeChance){showMonsterFloat(mon,'闪避','#9ca3af',{variant:'avoid'});log(sk.icon+' '+sk.name+' 被 '+mon.name+' 闪避!','bad');}
+    else if(mon.dodgeChance&&Math.random()<mon.dodgeChance){showMonsterFloat(mon,'闪避','#9ca3af',{variant:'avoid'});log(sk.name+' 被 '+mon.name+' 闪避!','bad');}
     else{
       const rt=calcSkillRuntimeBonus(skillKey, sk, mon, now);
       const forceCrit = baseForceCrit || rt.forceCrit;
@@ -3016,7 +3016,7 @@ function castSkill(skillKey,manual){
       {const dr=monsterDamageReduction(mon, now);if(dr)dd=Math.max(1,Math.floor(dd*(1-dr)));}
       mon.hp-=dd;dmgDone=dd;trackDmg('hero',dd,d.crit,sk.name);
       showMonsterFloat(mon,(sk.icon||'✨')+'-'+dd,(d.crit||forceCrit)?'#fbbf24':'#a335ee',{variant:(d.crit||forceCrit)?'crit':'hit',scale:(d.crit||forceCrit)?1.16:1,important:true});
-      log(sk.icon+' '+sk.name+'! '+dd+' 伤害'+(forceCrit?' (必暴)':''),'good');
+      log(sk.name+'! '+dd+' 伤害'+(forceCrit?' (必暴)':''),'good');
       if(d.crit||forceCrit)processTalentOnCrit(mon,dd,{skillKey});
       if(sk.lifeSteal){const heal=Math.floor(dmgDone*sk.lifeSteal);healHeroAmount(heal,'🩸','#6ee7b7');}
       if(sk.slow)mon.slowUntil=Date.now()+4000;
@@ -3030,12 +3030,12 @@ function castSkill(skillKey,manual){
     const healMult=1+(state.hero.healBonus||0)/100;
     const h=Math.floor(state.hero.hpMax*sk.heal*healMult);
     const hr=healHeroAmount(h, sk.icon, '#6ee7b7', 'hero', sk.name);
-    log(sk.icon+' '+sk.name+'!恢复 '+hr.applied+' 生命','good');
+    log(sk.name+'! 恢复 '+hr.applied+' 生命','good');
     applySkillHealEffects(skillKey, sk, hr.applied, hr.overheal);
     processTalentAfterHeal(skillKey, hr.applied, hr.overheal);
     processTalentAfterSkill(skillKey, sk, null, hr.applied, { overheal:hr.overheal, cost });
   }
-  else if(sk.type==='buff'){const dur=sk.duration+(state.hero.buffDuration||0)*1000;state.buffs[sk.buff]=Date.now()+dur;recomputeStats();log(sk.icon+' '+sk.name+'!','good');}
+  else if(sk.type==='buff'){const dur=sk.duration+(state.hero.buffDuration||0)*1000;state.buffs[sk.buff]=Date.now()+dur;recomputeStats();log(sk.name+'!','good');}
   if(sk.type==='buff') processTalentAfterSkill(skillKey, sk, state.currentMonsters[0] || null, 0, { cost });
 }
 function doInterrupt(){if(!bossCasting){log('没有正在施放的法术','info');return;}const bossName=bossCasting.bossName||'BOSS';log('🦶 打断了 '+bossName+' 的 '+bossCasting.icon+' 施法!','good');$('cast-bar-wrap').style.visibility='hidden';bossCasting=null;}
@@ -3222,11 +3222,11 @@ function downCompanion(now){
   const comp=getActiveCompanion();const tpl=comp&&COMPANIONS.find(c=>c.key===comp.key);
   showFloat($('comp-mini'),'💫倒下','#fde047');
   const e=$('comp-mini');if(e){e.classList.add('shake');setTimeout(()=>{const x=$('comp-mini');if(x)x.classList.remove('shake');},200);}
-  log('💫 '+(tpl?tpl.emoji+tpl.name:'随从')+' 倒下了!15秒后归来','bad');
+  log((tpl?tpl.name:'随从')+' 倒下了! 15秒后归来','bad');
 }
 function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;const st=computeCompanionStats();if(!st)return;const tpl=COMPANIONS.find(c=>c.key===comp.key);
   // 复活计时:倒地满15秒 → 以 50% 血归来
-  if(!compDowned()&&(state._compDownUntil||0)>0){state._compDownUntil=0;state._compHp=Math.floor(st.hpMax*0.5);const tpl=COMPANIONS.find(c=>c.key===comp.key);showFloat($('comp-mini'),'✨归来','#6ee7b7');log('✨ '+(tpl?tpl.emoji+tpl.name:'随从')+' 重新投入战斗!','good');}
+  if(!compDowned()&&(state._compDownUntil||0)>0){state._compDownUntil=0;state._compHp=Math.floor(st.hpMax*0.5);const tpl=COMPANIONS.find(c=>c.key===comp.key);showFloat($('comp-mini'),'✨归来','#6ee7b7');log((tpl?tpl.name:'随从')+' 重新投入战斗!','good');}
   // 缓慢回血:存活且未满,每秒回复 2% 最大生命(受减益影响)
   if(!compDowned()&&(state._compHp||0)>0&&state._compHp<st.hpMax&&now-lastCompRegen>1000){lastCompRegen=now;state._compHp=Math.min(st.hpMax,state._compHp+Math.max(1,Math.ceil(st.hpMax*0.02*companionDebuffRegenMult())));}
   // DOT: 每秒结算随从身上的持续伤害
@@ -3273,11 +3273,11 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
           const healTarget = companionSkillTarget(sk) === 'hero' ? 'hero' : companionSkillTarget(sk) === 'companion' ? 'companion' : companionHealTarget();
           if(healTarget==='companion'){
             const h=Math.floor(st.hpMax*sk.heal*COMPANION_HEAL_SCALE);
-            const hr=healCompanionAmount(h, st.emoji, '#6ee7b7', 'comp', sk.name); log(st.emoji+' '+sk.name+'! 为随从恢复 '+hr.applied+' 生命','good');
+            const hr=healCompanionAmount(h, st.emoji, '#6ee7b7', 'comp', sk.name); log(sk.name+'! 为随从恢复 '+hr.applied+' 生命','good');
           }
           else {
             const h=Math.floor(state.hero.hpMax*sk.heal*COMPANION_HEAL_SCALE);
-            const hr=healHeroAmount(h, st.emoji, '#6ee7b7', 'comp', sk.name);log(st.emoji+' '+sk.name+'! +'+hr.applied+' 生命','good');
+            const hr=healHeroAmount(h, st.emoji, '#6ee7b7', 'comp', sk.name);log(sk.name+'! +'+hr.applied+' 生命','good');
           }
           applyCompanionSupportSkill(sk, st, now);
         }
@@ -3292,7 +3292,7 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
             if(!state._compBuffs)state._compBuffs={};state._compBuffs[sk.buff]=Date.now()+dur;markDirty('companion');
           }
           applyCompanionSupportSkill(sk, st, now);
-          log(st.emoji+' '+sk.name+'!','good');
+          log(sk.name+'!','good');
         }
         compSkillCd[i]=now+(sk.cd||COMP_SKILL_DEFAULT_CD)*1000;lastCompSkill=now;
       }

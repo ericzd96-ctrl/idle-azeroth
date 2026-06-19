@@ -905,7 +905,7 @@
       resolveSymbolIconName(fallback) ||
       resolveLabelIconName(fallback, '') ||
       'spell_holy_powerinfusion';
-    return imgHtml(wowIconName(iconName), size, skillName, fallbackText(fallback), 'wow-inline-icon');
+    return imgHtml(wowIconName(iconName), size, skillName, '', 'wow-inline-icon');
   };
 
   window.entityIcon = function (entityName, size, fallback) {
@@ -915,7 +915,7 @@
       resolveLabelIconName(entityName, '') ||
       resolveLabelIconName(fallback, '') ||
       'inv_misc_head_dragon_01';
-    return imgHtml(wowIconName(iconName), size, entityName, fallbackText(fallback), 'wow-inline-icon');
+    return imgHtml(wowIconName(iconName), size, entityName, '', 'wow-inline-icon');
   };
 
   window.dungeonIcon = function (key, name, size, fallback) {
@@ -924,7 +924,7 @@
       resolveSymbolIconName(fallback) ||
       resolveLabelIconName(name, '') ||
       'achievement_dungeon_naxxramas';
-    return imgHtml(wowIconName(iconName), size, name || key, fallbackText(fallback), 'wow-inline-icon');
+    return imgHtml(wowIconName(iconName), size, name || key, '', 'wow-inline-icon');
   };
 
   window.symbolIcon = function (symbol, size, label, fallback) {
@@ -934,7 +934,7 @@
       resolveLabelIconName(label, '') ||
       resolveLabelIconName(fallback, '') ||
       'spell_holy_powerinfusion';
-    return imgHtml(wowIconName(iconName), size, label || symbol || '', fallbackText(fallback || symbol), 'wow-inline-icon');
+    return imgHtml(wowIconName(iconName), size, label || symbol || '', '', 'wow-inline-icon');
   };
 
   window.statusIcon = function (name, symbol, size, fallback) {
@@ -944,7 +944,7 @@
       resolveSymbolIconName(fallback) ||
       resolveLabelIconName(fallback, '') ||
       'spell_holy_powerinfusion';
-    return imgHtml(wowIconName(iconName), size, name || symbol || '', fallbackText(fallback || symbol), 'wow-inline-icon', 'eager');
+    return imgHtml(wowIconName(iconName), size, name || symbol || '', '', 'wow-inline-icon', 'eager');
   };
 
   window.factionIcon = function (key, size, fallback) {
