@@ -2946,7 +2946,7 @@ function tickCast(now){
     const elapsed=now-bossCasting.startTime;const pct=Math.min(100,elapsed/bossCasting.duration*100);
     const remaining=Math.max(0,Math.ceil((bossCasting.duration-elapsed)/1000));
     $('boss-cast-bar-wrap').style.visibility='visible';
-    $('boss-cast-name').textContent='💀 '+(bossCasting.bossName||'BOSS')+' - '+(bossCasting.icon||'');
+    $('boss-cast-name').textContent='💀 '+(bossCasting.bossName||'BOSS')+' - '+(bossCasting.icon||'')+' '+(bossCasting.name||'施法');
     $('boss-cast-time').textContent=remaining>0?remaining+'s':'';
     $('boss-b-cast').style.width=pct+'%';
     if(elapsed>=bossCasting.duration){
