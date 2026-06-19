@@ -621,7 +621,8 @@ function pickRarity(maxRarity) {
 
 function showFloat(targetEl, text, color, opts) {
   const stage = $('stage');
-  if (!stage || !targetEl) return;
+  const floatLayer = $('float-layer') || stage;
+  if (!stage || !floatLayer || !targetEl) return;
   if (typeof document !== 'undefined' && document.hidden) return;
   const mobile = isMobilePerfMode();
   const now = Date.now();
@@ -647,7 +648,7 @@ function showFloat(targetEl, text, color, opts) {
   if (opts?.dx) el.style.setProperty('--float-dx', opts.dx + 'px');
   if (opts?.dy) el.style.setProperty('--float-dy', opts.dy + 'px');
   if (opts?.duration) el.style.setProperty('--float-duration', opts.duration + 'ms');
-  stage.appendChild(el);
+  floatLayer.appendChild(el);
   _activeFloatCount++;
   setTimeout(() => {
     el.remove();

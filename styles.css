@@ -115,6 +115,13 @@ h1 {
   border-radius: 12px; border: 1px solid var(--border); padding: 14px;
   text-align: center; position: relative; overflow: hidden;
 }
+.float-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 40;
+  overflow: hidden;
+}
 .stage.dungeon { background: linear-gradient(180deg, #3a1010 0%, #100808 100%); border-color: #5c1a1a; }
 .stage-info {
   display: flex; justify-content: space-between;
@@ -326,6 +333,8 @@ h1 {
   position: absolute; font-weight: 700; pointer-events: none;
   animation: floatUp var(--float-duration) ease-out forwards;
   font-size: calc(18px * var(--float-scale));
+  white-space: nowrap;
+  z-index: 2;
   text-shadow: 0 1px 3px rgba(0,0,0,.9), 0 0 10px rgba(15,23,42,.22);
   transform-origin: center center;
 }
