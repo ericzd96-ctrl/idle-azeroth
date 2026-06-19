@@ -11,12 +11,12 @@ const WORLD_BOSSES = [
   { key:'hogger_king', name:'霍格大王', emoji:'🐗', lvl:30, gateLevel:30, minLvl:30, cdHours:0, color:'#b45309',
     desc:'艾尔文与西部荒野交界传说中的豺狼人之王，专门终结轻敌的新兵。',
     hpMul:15, atkMul:2.4, defMul:1.7, rewards:{ gold:1600, gem:8, honor:120, essence:3 } },
-  { key:'arugal_shadow', name:'阿鲁高之影', emoji:'🌑', lvl:40, gateLevel:40, minLvl:40, cdHours:0, color:'#7c3aed',
-    desc:'影牙诅咒的残响，会把没有准备好的冒险者撕成碎片。',
-    hpMul:16.5, atkMul:2.6, defMul:1.85, rewards:{ gold:3200, gem:10, honor:180, essence:4 } },
-  { key:'gazrilla_tide', name:'海潮巨兽加兹瑞拉', emoji:'🐍', lvl:50, gateLevel:50, minLvl:50, cdHours:0, color:'#0ea5e9',
-    desc:'盘踞海湾的古老海蛇，真正开始考验 build 与装备质量。',
-    hpMul:18.5, atkMul:2.85, defMul:2.05, rewards:{ gold:6200, gem:12, honor:260, essence:5 } },
+  { key:'swamp_tyrant', name:'沼泽暴君·格拉姆', emoji:'🐊', lvl:40, gateLevel:40, minLvl:40, cdHours:0, color:'#15803d',
+    desc:'盘踞湿地深沼的远古巨鳄，会把节奏拖入漫长而窒息的泥潭。',
+    hpMul:16.8, atkMul:2.7, defMul:1.92, rewards:{ gold:3400, gem:10, honor:180, essence:4 } },
+  { key:'blackrock_overlord', name:'黑石霸主·达格兰', emoji:'⛰️', lvl:50, gateLevel:50, minLvl:50, cdHours:0, color:'#b91c1c',
+    desc:'黑石山外围的残暴军阀，开始检验装备、减伤与续航是否真正成型。',
+    hpMul:19.2, atkMul:2.95, defMul:2.12, rewards:{ gold:6800, gem:12, honor:280, essence:6 } },
   { key:'kazzak_doom', name:'末日领主卡扎克', emoji:'😈', lvl:60, gateLevel:60, minLvl:60, cdHours:0, color:'#dc2626',
     desc:'诅咒之地裂隙中的末日使者，会把中期的数值短板全部放大。',
     hpMul:21.5, atkMul:3.15, defMul:2.25, rewards:{ gold:12000, gem:16, honor:420, essence:7 } },
@@ -266,7 +266,12 @@ function onWorldBossKill(mon) {
       if (typeof eventsOnItemGet==='function') eventsOnItemGet(bonusItem);
       log(`🏁 击败阶段守关Boss ${wb.name}，Lv.${wb.gateLevel} 经验封锁已解除！`, 'legend');
     } else {
-      log(`🏆 再次击败 ${wb.name}!`, 'epic');
+      if (wb.lvl >= 60) {
+        const bonusItem = rollItem('epic', wb.lvl);
+        addToInventory(bonusItem);
+        if (typeof eventsOnItemGet==='function') eventsOnItemGet(bonusItem);
+      }
+      log(`🏆 再次击败 ${wb.name}! +${wb.rewards?.gem || 0}💎 +${wb.rewards?.essence || 0}✨`, 'epic');
     }
     seasonAddPoints(180 + wb.lvl * 3, '阶段世界Boss');
     if (typeof gainXP === 'function') gainXP(0);
@@ -597,7 +602,7 @@ function renderWorldBossSub() {
     return parts.join(' ');
   };
 
-  html += `<div class="muted" style="margin:8px 0 4px;font-size:11px">阶段守关世界Boss</div><div class="wb-list">`;
+  html += `<div class="wb-list">`;
   for (const wb of trialWorldBosses()) {
     const cleared = worldBossStageCleared(wb);
     const ready = worldBossReady(wb.key);
@@ -619,7 +624,6 @@ function renderWorldBossSub() {
     </div>`;
   }
   html += '</div>';
-
   html += `<div class="muted" style="margin:10px 0 4px;font-size:11px">终局世界Boss</div><div class="wb-list">`;
   for (const wb of WORLD_BOSSES.filter(isApexWorldBoss)) {
     const ready = worldBossReady(wb.key);

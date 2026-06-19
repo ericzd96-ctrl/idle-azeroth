@@ -3646,22 +3646,22 @@ const WORLD_BOSS_SKILLSETS = {
       {name:'霍格呼号', icon:'📯', desc:'8倍范围伤害', type:'dmg', mul:8, castTime:2.8, aoe:true, fear:1400, frenzy:true}
     ]
   },
-  arugal_shadow: {
-    passive:{ dmgReduction:0.18, critChance:0.16, dodgeChance:0.1, atkBonus:0.16, leech:0.08 },
+  swamp_tyrant: {
+    passive:{ dmgReduction:0.19, critChance:0.16, dodgeChance:0.08, atkBonus:0.16, leech:0.09 },
     supportCount:2,
     skills:[
-      {name:'影牙撕咬', icon:'🌑', desc:'8倍暗影伤害', type:'dmg', mul:8, castTime:2, weaken:true, dot:true},
-      {name:'月嚎癫狂', icon:'🐺', desc:'8倍伤害', type:'dmg', mul:8, castTime:2.5, fear:1500, bleed:true},
-      {name:'诅咒裂影', icon:'👻', desc:'9倍暗影伤害', type:'dmg', mul:9, castTime:3.1, silence:1600, mirror:true}
+      {name:'泥沼绞缠', icon:'🪢', desc:'8倍自然伤害', type:'dmg', mul:8, castTime:2, cripple:true, decay:true},
+      {name:'暴君撕咬', icon:'🦷', desc:'8倍伤害', type:'dmg', mul:8, castTime:2.6, bleed:true, brittle:true},
+      {name:'腐泥吞噬', icon:'🫧', desc:'9倍范围伤害', type:'dmg', mul:9, castTime:3.2, aoe:true, plague:true, weaken:true}
     ]
   },
-  gazrilla_tide: {
-    passive:{ dmgReduction:0.22, critChance:0.16, dodgeChance:0.08, atkBonus:0.18, leech:0.05 },
+  blackrock_overlord: {
+    passive:{ dmgReduction:0.23, critChance:0.18, dodgeChance:0.08, atkBonus:0.2, leech:0.06, stunChance:0.08 },
     supportCount:3,
     skills:[
-      {name:'潮汐鞭尾', icon:'🌊', desc:'9倍伤害', type:'dmg', mul:9, castTime:2.2, slow:true, brittle:true},
-      {name:'深渊雷啸', icon:'⚡', desc:'10倍自然伤害', type:'dmg', mul:10, castTime:3, stun:1400, weaken:true},
-      {name:'漩涡吞咬', icon:'🌀', desc:'10倍范围伤害', type:'dmg', mul:10, castTime:3.6, aoe:true, manaDrain:50, cripple:true}
+      {name:'熔岩重踏', icon:'🌋', desc:'9倍范围伤害', type:'dmg', mul:9, castTime:2.4, aoe:true, stun:1400, brittle:true},
+      {name:'黑铁军令', icon:'⚒️', desc:'10倍伤害', type:'dmg', mul:10, castTime:3, silence:1700, sunder:true},
+      {name:'焦岩碾碎', icon:'🪨', desc:'10倍伤害', type:'dmg', mul:10, castTime:3.5, weaken:true, bleed:true}
     ]
   },
   kazzak_doom: {

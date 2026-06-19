@@ -97,54 +97,6 @@
     ],
   };
 
-  const MIDGAME_WORLD_BOSSES = [
-    {
-      key:'hogger_king', name:'霍格大王', emoji:'🐗', lvl:30, minLvl:28, color:'#b45309',
-      desc:'艾尔文森林深处的豺狼人王者,是新兵成长的第一道坎。',
-      hpMul:12, atkMul:2.2, defMul:1.7, stageGate:true, rewards:{ gold:9000, gem:12, honor:250, essence:6, shards:0 },
-      supportCount:2,
-      passive:{ critChance:0.12, dmgReduction:0.12, atkBonus:0.12 },
-      skills:[
-        { name:'野蛮扑袭', icon:'🐗', mul:4.8, stun:true, castTime:1.6, weaken:true },
-        { name:'碎骨嚎叫', icon:'📯', mul:4.2, fear:1400, brittle:true, castTime:2.2 },
-      ],
-    },
-    {
-      key:'swamp_tyrant', name:'沼泽暴君·格拉姆', emoji:'🐊', lvl:45, minLvl:43, color:'#15803d',
-      desc:'盘踞在湿地深沼的远古巨鳄,会拖慢冒险者的中期节奏。',
-      hpMul:15, atkMul:2.6, defMul:1.9, stageGate:true, rewards:{ gold:18000, gem:18, honor:420, essence:9, shards:0 },
-      supportCount:2,
-      passive:{ critChance:0.14, dmgReduction:0.15, leech:0.06 },
-      skills:[
-        { name:'泥沼绞缠', icon:'🪢', mul:5.5, cripple:true, decay:true, castTime:1.9 },
-        { name:'暴君撕咬', icon:'🦷', mul:6.2, bleed:true, brittle:true, castTime:2.4 },
-      ],
-    },
-    {
-      key:'blackrock_overlord', name:'黑石霸主·达格兰', emoji:'⛰️', lvl:60, minLvl:58, color:'#dc2626',
-      desc:'黑石深渊上层的钢铁军阀,是踏入后期前最硬的一块石头。',
-      hpMul:18, atkMul:3.0, defMul:2.2, stageGate:true, rewards:{ gold:32000, gem:24, honor:800, essence:14, shards:2 },
-      supportCount:3,
-      passive:{ critChance:0.18, dmgReduction:0.18, atkBonus:0.18 },
-      skills:[
-        { name:'熔岩重踏', icon:'🌋', mul:7.4, aoe:true, stun:true, castTime:2.4, brittle:true },
-        { name:'黑铁军令', icon:'⚒️', mul:6.8, silence:1800, sunder:true, castTime:2.8 },
-      ],
-    },
-    {
-      key:'plague_marshal', name:'瘟疫领主·玛尔萨加', emoji:'☣️', lvl:75, minLvl:73, color:'#7c3aed',
-      desc:'北境边缘散播瘟疫的天灾军阀,是满级前最后一场硬仗。',
-      hpMul:22, atkMul:3.4, defMul:2.5, stageGate:true, rewards:{ gold:42000, gem:35, honor:1200, essence:18, shards:4 },
-      supportCount:4,
-      passive:{ critChance:0.2, dmgReduction:0.2, leech:0.08 },
-      skills:[
-        { name:'疫病爆发', icon:'☣️', mul:8.5, plague:true, decay2:true, aoe:true, castTime:2.5 },
-        { name:'死亡军令', icon:'💀', mul:9.2, fear:1800, soulLink:true, silence:1800, castTime:3.0 },
-      ],
-    },
-  ];
-  const XP_STAGE_GATES = MIDGAME_WORLD_BOSSES.filter(b => b.stageGate).map(b => ({ level:b.lvl, key:b.key, name:b.name }));
-
   const RARE_ELITES = [
     { key:'riverpaw_howl', name:'河爪头目·咆爪', mapKey:'elwynn', emoji:'🐺', lvl:18, desc:'擅长呼朋引伴的河爪头目。', hpMul:4.5, atkMul:1.8, defMul:1.3, rewards:{ gold:1200, gem:1, honor:20, essence:1 }, mountKey:'horse_chestnut' },
     { key:'duskfang_alpha', name:'夜牙之王', mapKey:'duskwood', emoji:'🐺', lvl:32, desc:'暮色森林边缘最危险的巨狼。', hpMul:5.8, atkMul:2.1, defMul:1.4, rewards:{ gold:2800, gem:2, honor:40, essence:2 }, mountKey:'wolf_black' },
@@ -181,7 +133,6 @@
 
   function ensureMidgameState() {
     if (typeof account === 'undefined' || !account) return;
-    if (!account.stageBossClears) account.stageBossClears = {};
     if (!account.repLineClaims) account.repLineClaims = {};
     if (!state.bounties) state.bounties = { resetAt:0, tasks:[] };
     if (!state.rareEliteKills) state.rareEliteKills = {};
@@ -360,12 +311,7 @@
   }
 
   function stageBossGateInfo() {
-    ensureMidgameState();
-    const reached = XP_STAGE_GATES.filter(g => state.hero.lvl >= g.level);
-    for (let i = reached.length - 1; i >= 0; i--) {
-      const gate = reached[i];
-      if (!account.stageBossClears[gate.key]) return gate;
-    }
+    if (typeof currentXpGate === 'function') return currentXpGate();
     return null;
   }
 
@@ -607,22 +553,6 @@
     return html;
   }
 
-  function renderStageGateBanner() {
-    const gate = stageBossGateInfo();
-    if (!gate) return '';
-    return `<div class="ascend-box" style="margin-bottom:8px;border-left:3px solid #f59e0b">
-      <div style="font-weight:700;color:#fbbf24">阶段试炼未完成</div>
-      <div class="muted" style="font-size:11px;line-height:1.5">你当前已达到 <b>Lv.${gate.level}</b> 阶段上限。击败 <b>${gate.name}</b> 后，经验获取才会继续恢复。</div>
-    </div>`;
-  }
-
-  function installWorldBossContent() {
-    if (typeof WORLD_BOSSES === 'undefined') return;
-    for (const boss of MIDGAME_WORLD_BOSSES) {
-      if (!WORLD_BOSSES.find(x => x.key === boss.key)) WORLD_BOSSES.push(boss);
-    }
-    WORLD_BOSSES.sort((a, b) => (a.lvl || 0) - (b.lvl || 0));
-  }
   function installMountContent() {
     if (typeof MOUNTS === 'undefined') return;
     for (const mount of EXTRA_MOUNTS) {
@@ -690,42 +620,6 @@
     for (const [k, v] of Object.entries(src)) state._statSources._total[k] = (state._statSources._total[k] || 0) + v;
   };
 
-  globalThis.currentXpGate = stageBossGateInfo;
-
-  globalThis.gainXP = function(amt) {
-    if (state.hero.lvl >= MAX_LEVEL) { state.hero.xp = 0; return; }
-    ensureMidgameState();
-    const activeGate = stageBossGateInfo();
-    if (activeGate && state.hero.lvl >= activeGate.level) {
-      if (!state._lastXpGateNotice || Date.now() - state._lastXpGateNotice > 5000) {
-        log(`⛔ 当前经验被阶段试炼锁定：击败 ${activeGate.name} 后继续升级`, 'bad');
-        state._lastXpGateNotice = Date.now();
-      }
-      return;
-    }
-    state.hero.xp += amt;
-    while (state.hero.lvl < MAX_LEVEL && state.hero.xp >= xpNeeded(state.hero.lvl)) {
-      state.hero.xp -= xpNeeded(state.hero.lvl);
-      state.hero.lvl += 1;
-      for (const k of ['str','agi','int','spi','sta']) state.attrs[k] += 1;
-      state.talentPoints += 1;
-      recomputeStats();
-      state.hp = state.hero.hpMax;
-      const c = getCls();
-      state.resource = c.resKey === 'rage' ? 0 : state.resourceMax;
-      checkSkillUnlocks();
-      log('🎉 升到 Lv.' + state.hero.lvl + '! 全属性+1 +1天赋点', 'good');
-      if (typeof markDirty === 'function') markDirty('hero','shop','talents','skills','map','dungeon','events');
-      const gate = stageBossGateInfo();
-      if (gate && state.hero.lvl >= gate.level) {
-        state.hero.xp = 0;
-        log(`🛑 达到 Lv.${gate.level} 阶段上限：击败 ${gate.name} 后继续升级`, 'epic');
-        break;
-      }
-    }
-    if (state.hero.lvl >= MAX_LEVEL) state.hero.xp = 0;
-  };
-
   const _ensureEventState = globalThis.ensureEventState;
   globalThis.ensureEventState = function() {
     _ensureEventState();
@@ -734,7 +628,6 @@
   const _onWorldBossKill = globalThis.onWorldBossKill;
   globalThis.onWorldBossKill = function(mon) {
     ensureMidgameState();
-    if (mon?.wbKey) account.stageBossClears[mon.wbKey] = true;
     const out = _onWorldBossKill(mon);
     if (typeof markDirty === 'function') markDirty('events','hero');
     return out;
@@ -754,40 +647,12 @@
         <span class="sub-tab ${eventsSubTab==='season'?'active':''}" data-sub="season">🏁 赛季</span>
       </div>`;
     let body = '';
-    if (eventsSubTab === 'wb') body = renderStageGateBanner() + renderWorldBossSub();
+    if (eventsSubTab === 'wb') body = renderWorldBossSub();
     else if (eventsSubTab === 'bounty') body = renderBountySub();
     else if (eventsSubTab === 'daily') body = renderDailySub();
     else body = renderSeasonSub();
     root.innerHTML = head + body;
-  };
-
-  const _renderWorldBossSub = globalThis.renderWorldBossSub;
-  globalThis.renderWorldBossSub = function() {
-    let html = `<div class="prog-summary muted">橙装碎片: <b style="color:var(--legend)">${state.worldBoss.shards||0}</b> / ${SHARD_EXCHANGE_COST} · 累计击败 ${state.worldBoss.totalKilled||0} 次
-      ${(state.worldBoss.shards||0)>=SHARD_EXCHANGE_COST ? '<button class="gold" data-action="exchangeshards" style="margin-left:8px">合成橙装</button>' : ''}
-    </div>`;
-    html += '<div class="wb-list">';
-    for (const wb of WORLD_BOSSES) {
-      const ready = worldBossReady(wb.key);
-      const nextTs = worldBossAvailableAt(wb.key);
-      const cd = Math.max(0, Math.ceil((nextTs - Date.now())/1000));
-      const rwds = `${wb.rewards.gold}💰 ${wb.rewards.gem}💎 ${wb.rewards.honor}🏅 ${wb.rewards.essence}✨ ${wb.rewards.shards||0}🧩`;
-      const gate = wb.stageGate ? (account.stageBossClears?.[wb.key] ? '<span class="pill" style="background:#14532d;color:#bbf7d0">已通关阶段试炼</span>' : '<span class="pill" style="background:#7c2d12;color:#fed7aa">阶段试炼</span>') : '';
-      const reqLvl = wb.minLvl || Math.max(1, wb.lvl - 5);
-      const canChallenge = state.hero.lvl >= reqLvl;
-      html += `<div class="wb-item ${ready?'wb-ready':''}" style="border-left:4px solid ${wb.color}">
-        <div class="wb-main">
-          <div class="wb-name" style="color:${wb.color}">${wb.emoji} ${wb.name} <span class="muted" style="font-size:10px">Lv.${wb.lvl}</span> ${gate}</div>
-          <div class="muted" style="font-size:11px">${wb.desc}</div>
-          <div class="muted" style="font-size:10px;margin-top:2px">奖励: ${rwds}</div>
-        </div>
-        <div class="wb-act">
-          ${!canChallenge ? `<span class="muted" style="font-size:11px">需 Lv.${reqLvl}+</span>` : (ready ? `<button class="danger" data-action="challengewb" data-key="${wb.key}">挑战</button>` : `<span class="muted" style="font-size:11px">${fmtCd(cd)}</span>`)}
-        </div>
-      </div>`;
-    }
-    html += '</div>';
-    return html;
+    if (eventsSubTab === 'wb' && typeof bindWorldBossTooltips === 'function') bindWorldBossTooltips(root);
   };
 
   const _renderRepSubtab = globalThis.renderRepSubtab;
@@ -808,7 +673,6 @@
     return base + html;
   };
 
-  installWorldBossContent();
   installMountContent();
   normalizeCompanionLoadouts();
 
