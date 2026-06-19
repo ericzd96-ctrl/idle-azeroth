@@ -59,6 +59,9 @@ function unpinTip() {
 
 function addTouchPin(el, showFn) {
   el.addEventListener('click', e => {
+    if (e.target && e.target.closest && e.target.closest('button,select,input,textarea,a,label,[data-action],[data-modal-close]')) {
+      return;
+    }
     e.stopPropagation();
     if (_tipPinned && _tipPinnedOwner === el) {
       unpinTip();
