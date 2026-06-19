@@ -495,6 +495,7 @@ function bindUnitTip(el, htmlBuilder) {
 }
 function attachFocusBossHover(focus) {
   const emojiEl = $('mon-emoji'); if (!emojiEl) return;
+  const nameEl = $('mon-name');
   if (!focus) return;
 
   // 获取BOSS数据(地图/副本/大秘境)
@@ -505,7 +506,6 @@ function attachFocusBossHover(focus) {
     bindUnitTip(emojiEl, () => monsterUnitTipHtml(focus, null));
     return;
   }
-  emojiEl.style.cursor = 'help';
   const showFocusTip = function(e) {
     let html = monsterUnitTipHtml(focus, bossData);
     if (bossData?.skills) {
@@ -541,10 +541,13 @@ function attachFocusBossHover(focus) {
     tip.style.display = 'block';
     positionTip(tip, e);
   };
-  emojiEl.onmouseenter = e => { if (!tooltipHoverEnabled()) return; showFocusTip(e); };
-  emojiEl.onmouseleave = () => { if (!tooltipHoverEnabled()) return; if (!_tipPinned) hideLootTip(); };
-  emojiEl.onmousemove = (e) => { if (!tooltipHoverEnabled()) return; positionTip($('compare-tip'), e); };
-  addTouchPin(emojiEl, showFocusTip);
+  [emojiEl, nameEl].filter(Boolean).forEach(el => {
+    el.style.cursor = 'help';
+    el.onmouseenter = e => { if (!tooltipHoverEnabled()) return; showFocusTip(e); };
+    el.onmouseleave = () => { if (!tooltipHoverEnabled()) return; if (!_tipPinned) hideLootTip(); };
+    el.onmousemove = (e) => { if (!tooltipHoverEnabled()) return; positionTip($('compare-tip'), e); };
+    addTouchPin(el, showFocusTip);
+  });
 }
 function renderMonList() {
   const wrap = $('mon-list'); if (!wrap) return;
@@ -600,7 +603,7 @@ function renderMonList() {
       if (!row) continue;
       bindUnitTip(row, () => monsterUnitTipHtml(m, lookupMonsterBossData(m)));
       const iconEl = row.querySelector('.m-emoji');
-      if (iconEl) bindUnitTip(iconEl, () => monsterUnitTipHtml(m, lookupMonsterBossData(m)));
+      if (iconEl && m !== focus) bindUnitTip(iconEl, () => monsterUnitTipHtml(m, lookupMonsterBossData(m)));
     }
     if (focus) attachFocusBossHover(focus);
   }
@@ -719,7 +722,69 @@ function updateDmgMeter() {
     killsEl.textContent = String(k);
   }
 
-  // 技能伤害分解(签名缓存避免每帧 innerHTML)
+  function syncMeterBreakdownRows(container, rows, valueKey, accentColor, fallbackIcon) {
+    if (!container) return;
+    const desiredKeys = rows.map(r => `${r.src}|${r.name}`);
+    const existing = new Map(Array.from(container.querySelectorAll('[data-meter-key]')).map(el => [el.dataset.meterKey, el]));
+    const fragment = document.createDocumentFragment();
+    for (const row of rows) {
+      const key = `${row.src}|${row.name}`;
+      let el = existing.get(key);
+      if (!el) {
+        el = document.createElement('div');
+        el.dataset.meterKey = key;
+        el.style.display = 'flex';
+        el.style.alignItems = 'center';
+        el.style.gap = '4px';
+        el.style.fontSize = '10px';
+        el.style.marginBottom = '2px';
+        const iconHtml = (typeof skillIcon === 'function') ? skillIcon(row.name, 13, fallbackIcon) : '';
+        el.innerHTML = `
+          <span class="meter-src" style="width:14px;flex-shrink:0"></span>
+          <span class="meter-icon" style="width:14px;flex-shrink:0">${iconHtml}</span>
+          <span class="meter-name" style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></span>
+          <span class="meter-val" style="width:52px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums"></span>
+          <span style="width:36px;flex-shrink:0;background:var(--panel);height:6px;border-radius:3px;overflow:hidden"><i class="meter-bar" style="display:block;height:100%;width:0%;border-radius:3px"></i></span>`;
+      }
+      fragment.appendChild(el);
+      existing.delete(key);
+    }
+    existing.forEach(el => el.remove());
+    container.appendChild(fragment);
+    if (!rows.length) {
+      container.style.display = 'none';
+      return;
+    }
+    container.style.display = 'block';
+    const maxVal = rows[0]?.[valueKey] || 0;
+    rows.forEach((row, index) => {
+      const key = `${row.src}|${row.name}`;
+      const el = Array.from(container.querySelectorAll('[data-meter-key]')).find(node => node.dataset.meterKey === key) || container.querySelectorAll('[data-meter-key]')[index];
+      if (!el || el.dataset.meterKey !== key) return;
+      const pct = maxVal > 0 ? Math.round((row[valueKey] || 0) / maxVal * 100) : 0;
+      const srcEl = el.querySelector('.meter-src');
+      const nameEl = el.querySelector('.meter-name');
+      const valEl = el.querySelector('.meter-val');
+      const barEl = el.querySelector('.meter-bar');
+      if (srcEl && srcEl.textContent !== row.src) srcEl.textContent = row.src;
+      if (nameEl && nameEl.textContent !== row.name) nameEl.textContent = row.name;
+      const valText = fmt(row[valueKey] || 0);
+      if (valEl) {
+        if (valEl.textContent !== valText) valEl.textContent = valText;
+        if (accentColor && valEl.style.color !== accentColor) valEl.style.color = accentColor;
+      }
+      if (barEl) {
+        const width = `${pct}%`;
+        if (barEl.style.width !== width) barEl.style.width = width;
+        const primary = accentColor || '#6366f1';
+        const secondary = accentColor === '#6ee7b7' ? '#a7f3d0' : '#a78bfa';
+        const bg = `linear-gradient(90deg,${primary},${secondary})`;
+        if (barEl.style.background !== bg) barEl.style.background = bg;
+      }
+    });
+  }
+
+  // 技能伤害分解(结构稳定,仅更新数值/进度,避免图标闪烁)
   const sdEl = $('dm-skills-breakdown');
   if (sdEl) {
     const hs = (typeof dmgStats !== 'undefined' && dmgStats.heroSkills) ? dmgStats.heroSkills : {};
@@ -729,29 +794,7 @@ function updateDmgMeter() {
     for (const [name, dmg] of Object.entries(cs)) allSkills.push({ name, dmg, src: '🐾' });
     allSkills.sort((a, b) => b.dmg - a.dmg);
     const top = allSkills.slice(0, 5);
-    const sdSig = top.map(s => s.src + s.name + s.dmg).join('|');
-    if (sdSig !== sdEl._sig) {
-      sdEl._sig = sdSig;
-      if (top.length > 0) {
-        sdEl.style.display = 'block';
-        const maxDmg = top[0].dmg;
-        sdEl.innerHTML = top.map(s => {
-          const pct = maxDmg > 0 ? Math.round(s.dmg / maxDmg * 100) : 0;
-          const dmgSkillIconHtml = (typeof skillIcon === 'function')
-            ? skillIcon(s.name, 13, 'spell_holy_powerinfusion')
-            : '';
-          return `<div style="display:flex;align-items:center;gap:4px;font-size:10px;margin-bottom:2px">
-            <span style="width:14px;flex-shrink:0">${s.src}</span>
-            <span style="width:14px;flex-shrink:0">${dmgSkillIconHtml}</span>
-            <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name}</span>
-            <span style="width:52px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums">${fmt(s.dmg)}</span>
-            <span style="width:36px;flex-shrink:0;background:var(--panel);height:6px;border-radius:3px;overflow:hidden"><i style="display:block;height:100%;width:${pct}%;background:linear-gradient(90deg,#6366f1,#a78bfa);border-radius:3px"></i></span>
-          </div>`;
-        }).join('');
-      } else {
-        sdEl.style.display = 'none';
-      }
-    }
+    syncMeterBreakdownRows(sdEl, top, 'dmg', '', 'spell_holy_powerinfusion');
   }
   const shEl = $('dm-heal-breakdown');
   if (shEl) {
@@ -762,29 +805,7 @@ function updateDmgMeter() {
     for (const [name, heal] of Object.entries(cs)) allSkills.push({ name, heal, src: '🐾' });
     allSkills.sort((a, b) => b.heal - a.heal);
     const top = allSkills.slice(0, 5);
-    const shSig = top.map(s => s.src + s.name + s.heal).join('|');
-    if (shSig !== shEl._sig) {
-      shEl._sig = shSig;
-      if (top.length > 0) {
-        shEl.style.display = 'block';
-        const maxHeal = top[0].heal;
-        shEl.innerHTML = top.map(s => {
-          const pct = maxHeal > 0 ? Math.round(s.heal / maxHeal * 100) : 0;
-          const healSkillIconHtml = (typeof skillIcon === 'function')
-            ? skillIcon(s.name, 13, 'spell_holy_heal')
-            : '';
-          return `<div style="display:flex;align-items:center;gap:4px;font-size:10px;margin-bottom:2px">
-            <span style="width:14px;flex-shrink:0">${s.src}</span>
-            <span style="width:14px;flex-shrink:0">${healSkillIconHtml}</span>
-            <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name}</span>
-            <span style="width:52px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums;color:#6ee7b7">${fmt(s.heal)}</span>
-            <span style="width:36px;flex-shrink:0;background:var(--panel);height:6px;border-radius:3px;overflow:hidden"><i style="display:block;height:100%;width:${pct}%;background:linear-gradient(90deg,#10b981,#6ee7b7);border-radius:3px"></i></span>
-          </div>`;
-        }).join('');
-      } else {
-        shEl.style.display = 'none';
-      }
-    }
+    syncMeterBreakdownRows(shEl, top, 'heal', '#6ee7b7', 'spell_holy_heal');
   }
   if (totalEl) {
     let text = '总伤 ' + fmt(total) + ' · ' + Math.floor(elapsed) + 's';
@@ -1504,7 +1525,8 @@ function renderSkills() {
     const lockInfo = sk.unlockLvl ? `(Lv.${sk.unlockLvl})` : '(天赋解锁)';
     const baseDesc = sk._baseDesc || sk.desc || '';
     const detailDesc = sk._detailDesc || '';
-    const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, sk.icon) : sk.icon;
+    const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, skillVisualFallback(sk)) : sk.icon;
+    const castLabel = sk.castTime > 0 ? `${sk.castTime}s读条` : '瞬发';
     div.innerHTML = `
       <div class="row">
         <b style="color:${unlocked?'inherit':'var(--muted)'}">${skillIconHtml} ${sk.name}</b>
@@ -1513,7 +1535,7 @@ function renderSkills() {
       <div class="muted">${baseDesc}</div>
       ${detailDesc ? `<div class="muted" style="margin-top:4px;color:#cbd5e1;font-size:11px;line-height:1.45">联动: ${detailDesc}</div>` : ''}
       <div class="row">
-        <span class="muted">${c.resource} ${sk.mp} · CD ${cdSec}秒</span>
+        <span class="muted">${c.resource} ${sk.mp} · CD ${cdSec}秒 · ${castLabel}</span>
         ${unlocked ? `<button class="${isSel?'success':''}" data-action="selectskill" data-key="${skKey}">${isSel?'取消':'选用'}</button>` : ''}
       </div>`;
     skl.appendChild(div);
@@ -2046,6 +2068,7 @@ function buildDungeonInfoHtml(dg) {
   const power = dg.reqLvl + 5;
   const isRaid = dg.type === 'raid';
   const isEpicRaid = !!dg.epicRaid;
+  const dgAffixes = (typeof getDungeonAffixes === 'function') ? getDungeonAffixes(dg) : [];
   const lastBossName = (dg.bosses || [])[(dg.bosses || []).length - 1]?.name;
   const dungeonIconHtml = (typeof dungeonIcon === 'function') ? dungeonIcon(dg.key, dg.name, 18, dg.icon) : dg.icon;
   const setTierInfo = (!isEpicRaid && typeof setBandForDungeon === 'function' && typeof setLabelForClass === 'function' && typeof setTierIndex === 'function')
@@ -2069,6 +2092,18 @@ function buildDungeonInfoHtml(dg) {
       推荐波次: ${dg.waves || '?'} · BOSS数量: ${(dg.bosses || []).length}
       ${dg.type==='raid'?(isEpicRaid?' · 掉落: 史诗级紫装 / 全BOSS超低概率橙装':' · 掉落: 常规团本装备 / 关底低概率橙武'):''}
     </div>`;
+  if (dgAffixes.length) {
+    html += `<div style="margin-bottom:10px;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.03)">
+      <div style="font-weight:700;font-size:13px;margin-bottom:6px">本期词缀</div>
+      <div style="display:flex;flex-direction:column;gap:6px">` +
+      dgAffixes.map(a => `
+        <div style="font-size:11px;line-height:1.55">
+          <div style="color:#fbbf24">${symbolIconHtml(a.icon, 14, a.name, 'spell_holy_powerinfusion')} ${a.name}</div>
+          <div class="muted">${a.desc || '特殊规则'}</div>
+        </div>`).join('') +
+      `</div>
+    </div>`;
+  }
   if (setTierInfo) {
     html += `<div class="dungeon-set-track"><b>当前职业套装目标:</b> ${setTierInfo.setName} · ${setTierInfo.bandName}阶段（2件/4件激活特效）</div>`;
   }
@@ -2184,7 +2219,7 @@ function renderDungeon() {
     div.dataset.dungeonKey = dg.key;
     const dungeonIconHtml = (typeof dungeonIcon === 'function') ? dungeonIcon(dg.key, dg.name, 18, dg.icon) : dg.icon;
     const dgAffixes = (typeof getDungeonAffixes === 'function') ? getDungeonAffixes(dg) : [];
-    const affixLine = dgAffixes.length ? `<div class="muted" style="font-size:11px">⚙️ 词缀: ${dgAffixes.map(a => (a.icon||'') + a.name).join(' · ')}</div>` : '';
+    const affixLine = dgAffixes.length ? `<div class="muted" style="font-size:11px">⚙️ 词缀: ${dgAffixes.map(a => `${symbolIconHtml(a.icon, 12, a.name, 'spell_holy_powerinfusion')} ${a.name}`).join(' · ')}</div>` : '';
     const firstClearBadge = (!state.dungeonFirstClear || !state.dungeonFirstClear[dg.key]) ? '<span class="pill" style="background:rgba(246,196,83,.18);color:#f6c453">🎁首通</span>' : '';
     div.innerHTML = `
       <div class="row">
