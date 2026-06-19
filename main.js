@@ -346,6 +346,7 @@ function setupDelegation() {
         if(typeof leaveRoguelike==='function') leaveRoguelike();
       }
     });
+  }
   // Roguelike 子标签切换
   $('dungeon-sub-roguelike').addEventListener('click', e => {
     const tab = e.target.closest('[data-roguesub]');
