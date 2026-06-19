@@ -137,6 +137,7 @@ function loop() {
 
 /* ---------- 事件代理:右侧 tab 各面板 ---------- */
 function setupDelegation() {
+  const hoverTipsEnabled = () => typeof tooltipHoverEnabled === 'function' ? tooltipHoverEnabled() : !isMobileLayout();
   document.addEventListener('click', e => {
     if (e.target.closest('[data-tip-close]') && typeof unpinTip === 'function') {
       unpinTip();
@@ -369,17 +370,19 @@ function setupDelegation() {
     const bb = $('buff-bar'); if (!bb) return;
     const tip = $('compare-tip');
     bb.addEventListener('mouseover', e => {
+      if (!hoverTipsEnabled()) return;
       const chip = e.target.closest('.buff-chip'); if (!chip) return;
       tip.querySelector('.compare-head').textContent = chip.dataset.tip || '';
       tip.querySelector('.compare-body').innerHTML = '';
       tip.style.display = 'block';
       positionTip(tip, e);
     });
-    bb.addEventListener('mousemove', e => { if (tip.style.display === 'block') positionTip(tip, e); });
-    bb.addEventListener('mouseout', e => { if ((typeof _tipPinned === 'undefined' || !_tipPinned) && (!e.relatedTarget || !e.relatedTarget.closest || !e.relatedTarget.closest('.buff-chip'))) tip.style.display = 'none'; });
+    bb.addEventListener('mousemove', e => { if (!hoverTipsEnabled()) return; if (tip.style.display === 'block') positionTip(tip, e); });
+    bb.addEventListener('mouseout', e => { if (!hoverTipsEnabled()) return; if ((typeof _tipPinned === 'undefined' || !_tipPinned) && (!e.relatedTarget || !e.relatedTarget.closest || !e.relatedTarget.closest('.buff-chip'))) tip.style.display = 'none'; });
     // 触屏点击固定
     bb.addEventListener('click', e => {
       const chip = e.target.closest('.buff-chip'); if (!chip) return;
+      e.stopPropagation();
       if (typeof _tipPinned !== 'undefined' && _tipPinned && _tipPinnedOwner === chip) { if (typeof unpinTip === 'function') unpinTip(); }
       else { if (typeof _tipPinned !== 'undefined' && _tipPinned) { if (typeof unpinTip === 'function') unpinTip(); } tip.querySelector('.compare-head').textContent = chip.dataset.tip || ''; tip.querySelector('.compare-body').innerHTML = ''; tip.style.display = 'block'; positionTip(tip, e); if (typeof _tipPinned !== 'undefined') { _tipPinned = true; _tipPinnedOwner = chip; } }
     });
@@ -447,17 +450,19 @@ function setupDelegation() {
     const root = $('companion-list'); if (!root) return;
     const tip = $('compare-tip');
     root.addEventListener('mouseover', e => {
+      if (!hoverTipsEnabled()) return;
       const sk = e.target.closest('.comp-skill'); if (!sk) return;
       tip.querySelector('.compare-head').innerHTML = sk.dataset.tip || '';
       tip.querySelector('.compare-body').innerHTML = '';
       tip.style.display = 'block';
       positionTip(tip, e);
     });
-    root.addEventListener('mousemove', e => { if (tip.style.display === 'block' && e.target.closest('.comp-skill')) positionTip(tip, e); });
-    root.addEventListener('mouseout', e => { const sk = e.target.closest('.comp-skill'); if (sk && (typeof _tipPinned === 'undefined' || !_tipPinned) && (!e.relatedTarget || !e.relatedTarget.closest || !e.relatedTarget.closest('.comp-skill'))) tip.style.display = 'none'; });
+    root.addEventListener('mousemove', e => { if (!hoverTipsEnabled()) return; if (tip.style.display === 'block' && e.target.closest('.comp-skill')) positionTip(tip, e); });
+    root.addEventListener('mouseout', e => { if (!hoverTipsEnabled()) return; const sk = e.target.closest('.comp-skill'); if (sk && (typeof _tipPinned === 'undefined' || !_tipPinned) && (!e.relatedTarget || !e.relatedTarget.closest || !e.relatedTarget.closest('.comp-skill'))) tip.style.display = 'none'; });
     // 触屏点击固定
     root.addEventListener('click', e => {
       const sk = e.target.closest('.comp-skill'); if (!sk) return;
+      e.stopPropagation();
       if (typeof _tipPinned !== 'undefined' && _tipPinned && _tipPinnedOwner === sk) { if (typeof unpinTip === 'function') unpinTip(); }
       else { if (typeof _tipPinned !== 'undefined' && _tipPinned) { if (typeof unpinTip === 'function') unpinTip(); } tip.querySelector('.compare-head').innerHTML = sk.dataset.tip || ''; tip.querySelector('.compare-body').innerHTML = ''; tip.style.display = 'block'; positionTip(tip, e); if (typeof _tipPinned !== 'undefined') { _tipPinned = true; _tipPinnedOwner = sk; } }
     });

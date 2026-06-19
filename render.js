@@ -14,6 +14,20 @@ let attrTips = {};
 let _tipPinned = false;
 let _tipPinnedOwner = null;
 
+function tooltipTapMode() {
+  if (typeof window === 'undefined') return false;
+  if (typeof isMobileLayout === 'function' && isMobileLayout()) return true;
+  try {
+    return !window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  } catch (_) {
+    return window.innerWidth <= 920;
+  }
+}
+
+function tooltipHoverEnabled() {
+  return !tooltipTapMode();
+}
+
 function classSkillEntriesSorted(cls) {
   const entries = Object.entries((cls && cls.skills) || {});
   const order = new Map(entries.map(([key], idx) => [key, idx]));
@@ -45,6 +59,7 @@ function unpinTip() {
 
 function addTouchPin(el, showFn) {
   el.addEventListener('click', e => {
+    e.stopPropagation();
     if (_tipPinned && _tipPinnedOwner === el) {
       unpinTip();
     } else {
@@ -69,9 +84,9 @@ function setupAttrHover() {
       tip.style.display = 'block';
       positionTip(tip, e);
     };
-    cell.addEventListener('mouseenter', showFn);
-    cell.addEventListener('mouseleave', () => { if (!_tipPinned) { $('compare-tip').style.display = 'none'; } });
-    cell.addEventListener('mousemove', e => positionTip($('compare-tip'), e));
+    cell.addEventListener('mouseenter', e => { if (!tooltipHoverEnabled()) return; showFn(e); });
+    cell.addEventListener('mouseleave', () => { if (!tooltipHoverEnabled()) return; if (!_tipPinned) { $('compare-tip').style.display = 'none'; } });
+    cell.addEventListener('mousemove', e => { if (!tooltipHoverEnabled()) return; positionTip($('compare-tip'), e); });
     addTouchPin(cell, showFn);
   });
 }
@@ -460,9 +475,9 @@ function bindUnitTip(el, htmlBuilder) {
     tip.style.display = 'block';
     positionTip(tip, e);
   };
-  el.onmouseenter = showTip;
-  el.onmouseleave = () => { if (!_tipPinned) hideLootTip(); };
-  el.onmousemove = e => positionTip($('compare-tip'), e);
+  el.onmouseenter = e => { if (!tooltipHoverEnabled()) return; showTip(e); };
+  el.onmouseleave = () => { if (!tooltipHoverEnabled()) return; if (!_tipPinned) hideLootTip(); };
+  el.onmousemove = e => { if (!tooltipHoverEnabled()) return; positionTip($('compare-tip'), e); };
   addTouchPin(el, showTip);
 }
 function attachFocusBossHover(focus) {
@@ -513,9 +528,9 @@ function attachFocusBossHover(focus) {
     tip.style.display = 'block';
     positionTip(tip, e);
   };
-  emojiEl.onmouseenter = showFocusTip;
-  emojiEl.onmouseleave = () => { if (!_tipPinned) hideLootTip(); };
-  emojiEl.onmousemove = (e) => positionTip($('compare-tip'), e);
+  emojiEl.onmouseenter = e => { if (!tooltipHoverEnabled()) return; showFocusTip(e); };
+  emojiEl.onmouseleave = () => { if (!tooltipHoverEnabled()) return; if (!_tipPinned) hideLootTip(); };
+  emojiEl.onmousemove = (e) => { if (!tooltipHoverEnabled()) return; positionTip($('compare-tip'), e); };
   addTouchPin(emojiEl, showFocusTip);
 }
 function renderMonList() {
@@ -963,12 +978,13 @@ function updateBattleVisuals() {
       if(!csEl._tipBound){
         csEl._tipBound=true;
         const showTip=e=>{const sp=e.target.closest('.comp-cd-skill,.comp-cd-passive');if(!sp)return;const tip=$('compare-tip');if(!tip)return;tip.querySelector('.compare-head').innerHTML=sp.dataset.tip||'';tip.querySelector('.compare-body').innerHTML='';tip.style.display='block';positionTip(tip,e);};
-        csEl.addEventListener('mouseover',showTip);
-        csEl.addEventListener('mousemove',e=>{if(e.target.closest('.comp-cd-skill,.comp-cd-passive'))positionTip($('compare-tip'),e);});
-        csEl.addEventListener('mouseleave',()=>{if(!_tipPinned){const tip=$('compare-tip');if(tip)tip.style.display='none';}});
+        csEl.addEventListener('mouseover',e=>{if(!tooltipHoverEnabled())return;showTip(e);});
+        csEl.addEventListener('mousemove',e=>{if(!tooltipHoverEnabled())return;if(e.target.closest('.comp-cd-skill,.comp-cd-passive'))positionTip($('compare-tip'),e);});
+        csEl.addEventListener('mouseleave',()=>{if(!tooltipHoverEnabled())return;if(!_tipPinned){const tip=$('compare-tip');if(tip)tip.style.display='none';}});
         csEl.addEventListener('click', e => {
           const sp = e.target.closest('.comp-cd-skill,.comp-cd-passive');
           if (!sp) return;
+          e.stopPropagation();
           if (_tipPinned && _tipPinnedOwner === sp) { unpinTip(); }
           else { if (_tipPinned) unpinTip(); showTip(e); _tipPinned = true; _tipPinnedOwner = sp; }
         });
@@ -1014,14 +1030,14 @@ function updateBattleVisuals() {
       tip.style.display='block';positionTip(tip,e);
     };
     const compMini = $('comp-mini');
-    compMiniName.onmouseenter = showCompDetail;
-    compMiniName.onmouseleave = () => { if (!_tipPinned) $('compare-tip').style.display = 'none'; };
-    compMiniName.onmousemove = e => positionTip($('compare-tip'), e);
+    compMiniName.onmouseenter = e => { if (!tooltipHoverEnabled()) return; showCompDetail(e); };
+    compMiniName.onmouseleave = () => { if (!tooltipHoverEnabled()) return; if (!_tipPinned) $('compare-tip').style.display = 'none'; };
+    compMiniName.onmousemove = e => { if (!tooltipHoverEnabled()) return; positionTip($('compare-tip'), e); };
     addTouchPin(compMiniName, showCompDetail);
     if (compMini) {
-      compMini.onmouseenter = showCompDetail;
-      compMini.onmouseleave = () => { if (!_tipPinned) $('compare-tip').style.display = 'none'; };
-      compMini.onmousemove = e => positionTip($('compare-tip'), e);
+      compMini.onmouseenter = e => { if (!tooltipHoverEnabled()) return; showCompDetail(e); };
+      compMini.onmouseleave = () => { if (!tooltipHoverEnabled()) return; if (!_tipPinned) $('compare-tip').style.display = 'none'; };
+      compMini.onmousemove = e => { if (!tooltipHoverEnabled()) return; positionTip($('compare-tip'), e); };
       addTouchPin(compMini, showCompDetail);
     }
   }else{
@@ -1230,9 +1246,9 @@ function renderInventory() {
       tip.style.display = 'block';
       positionTip(tip, e);
     };
-    row.addEventListener('mouseenter', showCompare);
-    row.addEventListener('mouseleave', () => { if (!_tipPinned) tip.style.display = 'none'; });
-    row.addEventListener('mousemove', e => positionTip(tip, e));
+    row.addEventListener('mouseenter', e => { if (!tooltipHoverEnabled()) return; showCompare(e); });
+    row.addEventListener('mouseleave', () => { if (!tooltipHoverEnabled()) return; if (!_tipPinned) tip.style.display = 'none'; });
+    row.addEventListener('mousemove', e => { if (!tooltipHoverEnabled()) return; positionTip(tip, e); });
     addTouchPin(row, showCompare);
 
     il.appendChild(row);
@@ -1755,9 +1771,9 @@ function renderMap() {
         tipEl.style.display = 'block';
         positionTip(tipEl, e);
       };
-      nameEl.addEventListener('mouseenter', showBossTip);
-      nameEl.addEventListener('mouseleave', () => { if (!_tipPinned) $('compare-tip').style.display = 'none'; });
-      nameEl.addEventListener('mousemove', e => positionTip($('compare-tip'), e));
+      nameEl.addEventListener('mouseenter', e => { if (!tooltipHoverEnabled()) return; showBossTip(e); });
+      nameEl.addEventListener('mouseleave', () => { if (!tooltipHoverEnabled()) return; if (!_tipPinned) $('compare-tip').style.display = 'none'; });
+      nameEl.addEventListener('mousemove', e => { if (!tooltipHoverEnabled()) return; positionTip($('compare-tip'), e); });
       addTouchPin(nameEl, showBossTip);
     }
     // BOSS按钮hover掉落预览
@@ -1779,8 +1795,8 @@ function renderMap() {
         ];
         showLootTip(e, bossDrops, `${bossPanelIcon} ${m.boss.name} 掉落`);
       };
-      bossBtn.addEventListener('mouseenter', showBossLoot);
-      bossBtn.addEventListener('mousemove', e => positionTip($('compare-tip'), e));
+      bossBtn.addEventListener('mouseenter', e => { if (!tooltipHoverEnabled()) return; showBossLoot(e); });
+      bossBtn.addEventListener('mousemove', e => { if (!tooltipHoverEnabled()) return; positionTip($('compare-tip'), e); });
       addTouchPin(bossBtn, showBossLoot);
     }
     ml.appendChild(div);
@@ -2246,6 +2262,8 @@ function processDirty() {
 /* 全局点击关闭已固定的 tooltip(触屏场景) */
 document.addEventListener('click', e => {
   if (!_tipPinned || !_tipPinnedOwner) return;
+  const tip = document.getElementById('compare-tip');
+  if (tip && tip.contains(e.target)) return;
   if (!_tipPinnedOwner.contains(e.target)) {
     unpinTip();
   }
