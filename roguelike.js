@@ -221,6 +221,8 @@ function restoreRoguelikeStats() {
 /* ---------- 怪物生成 ---------- */
 function spawnRoguelikeMonster() {
   const rs = state.roguelikeState; if (!rs) return;
+  // 有未选能力时暂停刷怪, 等玩家选择后再进下一层
+  if (rs.abilityChoices && rs.abilityChoices.length > 0) return;
   const floor = rs.floor;
   const isBoss = floor % ROGUELIKE_BOSS_EVERY === 0;
   const isElite = !isBoss && floor % ROGUELIKE_ELITE_EVERY === 0;
