@@ -626,17 +626,20 @@ function showFloat(targetEl, text, color, opts) {
   if (typeof document !== 'undefined' && document.hidden) return;
   const mobile = isMobilePerfMode();
   const now = Date.now();
-  const important = /晕|眩|沉默|缴械|恐惧|冻结|净化|归来|倒下|闪避|必暴|护盾|盾|召来|召唤|升级|掉落/.test(text || '');
+  const variant = inferFloatVariant(text, opts);
+  const important = !!opts?.important
+    || /晕|眩|沉默|缴械|恐惧|冻结|净化|归来|倒下|闪避|必暴|护盾|盾|召来|召唤|升级|掉落/.test(text || '')
+    || ['crit','boss','heal','shield','shield-break','status','dot'].includes(variant);
   if (mobile) {
-    const gap = important ? 80 : 150;
+    const gap = important ? 45 : 120;
     if (!important && now - _lastFloatTs < gap) return;
-    if (!important && _activeFloatCount >= 6) return;
+    if (!important && _activeFloatCount >= 8) return;
+    if (important && _activeFloatCount >= 16) return;
   }
   _lastFloatTs = now;
   const rect = targetEl.getBoundingClientRect();
   const sRect = stage.getBoundingClientRect();
   const el = document.createElement('div');
-  const variant = inferFloatVariant(text, opts);
   el.className = `float-dmg ${variant}`;
   el.style.color = color;
   el.textContent = text;

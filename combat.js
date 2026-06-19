@@ -323,7 +323,7 @@ function applySkillFollowupDamage(mon, amount, icon, color){
   if(amount <= 0) return 0;
   mon.hp -= amount;
   trackDmg('hero', amount);
-  showMonsterFloat(mon, (icon || '✨') + '-' + amount, color || '#fbbf24');
+  showMonsterFloat(mon, (icon || '✨') + '-' + amount, color || '#fbbf24', { important:true });
   return amount;
 }
 function splashSkillDamage(sourceMon, amount, pct, icon){
@@ -2989,7 +2989,7 @@ function castSkill(skillKey,manual){
         const d=calcDmg(state.hero.atk*sk.mul*cb*talentDamageMult(target,skillKey)*rt.mult,heroTargetDef(target),state.hero.crit,state.hero.critd,forceCrit,target.lvl,state.hero.lvl);
         let dd=d.dmg;
         {const dr=monsterDamageReduction(target, now);if(dr)dd=Math.max(1,Math.floor(dd*(1-dr)));}
-        target.hp-=dd;dmgDone+=dd;trackDmg('hero',dd,d.crit,sk.icon+sk.name);showMonsterFloat(target,(sk.icon||'✨')+'-'+dd,d.crit?'#fbbf24':'#a335ee',{variant:d.crit?'crit':'hit',scale:d.crit?1.14:1});
+        target.hp-=dd;dmgDone+=dd;trackDmg('hero',dd,d.crit,sk.icon+sk.name);showMonsterFloat(target,(sk.icon||'✨')+'-'+dd,d.crit?'#fbbf24':'#a335ee',{variant:d.crit?'crit':'hit',scale:d.crit?1.14:1,important:true});
         if(d.crit||forceCrit)processTalentOnCrit(target,dd,{skillKey});
         if(sk.lifeSteal){const heal=Math.floor(dd*sk.lifeSteal);healHeroAmount(heal,'🩸','#6ee7b7');}
         if(sk.slow)target.slowUntil=Date.now()+4000;
@@ -3008,7 +3008,7 @@ function castSkill(skillKey,manual){
       let dd=d.dmg;
       {const dr=monsterDamageReduction(mon, now);if(dr)dd=Math.max(1,Math.floor(dd*(1-dr)));}
       mon.hp-=dd;dmgDone=dd;trackDmg('hero',dd,d.crit,sk.icon+sk.name);
-      showMonsterFloat(mon,(sk.icon||'✨')+'-'+dd,(d.crit||forceCrit)?'#fbbf24':'#a335ee',{variant:(d.crit||forceCrit)?'crit':'hit',scale:(d.crit||forceCrit)?1.16:1});
+      showMonsterFloat(mon,(sk.icon||'✨')+'-'+dd,(d.crit||forceCrit)?'#fbbf24':'#a335ee',{variant:(d.crit||forceCrit)?'crit':'hit',scale:(d.crit||forceCrit)?1.16:1,important:true});
       log(sk.icon+' '+sk.name+'! '+dd+' 伤害'+(forceCrit?' (必暴)':''),'good');
       if(d.crit||forceCrit)processTalentOnCrit(mon,dd,{skillKey});
       if(sk.lifeSteal){const heal=Math.floor(dmgDone*sk.lifeSteal);healHeroAmount(heal,'🩸','#6ee7b7');}
@@ -3240,7 +3240,7 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
       if(i!==undefined){const sk=st.skills[i];
         if(sk.type==='dmg'){
           const dmgMult = companionSkillDamageMult(sk, mon, now);
-          const sd=calcDmg(st.atk*sk.mul*dmgMult*COMPANION_SKILL_DMG_BONUS,monArmor(mon),st.crit,st.critd,sk.alwaysCrit,mon.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(mon, sd.dmg, sk.icon || st.emoji).remaining;mon.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,sd.crit,st.emoji+sk.name);showMonsterFloat(mon,st.emoji+sk.icon+'-'+dealt,'#c0a0ff',{variant:sd.crit?'crit':'comp',scale:sd.crit?1.12:1});}
+          const sd=calcDmg(st.atk*sk.mul*dmgMult*COMPANION_SKILL_DMG_BONUS,monArmor(mon),st.crit,st.critd,sk.alwaysCrit,mon.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(mon, sd.dmg, sk.icon || st.emoji).remaining;mon.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,sd.crit,st.emoji+sk.name);showMonsterFloat(mon,st.emoji+sk.icon+'-'+dealt,'#c0a0ff',{variant:sd.crit?'crit':'comp',scale:sd.crit?1.12:1,important:true});}
           const dotPct = sk.dotPct || (sk.dot ? 0.12 : 0);
           if(dotPct > 0) applyMonsterDot(mon,`comp:${comp.key}:${i}`,Math.max(1,Math.floor(dealt*dotPct)),sk.dotMs||6000,{icon:sk.icon,name:sk.name,source:st.name});
           if(sk.slow) mon.slowUntil=Math.max(mon.slowUntil||0,Date.now()+(sk.slowMs||4000));
