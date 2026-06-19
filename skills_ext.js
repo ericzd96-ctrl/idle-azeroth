@@ -22,6 +22,8 @@ const BUFF_FX = {
   /* ===== 职业风味爆发/减伤(去同化:每职业独立数值与倾向) ===== */
   w_reckless: { atkMul:1.30, critAdd:12, critdAdd:24 },    // 战士·鲁莽:近战暴击爆发
   w_ironwall: { dr:0.30, defMul:1.40 },                    // 战士·钢铁壁垒:重甲减伤墙
+  m_combust:  { critAdd:20, critdAdd:40 },                 // 法师·燃烧:火法暴击/暴伤爆发
+  m_iceblock: { dr:0.40 },                                 // 法师·寒冰屏障:纯减伤
 };
 
 const SKILL_AURA_LIBRARY = {
@@ -30,6 +32,9 @@ const SKILL_AURA_LIBRARY = {
   /* ===== 战士招牌资源 ===== */
   w_sunder:     { icon:'🔨', name:'破甲印记', desc:'致死打击/破甲攻击叠加,巨人之击按层消耗并暴增', maxStacks:5 },
   w_rage:       { icon:'💢', name:'暴怒', desc:'暴击叠加,强化怒火乱舞', maxStacks:5 },
+  /* ===== 法师招牌资源 ===== */
+  m_heat:       { icon:'🔥', name:'炽热', desc:'暴击叠加,炎爆术按层引爆暴增', maxStacks:5 },
+  m_frost:      { icon:'❄️', name:'指尖寒冰', desc:'寒冰箭叠加,冰枪术按层 shatter 暴增', maxStacks:5 },
 };
 
 const MONSTER_STATE_META = {
@@ -54,10 +59,14 @@ const NEW_SKILLS = {
                     fx:{ bonusPerAuraStack:{ key:'w_rage', pct:0.18 }, consumeAura:{ key:'w_rage', all:true }, extraHitPct:0.4 }},
   },
   mage: {
-    m_combustion:{name:'燃烧',     icon:'🔥', desc:'爆发:5秒内暴击+17、暴伤+34',    mp:40, type:'buff', buff:'s_empower',  duration:5000, unlockLvl:26},
-    m_iceBlock:  {name:'寒冰屏障', icon:'🧊', desc:'减伤:4秒内受到伤害降低34%',      mp:30, type:'buff', buff:'s_mitigate', duration:4000,  unlockLvl:34},
+    m_combustion:{name:'燃烧',     icon:'🔥', desc:'爆发:5秒内暴击+20、暴伤+40',    mp:40, type:'buff', buff:'m_combust',  duration:5000, unlockLvl:26},
+    m_iceBlock:  {name:'寒冰屏障', icon:'🧊', desc:'减伤:4秒内受到伤害降低40%',      mp:30, type:'buff', buff:'m_iceblock', duration:4000,  unlockLvl:34},
     m_arcanePower:{name:'奥术强化',icon:'🌀', desc:'功能:5秒内攻速+33%',           mp:25, type:'buff', buff:'s_haste',    duration:5000, unlockLvl:44},
     m_meteor:    {name:'流星',     icon:'☄️', desc:'特色:3倍火焰范围伤害并灼烧',    mp:60, type:'dmg',  mul:9, dot:true,                    unlockLvl:54},
+    m_arcaneBarrage:{name:'奥术弹幕',icon:'🌟',desc:'招牌:4倍奥术伤害',            mp:35, type:'dmg', mul:4, unlockLvl:60, castTime:0,
+                    fx:{ bonusPerAuraStack:{ key:'arcaneCharge', pct:0.30 }, consumeAura:{ key:'arcaneCharge', all:true } }},
+    m_iceLance:  {name:'冰枪术',   icon:'🧊', desc:'招牌:3倍寒冰伤害',             mp:25, type:'dmg', mul:3, unlockLvl:70, castTime:0,
+                    fx:{ bonusStates:{ frozen:0.6 }, bonusPerAuraStack:{ key:'m_frost', pct:0.25 }, consumeAura:{ key:'m_frost', all:true } }},
   },
   priest: {
     p_shadowform:{name:'暗影形态', icon:'🌑', desc:'爆发:6秒内攻击+20%、攻速+20%', mp:40, type:'buff', buff:'s_frenzy',   duration:6000, unlockLvl:26},
@@ -136,11 +145,11 @@ const SKILL_REWORKS = {
     arcane:{ desc:'3倍伤害并叠加奥术充能,强化奥术爆炸', cd:4, fx:{ grantAura:{ key:'arcaneCharge', duration:12000, add:1, max:3 } } },
     arcaneExplosion:{ desc:'3倍范围伤害,消耗奥术充能,每层额外增伤35%', aoe:true, cd:10, fx:{ bonusPerAuraStack:{ key:'arcaneCharge', pct:0.35 }, consumeAura:{ key:'arcaneCharge', all:true } } },
     fireball:{ desc:'3倍伤害并施加点燃,为炎爆与流星铺垫', cd:6, fx:{ applyDotKey:'skill:fireball', dotName:'点燃', dotIcon:'🔥', dotPct:0.18, dotMs:6000 } },
-    frostbolt:{ desc:'3倍伤害并冰缓目标,让暴风雪更致命', cd:6, fx:{ applyTargetState:'frozen', stateDurationMs:7000, bonusStates:{ slow:0.2 } } },
+    frostbolt:{ desc:'3倍伤害并冰缓目标,叠加指尖寒冰,让冰枪更致命', cd:6, fx:{ applyTargetState:'frozen', stateDurationMs:7000, bonusStates:{ slow:0.2 }, grantAura:{ key:'m_frost', add:1, max:5, duration:12000 } } },
     iceBarrier:{ desc:'15秒防御+60%,护体存在时寒冰法术更稳' },
-    pyroblast:{ desc:'7倍必暴,对点燃目标额外造成60%伤害并引爆灼烧', cd:14, fx:{ bonusStates:{ dot:0.6 }, bonusPerDot:0.18, consumeDots:true, applyDotKey:'skill:pyroblast', dotName:'炎爆灼烧', dotIcon:'☄️', dotPct:0.12, dotMs:5000 } },
+    pyroblast:{ desc:'7倍必暴,消耗全部炽热每层+20%,对点燃目标额外60%并引爆灼烧', cd:14, fx:{ bonusStates:{ dot:0.6 }, bonusPerDot:0.18, bonusPerAuraStack:{ key:'m_heat', pct:0.2 }, consumeAura:{ key:'m_heat', all:true }, consumeDots:true, applyDotKey:'skill:pyroblast', dotName:'炎爆灼烧', dotIcon:'☄️', dotPct:0.12, dotMs:5000 } },
     blizzard:{ desc:'5倍范围伤害,对减速/冻结目标额外提高伤害', aoe:true, cd:16, fx:{ bonusStates:{ slow:0.35, frozen:0.5 } } },
-    m_combustion:{ desc:'5秒内暴击+17与暴伤+34,适合火法爆发' },
+    m_combustion:{ desc:'5秒内暴击+20、暴伤+40%,适合火法爆发' },
     m_meteor:{ desc:'9倍范围火焰伤害,对带灼烧目标额外增伤并附加新灼烧', aoe:true, cd:24, fx:{ bonusStates:{ dot:0.45 }, applyDotKey:'skill:m_meteor', dotName:'流星余烬', dotIcon:'☄️', dotPct:0.14, dotMs:5000 } },
   },
   priest: {
@@ -396,9 +405,11 @@ const SKILL_AI_OVERRIDES = {
     blizzard:{ priorityTag:'aoe', minEnemies:3, preferOnBoss:true },
     iceBarrier:{ priorityTag:'defBuff', useIfSelfHpBelow:0.48 },
     arcane:{ priorityTag:'builder' },
-    m_combustion:{ priorityTag:'buff', useIfBuffMissing:'s_empower', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
+    m_combustion:{ priorityTag:'buff', useIfBuffMissing:'m_combust', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
     m_iceBlock:{ priorityTag:'defBuff', useIfSelfHpBelow:0.42 },
     m_meteor:{ priorityTag:'spender', applyTargetState:null, useIfTargetMissing:null, useIfDotCountAtLeast:1, preferOnBoss:true },
+    m_arcaneBarrage:{ priorityTag:'spender', useIfChargeKey:'arcaneCharge', useIfChargeAtLeast:2, preferOnBoss:true },
+    m_iceLance:{ priorityTag:'spender', applyTargetState:null, useIfTargetMissing:null, useIfChargeKey:'m_frost', useIfChargeAtLeast:2, preferOnBoss:true },
   },
   priest: {
     shield:{ priorityTag:'defBuff', useIfSelfHpBelow:0.78, useIfBuffMissing:'shield' },

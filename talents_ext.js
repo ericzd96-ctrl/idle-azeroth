@@ -77,13 +77,13 @@ const TALENT_AURA_LIBRARY = {
         { name:'法网收束', req:66, desc:'你对首领造成的伤害提高 20%。', fx:{ type:'vsBoss', dmgPct:20 } },
       ],
       fire: [
-        { name:'热能连锁', req:46, desc:'暴击有 35% 几率触发 6 秒【热能连锁】。', fx:{ type:'onCrit', chance:35, cooldown:6000, aura:'fire_hotstreak' } },
+        { name:'热能连锁', req:46, desc:'暴击叠加 1 层【炽热】；并有 35% 几率触发 6 秒【热能连锁】。', fx:[{ type:'onCrit', grantCharge:{ key:'m_heat', add:1, max:5 } },{ type:'onCrit', chance:35, cooldown:6000, aura:'fire_hotstreak' }] },
         { name:'余烬蔓延', req:56, desc:'若目标带有持续伤害效果而死亡，会把 60% 的 DOT 蔓延给下一个敌人。', fx:{ type:'onKill', requireDot:true, spreadDotPct:0.6 } },
         { name:'烈焰处决', req:66, desc:'对生命低于 35% 的敌人造成的伤害提高 30%。', fx:{ type:'executeWindow', threshold:0.35, dmgPct:30 } },
       ],
       frost: [
-        { name:'寒霜裂片', req:46, desc:'你对被减速的敌人造成的伤害提高 25%。', fx:{ type:'vsState', state:'slow', dmgPct:25 } },
-        { name:'冰脉回响', req:56, desc:'暴击有 35% 几率触发 6 秒【冰脉回响】。', fx:{ type:'onCrit', chance:35, cooldown:6000, aura:'frost_icy' } },
+        { name:'寒霜裂片', req:46, desc:'你对被冻结的敌人造成的伤害提高 25%。', fx:{ type:'vsState', state:'frozen', dmgPct:25 } },
+        { name:'冰脉回响', req:56, desc:'暴击叠加 1 层【指尖寒冰】；并有 35% 几率触发 6 秒【冰脉回响】。', fx:[{ type:'onCrit', grantCharge:{ key:'m_frost', add:1, max:5 } },{ type:'onCrit', chance:35, cooldown:6000, aura:'frost_icy' }] },
         { name:'冰川护体', req:66, desc:'生命低于 40% 时，获得 8 秒【冰川护体】并吸收 15% 最大生命伤害，30秒冷却。', fx:{ type:'lowHp', threshold:0.4, cooldown:30000, aura:'frost_shell', shieldPct:0.15 } },
       ],
     },
