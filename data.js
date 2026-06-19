@@ -3638,60 +3638,80 @@ function isEpicRaidKey(dungeonKey) { return /_epic$/.test(String(dungeonKey || '
 function getDungeonDef(dungeonKey) { return DUNGEONS.find(d => d.key === dungeonKey) || null; }
 const WORLD_BOSS_SKILLSETS = {
   hogger_king: {
-    passive:{ dmgReduction:0.16, critChance:0.14, dodgeChance:0.08, atkBonus:0.18, leech:0.06, stunChance:0.08 },
-    supportCount:2,
+    passive:{ dmgReduction:0.19, critChance:0.16, dodgeChance:0.09, atkBonus:0.22, leech:0.06, stunChance:0.08 },
+    supportCount:1,
+    atkInterval:1360,
+    instantCast:false,
     skills:[
-      {name:'豺狼重槌', icon:'🔨', desc:'7倍伤害', type:'dmg', mul:7, castTime:1.8, stun:1200, brittle:true},
-      {name:'撕肉狂咬', icon:'🩸', desc:'7倍伤害', type:'dmg', mul:7, castTime:2.2, bleed:true, weaken:true},
-      {name:'霍格呼号', icon:'📯', desc:'8倍范围伤害', type:'dmg', mul:8, castTime:2.8, aoe:true, fear:1400, frenzy:true}
+      {name:'野蛮扑袭', icon:'🐗', desc:'6.8倍伤害，眩晕0.9秒并虚弱5秒', type:'dmg', mul:6.8, cd:8, castTime:1.6, stun:900, weaken:true},
+      {name:'撕喉裂伤', icon:'🩸', desc:'6.4倍伤害，流血8秒并附加易爆6秒', type:'dmg', mul:6.4, cd:9, castTime:2.1, bleed:true, brittle:true},
+      {name:'霍格呼号', icon:'📯', desc:'召唤1只豺狼人并在6秒内攻击+25%、攻速+20%', type:'support', cd:14, castTime:2.5, summonCount:1, summonTheme:'beast', atkBuffSecs:6, atkBuffPct:25, spdBuffSecs:6, spdBuffPct:20},
+      {name:'断骨重槌', icon:'🔨', desc:'7.8倍伤害，并施加5秒易伤', type:'dmg', mul:7.8, cd:11, castTime:2.8, sunder:true}
     ]
   },
   swamp_tyrant: {
-    passive:{ dmgReduction:0.19, critChance:0.16, dodgeChance:0.08, atkBonus:0.16, leech:0.09 },
-    supportCount:2,
+    passive:{ dmgReduction:0.23, critChance:0.18, dodgeChance:0.09, atkBonus:0.2, leech:0.1 },
+    supportCount:1,
+    atkInterval:1320,
+    instantCast:false,
+    instantCastChance:0.08,
     skills:[
-      {name:'泥沼绞缠', icon:'🪢', desc:'8倍自然伤害', type:'dmg', mul:8, castTime:2, cripple:true, decay:true},
-      {name:'暴君撕咬', icon:'🦷', desc:'8倍伤害', type:'dmg', mul:8, castTime:2.6, bleed:true, brittle:true},
-      {name:'腐泥吞噬', icon:'🫧', desc:'9倍范围伤害', type:'dmg', mul:9, castTime:3.2, aoe:true, plague:true, weaken:true}
+      {name:'泥沼绞缠', icon:'🪢', desc:'7.8倍自然伤害，残废5秒并衰老8秒', type:'dmg', mul:7.8, cd:8, castTime:2.1, cripple:true, decay:true},
+      {name:'暴君撕咬', icon:'🦷', desc:'8.2倍伤害，流血8秒并附加易爆6秒', type:'dmg', mul:8.2, cd:9, castTime:2.5, bleed:true, brittle:true},
+      {name:'腐泥喷潮', icon:'🫧', desc:'9.1倍范围伤害，并施加瘟疫与虚弱', type:'dmg', mul:9.1, cd:10, castTime:3.1, aoe:true, plague:true, weaken:true},
+      {name:'沼泽蜕皮', icon:'🛡️', desc:'恢复12%生命，获得12%护盾并在6秒内减伤18%', type:'support', cd:15, castTime:2.7, healPct:0.12, shieldPct:0.12, drBuffSecs:6, drBuffPct:0.18}
     ]
   },
   blackrock_overlord: {
-    passive:{ dmgReduction:0.23, critChance:0.18, dodgeChance:0.08, atkBonus:0.2, leech:0.06, stunChance:0.08 },
-    supportCount:3,
+    passive:{ dmgReduction:0.26, critChance:0.2, dodgeChance:0.09, atkBonus:0.24, leech:0.06, stunChance:0.1 },
+    supportCount:2,
+    atkInterval:1280,
+    instantCastChance:0.12,
     skills:[
-      {name:'熔岩重踏', icon:'🌋', desc:'9倍范围伤害', type:'dmg', mul:9, castTime:2.4, aoe:true, stun:1400, brittle:true},
-      {name:'黑铁军令', icon:'⚒️', desc:'10倍伤害', type:'dmg', mul:10, castTime:3, silence:1700, sunder:true},
-      {name:'焦岩碾碎', icon:'🪨', desc:'10倍伤害', type:'dmg', mul:10, castTime:3.5, weaken:true, bleed:true}
+      {name:'黑铁军令', icon:'⚒️', desc:'召唤1名黑铁守卫并在6秒内防御+30%', type:'support', cd:14, castTime:2.2, summonCount:1, summonTheme:'soldier', defBuffSecs:6, defBuffPct:30},
+      {name:'熔岩重踏', icon:'🌋', desc:'9倍范围伤害，眩晕1秒并附加易爆6秒', type:'dmg', mul:9, cd:9, castTime:2.5, aoe:true, stun:1000, brittle:true},
+      {name:'破城碾碎', icon:'🪨', desc:'9.6倍伤害，并施加沉默1.6秒与易伤5秒', type:'dmg', mul:9.6, cd:8, castTime:2.9, silence:1600, sunder:true},
+      {name:'黑石处刑', icon:'⛏️', desc:'10.4倍伤害，流血8秒并虚弱5秒', type:'dmg', mul:10.4, cd:11, castTime:3.4, bleed:true, weaken:true}
     ]
   },
   kazzak_doom: {
-    passive:{ dmgReduction:0.24, critChance:0.18, dodgeChance:0.1, atkBonus:0.22, leech:0.08, stunChance:0.1 },
-    supportCount:3,
+    passive:{ dmgReduction:0.29, critChance:0.22, dodgeChance:0.1, atkBonus:0.28, leech:0.09, stunChance:0.1 },
+    supportCount:2,
+    atkInterval:1240,
+    instantCastChance:0.16,
     skills:[
-      {name:'末日之痕', icon:'😈', desc:'10倍邪能伤害', type:'dmg', mul:10, castTime:2.3, weaken:true, decay:true},
-      {name:'灵魂压榨', icon:'💀', desc:'10倍暗影伤害', type:'dmg', mul:10, castTime:3, soulDrain:true, silence:1800},
-      {name:'毁灭践踏', icon:'🌋', desc:'11倍范围伤害', type:'dmg', mul:11, castTime:3.8, aoe:true, fear:1600, brittle:true},
-      {name:'军团钩锁', icon:'🔗', desc:'10倍伤害', type:'dmg', mul:10, castTime:3.2, soulLink:true, manaDrain:55}
+      {name:'末日之痕', icon:'😈', desc:'10倍邪能伤害，虚弱5秒并衰老8秒', type:'dmg', mul:10, cd:8, castTime:2.2, weaken:true, decay:true},
+      {name:'灵魂压榨', icon:'💀', desc:'10.4倍暗影伤害，沉默1.8秒并获得8秒吸血强化', type:'dmg', mul:10.4, cd:9, castTime:2.8, soulDrain:true, silence:1800},
+      {name:'虚空吞没', icon:'🛸', desc:'恢复10%生命，获得18%护盾并召唤1个虚空爪牙', type:'support', cd:15, castTime:3.1, healPct:0.10, shieldPct:0.18, summonCount:1, summonTheme:'void'},
+      {name:'毁灭践踏', icon:'🌋', desc:'11.2倍范围伤害，恐惧1.6秒并附加易爆6秒', type:'dmg', mul:11.2, cd:11, castTime:3.6, aoe:true, fear:1600, brittle:true},
+      {name:'军团钩锁', icon:'🔗', desc:'10.8倍伤害，灵魂链接8秒并吸取60点资源', type:'dmg', mul:10.8, cd:10, castTime:3.2, soulLink:true, manaDrain:60, cripple:true}
     ]
   },
   magtheridon_wrath: {
-    passive:{ dmgReduction:0.28, critChance:0.2, dodgeChance:0.1, atkBonus:0.26, leech:0.1, stunChance:0.12 },
-    supportCount:4,
+    passive:{ dmgReduction:0.33, critChance:0.24, dodgeChance:0.11, atkBonus:0.32, leech:0.1, stunChance:0.12 },
+    supportCount:2,
+    atkInterval:1200,
+    instantCastChance:0.2,
     skills:[
-      {name:'地狱裂拳', icon:'👊', desc:'11倍伤害', type:'dmg', mul:11, castTime:2.2, stun:1500, brittle:true},
-      {name:'深渊火雨', icon:'🔥', desc:'11倍范围火焰伤害', type:'dmg', mul:11, castTime:3.2, aoe:true, dot:true, silence:1800},
-      {name:'囚笼震爆', icon:'💥', desc:'12倍伤害', type:'dmg', mul:12, castTime:3.6, weaken:true, manaDrain:60},
-      {name:'末日锁链', icon:'⛓️', desc:'12倍伤害', type:'dmg', mul:12, castTime:4, cripple:true, fear:1800, soulLink:true}
+      {name:'地狱裂拳', icon:'👊', desc:'11.2倍伤害，眩晕1.4秒并附加易爆6秒', type:'dmg', mul:11.2, cd:8, castTime:2.2, stun:1400, brittle:true},
+      {name:'囚徒狂怒', icon:'😡', desc:'获得14%护盾，并在8秒内攻击+30%、攻速+25%', type:'support', cd:14, castTime:2.5, shieldPct:0.14, atkBuffSecs:8, atkBuffPct:30, spdBuffSecs:8, spdBuffPct:25},
+      {name:'深渊火雨', icon:'🔥', desc:'11.5倍范围火焰伤害，附带灼烧与沉默1.8秒', type:'dmg', mul:11.5, cd:10, castTime:3, aoe:true, dot:true, silence:1800},
+      {name:'末日锁链', icon:'⛓️', desc:'11.8倍伤害，残废5秒、恐惧1.6秒并灵魂链接8秒', type:'dmg', mul:11.8, cd:9, castTime:3.4, cripple:true, fear:1600, soulLink:true},
+      {name:'深渊震爆', icon:'💥', desc:'12.4倍伤害，虚弱5秒并吸取70点资源', type:'dmg', mul:12.4, cd:11, castTime:3.8, weaken:true, manaDrain:70}
     ]
   },
   sindragosa_shadow: {
-    passive:{ dmgReduction:0.32, critChance:0.22, dodgeChance:0.12, atkBonus:0.24, leech:0.08, stunChance:0.12 },
-    supportCount:4,
+    passive:{ dmgReduction:0.37, critChance:0.26, dodgeChance:0.14, atkBonus:0.34, leech:0.08, stunChance:0.14 },
+    supportCount:3,
+    atkInterval:1160,
+    instantCastChance:0.24,
     skills:[
-      {name:'霜墓龙息', icon:'❄️', desc:'12倍冰霜伤害', type:'dmg', mul:12, castTime:2.6, freeze:1600, decay:true},
-      {name:'寒翼横扫', icon:'🪽', desc:'12倍范围伤害', type:'dmg', mul:12, castTime:3.2, aoe:true, brittle:true, weaken:true},
-      {name:'灵魂寒渊', icon:'💀', desc:'13倍暗影冰霜伤害', type:'dmg', mul:13, castTime:4, silence:1800, soulDrain:true, decay2:true},
-      {name:'凛冬天幕', icon:'🌨️', desc:'13倍范围伤害', type:'dmg', mul:13, castTime:4.4, aoe:true, fear:1600, freeze:1400}
+      {name:'寒墓印记', icon:'🛡️', desc:'获得16%护盾，并在8秒内减伤20%', type:'support', cd:14, castTime:2.3, shieldPct:0.16, drBuffSecs:8, drBuffPct:0.20},
+      {name:'霜墓龙息', icon:'❄️', desc:'12倍冰霜伤害，冻结1.6秒并衰老8秒', type:'dmg', mul:12, cd:8, castTime:2.4, freeze:1600, decay:true},
+      {name:'寒翼横扫', icon:'🪽', desc:'12.3倍范围伤害，附加易爆6秒与虚弱5秒', type:'dmg', mul:12.3, cd:9, castTime:3, aoe:true, brittle:true, weaken:true},
+      {name:'灵魂寒渊', icon:'💀', desc:'13倍暗影冰霜伤害，沉默1.8秒并凋零8秒', type:'dmg', mul:13, cd:10, castTime:3.8, silence:1800, soulDrain:true, decay2:true},
+      {name:'冰封灵柩', icon:'🧊', desc:'11.8倍伤害，冻结1.2秒并吸取75点资源', type:'dmg', mul:11.8, cd:9, castTime:3.2, freeze:1200, manaDrain:75},
+      {name:'凛冬天幕', icon:'🌨️', desc:'13.4倍范围伤害，恐惧1.6秒并再次冻结1.4秒', type:'dmg', mul:13.4, cd:12, castTime:4.2, aoe:true, fear:1600, freeze:1400}
     ]
   },
   deathwing: {
