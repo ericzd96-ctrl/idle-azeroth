@@ -55,19 +55,19 @@ const TALENT_AURA_LIBRARY = {
   const CAPSTONES = {
     warrior: {
       arms: [
-        { name:'处刑连锁', req:46, desc:'击杀敌人后，你的下一次伤害技能必暴。', fx:{ type:'onKill', nextSkillCrit:1 } },
+        { name:'处刑连锁', req:46, desc:'击杀敌人后，你的下一次伤害技能必暴，并叠加 2 层破甲印记。', fx:[{ type:'onKill', nextSkillCrit:1, grantCharge:{ key:'w_sunder', add:2, max:5 } }] },
         { name:'破军', req:56, desc:'你对被破甲的目标造成的伤害提高 24%。', fx:{ type:'vsState', state:'sunder', dmgPct:24 } },
-        { name:'战场掌控', req:66, desc:'施放破甲攻击后，获得 6 秒【战场掌控】。', fx:{ type:'afterSkill', skill:'sunderArmor', aura:'arms_breach' } },
+        { name:'战场掌控', req:66, desc:'施放破甲攻击后，获得 6 秒【战场掌控】，并立即叠满破甲印记。', fx:[{ type:'afterSkill', skill:'sunderArmor', aura:'arms_breach' },{ type:'afterSkill', skill:'sunderArmor', grantCharge:{ key:'w_sunder', add:5, max:5 } }] },
       ],
       fury: [
-        { name:'鲜血狂潮', req:46, desc:'暴击有 35% 几率触发 5 秒【鲜血狂潮】。', fx:{ type:'onCrit', chance:35, cooldown:5000, aura:'fury_bloodrush' } },
-        { name:'杀戮渴望', req:56, desc:'击杀敌人后，恢复 6% 生命并回复 12 点资源。', fx:{ type:'onKill', healPct:0.06, resource:12 } },
+        { name:'鲜血狂潮', req:46, desc:'暴击叠加 1 层【暴怒】；并有 35% 几率触发 5 秒【鲜血狂潮】。', fx:[{ type:'onCrit', grantCharge:{ key:'w_rage', add:1, max:5 } },{ type:'onCrit', chance:35, cooldown:5000, aura:'fury_bloodrush' }] },
+        { name:'杀戮渴望', req:56, desc:'击杀敌人后，恢复 6% 生命并回复 12 点资源，叠加 2 层【暴怒】。', fx:[{ type:'onKill', healPct:0.06, resource:12 },{ type:'onKill', grantCharge:{ key:'w_rage', add:2, max:5 } }] },
         { name:'背水狂怒', req:66, desc:'生命低于 35% 时，获得 8 秒【背水狂怒】并吸收 12% 最大生命伤害，30秒冷却。', fx:{ type:'lowHp', threshold:0.35, cooldown:30000, aura:'fury_laststand', shieldPct:0.12 } },
       ],
       prot: [
         { name:'不屈壁垒', req:46, desc:'生命低于 40% 时，获得 8 秒【不屈壁垒】并吸收 18% 最大生命伤害，35秒冷却。', fx:{ type:'lowHp', threshold:0.4, cooldown:35000, aura:'prot_wall', shieldPct:0.18 } },
         { name:'重盾反制', req:56, desc:'对首领造成的伤害提高 18%，受到其伤害降低 12%。', fx:{ type:'vsBoss', dmgPct:18, takenPct:12 } },
-        { name:'震荡护卫', req:66, desc:'施放雷霆一击后，获得 6 秒【震荡护卫】。', fx:{ type:'afterSkill', skill:'thunderClap', aura:'prot_thunder' } },
+        { name:'坚盾不破', req:66, desc:'盾墙激活期间，受到伤害额外降低 18%，造成的伤害提高 15%。', fx:[{ type:'whileBuff', buffKey:'shield', takenPct:18 },{ type:'whileBuff', buffKey:'shield', dmgPct:15 }] },
       ],
     },
     mage: {

@@ -18,11 +18,18 @@ const BUFF_FX = {
   s_haste:    { spdMul:1.33 },                            // 急速:攻速+33%
   s_lifesurge:{ leechAdd:20, atkMul:1.13 },              // 生命洪流:吸血+20、攻击+13%
   s_avatar:   { atkMul:1.27,  defMul:1.20, dr:0.13 },       // 化身(终极):攻+27%、防+20%、减伤13%
+
+  /* ===== 职业风味爆发/减伤(去同化:每职业独立数值与倾向) ===== */
+  w_reckless: { atkMul:1.30, critAdd:12, critdAdd:24 },    // 战士·鲁莽:近战暴击爆发
+  w_ironwall: { dr:0.30, defMul:1.40 },                    // 战士·钢铁壁垒:重甲减伤墙
 };
 
 const SKILL_AURA_LIBRARY = {
   arcaneCharge: { icon:'🔷', name:'奥术充能', desc:'奥术飞弹叠加,强化奥术爆炸', maxStacks:3 },
   stormCharge:  { icon:'⚡', name:'雷霆充能', desc:'闪电箭叠加,强化风暴打击与闪电链', maxStacks:3 },
+  /* ===== 战士招牌资源 ===== */
+  w_sunder:     { icon:'🔨', name:'破甲印记', desc:'致死打击/破甲攻击叠加,巨人之击按层消耗并暴增', maxStacks:5 },
+  w_rage:       { icon:'💢', name:'暴怒', desc:'暴击叠加,强化怒火乱舞', maxStacks:5 },
 };
 
 const MONSTER_STATE_META = {
@@ -37,10 +44,14 @@ const MONSTER_STATE_META = {
 /* 每个职业 4 个新技能:爆发 / 减伤 / 功能性 / 职业特色 */
 const NEW_SKILLS = {
   warrior: {
-    w_recklessness:{name:'鲁莽',     icon:'💢', desc:'爆发:6秒内攻击+33%、暴伤+20', mp:25, type:'buff', buff:'s_burst',    duration:6000, unlockLvl:26},
-    w_ironwall:    {name:'钢铁壁垒', icon:'🧱', desc:'减伤:5秒内受到伤害降低34%',    mp:20, type:'buff', buff:'s_mitigate', duration:5000, unlockLvl:34},
+    w_recklessness:{name:'鲁莽',     icon:'💢', desc:'爆发:6秒内攻击+30%、暴击+12、暴伤+24', mp:25, type:'buff', buff:'w_reckless', duration:6000, unlockLvl:26},
+    w_ironwall:    {name:'钢铁壁垒', icon:'🧱', desc:'减伤:5秒内受伤-30%、防御+40%', mp:20, type:'buff', buff:'w_ironwall', duration:5000, unlockLvl:34},
     w_enrageRegen: {name:'狂怒回复', icon:'❤️‍🔥',desc:'功能:立即恢复35%最大生命',      mp:15, type:'heal', heal:0.35,                       unlockLvl:44},
     w_avatar:      {name:'天神下凡', icon:'⚡', desc:'特色:8秒攻+27%、防+20%、减伤13%',mp:40, type:'buff', buff:'s_avatar',   duration:7500, unlockLvl:54},
+    w_colossus:    {name:'巨人之击', icon:'🪨', desc:'招牌:5倍攻击的破甲重击', mp:45, type:'dmg', mul:5, unlockLvl:60,
+                    fx:{ applyTargetState:'sunder', stateDurationMs:15000, bonusStates:{ sunder:0.4 }, bonusPerAuraStack:{ key:'w_sunder', pct:0.2 }, consumeAura:{ key:'w_sunder', all:true } }},
+    w_rampage:     {name:'怒火乱舞', icon:'😤', desc:'招牌:4倍攻击的狂怒连舞', mp:40, type:'dmg', mul:4, unlockLvl:70,
+                    fx:{ bonusPerAuraStack:{ key:'w_rage', pct:0.18 }, consumeAura:{ key:'w_rage', all:true }, extraHitPct:0.4 }},
   },
   mage: {
     m_combustion:{name:'燃烧',     icon:'🔥', desc:'爆发:5秒内暴击+17、暴伤+34',    mp:40, type:'buff', buff:'s_empower',  duration:5000, unlockLvl:26},
@@ -109,15 +120,17 @@ const SKILL_REWORKS = {
     cleave:{ desc:'对当前目标造成3倍伤害,并横扫周围敌人', aoe:true, cd:5, fx:{ resourceGain:4 } },
     thunderClap:{ desc:'对所有敌人造成2倍伤害并减速,为斩杀做准备', aoe:true, cd:8, fx:{ bonusVsLowHp:0.18, executeThreshold:0.35 } },
     battleShout:{ desc:'15秒攻击+30%,期间致死打击与斩杀额外造成伤害' },
-    mortalStrike:{ desc:'3倍攻击,对破甲目标额外造成60%伤害', cd:9, fx:{ bonusStates:{ sunder:0.6 } } },
+    mortalStrike:{ desc:'3倍攻击,对破甲目标额外造成60%伤害,并叠加破甲印记', cd:9, fx:{ bonusStates:{ sunder:0.6 }, grantAura:{ key:'w_sunder', add:1, max:5, duration:15000 } } },
     bloodthirst:{ desc:'4倍攻击,吸血50%,并在低血时额外恢复', cd:8, fx:{ healFromDamagePct:0.25, healBonusIfSelfHpBelow:0.55, extraHealPct:0.08 } },
     execute:{ desc:'5倍攻击,消耗全部怒气;对残血与破甲目标造成更高伤害', cd:12, fx:{ bonusStates:{ sunder:0.45 }, bonusVsLowHp:0.7, executeThreshold:0.35, resourceGainOnKill:12 } },
-    sunderArmor:{ desc:'3倍攻击并施加15秒破甲,后续武器技更致命', cd:7, fx:{ applyTargetState:'sunder', stateDurationMs:15000, resourceGain:6 } },
+    sunderArmor:{ desc:'3倍攻击并施加15秒破甲,叠加2层破甲印记', cd:7, fx:{ applyTargetState:'sunder', stateDurationMs:15000, resourceGain:6, grantAura:{ key:'w_sunder', add:2, max:5, duration:15000 } } },
     sweepingStrikes:{ desc:'5倍范围伤害,对残血敌人额外提高伤害', aoe:true, cd:18, fx:{ bonusVsLowHp:0.35, executeThreshold:0.4 } },
     bladestorm:{ desc:'8倍范围伤害,对每个被命中的敌人追加旋风斩', aoe:true, cd:24, fx:{ extraHitPct:0.35 } },
     shieldWall:{ desc:'15秒减伤50%,并在持续期间提升反击能力', cd:28 },
-    w_recklessness:{ desc:'6秒内攻击+33%与暴伤+20%,适合斩杀窗口', cd:24 },
+    w_recklessness:{ desc:'6秒内攻击+30%、暴击+12、暴伤+24,适合斩杀窗口', cd:24 },
     w_avatar:{ desc:'8秒攻防兼备,武器技和斩杀都更稳定', cd:28 },
+    w_colossus:{ cd:14 },
+    w_rampage:{ cd:10 },
   },
   mage: {
     arcane:{ desc:'3倍伤害并叠加奥术充能,强化奥术爆炸', cd:4, fx:{ grantAura:{ key:'arcaneCharge', duration:12000, add:1, max:3 } } },
@@ -370,8 +383,10 @@ const SKILL_AI_OVERRIDES = {
     thunderClap:{ priorityTag:'aoe', minEnemies:3 },
     sweepingStrikes:{ priorityTag:'aoe', minEnemies:2, preferOnBoss:true },
     bladestorm:{ priorityTag:'aoe', minEnemies:3, preferOnBoss:true },
-    w_recklessness:{ priorityTag:'buff', useIfBuffMissing:'s_burst', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
+    w_recklessness:{ priorityTag:'buff', useIfBuffMissing:'w_reckless', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
     w_ironwall:{ priorityTag:'defBuff', useIfSelfHpBelow:0.45 },
+    w_colossus:{ priorityTag:'spender', applyTargetState:null, useIfTargetMissing:null, useIfChargeKey:'w_sunder', useIfChargeAtLeast:3, preferOnBoss:true },
+    w_rampage:{ priorityTag:'spender', useIfChargeKey:'w_rage', useIfChargeAtLeast:3, preferOnBoss:true },
   },
   mage: {
     fireball:{ priorityTag:'dot', applyTargetState:'dot', useIfTargetDotKeyMissing:'skill:fireball', avoidIfTargetHpBelow:0.18 },

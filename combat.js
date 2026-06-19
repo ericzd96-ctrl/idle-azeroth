@@ -386,6 +386,7 @@ function talentDamageMult(mon, skillKey){
     else if(fx.type === 'vsState' && monsterStateActive(mon, fx.state) && fx.dmgPct) mult *= 1 + fx.dmgPct/100;
     else if(fx.type === 'skillAmp' && skillMatches(fx, skillKey) && (!fx.state || monsterStateActive(mon, fx.state)) && fx.dmgPct) mult *= 1 + fx.dmgPct/100;
     else if(fx.type === 'whileAura' && hasTalentAura(fx.auraKey) && (!fx.skill || skillMatches(fx, skillKey)) && fx.dmgPct) mult *= 1 + fx.dmgPct/100;
+    else if(fx.type === 'whileBuff' && buffActive(fx.buffKey) && (!fx.skill || skillMatches(fx, skillKey)) && fx.dmgPct) mult *= 1 + fx.dmgPct/100;
   }
   return mult;
 }
@@ -394,6 +395,7 @@ function talentTakenMult(mon){
   for(const fx of talentFxList()){
     if(fx.type === 'vsBoss' && mon?.isBoss && fx.takenPct) mult *= 1 - Math.min(80, fx.takenPct)/100;
     else if(fx.type === 'whileAura' && hasTalentAura(fx.auraKey) && fx.takenPct) mult *= 1 - Math.min(80, fx.takenPct)/100;
+    else if(fx.type === 'whileBuff' && buffActive(fx.buffKey) && fx.takenPct) mult *= 1 - Math.min(80, fx.takenPct)/100;
   }
   return mult;
 }
@@ -513,6 +515,7 @@ function autoSkillScore(skillKey, sk, mon, ctx){
   if(ai.useIfDotCountBelow !== undefined && dotCount >= ai.useIfDotCountBelow) return null;
   if(ai.useIfTargetDotKeyPresent && !monsterHasDotKey(mon, ai.useIfTargetDotKeyPresent, ctx.now)) return null;
   if(ai.useIfTargetDotKeyMissing && monsterHasDotKey(mon, ai.useIfTargetDotKeyMissing, ctx.now)) return null;
+  if(ai.useIfChargeAtLeast && skillAuraStacks(ai.useIfChargeKey) < ai.useIfChargeAtLeast) return null;
 
   let score = base;
   if(mon.isBoss && ai.preferOnBoss) score += 18;
@@ -525,6 +528,7 @@ function autoSkillScore(skillKey, sk, mon, ctx){
   if(tag === 'spender' && ai.useIfTargetHas) score += 16;
   if(tag === 'spender' && ai.useIfTargetDotKeyPresent) score += 16;
   if(tag === 'spender' && ai.useIfDotCountAtLeast) score += dotCount * 8;
+  if(tag === 'spender' && ai.useIfChargeKey) score += skillAuraStacks(ai.useIfChargeKey) * 6;
   if(tag === 'aoe') score += Math.min(18, ctx.aliveN * 6);
   if((sk.mul || 0) >= 6 && mon.isBoss) score += 8;
   if(sk.castTime >= 2 && !mon.isBoss && ctx.targetHpFrac < 0.2) score -= 12;
@@ -544,6 +548,10 @@ function autoCastSkillEntries(cls){
 }
 function runTalentAction(fx, mon, value, ctx, now){
   if(fx.aura) addTalentAura(fx.aura, true);
+  if(fx.grantCharge && fx.grantCharge.key){
+    const gc = fx.grantCharge;
+    addSkillAura(gc.key, { add: gc.add || 1, max: gc.max || (SKILL_AURA_LIBRARY[gc.key]?.maxStacks) || 1, duration: gc.duration || 12000 });
+  }
   if(fx.resource) grantTalentResource(fx.resource);
   if(fx.healPct) healHeroAmount(Math.floor(state.hero.hpMax * fx.healPct), fx.healIcon || '💚', '#6ee7b7');
   if(fx.shieldPct) addTalentShield(Math.floor(state.hero.hpMax * fx.shieldPct), true);
