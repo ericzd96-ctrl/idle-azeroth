@@ -98,8 +98,8 @@ function loop() {
         _prevBuffs = curBuffs;
       }
 
-      updateBattleVisuals();
       tickCast(now);
+      updateBattleVisuals();
       processDirty();
 
       // CD 文本每秒就地刷新
