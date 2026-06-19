@@ -1875,9 +1875,21 @@ function compSkillChips(tpl){
     return `<span class="comp-skill${s._signature?' sig':''}" data-tip="${tip}">${skillIconHtml}<span class="cs-name">${s.name}</span></span>`;
   }).join('');
 }
+function companionPanelRenderSig(){
+  const compList = (state.companions || []).map(c => `${c.key}:${c.stars||1}`).sort().join('|');
+  const shards = state.compUniversalShards
+    ? Object.entries(state.compUniversalShards).sort((a,b)=>a[0].localeCompare(b[0])).map(([k,v])=>`${k}:${v||0}`).join('|')
+    : '';
+  const active = `${state.activeCompanion}|${getActiveCompanion()?.key || ''}`;
+  const bonds = (typeof activeCompanionBonds==='function' ? activeCompanionBonds() : []).map(b=>b.name).join('|');
+  return [state.cls||'', state.hero?.lvl||0, state.compTickets||0, active, compList, shards, bonds].join('||');
+}
 function renderCompanion() {
   $('gem-cost').textContent = '(消耗1🐾随从券 · 全随从统一 5主动 + 1专属，品质/星级决定强度)';
   const cl = $('companion-list');
+  if (!cl) return;
+  const renderSig = companionPanelRenderSig();
+  if (cl.dataset.renderSig === renderSig && cl.dataset.rendered === '1') return;
   const owned = state.companions.length;
   const bonds = (typeof activeCompanionBonds==='function') ? activeCompanionBonds() : [];
   let html = '';
@@ -1977,6 +1989,8 @@ function renderCompanion() {
     html += '<div class="muted" style="text-align:center;padding:14px">还没有随从,点击「抽随从」获取!</div>';
   }
   cl.innerHTML = html;
+  cl.dataset.renderSig = renderSig;
+  cl.dataset.rendered = '1';
 }
 
 let dgFilter = 'all'; // 'all' | '5man' | 'raid'
