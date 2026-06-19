@@ -68,7 +68,7 @@ const defaultState = () => ({
   permanentStats: {},   // 成就/赛季给的永久属性
   title: '',
   // ---- 世界Boss/日常/赛季 ----
-  worldBoss: { lastKill:{}, shards:0, totalKilled:0 },
+  worldBoss: { lastKill:{}, shards:0, totalKilled:0, stageClears:{}, rareKills:{} },
   daily: { resetAt:0, tasks:[], weekStreak:0, weeklyClaimedAt:0 },
   season: { startAt:0, endAt:0, points:0, history:[], id:1 },
   // ---- 觉醒 ----

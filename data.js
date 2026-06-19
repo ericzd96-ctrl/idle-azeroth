@@ -1188,6 +1188,201 @@ const MAPS = [
       skills:[{name:"灵魂撕裂",icon:"🦁",desc:"6倍伤害",type:"dmg",mul:6,castTime:2},{name:"幽灵步",icon:"👻",desc:"7倍伤害",type:"dmg",mul:7,castTime:2.5},{name:"兽王之怒",icon:"💢",desc:"8倍AOE伤害",type:"dmg",mul:8,castTime:3},{name:"洛卡纳哈之灵",icon:"✨",desc:"8倍伤害+吸血25%",type:"dmg",mul:8,lifeSteal:0.25,castTime:3.5},{name:"灵魂风暴",icon:"🌪️",desc:"9倍AOE伤害",type:"dmg",mul:9,castTime:4}] } },
 ];
 
+const RARE_ELITE_SKILLSETS = {
+  beast: {
+    passive:{ atkBonus:0.14, critChance:0.12, dodgeChance:0.08, dmgReduction:0.08 },
+    supportCount:1,
+    skills:[
+      {name:'撕裂扑击', icon:'🐾', desc:'6倍伤害', type:'dmg', mul:6, castTime:1.8, bleed:true, cripple:true},
+      {name:'野性震吼', icon:'🦁', desc:'7倍伤害', type:'dmg', mul:7, castTime:2.4, weaken:true, stun:1000},
+      {name:'饥饿追猎', icon:'🩸', desc:'7倍伤害并吸血', type:'dmg', mul:7, castTime:2.8, lifeSteal:0.22, frenzy:true}
+    ]
+  },
+  undead: {
+    passive:{ atkBonus:0.1, critChance:0.1, dmgReduction:0.12, leech:0.08 },
+    supportCount:1,
+    skills:[
+      {name:'亡者之握', icon:'💀', desc:'6倍暗影伤害', type:'dmg', mul:6, castTime:1.9, weaken:true, decay:true},
+      {name:'腐疫爆发', icon:'🦠', desc:'7倍伤害', type:'dmg', mul:7, castTime:2.6, plague:true, dot:true},
+      {name:'灵魂榨取', icon:'👻', desc:'7倍暗影伤害', type:'dmg', mul:7, castTime:3, soulDrain:true, fear:1200}
+    ]
+  },
+  bandit: {
+    passive:{ atkBonus:0.16, critChance:0.14, dodgeChance:0.1 },
+    supportCount:1,
+    skills:[
+      {name:'伏击开膛', icon:'🗡️', desc:'6倍伤害', type:'dmg', mul:6, castTime:1.5, bleed:true, brittle:true},
+      {name:'烟幕突袭', icon:'🌫️', desc:'7倍伤害', type:'dmg', mul:7, castTime:2.2, weaken:true, silence:1200},
+      {name:'黑火炸药', icon:'💣', desc:'7倍范围伤害', type:'dmg', mul:7, castTime:2.8, aoe:true, bomb:true}
+    ]
+  },
+  fire: {
+    passive:{ atkBonus:0.16, critChance:0.14, dmgReduction:0.08 },
+    supportCount:1,
+    skills:[
+      {name:'烈焰啃噬', icon:'🔥', desc:'6倍火焰伤害', type:'dmg', mul:6, castTime:1.8, dot:true, brittle:true},
+      {name:'熔火爆裂', icon:'🌋', desc:'7倍伤害', type:'dmg', mul:7, castTime:2.6, dot:true, silence:1200},
+      {name:'余烬喷发', icon:'☄️', desc:'7倍范围伤害', type:'dmg', mul:7, castTime:3, aoe:true, dot:true}
+    ]
+  },
+  dragon: {
+    passive:{ atkBonus:0.18, critChance:0.14, dmgReduction:0.12, dodgeChance:0.08 },
+    supportCount:1,
+    skills:[
+      {name:'龙炎吐息', icon:'🐉', desc:'7倍火焰伤害', type:'dmg', mul:7, castTime:2.2, dot:true, weaken:true},
+      {name:'裂鳞横扫', icon:'🪽', desc:'7倍范围伤害', type:'dmg', mul:7, castTime:2.8, aoe:true, stun:1200},
+      {name:'高空俯冲', icon:'🦴', desc:'8倍伤害', type:'dmg', mul:8, castTime:3.2, bleed:true, brittle:true}
+    ]
+  },
+  poison: {
+    passive:{ atkBonus:0.12, critChance:0.1, dodgeChance:0.1, leech:0.05 },
+    supportCount:1,
+    skills:[
+      {name:'剧毒穿刺', icon:'🦂', desc:'6倍伤害', type:'dmg', mul:6, castTime:1.7, dot:true, plague:true},
+      {name:'腐液喷溅', icon:'🐍', desc:'7倍伤害', type:'dmg', mul:7, castTime:2.6, cripple:true, decay:true},
+      {name:'毒雾弥漫', icon:'☠️', desc:'7倍范围伤害', type:'dmg', mul:7, castTime:3, aoe:true, plague:true}
+    ]
+  },
+  arcane: {
+    passive:{ atkBonus:0.12, critChance:0.14, dmgReduction:0.08 },
+    supportCount:1,
+    skills:[
+      {name:'奥能崩裂', icon:'✨', desc:'6倍奥术伤害', type:'dmg', mul:6, castTime:1.9, silence:1400},
+      {name:'法力抽离', icon:'🔮', desc:'7倍伤害', type:'dmg', mul:7, castTime:2.5, manaDrain:45, weaken:true},
+      {name:'虚空错位', icon:'🌀', desc:'7倍范围伤害', type:'dmg', mul:7, castTime:3, aoe:true, mirror:true}
+    ]
+  },
+  shadow: {
+    passive:{ atkBonus:0.14, critChance:0.12, dmgReduction:0.1, dodgeChance:0.08 },
+    supportCount:1,
+    skills:[
+      {name:'暗影穿心', icon:'🌑', desc:'6倍暗影伤害', type:'dmg', mul:6, castTime:1.9, weaken:true, silence:1200},
+      {name:'恐惧啃噬', icon:'👻', desc:'7倍伤害', type:'dmg', mul:7, castTime:2.6, fear:1400, soulDrain:true},
+      {name:'虚无枷锁', icon:'🔗', desc:'7倍伤害', type:'dmg', mul:7, castTime:3, decay2:true, soulLink:true}
+    ]
+  },
+  demon: {
+    passive:{ atkBonus:0.18, critChance:0.14, dmgReduction:0.1, leech:0.08 },
+    supportCount:1,
+    skills:[
+      {name:'邪能重击', icon:'😈', desc:'7倍邪能伤害', type:'dmg', mul:7, castTime:2, weaken:true, brittle:true},
+      {name:'末日烙印', icon:'🌑', desc:'7倍暗影伤害', type:'dmg', mul:7, castTime:2.8, dot:true, soulLink:true},
+      {name:'深渊践踏', icon:'💥', desc:'8倍范围伤害', type:'dmg', mul:8, castTime:3.2, aoe:true, stun:1200}
+    ]
+  },
+  frost: {
+    passive:{ atkBonus:0.12, critChance:0.1, dmgReduction:0.12, dodgeChance:0.08 },
+    supportCount:1,
+    skills:[
+      {name:'寒霜撕咬', icon:'❄️', desc:'6倍冰霜伤害', type:'dmg', mul:6, castTime:1.8, slow:true, freeze:1000},
+      {name:'冰墓冲撞', icon:'🧊', desc:'7倍伤害', type:'dmg', mul:7, castTime:2.6, brittle:true, decay:true},
+      {name:'凛冬风暴', icon:'🌨️', desc:'7倍范围伤害', type:'dmg', mul:7, castTime:3.1, aoe:true, freeze:1200}
+    ]
+  },
+  nature: {
+    passive:{ atkBonus:0.12, critChance:0.1, dmgReduction:0.1, dodgeChance:0.08 },
+    supportCount:1,
+    skills:[
+      {name:'根须缠杀', icon:'🌿', desc:'6倍自然伤害', type:'dmg', mul:6, castTime:1.9, cripple:true, weaken:true},
+      {name:'孢群腐化', icon:'🍄', desc:'7倍伤害', type:'dmg', mul:7, castTime:2.7, plague:true, decay:true},
+      {name:'荒野震荡', icon:'🌳', desc:'7倍范围伤害', type:'dmg', mul:7, castTime:3.1, aoe:true, stun:1000}
+    ]
+  },
+  storm: {
+    passive:{ atkBonus:0.14, critChance:0.12, dmgReduction:0.1, dodgeChance:0.08 },
+    supportCount:1,
+    skills:[
+      {name:'雷殛重拳', icon:'⚡', desc:'6倍自然伤害', type:'dmg', mul:6, castTime:1.8, stun:1100},
+      {name:'静电灼流', icon:'🌩️', desc:'7倍伤害', type:'dmg', mul:7, castTime:2.5, manaDrain:40, silence:1200},
+      {name:'风暴连锁', icon:'⛈️', desc:'7倍范围伤害', type:'dmg', mul:7, castTime:3.1, aoe:true, weaken:true}
+    ]
+  },
+  brute: {
+    passive:{ atkBonus:0.16, critChance:0.1, dmgReduction:0.12 },
+    supportCount:1,
+    skills:[
+      {name:'碎骨重殴', icon:'🔨', desc:'6倍伤害', type:'dmg', mul:6, castTime:1.7, stun:1000, brittle:true},
+      {name:'践踏震波', icon:'🌍', desc:'7倍范围伤害', type:'dmg', mul:7, castTime:2.6, aoe:true, weaken:true},
+      {name:'处决撕裂', icon:'🪓', desc:'7倍伤害', type:'dmg', mul:7, castTime:2.8, bleed:true, sunder:true}
+    ]
+  }
+};
+
+const MAP_RARE_ELITE_SEEDS = {
+  elwynn:{ name:'林地獠牙母狼', emoji:'🐺', theme:'beast', desc:'潜伏在林间的老猎手，只在最安静的时候现身。' },
+  tirisfal:{ name:'白骨守夜人', emoji:'💀', theme:'undead', desc:'提瑞斯法墓穴深处走出的古老看守者。' },
+  durotar:{ name:'裂尾毒刺', emoji:'🦂', theme:'poison', desc:'在赤红峡谷中猎食已久的巨型沙蝎。' },
+  westfall:{ name:'迪菲亚断手', emoji:'🗡️', theme:'bandit', desc:'专门埋伏旅商的迪菲亚老兵。' },
+  silverpine:{ name:'月嚎影爪', emoji:'🐺', theme:'undead', desc:'被诅咒得最深的银松狼人。' },
+  redridge:{ name:'黑翼余烬', emoji:'🐉', theme:'dragon', desc:'从黑石山边境游荡而来的幼龙头目。' },
+  barrens:{ name:'剃刀荒原毒母', emoji:'🦂', theme:'poison', desc:'在贫瘠之地迁徙的剧毒女王。' },
+  wetlands:{ name:'雾鳞巡空者', emoji:'🐉', theme:'dragon', desc:'常年盘旋在湿地上空的沼泽飞龙。' },
+  duskwood:{ name:'夜幕食魂者', emoji:'👻', theme:'undead', desc:'会在暮色最浓时撕扯灵魂的幽影。' },
+  thousand:{ name:'石针践踏者', emoji:'🦖', theme:'brute', desc:'在峡谷间横冲直撞的荒漠巨兽。' },
+  stranglethorn:{ name:'血冠丛林之王', emoji:'🐅', theme:'beast', desc:'祖尔格拉布外围最危险的顶级掠食者。' },
+  searing:{ name:'焦岩吞火者', emoji:'🔥', theme:'fire', desc:'从灼热地缝中爬出的熔岩吞噬者。' },
+  burning:{ name:'黑石灼翼', emoji:'🐉', theme:'fire', desc:'披着灰烬与铁鳞的黑色双足飞龙。' },
+  ungoro:{ name:'熔喉暴君', emoji:'🦖', theme:'beast', desc:'安戈洛火山环带里的食物链顶点。' },
+  silithus:{ name:'沙语毒皇', emoji:'🦂', theme:'poison', desc:'其拉虫群之外最凶残的沙海杀手。' },
+  eastern_plague:{ name:'瘟疫织魂者', emoji:'☠️', theme:'undead', desc:'能将瘟疫和灵魂一起缝合的怪物。' },
+  hellfire:{ name:'血炉督战魔', emoji:'😈', theme:'demon', desc:'燃烧军团遗留在半岛的行刑督军。' },
+  nagrand:{ name:'裂地重拳', emoji:'🦬', theme:'brute', desc:'纳格兰平原上最暴躁的巨型裂蹄牛王。' },
+  shadowmoon:{ name:'暮影吞界者', emoji:'🌑', theme:'demon', desc:'影月谷裂隙中游荡的深渊猎手。' },
+  borean:{ name:'霜原啮咬者', emoji:'❄️', theme:'frost', desc:'会在风雪里无声扑杀猎物的冰原怪。' },
+  storm:{ name:'泰坦裂雷者', emoji:'⚡', theme:'storm', desc:'风暴峭壁失控的古代造物。' },
+  icecrown:{ name:'冰冠缚魂者', emoji:'💀', theme:'frost', desc:'替巫妖王猎杀逃亡灵魂的寒冰执刑者。' },
+  lochmodan:{ name:'铁坝破坏者', emoji:'🔨', theme:'brute', desc:'在巨坝附近巡弋的巨型穴居怪。' },
+  ashenvale:{ name:'月影古树卫士', emoji:'🌳', theme:'nature', desc:'灰谷最古老的一棵战争古树。' },
+  arathi:{ name:'高地掠夺元帅', emoji:'⚔️', theme:'bandit', desc:'集结流亡者与佣兵的高地战犯。' },
+  desolace:{ name:'荒芜哀嚎者', emoji:'👻', theme:'shadow', desc:'凄凉之地风暴中反复出现的绝望回声。' },
+  feralas:{ name:'深林逐风者', emoji:'🐆', theme:'nature', desc:'菲拉斯夜幕下行动如风的猎豹首领。' },
+  tanaris:{ name:'流沙掘墓王', emoji:'🦂', theme:'bandit', desc:'与海盗和沙虫都能做交易的沙海暴君。' },
+  zangarmarsh:{ name:'沼泽孢后', emoji:'🍄', theme:'nature', desc:'赞加沼泽里掌控孢子的变异女王。' },
+  dragonblight:{ name:'墓寒龙裔', emoji:'🐉', theme:'dragon', desc:'龙眠神殿外围徘徊的失控龙族。' },
+  stonetalon:{ name:'峭壁裂爪', emoji:'🐻', theme:'beast', desc:'石爪山脉断崖间最臭名昭著的猎手。' },
+  hillsbrad:{ name:'丘陵断粮者', emoji:'🗡️', theme:'bandit', desc:'袭击村庄与商队的希尔斯布莱德匪首。' },
+  dustwallow:{ name:'淤泥噬骨兽', emoji:'🐊', theme:'poison', desc:'尘泥沼泽水道里的古老掠食者。' },
+  blasted:{ name:'邪痕裂空魔', emoji:'😈', theme:'demon', desc:'黑暗之门余波催生的裂界恶魔。' },
+  terokkar:{ name:'虚羽断魂者', emoji:'🦅', theme:'shadow', desc:'在泰罗卡树林里夺走旅人神智的黑羽猛禽。' },
+  bladesedge:{ name:'刀塔屠山者', emoji:'🗡️', theme:'brute', desc:'会把敌人连同山脊一并劈开的巨人。' },
+  netherstorm:{ name:'星涌扭曲体', emoji:'🌀', theme:'arcane', desc:'由奥术风暴凝聚出的失衡实体。' },
+  howling:{ name:'嚎风亡枪手', emoji:'❄️', theme:'frost', desc:'乘着风雪袭来的维库亡魂射手。' },
+  grizzly:{ name:'裂掌熊王', emoji:'🐻', theme:'beast', desc:'灰熊丘陵最凶恶的远古巨熊。' },
+  sholazar:{ name:'晶刺暴喉兽', emoji:'🦖', theme:'nature', desc:'被泰坦实验残留能量强化的顶级巨兽。' }
+};
+
+function buildRareElites() {
+  return MAPS.map(map => {
+    const seed = MAP_RARE_ELITE_SEEDS[map.key] || { name:`${map.name}稀有精英`, emoji:'⭐', theme:'brute', desc:`徘徊于${map.name}的危险目标。` };
+    const profile = JSON.parse(JSON.stringify(RARE_ELITE_SKILLSETS[seed.theme] || RARE_ELITE_SKILLSETS.brute));
+    const lvl = Math.max(map.lvlRange[0] + 1, Math.min(79, map.lvlRange[1] + 2));
+    return {
+      key:`rare_${map.key}`,
+      mapKey:map.key,
+      name:seed.name,
+      emoji:seed.emoji || '⭐',
+      theme:seed.theme || 'brute',
+      desc:seed.desc || `徘徊于${map.name}的危险目标。`,
+      lvl,
+      hpMul:11.8 + Math.min(2.8, lvl * 0.018),
+      atkMul:1.62 + Math.min(0.4, lvl * 0.0045),
+      defMul:1.26 + Math.min(0.28, lvl * 0.0035),
+      spawnChance:0.025,
+      rewards:{
+        gold:Math.floor(220 + lvl * 42),
+        gem:Math.max(2, Math.floor(lvl / 10)),
+        honor:Math.floor(30 + lvl * 4),
+        essence:Math.max(1, Math.floor(lvl / 16))
+      },
+      passive:profile.passive || {},
+      supportCount:profile.supportCount || 1,
+      skills:profile.skills || []
+    };
+  });
+}
+
+const RARE_ELITES = buildRareElites();
+
 /* ---------- 副本 ---------- */
 // bosses: [{name, emoji, wave}], wave 表示在第几波出现(1-based)
 // 最终BOSS总是在最后一波
@@ -3442,35 +3637,97 @@ function baseDungeonKey(dungeonKey) { return String(dungeonKey || '').replace(/_
 function isEpicRaidKey(dungeonKey) { return /_epic$/.test(String(dungeonKey || '')); }
 function getDungeonDef(dungeonKey) { return DUNGEONS.find(d => d.key === dungeonKey) || null; }
 const WORLD_BOSS_SKILLSETS = {
-  deathwing: {
-    passive:{ dmgReduction:0.35, critChance:0.28, dodgeChance:0.12, atkBonus:0.28, leech:0.12, stunChance:0.18 },
+  hogger_king: {
+    passive:{ dmgReduction:0.16, critChance:0.14, dodgeChance:0.08, atkBonus:0.18, leech:0.06, stunChance:0.08 },
+    supportCount:2,
+    skills:[
+      {name:'豺狼重槌', icon:'🔨', desc:'7倍伤害', type:'dmg', mul:7, castTime:1.8, stun:1200, brittle:true},
+      {name:'撕肉狂咬', icon:'🩸', desc:'7倍伤害', type:'dmg', mul:7, castTime:2.2, bleed:true, weaken:true},
+      {name:'霍格呼号', icon:'📯', desc:'8倍范围伤害', type:'dmg', mul:8, castTime:2.8, aoe:true, fear:1400, frenzy:true}
+    ]
+  },
+  arugal_shadow: {
+    passive:{ dmgReduction:0.18, critChance:0.16, dodgeChance:0.1, atkBonus:0.16, leech:0.08 },
+    supportCount:2,
+    skills:[
+      {name:'影牙撕咬', icon:'🌑', desc:'8倍暗影伤害', type:'dmg', mul:8, castTime:2, weaken:true, dot:true},
+      {name:'月嚎癫狂', icon:'🐺', desc:'8倍伤害', type:'dmg', mul:8, castTime:2.5, fear:1500, bleed:true},
+      {name:'诅咒裂影', icon:'👻', desc:'9倍暗影伤害', type:'dmg', mul:9, castTime:3.1, silence:1600, mirror:true}
+    ]
+  },
+  gazrilla_tide: {
+    passive:{ dmgReduction:0.22, critChance:0.16, dodgeChance:0.08, atkBonus:0.18, leech:0.05 },
+    supportCount:3,
+    skills:[
+      {name:'潮汐鞭尾', icon:'🌊', desc:'9倍伤害', type:'dmg', mul:9, castTime:2.2, slow:true, brittle:true},
+      {name:'深渊雷啸', icon:'⚡', desc:'10倍自然伤害', type:'dmg', mul:10, castTime:3, stun:1400, weaken:true},
+      {name:'漩涡吞咬', icon:'🌀', desc:'10倍范围伤害', type:'dmg', mul:10, castTime:3.6, aoe:true, manaDrain:50, cripple:true}
+    ]
+  },
+  kazzak_doom: {
+    passive:{ dmgReduction:0.24, critChance:0.18, dodgeChance:0.1, atkBonus:0.22, leech:0.08, stunChance:0.1 },
+    supportCount:3,
+    skills:[
+      {name:'末日之痕', icon:'😈', desc:'10倍邪能伤害', type:'dmg', mul:10, castTime:2.3, weaken:true, decay:true},
+      {name:'灵魂压榨', icon:'💀', desc:'10倍暗影伤害', type:'dmg', mul:10, castTime:3, soulDrain:true, silence:1800},
+      {name:'毁灭践踏', icon:'🌋', desc:'11倍范围伤害', type:'dmg', mul:11, castTime:3.8, aoe:true, fear:1600, brittle:true},
+      {name:'军团钩锁', icon:'🔗', desc:'10倍伤害', type:'dmg', mul:10, castTime:3.2, soulLink:true, manaDrain:55}
+    ]
+  },
+  magtheridon_wrath: {
+    passive:{ dmgReduction:0.28, critChance:0.2, dodgeChance:0.1, atkBonus:0.26, leech:0.1, stunChance:0.12 },
     supportCount:4,
     skills:[
-      {name:'灾变烈焰', icon:'🌋', desc:'12倍火焰伤害', type:'dmg', mul:12, castTime:3.5, dot:true, brittle:true, silence:2200},
-      {name:'熔岩撕裂', icon:'🦴', desc:'11倍伤害', type:'dmg', mul:11, castTime:3, bleed:true, cripple:true, brittle:true},
-      {name:'灭世龙息', icon:'🐲', desc:'13倍AOE烈焰伤害', type:'dmg', mul:13, castTime:4.5, aoe:true, dot:true, weaken:true, fear:1800},
-      {name:'大地裂变', icon:'🌍', desc:'12倍AOE伤害', type:'dmg', mul:12, castTime:4, aoe:true, stun:1800, decay2:true},
-      {name:'暮光腐化', icon:'🌑', desc:'11倍暗影伤害', type:'dmg', mul:11, castTime:3.5, weaken:true, plague:true, soulLink:true}
+      {name:'地狱裂拳', icon:'👊', desc:'11倍伤害', type:'dmg', mul:11, castTime:2.2, stun:1500, brittle:true},
+      {name:'深渊火雨', icon:'🔥', desc:'11倍范围火焰伤害', type:'dmg', mul:11, castTime:3.2, aoe:true, dot:true, silence:1800},
+      {name:'囚笼震爆', icon:'💥', desc:'12倍伤害', type:'dmg', mul:12, castTime:3.6, weaken:true, manaDrain:60},
+      {name:'末日锁链', icon:'⛓️', desc:'12倍伤害', type:'dmg', mul:12, castTime:4, cripple:true, fear:1800, soulLink:true}
+    ]
+  },
+  sindragosa_shadow: {
+    passive:{ dmgReduction:0.32, critChance:0.22, dodgeChance:0.12, atkBonus:0.24, leech:0.08, stunChance:0.12 },
+    supportCount:4,
+    skills:[
+      {name:'霜墓龙息', icon:'❄️', desc:'12倍冰霜伤害', type:'dmg', mul:12, castTime:2.6, freeze:1600, decay:true},
+      {name:'寒翼横扫', icon:'🪽', desc:'12倍范围伤害', type:'dmg', mul:12, castTime:3.2, aoe:true, brittle:true, weaken:true},
+      {name:'灵魂寒渊', icon:'💀', desc:'13倍暗影冰霜伤害', type:'dmg', mul:13, castTime:4, silence:1800, soulDrain:true, decay2:true},
+      {name:'凛冬天幕', icon:'🌨️', desc:'13倍范围伤害', type:'dmg', mul:13, castTime:4.4, aoe:true, fear:1600, freeze:1400}
+    ]
+  },
+  deathwing: {
+    passive:{ dmgReduction:0.46, critChance:0.32, dodgeChance:0.14, atkBonus:0.38, leech:0.16, stunChance:0.2 },
+    supportCount:5,
+    skills:[
+      {name:'灾变烈焰', icon:'🌋', desc:'15倍火焰伤害', type:'dmg', mul:15, castTime:3.2, dot:true, brittle:true, silence:2400},
+      {name:'熔岩撕裂', icon:'🦴', desc:'14倍伤害', type:'dmg', mul:14, castTime:2.8, bleed:true, cripple:true, brittle:true},
+      {name:'灭世龙息', icon:'🐲', desc:'16倍范围烈焰伤害', type:'dmg', mul:16, castTime:4.1, aoe:true, dot:true, weaken:true, fear:2000},
+      {name:'大地裂变', icon:'🌍', desc:'15倍范围伤害', type:'dmg', mul:15, castTime:3.8, aoe:true, stun:2000, decay2:true},
+      {name:'暮光腐化', icon:'🌑', desc:'14倍暗影伤害', type:'dmg', mul:14, castTime:3.3, weaken:true, plague:true, soulLink:true},
+      {name:'龙魂终焉', icon:'💥', desc:'17倍范围伤害', type:'dmg', mul:17, castTime:4.8, aoe:true, soulDrain:true, brittle:true, fear:1800}
     ]
   },
   ragnaros: {
-    passive:{ dmgReduction:0.3, critChance:0.25, atkBonus:0.32, leech:0.08 },
-    supportCount:4,
+    passive:{ dmgReduction:0.4, critChance:0.3, dodgeChance:0.1, atkBonus:0.4, leech:0.1, stunChance:0.16 },
+    supportCount:5,
     skills:[
-      {name:'萨弗隆之焰', icon:'🔥', desc:'11倍火焰伤害', type:'dmg', mul:11, castTime:3, dot:true, brittle:true},
-      {name:'熔火新星', icon:'☄️', desc:'12倍AOE火焰伤害', type:'dmg', mul:12, castTime:4, aoe:true, dot:true, silence:1800},
-      {name:'炎魔之手', icon:'🖐️', desc:'10倍伤害', type:'dmg', mul:10, castTime:2.8, stun:1600, dot:true, manaDrain:55},
-      {name:'元素湮灭', icon:'🌋', desc:'13倍AOE伤害', type:'dmg', mul:13, castTime:4.5, aoe:true, dot:true, decay:true, brittle:true}
+      {name:'萨弗隆之焰', icon:'🔥', desc:'14倍火焰伤害', type:'dmg', mul:14, castTime:2.8, dot:true, brittle:true},
+      {name:'熔火新星', icon:'☄️', desc:'15倍范围火焰伤害', type:'dmg', mul:15, castTime:3.6, aoe:true, dot:true, silence:2000},
+      {name:'炎魔之手', icon:'🖐️', desc:'13倍伤害', type:'dmg', mul:13, castTime:2.5, stun:1800, dot:true, manaDrain:65},
+      {name:'元素湮灭', icon:'🌋', desc:'16倍范围伤害', type:'dmg', mul:16, castTime:4.2, aoe:true, dot:true, decay:true, brittle:true},
+      {name:'熔火枷锁', icon:'⛓️', desc:'14倍火焰伤害', type:'dmg', mul:14, castTime:3.2, cripple:true, fear:1600},
+      {name:'炎王裁决', icon:'👑', desc:'17倍伤害', type:'dmg', mul:17, castTime:4.6, weaken:true, frenzy:true, silence:1800}
     ]
   },
   cthun: {
-    passive:{ dmgReduction:0.38, critChance:0.22, dodgeChance:0.18, atkBonus:0.2 },
-    supportCount:4,
+    passive:{ dmgReduction:0.48, critChance:0.26, dodgeChance:0.2, atkBonus:0.26, leech:0.08, stunChance:0.14 },
+    supportCount:5,
     skills:[
-      {name:'眼棱贯穿', icon:'👁️', desc:'10倍暗影伤害', type:'dmg', mul:10, castTime:2.5, silence:2200, weaken:true, manaDrain:60},
-      {name:'疯狂凝视', icon:'🌀', desc:'11倍伤害', type:'dmg', mul:11, castTime:3.2, fear:2200, decay2:true, mirror:true},
-      {name:'触须风暴', icon:'🦑', desc:'12倍AOE伤害', type:'dmg', mul:12, castTime:4, aoe:true, cripple:true, soulLink:true, revenge:true},
-      {name:'古神低语', icon:'🔮', desc:'10倍暗影伤害', type:'dmg', mul:10, castTime:3, weaken:true, plague:true, soulDrain:true}
+      {name:'眼棱贯穿', icon:'👁️', desc:'13倍暗影伤害', type:'dmg', mul:13, castTime:2.3, silence:2400, weaken:true, manaDrain:70},
+      {name:'疯狂凝视', icon:'🌀', desc:'14倍伤害', type:'dmg', mul:14, castTime:3, fear:2200, decay2:true, mirror:true},
+      {name:'触须风暴', icon:'🦑', desc:'15倍范围伤害', type:'dmg', mul:15, castTime:3.8, aoe:true, cripple:true, soulLink:true, revenge:true},
+      {name:'古神低语', icon:'🔮', desc:'13倍暗影伤害', type:'dmg', mul:13, castTime:2.9, weaken:true, plague:true, soulDrain:true},
+      {name:'吞世之眼', icon:'🌌', desc:'15倍暗影伤害', type:'dmg', mul:15, castTime:4.2, manaDrain:80, silence:1800, fear:1600},
+      {name:'疯狂孵化', icon:'🪲', desc:'16倍范围伤害', type:'dmg', mul:16, castTime:4.8, aoe:true, plague:true, mirror:true, soulLink:true}
     ]
   }
 };

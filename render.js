@@ -465,8 +465,49 @@ function monsterUnitTipHtml(mon, bossData) {
     <div>暴击 ${fmtPctValue(crit, 0)} · 减伤 ${fmtPctValue(dr * 100, 0)} · 吸血 ${fmtPctValue(leech * 100, 0)}</div>
     ${passiveHtml}`;
 }
+function worldBossTipHtml(wb) {
+  if (!wb) return '<b>世界Boss</b>';
+  const mon = (typeof buildWorldBossMonsterData === 'function') ? buildWorldBossMonsterData(wb) : null;
+  let html = monsterUnitTipHtml(mon, wb);
+  if (wb.skills?.length) {
+    html += '<div style="margin-top:4px;color:#fbbf24">技能:</div>';
+    wb.skills.forEach(s => { html += bossSkillLineHtml(s, { iconSize:15, tagColor:'#fbbf24' }); });
+  }
+  return html;
+}
+function rareEliteTipHtml(rare) {
+  if (!rare) return '<b>稀有精英</b>';
+  const mon = (typeof buildRareEliteMonsterData === 'function') ? buildRareEliteMonsterData(rare) : null;
+  let html = monsterUnitTipHtml(mon, rare);
+  if (rare.skills?.length) {
+    html += '<div style="margin-top:4px;color:#fbbf24">技能:</div>';
+    rare.skills.forEach(s => { html += bossSkillLineHtml(s, { iconSize:15, tagColor:'#fbbf24' }); });
+  }
+  return html;
+}
+function bindWorldBossTooltips(root) {
+  if (!root) return;
+  root.querySelectorAll('.wb-name-tip[data-wb-key]').forEach(el => {
+    const wb = (typeof getWorldBossDef === 'function') ? getWorldBossDef(el.dataset.wbKey) : null;
+    if (!wb) return;
+    const showTip = e => {
+      const tip = $('compare-tip');
+      tip.querySelector('.compare-head').innerHTML = worldBossTipHtml(wb);
+      tip.querySelector('.compare-body').innerHTML = '';
+      tip.style.display = 'block';
+      positionTip(tip, e);
+    };
+    el.onmouseenter = e => { if (!tooltipHoverEnabled()) return; showTip(e); };
+    el.onmouseleave = () => { if (!tooltipHoverEnabled()) return; if (!_tipPinned) $('compare-tip').style.display = 'none'; };
+    el.onmousemove = e => { if (!tooltipHoverEnabled()) return; positionTip($('compare-tip'), e); };
+    addTouchPin(el, showTip);
+  });
+}
 function lookupMonsterBossData(mon) {
   if (!mon) return null;
+  if (mon.isRareElite && typeof RARE_ELITES !== 'undefined') {
+    return RARE_ELITES.find(b => b.key === mon.rareKey) || null;
+  }
   if (state.mode === 'boss') {
     const map = getMap();
     return map?.boss || null;
@@ -1799,6 +1840,19 @@ function renderMap() {
         </div>
         <button class="boss-btn ${canBoss?'epic':''}" data-action="boss" data-map="${m.key}" ${canBoss?'':'disabled'}>${bossText}</button>
       </div>`;
+    const rare = (typeof getRareEliteForMap === 'function') ? getRareEliteForMap(m.key) : null;
+    if (rare) {
+      const rareIconHtml = (typeof entityIcon === 'function') ? entityIcon(rare.name, 16, rare.emoji || '⭐') : (rare.emoji || '⭐');
+      const rareSeen = state._currentRareElite === rare.key;
+      html += `
+        <div class="boss-row" style="margin-top:6px;border-top:1px dashed rgba(148,163,184,.18);padding-top:6px">
+          <div class="boss-info">
+            <div><span class="bname rare-name-tip" data-rarekey="${rare.key}" style="cursor:help">${rareIconHtml} ${rare.name}</span> <span class="pill">Lv ${rare.lvl}</span></div>
+            <div class="muted">${rare.desc}</div>
+          </div>
+          <div class="muted" style="font-size:11px;text-align:right">${rareSeen ? '已现身' : `野外约 ${Math.round((rare.spawnChance || 0.025) * 1000) / 10}% 遭遇`}</div>
+        </div>`;
+    }
     div.innerHTML = html;
     // BOSS名字hover显示技能/被动
     const nameEl = div.querySelector('.boss-name-tip');
@@ -1854,6 +1908,20 @@ function renderMap() {
       bossBtn.addEventListener('mouseenter', e => { if (!tooltipHoverEnabled()) return; showBossLoot(e); });
       bossBtn.addEventListener('mousemove', e => { if (!tooltipHoverEnabled()) return; positionTip($('compare-tip'), e); });
       addTouchPin(bossBtn, showBossLoot);
+    }
+    const rareNameEl = div.querySelector('.rare-name-tip');
+    if (rareNameEl && rare) {
+      const showRareTip = e => {
+        const tipEl = $('compare-tip');
+        tipEl.querySelector('.compare-head').innerHTML = rareEliteTipHtml(rare);
+        tipEl.querySelector('.compare-body').innerHTML = '';
+        tipEl.style.display = 'block';
+        positionTip(tipEl, e);
+      };
+      rareNameEl.addEventListener('mouseenter', e => { if (!tooltipHoverEnabled()) return; showRareTip(e); });
+      rareNameEl.addEventListener('mouseleave', () => { if (!tooltipHoverEnabled()) return; if (!_tipPinned) $('compare-tip').style.display = 'none'; });
+      rareNameEl.addEventListener('mousemove', e => { if (!tooltipHoverEnabled()) return; positionTip($('compare-tip'), e); });
+      addTouchPin(rareNameEl, showRareTip);
     }
     ml.appendChild(div);
   }

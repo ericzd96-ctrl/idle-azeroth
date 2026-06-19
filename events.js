@@ -6,20 +6,38 @@
    - 赛季: 14天一赛季,从战斗中累计积分,段位结算给永久属性+称号
    ========================================================= */
 
-/* ============ 世界Boss ============ */
+/* ============ 世界Boss / 阶段守关 / 稀有精英 ============ */
 const WORLD_BOSSES = [
-  { key:'deathwing', name:'死亡之翼·灭世者', emoji:'🐲', lvl:85, color:'#dc2626',
-    desc:'被腐化的大地守护神,毁灭艾泽拉斯的元凶',
-    hpMul:30, atkMul:3.5, defMul:2.5,
-    rewards:{ gold:50000, gem:80, honor:2000, essence:25, shards:8 } },
-  { key:'ragnaros', name:'拉格纳罗斯·火焰之王', emoji:'🔥', lvl:85, color:'#f97316',
-    desc:'熔火之心的元素领主,掌控烈焰之力',
-    hpMul:25, atkMul:4, defMul:2,
-    rewards:{ gold:40000, gem:60, honor:2000, essence:35, shards:6 } },
-  { key:'cthun',     name:'克苏恩·疯狂之眼', emoji:'👁️', lvl:85, color:'#a855f7',
-    desc:'希利苏斯沉眠的远古之神,旧日支配者',
-    hpMul:35, atkMul:3, defMul:3,
-    rewards:{ gold:45000, gem:100, honor:2500, essence:20, shards:10 } },
+  { key:'hogger_king', name:'霍格大王', emoji:'🐗', lvl:30, gateLevel:30, minLvl:30, cdHours:0, color:'#b45309',
+    desc:'艾尔文与西部荒野交界传说中的豺狼人之王，专门终结轻敌的新兵。',
+    hpMul:15, atkMul:2.4, defMul:1.7, rewards:{ gold:1600, gem:8, honor:120, essence:3 } },
+  { key:'arugal_shadow', name:'阿鲁高之影', emoji:'🌑', lvl:40, gateLevel:40, minLvl:40, cdHours:0, color:'#7c3aed',
+    desc:'影牙诅咒的残响，会把没有准备好的冒险者撕成碎片。',
+    hpMul:16.5, atkMul:2.6, defMul:1.85, rewards:{ gold:3200, gem:10, honor:180, essence:4 } },
+  { key:'gazrilla_tide', name:'海潮巨兽加兹瑞拉', emoji:'🐍', lvl:50, gateLevel:50, minLvl:50, cdHours:0, color:'#0ea5e9',
+    desc:'盘踞海湾的古老海蛇，真正开始考验 build 与装备质量。',
+    hpMul:18.5, atkMul:2.85, defMul:2.05, rewards:{ gold:6200, gem:12, honor:260, essence:5 } },
+  { key:'kazzak_doom', name:'末日领主卡扎克', emoji:'😈', lvl:60, gateLevel:60, minLvl:60, cdHours:0, color:'#dc2626',
+    desc:'诅咒之地裂隙中的末日使者，会把中期的数值短板全部放大。',
+    hpMul:21.5, atkMul:3.15, defMul:2.25, rewards:{ gold:12000, gem:16, honor:420, essence:7 } },
+  { key:'magtheridon_wrath', name:'深渊之王玛瑟里顿', emoji:'⛓️', lvl:70, gateLevel:70, minLvl:70, cdHours:0, color:'#f97316',
+    desc:'被封印的深渊领主余怒未散，专治“普通团本勉强毕业”的冒险者。',
+    hpMul:25, atkMul:3.55, defMul:2.55, rewards:{ gold:24000, gem:22, honor:700, essence:10 } },
+  { key:'sindragosa_shadow', name:'辛达苟萨之影', emoji:'❄️', lvl:79, gateLevel:79, minLvl:79, cdHours:0, color:'#38bdf8',
+    desc:'冰冠的霜魂守门者，只有真正成型的角色才能跨过最后一关。',
+    hpMul:29, atkMul:3.95, defMul:2.95, rewards:{ gold:42000, gem:30, honor:1200, essence:16 } },
+  { key:'deathwing', name:'死亡之翼·灭世者', emoji:'🐲', lvl:85, minLvl:80, color:'#dc2626',
+    desc:'被腐化的大地守护神，真正的终局世界Boss之一。',
+    hpMul:42, atkMul:5.4, defMul:3.8, cdHours:8,
+    rewards:{ gold:90000, gem:150, honor:4200, essence:45, shards:10 } },
+  { key:'ragnaros', name:'拉格纳罗斯·火焰之王', emoji:'🔥', lvl:85, minLvl:80, color:'#f97316',
+    desc:'熔火之心最深处的炎王，普攻和技能都不会再像挠痒痒。',
+    hpMul:38, atkMul:5.8, defMul:3.4, cdHours:8,
+    rewards:{ gold:82000, gem:130, honor:4000, essence:50, shards:8 } },
+  { key:'cthun', name:'克苏恩·疯狂之眼', emoji:'👁️', lvl:85, minLvl:80, color:'#a855f7',
+    desc:'希利苏斯旧神低语的本体，拖得越久越容易被机制碾碎。',
+    hpMul:46, atkMul:5.1, defMul:4.1, cdHours:8,
+    rewards:{ gold:86000, gem:160, honor:4600, essence:40, shards:12 } },
 ];
 for (const wb of WORLD_BOSSES) {
   const profile = (typeof WORLD_BOSS_SKILLSETS === 'object' && WORLD_BOSS_SKILLSETS[wb.key]) || null;
@@ -29,16 +47,169 @@ const WBOSS_CD_HOURS = 8;
 const SHARD_EXCHANGE_COST = 50; // 50 碎片 = 1 自选橙装
 
 function ensureEventState() {
-  if (!state.worldBoss) state.worldBoss = { lastKill:{}, shards:0, totalKilled:0 };
+  if (!state.worldBoss) state.worldBoss = { lastKill:{}, shards:0, totalKilled:0, stageClears:{}, rareKills:{} };
+  if (!state.worldBoss.lastKill) state.worldBoss.lastKill = {};
+  if (!state.worldBoss.stageClears) state.worldBoss.stageClears = {};
+  if (!state.worldBoss.rareKills) state.worldBoss.rareKills = {};
+  if (typeof state.worldBoss.shards !== 'number') state.worldBoss.shards = 0;
+  if (typeof state.worldBoss.totalKilled !== 'number') state.worldBoss.totalKilled = 0;
   if (!state.daily) state.daily = { resetAt:0, tasks:[], weekStreak:0, weeklyClaimedAt:0 };
   if (!state.eventsCounters) state.eventsCounters = { itemsRare:0, sessionGold:0, sessionKills:0, sessionDungeons:0 };
   // 赛季已搬到 account, 用 ensureSeason()
 }
 
+function getWorldBossDef(key) {
+  return WORLD_BOSSES.find(b => b.key === key) || null;
+}
+function isStageWorldBoss(wb) {
+  return !!(wb && wb.gateLevel);
+}
+function isApexWorldBoss(wb) {
+  return !!(wb && !wb.gateLevel);
+}
+function trialWorldBosses() {
+  return WORLD_BOSSES.filter(isStageWorldBoss).sort((a, b) => a.gateLevel - b.gateLevel);
+}
+function worldBossCooldownMs(wb) {
+  const hours = Math.max(0, wb?.cdHours == null ? WBOSS_CD_HOURS : wb.cdHours);
+  return Math.floor(hours * 3600 * 1000);
+}
+function worldBossMinLevel(wb) {
+  return wb?.minLvl || Math.max(1, (wb?.lvl || 1) - 5);
+}
+function worldBossStageCleared(wb) {
+  ensureEventState();
+  return !!(wb && isStageWorldBoss(wb) && state.worldBoss.stageClears[wb.key]);
+}
+function currentXpGate() {
+  ensureEventState();
+  for (const wb of trialWorldBosses()) {
+    if (state.hero.lvl >= wb.gateLevel && !worldBossStageCleared(wb)) {
+      return { key: wb.key, level: wb.gateLevel, name: wb.name, boss: wb };
+    }
+  }
+  return null;
+}
+
+function buildWorldBossMonsterData(wb) {
+  const boss = wb || {};
+  const baseHp = Math.floor((100 + boss.lvl * boss.lvl * 6.0) * (boss.hpMul || 1));
+  const baseAtk = Math.floor((8 + boss.lvl * 3.0) * (boss.atkMul || 1));
+  return {
+    name: boss.emoji + boss.name,
+    bossName: boss.name,
+    isBoss: true,
+    isWorldBoss: true,
+    wbKey: boss.key,
+    _uid: Date.now() + Math.floor(Math.random() * 1000),
+    lvl: boss.lvl,
+    hpMax: baseHp,
+    hp: baseHp,
+    atk: Math.floor(baseAtk * (1 + (boss.passive?.atkBonus || 0))),
+    def: Math.floor((3 + boss.lvl * 1.3) * (boss.defMul || 1)),
+    baseGold: Math.max(1, Math.floor((boss.rewards?.gold || 1) / 30)),
+    baseXp: isStageWorldBoss(boss) ? Math.max(180, boss.lvl * 16) : 300,
+    goldReward: boss.rewards?.gold || 0,
+    honorReward: boss.rewards?.honor || 0,
+    dropRate: isApexWorldBoss(boss) ? 1.0 : 0.9,
+    gemChance: 0,
+    maxRarity: isApexWorldBoss(boss) ? 'legend' : (boss.lvl >= 50 ? 'epic' : 'rare'),
+    _dots: {},
+    _dotLegacyImported: true,
+    _lastDotTick: 0,
+    dodgeChance: boss.passive?.dodgeChance || 0.08,
+    critChance: boss.passive?.critChance || 0.18,
+    dmgReduction: boss.passive?.dmgReduction || 0.2,
+    lifeSteal: boss.passive?.leech || 0,
+    stunChance: boss.passive?.stunChance || 0,
+    instantCast: true,
+    atkInterval: boss.atkInterval || (isApexWorldBoss(boss) ? 1125 : boss.lvl >= 70 ? 1225 : 1325),
+    _monSkills: [],
+    _monSkill: null,
+    _monSupportSkills: typeof buildMonsterSupportPool === 'function'
+      ? buildMonsterSupportPool(boss.name, null, boss.lvl, true, boss.supportCount || 4)
+      : [],
+    _supportSkillCooldowns: {},
+    _lastSupportSkill: Date.now() - 4000,
+    _lastTrick: 0,
+    _nextTrickAt: Date.now() + (isApexWorldBoss(boss) ? 6500 : 7800)
+  };
+}
+
+function getRareEliteForMap(mapKey) {
+  return (typeof RARE_ELITES !== 'undefined' ? RARE_ELITES.find(r => r.mapKey === mapKey) : null) || null;
+}
+function buildRareEliteMonsterData(rare) {
+  const baseHp = Math.floor((100 + rare.lvl * rare.lvl * 7.5) * (rare.hpMul || 1));
+  const baseAtk = Math.floor((10 + rare.lvl * 3.2) * (rare.atkMul || 1));
+  return {
+    name: rare.emoji + rare.name,
+    bossName: rare.name,
+    isBoss: true,
+    isRareElite: true,
+    rareKey: rare.key,
+    _uid: Date.now() + Math.floor(Math.random() * 1000),
+    lvl: rare.lvl,
+    hpMax: baseHp,
+    hp: baseHp,
+    atk: Math.floor(baseAtk * (1 + (rare.passive?.atkBonus || 0))),
+    def: Math.floor((3 + rare.lvl * 1.5) * (rare.defMul || 1)),
+    baseGold: Math.max(1, Math.floor((rare.rewards?.gold || 1) / 24)),
+    baseXp: Math.max(90, rare.lvl * 8),
+    goldReward: rare.rewards?.gold || 0,
+    honorReward: rare.rewards?.honor || 0,
+    dropRate: 0.45,
+    gemChance: 0,
+    maxRarity: rare.lvl >= 55 ? 'epic' : 'rare',
+    _dots: {},
+    _dotLegacyImported: true,
+    _lastDotTick: 0,
+    dodgeChance: rare.passive?.dodgeChance || 0.06,
+    critChance: rare.passive?.critChance || 0.12,
+    dmgReduction: rare.passive?.dmgReduction || 0.08,
+    lifeSteal: rare.passive?.leech || 0,
+    stunChance: rare.passive?.stunChance || 0,
+    instantCast: rare.lvl >= 60,
+    atkInterval: rare.atkInterval || (rare.lvl >= 60 ? 1300 : 1425),
+    _monSkills: [],
+    _monSkill: null,
+    _monSupportSkills: typeof buildMonsterSupportPool === 'function'
+      ? buildMonsterSupportPool(rare.name, null, rare.lvl, true, rare.supportCount || 1)
+      : [],
+    _supportSkillCooldowns: {},
+    _lastSupportSkill: Date.now() - 3500,
+    _lastTrick: 0,
+    _nextTrickAt: Date.now() + 9000
+  };
+}
+
+function maybeSpawnRareEliteEncounter(map) {
+  if (!map || typeof RARE_ELITES === 'undefined') return false;
+  if (state.mode !== 'world') return false;
+  const rare = getRareEliteForMap(map.key);
+  if (!rare) return false;
+  if (Math.random() >= (rare.spawnChance || 0.025)) return false;
+  state._currentRareElite = rare.key;
+  state.currentMonsters = [buildRareEliteMonsterData(rare)];
+  log(`⭐ 遭遇稀有精英 [${rare.name}]！`, 'epic');
+  if (typeof markDirty === 'function') markDirty('map', 'stage', 'events');
+  return true;
+}
+
+function leaveRareEliteEncounter() {
+  state._currentRareElite = null;
+  state.currentMonsters = [];
+  if (state.mode !== 'world') state.mode = 'world';
+  spawnMonster();
+  markDirty('map', 'events', 'stage');
+}
+
 function worldBossAvailableAt(key) {
   ensureEventState();
+  const wb = getWorldBossDef(key);
+  if (!wb) return 0;
   const last = state.worldBoss.lastKill[key] || 0;
-  return last + WBOSS_CD_HOURS * 3600 * 1000;
+  return last + worldBossCooldownMs(wb);
 }
 function worldBossReady(key) {
   return Date.now() >= worldBossAvailableAt(key);
@@ -46,48 +217,20 @@ function worldBossReady(key) {
 
 function challengeWorldBoss(key) {
   ensureEventState();
+  const wb = getWorldBossDef(key); if (!wb) return;
   if (!worldBossReady(key)) { log('世界BOSS冷却中', 'bad'); return; }
   if (state.mode === 'travel') { log('正在旅行中', 'bad'); return; }
   if (state.mode !== 'world') { log('请先结束当前战斗', 'bad'); return; }
-  const wb = WORLD_BOSSES.find(b => b.key === key); if (!wb) return;
-  const minLvl = wb.minLvl || Math.max(1, wb.lvl - 5);
+  const minLvl = worldBossMinLevel(wb);
   if (state.hero.lvl < minLvl) { log(`需要等级 Lv.${minLvl}+`, 'bad'); return; }
   state.mode = 'worldboss';
   state._currentWBoss = key;
+  state._currentRareElite = null;
   state.currentMonsters = [];
   state.hp = state.hero.hpMax; state.resource = state.resourceMax;
   if (typeof resetDmgStats === 'function') resetDmgStats();
-  // 生成怪物对象
-  const baseHp = Math.floor((100 + wb.lvl*wb.lvl*6.0) * wb.hpMul);
-  const baseAtk = Math.floor((8 + wb.lvl*3.0) * wb.atkMul);
-  state.currentMonsters.push({
-    name: wb.emoji + wb.name, isBoss:true, isWorldBoss:true, wbKey:key,
-    bossName: wb.name,
-    _uid: Date.now() + Math.floor(Math.random()*1000),
-    lvl: wb.lvl, hpMax: baseHp, hp: baseHp,
-    atk: Math.floor(baseAtk * (1 + (wb.passive?.atkBonus || 0))),
-    def: Math.floor((3 + wb.lvl*1.3) * wb.defMul),
-    baseGold: wb.rewards.gold/30, baseXp:300,
-    goldReward: wb.rewards.gold, honorReward: wb.rewards.honor,
-    dropRate:1.0, gemChance:0, maxRarity:'legend',
-    _dots:{}, _dotLegacyImported:true, _lastDotTick:0,
-    dodgeChance: wb.passive?.dodgeChance || 0.08,
-    critChance: wb.passive?.critChance || 0.18,
-    dmgReduction: wb.passive?.dmgReduction || 0.2,
-    lifeSteal: wb.passive?.leech || 0,
-    stunChance: wb.passive?.stunChance || 0,
-    instantCast:true,
-    _monSkills:[],
-    _monSkill:null,
-    _monSupportSkills: typeof buildMonsterSupportPool === 'function'
-      ? buildMonsterSupportPool(wb.name, null, wb.lvl, true, wb.supportCount || 4)
-      : [],
-    _supportSkillCooldowns:{},
-    _lastSupportSkill:Date.now()-4000,
-    _lastTrick:0,
-    _nextTrickAt:Date.now()+8000
-  });
-  log(`⚔️ 挑战世界BOSS [${wb.name}]!`, 'epic');
+  state.currentMonsters.push(buildWorldBossMonsterData(wb));
+  log(`⚔️ 挑战世界BOSS [${wb.name}]!`, isApexWorldBoss(wb) ? 'legend' : 'epic');
   markDirty('stage','events');
 }
 
@@ -102,33 +245,77 @@ function leaveWorldBoss() {
 function onWorldBossKill(mon) {
   ensureEventState();
   const key = mon.wbKey;
-  const wb = WORLD_BOSSES.find(b=>b.key===key); if (!wb) return;
+  const wb = getWorldBossDef(key); if (!wb) return;
   state.worldBoss.lastKill[key] = Date.now();
   state.worldBoss.totalKilled = (state.worldBoss.totalKilled||0) + 1;
   if (typeof mountOnWorldBossKill==='function') mountOnWorldBossKill();
-  state.worldBoss.shards = (state.worldBoss.shards||0) + wb.rewards.shards;
-  state.gem += wb.rewards.gem;
+  state.gem += wb.rewards?.gem || 0;
   if (typeof ensureMats==='function') ensureMats();
-  state.essence += wb.rewards.essence;
-  // 额外掉落 2 件 epic + 0~1 legend
-  if (typeof rollItem==='function') {
-    for (let i=0;i<2;i++) {
+  state.essence += wb.rewards?.essence || 0;
+
+  if (isStageWorldBoss(wb)) {
+    const firstClear = !worldBossStageCleared(wb);
+    state.worldBoss.stageClears[wb.key] = true;
+    const mainRarity = wb.lvl >= 50 ? 'epic' : 'rare';
+    const mainItem = rollItem(mainRarity, wb.lvl);
+    addToInventory(mainItem);
+    if (typeof eventsOnItemGet==='function') eventsOnItemGet(mainItem);
+    if (firstClear) {
+      const bonusItem = rollItem('epic', wb.lvl + 1);
+      addToInventory(bonusItem);
+      if (typeof eventsOnItemGet==='function') eventsOnItemGet(bonusItem);
+      log(`🏁 击败阶段守关Boss ${wb.name}，Lv.${wb.gateLevel} 经验封锁已解除！`, 'legend');
+    } else {
+      log(`🏆 再次击败 ${wb.name}!`, 'epic');
+    }
+    seasonAddPoints(180 + wb.lvl * 3, '阶段世界Boss');
+    if (typeof gainXP === 'function') gainXP(0);
+  } else {
+    state.worldBoss.shards = (state.worldBoss.shards||0) + (wb.rewards?.shards || 0);
+    for (let i = 0; i < 2; i++) {
       const ep = rollItem('epic', wb.lvl);
       addToInventory(ep);
       if (typeof eventsOnItemGet==='function') eventsOnItemGet(ep);
     }
-    if (Math.random() < 0.5) {
+    if (Math.random() < 0.35) {
       const lg = rollItem('legend', wb.lvl);
       addToInventory(lg);
       if (typeof eventsOnItemGet==='function') eventsOnItemGet(lg);
       if (typeof progressionOnLegendary==='function') progressionOnLegendary();
     }
+    seasonAddPoints(500, '世界Boss');
+    log(`🏆 击败 ${wb.name}! +${wb.rewards.shards || 0}橙装碎片 +${wb.rewards.gem || 0}💎 +${wb.rewards.essence || 0}✨`, 'legend');
   }
-  // 赛季积分大奖
-  seasonAddPoints(500, '世界Boss');
-  log(`🏆 击败 ${wb.name}! +${wb.rewards.shards}橙装碎片 +${wb.rewards.gem}💎 +${wb.rewards.essence}✨`, 'legend');
+
   leaveWorldBoss();
-  markDirty('events','hero','inventory');
+  markDirty('events','hero','inventory','map');
+}
+
+function onRareEliteKill(mon) {
+  ensureEventState();
+  const rare = typeof RARE_ELITES !== 'undefined' ? RARE_ELITES.find(r => r.key === mon.rareKey) : null;
+  if (!rare) {
+    state._currentRareElite = null;
+    spawnMonster();
+    return;
+  }
+  state._currentRareElite = null;
+  state.worldBoss.rareKills[rare.key] = (state.worldBoss.rareKills[rare.key] || 0) + 1;
+  state.gem += rare.rewards?.gem || 0;
+  if (typeof ensureMats === 'function') ensureMats();
+  state.essence += rare.rewards?.essence || 0;
+  const item = rollItem(rare.lvl >= 55 ? 'epic' : 'rare', rare.lvl, rare.mapKey);
+  addToInventory(item);
+  if (typeof eventsOnItemGet === 'function') eventsOnItemGet(item);
+  if (rare.lvl >= 60 && Math.random() < 0.12) {
+    const bonus = rollItem('epic', rare.lvl + 1, rare.mapKey);
+    addToInventory(bonus);
+    if (typeof eventsOnItemGet === 'function') eventsOnItemGet(bonus);
+  }
+  seasonAddPoints(80 + rare.lvl * 2, '稀有精英');
+  log(`⭐ 击败稀有精英 ${rare.name}! +${rare.rewards.gem || 0}💎 +${rare.rewards.essence || 0}✨`, 'epic');
+  spawnMonster();
+  markDirty('events', 'inventory', 'hero', 'map');
 }
 
 /* 用碎片换一件橙装(随机槽位) */
@@ -389,26 +576,63 @@ function renderEvents() {
   else if (eventsSubTab === 'daily') body = renderDailySub();
   else if (eventsSubTab === 'season') body = renderSeasonSub();
   root.innerHTML = head + body;
+  if (eventsSubTab === 'wb' && typeof bindWorldBossTooltips === 'function') bindWorldBossTooltips(root);
 }
 
 function renderWorldBossSub() {
-  let html = `<div class="prog-summary muted">橙装碎片: <b style="color:var(--legend)">${state.worldBoss.shards||0}</b> / ${SHARD_EXCHANGE_COST} · 累计击败 ${state.worldBoss.totalKilled||0} 次
-    ${(state.worldBoss.shards||0)>=SHARD_EXCHANGE_COST ? '<button class="gold" data-action="exchangeshards" style="margin-left:8px">合成橙装</button>':''}
+  const gate = currentXpGate();
+  const gateHtml = gate
+    ? `<div class="stage-gate-note" style="margin-bottom:8px"><b>当前卡级:</b> Lv.${gate.level} · 击败 <b>${gate.name}</b> 后继续获得经验</div>`
+    : '';
+  let html = `<div class="prog-summary muted">${gateHtml}橙装碎片: <b style="color:var(--legend)">${state.worldBoss.shards||0}</b> / ${SHARD_EXCHANGE_COST} · 累计击败 ${state.worldBoss.totalKilled||0} 次
+    ${(state.worldBoss.shards||0)>=SHARD_EXCHANGE_COST ? '<button class="gold" data-action="exchangeshards" style="margin-left:8px">合成橙装</button>' : ''}
   </div>`;
-  html += '<div class="wb-list">';
-  for (const wb of WORLD_BOSSES) {
+  const renderRewardLine = wb => {
+    const parts = [];
+    if (wb.rewards?.gold) parts.push(`${wb.rewards.gold}💰`);
+    if (wb.rewards?.gem) parts.push(`${wb.rewards.gem}💎`);
+    if (wb.rewards?.honor) parts.push(`${wb.rewards.honor}🏅`);
+    if (wb.rewards?.essence) parts.push(`${wb.rewards.essence}✨`);
+    if (wb.rewards?.shards) parts.push(`${wb.rewards.shards}🧩碎片`);
+    return parts.join(' ');
+  };
+
+  html += `<div class="muted" style="margin:8px 0 4px;font-size:11px">阶段守关世界Boss</div><div class="wb-list">`;
+  for (const wb of trialWorldBosses()) {
+    const cleared = worldBossStageCleared(wb);
+    const ready = worldBossReady(wb.key);
+    const statusText = state.hero.lvl < worldBossMinLevel(wb)
+      ? `需 Lv.${worldBossMinLevel(wb)}`
+      : cleared
+        ? '已突破'
+        : (gate?.key === wb.key ? '正在卡级' : '可挑战');
+    html += `<div class="wb-item ${ready && !cleared ? 'wb-ready' : ''}" style="border-left:4px solid ${wb.color}">
+      <div class="wb-main">
+        <div class="wb-name wb-name-tip" data-wb-key="${wb.key}" style="color:${wb.color};cursor:help">${wb.emoji} ${wb.name} <span class="muted" style="font-size:10px">Lv.${wb.lvl}</span></div>
+        <div class="muted" style="font-size:11px">${wb.desc}</div>
+        <div class="muted" style="font-size:10px;margin-top:2px">奖励: ${renderRewardLine(wb)}</div>
+      </div>
+      <div class="wb-act">
+        <div class="muted" style="font-size:10px;margin-bottom:4px">${statusText}</div>
+        <button class="${cleared ? 'primary' : 'danger'}" data-action="challengewb" data-key="${wb.key}" ${state.hero.lvl < worldBossMinLevel(wb) ? 'disabled' : ''}>${cleared ? '再战' : '挑战'}</button>
+      </div>
+    </div>`;
+  }
+  html += '</div>';
+
+  html += `<div class="muted" style="margin:10px 0 4px;font-size:11px">终局世界Boss</div><div class="wb-list">`;
+  for (const wb of WORLD_BOSSES.filter(isApexWorldBoss)) {
     const ready = worldBossReady(wb.key);
     const nextTs = worldBossAvailableAt(wb.key);
     const cd = Math.max(0, Math.ceil((nextTs - Date.now())/1000));
-    const rwds = `${wb.rewards.gold}💰 ${wb.rewards.gem}💎 ${wb.rewards.honor}🏅 ${wb.rewards.essence}✨ ${wb.rewards.shards}🧩碎片`;
     html += `<div class="wb-item ${ready?'wb-ready':''}" style="border-left:4px solid ${wb.color}">
       <div class="wb-main">
-        <div class="wb-name" style="color:${wb.color}">${wb.emoji} ${wb.name} <span class="muted" style="font-size:10px">Lv.${wb.lvl}</span></div>
+        <div class="wb-name wb-name-tip" data-wb-key="${wb.key}" style="color:${wb.color};cursor:help">${wb.emoji} ${wb.name} <span class="muted" style="font-size:10px">Lv.${wb.lvl}</span></div>
         <div class="muted" style="font-size:11px">${wb.desc}</div>
-        <div class="muted" style="font-size:10px;margin-top:2px">奖励: ${rwds}</div>
+        <div class="muted" style="font-size:10px;margin-top:2px">奖励: ${renderRewardLine(wb)}</div>
       </div>
       <div class="wb-act">
-        ${ready ? `<button class="danger" data-action="challengewb" data-key="${wb.key}">挑战</button>`
+        ${ready ? `<button class="danger" data-action="challengewb" data-key="${wb.key}" ${state.hero.lvl < worldBossMinLevel(wb) ? 'disabled' : ''}>挑战</button>`
                 : `<span class="muted" style="font-size:11px">${fmtCd(cd)}</span>`}
       </div>
     </div>`;

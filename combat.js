@@ -1386,6 +1386,7 @@ function overLevelPenalty(mon){
 }
 function spawnMonster(){
   initCompanionHp();state.currentMonsters=[];
+  state._currentRareElite = null;
   // 新战斗清除护盾(随从/天赋)
   state._compBarrier = 0;
   if (state.talentState) state.talentState.shield = 0;
@@ -1395,6 +1396,7 @@ function spawnMonster(){
   if(state.mode==='boss')return spawnZoneBoss();
   const map=getMap();if(!map){state.currentMap=MAPS[0].key;state.currentSubzone=0;return spawnMonster();}
   const sub=map.sub[state.currentSubzone]||map.sub[0];
+  if(typeof maybeSpawnRareEliteEncounter==='function'&&maybeSpawnRareEliteEncounter(map, sub)) return;
   // 敌群:野外可同时刷出 1~4 只敌人(怪群越大,单只攻击略降,避免瞬秒,但总收益更高)
   const packRoll=Math.random();
   const count=packRoll<0.07?4:packRoll<0.25?3:packRoll<0.55?2:1;
@@ -2632,8 +2634,20 @@ function onHeroDeath(){
 
 function gainXP(amt){
   if(state.hero.lvl>=MAX_LEVEL){state.hero.xp=0;return;}
+  const activeGate = (typeof currentXpGate==='function') ? currentXpGate() : null;
+  if(activeGate && state.hero.lvl >= activeGate.level){
+    const now = Date.now();
+    if(!state._xpGateWarnAt || now - state._xpGateWarnAt > 6000){
+      log(`⛔ 经验被锁定：击败 ${activeGate.name} 后才能突破 Lv.${activeGate.level}`, 'bad');
+      state._xpGateWarnAt = now;
+    }
+    markDirty('hero');
+    return;
+  }
   state.hero.xp+=amt;
   while(state.hero.lvl<MAX_LEVEL&&state.hero.xp>=xpNeeded(state.hero.lvl)){
+    const gate = (typeof currentXpGate==='function') ? currentXpGate() : null;
+    if(gate && state.hero.lvl >= gate.level) break;
     state.hero.xp-=xpNeeded(state.hero.lvl);state.hero.lvl+=1;
     for(const k of['str','agi','int','spi','sta'])state.attrs[k]+=1;
     state.talentPoints+=1;recomputeStats();state.hp=state.hero.hpMax;
