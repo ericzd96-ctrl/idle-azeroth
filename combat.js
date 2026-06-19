@@ -325,7 +325,8 @@ function calcSkillRuntimeBonus(skillKey, sk, mon, now){
   if(fx.forceCritIfDotCount && dotCount >= fx.forceCritIfDotCount) forceCrit = true;
   return { fx, mult, forceCrit, dotCount };
 }
-function applySkillFollowupDamage(mon, amount, icon, color){
+function applySkillFollowupDamage(mon, amount, icon, color, now){
+  now = now || Date.now();
   amount = Math.max(0, Math.floor(amount || 0));
   if(!mon || mon.hp <= 0 || amount <= 0) return 0;
   const shieldResult = absorbMonsterBarrier(mon, amount, icon || '🛡️');
@@ -338,12 +339,12 @@ function applySkillFollowupDamage(mon, amount, icon, color){
   showMonsterFloat(mon, (icon || '✨') + '-' + amount, color || '#fbbf24', { important:true });
   return amount;
 }
-function splashSkillDamage(sourceMon, amount, pct, icon){
+function splashSkillDamage(sourceMon, amount, pct, icon, now){
   if(!(pct > 0) || !(amount > 0)) return 0;
   let total = 0;
   for(const other of state.currentMonsters){
     if(other === sourceMon || other.hp <= 0) continue;
-    total += applySkillFollowupDamage(other, amount * pct, icon || '💥', '#f59e0b');
+    total += applySkillFollowupDamage(other, amount * pct, icon || '💥', '#f59e0b', now);
   }
   return total;
 }
@@ -368,9 +369,9 @@ function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
     const states = Array.isArray(fx.consumeState) ? fx.consumeState : [fx.consumeState];
     for(const stateKey of states) clearMonsterState(mon, stateKey);
   }
-  if(fx.extraHitPct) applySkillFollowupDamage(mon, dmgDone * fx.extraHitPct, sk.icon || '✨', '#fbbf24');
-  if(fx.extraHitPctIfBuff && buffActive(fx.extraHitPctIfBuff.key, now)) applySkillFollowupDamage(mon, dmgDone * (fx.extraHitPctIfBuff.pct || 0), sk.icon || '✨', '#fbbf24');
-  if(fx.splashPct && !ctx?.isAOE) splashSkillDamage(mon, dmgDone, fx.splashPct, sk.icon || '💥');
+  if(fx.extraHitPct) applySkillFollowupDamage(mon, dmgDone * fx.extraHitPct, sk.icon || '✨', '#fbbf24', now);
+  if(fx.extraHitPctIfBuff && buffActive(fx.extraHitPctIfBuff.key, now)) applySkillFollowupDamage(mon, dmgDone * (fx.extraHitPctIfBuff.pct || 0), sk.icon || '✨', '#fbbf24', now);
+  if(fx.splashPct && !ctx?.isAOE) splashSkillDamage(mon, dmgDone, fx.splashPct, sk.icon || '💥', now);
   if(fx.spreadDotsPct) spreadDotFromMonster(mon, fx.spreadDotsPct, fx.dotMs || 5000);
   if(fx.resourceGainOnKill && mon.hp <= 0) grantTalentResource(fx.resourceGainOnKill);
 }
