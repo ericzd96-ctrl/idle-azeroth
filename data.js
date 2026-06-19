@@ -3880,6 +3880,61 @@ function inferBossTheme(name, sk){
   if(/暗|影|亡|死|魂|暮光|巫妖|克尔苏加德|阿尔萨斯|尤格|克苏恩|卡扎克/.test(text)) return 'shadow';
   return 'brute';
 }
+const BOSS_ROTATION_SUPPORT_SKILLS = {
+  fire:   { name:'炽焰护体', icon:'🔥', desc:'获得10%护盾并在6秒内攻击+18%', type:'support', castTime:2.4, cd:14, shieldPct:0.10, atkBuffSecs:6, atkBuffPct:18 },
+  frost:  { name:'寒墓壁垒', icon:'🧊', desc:'获得12%护盾并在6秒内减伤15%', type:'support', castTime:2.4, cd:14, shieldPct:0.12, drBuffSecs:6, drBuffPct:0.15 },
+  poison: { name:'蜕皮再生', icon:'🐍', desc:'恢复10%生命并获得10%护盾', type:'support', castTime:2.5, cd:15, healPct:0.10, shieldPct:0.10 },
+  storm:  { name:'风暴蓄能', icon:'⛈️', desc:'6秒攻速+22%，暴击+18%', type:'support', castTime:2.3, cd:14, spdBuffSecs:6, spdBuffPct:22, critBuffSecs:6, critBuffPct:18 },
+  dragon: { name:'龙血苏醒', icon:'🐉', desc:'恢复8%生命并在6秒内攻击+20%', type:'support', castTime:2.6, cd:15, healPct:0.08, atkBuffSecs:6, atkBuffPct:20 },
+  arcane: { name:'奥术护壁', icon:'🌀', desc:'获得14%护盾并在6秒内减伤15%', type:'support', castTime:2.5, cd:15, shieldPct:0.14, drBuffSecs:6, drBuffPct:0.15 },
+  nature: { name:'自然回生', icon:'🌿', desc:'恢复12%生命并在6秒内防御+22%', type:'support', castTime:2.6, cd:15, healPct:0.12, defBuffSecs:6, defBuffPct:22 },
+  shadow: { name:'虚空回响', icon:'🌑', desc:'获得12%护盾并在6秒内吸血+14%', type:'support', castTime:2.6, cd:15, shieldPct:0.12, leechBuffSecs:6, leechBuffPct:14 },
+  brute:  { name:'战吼集结', icon:'📯', desc:'召唤1名援军并在6秒内攻击+18%', type:'support', castTime:2.5, cd:15, summonCount:1, summonTheme:'soldier', atkBuffSecs:6, atkBuffPct:18 },
+};
+function isBossSupportSkill(skill){
+  return !!(skill && (skill.type === 'support' || skill.type === 'buff' || skill.type === 'summon' ||
+    skill.healPct || skill.shieldPct || skill.summonCount || skill.atkBuffSecs || skill.spdBuffSecs ||
+    skill.defBuffSecs || skill.drBuffSecs || skill.critBuffSecs || skill.leechBuffSecs));
+}
+function bossControlScore(skill){
+  let score = 0;
+  if(skill.stun) score += 2;
+  if(skill.silence || skill.disarm) score += 2;
+  if(skill.fear || skill.freeze) score += 2;
+  if(skill.cripple || skill.weaken || skill.sunder) score += 1;
+  if(skill.decay || skill.decay2 || skill.manaDrain) score += 1;
+  return score;
+}
+function bossThreatScore(skill, ctx){
+  let score = 0;
+  if(isBossSupportSkill(skill)) score += 1;
+  if((skill.mul || 0) >= 10) score += 3;
+  else if((skill.mul || 0) >= 7) score += 2;
+  else if((skill.mul || 0) >= 4) score += 1;
+  if(skill.aoe) score += 1;
+  if(skill.alwaysCrit) score += 1;
+  score += Math.min(3, bossControlScore(skill));
+  if(skill.healPct) score += skill.healPct >= 0.12 ? 2 : 1;
+  if(skill.shieldPct) score += skill.shieldPct >= 0.14 ? 2 : 1;
+  if(skill.summonCount) score += 2;
+  if(skill.atkBuffSecs || skill.spdBuffSecs || skill.drBuffSecs || skill.defBuffSecs || skill.critBuffSecs || skill.leechBuffSecs) score += 1;
+  if((ctx?.final || ctx?.kind === 'world') && (skill.castTime || 0) >= 3) score += 1;
+  return score;
+}
+function bossThreatTier(skill, ctx){
+  const score = bossThreatScore(skill, ctx);
+  if(score >= 8) return 'extreme';
+  if(score >= 6) return 'high';
+  if(score >= 3) return 'medium';
+  return 'low';
+}
+function bossDamageCap(ctx, skill){
+  if(!skill || isBossSupportSkill(skill)) return null;
+  if(ctx.kind === 'raid') return ctx.final ? 10.5 : 8.8;
+  if(ctx.kind === 'world') return (ctx.lvl || 1) >= 80 ? 13.2 : ((ctx.lvl || 1) >= 70 ? 11.8 : ((ctx.lvl || 1) >= 55 ? 10.4 : 8.8));
+  if(ctx.kind === 'map') return ctx.final ? 8.8 : 7.6;
+  return ctx.final ? 7.9 : 6.9;
+}
 function ensureBossSkillDebuffs(sk, ctx){
   const skill = Object.assign({}, sk);
   const theme = inferBossTheme(ctx.name, skill);
@@ -3908,18 +3963,131 @@ function ensureBossSkillDebuffs(sk, ctx){
   return skill;
 }
 function bossMinSkillCount(ctx){
+  if(ctx.kind === 'world') return (ctx.lvl || 1) >= 70 ? 5 : 4;
   if(ctx.kind === 'raid') return ctx.final ? 4 : 3;
   if(ctx.kind === 'dungeon') return ctx.final ? 3 : 2;
   return (ctx.lvl||1) >= 70 ? 4 : ((ctx.lvl||1) >= 35 ? 3 : 2);
 }
 function bossSupportCount(ctx){
-  if(ctx.kind === 'raid') return ctx.final ? 4 : 2;
-  if(ctx.kind === 'dungeon') return ctx.final ? 2 : 1;
-  if((ctx.lvl||1) >= 70) return 4;
-  if((ctx.lvl||1) >= 40) return 3;
-  return 2;
+  if(ctx.kind === 'world') return (ctx.lvl || 1) >= 80 ? 2 : 1;
+  if(ctx.kind === 'raid') return ctx.final ? 2 : 1;
+  if(ctx.kind === 'dungeon') return ctx.final ? 1 : 0;
+  if((ctx.lvl||1) >= 70) return 1;
+  if((ctx.lvl||1) >= 40) return 1;
+  return 0;
+}
+function chooseBossInterruptPolicy(skill, ctx){
+  if(isBossSupportSkill(skill)) return 'soft';
+  const threat = bossThreatTier(skill, ctx);
+  const control = bossControlScore(skill);
+  if(threat === 'extreme') return 'hard';
+  if(threat === 'high' && ((skill.castTime || 0) >= 2.6 || control >= 2 || skill.aoe)) return 'hard';
+  return 'none';
+}
+function makeBossRotationSupportSkill(theme, ctx){
+  const base = BOSS_ROTATION_SUPPORT_SKILLS[theme] || BOSS_ROTATION_SUPPORT_SKILLS.brute;
+  const skill = Object.assign({}, base);
+  if((ctx.lvl || 1) >= 70){
+    if(skill.healPct) skill.healPct = +(skill.healPct + 0.02).toFixed(3);
+    if(skill.shieldPct) skill.shieldPct = +(skill.shieldPct + 0.02).toFixed(3);
+    if(skill.atkBuffPct) skill.atkBuffPct += 6;
+    if(skill.spdBuffPct) skill.spdBuffPct += 6;
+    if(skill.defBuffPct) skill.defBuffPct += 6;
+    if(skill.critBuffPct) skill.critBuffPct += 6;
+    if(skill.leechBuffPct) skill.leechBuffPct += 4;
+    if(skill.drBuffPct) skill.drBuffPct = +(skill.drBuffPct + 0.03).toFixed(2);
+  } else if((ctx.lvl || 1) >= 40){
+    if(skill.healPct) skill.healPct = +(skill.healPct + 0.01).toFixed(3);
+    if(skill.shieldPct) skill.shieldPct = +(skill.shieldPct + 0.01).toFixed(3);
+    if(skill.atkBuffPct) skill.atkBuffPct += 3;
+    if(skill.spdBuffPct) skill.spdBuffPct += 3;
+    if(skill.defBuffPct) skill.defBuffPct += 3;
+    if(skill.critBuffPct) skill.critBuffPct += 3;
+  }
+  return skill;
+}
+function ensureBossPassivePressure(boss, ctx){
+  boss.passive = Object.assign({}, boss.passive || {});
+  if(ctx.kind === 'world'){
+    boss.passive.dmgReduction = Math.max(boss.passive.dmgReduction || 0, (ctx.lvl || 1) >= 80 ? 0.24 : ((ctx.lvl || 1) >= 60 ? 0.18 : 0.14));
+    boss.passive.critChance = Math.max(boss.passive.critChance || 0, (ctx.lvl || 1) >= 70 ? 0.18 : 0.12);
+    boss.passive.atkBonus = Math.max(boss.passive.atkBonus || 0, (ctx.lvl || 1) >= 70 ? 0.22 : 0.14);
+    boss.passive.leech = Math.max(boss.passive.leech || 0, (ctx.lvl || 1) >= 60 ? 0.05 : 0.03);
+    boss.instantCastChance = Math.max(boss.instantCastChance || 0, (ctx.lvl || 1) >= 80 ? 0.2 : ((ctx.lvl || 1) >= 70 ? 0.14 : 0.08));
+    if(!boss.atkInterval) boss.atkInterval = (ctx.lvl || 1) >= 70 ? 1240 : 1340;
+    return;
+  }
+  if(ctx.kind === 'raid'){
+    boss.passive.dmgReduction = Math.max(boss.passive.dmgReduction || 0, ctx.final ? 0.18 : 0.12);
+    boss.passive.critChance = Math.max(boss.passive.critChance || 0, ctx.final ? 0.18 : 0.12);
+    boss.passive.atkBonus = Math.max(boss.passive.atkBonus || 0, ctx.final ? 0.22 : 0.14);
+    boss.passive.leech = Math.max(boss.passive.leech || 0, ctx.final ? 0.05 : 0.03);
+    boss.instantCastChance = Math.max(boss.instantCastChance || 0, ctx.final ? 0.12 : 0.06);
+    if(!boss.atkInterval) boss.atkInterval = ctx.final ? 1280 : 1360;
+    return;
+  }
+  if(ctx.kind === 'dungeon'){
+    boss.passive.dmgReduction = Math.max(boss.passive.dmgReduction || 0, ctx.final ? 0.12 : 0.08);
+    boss.passive.critChance = Math.max(boss.passive.critChance || 0, ctx.final ? 0.14 : 0.08);
+    boss.passive.atkBonus = Math.max(boss.passive.atkBonus || 0, ctx.final ? 0.16 : 0.1);
+    boss.passive.leech = Math.max(boss.passive.leech || 0, ctx.final ? 0.03 : 0.01);
+    boss.instantCastChance = Math.max(boss.instantCastChance || 0, ctx.final ? 0.08 : 0.03);
+    if(!boss.atkInterval) boss.atkInterval = ctx.final ? 1380 : 1460;
+    return;
+  }
+  boss.passive.dmgReduction = Math.max(boss.passive.dmgReduction || 0, ctx.final ? 0.14 : 0.08);
+  boss.passive.critChance = Math.max(boss.passive.critChance || 0, ctx.final ? 0.14 : 0.08);
+  boss.passive.atkBonus = Math.max(boss.passive.atkBonus || 0, ctx.final ? 0.16 : 0.1);
+  boss.instantCastChance = Math.max(boss.instantCastChance || 0, ctx.final ? 0.08 : 0.03);
+  if(!boss.atkInterval) boss.atkInterval = ctx.final ? 1360 : 1440;
+}
+function normalizeBossSkillProfile(skill, ctx, idx, total){
+  const out = ensureBossSkillDebuffs(skill, ctx);
+  const cap = bossDamageCap(ctx, out);
+  if(cap != null && typeof out.mul === 'number' && out.mul > cap) out.mul = +cap.toFixed(1);
+  out.threat = bossThreatTier(out, ctx);
+  out.interruptPolicy = chooseBossInterruptPolicy(out, ctx);
+  if(isBossSupportSkill(out) && out.threat === 'low') out.threat = 'medium';
+  if(out.interruptPolicy === 'hard' && out.threat === 'medium' && ctx.final) out.threat = 'high';
+  if(out.interruptPolicy === 'hard' && idx === total - 1 && ctx.final) out.threat = 'extreme';
+  return out;
+}
+function ensureBossRotationMix(boss, ctx){
+  const theme = inferBossTheme(ctx.name, boss.skills?.[0] || { name: ctx.name });
+  if((ctx.lvl || 1) >= 18 && !(boss.skills || []).some(isBossSupportSkill)){
+    const supportSkill = makeBossRotationSupportSkill(theme, ctx);
+    boss.skills = boss.skills || [];
+    boss.skills.splice(Math.min(1, boss.skills.length), 0, supportSkill);
+  }
+  boss.skills = (boss.skills || []).map((sk, idx, arr) => normalizeBossSkillProfile(sk, ctx, idx, arr.length));
+  let hardCount = boss.skills.filter(sk => sk.interruptPolicy === 'hard').length;
+  if(hardCount === 0){
+    let best = -1;
+    let bestScore = -1;
+    boss.skills.forEach((sk, idx) => {
+      if(isBossSupportSkill(sk)) return;
+      const score = bossThreatScore(sk, ctx) + (sk.castTime || 0);
+      if(score > bestScore){ bestScore = score; best = idx; }
+    });
+    if(best >= 0){
+      boss.skills[best].interruptPolicy = 'hard';
+      if(boss.skills[best].threat === 'low') boss.skills[best].threat = 'high';
+      else if(boss.skills[best].threat === 'medium') boss.skills[best].threat = ctx.final ? 'extreme' : 'high';
+      hardCount = 1;
+    }
+  }
+  const hardLimit = ctx.kind === 'raid' && ctx.final ? 2 : 1;
+  let seenHard = 0;
+  boss.skills = boss.skills.map(sk => {
+    if(sk.interruptPolicy === 'hard'){
+      seenHard++;
+      if(seenHard > hardLimit) sk.interruptPolicy = sk.threat === 'extreme' ? 'soft' : 'none';
+    }
+    return sk;
+  });
 }
 function ensureBossSkills(boss, ctx){
+  ensureBossPassivePressure(boss, ctx);
   boss.skills = (boss.skills || []).map(sk => ensureBossSkillDebuffs(sk, ctx));
   const theme = inferBossTheme(ctx.name, boss.skills[0] || { name: ctx.name });
   const templates = GENERATED_BOSS_SKILLS[theme] || GENERATED_BOSS_SKILLS.brute;
@@ -3933,7 +4101,9 @@ function ensureBossSkills(boss, ctx){
     else if((ctx.lvl||1) >= 40) extra.mul += 0.5;
     boss.skills.push(ensureBossSkillDebuffs(extra, ctx));
   }
-  boss.supportCount = Math.max(boss.supportCount || 0, bossSupportCount(ctx));
+  ensureBossRotationMix(boss, ctx);
+  const desiredSupport = bossSupportCount(ctx);
+  boss.supportCount = boss.supportCount == null ? desiredSupport : Math.min(boss.supportCount, desiredSupport);
 }
 function enhanceBossCollection(list, ctxBase){
   for(let i=0;i<list.length;i++){
@@ -4018,7 +4188,30 @@ function normalizeBossContent(){
     }
   }
 }
+function normalizeWorldBossSkillsets(){
+  const meta = {
+    hogger_king:{ name:'霍格大王', lvl:30, final:false },
+    swamp_tyrant:{ name:'沼泽暴君·格拉姆', lvl:40, final:false },
+    blackrock_overlord:{ name:'黑石霸主·达格兰', lvl:50, final:false },
+    kazzak_doom:{ name:'末日领主卡扎克', lvl:60, final:false },
+    magtheridon_wrath:{ name:'深渊之王玛瑟里顿', lvl:70, final:false },
+    sindragosa_shadow:{ name:'辛达苟萨之影', lvl:79, final:false },
+    deathwing:{ name:'死亡之翼·灭世者', lvl:85, final:true },
+    ragnaros:{ name:'拉格纳罗斯·火焰之王', lvl:85, final:true },
+    cthun:{ name:'克苏恩·疯狂之眼', lvl:85, final:true },
+  };
+  for(const [key, boss] of Object.entries(WORLD_BOSS_SKILLSETS)){
+    const info = meta[key] || { name:key, lvl:60, final:false };
+    ensureBossSkills(boss, {
+      kind:'world',
+      name:info.name,
+      lvl:info.lvl,
+      final:info.final
+    });
+  }
+}
 normalizeBossContent();
+normalizeWorldBossSkillsets();
 
 function extendDungeonCatalog(){
   const L = (name, slot, rarity, stats) => ({ name, slot, rarity, stats });
@@ -4582,6 +4775,7 @@ function createEpicRaidCatalog() {
       });
       return boss;
     });
+    enhanceBossCollection(clone.bosses, { kind:'raid', lvl:clone.reqLvl, finalAt:(clone.bosses.length - 1) });
     DUNGEONS.push(clone);
   }
 }

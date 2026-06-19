@@ -400,10 +400,24 @@ function bossSkillLineHtml(s, opts) {
   const cfg = opts || {};
   const iconSize = cfg.iconSize || 16;
   const tagColor = cfg.tagColor || '#fbbf24';
-  const leadColor = cfg.leadColor || 'var(--text)';
+  const threatPalette = {
+    low:'#fde68a',
+    medium:'#fdba74',
+    high:'#fca5a5',
+    extreme:'#fecaca',
+  };
+  const leadColor = cfg.leadColor || threatPalette[s?.threat] || 'var(--text)';
   const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(s.name, iconSize, s.icon) : (s.icon || '✨');
   const tags = effectTags(s);
-  const title = `${skillIconHtml} ${s.name}`;
+  const infoTags = [];
+  if (s?.threat === 'extreme') infoTags.push('<span style="color:#fecaca">致命</span>');
+  else if (s?.threat === 'high') infoTags.push('<span style="color:#fca5a5">高危</span>');
+  else if (s?.threat === 'medium') infoTags.push('<span style="color:#fdba74">危险</span>');
+  else if (s?.threat === 'low') infoTags.push('<span style="color:#fde68a">压制</span>');
+  if (s?.interruptPolicy === 'hard') infoTags.push('<span style="color:#fca5a5">必断</span>');
+  else if (s?.interruptPolicy === 'soft') infoTags.push('<span style="color:#c4b5fd">断后削弱</span>');
+  else if (s?.interruptPolicy === 'none') infoTags.push('<span style="color:#93c5fd">不可断</span>');
+  const title = `${skillIconHtml} ${s.name}${infoTags.length ? ` <span style="font-size:10px">${infoTags.join(' · ')}</span>` : ''}`;
   const castText = cfg.showCast === false ? '' : ` · ${(s.castTime || 0)}s读条`;
   const desc = s.desc || ((s.mul || 1) + '倍伤害');
   const tagHtml = tags.length

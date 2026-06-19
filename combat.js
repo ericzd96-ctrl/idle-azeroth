@@ -1332,7 +1332,8 @@ function inferBossSupportPackage(name){
   return 'warlord_command';
 }
 function buildMonsterSupportPool(name, kind, lvl, isBoss, desiredCount){
-  const count = Math.max(1, desiredCount || 1);
+  const count = Math.max(0, desiredCount == null ? 1 : desiredCount);
+  if(count === 0) return [];
   if(!isBoss){
     return pickMonSupportSkills(name, kind, lvl, count, false);
   }
@@ -1731,6 +1732,9 @@ function getReadyMonsterSupportSkill(mon, now){
 }
 function monsterSkillDangerLevel(skill){
   if(!skill) return 0;
+  if(skill.threat === 'extreme') return 2;
+  if(skill.threat === 'high') return 2;
+  if(skill.threat === 'medium') return 1;
   let score = 0;
   if((skill.mul || 0) >= 5) score += 2;
   else if((skill.mul || 0) >= 3) score += 1;
@@ -1739,6 +1743,50 @@ function monsterSkillDangerLevel(skill){
   if(skill.stun || skill.silence || skill.disarm || skill.fear || skill.freeze) score += 2;
   if(skill.summonCount || skill.spdBuff || skill.atkBuffSecs || skill.drBuffSecs || skill.defBuffSecs) score += 1;
   return score >= 4 ? 2 : score >= 2 ? 1 : 0;
+}
+const BOSS_CAST_THREAT_META = {
+  low: { label:'压制', bar:'linear-gradient(90deg,#fbbf24,#f59e0b)', text:'#fde68a' },
+  medium: { label:'危险', bar:'linear-gradient(90deg,#fb923c,#f97316)', text:'#fdba74' },
+  high: { label:'高危', bar:'linear-gradient(90deg,#ef4444,#dc2626)', text:'#fca5a5' },
+  extreme: { label:'致命', bar:'linear-gradient(90deg,#b91c1c,#7f1d1d)', text:'#fecaca' },
+};
+function bossCastThreatMeta(skill){
+  return BOSS_CAST_THREAT_META[skill?.threat] || BOSS_CAST_THREAT_META.low;
+}
+function bossInterruptTag(skill){
+  if(skill?.interruptPolicy === 'hard') return '必断';
+  if(skill?.interruptPolicy === 'soft') return '断后削弱';
+  if(skill?.interruptPolicy === 'none') return '不可断';
+  return '可断';
+}
+function buildInterruptedBossResidual(skill){
+  if(!skill || skill.interruptPolicy !== 'soft') return null;
+  const out = {
+    name:`${skill.name}·余波`,
+    icon:skill.icon || '✨',
+    type:'support',
+    desc:'被打断后仍留下部分余波',
+  };
+  let hasEffect = false;
+  if(skill.healPct){ out.healPct = +(skill.healPct * 0.45).toFixed(3); hasEffect = true; }
+  if(skill.shieldPct){ out.shieldPct = +(skill.shieldPct * 0.5).toFixed(3); hasEffect = true; }
+  if(skill.atkBuffSecs){ out.atkBuffSecs = Math.max(3, Math.floor(skill.atkBuffSecs * 0.55)); out.atkBuffPct = Math.max(10, Math.floor((skill.atkBuffPct || 30) * 0.55)); hasEffect = true; }
+  if(skill.spdBuffSecs){ out.spdBuffSecs = Math.max(3, Math.floor(skill.spdBuffSecs * 0.55)); out.spdBuffPct = Math.max(10, Math.floor((skill.spdBuffPct || 25) * 0.55)); hasEffect = true; }
+  if(skill.defBuffSecs){ out.defBuffSecs = Math.max(3, Math.floor(skill.defBuffSecs * 0.55)); out.defBuffPct = Math.max(10, Math.floor((skill.defBuffPct || 25) * 0.55)); hasEffect = true; }
+  if(skill.drBuffSecs){ out.drBuffSecs = Math.max(3, Math.floor(skill.drBuffSecs * 0.55)); out.drBuffPct = +Math.max(0.08, (skill.drBuffPct || 0.2) * 0.55).toFixed(2); hasEffect = true; }
+  if(skill.critBuffSecs){ out.critBuffSecs = Math.max(3, Math.floor(skill.critBuffSecs * 0.55)); out.critBuffPct = Math.max(10, Math.floor((skill.critBuffPct || 25) * 0.55)); hasEffect = true; }
+  if(skill.leechBuffSecs){ out.leechBuffSecs = Math.max(3, Math.floor(skill.leechBuffSecs * 0.55)); out.leechBuffPct = Math.max(8, Math.floor((skill.leechBuffPct || 18) * 0.55)); hasEffect = true; }
+  if(skill.summonCount){
+    if((skill.summonCount || 0) >= 2){
+      out.summonCount = 1;
+      out.summonTheme = skill.summonTheme;
+      hasEffect = true;
+    } else if(!hasEffect){
+      out.shieldPct = 0.08;
+      hasEffect = true;
+    }
+  }
+  return hasEffect ? out : null;
 }
 function applyMonsterSupportSkill(mon, skill, now, opts){
   if(!mon || !skill) return false;
@@ -2411,7 +2459,7 @@ function tickBattle(now){
     if(!bossData){const map=MAPS.find(m=>m.key===state.currentMap);if(map?.boss)bossData=map.boss;}
     const rawCd=((bossData?.skills||[])[bossSkillIdx%(bossData?.skills||[]).length])?.cd||10;
     const skillCd=Math.max(3,Math.floor(rawCd*0.6));   // CD加速40%,但最低3秒间隔
-    if(bossData?.skills?.length&&now-lastBossSkill>skillCd*1000){const sk=bossData.skills[bossSkillIdx%bossData.skills.length];let castTime=sk.castTime!==undefined?sk.castTime:2;const instantChance=typeof mon.instantCastChance==='number'?mon.instantCastChance:(mon.instantCast?0.35:0);const instant=instantChance>0&&Math.random()<instantChance;if(instant)castTime=0;bossCasting={bossName:mon.bossName,name:sk.name,icon:sk.icon,type:sk.type,heal:sk.heal,healPct:sk.healPct,mul:sk.mul,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,spdBuffSecs:sk.spdBuffSecs,spdBuffPct:sk.spdBuffPct,atkBuffSecs:sk.atkBuffSecs,atkBuffPct:sk.atkBuffPct,defBuffSecs:sk.defBuffSecs,defBuffPct:sk.defBuffPct,drBuffSecs:sk.drBuffSecs,drBuffPct:sk.drBuffPct,shieldPct:sk.shieldPct,critBuffSecs:sk.critBuffSecs,critBuffPct:sk.critBuffPct,leechBuffSecs:sk.leechBuffSecs,leechBuffPct:sk.leechBuffPct,summonCount:sk.summonCount,summonTheme:sk.summonTheme,aoe:sk.aoe,silence:sk.silence,disarm:sk.disarm,fear:sk.fear,freeze:sk.freeze,cripple:sk.cripple,decay:sk.decay,wither:sk.wither,manaDrain:sk.manaDrain,bomb:sk.bomb,plague:sk.plague,bleed:sk.bleed,brittle:sk.brittle,soulDrain:sk.soulDrain,soulLink:sk.soulLink,revenge:sk.revenge,frenzy:sk.frenzy,decay2:sk.decay2,mirror:sk.mirror,startTime:now,duration:castTime*1000};log('💀 '+mon.bossName+(instant?' 瞬发 ':' 开始施放 ')+sk.name+'!'+(instant?'(无法打断)':''),'bad');lastBossSkill=now;bossSkillIdx++;}
+    if(bossData?.skills?.length&&now-lastBossSkill>skillCd*1000){const sk=bossData.skills[bossSkillIdx%bossData.skills.length];let castTime=sk.castTime!==undefined?sk.castTime:2;const instantChance=typeof mon.instantCastChance==='number'?mon.instantCastChance:(mon.instantCast?0.35:0);const instant=instantChance>0&&Math.random()<instantChance;if(instant)castTime=0;bossCasting={bossName:mon.bossName,name:sk.name,icon:sk.icon,type:sk.type,heal:sk.heal,healPct:sk.healPct,mul:sk.mul,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,spdBuffSecs:sk.spdBuffSecs,spdBuffPct:sk.spdBuffPct,atkBuffSecs:sk.atkBuffSecs,atkBuffPct:sk.atkBuffPct,defBuffSecs:sk.defBuffSecs,defBuffPct:sk.defBuffPct,drBuffSecs:sk.drBuffSecs,drBuffPct:sk.drBuffPct,shieldPct:sk.shieldPct,critBuffSecs:sk.critBuffSecs,critBuffPct:sk.critBuffPct,leechBuffSecs:sk.leechBuffSecs,leechBuffPct:sk.leechBuffPct,summonCount:sk.summonCount,summonTheme:sk.summonTheme,aoe:sk.aoe,silence:sk.silence,disarm:sk.disarm,fear:sk.fear,freeze:sk.freeze,cripple:sk.cripple,decay:sk.decay,wither:sk.wither,manaDrain:sk.manaDrain,bomb:sk.bomb,plague:sk.plague,bleed:sk.bleed,brittle:sk.brittle,soulDrain:sk.soulDrain,soulLink:sk.soulLink,revenge:sk.revenge,frenzy:sk.frenzy,decay2:sk.decay2,mirror:sk.mirror,threat:sk.threat,interruptPolicy:sk.interruptPolicy,startTime:now,duration:castTime*1000};log('💀 '+mon.bossName+(instant?' 瞬发 ':' 开始施放 ')+sk.name+'!'+(instant?'(无法打断)':''),'bad');lastBossSkill=now;bossSkillIdx++;}
     // BOSS技巧(独立冷却,避免开场和支援技能一起连发)
     const tricks=bossTrickList(bossData);
     const supportRecently = (mon._lastSupportSkill || 0) > 0 && now - mon._lastSupportSkill < 4500;
@@ -2945,9 +2993,13 @@ function tickCast(now){
     if(!$('mon-emoji') && typeof renderMonList === 'function') renderMonList();
     const elapsed=now-bossCasting.startTime;const pct=Math.min(100,elapsed/bossCasting.duration*100);
     const remaining=Math.max(0,Math.ceil((bossCasting.duration-elapsed)/1000));
+    const threatMeta = bossCastThreatMeta(bossCasting);
+    const interruptText = bossInterruptTag(bossCasting);
     $('boss-cast-bar-wrap').style.visibility='visible';
-    $('boss-cast-name').textContent='💀 '+(bossCasting.bossName||'BOSS')+' - '+(bossCasting.icon||'')+' '+(bossCasting.name||'施法');
+    $('boss-cast-name').textContent='💀 '+(bossCasting.bossName||'BOSS')+' - '+(bossCasting.icon||'')+' '+(bossCasting.name||'施法')+'【'+threatMeta.label+' / '+interruptText+'】';
+    $('boss-cast-name').style.color = threatMeta.text;
     $('boss-cast-time').textContent=remaining>0?remaining+'s':'';
+    $('boss-b-cast').style.background = threatMeta.bar;
     $('boss-b-cast').style.width=pct+'%';
     if(elapsed>=bossCasting.duration){
       hideBossCastBar();
@@ -3066,7 +3118,27 @@ function castSkill(skillKey,manual){
   else if(sk.type==='buff'){const dur=sk.duration+(state.hero.buffDuration||0)*1000;state.buffs[sk.buff]=Date.now()+dur;recomputeStats();log(sk.name+'!','good');}
   if(sk.type==='buff') processTalentAfterSkill(skillKey, sk, state.currentMonsters[0] || null, 0, { cost });
 }
-function doInterrupt(){if(!bossCasting){log('没有正在施放的法术','info');return;}const bossName=bossCasting.bossName||'BOSS';log('🦶 打断了 '+bossName+' 的 '+bossCasting.icon+' 施法!','good');hideBossCastBar();bossCasting=null;}
+function doInterrupt(){
+  if(!bossCasting){log('没有正在施放的法术','info');return;}
+  const bossName=bossCasting.bossName||'BOSS';
+  const mon=state.currentMonsters[0];
+  if(bossCasting.interruptPolicy === 'none'){
+    log('🧱 '+bossName+' 的 '+bossCasting.name+' 无法被打断!','bad');
+    if(mon) showMonsterFloat(mon,'🧱不可断','#fca5a5',{variant:'boss',scale:1.04});
+    return;
+  }
+  log('🦶 打断了 '+bossName+' 的 '+bossCasting.icon+' '+bossCasting.name+'!','good');
+  if(bossCasting.interruptPolicy === 'soft' && mon && mon.hp > 0){
+    const residual = buildInterruptedBossResidual(bossCasting);
+    if(residual){
+      applyMonsterSupportSkill(mon, residual, Date.now(), { announce:false });
+      log('⚠️ 施法被打断，但仍留下了部分余波','bad');
+      showMonsterFloat(mon,'⚠️余波','#fda4af',{variant:'boss',scale:1.04});
+    }
+  }
+  hideBossCastBar();
+  bossCasting=null;
+}
 
 /* ---------- 随从 ---------- */
 let lastCompAtk=0,lastCompSkill=0,compSkillIdx=0,lastCompRegen=0;
