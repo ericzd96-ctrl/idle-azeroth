@@ -374,8 +374,10 @@ function renderItemSetEffectsHtml(item) {
 function getItemFullRerollCost(item) {
   const rarityFactor = { common:0.8, uncommon:1.1, rare:1.5, epic:2.4, legend:4 }[item?.rarity] || 1.2;
   const rerollCount = item?.fullRerolls || 0;
+  const lockedCount = (item?._lockedStats?.length || 0) + (item?._lockedAffixes?.length || 0);
+  const lockFactor = Math.min(1 + lockedCount * 0.5, 3.0);
   return {
-    gold: Math.max(120, Math.floor((item?.reqLvl || 1) * 18 * rarityFactor * (1 + rerollCount * 0.75))),
+    gold: Math.max(120, Math.floor((item?.reqLvl || 1) * 18 * rarityFactor * (1 + rerollCount * 0.75) * lockFactor)),
     essence: Math.max(0, Math.floor(({ common:0, uncommon:0, rare:1, epic:3, legend:6 }[item?.rarity] || 1) * (1 + rerollCount * 0.5))),
   };
 }
@@ -395,8 +397,29 @@ function rerollItemFully(itemId) {
       returnKeys.push(sk.gem);
     }
   }
+  // ---- 快照锁定数据 ----
+  const lockedStatSnap = {};
+  if (it._lockedStats) {
+    for (const sk of it._lockedStats) {
+      if (it.stats && typeof it.stats[sk] === 'number') lockedStatSnap[sk] = it.stats[sk];
+    }
+  }
+  const lockedAffixSnap = [];
+  if (it._lockedAffixes && it.affixes) {
+    for (const afk of it._lockedAffixes) {
+      const af = it.affixes.find(a => a.key === afk);
+      if (af) lockedAffixSnap.push({ key: af.key, tier: af.tier, value: af.value, rerolls: af.rerolls || 0 });
+    }
+  }
+  // ---- confirm 提示 ----
+  const lockedStatNames = it._lockedStats?.map(k => fmtStatName(k)).join('、') || '';
+  const lockedAffixNames = it._lockedAffixes?.map(k => AFFIX_BY_KEY[k]?.name || k).join('、') || '';
+  const lockedParts = [];
+  if (lockedStatNames) lockedParts.push('属性: ' + lockedStatNames);
+  if (lockedAffixNames) lockedParts.push('词缀: ' + lockedAffixNames);
+  const lockedHint = lockedParts.length ? '\n🔒 已锁定保留: ' + lockedParts.join(' | ') : '';
   const costText = `${cost.gold}💰${cost.essence ? ` + ${cost.essence}✨` : ''}`;
-  if (!confirm(`重洗 [${it.name}]？\n将消耗 ${costText}\n会重掷基础数值、词缀和宝石孔，并清除附魔。\n已镶嵌的宝石会返还到背包。`)) return;
+  if (!confirm(`重洗 [${it.name}]？\n将消耗 ${costText}${lockedHint}\n会重掷基础数值、词缀和宝石孔，并清除附魔。\n已镶嵌的宝石会返还到背包。`)) return;
   state.gold -= cost.gold;
   state.essence -= cost.essence;
   const returns = [];
@@ -407,6 +430,8 @@ function rerollItemFully(itemId) {
   const rarity = RARITY.find(r => r.key === it.rarity) || RARITY[0];
   const power = estimateItemRollPower(it);
   const extraStats = typeof resolveItemTemplateStats === 'function' ? resolveItemTemplateStats(it) : (it._baseExtraStats || {});
+  const savedLockedStats = it._lockedStats ? [...it._lockedStats] : [];
+  const savedLockedAffixes = it._lockedAffixes ? [...it._lockedAffixes] : [];
   const preserved = {
     id: it.id,
     slot: it.slot,
@@ -427,6 +452,8 @@ function rerollItemFully(itemId) {
     _rollPower: power,
     _rollSlot: it.slot,
     fullRerolls: (it.fullRerolls || 0) + 1,
+    _lockedStats: savedLockedStats,
+    _lockedAffixes: savedLockedAffixes,
   };
   for (const key of Object.keys(it)) delete it[key];
   Object.assign(it, preserved, { stats:{} });
@@ -434,6 +461,19 @@ function rerollItemFully(itemId) {
   delete it.sockets;
   delete it.enchant;
   finishItem(it, it.slot, rarity, power, extraStats || {});
+  // ---- 恢复锁定 ----
+  for (const [sk, val] of Object.entries(lockedStatSnap)) { it.stats[sk] = val; }
+  if (lockedAffixSnap.length > 0) {
+    if (!it.affixes) it.affixes = [];
+    for (const lad of lockedAffixSnap) {
+      const existingIdx = it.affixes.findIndex(a => a.key === lad.key);
+      if (existingIdx >= 0) {
+        it.affixes[existingIdx] = { key: lad.key, tier: lad.tier, value: lad.value, rerolls: lad.rerolls };
+      } else {
+        it.affixes.push({ key: lad.key, tier: lad.tier, value: lad.value, rerolls: lad.rerolls });
+      }
+    }
+  }
   it.fullRerolls = preserved.fullRerolls;
   syncItemIdentity(it);
   const returnedText = returns.length ? `，返还宝石 ${returns.join(' / ')}` : '';
@@ -449,6 +489,10 @@ function rerollAffix(itemId, affixIdx) {
   const it = found.item;
   if (!it.affixes || !it.affixes[affixIdx]) return;
   const af = it.affixes[affixIdx];
+  if (it._lockedAffixes && it._lockedAffixes.includes(af.key)) {
+    log('🔒 该词缀已被锁定，无法单独重铸（请先解锁或通过整件重洗保留）', 'bad');
+    return;
+  }
   const cost = 200 * (1 + (af.rerolls||0));
   const essCost = 1;
   if (state.gold < cost) { log('💰 金币不足('+cost+')', 'bad'); return; }
@@ -464,6 +508,29 @@ function rerollAffix(itemId, affixIdx) {
   if (typeof progressionOnReroll === 'function') progressionOnReroll();
   recomputeStats();
   markDirty('inventory','equipment','hero');
+  renderItemDetail(itemId);
+}
+
+/* ---------- 锁定/解锁副属性与词缀 ---------- */
+function toggleLockStat(itemId, statKey) {
+  const found = getItemById(itemId); if (!found) return;
+  const it = found.item;
+  const mainStat = SLOT_INFO[it.slot]?.mainStat;
+  if (statKey === mainStat) return;
+  if (!it._lockedStats) it._lockedStats = [];
+  const idx = it._lockedStats.indexOf(statKey);
+  if (idx >= 0) it._lockedStats.splice(idx, 1);
+  else it._lockedStats.push(statKey);
+  renderItemDetail(itemId);
+}
+
+function toggleLockAffix(itemId, affixKey) {
+  const found = getItemById(itemId); if (!found) return;
+  const it = found.item;
+  if (!it._lockedAffixes) it._lockedAffixes = [];
+  const idx = it._lockedAffixes.indexOf(affixKey);
+  if (idx >= 0) it._lockedAffixes.splice(idx, 1);
+  else it._lockedAffixes.push(affixKey);
   renderItemDetail(itemId);
 }
 
@@ -602,7 +669,18 @@ function renderItemDetail(itemId) {
     </div>`;
   const setHtml = renderItemSetEffectsHtml(it);
   // 基础属性
-  const baseStats = Object.entries(it.stats||{}).map(([k,v])=>`<div class="stat-row">${fmtStatName(k)} <b>+${v}${isPercentStat(k)?'%':''}</b></div>`).join('');
+  const mainStatKey = SLOT_INFO[it.slot]?.mainStat;
+  const baseStats = Object.entries(it.stats||{}).map(([k,v]) => {
+    const isMain = k === mainStatKey;
+    const isLocked = it._lockedStats && it._lockedStats.includes(k);
+    const tagHtml = isMain
+      ? '<span class="stat-type-tag main">主属性</span>'
+      : '<span class="stat-type-tag sec">副属性</span>';
+    const lockHtml = !isMain
+      ? `<button class="lock-btn${isLocked?' locked':''}" data-action="lockstat" data-id="${it.id}" data-sk="${k}" title="${isLocked?'已锁定：重洗时保留':'点击锁定：重洗时保留此属性'}">${isLocked?'🔒':'🔓'}</button>`
+      : '';
+    return `<div class="stat-row">${tagHtml}${lockHtml}${fmtStatName(k)} <b>+${v}${isPercentStat(k)?'%':''}</b></div>`;
+  }).join('');
   // 词缀
   let affixHtml = '<div class="muted" style="font-size:11px">无词缀</div>';
   if (it.affixes && it.affixes.length) {
@@ -610,9 +688,12 @@ function renderItemDetail(itemId) {
       const def = AFFIX_BY_KEY[af.key]; if (!def) return '';
       const tierCls = af.tier===3?'r-legend':af.tier===2?'r-epic':'r-rare';
       const cost = 200 * (1 + (af.rerolls||0));
+      const isAffixLocked = it._lockedAffixes && it._lockedAffixes.includes(af.key);
+      const affixLockHtml = `<button class="lock-btn${isAffixLocked?' locked':''}" data-action="lockaffix" data-id="${it.id}" data-afk="${af.key}" title="${isAffixLocked?'已锁定：重洗时保留':'点击锁定：重洗时保留此词缀'}">${isAffixLocked?'🔒':'🔓'}</button>`;
       return `<div class="affix-row">
+        ${affixLockHtml}
         <span class="${tierCls}">${def.name} ${fmtMod(def.mod, af.value)}</span>
-        <button data-action="reroll" data-id="${it.id}" data-idx="${i}" title="重铸: ${cost}💰 + 1精华 (已重铸${af.rerolls||0}次)">♻️ ${cost}</button>
+        <button data-action="reroll" data-id="${it.id}" data-idx="${i}" title="重铸: ${cost}💰 + 1精华 (已重铸${af.rerolls||0}次)"${isAffixLocked?' disabled':''}>♻️ ${cost}</button>
       </div>`;
     }).join('');
   }

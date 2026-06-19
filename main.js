@@ -191,6 +191,8 @@ function setupDelegation() {
     else if (act === 'equipfromdetail') { equipItem(id); renderItemDetail(id); }
     else if (act === 'unequipfromdetail') { const sk = Object.keys(state.equipped).find(k=>state.equipped[k]?.id===id); if(sk) { unequipItem(sk); closeItemDetail(); } }
     else if (act === 'sellfromdetail') { sellItem(id); closeItemDetail(); }
+    else if (act === 'lockstat') toggleLockStat(id, btn.dataset.sk);
+    else if (act === 'lockaffix') toggleLockAffix(id, btn.dataset.afk);
   });
   // 点击模态框外的暗色背景关闭
   $('modal-item-detail').addEventListener('click', e => {

@@ -1118,6 +1118,26 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
 .stat-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px 12px; font-size: 12px; }
 .stat-row { display: flex; justify-content: space-between; }
 .stat-row b { color: var(--accent); }
+
+/* 主/副属性标签 */
+.stat-type-tag {
+  display: inline-block; font-size: 9px; padding: 1px 5px; border-radius: 3px;
+  margin-right: 4px; font-weight: 600; line-height: 1.4; white-space: nowrap;
+}
+.stat-type-tag.main { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+.stat-type-tag.sec   { background: rgba(139,156,216,0.12); color: #8b9cd8; border: 1px solid rgba(139,156,216,0.25); }
+
+/* 锁定按钮 */
+.lock-btn {
+  background: transparent; border: 1px solid transparent; cursor: pointer;
+  font-size: 13px; padding: 0 3px; border-radius: 3px; line-height: 1;
+  margin-right: 4px; transition: all 0.15s; flex-shrink: 0;
+}
+.lock-btn:hover   { background: rgba(255,255,255,0.06); }
+.lock-btn.locked  { border-color: rgba(251,191,36,0.4); background: rgba(251,191,36,0.08); }
+.lock-btn:not(.locked) { opacity: 0.4; }
+.lock-btn:not(.locked):hover { opacity: 0.8; }
+
 .affix-row, .socket-row, .enchant-row {
   display: flex; justify-content: space-between; align-items: center;
   padding: 4px 0; font-size: 12px; gap: 8px;
