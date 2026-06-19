@@ -2389,6 +2389,7 @@ function processDirty() {
     if (typeof renderEvents==='function') renderEvents();
     if (typeof renderAscend==='function') renderAscend();
     if (typeof renderTowerPanel==='function') renderTowerPanel();
+    if (typeof renderRoguelikePanel==='function') renderRoguelikePanel();
     if (typeof renderLife==='function') renderLife();
     if (typeof renderArtifact==='function') renderArtifact();
     if (typeof renderMounts==='function') renderMounts();

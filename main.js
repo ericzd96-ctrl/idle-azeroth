@@ -270,7 +270,9 @@ function setupDelegation() {
       document.querySelectorAll('#tab-dungeon > .sub-tabs .sub-tab').forEach(x => x.classList.toggle('active', x.dataset.dgsub === key));
       $('dungeon-sub-dungeon').style.display = key === 'dungeon' ? '' : 'none';
       $('dungeon-sub-tower').style.display = key === 'tower' ? '' : 'none';
+      $('dungeon-sub-roguelike').style.display = key === 'roguelike' ? '' : 'none';
       if (key === 'tower' && typeof renderTowerPanel === 'function') renderTowerPanel();
+      if (key === 'roguelike' && typeof renderRoguelikePanel === 'function') renderRoguelikePanel();
       return;
     }
     const modeTab = e.target.closest('.sub-tab[data-dgmode]');
@@ -329,6 +331,28 @@ function setupDelegation() {
       else if (act === 'towerFloorUp')   { towerSetStartFloor(1);  renderTowerPanel(); }
       else if (act === 'towerFloorDown') { towerSetStartFloor(-1); renderTowerPanel(); }
       else if (act === 'towerBuy')       { towerBuy(btn.dataset.key); renderTowerPanel(); }
+      else if (act === 'enterRoguelike') { if(typeof enterRoguelike==='function') enterRoguelike(); }
+      else if (act === 'leaveRoguelike') {
+        if (!confirm('确定放弃幻象挑战?(已得幻象币保留)')) return;
+        if(typeof leaveRoguelike==='function') leaveRoguelike();
+      }
+    });
+  }
+  // Roguelike 子标签切换
+  $('dungeon-sub-roguelike').addEventListener('click', e => {
+    const tab = e.target.closest('[data-roguesub]');
+    if (!tab) return;
+    roguelikeSubTab = tab.dataset.roguesub;
+    if (typeof renderRoguelikePanel === 'function') renderRoguelikePanel();
+  });
+  // Roguelike 能力选择卡片点击
+  const rlModal = $('roguelike-choice-modal');
+  if (rlModal) {
+    rlModal.addEventListener('click', e => {
+      const card = e.target.closest('.roguelike-card');
+      if (card && card.dataset.choice != null) {
+        if (typeof roguelikeSelectAbility === 'function') roguelikeSelectAbility(parseInt(card.dataset.choice));
+      }
     });
   }
 
@@ -518,6 +542,11 @@ function setupMainButtons() {
       if (!confirm('确定撤离无尽塔?(本次进度丢失,但塔币和最高层保留)')) return;
       log('🚪 撤离 无尽塔', 'info');
       leaveTower();
+      markDirty('dungeon');
+    } else if (state.mode === 'roguelike') {
+      if (!confirm('确定放弃幻象挑战?(已得幻象币保留)')) return;
+      log('🚪 撤离 幻象挑战', 'info');
+      if (typeof leaveRoguelike === 'function') leaveRoguelike();
       markDirty('dungeon');
     } else if (state.mode === 'worldboss') {
       if (!confirm('撤离世界Boss战?(CD不重置,可重打)')) return;

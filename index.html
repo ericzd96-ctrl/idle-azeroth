@@ -224,6 +224,7 @@
       <div class="sub-tabs">
         <span class="sub-tab active" data-dgsub="dungeon"><span data-ui-icon="dungeon" data-ui-size="xs"></span>副本</span>
         <span class="sub-tab" data-dgsub="tower"><span data-ui-icon="towercoin" data-ui-size="xs"></span>无尽塔</span>
+        <span class="sub-tab" data-dgsub="roguelike">🌌 幻象</span>
       </div>
       <div id="dungeon-sub-dungeon">
         <div class="muted" style="margin-bottom:6px">挑战副本 BOSS,获取传说装备</div>
@@ -245,6 +246,9 @@
       </div>
       <div id="dungeon-sub-tower" style="display:none">
         <div id="tower-panel"></div>
+      </div>
+      <div id="dungeon-sub-roguelike" style="display:none">
+        <div id="roguelike-panel"></div>
       </div>
     </div>
 
@@ -402,6 +406,9 @@
   </div>
 </div>
 
+<!-- Roguelike ability choice -->
+<div class="modal-bg" id="roguelike-choice-modal" style="display:none"></div>
+
 <!-- Arena fight result -->
 <div class="modal-bg" id="modal-arena-result">
   <div class="modal" style="max-width:400px">
@@ -443,6 +450,7 @@
 <script src="life.js"></script>
 <script src="artifact.js"></script>
 <script src="mount.js"></script>
+<script src="roguelike.js"></script>
 <script src="midgame_ext.js"></script>
 <script src="arena.js"></script>
 <script src="passives.js"></script>

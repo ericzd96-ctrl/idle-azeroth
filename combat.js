@@ -80,7 +80,7 @@ function pulseMonsterEl(mon, kind, duration){ if(typeof pulseCombatEl === 'funct
 
 /* ---------- 天赋特效运行时 ---------- */
 function talentAuraMeta(key){ return (typeof TALENT_AURA_LIBRARY === 'object' && TALENT_AURA_LIBRARY[key]) || null; }
-function talentFxList(){ return state._talentFx || []; }
+function talentFxList(){ const tfx = state._talentFx || []; const sfx = state._setFx || []; return tfx.concat(sfx); }
 function ensureTalentState(){
   if(!state.talentAuras) state.talentAuras = {};
   if(!state.talentState) state.talentState = { cds:{}, flags:{}, shield:0 };
@@ -586,6 +586,37 @@ function runTalentAction(fx, mon, value, ctx, now){
   }
   if(fx.spreadDotPct) spreadDotFromMonster(mon, fx.spreadDotPct, fx.dotMs || 5000);
   if(fx.resetSkill) resetSkillCooldown(fx.resetSkill, fx.resetPct || 1);
+  // 套装触发效果
+  if(fx.auraKey && typeof applySetAura === 'function') applySetAura(fx.auraKey);
+  if(fx.extraDmgPct && mon && mon.hp > 0){
+    let extra = Math.max(1, Math.floor((value || state.hero.atk) * fx.extraDmgPct));
+    const dr = monsterDamageReduction(mon, now);
+    if(dr && extra > 0) extra = Math.max(1, Math.floor(extra * (1 - dr)));
+    if(extra > 0){ mon.hp -= extra; trackDmg('hero', extra); showMonsterFloat(mon, '🛡️⚔️-' + extra, '#fbbf24'); }
+  }
+  if(fx.holyDmgPct && mon && mon.hp > 0){
+    let extra = Math.max(1, Math.floor((value || state.hero.atk) * fx.holyDmgPct));
+    const dr = monsterDamageReduction(mon, now);
+    if(dr && extra > 0) extra = Math.max(1, Math.floor(extra * (1 - dr)));
+    if(extra > 0){ mon.hp -= extra; trackDmg('hero', extra); showMonsterFloat(mon, '✨-' + extra, '#fbbf24'); }
+  }
+  if(fx.extraHitPct && mon && mon.hp > 0){
+    let extra = Math.max(1, Math.floor((value || state.hero.atk) * fx.extraHitPct));
+    const dr = monsterDamageReduction(mon, now);
+    if(dr && extra > 0) extra = Math.max(1, Math.floor(extra * (1 - dr)));
+    if(extra > 0){ mon.hp -= extra; trackDmg('hero', extra); showMonsterFloat(mon, '👊-' + extra, '#fbbf24'); }
+  }
+  if(fx.chainDmgPct && mon && mon.hp > 0){
+    let extra = Math.max(1, Math.floor((value || state.hero.atk) * fx.chainDmgPct));
+    const dr = monsterDamageReduction(mon, now);
+    if(dr && extra > 0) extra = Math.max(1, Math.floor(extra * (1 - dr)));
+    if(extra > 0){ mon.hp -= extra; trackDmg('hero', extra); showMonsterFloat(mon, '⚡-' + extra, '#fbbf24'); }
+  }
+  if(fx.nextCrit && typeof grantNextSkillCrit === 'function') grantNextSkillCrit(fx.nextCrit);
+  if(fx.dotPct && mon && mon.hp > 0 && typeof applyMonsterDot === 'function'){
+    const dot = Math.max(1, Math.floor((value || state.hero.atk) * fx.dotPct * (1 + (state.hero.dotBonus || 0)/100)));
+    applyMonsterDot(mon, 'set:' + (fx._setKey || 'dot'), dot, fx.dotMs || 5000, { icon:'☠️', name:'套装毒伤', source:'set' });
+  }
 }
 function processTalentOnCrit(mon, value, ctx){
   const now = Date.now();
@@ -1406,6 +1437,7 @@ function spawnMonster(){
   if(state.mode==='travel')return;
   if(state.mode==='dungeon'||state.mode==='mythic')return spawnDungeonMonster();
   if(state.mode==='tower')return spawnTowerMonster();
+  if(state.mode==='roguelike')return typeof spawnRoguelikeMonster==='function'?spawnRoguelikeMonster():null;
   if(state.mode==='boss')return spawnZoneBoss();
   const map=getMap();if(!map){state.currentMap=MAPS[0].key;state.currentSubzone=0;return spawnMonster();}
   const sub=map.sub[state.currentSubzone]||map.sub[0];
@@ -2630,6 +2662,7 @@ function onMonsterDeath(mon){
   if(state.mode==='dungeon'){const ds=state.dungeonState;const dg=DUNGEONS.find(d=>d.key===ds.key);const lastBoss=(dg.bosses||[])[dg.bosses.length-1];ds.wave+=1;if(lastBoss&&ds.wave>lastBoss.wave){onDungeonClear(dg);return;}spawnDungeonMonster();}
   else if(state.mode==='mythic'){const ms=state.mythicState;const dg=DUNGEONS.find(d=>d.key===ms.key);const lastBoss=(dg.bosses||[])[dg.bosses.length-1];if(mon.isBoss)onMythicBossKill();ms.wave+=1;if(lastBoss&&ms.wave>lastBoss.wave){onMythicClear();return;}spawnDungeonMonster();}
   else if(state.mode==='tower'){if(typeof onTowerMonsterKill==='function') onTowerMonsterKill(mon);}
+  else if(state.mode==='roguelike'){if(typeof onRoguelikeMonsterKill==='function') onRoguelikeMonsterKill(mon);}
   else if(state.mode==='boss'){if(mon.isBoss){const map=getMap();log('👑 '+map.boss.name+' 已被击败!','legend');
     if(map.boss.lvl>=60){
       // 60+ BOSS: 必爆紫装 + 15%概率橙装
@@ -2682,6 +2715,7 @@ function onHeroDeath(){
   if(state.mode==='dungeon'){showDungeonFail();return;}
   if(state.mode==='mythic'){onMythicFail();return;}
   if(state.mode==='tower'){if(typeof onTowerFail==='function') onTowerFail(); spawnMonster(); return;}
+  if(state.mode==='roguelike'){if(typeof onRoguelikeFail==='function') onRoguelikeFail(); spawnMonster(); return;}
   if(state.mode==='boss'){log('🚪 BOSS 战失败,撤退到主城','bad');state.mode='world';markDirty('map');}
   if(state.mode==='worldboss'){
     if(state._currentRareElite && typeof leaveRareEliteEncounter==='function'){

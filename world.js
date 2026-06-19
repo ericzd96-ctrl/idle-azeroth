@@ -30,6 +30,10 @@ function switchSubzone(mapKey, subIdx) {
   if (state.mode === 'tower') {
     if (!confirm('撤离无尽塔?')) return;
     if (typeof leaveTower === 'function') leaveTower();
+  }
+  if (state.mode === 'roguelike') {
+    if (!confirm('撤离幻象挑战? 幻象币会保留')) return;
+    if (typeof leaveRoguelike === 'function') leaveRoguelike();
     else { state.mode = 'world'; state.towerState = null; }
   }
   if (state.mode === 'boss') {
@@ -330,7 +334,7 @@ function applyOfflineProgress() {
   }
   if (state.mode === 'travel') return;
   // 副本/BOSS/世界BOSS 模式不结算离线野外收益(且重置回 world 防止卡死)
-  if (state.mode === 'dungeon' || state.mode === 'boss' || state.mode === 'worldboss' || state.mode === 'mythic' || state.mode === 'tower') {
+  if (state.mode === 'dungeon' || state.mode === 'boss' || state.mode === 'worldboss' || state.mode === 'mythic' || state.mode === 'tower' || state.mode === 'roguelike') {
     state.mode = 'world';
     state.dungeonState = null;
     state.mythicState = null;

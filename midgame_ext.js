@@ -63,6 +63,227 @@
       { pieces:4, mod:{ healBonus:10, dotBonus:10, vers:3 } },
     ],
   };
+  // 套装触发效果(统御tier2和巅峰tier3的2件/4件proc)
+  const SET_TRIGGERS = {
+    warrior: {
+      2: { // 统御
+        4: [
+          { type:'onCrit', chance:15, cooldown:8000, auraKey:'warrior_dominion_fury' },
+          { type:'onKill', cooldown:12000, healPct:0.08, resource:15 },
+        ]
+      },
+      3: { // 巅峰
+        2: [
+          { type:'onHit', chance:10, cooldown:5000, extraDmgPct:0.50 },
+        ],
+        4: [
+          { type:'afterSkill', skill:'w_colossus', nextCrit:1, cooldown:15000 },
+          { type:'lowHp', threshold:0.35, cooldown:25000, auraKey:'warrior_paragon_fortitude' },
+        ]
+      }
+    },
+    mage: {
+      2: {
+        4: [
+          { type:'onCrit', chance:18, cooldown:8000, auraKey:'mage_dominion_ignite' },
+          { type:'onKill', cooldown:12000, resource:30 },
+        ]
+      },
+      3: {
+        2: [
+          { type:'afterSkill', skill:'m_meteor', cooldown:15000, auraKey:'mage_paragon_haste' },
+        ],
+        4: [
+          { type:'onCrit', dmgBonusPct:25, threshold:0.35 },
+          { type:'lowHp', threshold:0.35, cooldown:25000, auraKey:'mage_paragon_iceblock' },
+        ]
+      }
+    },
+    priest: {
+      2: {
+        4: [
+          { type:'afterHeal', overhealShieldPct:0.25, cooldown:10000 },
+          { type:'onCrit', chance:15, cooldown:10000, auraKey:'priest_dominion_holy' },
+        ]
+      },
+      3: {
+        2: [
+          { type:'onHit', chance:12, cooldown:8000, healPct:0.03 },
+        ],
+        4: [
+          { type:'lowHp', threshold:0.30, cooldown:25000, healPct:0.20, auraKey:'priest_paragon_guard' },
+          { type:'afterSkill', skill:'p_mindBlast', resource:20, cooldown:12000 },
+        ]
+      }
+    },
+    rogue: {
+      2: {
+        4: [
+          { type:'onCrit', chance:18, cooldown:7000, auraKey:'rogue_dominion_dance' },
+          { type:'onCrit', dmgBonusPct:20, threshold:0.30 },
+        ]
+      },
+      3: {
+        2: [
+          { type:'onHit', chance:12, cooldown:6000, dotPct:0.15, dotMs:5000 },
+        ],
+        4: [
+          { type:'onKill', cooldown:15000, resetSkill:'r_vanish', resetPct:1 },
+          { type:'afterSkill', skill:'r_coldBlood', nextCrit:1, cooldown:12000 },
+        ]
+      }
+    },
+    hunter: {
+      2: {
+        4: [
+          { type:'onCrit', chance:15, cooldown:8000, auraKey:'hunter_dominion_pack' },
+          { type:'onKill', cooldown:10000, extraDmgPct:0.30 },
+        ]
+      },
+      3: {
+        2: [
+          { type:'onHit', chance:12, cooldown:5000, resource:10, extraAtkBonus:true },
+        ],
+        4: [
+          { type:'onCrit', dmgBonusPct:15 },
+          { type:'onCrit', chance:10, cooldown:12000, auraKey:'hunter_paragon_snipe' },
+        ]
+      }
+    },
+    shaman: {
+      2: {
+        4: [
+          { type:'onCrit', chance:15, cooldown:8000, auraKey:'shaman_dominion_maelstrom' },
+          { type:'afterSkill', skill:'sh_stormStrike', chainDmgPct:0.40, cooldown:10000 },
+        ]
+      },
+      3: {
+        2: [
+          { type:'onHit', chance:10, cooldown:5000, extraHitPct:0.60 },
+        ],
+        4: [
+          { type:'lowHp', threshold:0.35, cooldown:25000, auraKey:'shaman_paragon_ancestral' },
+          { type:'onCrit', chance:12, cooldown:15000, healPct:0.05 },
+        ]
+      }
+    },
+    paladin: {
+      2: {
+        4: [
+          { type:'onCrit', chance:15, cooldown:8000, auraKey:'paladin_dominion_retribution' },
+          { type:'lowHp', threshold:0.35, cooldown:30000, shieldPct:0.15 },
+        ]
+      },
+      3: {
+        2: [
+          { type:'onHit', chance:10, cooldown:6000, holyDmgPct:0.40 },
+        ],
+        4: [
+          { type:'onKill', cooldown:15000, auraKey:'paladin_paragon_wings' },
+          { type:'afterHeal', overhealShieldPct:0.20, cooldown:12000 },
+        ]
+      }
+    },
+    warlock: {
+      2: {
+        4: [
+          { type:'onCrit', chance:18, cooldown:8000, auraKey:'warlock_dominion_darkSoul' },
+          { type:'onKill', cooldown:10000, resource:25 },
+        ]
+      },
+      3: {
+        2: [
+          { type:'onCrit', chance:15, dotBonusPct:0.40 },
+        ],
+        4: [
+          { type:'lowHp', threshold:0.35, cooldown:25000, auraKey:'warlock_paragon_demonArmor' },
+          { type:'afterSkill', skill:'wl_chaosBolt', dotBonusDmgPct:0.30, cooldown:12000 },
+        ]
+      }
+    },
+    druid: {
+      2: {
+        4: [
+          { type:'onCrit', chance:15, cooldown:8000, auraKey:'druid_dominion_eclipse' },
+          { type:'onCrit', chance:12, cooldown:20000, healPct:0.04 },
+        ]
+      },
+      3: {
+        2: [
+          { type:'onHit', chance:12, cooldown:6000, dotPct:0.12, dotMs:6000 },
+        ],
+        4: [
+          { type:'lowHp', threshold:0.35, cooldown:25000, auraKey:'druid_paragon_bearform' },
+          { type:'onKill', cooldown:12000, healPct:0.06, resource:20 },
+        ]
+      }
+    },
+  };
+  // 套装触发产生的临时光环
+  const SET_AURAS = {
+    warrior_dominion_fury:      { icon:'⚔️', name:'战场主宰', desc:'攻击+20%·暴伤+25%', duration:6000, mod:{ atkPct:20, critdPct:25 } },
+    warrior_paragon_fortitude:  { icon:'🛡️', name:'不灭战魂', desc:'减伤30%·防御+25%', duration:8000, mod:{ defPct:25 }, dr:0.30 },
+    mage_dominion_ignite:       { icon:'🔥', name:'烈焰蔓延', desc:'攻击+18%·持续伤害+30%', duration:6000, mod:{ atkPct:18, dotBonus:30 } },
+    mage_paragon_haste:         { icon:'💨', name:'奥术急流', desc:'攻速+25%·技能冷却-20%', duration:6000, mod:{ spdPct:25, cdReduction:20 } },
+    mage_paragon_iceblock:      { icon:'🧊', name:'冰霜壁垒', desc:'减伤30%·防御+22%', duration:8000, mod:{ defPct:22 }, dr:0.30 },
+    priest_dominion_holy:       { icon:'✨', name:'圣光回响', desc:'治疗+25%·全能+10', duration:6000, mod:{ healBonus:25, vers:10 } },
+    priest_paragon_guard:       { icon:'🛡️', name:'神圣庇佑', desc:'防御+20%·回复+8', duration:8000, mod:{ defPct:20, regFlat:8 } },
+    rogue_dominion_dance:       { icon:'🔪', name:'剑刃狂舞', desc:'攻击+18%·暴击+12', duration:6000, mod:{ atkPct:18, crit:12 } },
+    hunter_dominion_pack:       { icon:'🐾', name:'群狼狂潮', desc:'攻击+20%·攻速+18%', duration:6000, mod:{ atkPct:20, spdPct:18 } },
+    hunter_paragon_snipe:       { icon:'🎯', name:'狙击姿态', desc:'攻击+25%·暴伤+30%', duration:5000, mod:{ atkPct:25, critdPct:30 } },
+    shaman_dominion_maelstrom:  { icon:'🌀', name:'漩涡奔涌', desc:'攻击+18%·暴击+12', duration:6000, mod:{ atkPct:18, crit:12 } },
+    shaman_paragon_ancestral:   { icon:'👻', name:'先祖守护', desc:'防御+22%·回复+6', duration:8000, mod:{ defPct:22, regFlat:6 } },
+    paladin_dominion_retribution:{ icon:'⚖️', name:'制裁烈焰', desc:'攻击+22%·暴伤+24%', duration:6000, mod:{ atkPct:22, critdPct:24 } },
+    paladin_paragon_wings:      { icon:'😇', name:'复仇之翼', desc:'攻击+25%·暴击+15·全能+8', duration:6000, mod:{ atkPct:25, crit:15, vers:8 } },
+    warlock_dominion_darkSoul:  { icon:'👁️', name:'黑暗灵魂', desc:'暴击+20·暴伤+38', duration:6000, mod:{ crit:20, critdPct:38 } },
+    warlock_paragon_demonArmor: { icon:'😈', name:'恶魔甲壳', desc:'防御+25%·吸血+10', duration:8000, mod:{ defPct:25, leech:10 } },
+    druid_dominion_eclipse:     { icon:'🌙', name:'星火连辉', desc:'攻击+18%·暴击+12%·Dot+18%', duration:6000, mod:{ atkPct:18, crit:12, dotBonus:18 } },
+    druid_paragon_bearform:     { icon:'🐻', name:'巨熊形态', desc:'防御+30%·生命+20%', duration:8000, mod:{ defPct:30, hpPct:20 } },
+  };
+  function getSetTierIndexFromKey(setKey) {
+    if (!setKey || typeof setKey !== 'string') return 0;
+    for (const band of SET_STAGE_BANDS) { if (setKey.includes(':'+band.key+':')) return band.power; }
+    return 0;
+  }
+  function getSetClassKeyFromKey(setKey) {
+    if (!setKey || typeof setKey !== 'string') return '';
+    for (const clsKey of Object.keys(SET_EFFECTS)) { if (setKey.includes(':'+clsKey)) return clsKey; }
+    return '';
+  }
+  // 收集已激活套装的触发效果
+  globalThis.collectSetTriggers = function collectSetTriggers() {
+    const counts = getEquippedSetCounts();
+    const triggers = [];
+    for (const [setKey, info] of Object.entries(counts)) {
+      const tierIdx = getSetTierIndexFromKey(setKey);
+      if (tierIdx < 2) continue; // 仅统御和巅峰
+      const clsKey = getSetClassKeyFromKey(setKey);
+      const classTriggers = SET_TRIGGERS[clsKey];
+      if (!classTriggers) continue;
+      const tierTriggers = classTriggers[tierIdx];
+      if (!tierTriggers) continue;
+      for (const [piecesKey, triggerList] of Object.entries(tierTriggers)) {
+        const needPieces = parseInt(piecesKey);
+        if (isNaN(needPieces)) continue;
+        if (info.count >= needPieces) {
+          for (const trigger of triggerList) {
+            triggers.push(Object.assign({ _source:'set', _setKey:setKey, _setName:info.name || '' }, trigger));
+          }
+        }
+      }
+    }
+    return triggers;
+  };
+  // 应用套装触发的光环
+  globalThis.applySetAura = function applySetAura(key) {
+    const aura = SET_AURAS[key];
+    if (!aura) return;
+    if (!state.talentAuras) state.talentAuras = {};
+    state.talentAuras[key] = Date.now() + (aura.duration || 6000);
+    log(`🛡️ 套装触发: ${aura.icon}${aura.name}`, 'epic');
+    if (typeof recomputeStats === 'function') recomputeStats();
+    if (typeof markDirty === 'function') markDirty('hero');
+  };
 
   const REP_LINES = {
     '联盟': [
@@ -587,36 +808,51 @@
   globalThis.recomputeStats = function() {
     _recomputeStats();
     if (!state?.hero) return;
+    // 套装属性加成
     const mod = collectSetBonusMod();
+    // 幻象挑战能力加成
+    let rlMod = {};
+    if (typeof globalThis.collectRoguelikeMod === 'function') {
+      rlMod = globalThis.collectRoguelikeMod();
+    }
+    // 合并
+    const allMod = {};
+    for (const [k, v] of Object.entries(mod)) allMod[k] = (allMod[k] || 0) + v;
+    for (const [k, v] of Object.entries(rlMod)) allMod[k] = (allMod[k] || 0) + v;
     const src = {};
     const applyPct = (field, pct, srcKey) => {
       if (!pct) return;
       state.hero[field] = Math.max(1, Math.floor(state.hero[field] * (1 + pct / 100)));
       src[srcKey || `${field}Pct`] = pct;
     };
-    applyPct('atk', mod.atkPct || 0, 'atkPct');
-    applyPct('def', mod.defPct || 0, 'defPct');
-    applyPct('hpMax', mod.hpPct || 0, 'hpPct');
-    if (mod.spdPct) { state.hero.spd = Math.min(2.5, +(state.hero.spd * (1 + mod.spdPct / 100)).toFixed(2)); src.spdPct = mod.spdPct; }
-    if (mod.crit) { state.hero.crit = Math.min(90, state.hero.crit + mod.crit); src.crit = mod.crit; }
-    if (mod.critdPct) { state.hero.critd += mod.critdPct; src.critdPct = mod.critdPct; }
-    if (mod.regFlat) { state.hero.reg += mod.regFlat; src.regFlat = mod.regFlat; }
-    if (mod.leech) { state.hero.leech = Math.min(30, state.hero.leech + mod.leech); src.leech = mod.leech; }
-    if (mod.vers) { state.hero.vers = Math.min(40, state.hero.vers + mod.vers); src.vers = mod.vers; }
-    if (mod.mastery) { state.hero.mastery += mod.mastery; src.mastery = mod.mastery; }
-    if (mod.haste) { state.hero.haste = Math.min(50, (state.hero.haste || 0) + mod.haste); src.haste = mod.haste; }
-    if (mod.cdReduction) { state.hero.cdReduction = Math.min(40, (state.hero.cdReduction || 0) + mod.cdReduction); src.cdReduction = mod.cdReduction; }
-    if (mod.extraAtk) { state.hero.extraAtk = Math.min(25, (state.hero.extraAtk || 0) + mod.extraAtk); src.extraAtk = mod.extraAtk; }
-    if (mod.healBonus) { state.hero.healBonus = Math.min(50, (state.hero.healBonus || 0) + mod.healBonus); src.healBonus = mod.healBonus; }
-    if (mod.dotBonus) { state.hero.dotBonus = Math.min(50, (state.hero.dotBonus || 0) + mod.dotBonus); src.dotBonus = mod.dotBonus; }
-    if (mod.costReduction) { state.hero.costReduction = Math.min(30, (state.hero.costReduction || 0) + mod.costReduction); src.costReduction = mod.costReduction; }
-    if (mod.executeBonus) { state.hero.executeBonus = Math.min(40, (state.hero.executeBonus || 0) + mod.executeBonus); src.executeBonus = mod.executeBonus; }
-    if (mod.reflectDmg) { state.hero.reflectDmg = (state.hero.reflectDmg || 0) + mod.reflectDmg; src.reflectDmg = mod.reflectDmg; }
+    applyPct('atk', allMod.atkPct || 0, 'atkPct');
+    applyPct('def', allMod.defPct || 0, 'defPct');
+    applyPct('hpMax', allMod.hpPct || 0, 'hpPct');
+    if (allMod.spdPct) { state.hero.spd = Math.min(2.5, +(state.hero.spd * (1 + allMod.spdPct / 100)).toFixed(2)); src.spdPct = allMod.spdPct; }
+    if (allMod.crit) { state.hero.crit = Math.min(90, state.hero.crit + allMod.crit); src.crit = allMod.crit; }
+    if (allMod.critdPct) { state.hero.critd += allMod.critdPct; src.critdPct = allMod.critdPct; }
+    if (allMod.regFlat) { state.hero.reg += allMod.regFlat; src.regFlat = allMod.regFlat; }
+    if (allMod.leech) { state.hero.leech = Math.min(30, state.hero.leech + allMod.leech); src.leech = allMod.leech; }
+    if (allMod.vers) { state.hero.vers = Math.min(40, state.hero.vers + allMod.vers); src.vers = allMod.vers; }
+    if (allMod.mastery) { state.hero.mastery += allMod.mastery; src.mastery = allMod.mastery; }
+    if (allMod.haste) { state.hero.haste = Math.min(50, (state.hero.haste || 0) + allMod.haste); src.haste = allMod.haste; }
+    if (allMod.cdReduction) { state.hero.cdReduction = Math.min(40, (state.hero.cdReduction || 0) + allMod.cdReduction); src.cdReduction = allMod.cdReduction; }
+    if (allMod.extraAtk) { state.hero.extraAtk = Math.min(25, (state.hero.extraAtk || 0) + allMod.extraAtk); src.extraAtk = allMod.extraAtk; }
+    if (allMod.healBonus) { state.hero.healBonus = Math.min(50, (state.hero.healBonus || 0) + allMod.healBonus); src.healBonus = allMod.healBonus; }
+    if (allMod.dotBonus) { state.hero.dotBonus = Math.min(50, (state.hero.dotBonus || 0) + allMod.dotBonus); src.dotBonus = allMod.dotBonus; }
+    if (allMod.costReduction) { state.hero.costReduction = Math.min(30, (state.hero.costReduction || 0) + allMod.costReduction); src.costReduction = allMod.costReduction; }
+    if (allMod.executeBonus) { state.hero.executeBonus = Math.min(40, (state.hero.executeBonus || 0) + allMod.executeBonus); src.executeBonus = allMod.executeBonus; }
+    if (allMod.reflectDmg) { state.hero.reflectDmg = (state.hero.reflectDmg || 0) + allMod.reflectDmg; src.reflectDmg = allMod.reflectDmg; }
     state.hp = Math.min(state.hp, state.hero.hpMax);
     state.resourceMax = state.hero.mpMax;
     state.resource = Math.min(state.resource, state.resourceMax);
+    // 存储套装触发效果供战斗钩子使用
+    if (typeof globalThis.collectSetTriggers === 'function') {
+      state._setFx = collectSetTriggers();
+    }
+    // 来源标注
     if (!state._statSources) state._statSources = {};
-    if (Object.keys(src).length) state._statSources['套装'] = src;
+    if (Object.keys(src).length) state._statSources['套装+幻象'] = src;
     if (!state._statSources._total) state._statSources._total = {};
     for (const [k, v] of Object.entries(src)) state._statSources._total[k] = (state._statSources._total[k] || 0) + v;
   };
