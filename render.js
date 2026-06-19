@@ -296,6 +296,7 @@ function diffBuffSide(listEl, items, emptyText) {
 
   for (const b of items) {
     const key = b.kind + '|' + (b.base || b.name || '');
+    if (desiredKeys.has(key)) continue; // 跳过重复key, 防止创建重复chip
     desiredKeys.add(key);
     let chip = existing.get(key);
     if (chip) {

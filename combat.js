@@ -2659,6 +2659,7 @@ function onHeroDeath(){
   state.talentAuras = {};
   state.talentState = { cds:{}, flags:{}, shield:0 };
   state.skillRuntime = { auras:{} };
+  state.buffs = {};
   recomputeStats();
   const loss=Math.floor(state.gold*0.05);state.gold=Math.max(0,state.gold-loss);
   state.hp=state.hero.hpMax;state.resource=state.resourceMax;
@@ -2873,7 +2874,7 @@ function resetCombatState(){
     state.heroDebuffs={};state.heroStunUntil=0;state.heroSilenceUntil=0;state.heroDisarmUntil=0;
     state._compDebuffs={};state._compBuffs={};state._compBarrier=0;state._compStunUntil=0;state._compSilenceUntil=0;state._compDisarmUntil=0;state._compSoulLinkUntil=0;state._compFrenzyUntil=0;state._compDecayUntil=0;state._compLastDotTick=0;
     state._brittleUntil=0;state._soulLinkUntil=0;state._decayUntil=0;
-    state.talentAuras={};state.talentState={cds:{},flags:{},shield:0};state.skillRuntime={auras:{}};
+    state.talentAuras={};state.talentState={cds:{},flags:{},shield:0};state.skillRuntime={auras:{}};state.buffs={};
   }
   if(typeof lastCompAtk==='number')lastCompAtk=0;
   if(typeof lastCompSkill==='number')lastCompSkill=0;
