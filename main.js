@@ -331,13 +331,21 @@ function setupDelegation() {
       else if (act === 'towerFloorUp')   { towerSetStartFloor(1);  renderTowerPanel(); }
       else if (act === 'towerFloorDown') { towerSetStartFloor(-1); renderTowerPanel(); }
       else if (act === 'towerBuy')       { towerBuy(btn.dataset.key); renderTowerPanel(); }
-      else if (act === 'enterRoguelike') { if(typeof enterRoguelike==='function') enterRoguelike(); }
+    });
+  }
+  // 幻象挑战 事件代理
+  const roguelikeRoot = $('roguelike-panel');
+  if (roguelikeRoot) {
+    roguelikeRoot.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      const act = btn.dataset.action;
+      if (act === 'enterRoguelike') { if(typeof enterRoguelike==='function') enterRoguelike(); }
       else if (act === 'leaveRoguelike') {
         if (!confirm('确定放弃幻象挑战?(已得幻象币保留)')) return;
         if(typeof leaveRoguelike==='function') leaveRoguelike();
       }
     });
-  }
   // Roguelike 子标签切换
   $('dungeon-sub-roguelike').addEventListener('click', e => {
     const tab = e.target.closest('[data-roguesub]');
