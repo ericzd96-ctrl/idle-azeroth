@@ -3279,6 +3279,7 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
   }}
 function companionDraw(){
   if((state.compTickets||0)<1)return log('🐾随从券不足,去商店购买','bad');
+  state.compTickets--;
   // 初始化通用碎片
   if(!state.compUniversalShards) state.compUniversalShards = {white:0,green:0,blue:0,purple:0,orange:0};
   const univ = state.compUniversalShards;
