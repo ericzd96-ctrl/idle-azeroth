@@ -731,8 +731,12 @@ function updateDmgMeter() {
         const maxDmg = top[0].dmg;
         sdEl.innerHTML = top.map(s => {
           const pct = maxDmg > 0 ? Math.round(s.dmg / maxDmg * 100) : 0;
+          const dmgSkillIconHtml = (typeof skillIcon === 'function')
+            ? skillIcon(s.name, 13, 'spell_holy_powerinfusion')
+            : '';
           return `<div style="display:flex;align-items:center;gap:4px;font-size:10px;margin-bottom:2px">
             <span style="width:14px;flex-shrink:0">${s.src}</span>
+            <span style="width:14px;flex-shrink:0">${dmgSkillIconHtml}</span>
             <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name}</span>
             <span style="width:52px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums">${fmt(s.dmg)}</span>
             <span style="width:36px;flex-shrink:0;background:var(--panel);height:6px;border-radius:3px;overflow:hidden"><i style="display:block;height:100%;width:${pct}%;background:linear-gradient(90deg,#6366f1,#a78bfa);border-radius:3px"></i></span>
@@ -760,8 +764,12 @@ function updateDmgMeter() {
         const maxHeal = top[0].heal;
         shEl.innerHTML = top.map(s => {
           const pct = maxHeal > 0 ? Math.round(s.heal / maxHeal * 100) : 0;
+          const healSkillIconHtml = (typeof skillIcon === 'function')
+            ? skillIcon(s.name, 13, 'spell_holy_heal')
+            : '';
           return `<div style="display:flex;align-items:center;gap:4px;font-size:10px;margin-bottom:2px">
             <span style="width:14px;flex-shrink:0">${s.src}</span>
+            <span style="width:14px;flex-shrink:0">${healSkillIconHtml}</span>
             <span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name}</span>
             <span style="width:52px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums;color:#6ee7b7">${fmt(s.heal)}</span>
             <span style="width:36px;flex-shrink:0;background:var(--panel);height:6px;border-radius:3px;overflow:hidden"><i style="display:block;height:100%;width:${pct}%;background:linear-gradient(90deg,#10b981,#6ee7b7);border-radius:3px"></i></span>

@@ -799,6 +799,25 @@
     [/战士|步兵|督军|加尔鲁什|瓦里安|格罗玛什/i, 'ability_warrior_savageblow']
   ];
 
+  Object.assign(ENTITY_EXACT, {
+    '萨鲁法尔大王':'achievement_character_orc_male',
+    '死亡使者萨鲁法尔':'achievement_character_orc_male',
+    '萨鲁法尔':'achievement_character_orc_male'
+  });
+
+  Object.assign(SKILL_EXACT, {
+    '斩杀':'inv_sword_48',
+    '裂伤':'ability_druid_lacerate',
+    '顺劈':'ability_warrior_cleave',
+    '顺劈斩':'ability_warrior_cleave',
+    '鲁莽':'ability_criticalstrike',
+    '天神下凡':'warrior_talent_icon_avatar',
+    '压制':'ability_meleedamage',
+    '致死劈砍':'ability_warrior_savageblow',
+    '致死打击':'ability_warrior_savageblow',
+    '战吼':'ability_warrior_battleshout'
+  });
+
   function normalizeSize(size) {
     if (typeof size === 'number') return size;
     if (size === 'xs') return 14;
