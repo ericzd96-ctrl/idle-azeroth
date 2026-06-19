@@ -841,8 +841,8 @@
 
   function wowIconName(name) {
     if (!name) return '';
-    const missing = typeof window !== 'undefined' && window.__wowMissingIcons && window.__wowMissingIcons[name];
-    return (missing ? CDN_BASE : BASE) + name + '.jpg';
+    // CDN优先, 避免本地缺失文件的404错误; CDN失败时onerror回退本地
+    return CDN_BASE + name + '.jpg';
   }
 
   function warmIconUrl(url) {
@@ -856,12 +856,12 @@
   function imgHtml(src, size, alt, fallback, cls, loadingMode) {
     const px = normalizeSize(size);
     const iconKey = String(src || '').replace(BASE, '').replace(CDN_BASE, '').replace(/\.jpg$/i, '');
-    // 构造 CDN 兜底 URL (本地加载失败时尝试)
-    const cdnSrc = src.indexOf(CDN_BASE) === 0 ? src : src.replace(BASE, CDN_BASE);
+    // 构造本地兜底 URL (CDN加载失败时尝试)
+    const localSrc = src.indexOf(BASE) === 0 ? src : src.replace(CDN_BASE, BASE);
     warmIconUrl(src);
     return `<span class="${cls || 'ui-icon wow-ico'}" style="width:${px}px;height:${px}px" title="${alt || ''}">
       <img src="${src}" alt="${alt || ''}" loading="${loadingMode || 'eager'}" decoding="sync"
-        onerror="var t=this;window.__wowMissingIcons=window.__wowMissingIcons||{};window.__wowMissingIcons['${iconKey}']=1;if(!t.dataset.tried){t.dataset.tried='1';t.src='${cdnSrc}';}else{t.parentNode.replaceWith(document.createTextNode(t.dataset.fb||''))}"
+        onerror="var t=this;window.__wowMissingIcons=window.__wowMissingIcons||{};window.__wowMissingIcons['${iconKey}']=1;if(!t.dataset.tried){t.dataset.tried='1';t.src='${localSrc}';}else{t.parentNode.replaceWith(document.createTextNode(t.dataset.fb||''))}"
         data-fb="${(fallback || '').replace(/"/g, '&quot;')}">
     </span>`;
   }
