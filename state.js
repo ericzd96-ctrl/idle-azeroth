@@ -45,6 +45,7 @@ const defaultState = () => ({
   travel: null,
   dungeonState: null,
   dungeonCd: {},
+  dungeonFirstClear: {},   // 每角色:已首通的副本 key(首通一次性奖励用)
   bossCd: {},
   startTime: Date.now(),
   lastTick: Date.now(),
@@ -315,6 +316,7 @@ function mergeState(saved) {
     }) : d.talentState,
     heroDebuffs: saved.heroDebuffs || {},
     dungeonCd: saved.dungeonCd || {},
+    dungeonFirstClear: saved.dungeonFirstClear || {},
     bossCd: saved.bossCd || {},
     bossCd: saved.bossCd || {},
     subzoneKills: saved.subzoneKills || {},

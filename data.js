@@ -4309,6 +4309,11 @@ function createEpicRaidCatalog() {
   }
 }
 createEpicRaidCatalog();
+/* 修复:部分副本(diremaul/lbrs/aq40等)缺失 cd 字段,导致 onDungeonClear 写入 NaN→永远无CD可无限刷。
+   归一化:给任何无有效 cd 的副本按 type/reqLvl 补一个与邻居对齐的冷却。 */
+for (const d of DUNGEONS) {
+  if (!(d.cd > 0)) d.cd = Math.min(d.type === 'raid' ? 5400 : 2400, Math.max(600, Math.round((d.reqLvl || 12) * 40)));
+}
 /* ========== COMPANIONS(2026-06-15 大修)==========
    品质=按背景设定固定(不可升级),当前统一为 5主动 + 1专属
    mult=战力系数(越稀有越强),weight=抽卡权重,starsMax=可升星上限 */

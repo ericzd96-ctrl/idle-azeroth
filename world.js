@@ -135,7 +135,7 @@ function enterDungeon(key) {
     log(`🚪 进入 [${dg.name}] (免费)`, 'epic');
   }
   state.mode = 'dungeon';
-  state.dungeonState = { key, wave: 1, loot: [] };
+  state.dungeonState = { key, wave: 1, loot: [], affixes: getDungeonAffixes(dg) };
   state.hp = state.hero.hpMax;
   state.resource = state.resourceMax;
   if (typeof resetDmgStats === 'function') resetDmgStats();
@@ -157,13 +157,40 @@ function onDungeonClear(dg) {
   const lastBoss = (dg.bosses||[])[dg.bosses.length-1];
   const finalBossName = lastBoss ? lastBoss.name : '最终BOSS';
 
-  // 额外通关奖励
-  const bonusGold = dg.reqLvl * 50;
-  const bonusGem = rng(5, 15) + Math.floor(dg.reqLvl/5);
-  const bonusHonor = dg.reqLvl * 10;
+  // 词缀加成:越多词缀通关奖励越高(呼应"越难越值")
+  const affixes = (state.dungeonState && state.dungeonState.affixes) || [];
+  const affixMult = 1 + affixes.length * 0.15;
+
+  // 额外通关奖励(小幅上调 + 词缀加成)
+  const bonusGold = Math.floor(dg.reqLvl * 60 * affixMult);
+  const bonusGem = Math.floor((rng(5, 15) + Math.floor(dg.reqLvl/5)) * affixMult);
+  const bonusHonor = Math.floor(dg.reqLvl * 12 * affixMult);
   state.gold += bonusGold;
   state.gem += bonusGem;
   state.honor += bonusHonor;
+
+  // 首通奖励(每角色每本一次性):保底高品装 + 钻石/精华,作为进度目标与收益提升
+  if (!state.dungeonFirstClear) state.dungeonFirstClear = {};
+  const firstClear = !state.dungeonFirstClear[dg.key];
+  let firstClearHtml = '';
+  if (firstClear) {
+    state.dungeonFirstClear[dg.key] = true;
+    const fcRarity = (dg.type === 'raid' || dg.reqLvl >= 70) ? 'legend' : 'epic';
+    const fcGem = 20 + dg.reqLvl;
+    const fcEssence = Math.max(3, Math.floor(dg.reqLvl / 6));
+    let fcItem = null;
+    if (typeof rollItemOfRarity === 'function') { fcItem = rollItemOfRarity(fcRarity, dg.reqLvl); if (typeof addToInventory === 'function') addToInventory(fcItem); if (typeof eventsOnItemGet === 'function') eventsOnItemGet(fcItem); }
+    state.gem += fcGem;
+    if (typeof ensureMats === 'function') ensureMats();
+    state.essence = (state.essence || 0) + fcEssence;
+    firstClearHtml = `
+      <div style="margin-top:10px;padding:8px;border:1px solid #f6c453;border-radius:6px;background:rgba(246,196,83,0.08)">
+        <div style="color:#f6c453;font-weight:bold">🎉 首次通关奖励</div>
+        ${fcItem ? `<div style="font-size:12px">　保底装备 <span class="${fcItem.cls}">${fcItem.name}</span></div>` : ''}
+        <div style="font-size:12px">　💎 钻石 +${fcGem} · ✨ 精华 +${fcEssence}</div>
+      </div>`;
+    log(`🎉 首次通关 ${dg.name}! 获得首通奖励`, 'legend');
+  }
 
   // 全程掉落:每个BOSS击杀时已各掉 1 件其专属池装备(combat.js 里 dungeon BOSS 必掉),这里不再额外补掉落
   const allLoot = (state.dungeonState?.loot || []).slice();
@@ -175,9 +202,13 @@ function onDungeonClear(dg) {
     ? uniqueLoot.map(it => `<div style="font-size:11px">　<span class="${it.cls}">${it.name}${typeof itemEpicRaidBadge==='function'?itemEpicRaidBadge(it,true):''}</span></div>`).join('')
     : '<div class="muted">　无</div>';
 
+  const affixHtml = affixes.length
+    ? `<div class="muted" style="font-size:12px">本次词缀: ${affixes.map(a => (a.icon||'') + a.name).join(' · ')}</div>`
+    : '';
   $('dungeon-clear-text').innerHTML = `
     <div style="font-size:18px;margin:8px 0">🏆 ${dg.name} 通关!</div>
     <div class="muted">击败了 ${finalBossName} 等 ${(dg.bosses||[]).length} 个BOSS</div>
+    ${affixHtml}
     <div style="margin:10px 0;text-align:left;font-size:13px">
       <div>💰 金币 +${bonusGold}</div>
       <div>💎 钻石 +${bonusGem}</div>
@@ -185,6 +216,7 @@ function onDungeonClear(dg) {
       <div style="margin-top:6px">🎁 本次副本掉落 (${uniqueLoot.length}件):</div>
       ${lootHtml}
     </div>
+    ${firstClearHtml}
   `;
   $('modal-dungeon-clear').classList.add('show');
   log(`🏆 通关 ${dg.name}! 获得 ${uniqueLoot.length} 件装备`, 'legend');
@@ -435,6 +467,27 @@ function getMythicAffixes(level) {
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
   return pool.slice(0, count);
+}
+
+/* 普通副本词缀:按 dungeon key 确定性挑选(每本稳定可识别,不每次随机)。
+   低档过滤掉纯惩罚、无对抗手段的词缀;数量随等级/类型递增。复用 MYTHIC_AFFIXES 池与执行机制。 */
+function getDungeonAffixes(dg) {
+  if (!dg || typeof MYTHIC_AFFIXES === 'undefined') return [];
+  const reqLvl = dg.reqLvl || 12;
+  const count = reqLvl < 35 ? 1 : (dg.type === 'raid' || reqLvl >= 70) ? 3 : 2;
+  let pool = MYTHIC_AFFIXES.slice();
+  if (reqLvl < 50) pool = pool.filter(a => !['heArtless', 'ragingWinds'].includes(a.key));
+  // 按 key 生成稳定种子(同一副本词缀固定)
+  let seed = reqLvl * 97 + 13;
+  const k = dg.key || '';
+  for (let i = 0; i < k.length; i++) seed = (seed * 31 + k.charCodeAt(i)) % 2147483647;
+  seed = seed || 1;
+  for (let i = pool.length - 1; i > 0; i--) {
+    seed = (seed * 16807) % 2147483647;
+    const j = seed % (i + 1);
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, Math.min(count, pool.length));
 }
 
 /* 大秘境层数阶梯奖励 */

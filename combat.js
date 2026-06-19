@@ -988,9 +988,9 @@ function recomputeStats() {
     }
   }
 
-  // 大秘境词缀:暴风(攻速-) / 无心(治疗-)
-  const ms2 = state.mythicState;
-  if (ms2 && ms2.affixes && state.mode === 'mythic') {
+  // 大秘境/副本词缀:暴风(攻速-) / 无心(治疗-)
+  const ms2 = state.mythicState || state.dungeonState;
+  if (ms2 && ms2.affixes && (state.mode === 'mythic' || state.mode === 'dungeon')) {
     for (const af of ms2.affixes) {
       if (af.mod.heroSpd) spd = +(spd * (1 + af.mod.heroSpd)).toFixed(2);
       if (af.mod.healReduction) healBonus = Math.floor(healBonus * (1 - af.mod.healReduction));
@@ -2243,9 +2243,9 @@ function tickBattle(now){
     }
   }
 
-  // 大秘境词缀:周期性效果
-  const ms = state.mythicState;
-  if (ms && ms.affixes && state.mode === 'mythic') {
+  // 大秘境/副本词缀:周期性效果
+  const ms = state.mythicState || state.dungeonState;
+  if (ms && ms.affixes && (state.mode === 'mythic' || state.mode === 'dungeon')) {
     for (const af of ms.affixes) {
       const mod = af.mod || {};
       // 火山:每8秒
