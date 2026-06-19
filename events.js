@@ -91,10 +91,13 @@ function currentXpGate() {
   return null;
 }
 
+// 世界Boss强度系数(可调):血量是耐久战核心,大幅上调;攻击小幅上调增加威胁
+const WORLD_BOSS_HP_BUFF = 2.5;
+const WORLD_BOSS_ATK_BUFF = 1.15;
 function buildWorldBossMonsterData(wb) {
   const boss = wb || {};
-  const baseHp = Math.floor((100 + boss.lvl * boss.lvl * 6.0) * (boss.hpMul || 1));
-  const baseAtk = Math.floor((8 + boss.lvl * 3.0) * (boss.atkMul || 1));
+  const baseHp = Math.floor((100 + boss.lvl * boss.lvl * 6.0) * (boss.hpMul || 1) * WORLD_BOSS_HP_BUFF);
+  const baseAtk = Math.floor((8 + boss.lvl * 3.0) * (boss.atkMul || 1) * WORLD_BOSS_ATK_BUFF);
   return {
     name: boss.emoji + boss.name,
     bossName: boss.name,
