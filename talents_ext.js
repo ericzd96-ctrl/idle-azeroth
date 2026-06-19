@@ -99,7 +99,7 @@ const TALENT_AURA_LIBRARY = {
         { name:'守护天启', req:66, desc:'生命低于 35% 时，立刻恢复 15% 生命并获得 8 秒【守护天启】，30秒冷却。', fx:{ type:'lowHp', threshold:0.35, cooldown:30000, healPct:0.15, aura:'holy_lastgrace' } },
       ],
       shadow: [
-        { name:'暗影回响', req:46, desc:'暴击会额外施加一层基于本次伤害 18% 的持续暗影伤害。', fx:{ type:'onCrit', applyDotPct:0.18 } },
+        { name:'暗影回响', req:46, desc:'暴击叠加 1 层【疯狂】，并额外施加一层基于本次伤害 18% 的持续暗影伤害。', fx:{ type:'onCrit', applyDotPct:0.18, grantCharge:{ key:'p_insanity', add:1, max:6 } } },
         { name:'痛苦蔓延', req:56, desc:'若目标带有持续伤害效果而死亡，会把 50% 的 DOT 蔓延给下一个敌人。', fx:{ type:'onKill', requireDot:true, spreadDotPct:0.5 } },
         { name:'虚空收割', req:66, desc:'对生命低于 35% 的敌人造成的伤害提高 28%。', fx:{ type:'executeWindow', threshold:0.35, dmgPct:28 } },
       ],
@@ -108,22 +108,22 @@ const TALENT_AURA_LIBRARY = {
       assassination: [
         { name:'毒液奔涌', req:46, desc:'你对带有持续伤害效果的敌人造成的伤害提高 22%。', fx:{ type:'vsState', state:'dot', dmgPct:22 } },
         { name:'血色收割', req:56, desc:'击杀敌人后，你的下一次伤害技能必暴，并回复 20 点资源。', fx:{ type:'onKill', nextSkillCrit:1, resource:20 } },
-        { name:'暗毒回流', req:66, desc:'暴击有 30% 几率触发 6 秒【暗毒回流】。', fx:{ type:'onCrit', chance:30, cooldown:6000, aura:'assassination_venom' } },
+        { name:'暗毒回流', req:66, desc:'暴击叠加 1 层【毒锋】；并有 30% 几率触发 6 秒【暗毒回流】。', fx:[{ type:'onCrit', grantCharge:{ key:'r_venom', add:1, max:5 } },{ type:'onCrit', chance:30, cooldown:6000, aura:'assassination_venom' }] },
       ],
       combat: [
         { name:'乘胜追击', req:46, desc:'击杀敌人后，获得 7 秒【乘胜追击】。', fx:{ type:'onKill', aura:'combat_rush' } },
-        { name:'见招拆招', req:56, desc:'暴击后追加一次 70% 伤害的追击，2秒冷却。', fx:{ type:'onCrit', cooldown:2000, extraHitMul:0.7, extraHitIcon:'⚔️' } },
+        { name:'见招拆招', req:56, desc:'暴击叠加 1 点连击；并追加一次 70% 伤害的追击，2秒冷却。', fx:[{ type:'onCrit', grantCharge:{ key:'r_combo', add:1, max:5 } },{ type:'onCrit', cooldown:2000, extraHitMul:0.7, extraHitIcon:'⚔️' }] },
         { name:'剑刃压制', req:66, desc:'施放邪恶打击或背刺后，获得 6 秒【剑刃压制】。', fx:{ type:'afterSkill', skill:['sinister','backstab'], aura:'combat_blade' } },
       ],
       subtlety: [
         { name:'暗影绝息', req:46, desc:'施放影遁后，你的下一次伤害技能必暴。', fx:{ type:'afterSkill', skill:'shadow', nextSkillCrit:1 } },
         { name:'猎杀号令', req:56, desc:'对生命低于 35% 的敌人造成的伤害提高 28%。', fx:{ type:'executeWindow', threshold:0.35, dmgPct:28 } },
-        { name:'影舞连闪', req:66, desc:'暴击有 35% 几率触发 6 秒【影舞连闪】。', fx:{ type:'onCrit', chance:35, cooldown:6000, aura:'subtlety_dance' } },
+        { name:'影舞连闪', req:66, desc:'暴击叠加 1 点连击；并有 35% 几率触发 6 秒【影舞连闪】。', fx:[{ type:'onCrit', grantCharge:{ key:'r_combo', add:1, max:5 } },{ type:'onCrit', chance:35, cooldown:6000, aura:'subtlety_dance' }] },
       ],
     },
     hunter: {
       bm: [
-        { name:'兽群狂奔', req:46, desc:'击杀敌人后，获得 7 秒【兽群狂奔】。', fx:{ type:'onKill', aura:'bm_pack' } },
+        { name:'兽群狂奔', req:46, desc:'击杀敌人后，获得 7 秒【兽群狂奔】并叠加 2 层【野兽狂怒】。', fx:{ type:'onKill', aura:'bm_pack', grantCharge:{ key:'h_frenzy', add:2, max:5 } } },
         { name:'野兽直觉', req:56, desc:'你对首领造成的伤害提高 22%。', fx:{ type:'vsBoss', dmgPct:22 } },
         { name:'撕咬命令', req:66, desc:'施放狂野怒火后，获得 7 秒【撕咬命令】。', fx:{ type:'afterSkill', skill:'bestialWrath', aura:'bm_rampage' } },
       ],
@@ -140,14 +140,14 @@ const TALENT_AURA_LIBRARY = {
     },
     shaman: {
       element: [
-        { name:'风暴余震', req:46, desc:'暴击有 30% 几率触发 6 秒【风暴余震】。', fx:{ type:'onCrit', chance:30, cooldown:6000, aura:'element_storm' } },
+        { name:'风暴余震', req:46, desc:'暴击叠加 1 层【雷霆充能】；并有 30% 几率触发 6 秒【风暴余震】。', fx:[{ type:'onCrit', grantCharge:{ key:'stormCharge', add:1, max:3 } },{ type:'onCrit', chance:30, cooldown:6000, aura:'element_storm' }] },
         { name:'熔岩奔流', req:56, desc:'施放烈焰震击后，你的下一次伤害技能必暴。', fx:{ type:'afterSkill', skill:'flameShock', nextSkillCrit:1 } },
         { name:'过载终结', req:66, desc:'对生命低于 35% 的敌人造成的伤害提高 30%。', fx:{ type:'executeWindow', threshold:0.35, dmgPct:30 } },
       ],
       enhancement: [
         { name:'漩涡涌动', req:46, desc:'施放风怒武器后，获得 7 秒【漩涡涌动】。', fx:{ type:'afterSkill', skill:'windfury', aura:'enhancement_maelstrom' } },
         { name:'狂岚步伐', req:56, desc:'击杀敌人后，获得 7 秒【狂岚步伐】。', fx:{ type:'onKill', aura:'enhancement_wind' } },
-        { name:'双风怒', req:66, desc:'暴击后追加一次 80% 伤害的风怒打击，2秒冷却。', fx:{ type:'onCrit', cooldown:2000, extraHitMul:0.8, extraHitIcon:'💨' } },
+        { name:'双风怒', req:66, desc:'暴击叠加 1 层【漩涡之力】；并追加一次 80% 伤害的风怒打击，2秒冷却。', fx:[{ type:'onCrit', grantCharge:{ key:'sh_maelstrom', add:1, max:5 } },{ type:'onCrit', cooldown:2000, extraHitMul:0.8, extraHitIcon:'💨' }] },
       ],
       restoration: [
         { name:'潮汐回响', req:46, desc:'你的过量治疗会转化为 50% 吸收护盾。', fx:{ type:'afterHeal', overhealShieldPct:0.5 } },
@@ -169,22 +169,22 @@ const TALENT_AURA_LIBRARY = {
       ret: [
         { name:'审判连锁', req:46, desc:'施放十字军打击后，获得 6 秒【审判连锁】。', fx:{ type:'afterSkill', skill:'crusader', aura:'ret_templar' } },
         { name:'处刑宣判', req:56, desc:'对生命低于 35% 的敌人造成的伤害提高 32%。', fx:{ type:'executeWindow', threshold:0.35, dmgPct:32 } },
-        { name:'复仇圣焰', req:66, desc:'击杀敌人后，获得 7 秒【复仇圣焰】。', fx:{ type:'onKill', aura:'ret_ashes' } },
+        { name:'复仇圣焰', req:66, desc:'击杀敌人后，获得 7 秒【复仇圣焰】并叠加 2 层【圣能】。', fx:{ type:'onKill', aura:'ret_ashes', grantCharge:{ key:'pa_holyPower', add:2, max:5 } } },
       ],
     },
     warlock: {
       affliction: [
         { name:'病疫蔓延', req:46, desc:'若目标带有持续伤害效果而死亡，会把 70% 的 DOT 蔓延给下一个敌人。', fx:{ type:'onKill', requireDot:true, spreadDotPct:0.7 } },
         { name:'灵魂虹吸', req:56, desc:'你对带有持续伤害效果的敌人造成的伤害提高 22%。', fx:{ type:'vsState', state:'dot', dmgPct:22 } },
-        { name:'痛苦盛宴', req:66, desc:'暴击会额外施加一层基于本次伤害 20% 的持续痛苦。', fx:{ type:'onCrit', applyDotPct:0.2 } },
+        { name:'痛苦盛宴', req:66, desc:'暴击叠加 1 层【灵魂碎片】，并额外施加一层基于本次伤害 20% 的持续痛苦。', fx:{ type:'onCrit', applyDotPct:0.2, grantCharge:{ key:'wl_shard', add:1, max:5 } } },
       ],
       demonology: [
         { name:'恶魔甲壳', req:46, desc:'生命低于 40% 时，获得 8 秒【恶魔甲壳】并吸收 16% 最大生命伤害，30秒冷却。', fx:{ type:'lowHp', threshold:0.4, cooldown:30000, shieldPct:0.16, aura:'demonology_guard' } },
         { name:'邪能狂宴', req:56, desc:'击杀敌人后，获得 7 秒【邪能狂宴】。', fx:{ type:'onKill', aura:'demonology_feast' } },
-        { name:'变形余威', req:66, desc:'施放生命分流或恶魔变身后，获得 7 秒【变形余威】。', fx:{ type:'afterSkill', skill:['drainLife','metamorphosis'], aura:'demonology_meta' } },
+        { name:'变形余威', req:66, desc:'恶魔变身期间，造成的伤害提高 20%、受到伤害降低 12%。', fx:[{ type:'whileBuff', buffKey:'demonForm', dmgPct:20 },{ type:'whileBuff', buffKey:'demonForm', takenPct:12 }] },
       ],
       destruction: [
-        { name:'烈焰余烬', req:46, desc:'暴击有 35% 几率触发 6 秒【烈焰余烬】。', fx:{ type:'onCrit', chance:35, cooldown:6000, aura:'destruction_embers' } },
+        { name:'烈焰余烬', req:46, desc:'暴击叠加 1 层【余烬】；并有 35% 几率触发 6 秒【烈焰余烬】。', fx:[{ type:'onCrit', grantCharge:{ key:'wl_ember', add:1, max:5 } },{ type:'onCrit', chance:35, cooldown:6000, aura:'destruction_embers' }] },
         { name:'混沌压境', req:56, desc:'你对首领造成的伤害提高 24%。', fx:{ type:'vsBoss', dmgPct:24 } },
         { name:'末日回响', req:66, desc:'施放混乱之箭后，你的下一次伤害技能必暴，8秒冷却。', fx:{ type:'afterSkill', skill:'chaosBolt', nextSkillCrit:1, cooldown:8000 } },
       ],
@@ -193,12 +193,12 @@ const TALENT_AURA_LIBRARY = {
       balance: [
         { name:'星火连辉', req:46, desc:'施放月火术或星火术后，获得 7 秒【星火连辉】。', fx:{ type:'afterSkill', skill:['moonfire','starfire'], aura:'balance_eclipse' } },
         { name:'新月收束', req:56, desc:'你对带有持续伤害效果的敌人造成的伤害提高 22%。', fx:{ type:'vsState', state:'dot', dmgPct:22 } },
-        { name:'天穹坠星', req:66, desc:'暴击有 35% 几率让你的下一次伤害技能必暴，7秒冷却。', fx:{ type:'onCrit', chance:35, cooldown:7000, nextSkillCrit:1 } },
+        { name:'天穹坠星', req:66, desc:'暴击叠加 1 层【星界能量】；并有 35% 几率让你的下一次伤害技能必暴，7秒冷却。', fx:[{ type:'onCrit', grantCharge:{ key:'d_astral', add:1, max:5 } },{ type:'onCrit', chance:35, cooldown:7000, nextSkillCrit:1 }] },
       ],
       feral: [
         { name:'撕裂狩猎', req:46, desc:'你对带有持续伤害效果的敌人造成的伤害提高 25%。', fx:{ type:'vsState', state:'dot', dmgPct:25 } },
         { name:'嗜血狂猎', req:56, desc:'击杀敌人后，获得 7 秒【嗜血狂猎】。', fx:{ type:'onKill', aura:'feral_hunt' } },
-        { name:'野性伏击', req:66, desc:'暴击后追加一次 80% 伤害的扑击，2秒冷却。', fx:{ type:'onCrit', cooldown:2000, extraHitMul:0.8, extraHitIcon:'🐾' } },
+        { name:'野性伏击', req:66, desc:'暴击叠加 1 点撕咬连击；并追加一次 80% 伤害的扑击，2秒冷却。', fx:[{ type:'onCrit', grantCharge:{ key:'d_combo', add:1, max:5 } },{ type:'onCrit', cooldown:2000, extraHitMul:0.8, extraHitIcon:'🐾' }] },
       ],
       resto: [
         { name:'森林馈赠', req:46, desc:'你的过量治疗会转化为 50% 吸收护盾。', fx:{ type:'afterHeal', overhealShieldPct:0.5 } },
