@@ -2195,7 +2195,7 @@ function applyCompanionSplash(mon, dmg, pct, icon, color){
     if(splash <= 0) continue;
     target.hp -= splash;
     trackDmg('comp', splash);
-    showMonsterFloat(other, (icon || '💥') + '-' + splash, color || '#fca5a5');
+    showMonsterFloat(target, (icon || '💥') + '-' + splash, color || '#fca5a5');
   }
 }
 function applyCompanionSupportSkill(sk, st, now){
