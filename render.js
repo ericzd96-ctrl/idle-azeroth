@@ -213,6 +213,9 @@ function symbolIconHtml(symbol, size, label, fallback) {
   if (typeof symbolIcon === 'function') return symbolIcon(symbol, size || 16, label || symbol || '', fallback || '');
   return symbol || fallback || label || '';
 }
+function skillVisualFallback(sk) {
+  return (sk && (sk.iconName || sk.icon)) || 'spell_holy_powerinfusion';
+}
 function companionIconHtml(tpl, size) {
   if (!tpl) return '';
   const fallback = tpl.iconName || tpl.emoji || 'ability_hunter_pet_wolf';
