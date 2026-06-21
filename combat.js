@@ -2847,7 +2847,10 @@ function onHeroDeath(){
   state._decayUntil = 0;
   state.talentState = { cds:{}, flags:{}, shield:0 };
   recomputeStats();
-  const loss=Math.floor(state.gold*0.05);state.gold=Math.max(0,state.gold-loss);
+  if(state.mode !== 'roguelike'){
+    const loss=Math.floor(state.gold*0.05);
+    state.gold=Math.max(0,state.gold-loss);
+  }
   state.hp=state.hero.hpMax;state.resource=state.resourceMax;
   if(state.mode==='dungeon'){showDungeonFail();return;}
   if(state.mode==='mythic'){onMythicFail();return;}
