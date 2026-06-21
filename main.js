@@ -382,10 +382,14 @@ function setupDelegation() {
   const rlModal = $('roguelike-choice-modal');
   if (rlModal) {
     rlModal.addEventListener('click', e => {
+      e.preventDefault();
       const card = e.target.closest('.roguelike-card');
       if (card && card.dataset.choice != null) {
+        e.stopPropagation();
         if (typeof roguelikeSelectAbility === 'function') roguelikeSelectAbility(parseInt(card.dataset.choice));
+        return;
       }
+      e.stopPropagation();
     });
   }
 
@@ -397,6 +401,10 @@ function setupDelegation() {
       const amount = parseInt(btn.dataset.amount);
       const price = parseInt(btn.dataset.price);
       const type = btn.dataset.type;
+      if (!Number.isFinite(amount) || !Number.isFinite(price) || price <= 0) {
+        log('商店数据异常，购买已取消', 'bad');
+        return;
+      }
       if (state.gold < price) { log('金币不足', 'bad'); return; }
       state.gold -= price;
       if (type === 'comp') {

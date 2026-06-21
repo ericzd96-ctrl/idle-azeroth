@@ -151,6 +151,18 @@ function collectRoguelikeMod() {
   return out;
 }
 
+function roguelikeProtectGold() {
+  const rs = state.roguelikeState;
+  if (!rs) return;
+  const floorGold = Number.isFinite(rs.safeGold) ? rs.safeGold : 0;
+  const curGold = Number.isFinite(state.gold) ? state.gold : floorGold;
+  if (!Number.isFinite(state.gold) || curGold < floorGold) {
+    state.gold = floorGold;
+    return;
+  }
+  rs.safeGold = curGold;
+}
+
 /* ---------- 进入/退出 ---------- */
 function enterRoguelike() {
   ensureRoguelikeState();
@@ -162,6 +174,7 @@ function enterRoguelike() {
     abilityChoices: [],
     chosenAbilities: [],
     coinThisRun: 0,
+    safeGold: Number.isFinite(state.gold) ? state.gold : 0,
   };
   state.roguelike.totalRuns = (state.roguelike.totalRuns || 0) + 1;
   // 存档外部属性
@@ -187,6 +200,7 @@ function enterRoguelike() {
 function leaveRoguelike() {
   const rs = state.roguelikeState;
   if (rs) {
+    roguelikeProtectGold();
     log(`🌌 离开幻象挑战(第 ${rs.floor} 层, +${rs.coinThisRun||0}🤖幻象币)`, 'info');
   }
   restoreRoguelikeStats();
@@ -267,6 +281,7 @@ function spawnRoguelikeMonster() {
 /* ---------- 击杀/失败/通关 ---------- */
 function onRoguelikeMonsterKill(mon) {
   const rs = state.roguelikeState; if (!rs) return;
+  roguelikeProtectGold();
   const floor = rs.floor;
 
   // 幻象币奖励
@@ -295,6 +310,7 @@ function onRoguelikeMonsterKill(mon) {
 function onRoguelikeFail() {
   const rs = state.roguelikeState;
   if (!rs) return;
+  roguelikeProtectGold();
   const reached = rs.floor;
   log(`💀 幻象挑战失败，到达第 ${reached} 层 (+${rs.coinThisRun||0}🤖幻象币)`, 'bad');
   state.mode = 'world';
@@ -306,10 +322,12 @@ function onRoguelikeFail() {
 function roguelikeComplete() {
   const rs = state.roguelikeState;
   if (!rs) return;
+  roguelikeProtectGold();
   log(`🌌🏆 完成幻象挑战！到达第 ${rs.floor} 层 (+${rs.coinThisRun||0}🤖幻象币)！`, 'legend');
   // 通关额外奖励
   state.roguelikeCoin = (state.roguelikeCoin || 0) + 1000;
   state.gold = (state.gold || 0) + 20000;
+  roguelikeProtectGold();
   state.gem = (state.gem || 0) + 50;
   state.mode = 'world';
   state.roguelikeState = null;
@@ -348,6 +366,7 @@ function rollRoguelikeChoices() {
 function roguelikeSelectAbility(index) {
   const rs = state.roguelikeState;
   if (!rs || !rs.abilityChoices || rs.abilityChoices.length === 0) return;
+  roguelikeProtectGold();
 
   const chosen = rs.abilityChoices[index];
   if (!chosen) return;
@@ -364,6 +383,7 @@ function roguelikeSelectAbility(index) {
 
   log(`✨ 获得能力: ${chosen.icon} ${chosen.name} — ${chosen.desc}`, 'legend');
   if (typeof recomputeStats === 'function') recomputeStats();
+  roguelikeProtectGold();
   markDirty('hero');
 
   // 进入下一层
@@ -381,6 +401,7 @@ function checkRoguelikeMilestone(floor) {
   state.roguelikeCoin = (state.roguelikeCoin || 0) + (ms.coin || 0);
   state.gold = (state.gold || 0) + (ms.gold || 0);
   state.gem = (state.gem || 0) + (ms.gem || 0);
+  roguelikeProtectGold();
   log(`🏆 幻象里程碑: ${ms.name}! +${ms.coin}🤖 +${ms.gold}💰 +${ms.gem}💎`, 'legend');
   if (ms.title && typeof grantTitle === 'function') grantTitle(ms.title);
   if (ms.item && typeof rollItem === 'function') {
