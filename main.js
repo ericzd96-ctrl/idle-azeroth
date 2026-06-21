@@ -16,12 +16,36 @@ let minuteCounter = 0;
 let mobilePanelOpen = false;
 let _lastMobile = null;
 let _lastLoopRun = 0;
+let _zoomLockInstalled = false;
 
 let _loopErrLogged = false;
 let _prevBuffs = '';   // 上帧活跃 buff 签名(检测过期)
 
 function isMobileLayout() {
   return window.innerWidth <= 920;
+}
+
+function installMobileZoomLock() {
+  if (_zoomLockInstalled || typeof document === 'undefined') return;
+  _zoomLockInstalled = true;
+  let lastTouchEnd = 0;
+  const prevent = e => e.preventDefault();
+  document.addEventListener('gesturestart', prevent, { passive:false });
+  document.addEventListener('gesturechange', prevent, { passive:false });
+  document.addEventListener('gestureend', prevent, { passive:false });
+  document.addEventListener('dblclick', e => {
+    if (isMobileLayout()) e.preventDefault();
+  }, { passive:false });
+  document.addEventListener('touchend', e => {
+    if (!isMobileLayout()) return;
+    const now = Date.now();
+    if (now - lastTouchEnd < 320) e.preventDefault();
+    lastTouchEnd = now;
+  }, { passive:false });
+  document.addEventListener('touchmove', e => {
+    if (!isMobileLayout()) return;
+    if (e.touches && e.touches.length > 1) e.preventDefault();
+  }, { passive:false });
 }
 
 function updateHeroMobileToggle() {
@@ -923,6 +947,7 @@ function setupCharListEvents() {
 
 /* ---------- 启动 ---------- */
 function boot() {
+  installMobileZoomLock();
   applyResponsiveLayout();
   setupDelegation();
   setupMainButtons();

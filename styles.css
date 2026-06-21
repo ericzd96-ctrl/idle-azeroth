@@ -28,6 +28,7 @@ html, body {
   min-height: 100vh;
   max-width: 100%;
   overflow-x: hidden;
+  touch-action: manipulation;
 }
 .wrap {
   width: min(100%, 1240px); max-width: 1240px; margin: 0 auto; padding: 16px;
