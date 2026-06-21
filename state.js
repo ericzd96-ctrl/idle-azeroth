@@ -97,7 +97,10 @@ const defaultState = () => ({
   lifeAction: null,         // { type, startedAt, lastYieldAt }
   lifeBuffs: {},            // { buffKey: expireTs }
   // ---- 神器 ----
+  // 旧版(per-char 单神器)保留作迁移源
   artifact: { lvl:0, ap:0, traits:{}, milestonesSeen:{} },
+  // 新版: 每专精一把独立神器 { [spec]: { ap, lvl, traits:{}, capstone:null, infRank:0, relics:[] } }
+  artifacts: {},
   // ---- 坐骑 ----
   activeMount: null,
   // ---- 竞技场(PvP)----
@@ -364,8 +367,10 @@ function mergeState(saved) {
     life: saved.life ? Object.assign({}, d.life, saved.life, { mats: saved.life.mats || {} }) : d.life,
     lifeAction: saved.lifeAction || null,
     lifeBuffs: saved.lifeBuffs || {},
-    // 神器
+    // 神器(旧版迁移源)
     artifact: saved.artifact ? Object.assign({}, d.artifact, saved.artifact, { traits: saved.artifact.traits||{}, milestonesSeen: saved.artifact.milestonesSeen||{} }) : d.artifact,
+    // 神器(新版 per-spec)
+    artifacts: (saved.artifacts && typeof saved.artifacts === 'object') ? saved.artifacts : {},
     // 坐骑
     activeMount: saved.activeMount || null,
     // 竞技场:浅合并并保护嵌套对象,opp 不持久化跨版本(重新生成)

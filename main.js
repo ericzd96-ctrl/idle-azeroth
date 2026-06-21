@@ -320,8 +320,10 @@ function setupDelegation() {
       const btn = e.target.closest('button[data-action]');
       if (!btn) return;
       const act = btn.dataset.action;
-      if (act === 'artifactBuy')        { artifactBuyTrait(btn.dataset.key); renderArtifact(); }
-      else if (act === 'artifactReset') { artifactReset(); renderArtifact(); }
+      if (act === 'artifactBuy')           { artifactBuyTrait(btn.dataset.key); renderArtifact(); }
+      else if (act === 'artifactCapstone') { artifactChooseCapstone(btn.dataset.key); renderArtifact(); }
+      else if (act === 'artifactInfinite') { artifactBuyInfinite(); renderArtifact(); }
+      else if (act === 'artifactReset')    { artifactReset(); renderArtifact(); }
     });
   }
 

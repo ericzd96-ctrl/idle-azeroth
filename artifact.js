@@ -11,7 +11,9 @@
    ========================================================= */
 
 const ARTIFACT_UNLOCK_LVL = 10;
-const ARTIFACT_MAX_LVL = 36;
+const ARTIFACT_MAX_LVL = 120;            // 软上限(留给无限特性长线);点满核心树约需 ~20 点
+const ARTIFACT_AP_RATE = 0.12;           // 杀怪 XP → AP 转化率(旧版 0.30,收紧)
+const ARTIFACT_CORE_GATE = 8;            // 解锁核心三选一前,需在本树次要节点累计花费的点数
 
 const ARTIFACTS = {
   warrior: { name:'霸者之刃 · 灰烬使者', icon:'🗡️', color:'#c79c6e' },
@@ -366,6 +368,77 @@ const ARTIFACT_TRAITS = {
   ],
 };
 
+/* =========================================================
+   新版 per-spec 神器内容
+   - 每专精一把神器,一棵专属树(分两条支路) + 核心三选一 + 无限特性
+   - 次要节点复用上方 ARTIFACT_TRAITS(每专精 4 个)
+   - SPEC_EXTRA_MINORS: 给指定专精追加次要节点(战士样板 +2/专精 → 6 个)
+   - SPEC_CAPSTONES: 核心三选一(战士手写;其余职业用 GENERIC_CAPSTONES)
+   ========================================================= */
+
+// 神器身份(战士手写;其余职业由 ARTIFACTS + 树名派生)
+const SPEC_ARTIFACT_IDENTITY = {
+  warrior: {
+    arms: { name:'斯特拉之颌·灰烬使者', icon:'⚔️', color:'#ef4444' },
+    fury: { name:'瓦拉加双刃', icon:'🔥', color:'#f97316' },
+    prot: { name:'守护之鳞·大地之怒', icon:'🛡️', color:'#3b82f6' },
+  },
+};
+
+// 追加次要节点(战士每专精 +2,凑成 6 个次要 → 两条支路各 3)
+const SPEC_EXTRA_MINORS = {
+  warrior: {
+    arms: [
+      onKillTrait({ key:'art_war_arms_ex_tempo', tree:'arms', name:'战场韵律', icon:'🥁', healPct:[0.02,0.04,0.06], resource:[4,8,12], mod:{spdPct:1}, desc:'击杀敌人后恢复 2%/4%/6% 最大生命并回复 4/8/12 点资源,并获得攻速 +1%/2%/3%。' }),
+      bossTrait({ key:'art_war_arms_ex_domin', tree:'arms', name:'主宰之势', icon:'👑', dmgPct:[6,12,18], mod:{atkPct:1}, desc:'对首领造成的伤害提高 6/12/18%,并获得攻击 +1%/2%/3%。' }),
+    ],
+    fury: [
+      executeTrait({ key:'art_war_fury_ex_slay', tree:'fury', name:'嗜杀本能', icon:'🩸', threshold:0.35, dmgPct:[10,20,30], mod:{atkPct:1}, desc:'对生命低于 35% 的目标造成的伤害提高 10/20/30%,并获得攻击 +1%/2%/3%。' }),
+      lowHpTrait({ key:'art_war_fury_ex_blood', tree:'fury', name:'血色护盾', icon:'🛡️', threshold:0.4, cooldown:30000, shieldPct:[0.05,0.09,0.13], mod:{hpPct:2}, desc:'生命低于 40% 时,获得相当于 5%/9%/13% 最大生命的护盾,30秒冷却,并获得生命 +2%/4%/6%。' }),
+    ],
+    prot: [
+      onKillTrait({ key:'art_war_prot_ex_hold', tree:'prot', name:'镇守回复', icon:'💚', healPct:[0.03,0.05,0.07], mod:{defPct:1}, desc:'击杀敌人后恢复 3%/5%/7% 最大生命,并获得防御 +1%/2%/3%。' }),
+      vsStateTrait({ key:'art_war_prot_ex_crush', tree:'prot', name:'碎甲突进', icon:'🔨', state:'sunder', dmgPct:[8,16,24], mod:{atkPct:1}, desc:'对被破甲目标造成的伤害提高 8/16/24%,并获得攻击 +1%/2%/3%。' }),
+    ],
+  },
+};
+
+// 核心三选一(战士手写;每项 = 一种 build 方向)
+function capstone(cfg){ return Object.assign({ maxRank:1, mod:{}, fx:null }, cfg); }
+const SPEC_CAPSTONES = {
+  warrior: {
+    arms: [
+      capstone({ key:'cap_arms_titan', name:'泰坦之握', icon:'💥', dir:'爆发', mod:{critdPct:25, atkPct:4}, fx:{ type:'onCrit', extraHitMul:0.6, extraHitIcon:'⚔️', cooldown:2000 }, desc:'【爆发】暴击伤害 +25% · 攻击 +4%;暴击后追加一次 60% 伤害的强力追击(2秒冷却)。' }),
+      capstone({ key:'cap_arms_reaper', name:'死神镰歌', icon:'💀', dir:'斩杀', mod:{executeBonus:6, atkPct:3}, fx:{ type:'executeWindow', threshold:0.5, dmgPct:50 }, desc:'【斩杀】斩杀加成 +6% · 攻击 +3%;对生命低于 50% 的目标造成的伤害提高 50%。' }),
+      capstone({ key:'cap_arms_warlord', name:'不败战将', icon:'🛡️', dir:'生存', mod:{defPct:5, hpPct:6}, fx:{ type:'vsBoss', dmgPct:10, takenPct:12 }, desc:'【生存】防御 +5% · 生命 +6%;对首领伤害 +10%,受其伤害 -12%。' }),
+    ],
+    fury: [
+      capstone({ key:'cap_fury_blood', name:'血之狂澜', icon:'🩸', dir:'爆发', mod:{spdPct:5, atkPct:3}, fx:{ type:'onCrit', extraHitMul:0.5, extraHitIcon:'🩸', cooldown:1500 }, desc:'【爆发】攻速 +5% · 攻击 +3%;暴击后追加一次 50% 伤害的狂乱追击(1.5秒冷却)。' }),
+      capstone({ key:'cap_fury_undying', name:'不灭狂怒', icon:'♾️', dir:'生存', mod:{hpPct:6, defPct:3}, fx:{ type:'lowHp', threshold:0.4, shieldPct:0.16, cooldown:25000 }, desc:'【生存】生命 +6% · 防御 +3%;生命低于 40% 时获得 16% 最大生命护盾(25秒冷却)。' }),
+      capstone({ key:'cap_fury_rampage', name:'无尽杀戮', icon:'🔥', dir:'持续', mod:{atkPct:5}, fx:{ type:'onKill', healPct:0.06, resource:14 }, desc:'【持续】攻击 +5%;击杀敌人后恢复 6% 最大生命并回复 14 点资源。' }),
+    ],
+    prot: [
+      capstone({ key:'cap_prot_bulwark', name:'不破壁垒', icon:'🧱', dir:'格挡', mod:{defPct:6, hpPct:5}, fx:{ type:'whileBuff', buffKey:'shield', takenPct:25 }, desc:'【格挡】防御 +6% · 生命 +5%;盾墙持续期间受到的伤害额外降低 25%。' }),
+      capstone({ key:'cap_prot_avenger', name:'以盾还击', icon:'🔨', dir:'反击', mod:{reflectDmg:6, atkPct:3}, fx:{ type:'afterSkill', skill:'sunderArmor', extraDmgPct:0.4 }, desc:'【反击】反伤 +6% · 攻击 +3%;施放破甲攻击后额外造成本次伤害 40% 的压制伤害。' }),
+      capstone({ key:'cap_prot_guardian', name:'磐石守护', icon:'⛰️', dir:'坦克', mod:{hpPct:8, defPct:3}, fx:{ type:'vsBoss', dmgPct:8, takenPct:15 }, desc:'【坦克】生命 +8% · 防御 +3%;对首领伤害 +8%,受其伤害 -15%。' }),
+    ],
+  },
+};
+
+// 通用核心三选一(尚未手写专属内容的职业)
+const GENERIC_CAPSTONES = [
+  capstone({ key:'cap_gen_offense', name:'湮灭核心', icon:'💥', dir:'爆发', mod:{atkPct:6, critdPct:15}, fx:{ type:'vsBoss', dmgPct:12 }, desc:'【爆发】攻击 +6% · 暴伤 +15%;对首领造成的伤害提高 12%。' }),
+  capstone({ key:'cap_gen_defense', name:'壁垒核心', icon:'🛡️', dir:'生存', mod:{defPct:6, hpPct:6}, fx:{ type:'lowHp', threshold:0.4, shieldPct:0.13, cooldown:25000 }, desc:'【生存】防御 +6% · 生命 +6%;生命低于 40% 时获得 13% 最大生命护盾(25秒冷却)。' }),
+  capstone({ key:'cap_gen_sustain', name:'不竭核心', icon:'🔥', dir:'持续', mod:{spdPct:4, atkPct:3}, fx:{ type:'onKill', healPct:0.05, resource:10 }, desc:'【持续】攻速 +4% · 攻击 +3%;击杀敌人后恢复 5% 最大生命并回复 10 点资源。' }),
+];
+
+// 无限特性(所有专精共用;核心点完后开放,可无限叠,吃溢出 AP)
+const ARTIFACT_INFINITE = {
+  key:'art_infinite', name:'神器共鸣', icon:'♾️',
+  perRank:{ atkPct:0.5, hpPct:0.6, defPct:0.4 },
+  desc:'每阶: 攻击 +0.5% · 生命 +0.6% · 防御 +0.4%(可无限提升,消耗溢出神器点)',
+};
+
 const ARTIFACT_MILESTONES = {
   warrior: milestoneList('strPct'),
   mage: milestoneList('intPct'),
@@ -401,96 +474,217 @@ function artifactRankModText(t, rank) {
   return modText || '';
 }
 
-function ensureArtifactState() {
-  if (!state.artifact) state.artifact = { lvl:0, ap:0, traits:{}, milestonesSeen:{} };
-  if (!state.artifact.traits) state.artifact.traits = {};
-  if (!state.artifact.milestonesSeen) state.artifact.milestonesSeen = {};
+/* ============ 新版 per-spec 引擎 ============ */
+
+function activeArtifactSpec(){ return (state && state.specialization) || null; }
+
+function artifactBucketRaw(spec){
+  if(!state.artifacts[spec]) state.artifacts[spec] = { ap:0, lvl:0, traits:{}, capstone:null, infRank:0, relics:[] };
+  const b = state.artifacts[spec];
+  if(!b.traits) b.traits = {};
+  if(b.capstone === undefined) b.capstone = null;
+  if(!b.infRank) b.infRank = 0;
+  if(!b.relics) b.relics = [];
+  return b;
 }
 
-function artifactApNeeded(lvl) {
-  if (lvl >= ARTIFACT_MAX_LVL) return Infinity;
-  return Math.floor(100 + Math.pow(lvl, 1.8) * 50);
-}
-
-function artifactSpentPoints() {
-  ensureArtifactState();
-  const keys = artifactTraitKeys();
-  let n = 0;
-  for (const [key, rank] of Object.entries(state.artifact.traits || {})) {
-    if (keys.has(key)) n += rank || 0;
+function ensureArtifactStore(){
+  if(!state.artifacts || typeof state.artifacts !== 'object') state.artifacts = {};
+  // 旧版单神器(per-char) → 当前专精桶: 一次性迁移, ap/lvl 保留, 特性重置返还为自由点
+  const legacy = state.artifact;
+  if(legacy && !legacy._migrated && ((legacy.lvl||0) > 0 || (legacy.ap||0) > 0)){
+    const sp = activeArtifactSpec();
+    if(sp){
+      const b = artifactBucketRaw(sp);
+      b.ap  = Math.max(b.ap||0,  legacy.ap||0);
+      b.lvl = Math.max(b.lvl||0, legacy.lvl||0);
+      legacy._migrated = true;
+    }
   }
+  return state.artifacts;
+}
+
+// 兼容旧调用名
+function ensureArtifactState(){ ensureArtifactStore(); }
+
+function artifactBucket(spec){
+  spec = spec || activeArtifactSpec();
+  if(!spec) return null;
+  ensureArtifactStore();
+  return artifactBucketRaw(spec);
+}
+
+// ---- 身份 / 节点 / 核心 ----
+function artifactIdentity(cls, spec){
+  cls = cls || state.cls; spec = spec || activeArtifactSpec();
+  const bespoke = SPEC_ARTIFACT_IDENTITY[cls] && SPEC_ARTIFACT_IDENTITY[cls][spec];
+  if(bespoke) return bespoke;
+  const tree = (ARTIFACT_TREES[cls]||{})[spec];
+  const base = ARTIFACTS[cls] || { name:'神器', icon:'🗡️', color:'#888' };
+  return { name: tree ? `${base.name}·${tree.name}` : base.name, icon:(tree&&tree.icon)||base.icon, color:(tree&&tree.color)||base.color };
+}
+
+// 次要节点: 入门 + 现有特性(+追加) 分两条支路链式前置
+function artifactMinorNodes(cls, spec){
+  cls = cls || state.cls; spec = spec || activeArtifactSpec();
+  if(!cls || !spec) return [];
+  const baseTraits = (ARTIFACT_TRAITS[cls]||[]).filter(t => t.tree === spec);
+  const extra = (SPEC_EXTRA_MINORS[cls] && SPEC_EXTRA_MINORS[cls][spec]) || [];
+  const minors = baseTraits.concat(extra);
+  const entry = { key:`art_${cls}_${spec}_entry`, tree:spec, name:'神器觉醒', icon:'✦', maxRank:3, ring:0, branch:null,
+    mod:{ atkPct:2, hpPct:2, defPct:2 }, desc:'神器觉醒: 攻击 / 生命 / 防御 +2%/4%/6%。' };
+  const branchA = [], branchB = [];
+  minors.forEach((m,i)=>{ (i % 2 === 0 ? branchA : branchB).push(m); });
+  const out = [entry];
+  [['a',branchA],['b',branchB]].forEach(pair=>{
+    const br = pair[0], list = pair[1];
+    list.forEach((m,i)=>{
+      out.push(Object.assign({}, m, { branch:br, ring:i+1, prereq: i===0 ? entry.key : list[i-1].key }));
+    });
+  });
+  return out;
+}
+function artifactNodeByKey(key, cls, spec){ return artifactMinorNodes(cls, spec).find(n => n.key === key) || null; }
+
+function artifactCapstoneList(cls, spec){
+  cls = cls || state.cls; spec = spec || activeArtifactSpec();
+  const bespoke = SPEC_CAPSTONES[cls] && SPEC_CAPSTONES[cls][spec];
+  return bespoke || GENERIC_CAPSTONES;
+}
+function artifactCapstoneByKey(key, cls, spec){ return artifactCapstoneList(cls, spec).find(c => c.key === key) || null; }
+
+// ---- 点数核算 ----
+function artifactMinorSpent(spec){
+  spec = spec || activeArtifactSpec(); if(!spec) return 0;
+  const b = artifactBucket(spec); if(!b) return 0;
+  const keys = new Set(artifactMinorNodes(state.cls, spec).map(n => n.key));
+  let n = 0;
+  for(const e of Object.entries(b.traits||{})){ if(keys.has(e[0])) n += e[1]||0; }
   return n;
 }
-
-function artifactPointsFree() {
-  ensureArtifactState();
-  return Math.max(0, (state.artifact.lvl || 0) - artifactSpentPoints());
+function artifactSpentPoints(spec){
+  spec = spec || activeArtifactSpec(); if(!spec) return 0;
+  const b = artifactBucket(spec); if(!b) return 0;
+  let n = artifactMinorSpent(spec);
+  if(b.capstone) n += 1;
+  n += b.infRank || 0;
+  return n;
+}
+function artifactPointsFree(spec){
+  spec = spec || activeArtifactSpec(); if(!spec) return 0;
+  const b = artifactBucket(spec); if(!b) return 0;
+  return Math.max(0, (b.lvl||0) - artifactSpentPoints(spec));
+}
+function artifactCoreUnlocked(spec){
+  spec = spec || activeArtifactSpec();
+  return artifactMinorSpent(spec) >= ARTIFACT_CORE_GATE;
 }
 
-function artifactUnlocked() {
-  if (!state.cls || !state.hero) return false;
-  if (state.artifact && (state.artifact.lvl || 0) > 0) return true;
+function artifactApNeeded(lvl){
+  if(lvl >= ARTIFACT_MAX_LVL) return Infinity;
+  return Math.floor(220 + Math.pow(lvl, 1.9) * 65);
+}
+
+function artifactUnlocked(){
+  if(!state.cls || !state.hero) return false;
+  const sp = activeArtifactSpec(); if(!sp) return false;
+  ensureArtifactStore();
+  const b = state.artifacts[sp];
+  if(b && (b.lvl||0) > 0) return true;
   return state.hero.lvl >= ARTIFACT_UNLOCK_LVL;
 }
 
-function artifactPrereqMet(traitDef) {
-  if (!traitDef || !traitDef.prereq) return true;
-  return (state.artifact.traits[traitDef.prereq] || 0) >= 1;
+function artifactPrereqMet(node, b){
+  if(!node || !node.prereq) return true;
+  b = b || artifactBucket();
+  if(!b) return false;
+  return (b.traits[node.prereq]||0) >= 1;
 }
 
-function artifactGainAp(xpReward) {
-  ensureArtifactState();
-  if (!artifactUnlocked()) return;
-  if (state.artifact.lvl >= ARTIFACT_MAX_LVL) return;
-  const gain = Math.max(1, Math.floor(xpReward * 0.3));
-  state.artifact.ap += gain;
+function artifactGainAp(xpReward){
+  if(!artifactUnlocked()) return;
+  const spec = activeArtifactSpec(); if(!spec) return;
+  const b = artifactBucket(spec); if(!b) return;
+  if(b.lvl >= ARTIFACT_MAX_LVL) return;
+  const gain = Math.max(1, Math.floor(xpReward * ARTIFACT_AP_RATE));
+  b.ap += gain;
   let leveled = false;
-  while (state.artifact.lvl < ARTIFACT_MAX_LVL && state.artifact.ap >= artifactApNeeded(state.artifact.lvl)) {
-    state.artifact.ap -= artifactApNeeded(state.artifact.lvl);
-    state.artifact.lvl += 1;
-    leveled = true;
-    const art = ARTIFACTS[state.cls];
-    log(`${art ? art.icon : '🗡️'} 神器升到 Lv.${state.artifact.lvl}! +1 神器点`, 'epic');
-    const ms = artifactMilestonesForClass().find(m => m.lvl === state.artifact.lvl);
-    if (ms && !state.artifact.milestonesSeen[state.artifact.lvl]) {
-      state.artifact.milestonesSeen[state.artifact.lvl] = true;
-      log(`✨ 神器里程碑【${ms.name}】解锁: ${ms.desc}`, 'legend');
-    }
+  while(b.lvl < ARTIFACT_MAX_LVL && b.ap >= artifactApNeeded(b.lvl)){
+    b.ap -= artifactApNeeded(b.lvl);
+    b.lvl += 1; leveled = true;
+    const id = artifactIdentity(state.cls, spec);
+    log(`${id.icon} 神器升到 Lv.${b.lvl}! +1 神器点`, 'epic');
+    const ms = artifactMilestonesForClass().find(m => m.lvl === b.lvl);
+    if(ms) log(`✨ 神器里程碑【${ms.name}】解锁: ${ms.desc}`, 'legend');
   }
-  if (leveled) {
-    recomputeStats();
-    markDirty('artifact', 'hero');
-  }
+  if(leveled){ recomputeStats(); markDirty('artifact','hero'); }
 }
 
-function artifactBuyTrait(key) {
-  ensureArtifactState();
-  const t = artifactTraitByKey(key);
-  if (!t) return;
-  const cur = state.artifact.traits[key] || 0;
-  if (cur >= t.maxRank) { log('已满阶', 'bad'); return; }
-  if (!artifactPrereqMet(t)) { log('前置未解锁', 'bad'); return; }
-  if (artifactPointsFree() <= 0) { log('神器点数不足', 'bad'); return; }
-  state.artifact.traits[key] = cur + 1;
-  log(`✦ 神器特性: ${t.name} → ${cur + 1}/${t.maxRank}`, 'good');
+function artifactBuyTrait(key){
+  const spec = activeArtifactSpec();
+  if(!spec){ log('请先选择专精', 'bad'); return; }
+  const b = artifactBucket(spec); if(!b) return;
+  const node = artifactNodeByKey(key, state.cls, spec);
+  if(!node) return;
+  const cur = b.traits[key] || 0;
+  if(cur >= node.maxRank){ log('已满阶', 'bad'); return; }
+  if(!artifactPrereqMet(node, b)){ log('前置未解锁', 'bad'); return; }
+  if(artifactPointsFree(spec) <= 0){ log('神器点数不足', 'bad'); return; }
+  b.traits[key] = cur + 1;
+  log(`✦ 神器特性: ${node.name} → ${cur+1}/${node.maxRank}`, 'good');
   recomputeStats();
-  markDirty('artifact', 'hero');
+  markDirty('artifact','hero');
 }
 
-function artifactReset() {
-  ensureArtifactState();
+function artifactChooseCapstone(key){
+  const spec = activeArtifactSpec();
+  if(!spec){ log('请先选择专精', 'bad'); return; }
+  const b = artifactBucket(spec); if(!b) return;
+  if(!artifactCoreUnlocked(spec)){ log(`需在本树次要节点累计投入 ${ARTIFACT_CORE_GATE} 点才能激活核心`, 'bad'); return; }
+  const cap = artifactCapstoneByKey(key, state.cls, spec);
+  if(!cap) return;
+  if(b.capstone === key){ log('已激活该核心', 'bad'); return; }
+  if(b.capstone){
+    b.capstone = key;                       // 切换核心(免费, 核心仅占 1 点)
+    log(`✦ 神器核心已切换:【${cap.name}】`, 'epic');
+  } else {
+    if(artifactPointsFree(spec) <= 0){ log('神器点数不足', 'bad'); return; }
+    b.capstone = key;
+    log(`✦ 神器核心激活:【${cap.name}】`, 'epic');
+  }
+  recomputeStats();
+  markDirty('artifact','hero');
+}
+
+function artifactBuyInfinite(){
+  const spec = activeArtifactSpec();
+  if(!spec){ log('请先选择专精', 'bad'); return; }
+  const b = artifactBucket(spec); if(!b) return;
+  if(!b.capstone){ log('需先激活神器核心才能开启无限共鸣', 'bad'); return; }
+  if(artifactPointsFree(spec) <= 0){ log('神器点数不足', 'bad'); return; }
+  b.infRank = (b.infRank||0) + 1;
+  log(`♾️ 神器共鸣 → ${b.infRank} 阶`, 'good');
+  recomputeStats();
+  markDirty('artifact','hero');
+}
+
+function artifactReset(){
+  const spec = activeArtifactSpec();
+  if(!spec){ log('请先选择专精', 'bad'); return; }
+  const b = artifactBucket(spec); if(!b) return;
   const cost = 100;
-  if (state.gem < cost) { log(`💎 重置神器需要 ${cost} 钻石`, 'bad'); return; }
-  if (!confirm(`确定重置当前职业的神器特性? 消耗 ${cost} 💎。`)) return;
+  const refundable = artifactSpentPoints(spec);
+  if(refundable <= 0){ log('当前神器没有可重置的投入', 'bad'); return; }
+  if(state.gem < cost){ log(`💎 重置神器需要 ${cost} 钻石`, 'bad'); return; }
+  if(!confirm(`确定重置当前专精神器的全部投入? 返还 ${refundable} 点, 消耗 ${cost} 💎。`)) return;
   state.gem -= cost;
-  for (const key of artifactTraitKeys()) delete state.artifact.traits[key];
-  log(`♻️ 神器特性已重置, 返还 ${state.artifact.lvl} 点`, 'good');
+  b.traits = {}; b.capstone = null; b.infRank = 0;
+  log(`♻️ 神器已重置, 返还 ${refundable} 点`, 'good');
   recomputeStats();
-  markDirty('artifact', 'hero');
+  markDirty('artifact','hero');
 }
 
-function collectArtifactMod() {
-  ensureArtifactState();
+function collectArtifactMod(){
   const out = {
     atkPct:0, hpPct:0, defPct:0, critdPct:0, spdPct:0,
     crit:0, leech:0, vers:0, mastery:0,
@@ -500,101 +694,152 @@ function collectArtifactMod() {
     reflectDmg:0, armorPen:0, dodge:0, stunChance:0,
     strPct:0, agiPct:0, intPct:0, spiPct:0, staPct:0,
   };
-  if (!artifactUnlocked()) return out;
-  for (const t of artifactTraitsForClass()) {
-    const rank = state.artifact.traits[t.key] || 0;
-    if (rank <= 0) continue;
-    for (const [k, v] of Object.entries(t.mod || {})) out[k] = (out[k] || 0) + v * rank;
+  if(!artifactUnlocked()) return out;
+  const spec = activeArtifactSpec(); if(!spec) return out;
+  const b = artifactBucket(spec); if(!b) return out;
+  for(const node of artifactMinorNodes(state.cls, spec)){
+    const r = b.traits[node.key] || 0; if(r <= 0) continue;
+    for(const e of Object.entries(node.mod||{})) out[e[0]] = (out[e[0]]||0) + e[1]*r;
   }
-  for (const ms of artifactMilestonesForClass()) {
-    if ((state.artifact.lvl || 0) < ms.lvl) continue;
-    for (const [k, v] of Object.entries(ms.mod || {})) out[k] = (out[k] || 0) + v;
+  if(b.capstone){
+    const cap = artifactCapstoneByKey(b.capstone, state.cls, spec);
+    if(cap) for(const e of Object.entries(cap.mod||{})) out[e[0]] = (out[e[0]]||0) + e[1];
+  }
+  if((b.infRank||0) > 0){
+    for(const e of Object.entries(ARTIFACT_INFINITE.perRank)) out[e[0]] = (out[e[0]]||0) + e[1]*b.infRank;
+  }
+  for(const ms of artifactMilestonesForClass()){
+    if((b.lvl||0) < ms.lvl) continue;
+    for(const e of Object.entries(ms.mod||{})) out[e[0]] = (out[e[0]]||0) + e[1];
   }
   return out;
 }
 
-function collectArtifactFx() {
-  ensureArtifactState();
-  if (!artifactUnlocked()) return [];
+function collectArtifactFx(){
+  if(!artifactUnlocked()) return [];
+  const spec = activeArtifactSpec(); if(!spec) return [];
+  const b = artifactBucket(spec); if(!b) return [];
   const out = [];
-  for (const t of artifactTraitsForClass()) {
-    const rank = state.artifact.traits[t.key] || 0;
-    if (rank <= 0 || !t.fx) continue;
-    for (const fx of asFxList(typeof t.fx === 'function' ? t.fx(rank) : t.fx)) {
-      out.push(Object.assign({ artifactKey:t.key, artifactName:t.name, treeKey:t.tree, source:'artifact' }, fx));
+  for(const node of artifactMinorNodes(state.cls, spec)){
+    const r = b.traits[node.key] || 0; if(r <= 0 || !node.fx) continue;
+    for(const fx of asFxList(typeof node.fx === 'function' ? node.fx(r) : node.fx))
+      out.push(Object.assign({ key:node.key, artifactKey:node.key, artifactName:node.name, treeKey:node.tree, source:'artifact' }, fx));
+  }
+  if(b.capstone){
+    const cap = artifactCapstoneByKey(b.capstone, state.cls, spec);
+    if(cap && cap.fx){
+      for(const fx of asFxList(typeof cap.fx === 'function' ? cap.fx(1) : cap.fx))
+        out.push(Object.assign({ key:cap.key, artifactKey:cap.key, artifactName:cap.name, source:'artifact', capstone:true }, fx));
     }
   }
   return out;
 }
 
-function renderArtifact() {
-  ensureArtifactState();
+function renderArtifact(){
+  ensureArtifactStore();
   const root = $('tab-artifact');
-  if (!root) return;
-  if (!state.cls) { root.innerHTML = '<div class="muted">先创建角色</div>'; return; }
-  if (!artifactUnlocked()) {
+  if(!root) return;
+  if(!state.cls){ root.innerHTML = '<div class="muted">先创建角色</div>'; return; }
+  const spec = activeArtifactSpec();
+  const heroLvl = (state.hero && state.hero.lvl) || 0;
+  const specBucket = spec && state.artifacts[spec];
+  if(heroLvl < ARTIFACT_UNLOCK_LVL && !(specBucket && specBucket.lvl > 0)){
     const lockedIconHtml = (typeof symbolIcon === 'function') ? symbolIcon('🗡️', 28, '神器', 'inv_sword_39') : '🗡️';
-    root.innerHTML = `<div class="ascend-box">
-      <div style="font-size:14px;font-weight:bold;text-align:center;margin:20px 0">${lockedIconHtml} 神器尚未觉醒</div>
-      <div class="muted" style="text-align:center">需达到 Lv.${ARTIFACT_UNLOCK_LVL} 才能开启专属神器</div>
-    </div>`;
+    root.innerHTML = `<div class="ascend-box"><div style="font-size:14px;font-weight:bold;text-align:center;margin:20px 0">${lockedIconHtml} 神器尚未觉醒</div><div class="muted" style="text-align:center">需达到 Lv.${ARTIFACT_UNLOCK_LVL} 才能开启专属神器</div></div>`;
+    return;
+  }
+  if(!spec){
+    root.innerHTML = `<div class="ascend-box"><div style="text-align:center;margin:20px 0">⚔️ 请先在 <b>天赋</b> 面板选择一个专精</div><div class="muted" style="text-align:center;font-size:11px">每个专精拥有独立的神器与神器树, 切换专精即切换神器</div></div>`;
     return;
   }
 
-  const art = ARTIFACTS[state.cls] || { name:'神器', icon:'🗡️', color:'#888' };
-  const a = state.artifact;
-  const need = artifactApNeeded(a.lvl);
-  const pct = a.lvl >= ARTIFACT_MAX_LVL ? 100 : Math.floor((a.ap || 0) * 100 / Math.max(1, need));
-  const free = artifactPointsFree();
-  const spent = artifactSpentPoints();
-  const artIconHtml = (typeof symbolIcon === 'function') ? symbolIcon(art.icon, 30, art.name, 'inv_sword_39') : art.icon;
+  const id = artifactIdentity(state.cls, spec);
+  const b = artifactBucket(spec);
+  const need = artifactApNeeded(b.lvl);
+  const pct = b.lvl >= ARTIFACT_MAX_LVL ? 100 : Math.floor((b.ap||0) * 100 / Math.max(1, need));
+  const free = artifactPointsFree(spec);
+  const spent = artifactSpentPoints(spec);
+  const minorSpent = artifactMinorSpent(spec);
+  const coreOk = artifactCoreUnlocked(spec);
+  const specName = (ARTIFACT_TREES[state.cls] && ARTIFACT_TREES[state.cls][spec] && ARTIFACT_TREES[state.cls][spec].name) || spec;
+  const artIconHtml = (typeof symbolIcon === 'function') ? symbolIcon(id.icon, 30, id.name, 'inv_sword_39') : id.icon;
   const lightningIconHtml = (typeof statusIcon === 'function') ? statusIcon('神器能量', '⚡', 12, 'spell_arcane_arcanepotency') : '⚡';
 
-  let html = `<div class="ascend-box" style="border:1px solid ${art.color}">
+  const renderNode = (node)=>{
+    const rank = b.traits[node.key] || 0;
+    const prereqOk = artifactPrereqMet(node, b);
+    const canBuy = prereqOk && rank < node.maxRank && free > 0;
+    const prereqNode = node.prereq ? artifactNodeByKey(node.prereq, state.cls, spec) : null;
+    const lockHint = (!prereqOk && prereqNode) ? `<span class="muted" style="font-size:10px">🔒 需 [${prereqNode.name}]</span>` : '';
+    const curText = artifactRankModText(node, rank);
+    return `<div class="ascend-milestone ${rank>0?'reached':''}" style="padding:6px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px">
+        <div style="min-width:0">
+          <div><b>${node.icon||'✦'} ${node.name}</b> <span class="muted" style="font-size:10px">${rank}/${node.maxRank}</span> ${lockHint}</div>
+          <div class="muted" style="font-size:10px;line-height:1.45">${artifactTraitDesc(node)}${curText?` · 当前: ${curText}`:''}</div>
+        </div>
+        <button class="${canBuy?'success':''}" data-action="artifactBuy" data-key="${node.key}" ${canBuy?'':'disabled'} style="padding:4px 10px">+</button>
+      </div>
+    </div>`;
+  };
+  const renderCap = (cap)=>{
+    const chosen = b.capstone === cap.key;
+    const canPick = coreOk && !chosen && (b.capstone ? true : free > 0);
+    return `<div class="ascend-milestone ${chosen?'reached':''}" style="padding:6px;${chosen?`border-left:3px solid ${id.color}`:''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px">
+        <div style="min-width:0">
+          <div><b>${cap.icon} ${cap.name}</b> <span class="muted" style="font-size:10px">[${cap.dir||'核心'}]</span> ${chosen?'<span class="r-legend">✓ 已激活</span>':''}</div>
+          <div class="muted" style="font-size:10px;line-height:1.45">${cap.desc}</div>
+        </div>
+        <button class="${canPick?'success':''}" data-action="artifactCapstone" data-key="${cap.key}" ${canPick?'':'disabled'} style="padding:4px 10px;min-width:34px">${chosen?'★':(b.capstone?'换':'选')}</button>
+      </div>
+    </div>`;
+  };
+
+  const nodes = artifactMinorNodes(state.cls, spec);
+  const entry = nodes.find(n => n.ring === 0);
+  const branchA = nodes.filter(n => n.branch === 'a');
+  const branchB = nodes.filter(n => n.branch === 'b');
+
+  let html = `<div class="ascend-box" style="border:1px solid ${id.color}">
     <div style="display:flex;align-items:center;gap:8px">
       <div style="font-size:30px">${artIconHtml}</div>
       <div style="flex:1">
-        <div style="font-weight:bold;color:${art.color}">${art.name}</div>
-        <div class="muted" style="font-size:11px">神器 Lv.${a.lvl}/${ARTIFACT_MAX_LVL} · 可用 <b style="color:var(--accent)">${free}</b> 点 · 已加 ${spent}</div>
+        <div style="font-weight:bold;color:${id.color}">${id.name}</div>
+        <div class="muted" style="font-size:11px">${specName} · 神器 Lv.${b.lvl} · 可用 <b style="color:var(--accent)">${free}</b> 点 · 已加 ${spent}</div>
       </div>
     </div>
-    <div class="bar xp" style="margin:6px 0"><i style="width:${pct}%;background:${art.color}"></i><span>${a.lvl >= ARTIFACT_MAX_LVL ? 'MAX' : `${a.ap}/${need} AP`}</span></div>
-    <div class="muted" style="font-size:10px">${lightningIconHtml} 每杀敌获得 30% XP 作为 AP · <button class="danger" data-action="artifactReset" style="float:right;padding:2px 8px;font-size:11px">重置 100💎</button></div>
+    <div class="bar xp" style="margin:6px 0"><i style="width:${pct}%;background:${id.color}"></i><span>${b.lvl>=ARTIFACT_MAX_LVL?'MAX':`${b.ap}/${need} AP`}</span></div>
+    <div class="muted" style="font-size:10px">${lightningIconHtml} 杀敌获得 ${Math.round(ARTIFACT_AP_RATE*100)}% XP 作为 AP(仅当前专精) · <button class="danger" data-action="artifactReset" style="float:right;padding:2px 8px;font-size:11px">重置 100💎</button></div>
   </div>`;
 
-  const trees = artifactTreesForClass();
-  for (const [treeKey, tree] of Object.entries(trees)) {
-    const treeTraits = artifactTraitsForClass().filter(t => t.tree === treeKey);
-    const treeIconHtml = (typeof symbolIcon === 'function') ? symbolIcon(tree.icon, 16, tree.name, 'spell_holy_powerinfusion') : tree.icon;
-    html += `<div class="ascend-box" style="border-left:3px solid ${tree.color}">
-      <div class="detail-label" style="color:${tree.color}">${treeIconHtml} ${tree.name}</div>`;
-    for (const t of treeTraits) {
-      const rank = a.traits[t.key] || 0;
-      const prereqOk = artifactPrereqMet(t);
-      const canBuy = prereqOk && rank < t.maxRank && free > 0;
-      const prereq = t.prereq ? artifactTraitByKey(t.prereq) : null;
-      const lockHint = (!prereqOk && prereq) ? `<span class="muted" style="font-size:10px">🔒 需 [${prereq.name}]</span>` : '';
-      const currentText = artifactRankModText(t, rank);
-      html += `<div class="ascend-milestone ${rank > 0 ? 'reached' : ''}" style="padding:6px">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px">
-          <div style="min-width:0">
-            <div><b>${t.icon || '✦'} ${t.name}</b> <span class="muted" style="font-size:10px">${rank}/${t.maxRank}</span> ${lockHint}</div>
-            <div class="muted" style="font-size:10px;line-height:1.45">${artifactTraitDesc(t)}${currentText ? ` · 当前: ${currentText}` : ''}</div>
-          </div>
-          <button class="${canBuy ? 'success' : ''}" data-action="artifactBuy" data-key="${t.key}" ${canBuy ? '' : 'disabled'} style="padding:4px 10px">+</button>
+  html += `<div class="ascend-box" style="border-left:3px solid ${id.color}"><div class="detail-label" style="color:${id.color}">✦ 觉醒</div>${entry?renderNode(entry):''}</div>`;
+  html += `<div class="ascend-box"><div class="detail-label">⚔️ 支路 A</div>${branchA.map(renderNode).join('')||'<div class="muted" style="font-size:10px">—</div>'}</div>`;
+  html += `<div class="ascend-box"><div class="detail-label">🔱 支路 B</div>${branchB.map(renderNode).join('')||'<div class="muted" style="font-size:10px">—</div>'}</div>`;
+
+  html += `<div class="ascend-box"><div class="detail-label">💠 核心 · 三选一 ${coreOk?'':`<span class="muted" style="font-weight:normal">(需投入 ${ARTIFACT_CORE_GATE} 点 · 当前 ${minorSpent})</span>`}</div>${artifactCapstoneList(state.cls, spec).map(renderCap).join('')}</div>`;
+
+  const infOk = !!b.capstone;
+  const canInf = infOk && free > 0;
+  const infCur = (b.infRank>0) ? ` · 当前: ${artifactRankModText({ mod:ARTIFACT_INFINITE.perRank }, b.infRank)}` : '';
+  html += `<div class="ascend-box"><div class="detail-label">${ARTIFACT_INFINITE.icon} ${ARTIFACT_INFINITE.name}</div>
+    <div class="ascend-milestone ${b.infRank>0?'reached':''}" style="padding:6px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px">
+        <div style="min-width:0">
+          <div><b>${ARTIFACT_INFINITE.icon} 共鸣阶数</b> <span class="muted" style="font-size:10px">${b.infRank} 阶</span> ${infOk?'':'<span class="muted" style="font-size:10px">🔒 需先激活核心</span>'}</div>
+          <div class="muted" style="font-size:10px;line-height:1.45">${ARTIFACT_INFINITE.desc}${infCur}</div>
         </div>
-      </div>`;
-    }
-    html += `</div>`;
-  }
+        <button class="${canInf?'success':''}" data-action="artifactInfinite" ${canInf?'':'disabled'} style="padding:4px 10px">+</button>
+      </div>
+    </div></div>`;
 
   html += `<div class="ascend-box"><div class="detail-label">里程碑</div>`;
-  for (const ms of artifactMilestonesForClass()) {
-    const reached = (a.lvl || 0) >= ms.lvl;
-    const modTxt = Object.entries(ms.mod || {}).map(([k, v]) => (typeof fmtMod === 'function') ? fmtMod(k, v) : `${k}+${v}`).join(' · ');
-    html += `<div class="ascend-milestone ${reached ? 'reached' : ''}">
-      <div><b>Lv.${ms.lvl} ${ms.name}</b> ${reached ? '<span class="r-legend">✓</span>' : '<span class="muted">🔒</span>'}</div>
-      <div class="muted" style="font-size:10px;line-height:1.45">${ms.desc}${modTxt ? ` · ${modTxt}` : ''}</div>
+  for(const ms of artifactMilestonesForClass()){
+    const reached = (b.lvl||0) >= ms.lvl;
+    const modTxt = Object.entries(ms.mod||{}).map(e => (typeof fmtMod==='function') ? fmtMod(e[0], e[1]) : `${e[0]}+${e[1]}`).join(' · ');
+    html += `<div class="ascend-milestone ${reached?'reached':''}">
+      <div><b>Lv.${ms.lvl} ${ms.name}</b> ${reached?'<span class="r-legend">✓</span>':'<span class="muted">🔒</span>'}</div>
+      <div class="muted" style="font-size:10px;line-height:1.45">${ms.desc}${modTxt?` · ${modTxt}`:''}</div>
     </div>`;
   }
   html += `</div>`;
