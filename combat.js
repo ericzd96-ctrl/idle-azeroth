@@ -80,7 +80,12 @@ function pulseMonsterEl(mon, kind, duration){ if(typeof pulseCombatEl === 'funct
 
 /* ---------- 天赋特效运行时 ---------- */
 function talentAuraMeta(key){ return (typeof TALENT_AURA_LIBRARY === 'object' && TALENT_AURA_LIBRARY[key]) || null; }
-function talentFxList(){ const tfx = state._talentFx || []; const sfx = state._setFx || []; return tfx.concat(sfx); }
+function talentFxList(){
+  const tfx = state._talentFx || [];
+  const sfx = state._setFx || [];
+  const afx = state._artifactFx || [];
+  return tfx.concat(sfx, afx);
+}
 function ensureTalentState(){
   if(!state.talentAuras) state.talentAuras = {};
   if(!state.talentState) state.talentState = { cds:{}, flags:{}, shield:0 };
@@ -847,6 +852,23 @@ function recomputeStats() {
       else if (k==='leech') leech+=v;
       else if (k==='vers') vers+=v;
       else if (k==='mastery') mastery+=v;
+      else if (k==='regFlat') regFlat+=v;
+      else if (k==='strPct') attrPct.str+=v;
+      else if (k==='agiPct') attrPct.agi+=v;
+      else if (k==='intPct') attrPct.int+=v;
+      else if (k==='spiPct') attrPct.spi+=v;
+      else if (k==='staPct') attrPct.sta+=v;
+      else if (k==='cdReduction') cdReduction+=v;
+      else if (k==='buffDuration') buffDuration+=v;
+      else if (k==='extraAtk') extraAtk+=v;
+      else if (k==='healBonus') healBonus+=v;
+      else if (k==='dotBonus') dotBonus+=v;
+      else if (k==='costReduction') costReduction+=v;
+      else if (k==='executeBonus') executeBonus+=v;
+      else if (k==='reflectDmg') reflectDmg+=v;
+      else if (k==='armorPen') armorPen+=v;
+      else if (k==='dodge') dodge+=v;
+      else if (k==='stunChance') stunChance+=v;
     }
   }
   _saveSrc('神器');
@@ -1090,6 +1112,7 @@ function recomputeStats() {
   state.hero.reflectDmg=reflectDmg;
   state.hero.armorPen=Math.min(armorPen,40); state.hero.dodge=Math.min(dodge,30); state.hero.stunChance=Math.min(stunChance,15);
   state._talentFx = talentFx;
+  state._artifactFx = (typeof collectArtifactFx === 'function') ? collectArtifactFx() : [];
   state.hp=Math.min(state.hp,state.hero.hpMax); state.resourceMax=state.hero.mpMax;
   state.resource=Math.min(state.resource,state.resourceMax);
   markDirty('hero','equipment');
