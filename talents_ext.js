@@ -61,7 +61,7 @@ const TALENT_AURA_LIBRARY = {
       ],
       fury: [
         { name:'鲜血狂潮', req:46, desc:'暴击叠加 1 层【暴怒】；并有 35% 几率触发 5 秒【鲜血狂潮】。', fx:[{ type:'onCrit', grantCharge:{ key:'w_rage', add:1, max:5 } },{ type:'onCrit', chance:35, cooldown:5000, aura:'fury_bloodrush' }] },
-        { name:'杀戮渴望', req:56, desc:'击杀敌人后，恢复 6% 生命并回复 12 点资源，叠加 2 层【暴怒】。', fx:[{ type:'onKill', healPct:0.06, resource:12 },{ type:'onKill', grantCharge:{ key:'w_rage', add:2, max:5 } }] },
+        { name:'杀戮渴望', req:56, desc:'击杀敌人后，你的下一次伤害技能必暴，并叠加 2 层【暴怒】。', fx:{ type:'onKill', nextSkillCrit:1, grantCharge:{ key:'w_rage', add:2, max:5 } } },
         { name:'背水狂怒', req:66, desc:'生命低于 35% 时，获得 8 秒【背水狂怒】并吸收 12% 最大生命伤害，30秒冷却。', fx:{ type:'lowHp', threshold:0.35, cooldown:30000, aura:'fury_laststand', shieldPct:0.12 } },
       ],
       prot: [
@@ -72,7 +72,7 @@ const TALENT_AURA_LIBRARY = {
     },
     mage: {
       arcane: [
-        { name:'奥术回流', req:46, desc:'击杀敌人后，回复 25 点资源并重置奥术飞弹冷却。', fx:{ type:'onKill', resource:25, resetSkill:'arcane' } },
+        { name:'奥术回流', req:46, desc:'击杀敌人后，重置奥术飞弹冷却，且你的下一次伤害技能必暴。', fx:{ type:'onKill', nextSkillCrit:1, resetSkill:'arcane' } },
         { name:'节点过载', req:56, desc:'施放奥术飞弹后，获得 6 秒【节点过载】。', fx:{ type:'afterSkill', skill:'arcane', aura:'arcane_overload' } },
         { name:'法网收束', req:66, desc:'你对首领造成的伤害提高 20%。', fx:{ type:'vsBoss', dmgPct:20 } },
       ],
@@ -107,7 +107,7 @@ const TALENT_AURA_LIBRARY = {
     rogue: {
       assassination: [
         { name:'毒液奔涌', req:46, desc:'你对带有持续伤害效果的敌人造成的伤害提高 22%。', fx:{ type:'vsState', state:'dot', dmgPct:22 } },
-        { name:'血色收割', req:56, desc:'击杀敌人后，你的下一次伤害技能必暴，并回复 20 点资源。', fx:{ type:'onKill', nextSkillCrit:1, resource:20 } },
+        { name:'血色收割', req:56, desc:'击杀敌人后，你的下一次伤害技能必暴，并叠加 2 层【毒锋】。', fx:{ type:'onKill', nextSkillCrit:1, grantCharge:{ key:'r_venom', add:2, max:5 } } },
         { name:'暗毒回流', req:66, desc:'暴击叠加 1 层【毒锋】；并有 30% 几率触发 6 秒【暗毒回流】。', fx:[{ type:'onCrit', grantCharge:{ key:'r_venom', add:1, max:5 } },{ type:'onCrit', chance:30, cooldown:6000, aura:'assassination_venom' }] },
       ],
       combat: [
@@ -134,7 +134,7 @@ const TALENT_AURA_LIBRARY = {
       ],
       survival: [
         { name:'猎网收束', req:46, desc:'你对被减速的敌人造成的伤害提高 25%。', fx:{ type:'vsState', state:'slow', dmgPct:25 } },
-        { name:'荒野复原', req:56, desc:'击杀敌人后，恢复 7% 生命并获得 7 秒【荒野复原】。', fx:{ type:'onKill', healPct:0.07, aura:'survival_wild' } },
+        { name:'荒野复原', req:56, desc:'击杀敌人后，获得 10% 最大生命护盾并进入 7 秒【荒野复原】。', fx:{ type:'onKill', shieldPct:0.10, aura:'survival_wild' } },
         { name:'爆裂陷阱', req:66, desc:'施放多重射击或爆炸射击后，会附加一层基于本次伤害 20% 的持续伤害。', fx:{ type:'afterSkill', skill:['multi','explosiveShot'], applyDotPct:0.2, dotMs:6000 } },
       ],
     },
@@ -237,7 +237,7 @@ const TALENT_AURA_LIBRARY = {
       ],
       fury: [
         { name:'嗜血', extra:'嗜血伤害额外提高 22%。', fx:{ type:'skillAmp', skill:'bloodthirst', dmgPct:22 } },
-        { name:'血之渴望', extra:'击杀敌人后，恢复 5% 生命并回复 10 点资源。', fx:{ type:'onKill', healPct:0.05, resource:10 } },
+        { name:'血之渴望', extra:'击杀敌人后，你的下一次伤害技能必暴，并叠加 1 层【暴怒】。', fx:{ type:'onKill', nextSkillCrit:1, grantCharge:{ key:'w_rage', add:1, max:5 } } },
       ],
       prot: [
         { name:'盾牌专精', extra:'施放盾墙后，获得 6 秒【震荡护卫】。', fx:{ type:'afterSkill', skill:'shieldWall', aura:'prot_thunder', cooldown:8000 } },
@@ -417,7 +417,7 @@ const TALENT_AURA_LIBRARY = {
     },
     hunter: {
       bm: [
-        { name:'狂热', extra:'击杀敌人后，回复 8 点资源。', fx:{ type:'onKill', resource:8 } },
+        { name:'狂热', extra:'击杀敌人后，叠加 2 层【野兽狂怒】。', fx:{ type:'onKill', grantCharge:{ key:'h_frenzy', add:2, max:5 } } },
         { name:'灵魂兽', extra:'生命低于 45% 时，恢复 5% 最大生命，35秒冷却。', fx:{ type:'lowHp', threshold:0.45, cooldown:35000, healPct:0.05 } },
       ],
       marks: [
@@ -436,7 +436,7 @@ const TALENT_AURA_LIBRARY = {
       ],
       enhancement: [
         { name:'怒火', extra:'暴击有 18% 几率追加一次 45% 伤害的风击，4秒冷却。', fx:{ type:'onCrit', chance:18, cooldown:4000, extraHitMul:0.45, extraHitIcon:'💨' } },
-        { name:'风暴之力', extra:'击杀敌人后，回复 8 点资源。', fx:{ type:'onKill', resource:8 } },
+        { name:'风暴之力', extra:'击杀敌人后，叠加 2 层【漩涡之力】。', fx:{ type:'onKill', grantCharge:{ key:'sh_maelstrom', add:2, max:5 } } },
       ],
       restoration: [
         { name:'水之护盾', extra:'你的过量治疗会转化为 20% 吸收护盾。', fx:{ type:'afterHeal', overhealShieldPct:0.2 } },
@@ -453,17 +453,17 @@ const TALENT_AURA_LIBRARY = {
         { name:'壁垒', extra:'生命低于 45% 时，获得 6% 最大生命护盾，35秒冷却。', fx:{ type:'lowHp', threshold:0.45, cooldown:35000, shieldPct:0.06 } },
       ],
       ret: [
-        { name:'复仇', extra:'击杀敌人后，回复 8 点资源。', fx:{ type:'onKill', resource:8 } },
+        { name:'复仇', extra:'击杀敌人后，叠加 2 层【圣能】。', fx:{ type:'onKill', grantCharge:{ key:'pa_holyPower', add:2, max:5 } } },
         { name:'圣战', extra:'施放十字军打击后，回复 8 点资源。', fx:{ type:'afterSkill', skill:'crusader', resource:8 } },
       ],
     },
     warlock: {
       affliction: [
         { name:'瘟疫蔓延', extra:'暴击会额外施加一层基于本次伤害 10% 的持续痛苦。', fx:{ type:'onCrit', applyDotPct:0.10 } },
-        { name:'灵魂虹吸', extra:'击杀敌人后，恢复 5% 最大生命。', fx:{ type:'onKill', healPct:0.05 } },
+        { name:'灵魂虹吸', extra:'若目标带有持续伤害而死亡，会向下一名敌人蔓延 35% 的 DOT。', fx:{ type:'onKill', requireDot:true, spreadDotPct:0.35 } },
       ],
       demonology: [
-        { name:'强化恶魔', extra:'击杀敌人后，回复 8 点资源。', fx:{ type:'onKill', resource:8 } },
+        { name:'强化恶魔', extra:'击杀敌人后，获得 7 秒【邪能狂宴】。', fx:{ type:'onKill', aura:'demonology_feast' } },
         { name:'恶魔皮肤', extra:'生命低于 45% 时，获得 6% 最大生命护盾，35秒冷却。', fx:{ type:'lowHp', threshold:0.45, cooldown:35000, shieldPct:0.06 } },
       ],
       destruction: [
@@ -478,7 +478,7 @@ const TALENT_AURA_LIBRARY = {
       ],
       feral: [
         { name:'锋利利爪', extra:'暴击有 18% 几率追加一次 45% 伤害的扑击，4秒冷却。', fx:{ type:'onCrit', chance:18, cooldown:4000, extraHitMul:0.45, extraHitIcon:'🐾' } },
-        { name:'血爪', extra:'击杀敌人后，恢复 5% 最大生命。', fx:{ type:'onKill', healPct:0.05 } },
+        { name:'血爪', extra:'击杀敌人后，获得 7 秒【嗜血狂猎】。', fx:{ type:'onKill', aura:'feral_hunt' } },
       ],
       resto: [
         { name:'萌芽', extra:'施放回春术后，回复 6 点资源。', fx:{ type:'afterSkill', skill:'rejuvenation', resource:6 } },

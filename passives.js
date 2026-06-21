@@ -13,7 +13,7 @@
 /* 注:原先的「纯属性」被动(武器大师/钢铁之躯/致命精准/吸血鬼之触/全能宗师)
    已挪进各专精天赋树(见 talents_ext.js),由天赋点点出。此处只保留有机制的"特色"被动。 */
 const PASSIVES = [
-  { key:'bloodthirst',   name:'嗜血本能',   icon:'🩸',  lvl:8,  proc:'onKillHeal', val:0.03, desc:'击杀敌人时回复 3% 最大生命' },
+  { key:'bloodthirst',   name:'猎杀直觉',   icon:'🩸',  lvl:8,  proc:'onKillMomentum', val:1, desc:'击杀敌人后，你的下一次伤害技能必暴' },
   { key:'arcaneFlow',    name:'奥术洪流',   icon:'🔵',  lvl:12, proc:'onCritResource', val:10, desc:'每次暴击回复 10 点资源' },
   { key:'chainLightning',name:'连锁闪电',   icon:'⚡',  lvl:16, proc:'onHitChain', chance:0.15, frac:0.6, desc:'普攻 15% 几率弹射,对另一名敌人造成 60% 伤害' },
   { key:'lastStand',     name:'不灭意志',   icon:'❤️‍🔥', lvl:24, proc:'lowHpDR', threshold:0.3, dr:0.4, desc:'生命低于 30% 时,受到伤害降低 40%' },
@@ -38,8 +38,8 @@ function collectPassiveMod() {
 function passiveOnKill(mon) {
   const p = _passive('bloodthirst');
   if (p) {
-    const heal = Math.floor(state.hero.hpMax * p.val);
-    if (heal > 0) { state.hp = Math.min(state.hero.hpMax, state.hp + heal); showFloat($('hero-emoji'), '🩸+' + heal, '#6ee7b7'); }
+    if (typeof grantNextSkillCrit === 'function') grantNextSkillCrit(p.val || 1);
+    showFloat($('hero-emoji'), '🩸暴', '#fda4af');
   }
 }
 function passiveOnCrit(mon, dmg) {

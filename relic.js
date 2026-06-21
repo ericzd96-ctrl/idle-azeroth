@@ -33,7 +33,7 @@ function nextRelicId(){ return 'rl' + (_relicIdSeq++) + '_' + Math.floor(Math.ra
 function rollRelicIdolFx(rarity){
   const m = (RELIC_RARITY[rarity] || RELIC_RARITY.rare).mult;
   const opts = [
-    { type:'onKill', healPct:Math.round(3*m)/100, resource:Math.round(8*m) },
+    { type:'onKill', nextSkillCrit:1, shieldPct:Math.round(4*m)/100 },
     { type:'onCrit', extraHitMul:Math.round(25*m)/100, extraHitIcon:'✦', cooldown:2500 },
     { type:'vsBoss', dmgPct:Math.round(8*m) },
     { type:'lowHp', threshold:0.4, shieldPct:Math.round(8*m)/100, cooldown:25000 },
@@ -73,7 +73,14 @@ function relicDisplayName(r){
 function relicFxText(fx){
   if(!fx) return '';
   switch(fx.type){
-    case 'onKill': return `击杀回复 ${Math.round((fx.healPct||0)*100)}% 生命` + (fx.resource ? ` +${fx.resource} 资源` : '');
+    case 'onKill': {
+      const parts = [];
+      if(fx.shieldPct) parts.push(`击杀后获得 ${Math.round((fx.shieldPct||0)*100)}% 最大生命护盾`);
+      if(fx.nextSkillCrit) parts.push('下一次伤害技能必暴');
+      if(fx.resetSkill) parts.push('重置关键技能冷却');
+      if(fx.spreadDotPct) parts.push(`蔓延 ${Math.round((fx.spreadDotPct||0)*100)}% 的持续伤害`);
+      return parts.join(' · ') || '击杀后触发强化';
+    }
     case 'onCrit': return `暴击追加 ${Math.round((fx.extraHitMul||0)*100)}% 伤害`;
     case 'vsBoss': return `对首领伤害 +${fx.dmgPct}%`;
     case 'lowHp': return `危急时获得 ${Math.round((fx.shieldPct||0)*100)}% 最大生命护盾`;

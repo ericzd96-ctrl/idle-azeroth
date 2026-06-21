@@ -69,7 +69,7 @@
       2: { // 统御
         4: [
           { type:'onCrit', chance:15, cooldown:8000, auraKey:'warrior_dominion_fury' },
-          { type:'onKill', cooldown:12000, healPct:0.08, resource:15 },
+          { type:'onKill', cooldown:12000, nextSkillCrit:1, shieldPct:0.10 },
         ]
       },
       3: { // 巅峰
@@ -86,7 +86,7 @@
       2: {
         4: [
           { type:'onCrit', chance:18, cooldown:8000, auraKey:'mage_dominion_ignite' },
-          { type:'onKill', cooldown:12000, resource:30 },
+          { type:'onKill', cooldown:12000, nextSkillCrit:1, auraKey:'mage_paragon_haste' },
         ]
       },
       3: {
@@ -188,7 +188,7 @@
       2: {
         4: [
           { type:'onCrit', chance:18, cooldown:8000, auraKey:'warlock_dominion_darkSoul' },
-          { type:'onKill', cooldown:10000, resource:25 },
+          { type:'onKill', cooldown:10000, nextSkillCrit:1, auraKey:'warlock_paragon_demonArmor' },
         ]
       },
       3: {
@@ -214,7 +214,7 @@
         ],
         4: [
           { type:'lowHp', threshold:0.35, cooldown:25000, auraKey:'druid_paragon_bearform' },
-          { type:'onKill', cooldown:12000, healPct:0.06, resource:20 },
+          { type:'onKill', cooldown:12000, nextSkillCrit:1, auraKey:'druid_paragon_bearform' },
         ]
       }
     },

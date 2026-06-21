@@ -16,15 +16,15 @@ const ARTIFACT_AP_RATE = 0.05;           // 杀怪 XP → AP 转化率(旧版 0.
 const ARTIFACT_CORE_GATE = 8;            // 解锁核心三选一前,需在本树次要节点累计花费的点数
 
 const ARTIFACTS = {
-  warrior: { name:'霸者之刃 · 灰烬使者', icon:'🗡️', color:'#c79c6e' },
-  mage:    { name:'风暴之眼',           icon:'🪄', color:'#69ccf0' },
-  priest:  { name:'伊格诺斯的低语',     icon:'📿', color:'#ffffff' },
-  rogue:   { name:'断魂双匕',           icon:'🗡️', color:'#fff569' },
-  hunter:  { name:'索利达尔的命运之弓', icon:'🏹', color:'#abd473' },
-  shaman:  { name:'氏族之斧 · 朵姆',    icon:'🪓', color:'#0070de' },
-  paladin: { name:'灰白之刃 · 银色之手',icon:'⚒️', color:'#f58cba' },
-  warlock: { name:'恐惧斯卡萨克思',     icon:'📕', color:'#9482c9' },
-  druid:   { name:'菲奥纳娜',           icon:'🌿', color:'#ff7d0a' },
+  warrior: { name:'霸者之刃 · 灰烬使者', icon:'inv_sword_39', color:'#c79c6e' },
+  mage:    { name:'风暴之眼',           icon:'inv_staff_13', color:'#69ccf0' },
+  priest:  { name:'伊格诺斯的低语',     icon:'inv_staff_30', color:'#ffffff' },
+  rogue:   { name:'断魂双匕',           icon:'ability_rogue_eviscerate', color:'#fff569' },
+  hunter:  { name:'索利达尔的命运之弓', icon:'inv_weapon_bow_07', color:'#abd473' },
+  shaman:  { name:'氏族之斧 · 朵姆',    icon:'inv_axe_01', color:'#0070de' },
+  paladin: { name:'灰白之刃 · 银色之手',icon:'spell_holy_holysmite', color:'#f58cba' },
+  warlock: { name:'恐惧斯卡萨克思',     icon:'spell_shadow_deathcoil', color:'#9482c9' },
+  druid:   { name:'菲奥纳娜',           icon:'spell_nature_healingtouch', color:'#ff7d0a' },
 };
 
 function clonePlain(v){
@@ -99,9 +99,17 @@ function onKillTrait(cfg){
       if (cfg.requireDot) out.requireDot = true;
       if (cfg.cooldown) out.cooldown = cfg.cooldown;
       if (cfg.healPct) out.healPct = rankValue(cfg.healPct, rank);
+      if (cfg.shieldPct) out.shieldPct = rankValue(cfg.shieldPct, rank);
       if (cfg.resource) out.resource = rankValue(cfg.resource, rank);
       if (cfg.spreadDotPct) out.spreadDotPct = rankValue(cfg.spreadDotPct, rank);
       if (cfg.nextSkillCrit) out.nextSkillCrit = rankValue(cfg.nextSkillCrit, rank);
+      if (cfg.aura) out.aura = cfg.aura;
+      if (cfg.grantCharge && cfg.grantCharge.key){
+        out.grantCharge = { key: cfg.grantCharge.key };
+        if (cfg.grantCharge.add != null) out.grantCharge.add = rankValue(cfg.grantCharge.add, rank);
+        if (cfg.grantCharge.max != null) out.grantCharge.max = rankValue(cfg.grantCharge.max, rank);
+        if (cfg.grantCharge.duration != null) out.grantCharge.duration = rankValue(cfg.grantCharge.duration, rank);
+      }
       if (cfg.resetSkill) out.resetSkill = cfg.resetSkill;
       return out;
     }
@@ -175,49 +183,49 @@ function milestoneList(mainAttrKey){
 
 const ARTIFACT_TREES = {
   warrior: {
-    arms:{ name:'武器', icon:'⚔️', color:'#ef4444' },
-    fury:{ name:'狂暴', icon:'🔥', color:'#f97316' },
-    prot:{ name:'防护', icon:'🛡️', color:'#3b82f6' },
+    arms:{ name:'武器', icon:'ability_warrior_savageblow', color:'#ef4444' },
+    fury:{ name:'狂暴', icon:'spell_fire_fire', color:'#f97316' },
+    prot:{ name:'防护', icon:'ability_warrior_shieldwall', color:'#3b82f6' },
   },
   mage: {
-    arcane:{ name:'奥术', icon:'✨', color:'#8b5cf6' },
-    fire:{ name:'火焰', icon:'🔥', color:'#ef4444' },
-    frost:{ name:'冰霜', icon:'❄️', color:'#38bdf8' },
+    arcane:{ name:'奥术', icon:'spell_arcane_blast', color:'#8b5cf6' },
+    fire:{ name:'火焰', icon:'spell_fire_fireball02', color:'#ef4444' },
+    frost:{ name:'冰霜', icon:'spell_frost_frostbolt02', color:'#38bdf8' },
   },
   priest: {
-    discipline:{ name:'戒律', icon:'🕊️', color:'#fbbf24' },
-    holy:{ name:'神圣', icon:'✝️', color:'#fde68a' },
-    shadow:{ name:'暗影', icon:'🌑', color:'#8b5cf6' },
+    discipline:{ name:'戒律', icon:'spell_holy_powerwordshield', color:'#fbbf24' },
+    holy:{ name:'神圣', icon:'spell_holy_holybolt', color:'#fde68a' },
+    shadow:{ name:'暗影', icon:'spell_shadow_shadowwordpain', color:'#8b5cf6' },
   },
   rogue: {
-    assassination:{ name:'刺杀', icon:'🐍', color:'#84cc16' },
-    combat:{ name:'战斗', icon:'⚔️', color:'#f97316' },
-    subtlety:{ name:'敏锐', icon:'👤', color:'#6366f1' },
+    assassination:{ name:'刺杀', icon:'ability_rogue_deadlybrew', color:'#84cc16' },
+    combat:{ name:'战斗', icon:'ability_rogue_eviscerate', color:'#f97316' },
+    subtlety:{ name:'敏锐', icon:'ability_stealth', color:'#6366f1' },
   },
   hunter: {
-    bm:{ name:'兽王', icon:'🦁', color:'#65a30d' },
-    marks:{ name:'射击', icon:'🎯', color:'#f59e0b' },
-    survival:{ name:'生存', icon:'🪤', color:'#14b8a6' },
+    bm:{ name:'兽王', icon:'ability_hunter_bestialdiscipline', color:'#65a30d' },
+    marks:{ name:'射击', icon:'ability_hunter_focusedaim', color:'#f59e0b' },
+    survival:{ name:'生存', icon:'ability_hunter_beastsoothe', color:'#14b8a6' },
   },
   shaman: {
-    element:{ name:'元素', icon:'⚡', color:'#60a5fa' },
-    enhancement:{ name:'增强', icon:'💨', color:'#f97316' },
-    restoration:{ name:'恢复', icon:'🌊', color:'#22c55e' },
+    element:{ name:'元素', icon:'spell_nature_lightning', color:'#60a5fa' },
+    enhancement:{ name:'增强', icon:'spell_nature_lightningshield', color:'#f97316' },
+    restoration:{ name:'恢复', icon:'spell_nature_healingwavegreater', color:'#22c55e' },
   },
   paladin: {
-    holy:{ name:'神圣', icon:'✨', color:'#fde68a' },
-    prot:{ name:'防护', icon:'🛡️', color:'#60a5fa' },
-    ret:{ name:'惩戒', icon:'⚔️', color:'#f43f5e' },
+    holy:{ name:'神圣', icon:'spell_holy_holybolt', color:'#fde68a' },
+    prot:{ name:'防护', icon:'ability_warrior_shieldwall', color:'#60a5fa' },
+    ret:{ name:'惩戒', icon:'spell_holy_auraoflight', color:'#f43f5e' },
   },
   warlock: {
-    affliction:{ name:'痛苦', icon:'🧿', color:'#8b5cf6' },
-    demonology:{ name:'恶魔学识', icon:'😈', color:'#ec4899' },
-    destruction:{ name:'毁灭', icon:'🔥', color:'#ef4444' },
+    affliction:{ name:'痛苦', icon:'spell_shadow_deathcoil', color:'#8b5cf6' },
+    demonology:{ name:'恶魔学识', icon:'spell_shadow_metamorphosis', color:'#ec4899' },
+    destruction:{ name:'毁灭', icon:'spell_fire_fire', color:'#ef4444' },
   },
   druid: {
-    balance:{ name:'平衡', icon:'🌙', color:'#6366f1' },
-    feral:{ name:'野性', icon:'🐺', color:'#f97316' },
-    resto:{ name:'恢复', icon:'🌿', color:'#22c55e' },
+    balance:{ name:'平衡', icon:'spell_nature_starfall', color:'#6366f1' },
+    feral:{ name:'野性', icon:'ability_druid_catform', color:'#f97316' },
+    resto:{ name:'恢复', icon:'spell_nature_healingtouch', color:'#22c55e' },
   },
 };
 
@@ -230,7 +238,7 @@ const ARTIFACT_TRAITS = {
 
     skillAmpTrait({ key:'art_war_fury_blood', tree:'fury', name:'血潮双刃', icon:'🩸', skill:'bloodthirst', dmgPct:[12,24,36], mod:{spdPct:2}, desc:'嗜血伤害提高 12/24/36%，并获得攻速 +2%/4%/6%。' }),
     onCritTrait({ key:'art_war_fury_rush', tree:'fury', name:'狂怒回响', icon:'🔥', extraHitMul:[0.22,0.34,0.46], extraHitIcon:'⚔️', cooldown:2500, mod:{atkPct:1}, prereq:'art_war_fury_blood', desc:'暴击后追加一次 22%/34%/46% 伤害的追击，2.5秒冷却，并获得攻击 +1%/2%/3%。' }),
-    onKillTrait({ key:'art_war_fury_hunt', tree:'fury', name:'战吼回流', icon:'📯', healPct:[0.03,0.05,0.07], resource:[4,8,12], mod:{hpPct:2}, prereq:'art_war_fury_rush', desc:'击杀敌人后恢复 3%/5%/7% 最大生命并回复 4/8/12 点资源，获得生命 +2%/4%/6%。' }),
+    onKillTrait({ key:'art_war_fury_hunt', tree:'fury', name:'战吼回流', icon:'📯', nextSkillCrit:[1,1,1], grantCharge:{ key:'w_rage', add:[1,2,3], max:5 }, mod:{hpPct:2}, prereq:'art_war_fury_rush', desc:'击杀敌人后，下一次伤害技能必暴，并叠加 1/2/3 层【暴怒】，获得生命 +2%/4%/6%。' }),
     afterSkillTrait({ key:'art_war_fury_reset', tree:'fury', name:'嗜血不息', icon:'😡', skill:'bloodthirst', chance:[10,18,26], resetSkill:'bloodthirst', mod:{spdPct:2}, prereq:'art_war_fury_hunt', desc:'施放嗜血后有 10/18/26% 几率立刻重置嗜血冷却，并获得攻速 +2%/4%/6%。' }),
 
     whileBuffTrait({ key:'art_war_prot_wall', tree:'prot', name:'坚壁压阵', icon:'🛡️', buffKey:'shield', takenPct:[8,16,24], mod:{defPct:2}, desc:'盾墙持续期间，受到的伤害额外降低 8/16/24%，并获得防御 +2%/4%/6%。' }),
@@ -284,11 +292,11 @@ const ARTIFACT_TRAITS = {
     skillAmpTrait({ key:'art_rog_sub_mark', tree:'subtlety', name:'影裂刻痕', icon:'👤', skill:['killingSpree','deathMark'], dmgPct:[10,20,30], mod:{executeBonus:2}, desc:'杀戮盛宴与死亡标记伤害提高 10/20/30%，并获得斩杀加成 +2%/4%/6%。' }),
     afterSkillTrait({ key:'art_rog_sub_shadow', tree:'subtlety', name:'影遁伏杀', icon:'🌑', skill:'shadow', nextSkillCrit:[1,1,1], mod:{atkPct:1}, prereq:'art_rog_sub_mark', desc:'施放影遁后，下一次伤害技能必定暴击，并获得攻击 +1%/2%/3%。' }),
     executeTrait({ key:'art_rog_sub_exec', tree:'subtlety', name:'喉切终结', icon:'🪢', threshold:0.35, dmgPct:[12,24,36], mod:{atkPct:1}, prereq:'art_rog_sub_shadow', desc:'对生命低于 35% 的目标造成的伤害提高 12/24/36%，并获得攻击 +1%/2%/3%。' }),
-    onKillTrait({ key:'art_rog_sub_reset', tree:'subtlety', name:'夜行复归', icon:'🌘', resource:[6,12,18], resetSkill:'shadow', mod:{cdReduction:2}, prereq:'art_rog_sub_exec', desc:'击杀敌人后回复 6/12/18 点资源，并重置影遁冷却，同时获得技能冷却缩减 +2%/4%/6%。' }),
+    onKillTrait({ key:'art_rog_sub_reset', tree:'subtlety', name:'夜行复归', icon:'🌘', nextSkillCrit:[1,1,1], resetSkill:'shadow', mod:{cdReduction:2}, prereq:'art_rog_sub_exec', desc:'击杀敌人后，重置影遁冷却，且下一次伤害技能必暴，同时获得技能冷却缩减 +2%/4%/6%。' }),
   ],
   hunter: [
     whileBuffTrait({ key:'art_hun_bm_wrath', tree:'bm', name:'兽群狂吼', icon:'🦁', buffKey:'bestial', dmgPct:[10,20,30], mod:{atkPct:1}, desc:'狂野怒火持续期间，你造成的伤害提高 10/20/30%，并获得攻击 +1%/2%/3%。' }),
-    onKillTrait({ key:'art_hun_bm_feed', tree:'bm', name:'猎群进食', icon:'🐾', resource:[5,10,15], mod:{hpPct:2}, prereq:'art_hun_bm_wrath', desc:'击杀敌人后回复 5/10/15 点资源，并获得生命 +2%/4%/6%。' }),
+    onKillTrait({ key:'art_hun_bm_feed', tree:'bm', name:'猎群进食', icon:'🐾', aura:'bm_pack', grantCharge:{ key:'h_frenzy', add:[1,2,3], max:5 }, mod:{hpPct:2}, prereq:'art_hun_bm_wrath', desc:'击杀敌人后，获得 7 秒【兽群狂奔】并叠加 1/2/3 层【野兽狂怒】，获得生命 +2%/4%/6%。' }),
     afterSkillTrait({ key:'art_hun_bm_stamp', tree:'bm', name:'怒兽践踏', icon:'🦬', skill:'bestialWrath', extraDmgPct:[0.12,0.2,0.3], mod:{extraAtk:1}, prereq:'art_hun_bm_feed', desc:'施放狂野怒火后，额外造成本次伤害 12%/20%/30% 的践踏伤害，并获得额外攻击 +1%/2%/3%。' }),
     bossTrait({ key:'art_hun_bm_predator', tree:'bm', name:'顶级猎食者', icon:'👑', dmgPct:[8,16,24], mod:{atkPct:1}, prereq:'art_hun_bm_stamp', desc:'对首领造成的伤害提高 8/16/24%，并获得攻击 +1%/2%/3%。' }),
 
@@ -299,7 +307,7 @@ const ARTIFACT_TRAITS = {
 
     skillAmpTrait({ key:'art_hun_surv_trap', tree:'survival', name:'荒野陷阱', icon:'🪤', skill:['explosiveShot','multi'], dmgPct:[10,20,30], mod:{dotBonus:3}, desc:'爆炸射击与多重射击伤害提高 10/20/30%，并获得持续伤害 +3%/6%/9%。' }),
     vsStateTrait({ key:'art_hun_surv_slow', tree:'survival', name:'困猎之网', icon:'❄️', state:'slow', dmgPct:[10,20,30], mod:{defPct:2}, prereq:'art_hun_surv_trap', desc:'对被减速目标造成的伤害提高 10/20/30%，并获得防御 +2%/4%/6%。' }),
-    onKillTrait({ key:'art_hun_surv_recover', tree:'survival', name:'荒野疗创', icon:'🌿', healPct:[0.03,0.05,0.07], mod:{hpPct:2}, prereq:'art_hun_surv_slow', desc:'击杀敌人后恢复 3%/5%/7% 最大生命，并获得生命 +2%/4%/6%。' }),
+    onKillTrait({ key:'art_hun_surv_recover', tree:'survival', name:'荒野疗创', icon:'🌿', aura:'survival_wild', shieldPct:[0.04,0.07,0.1], mod:{hpPct:2}, prereq:'art_hun_surv_slow', desc:'击杀敌人后，获得 7 秒【荒野复原】与 4%/7%/10% 最大生命护盾，并获得生命 +2%/4%/6%。' }),
     afterSkillTrait({ key:'art_hun_surv_bleed', tree:'survival', name:'裂爆追伤', icon:'💥', skill:['freezingTrap','multi'], applyDotPct:[0.08,0.12,0.18], dotMs:6000, mod:{atkPct:1}, prereq:'art_hun_surv_recover', desc:'施放冰冻陷阱或多重射击后，附加一层基于本次伤害 8%/12%/18% 的持续伤害，持续 6 秒，并获得攻击 +1%/2%/3%。' }),
   ],
   shaman: [
@@ -310,7 +318,7 @@ const ARTIFACT_TRAITS = {
 
     whileBuffTrait({ key:'art_sha_enh_wind', tree:'enhancement', name:'狂岚怒刃', icon:'💨', buffKey:'windfury', dmgPct:[10,20,30], mod:{spdPct:2}, desc:'风怒武器持续期间，你造成的伤害提高 10/20/30%，并获得攻速 +2%/4%/6%。' }),
     onCritTrait({ key:'art_sha_enh_chain', tree:'enhancement', name:'双风怒袭', icon:'⚔️', extraHitMul:[0.24,0.36,0.48], extraHitIcon:'💨', cooldown:2500, mod:{extraAtk:1}, prereq:'art_sha_enh_wind', desc:'暴击后追加一次 24%/36%/48% 伤害的风怒追击，2.5秒冷却，并获得额外攻击 +1%/2%/3%。' }),
-    onKillTrait({ key:'art_sha_enh_flow', tree:'enhancement', name:'战意回潮', icon:'🩸', resource:[5,10,15], mod:{atkPct:1}, prereq:'art_sha_enh_chain', desc:'击杀敌人后回复 5/10/15 点资源，并获得攻击 +1%/2%/3%。' }),
+    onKillTrait({ key:'art_sha_enh_flow', tree:'enhancement', name:'战意回潮', icon:'🩸', aura:'enhancement_wind', grantCharge:{ key:'sh_maelstrom', add:[1,2,3], max:5 }, mod:{atkPct:1}, prereq:'art_sha_enh_chain', desc:'击杀敌人后，获得 7 秒【狂岚步伐】并叠加 1/2/3 层【漩涡之力】，并获得攻击 +1%/2%/3%。' }),
     afterSkillTrait({ key:'art_sha_enh_reset', tree:'enhancement', name:'漩涡借势', icon:'🌀', skill:'windfury', nextSkillCrit:[1,1,1], mod:{cdReduction:2}, prereq:'art_sha_enh_flow', desc:'施放风怒武器后，下一次伤害技能必定暴击，并获得技能冷却缩减 +2%/4%/6%。' }),
 
     afterHealTrait({ key:'art_sha_rest_shield', tree:'restoration', name:'潮汐护膜', icon:'🌊', overhealShieldPct:[0.32,0.48,0.64], mod:{healBonus:4}, desc:'你的过量治疗会转化为 32%/48%/64% 的吸收护盾，并获得治疗效果 +4%/8%/12%。' }),
@@ -332,7 +340,7 @@ const ARTIFACT_TRAITS = {
     skillAmpTrait({ key:'art_pal_ret_burst', tree:'ret', name:'裁决锋芒', icon:'⚔️', skill:['judgement','crusader','consecration'], dmgPct:[10,20,30], mod:{atkPct:1}, desc:'审判、十字军打击与奉献伤害提高 10/20/30%，并获得攻击 +1%/2%/3%。' }),
     executeTrait({ key:'art_pal_ret_exec', tree:'ret', name:'圣裁终章', icon:'😇', threshold:0.35, dmgPct:[10,20,30], mod:{executeBonus:2}, prereq:'art_pal_ret_burst', desc:'对生命低于 35% 的目标造成的伤害提高 10/20/30%，并获得斩杀加成 +2%/4%/6%。' }),
     afterSkillTrait({ key:'art_pal_ret_chain', tree:'ret', name:'审判连锁', icon:'⚖️', skill:'judgement', nextSkillCrit:[1,1,1], mod:{cdReduction:2}, prereq:'art_pal_ret_exec', desc:'施放审判后，下一次伤害技能必定暴击，并获得技能冷却缩减 +2%/4%/6%。' }),
-    onKillTrait({ key:'art_pal_ret_ashes', tree:'ret', name:'灰烬战愿', icon:'🔥', healPct:[0.03,0.05,0.07], resource:[4,8,12], mod:{atkPct:1}, prereq:'art_pal_ret_chain', desc:'击杀敌人后恢复 3%/5%/7% 最大生命并回复 4/8/12 点资源，同时获得攻击 +1%/2%/3%。' }),
+    onKillTrait({ key:'art_pal_ret_ashes', tree:'ret', name:'灰烬战愿', icon:'🔥', aura:'ret_ashes', grantCharge:{ key:'pa_holyPower', add:[1,2,3], max:5 }, mod:{atkPct:1}, prereq:'art_pal_ret_chain', desc:'击杀敌人后，获得 7 秒【复仇圣焰】并叠加 1/2/3 层【圣能】，同时获得攻击 +1%/2%/3%。' }),
   ],
   warlock: [
     skillAmpTrait({ key:'art_wl_aff_curse', tree:'affliction', name:'无尽病灶', icon:'🧿', skill:['corruption','unstableAffliction'], dmgPct:[10,20,30], mod:{dotBonus:3}, desc:'腐蚀术与痛苦无常伤害提高 10/20/30%，并获得持续伤害 +3%/6%/9%。' }),
@@ -353,12 +361,12 @@ const ARTIFACT_TRAITS = {
   druid: [
     skillAmpTrait({ key:'art_dru_bal_lunar', tree:'balance', name:'月潮轮转', icon:'🌙', skill:['moonfire','wrath','starfire'], dmgPct:[10,20,30], mod:{dotBonus:3}, desc:'月火术、愤怒与星火术伤害提高 10/20/30%，并获得持续伤害 +3%/6%/9%。' }),
     onCritTrait({ key:'art_dru_bal_dot', tree:'balance', name:'群星灼痕', icon:'⭐', applyDotPct:[0.08,0.12,0.18], dotMs:6000, mod:{atkPct:1}, prereq:'art_dru_bal_lunar', desc:'暴击时追加一层基于本次伤害 8%/12%/18% 的星辉灼烧，持续 6 秒，并获得攻击 +1%/2%/3%。' }),
-    onKillTrait({ key:'art_dru_bal_flow', tree:'balance', name:'自然回声', icon:'🌿', resource:[4,8,12], mod:{cdReduction:2}, prereq:'art_dru_bal_dot', desc:'击杀敌人后回复 4/8/12 点资源，并获得技能冷却缩减 +2%/4%/6%。' }),
+    onKillTrait({ key:'art_dru_bal_flow', tree:'balance', name:'自然回声', icon:'🌿', nextSkillCrit:[1,1,1], grantCharge:{ key:'d_astral', add:[1,2,3], max:5 }, mod:{cdReduction:2}, prereq:'art_dru_bal_dot', desc:'击杀敌人后，下一次伤害技能必暴，并叠加 1/2/3 层【星界能量】，获得技能冷却缩减 +2%/4%/6%。' }),
     vsStateTrait({ key:'art_dru_bal_eclipse', tree:'balance', name:'蚀刻星环', icon:'🪐', state:'dot', dmgPct:[10,20,30], mod:{atkPct:1}, prereq:'art_dru_bal_flow', desc:'对带有持续伤害效果的目标造成的伤害提高 10/20/30%，并获得攻击 +1%/2%/3%。' }),
 
     skillAmpTrait({ key:'art_dru_feral_bite', tree:'feral', name:'裂喉本能', icon:'🦷', skill:['bite','swipe'], dmgPct:[10,20,30], mod:{atkPct:1}, desc:'凶猛撕咬与横扫伤害提高 10/20/30%，并获得攻击 +1%/2%/3%。' }),
     onCritTrait({ key:'art_dru_feral_pounce', tree:'feral', name:'兽袭回扑', icon:'🐾', extraHitMul:[0.22,0.34,0.46], extraHitIcon:'🐺', cooldown:2500, mod:{spdPct:2}, prereq:'art_dru_feral_bite', desc:'暴击后追加一次 22%/34%/46% 伤害的撕咬追击，2.5秒冷却，并获得攻速 +2%/4%/6%。' }),
-    onKillTrait({ key:'art_dru_feral_hunt', tree:'feral', name:'掠食回生', icon:'🩸', healPct:[0.03,0.05,0.07], mod:{hpPct:2}, prereq:'art_dru_feral_pounce', desc:'击杀敌人后恢复 3%/5%/7% 最大生命，并获得生命 +2%/4%/6%。' }),
+    onKillTrait({ key:'art_dru_feral_hunt', tree:'feral', name:'掠食回生', icon:'🩸', aura:'feral_hunt', grantCharge:{ key:'d_combo', add:[1,2,3], max:5 }, mod:{hpPct:2}, prereq:'art_dru_feral_pounce', desc:'击杀敌人后，获得 7 秒【嗜血狂猎】并叠加 1/2/3 点【撕咬连击】，并获得生命 +2%/4%/6%。' }),
     executeTrait({ key:'art_dru_feral_end', tree:'feral', name:'血牙终袭', icon:'🐺', threshold:0.35, dmgPct:[12,24,36], mod:{executeBonus:2}, prereq:'art_dru_feral_hunt', desc:'对生命低于 35% 的目标造成的伤害提高 12/24/36%，并获得斩杀加成 +2%/4%/6%。' }),
 
     afterHealTrait({ key:'art_dru_rest_seed', tree:'resto', name:'繁花种荫', icon:'🌺', overhealShieldPct:[0.32,0.48,0.64], mod:{healBonus:4}, desc:'你的过量治疗会转化为 32%/48%/64% 的吸收护盾，并获得治疗效果 +4%/8%/12%。' }),
@@ -429,7 +437,7 @@ const SPEC_ARTIFACT_IDENTITY = {
 const SPEC_EXTRA_MINORS = {
   warrior: {
     arms: [
-      onKillTrait({ key:'art_war_arms_ex_tempo', tree:'arms', name:'战场韵律', icon:'🥁', healPct:[0.02,0.04,0.06], resource:[4,8,12], mod:{spdPct:1}, desc:'击杀敌人后恢复 2%/4%/6% 最大生命并回复 4/8/12 点资源,并获得攻速 +1%/2%/3%。' }),
+      onKillTrait({ key:'art_war_arms_ex_tempo', tree:'arms', name:'战场韵律', icon:'🥁', nextSkillCrit:[1,1,1], grantCharge:{ key:'w_sunder', add:[1,2,3], max:5 }, mod:{spdPct:1}, desc:'击杀敌人后，下一次伤害技能必暴，并叠加 1/2/3 层破甲印记,并获得攻速 +1%/2%/3%。' }),
       bossTrait({ key:'art_war_arms_ex_domin', tree:'arms', name:'主宰之势', icon:'👑', dmgPct:[6,12,18], mod:{atkPct:1}, desc:'对首领造成的伤害提高 6/12/18%,并获得攻击 +1%/2%/3%。' }),
     ],
     fury: [
@@ -437,7 +445,7 @@ const SPEC_EXTRA_MINORS = {
       lowHpTrait({ key:'art_war_fury_ex_blood', tree:'fury', name:'血色护盾', icon:'🛡️', threshold:0.4, cooldown:30000, shieldPct:[0.05,0.09,0.13], mod:{hpPct:2}, desc:'生命低于 40% 时,获得相当于 5%/9%/13% 最大生命的护盾,30秒冷却,并获得生命 +2%/4%/6%。' }),
     ],
     prot: [
-      onKillTrait({ key:'art_war_prot_ex_hold', tree:'prot', name:'镇守回复', icon:'💚', healPct:[0.03,0.05,0.07], mod:{defPct:1}, desc:'击杀敌人后恢复 3%/5%/7% 最大生命,并获得防御 +1%/2%/3%。' }),
+      onKillTrait({ key:'art_war_prot_ex_hold', tree:'prot', name:'镇守回复', icon:'💚', shieldPct:[0.05,0.08,0.12], mod:{defPct:1}, desc:'击杀敌人后，获得 5%/8%/12% 最大生命护盾,并获得防御 +1%/2%/3%。' }),
       vsStateTrait({ key:'art_war_prot_ex_crush', tree:'prot', name:'碎甲突进', icon:'🔨', state:'sunder', dmgPct:[8,16,24], mod:{atkPct:1}, desc:'对被破甲目标造成的伤害提高 8/16/24%,并获得攻击 +1%/2%/3%。' }),
     ],
   },
@@ -455,7 +463,7 @@ const SPEC_CAPSTONES = {
     fury: [
       capstone({ key:'cap_fury_blood', name:'血之狂澜', icon:'🩸', dir:'爆发', mod:{spdPct:5, atkPct:3}, fx:{ type:'onCrit', extraHitMul:0.5, extraHitIcon:'🩸', cooldown:1500 }, desc:'【爆发】攻速 +5% · 攻击 +3%;暴击后追加一次 50% 伤害的狂乱追击(1.5秒冷却)。' }),
       capstone({ key:'cap_fury_undying', name:'不灭狂怒', icon:'♾️', dir:'生存', mod:{hpPct:6, defPct:3}, fx:{ type:'lowHp', threshold:0.4, shieldPct:0.16, cooldown:25000 }, desc:'【生存】生命 +6% · 防御 +3%;生命低于 40% 时获得 16% 最大生命护盾(25秒冷却)。' }),
-      capstone({ key:'cap_fury_rampage', name:'无尽杀戮', icon:'🔥', dir:'持续', mod:{atkPct:5}, fx:{ type:'onKill', healPct:0.06, resource:14 }, desc:'【持续】攻击 +5%;击杀敌人后恢复 6% 最大生命并回复 14 点资源。' }),
+      capstone({ key:'cap_fury_rampage', name:'无尽杀戮', icon:'🔥', dir:'持续', mod:{atkPct:5}, fx:{ type:'onKill', aura:'fury_bloodrush', grantCharge:{ key:'w_rage', add:3, max:5 } }, desc:'【持续】攻击 +5%;击杀敌人后获得 5 秒【鲜血狂潮】并叠加 3 层【暴怒】。' }),
     ],
     prot: [
       capstone({ key:'cap_prot_bulwark', name:'不破壁垒', icon:'🧱', dir:'格挡', mod:{defPct:6, hpPct:5}, fx:{ type:'whileBuff', buffKey:'shield', takenPct:25 }, desc:'【格挡】防御 +6% · 生命 +5%;盾墙持续期间受到的伤害额外降低 25%。' }),
@@ -483,12 +491,12 @@ const SPEC_CAPSTONES = {
   priest: {
     discipline: [
       capstone({ key:'cap_pri_disc_shield', name:'救赎护壁', icon:'🛡️', dir:'守护', mod:{hpPct:6, healBonus:6}, fx:{ type:'lowHp', threshold:0.45, shieldPct:0.12, healPct:0.1, cooldown:25000 }, desc:'【守护】生命 +6% · 治疗 +6%;生命低于 45% 时恢复 10% 生命并获得 12% 护盾(25秒冷却)。' }),
-      capstone({ key:'cap_pri_disc_flow', name:'仁慈涌泉', icon:'💧', dir:'续航', mod:{healBonus:8, atkPct:2}, fx:{ type:'onKill', healPct:0.06, resource:12 }, desc:'【续航】治疗 +8% · 攻击 +2%;击杀敌人后恢复 6% 生命并回复 12 点资源。' }),
+      capstone({ key:'cap_pri_disc_flow', name:'仁慈涌泉', icon:'💧', dir:'续航', mod:{healBonus:8, atkPct:2}, fx:{ type:'onKill', shieldPct:0.12, aura:'discipline_guard' }, desc:'【续航】治疗 +8% · 攻击 +2%;击杀敌人后获得 12% 最大生命护盾与【苦修意志】。' }),
       capstone({ key:'cap_pri_disc_boss', name:'戒律坚守', icon:'⚖️', dir:'坚壁', mod:{hpPct:8, defPct:3}, fx:{ type:'vsBoss', takenPct:14, dmgPct:6 }, desc:'【坚壁】生命 +8% · 防御 +3%;对首领伤害 +6%,受其伤害 -14%。' }),
     ],
     holy: [
       capstone({ key:'cap_pri_holy_shield', name:'圣愈壁垒', icon:'🛡️', dir:'守护', mod:{hpPct:6, healBonus:6}, fx:{ type:'lowHp', threshold:0.45, shieldPct:0.12, healPct:0.1, cooldown:25000 }, desc:'【守护】生命 +6% · 治疗 +6%;生命低于 45% 时恢复 10% 生命并获得 12% 护盾(25秒冷却)。' }),
-      capstone({ key:'cap_pri_holy_flow', name:'圣光不息', icon:'✨', dir:'续航', mod:{healBonus:8, atkPct:2}, fx:{ type:'onKill', healPct:0.06, resource:12 }, desc:'【续航】治疗 +8% · 攻击 +2%;击杀敌人后恢复 6% 生命并回复 12 点资源。' }),
+      capstone({ key:'cap_pri_holy_flow', name:'圣光不息', icon:'✨', dir:'续航', mod:{healBonus:8, atkPct:2}, fx:{ type:'onKill', shieldPct:0.1, aura:'holy_prayer' }, desc:'【续航】治疗 +8% · 攻击 +2%;击杀敌人后获得 10% 最大生命护盾与【圣光涌动】。' }),
       capstone({ key:'cap_pri_holy_guard', name:'神圣庇护', icon:'👼', dir:'坚壁', mod:{hpPct:8, defPct:3}, fx:{ type:'vsBoss', takenPct:14, dmgPct:6 }, desc:'【坚壁】生命 +8% · 防御 +3%;对首领伤害 +6%,受其伤害 -14%。' }),
     ],
     shadow: [
@@ -505,7 +513,7 @@ const SPEC_CAPSTONES = {
     ],
     combat: [
       capstone({ key:'cap_rog_combat_combo', name:'连击共鸣', icon:'🔆', dir:'招牌', mod:{atkPct:3, spdPct:3}, fx:{ type:'auraStackAmp', auraKey:'r_combo', dmgPctPerStack:6 }, desc:'【招牌·连击点】每层【连击点】使你造成的伤害提高 6%(最多5层 +30%);攻击 +3% · 攻速 +3%。' }),
-      capstone({ key:'cap_rog_combat_flow', name:'浴血连势', icon:'🔥', dir:'持续', mod:{atkPct:5}, fx:{ type:'onKill', healPct:0.05, resource:14 }, desc:'【持续】攻击 +5%;击杀敌人后恢复 5% 生命并回复 14 点资源。' }),
+      capstone({ key:'cap_rog_combat_flow', name:'浴血连势', icon:'🔥', dir:'持续', mod:{atkPct:5}, fx:{ type:'onKill', aura:'combat_rush', grantCharge:{ key:'r_combo', add:2, max:5 } }, desc:'【持续】攻击 +5%;击杀敌人后获得【乘胜追击】并叠加 2 点连击。' }),
       capstone({ key:'cap_rog_combat_exec', name:'终结', icon:'💀', dir:'斩杀', mod:{executeBonus:6, atkPct:3}, fx:{ type:'executeWindow', threshold:0.5, dmgPct:45 }, desc:'【斩杀】斩杀加成 +6% · 攻击 +3%;对生命低于 50% 的目标伤害 +45%。' }),
     ],
     subtlety: [
@@ -517,7 +525,7 @@ const SPEC_CAPSTONES = {
   hunter: {
     bm: [
       capstone({ key:'cap_hun_bm_frenzy', name:'野性共鸣', icon:'🐾', dir:'招牌', mod:{atkPct:3, critdPct:8}, fx:{ type:'auraStackAmp', auraKey:'h_frenzy', dmgPctPerStack:6 }, desc:'【招牌·野兽狂怒】每层【野兽狂怒】使你造成的伤害提高 6%(最多5层 +30%);攻击 +3% · 暴伤 +8%。' }),
-      capstone({ key:'cap_hun_bm_flow', name:'兽群盛宴', icon:'🐾', dir:'持续', mod:{atkPct:5}, fx:{ type:'onKill', healPct:0.05, resource:14 }, desc:'【持续】攻击 +5%;击杀敌人后恢复 5% 生命并回复 14 点资源。' }),
+      capstone({ key:'cap_hun_bm_flow', name:'兽群盛宴', icon:'🐾', dir:'持续', mod:{atkPct:5}, fx:{ type:'onKill', aura:'bm_pack', grantCharge:{ key:'h_frenzy', add:3, max:5 } }, desc:'【持续】攻击 +5%;击杀敌人后获得【兽群狂奔】并叠加 3 层【野兽狂怒】。' }),
       capstone({ key:'cap_hun_bm_boss', name:'顶级猎食', icon:'👑', dir:'攻坚', mod:{atkPct:5, critdPct:10}, fx:{ type:'vsBoss', dmgPct:14 }, desc:'【攻坚】攻击 +5% · 暴伤 +10%;对首领造成的伤害提高 14%。' }),
     ],
     marks: [
@@ -535,29 +543,29 @@ const SPEC_CAPSTONES = {
     element: [
       capstone({ key:'cap_sha_ele_storm', name:'雷霆共鸣', icon:'⚡', dir:'招牌', mod:{atkPct:3, critdPct:8}, fx:{ type:'auraStackAmp', auraKey:'stormCharge', dmgPctPerStack:10 }, desc:'【招牌·雷霆充能】每层【雷霆充能】使你造成的伤害提高 10%(最多3层 +30%);攻击 +3% · 暴伤 +8%。' }),
       capstone({ key:'cap_sha_ele_boss', name:'雷霆聚焦', icon:'🌩️', dir:'攻坚', mod:{atkPct:4, critdPct:12}, fx:{ type:'vsBoss', dmgPct:14 }, desc:'【攻坚】攻击 +4% · 暴伤 +12%;对首领造成的伤害提高 14%。' }),
-      capstone({ key:'cap_sha_ele_flow', name:'元素回响', icon:'🌀', dir:'持续', mod:{atkPct:5}, fx:{ type:'onKill', healPct:0.05, resource:12 }, desc:'【持续】攻击 +5%;击杀敌人后恢复 5% 生命并回复 12 点资源。' }),
+      capstone({ key:'cap_sha_ele_flow', name:'元素回响', icon:'🌀', dir:'持续', mod:{atkPct:5}, fx:{ type:'onKill', nextSkillCrit:1, grantCharge:{ key:'stormCharge', add:2, max:3 } }, desc:'【持续】攻击 +5%;击杀敌人后，下一次伤害技能必暴，并叠加 2 层【雷霆充能】。' }),
     ],
     enhancement: [
       capstone({ key:'cap_sha_enh_maelstrom', name:'漩涡共鸣', icon:'🌀', dir:'招牌', mod:{atkPct:3, spdPct:3}, fx:{ type:'auraStackAmp', auraKey:'sh_maelstrom', dmgPctPerStack:6 }, desc:'【招牌·漩涡之力】每层【漩涡之力】使你造成的伤害提高 6%(最多5层 +30%);攻击 +3% · 攻速 +3%。' }),
-      capstone({ key:'cap_sha_enh_flow', name:'战意奔涌', icon:'🩸', dir:'持续', mod:{atkPct:5}, fx:{ type:'onKill', healPct:0.05, resource:14 }, desc:'【持续】攻击 +5%;击杀敌人后恢复 5% 生命并回复 14 点资源。' }),
+      capstone({ key:'cap_sha_enh_flow', name:'战意奔涌', icon:'🩸', dir:'持续', mod:{atkPct:5}, fx:{ type:'onKill', aura:'enhancement_wind', grantCharge:{ key:'sh_maelstrom', add:2, max:5 } }, desc:'【持续】攻击 +5%;击杀敌人后获得【狂岚步伐】并叠加 2 层【漩涡之力】。' }),
       capstone({ key:'cap_sha_enh_exec', name:'雷霆终结', icon:'💀', dir:'斩杀', mod:{executeBonus:6, atkPct:3}, fx:{ type:'executeWindow', threshold:0.5, dmgPct:45 }, desc:'【斩杀】斩杀加成 +6% · 攻击 +3%;对生命低于 50% 的目标伤害 +45%。' }),
     ],
     restoration: [
       capstone({ key:'cap_sha_rest_shield', name:'潮汐护壁', icon:'🛡️', dir:'守护', mod:{hpPct:6, healBonus:6}, fx:{ type:'lowHp', threshold:0.45, shieldPct:0.12, healPct:0.1, cooldown:25000 }, desc:'【守护】生命 +6% · 治疗 +6%;生命低于 45% 时恢复 10% 生命并获得 12% 护盾(25秒冷却)。' }),
-      capstone({ key:'cap_sha_rest_flow', name:'生命之泉', icon:'💧', dir:'续航', mod:{healBonus:8, atkPct:2}, fx:{ type:'onKill', healPct:0.06, resource:12 }, desc:'【续航】治疗 +8% · 攻击 +2%;击杀敌人后恢复 6% 生命并回复 12 点资源。' }),
+      capstone({ key:'cap_sha_rest_flow', name:'生命之泉', icon:'💧', dir:'续航', mod:{healBonus:8, atkPct:2}, fx:{ type:'onKill', shieldPct:0.12, aura:'restoration_tidal' }, desc:'【续航】治疗 +8% · 攻击 +2%;击杀敌人后获得 12% 最大生命护盾与【激流施法】。' }),
       capstone({ key:'cap_sha_rest_guard', name:'先祖庇护', icon:'🪨', dir:'坚壁', mod:{hpPct:8, defPct:3}, fx:{ type:'vsBoss', takenPct:14, dmgPct:6 }, desc:'【坚壁】生命 +8% · 防御 +3%;对首领伤害 +6%,受其伤害 -14%。' }),
     ],
   },
   paladin: {
     holy: [
       capstone({ key:'cap_pal_holy_shield', name:'圣愈壁垒', icon:'🛡️', dir:'守护', mod:{hpPct:6, healBonus:6}, fx:{ type:'lowHp', threshold:0.45, shieldPct:0.12, healPct:0.1, cooldown:25000 }, desc:'【守护】生命 +6% · 治疗 +6%;生命低于 45% 时恢复 10% 生命并获得 12% 护盾(25秒冷却)。' }),
-      capstone({ key:'cap_pal_holy_flow', name:'圣恩不息', icon:'✨', dir:'续航', mod:{healBonus:8, atkPct:2}, fx:{ type:'onKill', healPct:0.06, resource:12 }, desc:'【续航】治疗 +8% · 攻击 +2%;击杀敌人后恢复 6% 生命并回复 12 点资源。' }),
+      capstone({ key:'cap_pal_holy_flow', name:'圣恩不息', icon:'✨', dir:'续航', mod:{healBonus:8, atkPct:2}, fx:{ type:'onKill', shieldPct:0.12, aura:'palholy_dawn' }, desc:'【续航】治疗 +8% · 攻击 +2%;击杀敌人后获得 12% 最大生命护盾与【黎明恩泽】。' }),
       capstone({ key:'cap_pal_holy_guard', name:'神圣庇护', icon:'👼', dir:'坚壁', mod:{hpPct:8, defPct:3}, fx:{ type:'vsBoss', takenPct:14, dmgPct:6 }, desc:'【坚壁】生命 +8% · 防御 +3%;对首领伤害 +6%,受其伤害 -14%。' }),
     ],
     prot: [
       capstone({ key:'cap_pal_prot_guard', name:'圣盾壁垒', icon:'🛡️', dir:'生存', mod:{defPct:5, hpPct:6}, fx:{ type:'lowHp', threshold:0.4, shieldPct:0.15, cooldown:25000 }, desc:'【生存】防御 +5% · 生命 +6%;生命低于 40% 时获得 15% 最大生命护盾(25秒冷却)。' }),
       capstone({ key:'cap_pal_prot_boss', name:'正义壁垒', icon:'⛰️', dir:'坚壁', mod:{hpPct:8, defPct:3}, fx:{ type:'vsBoss', takenPct:15, dmgPct:8 }, desc:'【坚壁】生命 +8% · 防御 +3%;对首领伤害 +8%,受其伤害 -15%。' }),
-      capstone({ key:'cap_pal_prot_flow', name:'奉献回复', icon:'💚', dir:'持续', mod:{defPct:4, hpPct:3}, fx:{ type:'onKill', healPct:0.06, resource:10 }, desc:'【持续】防御 +4% · 生命 +3%;击杀敌人后恢复 6% 生命并回复 10 点资源。' }),
+      capstone({ key:'cap_pal_prot_flow', name:'奉献回复', icon:'💚', dir:'持续', mod:{defPct:4, hpPct:3}, fx:{ type:'onKill', shieldPct:0.14, aura:'palprot_bastion' }, desc:'【持续】防御 +4% · 生命 +3%;击杀敌人后获得 14% 最大生命护盾与【圣佑壁垒】。' }),
     ],
     ret: [
       capstone({ key:'cap_pal_ret_holypower', name:'圣能共鸣', icon:'⚜️', dir:'招牌', mod:{atkPct:3, critdPct:8}, fx:{ type:'auraStackAmp', auraKey:'pa_holyPower', dmgPctPerStack:6 }, desc:'【招牌·圣能】每层【圣能】使你造成的伤害提高 6%(最多5层 +30%);攻击 +3% · 暴伤 +8%。' }),
@@ -595,7 +603,7 @@ const SPEC_CAPSTONES = {
     ],
     resto: [
       capstone({ key:'cap_dru_resto_shield', name:'繁花护壁', icon:'🛡️', dir:'守护', mod:{hpPct:6, healBonus:6}, fx:{ type:'lowHp', threshold:0.45, shieldPct:0.12, healPct:0.1, cooldown:25000 }, desc:'【守护】生命 +6% · 治疗 +6%;生命低于 45% 时恢复 10% 生命并获得 12% 护盾(25秒冷却)。' }),
-      capstone({ key:'cap_dru_resto_flow', name:'生命绽放', icon:'🌺', dir:'续航', mod:{healBonus:8, atkPct:2}, fx:{ type:'onKill', healPct:0.06, resource:12 }, desc:'【续航】治疗 +8% · 攻击 +2%;击杀敌人后恢复 6% 生命并回复 12 点资源。' }),
+      capstone({ key:'cap_dru_resto_flow', name:'生命绽放', icon:'🌺', dir:'续航', mod:{healBonus:8, atkPct:2}, fx:{ type:'onKill', shieldPct:0.12, aura:'resto_bloom' }, desc:'【续航】治疗 +8% · 攻击 +2%;击杀敌人后获得 12% 最大生命护盾与【百花复苏】。' }),
       capstone({ key:'cap_dru_resto_guard', name:'自然庇护', icon:'🌿', dir:'坚壁', mod:{hpPct:8, defPct:3}, fx:{ type:'vsBoss', takenPct:14, dmgPct:6 }, desc:'【坚壁】生命 +8% · 防御 +3%;对首领伤害 +6%,受其伤害 -14%。' }),
     ],
   },
@@ -603,9 +611,9 @@ const SPEC_CAPSTONES = {
 
 // 通用核心三选一(尚未手写专属内容的职业)
 const GENERIC_CAPSTONES = [
-  capstone({ key:'cap_gen_offense', name:'湮灭核心', icon:'💥', dir:'爆发', mod:{atkPct:6, critdPct:15}, fx:{ type:'vsBoss', dmgPct:12 }, desc:'【爆发】攻击 +6% · 暴伤 +15%;对首领造成的伤害提高 12%。' }),
-  capstone({ key:'cap_gen_defense', name:'壁垒核心', icon:'🛡️', dir:'生存', mod:{defPct:6, hpPct:6}, fx:{ type:'lowHp', threshold:0.4, shieldPct:0.13, cooldown:25000 }, desc:'【生存】防御 +6% · 生命 +6%;生命低于 40% 时获得 13% 最大生命护盾(25秒冷却)。' }),
-  capstone({ key:'cap_gen_sustain', name:'不竭核心', icon:'🔥', dir:'持续', mod:{spdPct:4, atkPct:3}, fx:{ type:'onKill', healPct:0.05, resource:10 }, desc:'【持续】攻速 +4% · 攻击 +3%;击杀敌人后恢复 5% 最大生命并回复 10 点资源。' }),
+  capstone({ key:'cap_gen_offense', name:'湮灭核心', icon:'spell_fire_selfdestruct', dir:'爆发', mod:{atkPct:6, critdPct:15}, fx:{ type:'vsBoss', dmgPct:12 }, desc:'【爆发】攻击 +6% · 暴伤 +15%;对首领造成的伤害提高 12%。' }),
+  capstone({ key:'cap_gen_defense', name:'壁垒核心', icon:'ability_warrior_shieldwall', dir:'生存', mod:{defPct:6, hpPct:6}, fx:{ type:'lowHp', threshold:0.4, shieldPct:0.13, cooldown:25000 }, desc:'【生存】防御 +6% · 生命 +6%;生命低于 40% 时获得 13% 最大生命护盾(25秒冷却)。' }),
+  capstone({ key:'cap_gen_sustain', name:'不竭核心', icon:'spell_shadow_lifedrain02', dir:'持续', mod:{spdPct:4, atkPct:3}, fx:{ type:'onKill', shieldPct:0.1, nextSkillCrit:1 }, desc:'【持续】攻速 +4% · 攻击 +3%;击杀敌人后获得 10% 最大生命护盾，且下一次伤害技能必暴。' }),
 ];
 
 // 无限特性(所有专精共用;核心点完后开放,可无限叠,吃溢出 AP)
@@ -618,51 +626,51 @@ const ARTIFACT_INFINITE = {
 /* 神器招牌技能(由"神器觉醒"入门节点解锁, 自动释放不占技能栏, 阶数=威力档位)
    战士参考 WoW 军团神器主动技; 其余职业用 _generic, 后续逐职业替换 */
 const ARTIFACT_SKILLS = {
-  _generic: { name:'神器爆发', icon:'✦', cd:20, mul:[3,4,5], aoe:true, desc:'释放神器之力, 对全体敌人造成 ATK× 伤害。' },
+  _generic: { name:'神器爆发', icon:'spell_holy_powerinfusion', cd:20, mul:[3,4,5], aoe:true, desc:'释放神器之力, 对全体敌人造成 ATK× 伤害。' },
   warrior: {
-    arms: { name:'破城', icon:'🪓', cd:16, mul:[3,4,5], aoe:true, sunder:true, desc:'横扫全体敌人, 造成 ATK× 伤害并破甲(防御-30%, 15秒)。' },          // Warbreaker
-    fury: { name:'奥丁之怒', icon:'🔥', cd:20, mul:[4,5.5,7], aoe:true, desc:'引爆奥丁之怒, 对全体敌人造成 ATK× 烈焰爆发伤害。' },                    // Odyn's Fury
-    prot: { name:'死翼之怒', icon:'🐲', cd:18, mul:[2.5,3.5,4.5], selfShieldPct:0.08, desc:'喷吐烈焰对焦点造成 ATK× 伤害, 并获得 8%/12%/16% 最大生命的吸收护盾。' },     // Neltharion's Fury
+    arms: { name:'破城', icon:'inv_axe_09', cd:16, mul:[3,4,5], aoe:true, sunder:true, desc:'横扫全体敌人, 造成 ATK× 伤害并破甲(防御-30%, 15秒)。' },          // Warbreaker
+    fury: { name:'奥丁之怒', icon:'spell_fire_fire', cd:20, mul:[4,5.5,7], aoe:true, desc:'引爆奥丁之怒, 对全体敌人造成 ATK× 烈焰爆发伤害。' },                    // Odyn's Fury
+    prot: { name:'死翼之怒', icon:'spell_fire_fireball', cd:18, mul:[2.5,3.5,4.5], selfShieldPct:0.08, desc:'喷吐烈焰对焦点造成 ATK× 伤害, 并获得 8%/12%/16% 最大生命的吸收护盾。' },     // Neltharion's Fury
   },
   mage: {
-    arcane: { name:'阿鲁尼斯印记', icon:'🔮', cd:18, mul:[3,4,5],     aoe:true, desc:'对全体敌人烙下奥术印记爆发, 造成 ATK× 奥术伤害。' },
-    fire:   { name:'凤凰烈焰',     icon:'🔥', cd:16, mul:[3.5,4.5,5.5], aoe:true, desc:'召唤凤凰扑击全体敌人, 造成 ATK× 烈焰伤害。' },
-    frost:  { name:'乌玄之珠',     icon:'❄️', cd:14, mul:[3,4,5],               desc:'凝聚乌玄冰晶轰击焦点, 造成 ATK× 冰霜伤害。' },
+    arcane: { name:'阿鲁尼斯印记', icon:'spell_arcane_blast', cd:18, mul:[3,4,5],     aoe:true, desc:'对全体敌人烙下奥术印记爆发, 造成 ATK× 奥术伤害。' },
+    fire:   { name:'凤凰烈焰',     icon:'spell_fire_fireball02', cd:16, mul:[3.5,4.5,5.5], aoe:true, desc:'召唤凤凰扑击全体敌人, 造成 ATK× 烈焰伤害。' },
+    frost:  { name:'乌玄之珠',     icon:'spell_frost_frostbolt02', cd:14, mul:[3,4,5],               desc:'凝聚乌玄冰晶轰击焦点, 造成 ATK× 冰霜伤害。' },
   },
   priest: {
-    discipline: { name:'光明之怒', icon:'✝️', cd:18, mul:[2.5,3.5,4.5], healPct:0.06, desc:'倾泻光明之怒打击焦点造成 ATK× 神圣伤害并回复生命。' },
-    holy:       { name:'图尔的恩泽', icon:'🕊️', cd:20, mul:[1.5,2,2.5], healPct:0.1, selfShieldPct:0.06, desc:'沐浴纳鲁圣光, 对焦点造成 ATK× 伤害并大幅回复生命与护盾。' },
-    shadow:     { name:'虚空洪流', icon:'🌀', cd:16, mul:[3.5,4.5,6],            desc:'引导虚空洪流灌注焦点, 造成 ATK× 暗影伤害。' },
+    discipline: { name:'光明之怒', icon:'spell_holy_holynova', cd:18, mul:[2.5,3.5,4.5], healPct:0.06, desc:'倾泻光明之怒打击焦点造成 ATK× 神圣伤害并回复生命。' },
+    holy:       { name:'图尔的恩泽', icon:'spell_holy_heal', cd:20, mul:[1.5,2,2.5], healPct:0.1, selfShieldPct:0.06, desc:'沐浴纳鲁圣光, 对焦点造成 ATK× 伤害并大幅回复生命与护盾。' },
+    shadow:     { name:'虚空洪流', icon:'spell_shadow_shadowwordpain', cd:16, mul:[3.5,4.5,6],            desc:'引导虚空洪流灌注焦点, 造成 ATK× 暗影伤害。' },
   },
   rogue: {
-    assassination: { name:'弑君者', icon:'🗡️', cd:16, mul:[3,4,5],              desc:'以弑君之毒刺入焦点, 造成 ATK× 自然伤害。' },
-    combat:        { name:'恐惧之刃', icon:'⚔️', cd:14, mul:[2.5,3.5,4.5], aoe:true, desc:'恐惧之刃横扫全体敌人, 造成 ATK× 物理伤害。' },
-    subtlety:      { name:'血喉之噬', icon:'🌑', cd:18, mul:[4,5,6],             desc:'血喉巨口吞噬焦点, 造成 ATK× 暗影伤害。' },
+    assassination: { name:'弑君者', icon:'ability_rogue_eviscerate', cd:16, mul:[3,4,5],              desc:'以弑君之毒刺入焦点, 造成 ATK× 自然伤害。' },
+    combat:        { name:'恐惧之刃', icon:'ability_rogue_dualweild', cd:14, mul:[2.5,3.5,4.5], aoe:true, desc:'恐惧之刃横扫全体敌人, 造成 ATK× 物理伤害。' },
+    subtlety:      { name:'血喉之噬', icon:'spell_shadow_deathanddecay', cd:18, mul:[4,5,6],             desc:'血喉巨口吞噬焦点, 造成 ATK× 暗影伤害。' },
   },
   hunter: {
-    bm:       { name:'泰坦之雷', icon:'⚡', cd:18, mul:[3,4,5],       aoe:true, desc:'引动泰坦之雷劈击全体敌人, 造成 ATK× 自然伤害。' },
-    marks:    { name:'风暴迸发', icon:'🎯', cd:14, mul:[3.5,4.5,5.5],          desc:'风行者之箭贯穿焦点, 造成 ATK× 物理伤害。' },
-    survival: { name:'雄鹰之怒', icon:'🦅', cd:16, mul:[3,4,5],       aoe:true, desc:'雄鹰之怒席卷全体敌人, 造成 ATK× 物理伤害。' },
+    bm:       { name:'泰坦之雷', icon:'spell_nature_lightning', cd:18, mul:[3,4,5],       aoe:true, desc:'引动泰坦之雷劈击全体敌人, 造成 ATK× 自然伤害。' },
+    marks:    { name:'风暴迸发', icon:'ability_hunter_focusedaim', cd:14, mul:[3.5,4.5,5.5],          desc:'风行者之箭贯穿焦点, 造成 ATK× 物理伤害。' },
+    survival: { name:'雄鹰之怒', icon:'ability_hunter_beastcall', cd:16, mul:[3,4,5],       aoe:true, desc:'雄鹰之怒席卷全体敌人, 造成 ATK× 物理伤害。' },
   },
   shaman: {
-    element:     { name:'拉登之拳', icon:'⚡', cd:16, mul:[3.5,4.5,6],           desc:'落下拉登之拳轰击焦点, 造成 ATK× 自然伤害。' },
-    enhancement: { name:'末日之风', icon:'💨', cd:16, mul:[2.5,3.5,4.5], aoe:true, desc:'末日之风席卷全体敌人, 造成 ATK× 自然伤害。' },
-    restoration: { name:'潮汐图腾', icon:'🌊', cd:20, mul:[1.5,2,2.5], healPct:0.1, selfShieldPct:0.05, desc:'潮汐图腾涌动, 对焦点造成 ATK× 伤害并大幅回复生命。' },
+    element:     { name:'拉登之拳', icon:'spell_nature_lightning', cd:16, mul:[3.5,4.5,6],           desc:'落下拉登之拳轰击焦点, 造成 ATK× 自然伤害。' },
+    enhancement: { name:'末日之风', icon:'spell_nature_lightningshield', cd:16, mul:[2.5,3.5,4.5], aoe:true, desc:'末日之风席卷全体敌人, 造成 ATK× 自然伤害。' },
+    restoration: { name:'潮汐图腾', icon:'spell_nature_healingwavegreater', cd:20, mul:[1.5,2,2.5], healPct:0.1, selfShieldPct:0.05, desc:'潮汐图腾涌动, 对焦点造成 ATK× 伤害并大幅回复生命。' },
   },
   paladin: {
-    holy: { name:'提尔的救赎', icon:'✨', cd:20, mul:[1.5,2,2.5], healPct:0.1, selfShieldPct:0.06, desc:'提尔之力降临, 对焦点造成 ATK× 神圣伤害并大幅回复生命。' },
-    prot: { name:'提尔之眼', icon:'🛡️', cd:16, mul:[2.5,3.5,4.5], aoe:true, selfShieldPct:0.07, desc:'提尔之眼审判全体敌人, 造成 ATK× 神圣伤害并获得护盾。' },
-    ret:  { name:'灰烬觉醒', icon:'⚔️', cd:16, mul:[3.5,4.5,5.5], aoe:true, sunder:true, desc:'灰烬使者觉醒横扫全体敌人, 造成 ATK× 神圣伤害并破甲。' },
+    holy: { name:'提尔的救赎', icon:'spell_holy_holybolt', cd:20, mul:[1.5,2,2.5], healPct:0.1, selfShieldPct:0.06, desc:'提尔之力降临, 对焦点造成 ATK× 神圣伤害并大幅回复生命。' },
+    prot: { name:'提尔之眼', icon:'ability_warrior_shieldwall', cd:16, mul:[2.5,3.5,4.5], aoe:true, selfShieldPct:0.07, desc:'提尔之眼审判全体敌人, 造成 ATK× 神圣伤害并获得护盾。' },
+    ret:  { name:'灰烬觉醒', icon:'spell_holy_auraoflight', cd:16, mul:[3.5,4.5,5.5], aoe:true, sunder:true, desc:'灰烬使者觉醒横扫全体敌人, 造成 ATK× 神圣伤害并破甲。' },
   },
   warlock: {
-    affliction:  { name:'收割灵魂', icon:'🟣', cd:18, mul:[3,4,5],       aoe:true, desc:'收割全体敌人的灵魂, 造成 ATK× 暗影伤害。' },
-    demonology:  { name:'萨尔凯尔的吞噬', icon:'😈', cd:18, mul:[3.5,4.5,6],     desc:'召唤恶魔吞噬焦点, 造成 ATK× 暗影伤害。' },
-    destruction: { name:'次元裂隙', icon:'🔥', cd:16, mul:[3.5,4.5,5.5], aoe:true, desc:'撕开次元裂隙轰击全体敌人, 造成 ATK× 混乱伤害。' },
+    affliction:  { name:'收割灵魂', icon:'spell_shadow_deathcoil', cd:18, mul:[3,4,5],       aoe:true, desc:'收割全体敌人的灵魂, 造成 ATK× 暗影伤害。' },
+    demonology:  { name:'萨尔凯尔的吞噬', icon:'spell_shadow_metamorphosis', cd:18, mul:[3.5,4.5,6],     desc:'召唤恶魔吞噬焦点, 造成 ATK× 暗影伤害。' },
+    destruction: { name:'次元裂隙', icon:'spell_fire_fire', cd:16, mul:[3.5,4.5,5.5], aoe:true, desc:'撕开次元裂隙轰击全体敌人, 造成 ATK× 混乱伤害。' },
   },
   druid: {
-    balance: { name:'新月之蚀', icon:'🌙', cd:16, mul:[3,4,5],       aoe:true, desc:'新月落下蚀刻全体敌人, 造成 ATK× 自然伤害。' },
-    feral:   { name:'阿莎曼之怒', icon:'🐆', cd:14, mul:[3,4,5],               desc:'阿莎曼之爪狂乱撕咬焦点, 造成 ATK× 物理伤害。' },
-    resto:   { name:'母亲之树', icon:'🌳', cd:20, mul:[1.5,2,2.5], healPct:0.1, selfShieldPct:0.05, desc:'吉哈尔母树绽放, 对焦点造成 ATK× 伤害并大幅回复生命。' },
+    balance: { name:'新月之蚀', icon:'spell_nature_starfall', cd:16, mul:[3,4,5],       aoe:true, desc:'新月落下蚀刻全体敌人, 造成 ATK× 自然伤害。' },
+    feral:   { name:'阿莎曼之怒', icon:'ability_druid_catformattack', cd:14, mul:[3,4,5],               desc:'阿莎曼之爪狂乱撕咬焦点, 造成 ATK× 物理伤害。' },
+    resto:   { name:'母亲之树', icon:'spell_nature_healingtouch', cd:20, mul:[1.5,2,2.5], healPct:0.1, selfShieldPct:0.05, desc:'吉哈尔母树绽放, 对焦点造成 ATK× 伤害并大幅回复生命。' },
   },
 };
 
@@ -1030,10 +1038,11 @@ function renderArtifact(){
     const prereqNode = node.prereq ? artifactNodeByKey(node.prereq, state.cls, spec) : null;
     const lockHint = (!prereqOk && prereqNode) ? `<span class="muted" style="font-size:10px">🔒 需 [${prereqNode.name}]</span>` : '';
     const curText = artifactRankModText(node, rank);
+    const iconHtml = (typeof symbolIcon === 'function') ? symbolIcon(node.icon || 'spell_holy_powerinfusion', 16, node.name, 'spell_holy_powerinfusion') : (node.icon || '✦');
     return `<div class="ascend-milestone ${rank>0?'reached':''}" style="padding:6px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px">
         <div style="min-width:0">
-          <div><b>${node.icon||'✦'} ${node.name}</b> <span class="muted" style="font-size:10px">${rank}/${node.maxRank}</span> ${lockHint}</div>
+          <div><b>${iconHtml} ${node.name}</b> <span class="muted" style="font-size:10px">${rank}/${node.maxRank}</span> ${lockHint}</div>
           <div class="muted" style="font-size:10px;line-height:1.45">${artifactTraitDesc(node)}${curText?` · 当前: ${curText}`:''}</div>
         </div>
         <button class="${canBuy?'success':''}" data-action="artifactBuy" data-key="${node.key}" ${canBuy?'':'disabled'} style="padding:4px 10px">+</button>
@@ -1043,10 +1052,11 @@ function renderArtifact(){
   const renderCap = (cap)=>{
     const chosen = b.capstone === cap.key;
     const canPick = coreOk && !chosen && (b.capstone ? true : free > 0);
+    const iconHtml = (typeof symbolIcon === 'function') ? symbolIcon(cap.icon || 'spell_holy_powerinfusion', 16, cap.name, 'spell_holy_powerinfusion') : (cap.icon || '✦');
     return `<div class="ascend-milestone ${chosen?'reached':''}" style="padding:6px;${chosen?`border-left:3px solid ${id.color}`:''}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px">
         <div style="min-width:0">
-          <div><b>${cap.icon} ${cap.name}</b> <span class="muted" style="font-size:10px">[${cap.dir||'核心'}]</span> ${chosen?'<span class="r-legend">✓ 已激活</span>':''}</div>
+          <div><b>${iconHtml} ${cap.name}</b> <span class="muted" style="font-size:10px">[${cap.dir||'核心'}]</span> ${chosen?'<span class="r-legend">✓ 已激活</span>':''}</div>
           <div class="muted" style="font-size:10px;line-height:1.45">${cap.desc}</div>
         </div>
         <button class="${canPick?'success':''}" data-action="artifactCapstone" data-key="${cap.key}" ${canPick?'':'disabled'} style="padding:4px 10px;min-width:34px">${chosen?'★':(b.capstone?'换':'选')}</button>
