@@ -159,6 +159,7 @@ function leaveDungeon() {
 function onDungeonClear(dg) {
   if (typeof progressionOnDungeonClear === 'function') progressionOnDungeonClear(dg.key);
   if (typeof eventsOnDungeonClear === 'function') eventsOnDungeonClear();
+  if (typeof relicOnDungeonClear === 'function') relicOnDungeonClear(dg);   // 神器遗物掉落
   state.dungeonCd[dg.key] = Date.now() + dg.cd * 1000;
   const lastBoss = (dg.bosses||[])[dg.bosses.length-1];
   const finalBossName = lastBoss ? lastBoss.name : '最终BOSS';

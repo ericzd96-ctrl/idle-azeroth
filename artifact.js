@@ -946,8 +946,11 @@ function collectArtifactMod(){
   if(!artifactUnlocked()) return out;
   const spec = activeArtifactSpec(); if(!spec) return out;
   const b = artifactBucket(spec); if(!b) return out;
+  const runeBonus = (typeof relicTopNodeBonus === 'function') ? relicTopNodeBonus(spec) : null;   // 神符 +阶
   for(const node of artifactMinorNodes(state.cls, spec)){
-    const r = b.traits[node.key] || 0; if(r <= 0) continue;
+    let r = b.traits[node.key] || 0;
+    if(runeBonus && runeBonus.nodeKey === node.key && r > 0) r += runeBonus.bonus;
+    if(r <= 0) continue;
     for(const e of Object.entries(node.mod||{})) out[e[0]] = (out[e[0]]||0) + e[1]*r;
   }
   if(b.capstone){
@@ -961,6 +964,9 @@ function collectArtifactMod(){
     if((b.lvl||0) < ms.lvl) continue;
     for(const e of Object.entries(ms.mod||{})) out[e[0]] = (out[e[0]]||0) + e[1];
   }
+  if(typeof collectRelicMod === 'function'){   // 遗物属性加成
+    for(const e of Object.entries(collectRelicMod())) out[e[0]] = (out[e[0]]||0) + e[1];
+  }
   return out;
 }
 
@@ -969,8 +975,10 @@ function collectArtifactFx(){
   const spec = activeArtifactSpec(); if(!spec) return [];
   const b = artifactBucket(spec); if(!b) return [];
   const out = [];
+  const runeBonus = (typeof relicTopNodeBonus === 'function') ? relicTopNodeBonus(spec) : null;   // 神符 +阶
   for(const node of artifactMinorNodes(state.cls, spec)){
-    const r = b.traits[node.key] || 0; if(r <= 0 || !node.fx) continue;
+    let r = b.traits[node.key] || 0; if(r <= 0 || !node.fx) continue;
+    if(runeBonus && runeBonus.nodeKey === node.key) r += runeBonus.bonus;
     for(const fx of asFxList(typeof node.fx === 'function' ? node.fx(r) : node.fx))
       out.push(Object.assign({ key:node.key, artifactKey:node.key, artifactName:node.name, treeKey:node.tree, source:'artifact' }, fx));
   }
@@ -981,6 +989,7 @@ function collectArtifactFx(){
         out.push(Object.assign({ key:cap.key, artifactKey:cap.key, artifactName:cap.name, source:'artifact', capstone:true }, fx));
     }
   }
+  if(typeof collectRelicFx === 'function') out.push(...collectRelicFx());   // 遗物被动(神像)
   return out;
 }
 
@@ -1081,6 +1090,8 @@ function renderArtifact(){
         <button class="${canInf?'success':''}" data-action="artifactInfinite" ${canInf?'':'disabled'} style="padding:4px 10px">+</button>
       </div>
     </div></div>`;
+
+  if(typeof renderRelicSection === 'function') html += renderRelicSection(spec, b);   // 遗物镶嵌
 
   html += `<div class="ascend-box"><div class="detail-label">里程碑</div>`;
   for(const ms of artifactMilestonesForClass()){

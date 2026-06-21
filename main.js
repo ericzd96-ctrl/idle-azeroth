@@ -324,6 +324,10 @@ function setupDelegation() {
       else if (act === 'artifactCapstone') { artifactChooseCapstone(btn.dataset.key); renderArtifact(); }
       else if (act === 'artifactInfinite') { artifactBuyInfinite(); renderArtifact(); }
       else if (act === 'artifactReset')    { artifactReset(); renderArtifact(); }
+      else if (act === 'relicSocket')      { relicSocket(btn.dataset.id); renderArtifact(); }
+      else if (act === 'relicUnsocket')    { relicUnsocket(btn.dataset.slot); renderArtifact(); }
+      else if (act === 'relicBuy')         { relicBuy(btn.dataset.rarity); renderArtifact(); }
+      else if (act === 'relicSalvage')     { relicSalvage(btn.dataset.id); renderArtifact(); }
     });
   }
 

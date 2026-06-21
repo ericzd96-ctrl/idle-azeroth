@@ -2879,9 +2879,10 @@ function tickArtifactSkill(now){
   const alive=getAliveMonsters();if(!alive.length)return;
   const focus=state.currentMonsters[0];if(!focus||focus.hp<=0)return;
   const cdMul=(typeof castSpeedMul==='function')?castSpeedMul():(state.battleSpeed||1);
-  state.artifactSkillCd=now+(def.cd||20)*1000/Math.max(0.1,cdMul);
+  const relicBoost=(typeof artifactRelicSkillBoost==='function')?artifactRelicSkillBoost():{dmgPct:0,cdPct:0};   // 印记遗物强化招牌技
+  state.artifactSkillCd=now+(def.cd||20)*(1-(relicBoost.cdPct||0)/100)*1000/Math.max(0.1,cdMul);
   const tier=Math.max(0,Math.min(def.mul.length-1,rank-1));
-  const mul=def.mul[tier];
+  const mul=def.mul[tier]*(1+(relicBoost.dmgPct||0)/100);
   const targets=def.aoe?alive:[focus];
   let total=0,anyCrit=false;
   for(const t of targets){

@@ -157,6 +157,8 @@ function defaultAccount() {
     ascendMilestones: {},
     // 赛季(账号共享)
     season: { startAt:0, endAt:0, points:0, history:[], id:1 },
+    // 神器遗物背包(账号共享,未镶嵌的遗物;已镶嵌的存于各专精 state.artifacts[spec].relics)
+    relics: [],
   };
 }
 
@@ -176,6 +178,7 @@ function mergeAccount(saved) {
     ascendMilestones: saved.ascendMilestones || {},
     season: mo(d.season, saved.season),
     mounts: saved.mounts || {},
+    relics: Array.isArray(saved.relics) ? saved.relics : [],
     // 公共资源:数值类靠 Object.assign(d,saved) 已带过来;对象/数组做空值保护
     gems: saved.gems || {},
     companions: saved.companions || [],
