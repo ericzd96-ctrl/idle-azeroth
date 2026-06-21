@@ -622,7 +622,7 @@ const ARTIFACT_SKILLS = {
   warrior: {
     arms: { name:'破城', icon:'🪓', cd:16, mul:[3,4,5], aoe:true, sunder:true, desc:'横扫全体敌人, 造成 ATK× 伤害并破甲(防御-30%, 15秒)。' },          // Warbreaker
     fury: { name:'奥丁之怒', icon:'🔥', cd:20, mul:[4,5.5,7], aoe:true, desc:'引爆奥丁之怒, 对全体敌人造成 ATK× 烈焰爆发伤害。' },                    // Odyn's Fury
-    prot: { name:'死翼之怒', icon:'🐲', cd:18, mul:[2.5,3.5,4.5], selfShieldPct:0.08, desc:'喷吐烈焰对焦点造成 ATK× 伤害, 并获得最大生命护盾。' },     // Neltharion's Fury
+    prot: { name:'死翼之怒', icon:'🐲', cd:18, mul:[2.5,3.5,4.5], selfShieldPct:0.08, desc:'喷吐烈焰对焦点造成 ATK× 伤害, 并获得 8%/12%/16% 最大生命的吸收护盾。' },     // Neltharion's Fury
   },
   mage: {
     arcane: { name:'阿鲁尼斯印记', icon:'🔮', cd:18, mul:[3,4,5],     aoe:true, desc:'对全体敌人烙下奥术印记爆发, 造成 ATK× 奥术伤害。' },

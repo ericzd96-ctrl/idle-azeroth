@@ -302,6 +302,11 @@ function renderBuffBar() {
     }
   }
   buffs.sort((a, b) => a.left - b.left);
+  // 吸收护盾(天赋/神器),显示当前可吸收量而非倒计时
+  const shieldAmt = Math.floor(Math.max(0, state?.talentState?.shield || 0));
+  if (shieldAmt > 0) {
+    buffs.unshift({ kind: 'dr', icon: '🛡️', name: '吸收护盾', base: '吸收护盾', desc: '抵消即将受到的伤害', valText: fmt(shieldAmt), left: 0 });
+  }
   const enemyBuffs = focusBuffs(now).map(b => ({ kind: 'enemy-buff', icon: b.icon, name: '敌·' + b.name, base: '敌·' + (b.base || b.name), stacks: b.stacks || 0, desc: b.desc, left: b.left }));
   const debuffs = focusDebuffs(now).map(d => ({ kind: 'debuff', icon: d.icon, name: '敌·' + d.name, desc: d.desc, left: d.left }));
   const heroDe = [];
@@ -361,7 +366,7 @@ function diffBuffSide(listEl, items, emptyText) {
       icDiv.innerHTML = statusIconHtml(b.name?.replace(/^敌·|^你·/, ''), b.icon, 16);
       chip.appendChild(icDiv);
       const tDiv = document.createElement('div'); tDiv.className = 'b-t';
-      tDiv.textContent = b.left > 0 ? b.left + 's' : '∞';
+      tDiv.textContent = b.valText != null ? b.valText : (b.left > 0 ? b.left + 's' : '∞');
       chip.appendChild(tDiv);
       const sDiv = document.createElement('div'); sDiv.className = 'b-s';
       sDiv.textContent = b.stacks > 1 ? b.stacks + '层' : '';
@@ -391,7 +396,7 @@ function updateBuffChipTexts(bar, allItems) {
   const allT = bar.querySelectorAll('.buff-chip .b-t');
   const allS = bar.querySelectorAll('.buff-chip .b-s');
   for (let i = 0; i < Math.min(allT.length, allItems.length); i++) {
-    const txt = allItems[i].left > 0 ? allItems[i].left + 's' : '∞';
+    const txt = allItems[i].valText != null ? allItems[i].valText : (allItems[i].left > 0 ? allItems[i].left + 's' : '∞');
     if (allT[i].textContent !== txt) allT[i].textContent = txt;
   }
   for (let i = 0; i < Math.min(allS.length, allItems.length); i++) {
