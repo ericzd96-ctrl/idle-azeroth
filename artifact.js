@@ -467,15 +467,15 @@ const SPEC_CAPSTONES = {
     arcane: [
       capstone({ key:'cap_mag_arcane_burst', name:'奥能涌动', icon:'💥', dir:'爆发', mod:{critdPct:20, atkPct:3}, fx:{ type:'onCrit', extraHitMul:0.55, extraHitIcon:'✨', cooldown:2000 }, desc:'【爆发】暴伤 +20% · 攻击 +3%;暴击后追加一次 55% 伤害的奥能追击(2秒冷却)。' }),
       capstone({ key:'cap_mag_arcane_boss', name:'法阵聚焦', icon:'🪞', dir:'攻坚', mod:{atkPct:4, critdPct:12}, fx:{ type:'vsBoss', dmgPct:14 }, desc:'【攻坚】攻击 +4% · 暴伤 +12%;对首领造成的伤害提高 14%。' }),
-      capstone({ key:'cap_mag_arcane_flow', name:'法力永续', icon:'🔮', dir:'持续', mod:{atkPct:5}, fx:{ type:'onKill', healPct:0.05, resource:12 }, desc:'【持续】攻击 +5%;击杀敌人后恢复 5% 最大生命并回复 12 点资源。' }),
+      capstone({ key:'cap_mag_arcane_charge', name:'法网共鸣', icon:'🔷', dir:'招牌', mod:{atkPct:3, critdPct:8}, fx:{ type:'auraStackAmp', auraKey:'arcaneCharge', dmgPctPerStack:10 }, desc:'【招牌·奥术充能】每层【奥术充能】使你造成的伤害提高 10%(最多3层 +30%);攻击 +3% · 暴伤 +8%。' }),
     ],
     fire: [
-      capstone({ key:'cap_mag_fire_burst', name:'烈焰迸发', icon:'💥', dir:'爆发', mod:{critdPct:20, atkPct:3}, fx:{ type:'onCrit', extraHitMul:0.55, extraHitIcon:'🔥', cooldown:2000 }, desc:'【爆发】暴伤 +20% · 攻击 +3%;暴击后追加一次 55% 伤害的烈焰追击(2秒冷却)。' }),
+      capstone({ key:'cap_mag_fire_heat', name:'炽焰共鸣', icon:'🔥', dir:'招牌', mod:{atkPct:3, critdPct:8}, fx:{ type:'auraStackAmp', auraKey:'m_heat', dmgPctPerStack:6 }, desc:'【招牌·炽热】每层【炽热】使你造成的伤害提高 6%(最多5层 +30%);攻击 +3% · 暴伤 +8%。' }),
       capstone({ key:'cap_mag_fire_dot', name:'余烬燎原', icon:'☄️', dir:'灼蚀', mod:{dotBonus:4, atkPct:2}, fx:{ type:'vsState', state:'dot', dmgPct:25 }, desc:'【灼蚀】持续伤害 +4% · 攻击 +2%;对带有灼烧的目标造成的伤害提高 25%。' }),
       capstone({ key:'cap_mag_fire_exec', name:'焚尽', icon:'🌋', dir:'斩杀', mod:{executeBonus:6, atkPct:3}, fx:{ type:'executeWindow', threshold:0.5, dmgPct:45 }, desc:'【斩杀】斩杀加成 +6% · 攻击 +3%;对生命低于 50% 的目标伤害 +45%。' }),
     ],
     frost: [
-      capstone({ key:'cap_mag_frost_burst', name:'冰川迸裂', icon:'💥', dir:'爆发', mod:{critdPct:20, atkPct:3}, fx:{ type:'onCrit', extraHitMul:0.55, extraHitIcon:'❄️', cooldown:2000 }, desc:'【爆发】暴伤 +20% · 攻击 +3%;暴击后追加一次 55% 伤害的冰凌追击(2秒冷却)。' }),
+      capstone({ key:'cap_mag_frost_fingers', name:'寒冰共鸣', icon:'❄️', dir:'招牌', mod:{atkPct:3, critdPct:8}, fx:{ type:'auraStackAmp', auraKey:'m_frost', dmgPctPerStack:6 }, desc:'【招牌·指尖寒冰】每层【指尖寒冰】使你造成的伤害提高 6%(最多5层 +30%);攻击 +3% · 暴伤 +8%。' }),
       capstone({ key:'cap_mag_frost_slow', name:'彻骨严寒', icon:'🧊', dir:'控制', mod:{spdPct:3, atkPct:2}, fx:{ type:'vsState', state:'slow', dmgPct:25 }, desc:'【控制】攻速 +3% · 攻击 +2%;对被减速目标造成的伤害提高 25%。' }),
       capstone({ key:'cap_mag_frost_guard', name:'寒冰护体', icon:'🛡️', dir:'生存', mod:{defPct:5, hpPct:5}, fx:{ type:'lowHp', threshold:0.4, shieldPct:0.14, cooldown:25000 }, desc:'【生存】防御 +5% · 生命 +5%;生命低于 40% 时获得 14% 最大生命护盾(25秒冷却)。' }),
     ],
@@ -492,53 +492,53 @@ const SPEC_CAPSTONES = {
       capstone({ key:'cap_pri_holy_guard', name:'神圣庇护', icon:'👼', dir:'坚壁', mod:{hpPct:8, defPct:3}, fx:{ type:'vsBoss', takenPct:14, dmgPct:6 }, desc:'【坚壁】生命 +8% · 防御 +3%;对首领伤害 +6%,受其伤害 -14%。' }),
     ],
     shadow: [
-      capstone({ key:'cap_pri_shadow_burst', name:'虚空迸发', icon:'💥', dir:'爆发', mod:{critdPct:20, atkPct:3}, fx:{ type:'onCrit', extraHitMul:0.55, extraHitIcon:'🌑', cooldown:2000 }, desc:'【爆发】暴伤 +20% · 攻击 +3%;暴击后追加一次 55% 伤害的虚空追击(2秒冷却)。' }),
+      capstone({ key:'cap_pri_shadow_insanity', name:'疯狂共鸣', icon:'🌀', dir:'招牌', mod:{atkPct:3, critdPct:8}, fx:{ type:'auraStackAmp', auraKey:'p_insanity', dmgPctPerStack:5 }, desc:'【招牌·疯狂】每层【疯狂】使你造成的伤害提高 5%(最多6层 +30%);攻击 +3% · 暴伤 +8%。' }),
       capstone({ key:'cap_pri_shadow_dot', name:'暗影蔓延', icon:'🌑', dir:'灼蚀', mod:{dotBonus:4, atkPct:2}, fx:{ type:'vsState', state:'dot', dmgPct:25 }, desc:'【灼蚀】持续伤害 +4% · 攻击 +2%;对带有持续伤害的目标造成的伤害提高 25%。' }),
       capstone({ key:'cap_pri_shadow_exec', name:'湮灭', icon:'☠️', dir:'斩杀', mod:{executeBonus:6, atkPct:3}, fx:{ type:'executeWindow', threshold:0.5, dmgPct:45 }, desc:'【斩杀】斩杀加成 +6% · 攻击 +3%;对生命低于 50% 的目标伤害 +45%。' }),
     ],
   },
   rogue: {
     assassination: [
-      capstone({ key:'cap_rog_assn_burst', name:'致命突袭', icon:'💥', dir:'爆发', mod:{critdPct:20, atkPct:3}, fx:{ type:'onCrit', extraHitMul:0.55, extraHitIcon:'🗡️', cooldown:2000 }, desc:'【爆发】暴伤 +20% · 攻击 +3%;暴击后追加一次 55% 伤害的追击(2秒冷却)。' }),
+      capstone({ key:'cap_rog_assn_venom', name:'毒锋共鸣', icon:'🐍', dir:'招牌', mod:{atkPct:3, critdPct:8}, fx:{ type:'auraStackAmp', auraKey:'r_venom', dmgPctPerStack:6 }, desc:'【招牌·毒锋】每层【毒锋】使你造成的伤害提高 6%(最多5层 +30%);攻击 +3% · 暴伤 +8%。' }),
       capstone({ key:'cap_rog_assn_dot', name:'毒囊横流', icon:'☠️', dir:'灼蚀', mod:{dotBonus:4, atkPct:2}, fx:{ type:'vsState', state:'dot', dmgPct:25 }, desc:'【灼蚀】持续伤害 +4% · 攻击 +2%;对中毒/流血的目标造成的伤害提高 25%。' }),
       capstone({ key:'cap_rog_assn_exec', name:'见血封喉', icon:'🩸', dir:'斩杀', mod:{executeBonus:6, atkPct:3}, fx:{ type:'executeWindow', threshold:0.5, dmgPct:45 }, desc:'【斩杀】斩杀加成 +6% · 攻击 +3%;对生命低于 50% 的目标伤害 +45%。' }),
     ],
     combat: [
-      capstone({ key:'cap_rog_combat_burst', name:'疾风刃舞', icon:'💥', dir:'爆发', mod:{spdPct:5, atkPct:3}, fx:{ type:'onCrit', extraHitMul:0.5, extraHitIcon:'⚔️', cooldown:1800 }, desc:'【爆发】攻速 +5% · 攻击 +3%;暴击后追加一次 50% 伤害的追击(1.8秒冷却)。' }),
+      capstone({ key:'cap_rog_combat_combo', name:'连击共鸣', icon:'🔆', dir:'招牌', mod:{atkPct:3, spdPct:3}, fx:{ type:'auraStackAmp', auraKey:'r_combo', dmgPctPerStack:6 }, desc:'【招牌·连击点】每层【连击点】使你造成的伤害提高 6%(最多5层 +30%);攻击 +3% · 攻速 +3%。' }),
       capstone({ key:'cap_rog_combat_flow', name:'浴血连势', icon:'🔥', dir:'持续', mod:{atkPct:5}, fx:{ type:'onKill', healPct:0.05, resource:14 }, desc:'【持续】攻击 +5%;击杀敌人后恢复 5% 生命并回复 14 点资源。' }),
       capstone({ key:'cap_rog_combat_exec', name:'终结', icon:'💀', dir:'斩杀', mod:{executeBonus:6, atkPct:3}, fx:{ type:'executeWindow', threshold:0.5, dmgPct:45 }, desc:'【斩杀】斩杀加成 +6% · 攻击 +3%;对生命低于 50% 的目标伤害 +45%。' }),
     ],
     subtlety: [
-      capstone({ key:'cap_rog_sub_burst', name:'暗影之舞', icon:'💥', dir:'爆发', mod:{critdPct:22, atkPct:3}, fx:{ type:'onCrit', extraHitMul:0.6, extraHitIcon:'🌑', cooldown:2000 }, desc:'【爆发】暴伤 +22% · 攻击 +3%;暴击后追加一次 60% 伤害的影袭(2秒冷却)。' }),
+      capstone({ key:'cap_rog_sub_combo', name:'背袭共鸣', icon:'🔆', dir:'招牌', mod:{atkPct:3, critdPct:8}, fx:{ type:'auraStackAmp', auraKey:'r_combo', dmgPctPerStack:6 }, desc:'【招牌·连击点】每层【连击点】使你造成的伤害提高 6%(最多5层 +30%);攻击 +3% · 暴伤 +8%。' }),
       capstone({ key:'cap_rog_sub_exec', name:'喉切', icon:'🪢', dir:'斩杀', mod:{executeBonus:7, atkPct:3}, fx:{ type:'executeWindow', threshold:0.5, dmgPct:50 }, desc:'【斩杀】斩杀加成 +7% · 攻击 +3%;对生命低于 50% 的目标伤害 +50%。' }),
       capstone({ key:'cap_rog_sub_boss', name:'猎首', icon:'🎯', dir:'攻坚', mod:{atkPct:5, critdPct:10}, fx:{ type:'vsBoss', dmgPct:14 }, desc:'【攻坚】攻击 +5% · 暴伤 +10%;对首领造成的伤害提高 14%。' }),
     ],
   },
   hunter: {
     bm: [
-      capstone({ key:'cap_hun_bm_burst', name:'狂野爆发', icon:'💥', dir:'爆发', mod:{critdPct:20, atkPct:3}, fx:{ type:'onCrit', extraHitMul:0.55, extraHitIcon:'🦁', cooldown:2000 }, desc:'【爆发】暴伤 +20% · 攻击 +3%;暴击后追加一次 55% 伤害的撕咬(2秒冷却)。' }),
+      capstone({ key:'cap_hun_bm_frenzy', name:'野性共鸣', icon:'🐾', dir:'招牌', mod:{atkPct:3, critdPct:8}, fx:{ type:'auraStackAmp', auraKey:'h_frenzy', dmgPctPerStack:6 }, desc:'【招牌·野兽狂怒】每层【野兽狂怒】使你造成的伤害提高 6%(最多5层 +30%);攻击 +3% · 暴伤 +8%。' }),
       capstone({ key:'cap_hun_bm_flow', name:'兽群盛宴', icon:'🐾', dir:'持续', mod:{atkPct:5}, fx:{ type:'onKill', healPct:0.05, resource:14 }, desc:'【持续】攻击 +5%;击杀敌人后恢复 5% 生命并回复 14 点资源。' }),
       capstone({ key:'cap_hun_bm_boss', name:'顶级猎食', icon:'👑', dir:'攻坚', mod:{atkPct:5, critdPct:10}, fx:{ type:'vsBoss', dmgPct:14 }, desc:'【攻坚】攻击 +5% · 暴伤 +10%;对首领造成的伤害提高 14%。' }),
     ],
     marks: [
-      capstone({ key:'cap_hun_marks_burst', name:'精准迸发', icon:'💥', dir:'爆发', mod:{critdPct:22, atkPct:3}, fx:{ type:'onCrit', extraHitMul:0.55, extraHitIcon:'🎯', cooldown:2000 }, desc:'【爆发】暴伤 +22% · 攻击 +3%;暴击后追加一次 55% 伤害的补射(2秒冷却)。' }),
+      capstone({ key:'cap_hun_marks_command', name:'杀戮号令', icon:'🎯', dir:'招牌', mod:{atkPct:3, critdPct:10}, fx:{ type:'whileBuff', buffKey:'h_burst', dmgPct:30 }, desc:'【招牌·杀戮命令】杀戮命令(爆发)持续期间, 你造成的伤害提高 30%;攻击 +3% · 暴伤 +10%。' }),
       capstone({ key:'cap_hun_marks_exec', name:'断头狙杀', icon:'💀', dir:'斩杀', mod:{executeBonus:7, atkPct:3}, fx:{ type:'executeWindow', threshold:0.5, dmgPct:50 }, desc:'【斩杀】斩杀加成 +7% · 攻击 +3%;对生命低于 50% 的目标伤害 +50%。' }),
       capstone({ key:'cap_hun_marks_boss', name:'猎物标记', icon:'🔍', dir:'攻坚', mod:{atkPct:5, critdPct:10}, fx:{ type:'vsBoss', dmgPct:14 }, desc:'【攻坚】攻击 +5% · 暴伤 +10%;对首领造成的伤害提高 14%。' }),
     ],
     survival: [
-      capstone({ key:'cap_hun_surv_burst', name:'利爪连击', icon:'💥', dir:'爆发', mod:{spdPct:5, atkPct:3}, fx:{ type:'onCrit', extraHitMul:0.5, extraHitIcon:'🦅', cooldown:1800 }, desc:'【爆发】攻速 +5% · 攻击 +3%;暴击后追加一次 50% 伤害的追击(1.8秒冷却)。' }),
+      capstone({ key:'cap_hun_surv_command', name:'猎杀号令', icon:'🦅', dir:'招牌', mod:{atkPct:3, spdPct:4}, fx:{ type:'whileBuff', buffKey:'h_burst', dmgPct:28 }, desc:'【招牌·杀戮命令】杀戮命令(爆发)持续期间, 你造成的伤害提高 28%;攻击 +3% · 攻速 +4%。' }),
       capstone({ key:'cap_hun_surv_dot', name:'陷阱毒伤', icon:'☠️', dir:'灼蚀', mod:{dotBonus:4, atkPct:2}, fx:{ type:'vsState', state:'dot', dmgPct:25 }, desc:'【灼蚀】持续伤害 +4% · 攻击 +2%;对带有持续伤害的目标造成的伤害提高 25%。' }),
       capstone({ key:'cap_hun_surv_guard', name:'荒野生存', icon:'🪤', dir:'生存', mod:{defPct:5, hpPct:5}, fx:{ type:'lowHp', threshold:0.4, shieldPct:0.14, cooldown:25000 }, desc:'【生存】防御 +5% · 生命 +5%;生命低于 40% 时获得 14% 最大生命护盾(25秒冷却)。' }),
     ],
   },
   shaman: {
     element: [
-      capstone({ key:'cap_sha_ele_burst', name:'元素过载', icon:'💥', dir:'爆发', mod:{critdPct:20, atkPct:3}, fx:{ type:'onCrit', extraHitMul:0.55, extraHitIcon:'⚡', cooldown:2000 }, desc:'【爆发】暴伤 +20% · 攻击 +3%;暴击后追加一次 55% 伤害的闪电过载(2秒冷却)。' }),
+      capstone({ key:'cap_sha_ele_storm', name:'雷霆共鸣', icon:'⚡', dir:'招牌', mod:{atkPct:3, critdPct:8}, fx:{ type:'auraStackAmp', auraKey:'stormCharge', dmgPctPerStack:10 }, desc:'【招牌·雷霆充能】每层【雷霆充能】使你造成的伤害提高 10%(最多3层 +30%);攻击 +3% · 暴伤 +8%。' }),
       capstone({ key:'cap_sha_ele_boss', name:'雷霆聚焦', icon:'🌩️', dir:'攻坚', mod:{atkPct:4, critdPct:12}, fx:{ type:'vsBoss', dmgPct:14 }, desc:'【攻坚】攻击 +4% · 暴伤 +12%;对首领造成的伤害提高 14%。' }),
       capstone({ key:'cap_sha_ele_flow', name:'元素回响', icon:'🌀', dir:'持续', mod:{atkPct:5}, fx:{ type:'onKill', healPct:0.05, resource:12 }, desc:'【持续】攻击 +5%;击杀敌人后恢复 5% 生命并回复 12 点资源。' }),
     ],
     enhancement: [
-      capstone({ key:'cap_sha_enh_burst', name:'风暴打击', icon:'💥', dir:'爆发', mod:{spdPct:5, atkPct:3}, fx:{ type:'onCrit', extraHitMul:0.5, extraHitIcon:'💨', cooldown:1800 }, desc:'【爆发】攻速 +5% · 攻击 +3%;暴击后追加一次 50% 伤害的风怒追击(1.8秒冷却)。' }),
+      capstone({ key:'cap_sha_enh_maelstrom', name:'漩涡共鸣', icon:'🌀', dir:'招牌', mod:{atkPct:3, spdPct:3}, fx:{ type:'auraStackAmp', auraKey:'sh_maelstrom', dmgPctPerStack:6 }, desc:'【招牌·漩涡之力】每层【漩涡之力】使你造成的伤害提高 6%(最多5层 +30%);攻击 +3% · 攻速 +3%。' }),
       capstone({ key:'cap_sha_enh_flow', name:'战意奔涌', icon:'🩸', dir:'持续', mod:{atkPct:5}, fx:{ type:'onKill', healPct:0.05, resource:14 }, desc:'【持续】攻击 +5%;击杀敌人后恢复 5% 生命并回复 14 点资源。' }),
       capstone({ key:'cap_sha_enh_exec', name:'雷霆终结', icon:'💀', dir:'斩杀', mod:{executeBonus:6, atkPct:3}, fx:{ type:'executeWindow', threshold:0.5, dmgPct:45 }, desc:'【斩杀】斩杀加成 +6% · 攻击 +3%;对生命低于 50% 的目标伤害 +45%。' }),
     ],
@@ -560,7 +560,7 @@ const SPEC_CAPSTONES = {
       capstone({ key:'cap_pal_prot_flow', name:'奉献回复', icon:'💚', dir:'持续', mod:{defPct:4, hpPct:3}, fx:{ type:'onKill', healPct:0.06, resource:10 }, desc:'【持续】防御 +4% · 生命 +3%;击杀敌人后恢复 6% 生命并回复 10 点资源。' }),
     ],
     ret: [
-      capstone({ key:'cap_pal_ret_burst', name:'圣裁迸发', icon:'💥', dir:'爆发', mod:{critdPct:20, atkPct:3}, fx:{ type:'onCrit', extraHitMul:0.55, extraHitIcon:'⚔️', cooldown:2000 }, desc:'【爆发】暴伤 +20% · 攻击 +3%;暴击后追加一次 55% 伤害的圣裁追击(2秒冷却)。' }),
+      capstone({ key:'cap_pal_ret_holypower', name:'圣能共鸣', icon:'⚜️', dir:'招牌', mod:{atkPct:3, critdPct:8}, fx:{ type:'auraStackAmp', auraKey:'pa_holyPower', dmgPctPerStack:6 }, desc:'【招牌·圣能】每层【圣能】使你造成的伤害提高 6%(最多5层 +30%);攻击 +3% · 暴伤 +8%。' }),
       capstone({ key:'cap_pal_ret_exec', name:'终极审判', icon:'😇', dir:'斩杀', mod:{executeBonus:6, atkPct:3}, fx:{ type:'executeWindow', threshold:0.5, dmgPct:45 }, desc:'【斩杀】斩杀加成 +6% · 攻击 +3%;对生命低于 50% 的目标伤害 +45%。' }),
       capstone({ key:'cap_pal_ret_boss', name:'制裁强敌', icon:'⚖️', dir:'攻坚', mod:{atkPct:5, critdPct:10}, fx:{ type:'vsBoss', dmgPct:14 }, desc:'【攻坚】攻击 +5% · 暴伤 +10%;对首领造成的伤害提高 14%。' }),
     ],
@@ -568,28 +568,28 @@ const SPEC_CAPSTONES = {
   warlock: {
     affliction: [
       capstone({ key:'cap_wl_aff_dot', name:'灵魂腐蚀', icon:'☠️', dir:'灼蚀', mod:{dotBonus:5, atkPct:2}, fx:{ type:'vsState', state:'dot', dmgPct:28 }, desc:'【灼蚀】持续伤害 +5% · 攻击 +2%;对带有持续伤害的目标造成的伤害提高 28%。' }),
-      capstone({ key:'cap_wl_aff_flow', name:'灵魂收割', icon:'🟣', dir:'持续', mod:{atkPct:4, hpPct:3}, fx:{ type:'onKill', healPct:0.06, resource:12 }, desc:'【持续】攻击 +4% · 生命 +3%;击杀敌人后恢复 6% 生命并回复 12 点资源。' }),
+      capstone({ key:'cap_wl_aff_shard', name:'碎片共鸣', icon:'💜', dir:'招牌', mod:{atkPct:3, dotBonus:4}, fx:{ type:'auraStackAmp', auraKey:'wl_shard', dmgPctPerStack:6 }, desc:'【招牌·灵魂碎片】每层【灵魂碎片】使你造成的伤害提高 6%(最多5层 +30%);攻击 +3% · 持续伤害 +4%。' }),
       capstone({ key:'cap_wl_aff_exec', name:'痛苦终结', icon:'💜', dir:'斩杀', mod:{executeBonus:6, atkPct:3}, fx:{ type:'executeWindow', threshold:0.5, dmgPct:45 }, desc:'【斩杀】斩杀加成 +6% · 攻击 +3%;对生命低于 50% 的目标伤害 +45%。' }),
     ],
     demonology: [
-      capstone({ key:'cap_wl_demo_burst', name:'恶魔迸发', icon:'💥', dir:'爆发', mod:{critdPct:20, atkPct:3}, fx:{ type:'onCrit', extraHitMul:0.55, extraHitIcon:'😈', cooldown:2000 }, desc:'【爆发】暴伤 +20% · 攻击 +3%;暴击后追加一次 55% 伤害的恶魔追击(2秒冷却)。' }),
+      capstone({ key:'cap_wl_demo_darksoul', name:'黑暗灵魂', icon:'😈', dir:'招牌', mod:{atkPct:3, critdPct:10}, fx:{ type:'whileBuff', buffKey:'wl_dark', dmgPct:30 }, desc:'【招牌·黑暗灵魂】黑暗灵魂(爆发)持续期间, 你造成的伤害提高 30%;攻击 +3% · 暴伤 +10%。' }),
       capstone({ key:'cap_wl_demo_boss', name:'恶魔统御', icon:'👿', dir:'攻坚', mod:{atkPct:5, hpPct:3}, fx:{ type:'vsBoss', dmgPct:14 }, desc:'【攻坚】攻击 +5% · 生命 +3%;对首领造成的伤害提高 14%。' }),
       capstone({ key:'cap_wl_demo_guard', name:'魔壳护体', icon:'🧱', dir:'生存', mod:{defPct:5, hpPct:5}, fx:{ type:'lowHp', threshold:0.4, shieldPct:0.14, cooldown:25000 }, desc:'【生存】防御 +5% · 生命 +5%;生命低于 40% 时获得 14% 最大生命护盾(25秒冷却)。' }),
     ],
     destruction: [
-      capstone({ key:'cap_wl_dest_burst', name:'混乱迸发', icon:'💥', dir:'爆发', mod:{critdPct:22, atkPct:3}, fx:{ type:'onCrit', extraHitMul:0.6, extraHitIcon:'🔥', cooldown:2000 }, desc:'【爆发】暴伤 +22% · 攻击 +3%;暴击后追加一次 60% 伤害的混乱追击(2秒冷却)。' }),
+      capstone({ key:'cap_wl_dest_ember', name:'余烬共鸣', icon:'🔥', dir:'招牌', mod:{atkPct:3, critdPct:8}, fx:{ type:'auraStackAmp', auraKey:'wl_ember', dmgPctPerStack:6 }, desc:'【招牌·余烬】每层【余烬】使你造成的伤害提高 6%(最多5层 +30%);攻击 +3% · 暴伤 +8%。' }),
       capstone({ key:'cap_wl_dest_exec', name:'末日焚决', icon:'💀', dir:'斩杀', mod:{executeBonus:6, atkPct:3}, fx:{ type:'executeWindow', threshold:0.5, dmgPct:45 }, desc:'【斩杀】斩杀加成 +6% · 攻击 +3%;对生命低于 50% 的目标伤害 +45%。' }),
       capstone({ key:'cap_wl_dest_boss', name:'灼烧强敌', icon:'🌋', dir:'攻坚', mod:{atkPct:5, critdPct:10}, fx:{ type:'vsBoss', dmgPct:14 }, desc:'【攻坚】攻击 +5% · 暴伤 +10%;对首领造成的伤害提高 14%。' }),
     ],
   },
   druid: {
     balance: [
-      capstone({ key:'cap_dru_bal_burst', name:'星辰迸发', icon:'💥', dir:'爆发', mod:{critdPct:20, atkPct:3}, fx:{ type:'onCrit', extraHitMul:0.55, extraHitIcon:'⭐', cooldown:2000 }, desc:'【爆发】暴伤 +20% · 攻击 +3%;暴击后追加一次 55% 伤害的星辉追击(2秒冷却)。' }),
+      capstone({ key:'cap_dru_bal_astral', name:'星界共鸣', icon:'🌗', dir:'招牌', mod:{atkPct:3, critdPct:8}, fx:{ type:'auraStackAmp', auraKey:'d_astral', dmgPctPerStack:6 }, desc:'【招牌·星界能量】每层【星界能量】使你造成的伤害提高 6%(最多5层 +30%);攻击 +3% · 暴伤 +8%。' }),
       capstone({ key:'cap_dru_bal_dot', name:'月蚀灼烧', icon:'🌙', dir:'灼蚀', mod:{dotBonus:4, atkPct:2}, fx:{ type:'vsState', state:'dot', dmgPct:25 }, desc:'【灼蚀】持续伤害 +4% · 攻击 +2%;对带有持续伤害的目标造成的伤害提高 25%。' }),
       capstone({ key:'cap_dru_bal_boss', name:'星界聚焦', icon:'🪐', dir:'攻坚', mod:{atkPct:4, critdPct:12}, fx:{ type:'vsBoss', dmgPct:14 }, desc:'【攻坚】攻击 +4% · 暴伤 +12%;对首领造成的伤害提高 14%。' }),
     ],
     feral: [
-      capstone({ key:'cap_dru_feral_burst', name:'兽性迸发', icon:'💥', dir:'爆发', mod:{spdPct:5, atkPct:3}, fx:{ type:'onCrit', extraHitMul:0.5, extraHitIcon:'🐾', cooldown:1800 }, desc:'【爆发】攻速 +5% · 攻击 +3%;暴击后追加一次 50% 伤害的撕咬(1.8秒冷却)。' }),
+      capstone({ key:'cap_dru_feral_combo', name:'裂伤共鸣', icon:'🐾', dir:'招牌', mod:{atkPct:3, spdPct:3}, fx:{ type:'auraStackAmp', auraKey:'d_combo', dmgPctPerStack:6 }, desc:'【招牌·撕咬连击】每层【撕咬连击】使你造成的伤害提高 6%(最多5层 +30%);攻击 +3% · 攻速 +3%。' }),
       capstone({ key:'cap_dru_feral_dot', name:'血牙撕裂', icon:'🩸', dir:'灼蚀', mod:{dotBonus:4, atkPct:2}, fx:{ type:'vsState', state:'dot', dmgPct:25 }, desc:'【灼蚀】持续伤害 +4% · 攻击 +2%;对流血的目标造成的伤害提高 25%。' }),
       capstone({ key:'cap_dru_feral_exec', name:'血牙终袭', icon:'🐺', dir:'斩杀', mod:{executeBonus:6, atkPct:3}, fx:{ type:'executeWindow', threshold:0.5, dmgPct:45 }, desc:'【斩杀】斩杀加成 +6% · 攻击 +3%;对生命低于 50% 的目标伤害 +45%。' }),
     ],

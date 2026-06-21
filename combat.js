@@ -432,8 +432,9 @@ function talentDamageMult(mon, skillKey){
     else if(fx.type === 'executeWindow' && mon && mon.hp > 0 && mon.hp <= mon.hpMax * (fx.threshold || 0.35) && fx.dmgPct) mult *= 1 + fx.dmgPct/100;
     else if(fx.type === 'vsState' && monsterStateActive(mon, fx.state) && fx.dmgPct) mult *= 1 + fx.dmgPct/100;
     else if(fx.type === 'skillAmp' && skillMatches(fx, skillKey) && (!fx.state || monsterStateActive(mon, fx.state)) && fx.dmgPct) mult *= 1 + fx.dmgPct/100;
-    else if(fx.type === 'whileAura' && hasTalentAura(fx.auraKey) && (!fx.skill || skillMatches(fx, skillKey)) && fx.dmgPct) mult *= 1 + fx.dmgPct/100;
+    else if(fx.type === 'whileAura' && (hasTalentAura(fx.auraKey) || (typeof hasSkillAura==='function' && hasSkillAura(fx.auraKey))) && (!fx.skill || skillMatches(fx, skillKey)) && fx.dmgPct) mult *= 1 + fx.dmgPct/100;
     else if(fx.type === 'whileBuff' && buffActive(fx.buffKey) && (!fx.skill || skillMatches(fx, skillKey)) && fx.dmgPct) mult *= 1 + fx.dmgPct/100;
+    else if(fx.type === 'auraStackAmp' && fx.dmgPctPerStack && typeof skillAuraStacks==='function'){ const st = skillAuraStacks(fx.auraKey); if(st > 0) mult *= 1 + st*fx.dmgPctPerStack/100; }   // 招牌充能层数叠伤
   }
   return mult;
 }
