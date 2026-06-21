@@ -64,6 +64,8 @@ const SKILL_AURA_LIBRARY = {
 const MONSTER_STATE_META = {
   slow:    { icon:'❄️', name:'减速',   desc:'攻击速度降低约33%' },
   sunder:  { icon:'🔨', name:'破甲',   desc:'防御降低30%' },
+  decay:   { icon:'👴', name:'衰老',   desc:'受到治疗和生命回复降低30%' },
+  decay2:  { icon:'🌑', name:'凋零',   desc:'受到治疗降低55%,生命回复降低65%' },
   judged:  { icon:'⚖️', name:'审判',   desc:'十字军打击额外+55%，奉献额外+35%，神圣风暴额外+45%' },
   frozen:  { icon:'🧊', name:'冻结',   desc:'暴风雪额外+50%伤害' },
   exposed: { icon:'🗡️', name:'破绽',   desc:'背刺额外+60%伤害' },
@@ -181,7 +183,7 @@ const SKILL_REWORKS = {
     cleave:{ desc:'对当前目标造成3倍伤害,并横扫周围敌人', aoe:true, cd:5, fx:{ resourceGain:4 } },
     thunderClap:{ desc:'对所有敌人造成2倍伤害并减速,为斩杀做准备', aoe:true, cd:8, fx:{ bonusVsLowHp:0.18, executeThreshold:0.35 } },
     battleShout:{ desc:'15秒攻击+30%,期间致死打击与斩杀额外造成伤害' },
-    mortalStrike:{ desc:'3倍攻击,对破甲目标额外造成60%伤害,并叠加破甲印记', cd:9, fx:{ bonusStates:{ sunder:0.6 }, grantAura:{ key:'w_sunder', add:1, max:5, duration:15000 } } },
+    mortalStrike:{ desc:'3倍攻击,附带8秒凋零,对破甲目标额外造成60%伤害,并叠加破甲印记', cd:9, fx:{ applyTargetState:'decay2', stateDurationMs:8000, bonusStates:{ sunder:0.6 }, grantAura:{ key:'w_sunder', add:1, max:5, duration:15000 } } },
     bloodthirst:{ desc:'4倍攻击,吸血50%,叠加暴怒,并在低血时额外恢复', cd:8, fx:{ healFromDamagePct:0.25, healBonusIfSelfHpBelow:0.55, extraHealPct:0.08, grantAura:{ key:'w_rage', add:1, max:5, duration:12000 } } },
     execute:{ desc:'5倍攻击,消耗全部怒气;对残血与破甲目标造成更高伤害', cd:12, fx:{ bonusStates:{ sunder:0.45 }, bonusVsLowHp:0.7, executeThreshold:0.35, resourceGainOnKill:12 } },
     sunderArmor:{ desc:'3倍攻击并施加15秒破甲,叠加2层破甲印记', cd:7, fx:{ applyTargetState:'sunder', stateDurationMs:15000, resourceGain:6, grantAura:{ key:'w_sunder', add:2, max:5, duration:15000 } } },
@@ -196,7 +198,7 @@ const SKILL_REWORKS = {
   mage: {
     arcane:{ desc:'3倍伤害并叠加奥术充能,强化奥术爆炸', cd:4, fx:{ grantAura:{ key:'arcaneCharge', duration:12000, add:1, max:3 } } },
     arcaneExplosion:{ desc:'3倍范围伤害,消耗奥术充能,每层额外增伤35%', aoe:true, cd:10, fx:{ bonusPerAuraStack:{ key:'arcaneCharge', pct:0.35 }, consumeAura:{ key:'arcaneCharge', all:true } } },
-    fireball:{ desc:'3倍伤害并施加点燃,为炎爆与流星铺垫', cd:6, fx:{ applyDotKey:'skill:fireball', dotName:'点燃', dotIcon:'🔥', dotPct:0.18, dotMs:6000 } },
+    fireball:{ desc:'3倍伤害并施加点燃与8秒衰老,为炎爆与流星铺垫', cd:6, fx:{ applyTargetState:'decay', stateDurationMs:8000, applyDotKey:'skill:fireball', dotName:'点燃', dotIcon:'🔥', dotPct:0.18, dotMs:6000 } },
     frostbolt:{ desc:'3倍伤害并冰缓目标,叠加指尖寒冰,让冰枪更致命', cd:6, fx:{ applyTargetState:'frozen', stateDurationMs:7000, bonusStates:{ slow:0.2 }, grantAura:{ key:'m_frost', add:1, max:5, duration:12000 } } },
     iceBarrier:{ desc:'15秒防御+60%,护体存在时寒冰法术更稳' },
     pyroblast:{ desc:'7倍必暴,消耗全部炽热每层+20%,对点燃目标额外60%并引爆灼烧', cd:14, fx:{ bonusStates:{ dot:0.6 }, bonusPerDot:0.18, bonusPerAuraStack:{ key:'m_heat', pct:0.2 }, consumeAura:{ key:'m_heat', all:true }, consumeDots:true, applyDotKey:'skill:pyroblast', dotName:'炎爆灼烧', dotIcon:'☄️', dotPct:0.12, dotMs:5000 } },
@@ -206,7 +208,7 @@ const SKILL_REWORKS = {
   },
   priest: {
     smite:{ desc:'2倍神圣伤害;若你有真言术盾,将把部分伤害转为治疗', cd:4, fx:{ healFromDamagePct:0.2, healFromDamagePctIfBuff:{ key:'shield', pct:0.4 } } },
-    shadowWord:{ desc:'3倍伤害并施加暗言术·痛,叠加疯狂,为暗影技能提供联动', cd:6, fx:{ applyDotKey:'skill:shadowWord', dotName:'暗言术·痛', dotIcon:'🌑', dotPct:0.16, dotMs:7000, grantAura:{ key:'p_insanity', add:1, max:6, duration:12000 } } },
+    shadowWord:{ desc:'3倍伤害并施加暗言术·痛与8秒凋零,叠加疯狂,为暗影技能提供联动', cd:6, fx:{ applyTargetState:'decay2', stateDurationMs:8000, applyDotKey:'skill:shadowWord', dotName:'暗言术·痛', dotIcon:'🌑', dotPct:0.16, dotMs:7000, grantAura:{ key:'p_insanity', add:1, max:6, duration:12000 } } },
     shield:{ desc:'15秒防御+50%,并让惩击转化为额外治疗' },
     heal:{ desc:'恢复40%生命,过量治疗将转化为护盾', cd:12, fx:{ shieldFromOverhealPct:0.65 } },
     holyNova:{ desc:'3倍范围神圣伤害并自愈,敌人越多恢复越多', aoe:true, cd:10, fx:{ healFromDamagePct:0.32 } },
@@ -219,7 +221,7 @@ const SKILL_REWORKS = {
   rogue: {
     sinister:{ desc:'2倍伤害,叠加连击点,命中减速/中毒目标时更易追击', cd:4, fx:{ bonusStates:{ slow:0.2 }, resourceGain:4, grantAura:{ key:'r_combo', add:1, max:5, duration:12000 } } },
     backstab:{ desc:'3倍伤害,叠加2点连击,对减速/破绽目标额外造成伤害', cd:5, fx:{ bonusStates:{ slow:0.6, exposed:0.5 }, grantAura:{ key:'r_combo', add:2, max:5, duration:12000 } } },
-    poison:{ desc:'3倍伤害并施加致命毒药,叠加毒锋,为终结技提供收益', cd:6, fx:{ applyDotKey:'skill:poison', dotName:'致命毒药', dotIcon:'🐍', dotPct:0.17, dotMs:7000, grantAura:{ key:'r_venom', add:1, max:5, duration:12000 } } },
+    poison:{ desc:'3倍伤害并施加致命毒药与8秒衰老,叠加毒锋,为终结技提供收益', cd:6, fx:{ applyTargetState:'decay', stateDurationMs:8000, applyDotKey:'skill:poison', dotName:'致命毒药', dotIcon:'🐍', dotPct:0.17, dotMs:7000, grantAura:{ key:'r_venom', add:1, max:5, duration:12000 } } },
     evasion:{ desc:'15秒防御+40%,帮助你撑过危险窗口' },
     kidneyShot:{ desc:'4倍伤害并让目标进入破绽状态,便于背刺', cd:10, fx:{ applyTargetState:'exposed', stateDurationMs:7000 } },
     killingSpree:{ desc:'7倍必暴,对中毒目标追加连击', cd:16, fx:{ bonusPerDot:0.22, extraHitPct:0.45 } },
@@ -230,7 +232,7 @@ const SKILL_REWORKS = {
   },
   hunter: {
     arcaneShot:{ desc:'2倍攻击,叠加野兽狂怒,对带钉刺目标额外提高伤害', cd:4, fx:{ bonusPerDot:0.18, grantAura:{ key:'h_frenzy', add:1, max:5, duration:12000 } } },
-    serpentSting:{ desc:'3倍攻击并施加毒蛇钉刺,为瞄准与爆炸射击做准备', cd:6, fx:{ applyDotKey:'skill:serpentSting', dotName:'毒蛇钉刺', dotIcon:'🐍', dotPct:0.16, dotMs:7000 } },
+    serpentSting:{ desc:'3倍攻击并施加毒蛇钉刺与8秒衰老,为瞄准与爆炸射击做准备', cd:6, fx:{ applyTargetState:'decay', stateDurationMs:8000, applyDotKey:'skill:serpentSting', dotName:'毒蛇钉刺', dotIcon:'🐍', dotPct:0.16, dotMs:7000 } },
     rapidFire:{ desc:'15秒攻速+60%,让射击循环明显提速' },
     aimed:{ desc:'4倍必暴,对带钉刺目标额外提高伤害', cd:10, fx:{ bonusPerDot:0.32 } },
     multi:{ desc:'3倍范围伤害,命中的敌人越多越适合接杀戮射击', aoe:true, cd:8, fx:{ bonusVsLowHp:0.12, executeThreshold:0.4 } },
@@ -241,7 +243,7 @@ const SKILL_REWORKS = {
   },
   shaman: {
     lightning:{ desc:'2倍闪电伤害,命中会为风暴打击积蓄雷霆', cd:4, fx:{ grantAura:{ key:'stormCharge', duration:12000, add:1, max:3 } } },
-    flameShock:{ desc:'3倍伤害并施加烈焰震击,叠加漩涡之力,点燃后续爆发', cd:6, fx:{ applyDotKey:'skill:flameShock', dotName:'烈焰震击', dotIcon:'🔥', dotPct:0.16, dotMs:7000, grantAura:{ key:'sh_maelstrom', add:1, max:5, duration:12000 } } },
+    flameShock:{ desc:'3倍伤害并施加烈焰震击与8秒衰老,叠加漩涡之力,点燃后续爆发', cd:6, fx:{ applyTargetState:'decay', stateDurationMs:8000, applyDotKey:'skill:flameShock', dotName:'烈焰震击', dotIcon:'🔥', dotPct:0.16, dotMs:7000, grantAura:{ key:'sh_maelstrom', add:1, max:5, duration:12000 } } },
     earthShield:{ desc:'15秒防御+40%,并强化你的治疗波' },
     chainLightning:{ desc:'4倍范围闪电伤害,雷霆充能会强化它', aoe:true, cd:10, fx:{ bonusPerAuraStack:{ key:'stormCharge', pct:0.18 }, consumeAura:{ key:'stormCharge', add:-1 } } },
     healingWave:{ desc:'恢复35%生命,过量治疗会转成大地护盾', cd:12, fx:{ shieldFromOverhealPct:0.55, shieldBonusIfBuff:{ key:'earthShield', pct:0.2 } } },
@@ -251,7 +253,7 @@ const SKILL_REWORKS = {
     s_stormstrike:{ desc:'9倍风暴打击,叠漩涡之力,受烈焰震击/风怒/雷霆充能共同强化', cd:12, fx:{ bonusPerDot:0.2, bonusIfBuff:{ windfury:0.4 }, bonusPerAuraStack:{ key:'stormCharge', pct:0.16 }, extraHitPctIfBuff:{ key:'windfury', pct:0.4 }, consumeAura:{ key:'stormCharge', all:true }, grantAura:{ key:'sh_maelstrom', add:1, max:5, duration:12000 } } },
   },
   paladin: {
-    judgement:{ desc:'2倍神圣伤害并施加审判,叠加圣能,为制裁与神圣风暴开路', cd:5, fx:{ applyTargetState:'judged', stateDurationMs:12000, grantAura:{ key:'pa_holyPower', add:1, max:5, duration:15000 } } },
+    judgement:{ desc:'2倍神圣伤害并施加审判与8秒衰老,叠加圣能,为制裁与神圣风暴开路', cd:5, fx:{ applyTargetState:[{ key:'judged', durMs:12000 }, { key:'decay', durMs:8000 }], grantAura:{ key:'pa_holyPower', add:1, max:5, duration:15000 } } },
     consecration:{ desc:'3倍范围神圣伤害,对被审判敌人额外提高伤害', aoe:true, cd:10, fx:{ bonusStates:{ judged:0.35 } } },
     holyLight:{ desc:'恢复40%生命,过量治疗会化为圣光护盾', cd:12, fx:{ shieldFromOverhealPct:0.75 } },
     crusader:{ desc:'3倍必暴,叠加圣能,对被审判目标额外提高伤害并回复生命', cd:8, fx:{ bonusStates:{ judged:0.55 }, healFromDamagePct:0.22, grantAura:{ key:'pa_holyPower', add:1, max:5, duration:15000 } } },
@@ -266,7 +268,7 @@ const SKILL_REWORKS = {
     shadowBolt:{ desc:'3倍暗影伤害,目标每多一种痛苦效果伤害越高', cd:5, fx:{ bonusPerDot:0.18 } },
     immolate:{ desc:'3倍火焰伤害并施加献祭,叠加余烬,和腐蚀术可同时存在', cd:6, fx:{ applyDotKey:'skill:immolate', dotName:'献祭', dotIcon:'🔥', dotPct:0.17, dotMs:7000, grantAura:{ key:'wl_ember', add:1, max:5, duration:12000 } } },
     corruption:{ desc:'3倍暗影伤害并施加腐蚀术,叠加灵魂碎片,是术士循环的起点', cd:6, fx:{ applyDotKey:'skill:corruption', dotName:'腐蚀术', dotIcon:'🧿', dotPct:0.15, dotMs:8000, grantAura:{ key:'wl_shard', add:1, max:5, duration:12000 } } },
-    unstableAffliction:{ desc:'4倍伤害并施加痛苦无常,叠加2层灵魂碎片', cd:7, fx:{ applyDotKey:'skill:unstableAffliction', dotName:'痛苦无常', dotIcon:'💜', dotPct:0.18, dotMs:8000, grantAura:{ key:'wl_shard', add:2, max:5, duration:12000 } } },
+    unstableAffliction:{ desc:'4倍伤害并施加痛苦无常与8秒凋零,叠加2层灵魂碎片', cd:7, fx:{ applyTargetState:'decay2', stateDurationMs:8000, applyDotKey:'skill:unstableAffliction', dotName:'痛苦无常', dotIcon:'💜', dotPct:0.18, dotMs:8000, grantAura:{ key:'wl_shard', add:2, max:5, duration:12000 } } },
     drainLife:{ desc:'4倍吸取生命,低血时额外治疗并留下护盾', cd:12, fx:{ healFromDamagePct:0.35, healBonusIfSelfHpBelow:0.6, shieldFromDamagePct:0.12 } },
     fear:{ desc:'3倍伤害并减速,让献祭与混乱之箭更容易打满', cd:10, fx:{ applyTargetState:'terror', stateDurationMs:6000 } },
     chaosBolt:{ desc:'8倍混乱之箭,消耗全部余烬每层+18%,引爆痛苦', cd:16, fx:{ bonusPerDot:0.26, bonusPerAuraStack:{ key:'wl_ember', pct:0.18 }, consumeAura:{ key:'wl_ember', all:true }, consumeDots:true, splashPct:0.25 } },
@@ -279,7 +281,7 @@ const SKILL_REWORKS = {
     wrath:{ desc:'2倍自然伤害,对带月火术的目标额外提高伤害', cd:4, fx:{ bonusPerDot:0.2 } },
     swipe:{ desc:'2倍范围横扫,叠加撕咬连击,对残血敌人额外提高伤害', aoe:true, cd:8, fx:{ bonusVsLowHp:0.22, executeThreshold:0.4, grantAura:{ key:'d_combo', add:1, max:5, duration:12000 } } },
     rejuvenation:{ desc:'恢复35%生命,过量治疗会化为自然护盾', cd:10, fx:{ shieldFromOverhealPct:0.5 } },
-    moonfire:{ desc:'3倍伤害并施加月火术,叠加星界能量,是平衡与野性的共同起点', cd:6, fx:{ applyDotKey:'skill:moonfire', dotName:'月火术', dotIcon:'🌙', dotPct:0.16, dotMs:7000, grantAura:{ key:'d_astral', add:1, max:5, duration:12000 } } },
+    moonfire:{ desc:'3倍伤害并施加月火术与8秒衰老,叠加星界能量,是平衡与野性的共同起点', cd:6, fx:{ applyTargetState:'decay', stateDurationMs:8000, applyDotKey:'skill:moonfire', dotName:'月火术', dotIcon:'🌙', dotPct:0.16, dotMs:7000, grantAura:{ key:'d_astral', add:1, max:5, duration:12000 } } },
     starfire:{ desc:'5倍奥术伤害,叠加2层星界能量', fx:{ grantAura:{ key:'d_astral', add:2, max:5, duration:12000 } } },
     bite:{ desc:'4倍必暴,叠加撕咬连击,对带月火术或残血目标额外提高伤害', cd:10, fx:{ bonusPerDot:0.24, bonusVsLowHp:0.5, executeThreshold:0.35, grantAura:{ key:'d_combo', add:1, max:5, duration:12000 } } },
     berserk:{ desc:'15秒攻击+40%攻速+30%,野性窗口全面强化' },
@@ -315,6 +317,7 @@ function skillAuraName(key) {
 }
 
 function skillStateName(key) {
+  if (key && typeof key === 'object' && key.key) key = key.key;
   if (key === 'dot') return '带持续伤害';
   return (typeof MONSTER_STATE_META === 'object' && MONSTER_STATE_META[key] && MONSTER_STATE_META[key].name) || key;
 }
@@ -373,7 +376,14 @@ function buildSkillDetailParts(clsKey, sk, baseDesc) {
 
   if (!fx) return parts;
 
-  if (fx.applyTargetState) parts.push(`施加${skillStateName(fx.applyTargetState)}${skillSecText(fx.stateDurationMs || 10000)}`);
+  if (fx.applyTargetState) {
+    const states = Array.isArray(fx.applyTargetState) ? fx.applyTargetState : [fx.applyTargetState];
+    for (const state of states) {
+      const key = state && typeof state === 'object' ? state.key : state;
+      const dur = state && typeof state === 'object' ? (state.durMs || state.durationMs || fx.stateDurationMs || 10000) : (fx.stateDurationMs || 10000);
+      if (key) parts.push(`施加${skillStateName(key)}${skillSecText(dur)}`);
+    }
+  }
   if (fx.grantAura) parts.push(`叠加${skillAuraName(fx.grantAura.key)}${fx.grantAura.add || 1}层(最多${fx.grantAura.max || 99}层,持续${skillSecText(fx.grantAura.duration || 0)})`);
   if (fx.consumeAura) {
     let how = '消耗';
@@ -522,7 +532,7 @@ const SKILL_AI_OVERRIDES = {
     sh_lavaLash:{ priorityTag:'spender', useIfChargeKey:'sh_maelstrom', useIfChargeAtLeast:3, preferOnBoss:true },
   },
   paladin: {
-    judgement:{ priorityTag:'setup', applyTargetState:'judged', stateDurationMs:12000, useIfTargetMissing:'judged', avoidIfTargetHpBelow:0.2, preferOnBoss:true },
+    judgement:{ priorityTag:'setup', applyTargetState:[{ key:'judged', durMs:12000 }, { key:'decay', durMs:8000 }], useIfTargetMissing:'decay', avoidIfTargetHpBelow:0.2, preferOnBoss:true },
     holyLight:{ priorityTag:'heal', useIfSelfHpBelow:0.68 },
     divineShield:{ priorityTag:'defBuff', useIfSelfHpBelow:0.42 },
     crusader:{ priorityTag:'spender', useIfTargetHas:'judged', preferOnBoss:true },

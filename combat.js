@@ -121,12 +121,20 @@ function addTalentShield(amount, quiet){
   markDirty('hero');
   return amount;
 }
+const SHIELD_ABSORB_RATIO = 0.75;
+function shieldAbsorbAmount(pool, amount){
+  pool = Math.max(0, Math.floor(pool || 0));
+  amount = Math.max(0, Math.floor(amount || 0));
+  if(pool <= 0 || amount <= 0) return 0;
+  const perHitCap = Math.max(1, Math.floor(amount * SHIELD_ABSORB_RATIO));
+  return Math.min(pool, perHitCap);
+}
 function absorbTalentShield(amount){
   amount = Math.max(0, Math.floor(amount || 0));
   if(amount <= 0) return 0;
   const rt = ensureTalentState();
   if(rt.shield <= 0) return amount;
-  const absorb = Math.min(rt.shield, amount);
+  const absorb = shieldAbsorbAmount(rt.shield, amount);
   rt.shield -= absorb;
   showFloat($('hero-emoji'), '🛡️-' + absorb, '#93c5fd', { variant:'shield-break', scale:1.02 });
   if(typeof pulseCombatEl === 'function') pulseCombatEl($('hero-emoji'), 'shield', 260);
@@ -384,6 +392,13 @@ function applySkillHealEffects(skillKey, sk, amount, overheal){
 }
 function applyMonsterState(mon, stateKey, durMs){
   if(!mon || !stateKey) return;
+  if(Array.isArray(stateKey)){
+    for(const entry of stateKey){
+      if(typeof entry === 'string') applyMonsterState(mon, entry, durMs);
+      else if(entry && typeof entry === 'object' && entry.key) applyMonsterState(mon, entry.key, entry.durMs || entry.durationMs || durMs);
+    }
+    return;
+  }
   if(stateKey === 'sunder'){
     mon.sunderUntil = Math.max(mon.sunderUntil || 0, Date.now() + (durMs || 15000));
     return;
@@ -1573,7 +1588,7 @@ function bossTrickList(bossData){
 function syncMonsterShieldAura(mon){
   if(!mon) return;
   if((mon._arcaneShield || 0) > 0){
-    setMonsterTrickAura(mon, 'shield', { name:'护盾', icon:'🛡️', desc:'' }, 0, { desc:`护盾吸收 ${fmt(mon._arcaneShield)} 点伤害` });
+    setMonsterTrickAura(mon, 'shield', { name:'护盾', icon:'🛡️', desc:'' }, 0, { desc:`护盾可吸收 ${fmt(mon._arcaneShield)} 点任意伤害(单次最多吸收75%)` });
   }else if(mon._trickAuras){
     delete mon._trickAuras.shield;
   }
@@ -1582,7 +1597,7 @@ function absorbMonsterBarrier(mon, amount, icon){
   amount = Math.max(0, Math.floor(amount || 0));
   if(!mon || amount <= 0) return { remaining:0, absorbed:0 };
   if(!(mon._arcaneShield > 0)) return { remaining:amount, absorbed:0 };
-  const absorbed = Math.min(mon._arcaneShield, amount);
+  const absorbed = shieldAbsorbAmount(mon._arcaneShield, amount);
   mon._arcaneShield -= absorbed;
   const remaining = amount - absorbed;
   if(absorbed > 0){
@@ -2119,7 +2134,7 @@ function applyCompanionDamage(amount, mon, opts){
   const now = opts?.now || Date.now();
   let taken = Math.max(0, Math.floor(amount || 0));
   if((state._compBarrier || 0) > 0 && taken > 0){
-    const absorb = Math.min(state._compBarrier, taken);
+    const absorb = shieldAbsorbAmount(state._compBarrier, taken);
     state._compBarrier -= absorb;
     taken -= absorb;
     showFloat($('comp-mini'), '🛡️-' + absorb, '#93c5fd', { variant:'shield-break', scale:1.02 });

@@ -198,7 +198,7 @@ function focusBuffs(now) {
     }
   }
   if (mon._arcaneShield > 0 && !(mon._trickAuras && mon._trickAuras.shield)) {
-    pushBuff({ icon:'🔮', name:'护体屏障', base:'护体屏障', desc:`吸收 ${fmt(mon._arcaneShield)} 点伤害`, left:0 });
+    pushBuff({ icon:'🔮', name:'护体屏障', base:'护体屏障', desc:`吸收 ${fmt(mon._arcaneShield)} 点任意伤害(单次最多75%)`, left:0 });
   }
   return Array.from(merged.values()).map(entry => {
     const stacks = entry.stacks > 1 ? ` · ${entry.stacks}层` : '';
@@ -707,7 +707,7 @@ function renderMonList() {
       }
     } else if (m.dot > 0 && m.dotEnd > now) s += `<span title="灼烧/中毒:每秒 ${fmt(m.dot)} 伤害">${statusIconHtml('灼烧/中毒', '🔥', 13)}</span>`;
     if (m.sunderUntil > now) s += `<span title="破甲:防御降低30%">${statusIconHtml('破甲', '🔨', 13)}</span>`;
-    if (m._arcaneShield > 0) s += `<span title="法力护盾:吸收 ${fmt(m._arcaneShield)} 伤害">${statusIconHtml('法力护盾', '🔮', 13)}</span>`;
+    if (m._arcaneShield > 0) s += `<span title="法力护盾:吸收 ${fmt(m._arcaneShield)} 点任意伤害(单次最多75%)">${statusIconHtml('法力护盾', '🔮', 13)}</span>`;
     if (de.dataset.s !== s) { de.innerHTML = s; de.dataset.s = s; }
   }
   if (!skipNonFocus) _lastNonFocusMonPaint = now;
