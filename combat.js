@@ -927,6 +927,35 @@ function recomputeStats() {
     }
   }
   _saveSrc('神器');
+  // 幻象挑战能力 — 同 schema，仅在幻象挑战中生效
+  _snapSrc();
+  if (typeof collectRoguelikeMod === 'function') {
+    const p = collectRoguelikeMod();
+    for (const [k, v] of Object.entries(p)) {
+      if (!v) continue;
+      if (k==='atkPct') atkPct+=v;
+      else if (k==='hpPct') hpPct+=v;
+      else if (k==='defPct') defPct+=v;
+      else if (k==='critdPct') critdPct+=v;
+      else if (k==='spdPct') spdPct+=v;
+      else if (k==='crit') critFlat+=v;
+      else if (k==='leech') leech+=v;
+      else if (k==='vers') vers+=v;
+      else if (k==='mastery') mastery+=v;
+      else if (k==='regFlat') regFlat+=v;
+      else if (k==='cdReduction') cdReduction+=v;
+      else if (k==='extraAtk') extraAtk+=v;
+      else if (k==='healBonus') healBonus+=v;
+      else if (k==='dotBonus') dotBonus+=v;
+      else if (k==='costReduction') costReduction+=v;
+      else if (k==='executeBonus') executeBonus+=v;
+      else if (k==='reflectDmg') reflectDmg+=v;
+      else if (k==='armorPen') armorPen+=v;
+      else if (k==='dodge') dodge+=v;
+      else if (k==='stunChance') stunChance+=v;
+    }
+  }
+  _saveSrc('幻象');
   // 坐骑 — 同 schema
   _snapSrc();
   if (typeof collectMountMod === 'function') {

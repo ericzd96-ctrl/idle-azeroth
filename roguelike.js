@@ -171,6 +171,11 @@ function enterRoguelike() {
     buffs: Object.assign({}, state.buffs),
     talentAuras: Object.assign({}, state.talentAuras),
     equipped: Object.assign({}, state.equipped),
+    activeCompanion: state.activeCompanion,
+    skillCooldowns: Object.assign({}, state.skillCooldowns),
+    heroDebuffs: Object.assign({}, state.heroDebuffs),
+    hp: state.hp,
+    resource: state.resource,
   };
   // 重置为基准属性
   resetRoguelikeStats();
@@ -193,17 +198,18 @@ function leaveRoguelike() {
 
 function resetRoguelikeStats() {
   const c = typeof getCls === 'function' ? getCls() : null;
-  const base = c && c.baseStats ? c.baseStats : { atk:20, def:8, hpMax:200, spd:0.75, mpMax:100 };
-  state.hero = Object.assign({}, state.hero, {
-    atk: base.atk || 20, def: base.def || 8,
-    hpMax: base.hpMax || 200, spd: base.spd || 0.75,
-    mpMax: base.mpMax || 100, crit: 5, critd: 50,
-    reg: 1, leech: 0, vers: 0, mastery: 0, haste: 0,
-  });
-  state.hp = state.hero.hpMax;
-  state.resource = state.resourceMax;
+  state.attrs = { str:0, agi:0, int:0, spi:0, sta:0 };
+  state.equipped = {};
+  state.activeCompanion = -1;
+  state.skillCooldowns = {};
+  state.heroDebuffs = {};
   if (typeof clearAllBuffs === 'function') clearAllBuffs();
   state.buffs = {};
+  state.talentAuras = {};
+  if (typeof recomputeStats === 'function') recomputeStats();
+  state.resourceMax = Math.max(1, state.resourceMax || state.hero.mpMax || 100);
+  state.hp = Math.max(1, state.hero.hpMax || 200);
+  state.resource = c && c.resKey === 'rage' ? 0 : state.resourceMax;
 }
 
 function restoreRoguelikeStats() {
@@ -214,8 +220,15 @@ function restoreRoguelikeStats() {
   state.buffs = Object.assign({}, saved.buffs);
   state.talentAuras = Object.assign({}, saved.talentAuras);
   state.equipped = Object.assign({}, saved.equipped);
+  state.activeCompanion = typeof saved.activeCompanion === 'number' ? saved.activeCompanion : state.activeCompanion;
+  state.skillCooldowns = Object.assign({}, saved.skillCooldowns || {});
+  state.heroDebuffs = Object.assign({}, saved.heroDebuffs || {});
   state._roguelikeSaved = null;
   if (typeof recomputeStats === 'function') recomputeStats();
+  const savedHp = Number.isFinite(saved.hp) ? saved.hp : (state.hero.hpMax || 1);
+  const savedResource = Number.isFinite(saved.resource) ? saved.resource : 0;
+  state.hp = Math.max(1, Math.min(savedHp, state.hero.hpMax || 1));
+  state.resource = Math.max(0, Math.min(savedResource, state.resourceMax || state.hero.mpMax || 100));
 }
 
 /* ---------- 怪物生成 ---------- */

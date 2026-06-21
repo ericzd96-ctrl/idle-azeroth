@@ -528,6 +528,7 @@ const rng = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
 const choice = arr => arr[Math.floor(Math.random() * arr.length)];
 
 function fmt(n) {
+  if (!Number.isFinite(n)) return '0';
   if (n >= 1e9) return (n/1e9).toFixed(2)+'B';
   if (n >= 1e6) return (n/1e6).toFixed(2)+'M';
   if (n >= 1e4) return (n/1e3).toFixed(1)+'K';
@@ -543,6 +544,7 @@ function fmtCd(seconds) {
 }
 
 function setBar(el, pct, text) {
+  pct = Number.isFinite(pct) ? pct : 0;
   const pctText = Math.max(0, Math.min(100, pct)) + '%';
   if (el.dataset.w !== pctText) {
     el.dataset.w = pctText;
