@@ -122,12 +122,24 @@ function addTalentShield(amount, quiet){
   return amount;
 }
 const SHIELD_ABSORB_RATIO = 0.75;
+const BOSS_SKILL_HEAL_MULT = 0.5;
 function shieldAbsorbAmount(pool, amount){
   pool = Math.max(0, Math.floor(pool || 0));
   amount = Math.max(0, Math.floor(amount || 0));
   if(pool <= 0 || amount <= 0) return 0;
   const perHitCap = Math.max(1, Math.floor(amount * SHIELD_ABSORB_RATIO));
   return Math.min(pool, perHitCap);
+}
+function bossSkillHealPct(value){
+  value = +value || 0;
+  if(value <= 0) return 0;
+  return +(value * BOSS_SKILL_HEAL_MULT).toFixed(3);
+}
+function bossSkillHealAmount(mon, value){
+  if(!mon || !(mon.hpMax > 0)) return 0;
+  const pct = bossSkillHealPct(value);
+  if(pct <= 0) return 0;
+  return Math.max(1, Math.floor(mon.hpMax * pct));
 }
 function absorbTalentShield(amount){
   amount = Math.max(0, Math.floor(amount || 0));
@@ -1828,7 +1840,7 @@ function buildInterruptedBossResidual(skill){
     desc:'被打断后仍留下部分余波',
   };
   let hasEffect = false;
-  if(skill.healPct){ out.healPct = +(skill.healPct * 0.45).toFixed(3); hasEffect = true; }
+  if(skill.healPct){ out.healPct = +(bossSkillHealPct(skill.healPct) * 0.45).toFixed(3); hasEffect = true; }
   if(skill.shieldPct){ out.shieldPct = +(skill.shieldPct * 0.5).toFixed(3); hasEffect = true; }
   if(skill.atkBuffSecs){ out.atkBuffSecs = Math.max(3, Math.floor(skill.atkBuffSecs * 0.55)); out.atkBuffPct = Math.max(10, Math.floor((skill.atkBuffPct || 30) * 0.55)); hasEffect = true; }
   if(skill.spdBuffSecs){ out.spdBuffSecs = Math.max(3, Math.floor(skill.spdBuffSecs * 0.55)); out.spdBuffPct = Math.max(10, Math.floor((skill.spdBuffPct || 25) * 0.55)); hasEffect = true; }
@@ -1859,7 +1871,7 @@ function applyMonsterSupportSkill(mon, skill, now, opts){
     pulseMonsterEl(mon, 'bosscast', 300);
   }
   if(skill.healPct){
-    const heal = Math.max(1, Math.floor(mon.hpMax * skill.healPct));
+    const heal = bossSkillHealAmount(mon, skill.healPct);
     mon.hp = Math.min(mon.hpMax, mon.hp + heal);
     showMonsterFloat(mon, '💚+' + heal, '#6ee7b7', { variant:'heal', scale:1.05 });
     pulseMonsterEl(mon, 'heal', 240);
@@ -2549,7 +2561,7 @@ function tickBattle(now){
         mon._trickDefPct=trick.defBuffPct||50;
         setMonsterTrickAura(mon,'def',trick,mon._trickDefBuff);
       }
-      if(trick.healPct)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(mon.hpMax*trick.healPct));
+      if(trick.healPct)mon.hp=Math.min(mon.hpMax,mon.hp+bossSkillHealAmount(mon, trick.healPct));
       if(trick.leechBuff){
         mon._trickLeech=now+trick.leechBuff*1000;
         mon._trickLeechPct=trick.leechBuffPct||20;
@@ -3073,7 +3085,7 @@ function tickCast(now){
       hideBossCastBar();
       const bc=bossCasting;bossCasting=null;const mon=state.currentMonsters[0];if(!mon||mon.hp<=0)return;
       const critRate = monsterCritRate(mon, now);
-      if(bc.type==='heal'){const h=Math.floor(mon.hpMax*(bc.heal||0.2));mon.hp=Math.min(mon.hpMax,mon.hp+h);showMonsterFloat(mon,'💚+'+h,'#6ee7b7');}
+      if(bc.type==='heal'){const h=bossSkillHealAmount(mon, bc.heal||0.2);mon.hp=Math.min(mon.hpMax,mon.hp+h);showMonsterFloat(mon,'💚+'+h,'#6ee7b7');}
       else if(bc.type==='buff'||bc.type==='support'||bc.type==='summon'){
         log(`💀 ${mon.bossName || mon.name} 释放了 ${bc.name}!`,'bad');
         showMonsterFloat(mon, (bc.icon || '✨') + bc.name + '!', '#fda4af');
