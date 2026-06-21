@@ -223,13 +223,13 @@ const ARTIFACT_TRAITS = {
   warrior: [
     skillAmpTrait({ key:'art_war_arms_mortal', tree:'arms', name:'破军裂锋', icon:'⚔️', skill:'mortalStrike', dmgPct:[10,20,30], mod:{atkPct:1}, desc:'致死打击伤害提高 10/20/30%，并获得攻击 +1%/2%/3%。' }),
     vsStateTrait({ key:'art_war_arms_sunder', tree:'arms', name:'裂甲处刑', icon:'🔨', state:'sunder', dmgPct:[8,16,24], mod:{executeBonus:2}, prereq:'art_war_arms_mortal', desc:'对被破甲目标造成的伤害提高 8/16/24%，并获得斩杀加成 +2%/4%/6%。' }),
-    afterSkillTrait({ key:'art_war_arms_mark', tree:'arms', name:'处决节律', icon:'💀', skill:'sunderArmor', chance:[35,70,100], nextSkillCrit:[1,1,1], mod:{cdReduction:2}, prereq:'art_war_arms_sunder', desc:'施放破甲攻击后有 35/70/100% 几率让下一次伤害技能必定暴击，并获得技能冷却缩减 +2%/4%/6%。' }),
+    afterSkillTrait({ key:'art_war_arms_mark', tree:'arms', name:'处决节律', icon:'💀', skill:'sunderArmor', chance:[30,55,80], nextSkillCrit:[1,1,1], mod:{cdReduction:2}, prereq:'art_war_arms_sunder', desc:'施放破甲攻击后有 30/55/80% 几率让下一次伤害技能必定暴击，并获得技能冷却缩减 +2%/4%/6%。' }),
     executeTrait({ key:'art_war_arms_finish', tree:'arms', name:'终幕裁决', icon:'🪓', threshold:0.45, dmgPct:[12,24,36], mod:{atkPct:1}, prereq:'art_war_arms_mark', desc:'对生命低于 45% 的目标造成的伤害提高 12/24/36%，并获得攻击 +1%/2%/3%。' }),
 
     skillAmpTrait({ key:'art_war_fury_blood', tree:'fury', name:'血潮双刃', icon:'🩸', skill:'bloodthirst', dmgPct:[12,24,36], mod:{spdPct:2}, desc:'嗜血伤害提高 12/24/36%，并获得攻速 +2%/4%/6%。' }),
-    onCritTrait({ key:'art_war_fury_rush', tree:'fury', name:'狂怒回响', icon:'🔥', extraHitMul:[0.25,0.4,0.55], extraHitIcon:'⚔️', cooldown:2500, mod:{atkPct:1}, prereq:'art_war_fury_blood', desc:'暴击后追加一次 25%/40%/55% 伤害的追击，2.5秒冷却，并获得攻击 +1%/2%/3%。' }),
+    onCritTrait({ key:'art_war_fury_rush', tree:'fury', name:'狂怒回响', icon:'🔥', extraHitMul:[0.22,0.34,0.46], extraHitIcon:'⚔️', cooldown:2500, mod:{atkPct:1}, prereq:'art_war_fury_blood', desc:'暴击后追加一次 22%/34%/46% 伤害的追击，2.5秒冷却，并获得攻击 +1%/2%/3%。' }),
     onKillTrait({ key:'art_war_fury_hunt', tree:'fury', name:'战吼回流', icon:'📯', healPct:[0.03,0.05,0.07], resource:[4,8,12], mod:{hpPct:2}, prereq:'art_war_fury_rush', desc:'击杀敌人后恢复 3%/5%/7% 最大生命并回复 4/8/12 点资源，获得生命 +2%/4%/6%。' }),
-    afterSkillTrait({ key:'art_war_fury_reset', tree:'fury', name:'嗜血不息', icon:'😡', skill:'bloodthirst', chance:[15,25,35], resetSkill:'bloodthirst', mod:{spdPct:2}, prereq:'art_war_fury_hunt', desc:'施放嗜血后有 15/25/35% 几率立刻重置嗜血冷却，并获得攻速 +2%/4%/6%。' }),
+    afterSkillTrait({ key:'art_war_fury_reset', tree:'fury', name:'嗜血不息', icon:'😡', skill:'bloodthirst', chance:[10,18,26], resetSkill:'bloodthirst', mod:{spdPct:2}, prereq:'art_war_fury_hunt', desc:'施放嗜血后有 10/18/26% 几率立刻重置嗜血冷却，并获得攻速 +2%/4%/6%。' }),
 
     whileBuffTrait({ key:'art_war_prot_wall', tree:'prot', name:'坚壁压阵', icon:'🛡️', buffKey:'shield', takenPct:[8,16,24], mod:{defPct:2}, desc:'盾墙持续期间，受到的伤害额外降低 8/16/24%，并获得防御 +2%/4%/6%。' }),
     bossTrait({ key:'art_war_prot_boss', tree:'prot', name:'统御前线', icon:'👑', dmgPct:[6,12,18], takenPct:[4,8,12], mod:{hpPct:2}, prereq:'art_war_prot_wall', desc:'对首领造成的伤害提高 6/12/18%，受到其伤害降低 4/8/12%，并获得生命 +2%/4%/6%。' }),
@@ -239,29 +239,29 @@ const ARTIFACT_TRAITS = {
   mage: [
     skillAmpTrait({ key:'art_mage_arc_blast', tree:'arcane', name:'法网回路', icon:'✨', skill:'arcane', dmgPct:[10,20,30], mod:{intPct:2}, desc:'奥术飞弹伤害提高 10/20/30%，并获得智力 +2%/4%/6%。' }),
     afterSkillTrait({ key:'art_mage_arc_mana', tree:'arcane', name:'法力回收', icon:'🔮', skill:'arcane', resource:[4,8,12], mod:{costReduction:3}, prereq:'art_mage_arc_blast', desc:'施放奥术飞弹后回复 4/8/12 点资源，并获得减耗 +3%/6%/9%。' }),
-    onCritTrait({ key:'art_mage_arc_echo', tree:'arcane', name:'奥能回响', icon:'💥', skill:['arcane','arcaneExplosion'], extraHitMul:[0.3,0.45,0.6], extraHitIcon:'✨', cooldown:3000, mod:{cdReduction:2}, prereq:'art_mage_arc_mana', desc:'奥术技能暴击后追加一次 30%/45%/60% 伤害的奥能回响，3秒冷却，并获得技能冷却缩减 +2%/4%/6%。' }),
+    onCritTrait({ key:'art_mage_arc_echo', tree:'arcane', name:'奥能回响', icon:'💥', skill:['arcane','arcaneExplosion'], extraHitMul:[0.24,0.36,0.48], extraHitIcon:'✨', cooldown:3000, mod:{cdReduction:2}, prereq:'art_mage_arc_mana', desc:'奥术技能暴击后追加一次 24%/36%/48% 伤害的奥能回响，3秒冷却，并获得技能冷却缩减 +2%/4%/6%。' }),
     bossTrait({ key:'art_mage_arc_siege', tree:'arcane', name:'法阵收束', icon:'🪞', dmgPct:[8,16,24], mod:{atkPct:1}, prereq:'art_mage_arc_echo', desc:'对首领造成的伤害提高 8/16/24%，并获得攻击 +1%/2%/3%。' }),
 
     skillAmpTrait({ key:'art_mage_fire_ball', tree:'fire', name:'灼心余焰', icon:'🔥', skill:'fireball', dmgPct:[10,20,30], mod:{dotBonus:3}, desc:'火球术伤害提高 10/20/30%，并获得持续伤害 +3%/6%/9%。' }),
     onCritTrait({ key:'art_mage_fire_ignite', tree:'fire', name:'余烬翻涌', icon:'☄️', applyDotPct:[0.08,0.12,0.18], dotMs:6000, mod:{atkPct:1}, prereq:'art_mage_fire_ball', desc:'暴击时追加一层基于本次伤害 8%/12%/18% 的灼烧，持续 6 秒，并获得攻击 +1%/2%/3%。' }),
-    afterSkillTrait({ key:'art_mage_fire_chain', tree:'fire', name:'热能连发', icon:'🔥', skill:'fireball', chance:[20,35,50], nextSkillCrit:[1,1,1], mod:{cdReduction:2}, prereq:'art_mage_fire_ignite', desc:'施放火球术后有 20/35/50% 几率让下一次伤害技能必定暴击，并获得技能冷却缩减 +2%/4%/6%。' }),
+    afterSkillTrait({ key:'art_mage_fire_chain', tree:'fire', name:'热能连发', icon:'🔥', skill:'fireball', chance:[15,28,40], nextSkillCrit:[1,1,1], mod:{cdReduction:2}, prereq:'art_mage_fire_ignite', desc:'施放火球术后有 15/28/40% 几率让下一次伤害技能必定暴击，并获得技能冷却缩减 +2%/4%/6%。' }),
     executeTrait({ key:'art_mage_fire_finish', tree:'fire', name:'焦灼终焉', icon:'🌋', threshold:0.35, dmgPct:[12,24,36], mod:{atkPct:1}, prereq:'art_mage_fire_chain', desc:'对生命低于 35% 的目标造成的伤害提高 12/24/36%，并获得攻击 +1%/2%/3%。' }),
 
     skillAmpTrait({ key:'art_mage_frost_bolt', tree:'frost', name:'霜脉裂片', icon:'❄️', skill:'frostbolt', dmgPct:[10,20,30], mod:{defPct:2}, desc:'寒冰箭伤害提高 10/20/30%，并获得防御 +2%/4%/6%。' }),
     vsStateTrait({ key:'art_mage_frost_slow', tree:'frost', name:'冻伤锁定', icon:'🧊', state:'slow', dmgPct:[10,20,30], mod:{spdPct:2}, prereq:'art_mage_frost_bolt', desc:'对被减速目标造成的伤害提高 10/20/30%，并获得攻速 +2%/4%/6%。' }),
-    lowHpTrait({ key:'art_mage_frost_barrier', tree:'frost', name:'极寒护体', icon:'🛡️', threshold:0.45, cooldown:30000, shieldPct:[0.04,0.08,0.12], mod:{defPct:2}, prereq:'art_mage_frost_slow', desc:'生命低于 45% 时，获得相当于 4%/8%/12% 最大生命的护盾，30秒冷却，并获得防御 +2%/4%/6%。' }),
+    lowHpTrait({ key:'art_mage_frost_barrier', tree:'frost', name:'极寒护体', icon:'🛡️', threshold:0.45, cooldown:30000, shieldPct:[0.05,0.1,0.15], mod:{defPct:2}, prereq:'art_mage_frost_slow', desc:'生命低于 45% 时，获得相当于 5%/10%/15% 最大生命的护盾，30秒冷却，并获得防御 +2%/4%/6%。' }),
     onCritTrait({ key:'art_mage_frost_echo', tree:'frost', name:'冰凌追击', icon:'🌨️', skill:['frostbolt','blizzard'], extraHitMul:[0.25,0.4,0.55], extraHitIcon:'❄️', cooldown:3000, mod:{atkPct:1}, prereq:'art_mage_frost_barrier', desc:'冰霜技能暴击后追加一次 25%/40%/55% 伤害的冰凌追击，3秒冷却，并获得攻击 +1%/2%/3%。' }),
   ],
   priest: [
     skillAmpTrait({ key:'art_pri_disc_wrath', tree:'discipline', name:'赎罪烙印', icon:'✝️', skill:['smite','mindBlast'], dmgPct:[10,20,30], mod:{healBonus:3}, desc:'惩击与心灵震爆伤害提高 10/20/30%，并获得治疗效果 +3%/6%/9%。' }),
-    afterHealTrait({ key:'art_pri_disc_shell', tree:'discipline', name:'灵魂回护', icon:'🛡️', overhealShieldPct:[0.2,0.35,0.5], mod:{defPct:2}, prereq:'art_pri_disc_wrath', desc:'你的过量治疗会转化为 20%/35%/50% 的吸收护盾，并获得防御 +2%/4%/6%。' }),
-    afterSkillTrait({ key:'art_pri_disc_shield', tree:'discipline', name:'苦修慰藉', icon:'💚', skill:'shield', healPct:[0.02,0.04,0.06], mod:{regFlat:1}, prereq:'art_pri_disc_shell', desc:'施放真言术盾后，立刻恢复 2%/4%/6% 最大生命，并获得回复 +1/2/3。' }),
-    lowHpTrait({ key:'art_pri_disc_save', tree:'discipline', name:'神佑临界', icon:'🕊️', threshold:0.38, cooldown:30000, healPct:[0.04,0.08,0.12], shieldPct:[0.04,0.08,0.12], mod:{hpPct:2}, prereq:'art_pri_disc_shield', desc:'生命低于 38% 时，恢复 4%/8%/12% 最大生命并获得等量护盾，30秒冷却，同时获得生命 +2%/4%/6%。' }),
+    afterHealTrait({ key:'art_pri_disc_shell', tree:'discipline', name:'灵魂回护', icon:'🛡️', overhealShieldPct:[0.35,0.5,0.65], mod:{defPct:2}, prereq:'art_pri_disc_wrath', desc:'你的过量治疗会转化为 35%/50%/65% 的吸收护盾，并获得防御 +2%/4%/6%。' }),
+    afterSkillTrait({ key:'art_pri_disc_shield', tree:'discipline', name:'苦修慰藉', icon:'💚', skill:'shield', healPct:[0.03,0.06,0.09], mod:{regFlat:1}, prereq:'art_pri_disc_shell', desc:'施放真言术盾后，立刻恢复 3%/6%/9% 最大生命，并获得回复 +1/2/3。' }),
+    lowHpTrait({ key:'art_pri_disc_save', tree:'discipline', name:'神佑临界', icon:'🕊️', threshold:0.38, cooldown:30000, healPct:[0.06,0.1,0.14], shieldPct:[0.06,0.1,0.14], mod:{hpPct:2}, prereq:'art_pri_disc_shield', desc:'生命低于 38% 时，恢复 6%/10%/14% 最大生命并获得等量护盾，30秒冷却，同时获得生命 +2%/4%/6%。' }),
 
-    afterSkillTrait({ key:'art_pri_holy_light', tree:'holy', name:'晨辉余温', icon:'✨', skill:['heal','renew','divineHymn'], shieldPct:[0.02,0.04,0.06], mod:{healBonus:4}, desc:'施放治疗术、恢复或神圣赞美诗后，获得相当于 2%/4%/6% 最大生命的护盾，并获得治疗效果 +4%/8%/12%。' }),
-    afterHealTrait({ key:'art_pri_holy_over', tree:'holy', name:'圣光盈余', icon:'🌟', overhealShieldPct:[0.25,0.4,0.55], mod:{regFlat:1}, prereq:'art_pri_holy_light', desc:'你的过量治疗会转化为 25%/40%/55% 的吸收护盾，并获得回复 +1/2/3。' }),
-    afterSkillTrait({ key:'art_pri_holy_judgement', tree:'holy', name:'圣言回声', icon:'💫', skill:'smite', healPct:[0.02,0.04,0.06], mod:{intPct:2}, prereq:'art_pri_holy_over', desc:'施放惩击后，恢复 2%/4%/6% 最大生命，并获得智力 +2%/4%/6%。' }),
-    lowHpTrait({ key:'art_pri_holy_last', tree:'holy', name:'守护天启', icon:'👼', threshold:0.35, cooldown:30000, healPct:[0.06,0.1,0.15], shieldPct:[0.03,0.06,0.1], mod:{hpPct:2}, prereq:'art_pri_holy_judgement', desc:'生命低于 35% 时，恢复 6%/10%/15% 最大生命并获得 3%/6%/10% 最大生命护盾，30秒冷却，同时获得生命 +2%/4%/6%。' }),
+    afterSkillTrait({ key:'art_pri_holy_light', tree:'holy', name:'晨辉余温', icon:'✨', skill:['heal','renew','divineHymn'], shieldPct:[0.03,0.06,0.09], mod:{healBonus:4}, desc:'施放治疗术、恢复或神圣赞美诗后，获得相当于 3%/6%/9% 最大生命的护盾，并获得治疗效果 +4%/8%/12%。' }),
+    afterHealTrait({ key:'art_pri_holy_over', tree:'holy', name:'圣光盈余', icon:'🌟', overhealShieldPct:[0.35,0.5,0.65], mod:{regFlat:1}, prereq:'art_pri_holy_light', desc:'你的过量治疗会转化为 35%/50%/65% 的吸收护盾，并获得回复 +1/2/3。' }),
+    afterSkillTrait({ key:'art_pri_holy_judgement', tree:'holy', name:'圣言回声', icon:'💫', skill:'smite', healPct:[0.03,0.06,0.09], mod:{intPct:2}, prereq:'art_pri_holy_over', desc:'施放惩击后，恢复 3%/6%/9% 最大生命，并获得智力 +2%/4%/6%。' }),
+    lowHpTrait({ key:'art_pri_holy_last', tree:'holy', name:'守护天启', icon:'👼', threshold:0.35, cooldown:30000, healPct:[0.08,0.12,0.16], shieldPct:[0.05,0.08,0.12], mod:{hpPct:2}, prereq:'art_pri_holy_judgement', desc:'生命低于 35% 时，恢复 8%/12%/16% 最大生命并获得 5%/8%/12% 最大生命护盾，30秒冷却，同时获得生命 +2%/4%/6%。' }),
 
     skillAmpTrait({ key:'art_pri_shadow_blast', tree:'shadow', name:'虚空尖啸', icon:'🌀', skill:'mindBlast', dmgPct:[10,20,30], mod:{dotBonus:3}, desc:'心灵震爆伤害提高 10/20/30%，并获得持续伤害 +3%/6%/9%。' }),
     onCritTrait({ key:'art_pri_shadow_pain', tree:'shadow', name:'暗痛回响', icon:'🌑', applyDotPct:[0.08,0.12,0.18], dotMs:6000, mod:{atkPct:1}, prereq:'art_pri_shadow_blast', desc:'暴击时追加一层基于本次伤害 8%/12%/18% 的暗影痛楚，持续 6 秒，并获得攻击 +1%/2%/3%。' }),
@@ -275,9 +275,9 @@ const ARTIFACT_TRAITS = {
     executeTrait({ key:'art_rog_assn_finish', tree:'assassination', name:'无声处决', icon:'💀', threshold:0.4, dmgPct:[10,20,30], mod:{atkPct:1}, prereq:'art_rog_assn_bleed', desc:'对生命低于 40% 的目标造成的伤害提高 10/20/30%，并获得攻击 +1%/2%/3%。' }),
 
     skillAmpTrait({ key:'art_rog_combat_blade', tree:'combat', name:'疾刃节拍', icon:'⚔️', skill:['sinister','backstab'], dmgPct:[10,20,30], mod:{spdPct:2}, desc:'邪恶打击与背刺伤害提高 10/20/30%，并获得攻速 +2%/4%/6%。' }),
-    onCritTrait({ key:'art_rog_combat_echo', tree:'combat', name:'双刃回荡', icon:'🗡️', extraHitMul:[0.25,0.4,0.55], extraHitIcon:'⚔️', cooldown:2500, mod:{extraAtk:1}, prereq:'art_rog_combat_blade', desc:'暴击后追加一次 25%/40%/55% 伤害的追击，2.5秒冷却，并获得额外攻击 +1%/2%/3%。' }),
+    onCritTrait({ key:'art_rog_combat_echo', tree:'combat', name:'双刃回荡', icon:'🗡️', extraHitMul:[0.2,0.32,0.44], extraHitIcon:'⚔️', cooldown:2500, mod:{extraAtk:1}, prereq:'art_rog_combat_blade', desc:'暴击后追加一次 20%/32%/44% 伤害的追击，2.5秒冷却，并获得额外攻击 +1%/2%/3%。' }),
     afterSkillTrait({ key:'art_rog_combat_flow', tree:'combat', name:'无尽连势', icon:'💨', skill:['sinister','backstab'], resource:[5,10,15], mod:{cdReduction:2}, prereq:'art_rog_combat_echo', desc:'施放邪恶打击或背刺后回复 5/10/15 点资源，并获得技能冷却缩减 +2%/4%/6%。' }),
-    bossTrait({ key:'art_rog_combat_boss', tree:'combat', name:'猎首本能', icon:'🎯', dmgPct:[8,16,24], mod:{atkPct:1}, prereq:'art_rog_combat_flow', desc:'对首领造成的伤害提高 8/16/24%，并获得攻击 +1%/2%/3%。' }),
+    bossTrait({ key:'art_rog_combat_boss', tree:'combat', name:'猎首本能', icon:'🎯', dmgPct:[6,12,18], mod:{atkPct:1}, prereq:'art_rog_combat_flow', desc:'对首领造成的伤害提高 6/12/18%，并获得攻击 +1%/2%/3%。' }),
 
     skillAmpTrait({ key:'art_rog_sub_mark', tree:'subtlety', name:'影裂刻痕', icon:'👤', skill:['killingSpree','deathMark'], dmgPct:[10,20,30], mod:{executeBonus:2}, desc:'杀戮盛宴与死亡标记伤害提高 10/20/30%，并获得斩杀加成 +2%/4%/6%。' }),
     afterSkillTrait({ key:'art_rog_sub_shadow', tree:'subtlety', name:'影遁伏杀', icon:'🌑', skill:'shadow', nextSkillCrit:[1,1,1], mod:{atkPct:1}, prereq:'art_rog_sub_mark', desc:'施放影遁后，下一次伤害技能必定暴击，并获得攻击 +1%/2%/3%。' }),
@@ -288,11 +288,11 @@ const ARTIFACT_TRAITS = {
     whileBuffTrait({ key:'art_hun_bm_wrath', tree:'bm', name:'兽群狂吼', icon:'🦁', buffKey:'bestial', dmgPct:[10,20,30], mod:{atkPct:1}, desc:'狂野怒火持续期间，你造成的伤害提高 10/20/30%，并获得攻击 +1%/2%/3%。' }),
     onKillTrait({ key:'art_hun_bm_feed', tree:'bm', name:'猎群进食', icon:'🐾', resource:[5,10,15], mod:{hpPct:2}, prereq:'art_hun_bm_wrath', desc:'击杀敌人后回复 5/10/15 点资源，并获得生命 +2%/4%/6%。' }),
     afterSkillTrait({ key:'art_hun_bm_stamp', tree:'bm', name:'怒兽践踏', icon:'🦬', skill:'bestialWrath', extraDmgPct:[0.12,0.2,0.3], mod:{extraAtk:1}, prereq:'art_hun_bm_feed', desc:'施放狂野怒火后，额外造成本次伤害 12%/20%/30% 的践踏伤害，并获得额外攻击 +1%/2%/3%。' }),
-    bossTrait({ key:'art_hun_bm_predator', tree:'bm', name:'顶级猎食者', icon:'👑', dmgPct:[10,20,30], mod:{atkPct:1}, prereq:'art_hun_bm_stamp', desc:'对首领造成的伤害提高 10/20/30%，并获得攻击 +1%/2%/3%。' }),
+    bossTrait({ key:'art_hun_bm_predator', tree:'bm', name:'顶级猎食者', icon:'👑', dmgPct:[8,16,24], mod:{atkPct:1}, prereq:'art_hun_bm_stamp', desc:'对首领造成的伤害提高 8/16/24%，并获得攻击 +1%/2%/3%。' }),
 
     skillAmpTrait({ key:'art_hun_mark_aimed', tree:'marks', name:'狙心轨迹', icon:'🎯', skill:'aimed', dmgPct:[10,20,30], mod:{atkPct:1}, desc:'瞄准射击伤害提高 10/20/30%，并获得攻击 +1%/2%/3%。' }),
     executeTrait({ key:'art_hun_mark_kill', tree:'marks', name:'断息猎杀', icon:'💀', threshold:0.4, dmgPct:[12,24,36], mod:{executeBonus:2}, prereq:'art_hun_mark_aimed', desc:'对生命低于 40% 的目标造成的伤害提高 12/24/36%，并获得斩杀加成 +2%/4%/6%。' }),
-    onCritTrait({ key:'art_hun_mark_burst', tree:'marks', name:'连珠补射', icon:'🏹', skill:['aimed','arcaneShot'], extraHitMul:[0.3,0.45,0.6], extraHitIcon:'🎯', cooldown:3000, mod:{cdReduction:2}, prereq:'art_hun_mark_kill', desc:'瞄准射击或奥术射击暴击后，追加一次 30%/45%/60% 伤害的补射，3秒冷却，并获得技能冷却缩减 +2%/4%/6%。' }),
+    onCritTrait({ key:'art_hun_mark_burst', tree:'marks', name:'连珠补射', icon:'🏹', skill:['aimed','arcaneShot'], extraHitMul:[0.24,0.36,0.48], extraHitIcon:'🎯', cooldown:3000, mod:{cdReduction:2}, prereq:'art_hun_mark_kill', desc:'瞄准射击或奥术射击暴击后，追加一次 24%/36%/48% 伤害的补射，3秒冷却，并获得技能冷却缩减 +2%/4%/6%。' }),
     afterSkillTrait({ key:'art_hun_mark_mark', tree:'marks', name:'猎印逼杀', icon:'🔍', skill:'huntersMark', nextSkillCrit:[1,1,1], mod:{atkPct:1}, prereq:'art_hun_mark_burst', desc:'施放猎人印记后，下一次伤害技能必定暴击，并获得攻击 +1%/2%/3%。' }),
 
     skillAmpTrait({ key:'art_hun_surv_trap', tree:'survival', name:'荒野陷阱', icon:'🪤', skill:['explosiveShot','multi'], dmgPct:[10,20,30], mod:{dotBonus:3}, desc:'爆炸射击与多重射击伤害提高 10/20/30%，并获得持续伤害 +3%/6%/9%。' }),
@@ -307,20 +307,20 @@ const ARTIFACT_TRAITS = {
     executeTrait({ key:'art_sha_ele_storm', tree:'element', name:'风暴终断', icon:'⛈️', threshold:0.35, dmgPct:[12,24,36], mod:{atkPct:1}, prereq:'art_sha_ele_flame', desc:'对生命低于 35% 的目标造成的伤害提高 12/24/36%，并获得攻击 +1%/2%/3%。' }),
 
     whileBuffTrait({ key:'art_sha_enh_wind', tree:'enhancement', name:'狂岚怒刃', icon:'💨', buffKey:'windfury', dmgPct:[10,20,30], mod:{spdPct:2}, desc:'风怒武器持续期间，你造成的伤害提高 10/20/30%，并获得攻速 +2%/4%/6%。' }),
-    onCritTrait({ key:'art_sha_enh_chain', tree:'enhancement', name:'双风怒袭', icon:'⚔️', extraHitMul:[0.3,0.45,0.6], extraHitIcon:'💨', cooldown:2500, mod:{extraAtk:1}, prereq:'art_sha_enh_wind', desc:'暴击后追加一次 30%/45%/60% 伤害的风怒追击，2.5秒冷却，并获得额外攻击 +1%/2%/3%。' }),
+    onCritTrait({ key:'art_sha_enh_chain', tree:'enhancement', name:'双风怒袭', icon:'⚔️', extraHitMul:[0.24,0.36,0.48], extraHitIcon:'💨', cooldown:2500, mod:{extraAtk:1}, prereq:'art_sha_enh_wind', desc:'暴击后追加一次 24%/36%/48% 伤害的风怒追击，2.5秒冷却，并获得额外攻击 +1%/2%/3%。' }),
     onKillTrait({ key:'art_sha_enh_flow', tree:'enhancement', name:'战意回潮', icon:'🩸', resource:[5,10,15], mod:{atkPct:1}, prereq:'art_sha_enh_chain', desc:'击杀敌人后回复 5/10/15 点资源，并获得攻击 +1%/2%/3%。' }),
     afterSkillTrait({ key:'art_sha_enh_reset', tree:'enhancement', name:'漩涡借势', icon:'🌀', skill:'windfury', nextSkillCrit:[1,1,1], mod:{cdReduction:2}, prereq:'art_sha_enh_flow', desc:'施放风怒武器后，下一次伤害技能必定暴击，并获得技能冷却缩减 +2%/4%/6%。' }),
 
-    afterHealTrait({ key:'art_sha_rest_shield', tree:'restoration', name:'潮汐护膜', icon:'🌊', overhealShieldPct:[0.2,0.35,0.5], mod:{healBonus:4}, desc:'你的过量治疗会转化为 20%/35%/50% 的吸收护盾，并获得治疗效果 +4%/8%/12%。' }),
-    afterSkillTrait({ key:'art_sha_rest_wave', tree:'restoration', name:'泉涌回护', icon:'💚', skill:['healingWave','spiritLink'], shieldPct:[0.02,0.04,0.06], mod:{regFlat:1}, prereq:'art_sha_rest_shield', desc:'施放治疗波或灵魂链接后，获得相当于 2%/4%/6% 最大生命的护盾，并获得回复 +1/2/3。' }),
-    lowHpTrait({ key:'art_sha_rest_save', tree:'restoration', name:'先祖拯护', icon:'🪨', threshold:0.35, cooldown:30000, healPct:[0.05,0.09,0.13], shieldPct:[0.04,0.08,0.12], mod:{hpPct:2}, prereq:'art_sha_rest_wave', desc:'生命低于 35% 时，恢复 5%/9%/13% 最大生命并获得 4%/8%/12% 最大生命护盾，30秒冷却，同时获得生命 +2%/4%/6%。' }),
-    afterSkillTrait({ key:'art_sha_rest_bless', tree:'restoration', name:'激流余响', icon:'🔗', skill:'healingWave', resource:[4,8,12], mod:{cdReduction:2}, prereq:'art_sha_rest_save', desc:'施放治疗波后回复 4/8/12 点资源，并获得技能冷却缩减 +2%/4%/6%。' }),
+    afterHealTrait({ key:'art_sha_rest_shield', tree:'restoration', name:'潮汐护膜', icon:'🌊', overhealShieldPct:[0.32,0.48,0.64], mod:{healBonus:4}, desc:'你的过量治疗会转化为 32%/48%/64% 的吸收护盾，并获得治疗效果 +4%/8%/12%。' }),
+    afterSkillTrait({ key:'art_sha_rest_wave', tree:'restoration', name:'泉涌回护', icon:'💚', skill:['healingWave','spiritLink'], shieldPct:[0.03,0.06,0.09], mod:{regFlat:1}, prereq:'art_sha_rest_shield', desc:'施放治疗波或灵魂链接后，获得相当于 3%/6%/9% 最大生命的护盾，并获得回复 +1/2/3。' }),
+    lowHpTrait({ key:'art_sha_rest_save', tree:'restoration', name:'先祖拯护', icon:'🪨', threshold:0.35, cooldown:30000, healPct:[0.07,0.11,0.15], shieldPct:[0.06,0.1,0.14], mod:{hpPct:2}, prereq:'art_sha_rest_wave', desc:'生命低于 35% 时，恢复 7%/11%/15% 最大生命并获得 6%/10%/14% 最大生命护盾，30秒冷却，同时获得生命 +2%/4%/6%。' }),
+    afterSkillTrait({ key:'art_sha_rest_bless', tree:'restoration', name:'激流余响', icon:'🔗', skill:'healingWave', resource:[6,10,14], mod:{cdReduction:2}, prereq:'art_sha_rest_save', desc:'施放治疗波后回复 6/10/14 点资源，并获得技能冷却缩减 +2%/4%/6%。' }),
   ],
   paladin: [
-    afterHealTrait({ key:'art_pal_holy_beacon', tree:'holy', name:'晨曦回护', icon:'✨', overhealShieldPct:[0.25,0.4,0.55], mod:{healBonus:4}, desc:'你的过量治疗会转化为 25%/40%/55% 的吸收护盾，并获得治疗效果 +4%/8%/12%。' }),
-    afterSkillTrait({ key:'art_pal_holy_light', tree:'holy', name:'圣辉余温', icon:'💫', skill:['holyLight','flashOfLight'], shieldPct:[0.02,0.04,0.06], mod:{regFlat:1}, prereq:'art_pal_holy_beacon', desc:'施放圣光术或圣光闪现后，获得相当于 2%/4%/6% 最大生命的护盾，并获得回复 +1/2/3。' }),
-    lowHpTrait({ key:'art_pal_holy_last', tree:'holy', name:'黎明垂恩', icon:'🌅', threshold:0.35, cooldown:30000, healPct:[0.06,0.1,0.14], shieldPct:[0.03,0.06,0.09], mod:{hpPct:2}, prereq:'art_pal_holy_light', desc:'生命低于 35% 时，恢复 6%/10%/14% 最大生命并获得 3%/6%/9% 最大生命护盾，30秒冷却，同时获得生命 +2%/4%/6%。' }),
-    afterSkillTrait({ key:'art_pal_holy_judge', tree:'holy', name:'审判赐福', icon:'⚖️', skill:'judgement', healPct:[0.02,0.04,0.06], mod:{intPct:2}, prereq:'art_pal_holy_last', desc:'施放审判后，恢复 2%/4%/6% 最大生命，并获得智力 +2%/4%/6%。' }),
+    afterHealTrait({ key:'art_pal_holy_beacon', tree:'holy', name:'晨曦回护', icon:'✨', overhealShieldPct:[0.35,0.5,0.65], mod:{healBonus:4}, desc:'你的过量治疗会转化为 35%/50%/65% 的吸收护盾，并获得治疗效果 +4%/8%/12%。' }),
+    afterSkillTrait({ key:'art_pal_holy_light', tree:'holy', name:'圣辉余温', icon:'💫', skill:['holyLight','flashOfLight'], shieldPct:[0.03,0.06,0.09], mod:{regFlat:1}, prereq:'art_pal_holy_beacon', desc:'施放圣光术或圣光闪现后，获得相当于 3%/6%/9% 最大生命的护盾，并获得回复 +1/2/3。' }),
+    lowHpTrait({ key:'art_pal_holy_last', tree:'holy', name:'黎明垂恩', icon:'🌅', threshold:0.35, cooldown:30000, healPct:[0.08,0.12,0.16], shieldPct:[0.05,0.08,0.12], mod:{hpPct:2}, prereq:'art_pal_holy_light', desc:'生命低于 35% 时，恢复 8%/12%/16% 最大生命并获得 5%/8%/12% 最大生命护盾，30秒冷却，同时获得生命 +2%/4%/6%。' }),
+    afterSkillTrait({ key:'art_pal_holy_judge', tree:'holy', name:'审判赐福', icon:'⚖️', skill:'judgement', healPct:[0.03,0.06,0.09], mod:{intPct:2}, prereq:'art_pal_holy_last', desc:'施放审判后，恢复 3%/6%/9% 最大生命，并获得智力 +2%/4%/6%。' }),
 
     whileBuffTrait({ key:'art_pal_prot_shield', tree:'prot', name:'圣佑壁城', icon:'🛡️', buffKey:'divine', takenPct:[8,16,24], mod:{defPct:2}, desc:'圣盾术持续期间，受到的伤害额外降低 8/16/24%，并获得防御 +2%/4%/6%。' }),
     bossTrait({ key:'art_pal_prot_guard', tree:'prot', name:'裁决守势', icon:'👑', dmgPct:[6,12,18], takenPct:[4,8,12], mod:{hpPct:2}, prereq:'art_pal_prot_shield', desc:'对首领造成的伤害提高 6/12/18%，受到其伤害降低 4/8/12%，并获得生命 +2%/4%/6%。' }),
@@ -328,7 +328,7 @@ const ARTIFACT_TRAITS = {
     lowHpTrait({ key:'art_pal_prot_last', tree:'prot', name:'壁垒圣誓', icon:'💠', threshold:0.4, cooldown:30000, shieldPct:[0.05,0.09,0.13], mod:{hpPct:2}, prereq:'art_pal_prot_judge', desc:'生命低于 40% 时，获得相当于 5%/9%/13% 最大生命的护盾，30秒冷却，并获得生命 +2%/4%/6%。' }),
 
     skillAmpTrait({ key:'art_pal_ret_burst', tree:'ret', name:'裁决锋芒', icon:'⚔️', skill:['judgement','crusader','consecration'], dmgPct:[10,20,30], mod:{atkPct:1}, desc:'审判、十字军打击与奉献伤害提高 10/20/30%，并获得攻击 +1%/2%/3%。' }),
-    executeTrait({ key:'art_pal_ret_exec', tree:'ret', name:'圣裁终章', icon:'😇', threshold:0.35, dmgPct:[12,24,36], mod:{executeBonus:2}, prereq:'art_pal_ret_burst', desc:'对生命低于 35% 的目标造成的伤害提高 12/24/36%，并获得斩杀加成 +2%/4%/6%。' }),
+    executeTrait({ key:'art_pal_ret_exec', tree:'ret', name:'圣裁终章', icon:'😇', threshold:0.35, dmgPct:[10,20,30], mod:{executeBonus:2}, prereq:'art_pal_ret_burst', desc:'对生命低于 35% 的目标造成的伤害提高 10/20/30%，并获得斩杀加成 +2%/4%/6%。' }),
     afterSkillTrait({ key:'art_pal_ret_chain', tree:'ret', name:'审判连锁', icon:'⚖️', skill:'judgement', nextSkillCrit:[1,1,1], mod:{cdReduction:2}, prereq:'art_pal_ret_exec', desc:'施放审判后，下一次伤害技能必定暴击，并获得技能冷却缩减 +2%/4%/6%。' }),
     onKillTrait({ key:'art_pal_ret_ashes', tree:'ret', name:'灰烬战愿', icon:'🔥', healPct:[0.03,0.05,0.07], resource:[4,8,12], mod:{atkPct:1}, prereq:'art_pal_ret_chain', desc:'击杀敌人后恢复 3%/5%/7% 最大生命并回复 4/8/12 点资源，同时获得攻击 +1%/2%/3%。' }),
   ],
@@ -355,14 +355,14 @@ const ARTIFACT_TRAITS = {
     vsStateTrait({ key:'art_dru_bal_eclipse', tree:'balance', name:'蚀刻星环', icon:'🪐', state:'dot', dmgPct:[10,20,30], mod:{atkPct:1}, prereq:'art_dru_bal_flow', desc:'对带有持续伤害效果的目标造成的伤害提高 10/20/30%，并获得攻击 +1%/2%/3%。' }),
 
     skillAmpTrait({ key:'art_dru_feral_bite', tree:'feral', name:'裂喉本能', icon:'🦷', skill:['bite','swipe'], dmgPct:[10,20,30], mod:{atkPct:1}, desc:'凶猛撕咬与横扫伤害提高 10/20/30%，并获得攻击 +1%/2%/3%。' }),
-    onCritTrait({ key:'art_dru_feral_pounce', tree:'feral', name:'兽袭回扑', icon:'🐾', extraHitMul:[0.25,0.4,0.55], extraHitIcon:'🐺', cooldown:2500, mod:{spdPct:2}, prereq:'art_dru_feral_bite', desc:'暴击后追加一次 25%/40%/55% 伤害的撕咬追击，2.5秒冷却，并获得攻速 +2%/4%/6%。' }),
+    onCritTrait({ key:'art_dru_feral_pounce', tree:'feral', name:'兽袭回扑', icon:'🐾', extraHitMul:[0.22,0.34,0.46], extraHitIcon:'🐺', cooldown:2500, mod:{spdPct:2}, prereq:'art_dru_feral_bite', desc:'暴击后追加一次 22%/34%/46% 伤害的撕咬追击，2.5秒冷却，并获得攻速 +2%/4%/6%。' }),
     onKillTrait({ key:'art_dru_feral_hunt', tree:'feral', name:'掠食回生', icon:'🩸', healPct:[0.03,0.05,0.07], mod:{hpPct:2}, prereq:'art_dru_feral_pounce', desc:'击杀敌人后恢复 3%/5%/7% 最大生命，并获得生命 +2%/4%/6%。' }),
     executeTrait({ key:'art_dru_feral_end', tree:'feral', name:'血牙终袭', icon:'🐺', threshold:0.35, dmgPct:[12,24,36], mod:{executeBonus:2}, prereq:'art_dru_feral_hunt', desc:'对生命低于 35% 的目标造成的伤害提高 12/24/36%，并获得斩杀加成 +2%/4%/6%。' }),
 
-    afterHealTrait({ key:'art_dru_rest_seed', tree:'resto', name:'繁花种荫', icon:'🌺', overhealShieldPct:[0.2,0.35,0.5], mod:{healBonus:4}, desc:'你的过量治疗会转化为 20%/35%/50% 的吸收护盾，并获得治疗效果 +4%/8%/12%。' }),
-    afterSkillTrait({ key:'art_dru_rest_rejuv', tree:'resto', name:'春芽回护', icon:'🍃', skill:['rejuvenation','wildGrowth'], shieldPct:[0.02,0.04,0.06], mod:{regFlat:1}, prereq:'art_dru_rest_seed', desc:'施放回春术或野性成长后，获得相当于 2%/4%/6% 最大生命的护盾，并获得回复 +1/2/3。' }),
-    lowHpTrait({ key:'art_dru_rest_bloom', tree:'resto', name:'自然庇命', icon:'🌿', threshold:0.35, cooldown:30000, healPct:[0.05,0.09,0.13], shieldPct:[0.04,0.08,0.12], mod:{hpPct:2}, prereq:'art_dru_rest_rejuv', desc:'生命低于 35% 时，恢复 5%/9%/13% 最大生命并获得 4%/8%/12% 最大生命护盾，30秒冷却，同时获得生命 +2%/4%/6%。' }),
-    whileBuffTrait({ key:'art_dru_rest_bark', tree:'resto', name:'树皮回春', icon:'🪵', buffKey:'bark', takenPct:[8,16,24], mod:{defPct:2}, prereq:'art_dru_rest_bloom', desc:'树皮术持续期间，受到的伤害额外降低 8/16/24%，并获得防御 +2%/4%/6%。' }),
+    afterHealTrait({ key:'art_dru_rest_seed', tree:'resto', name:'繁花种荫', icon:'🌺', overhealShieldPct:[0.32,0.48,0.64], mod:{healBonus:4}, desc:'你的过量治疗会转化为 32%/48%/64% 的吸收护盾，并获得治疗效果 +4%/8%/12%。' }),
+    afterSkillTrait({ key:'art_dru_rest_rejuv', tree:'resto', name:'春芽回护', icon:'🍃', skill:['rejuvenation','wildGrowth'], shieldPct:[0.03,0.06,0.09], mod:{regFlat:1}, prereq:'art_dru_rest_seed', desc:'施放回春术或野性成长后，获得相当于 3%/6%/9% 最大生命的护盾，并获得回复 +1/2/3。' }),
+    lowHpTrait({ key:'art_dru_rest_bloom', tree:'resto', name:'自然庇命', icon:'🌿', threshold:0.35, cooldown:30000, healPct:[0.07,0.11,0.15], shieldPct:[0.06,0.1,0.14], mod:{hpPct:2}, prereq:'art_dru_rest_rejuv', desc:'生命低于 35% 时，恢复 7%/11%/15% 最大生命并获得 6%/10%/14% 最大生命护盾，30秒冷却，同时获得生命 +2%/4%/6%。' }),
+    whileBuffTrait({ key:'art_dru_rest_bark', tree:'resto', name:'树皮回春', icon:'🪵', buffKey:'bark', takenPct:[10,18,26], mod:{defPct:2}, prereq:'art_dru_rest_bloom', desc:'树皮术持续期间，受到的伤害额外降低 10/18/26%，并获得防御 +2%/4%/6%。' }),
   ],
 };
 

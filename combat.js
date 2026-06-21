@@ -455,6 +455,57 @@ function grantNextSkillCrit(count){
   rt.flags.nextSkillCrit = (rt.flags.nextSkillCrit || 0) + (count || 1);
   showFloat($('hero-emoji'), '✨必暴', '#fbbf24');
 }
+function artifactProcReady(key, now, cooldownMs){
+  const rt = ensureTalentState();
+  const procKey = 'artifactProc:' + key;
+  if((rt.flags[procKey] || 0) > now) return false;
+  rt.flags[procKey] = now + (cooldownMs || 900);
+  return true;
+}
+function artifactProcVisual(fx, mon, opts){
+  if(!fx || fx.source !== 'artifact') return;
+  const now = opts?.now || Date.now();
+  const tag = opts?.tag || fx.type || 'proc';
+  if(!artifactProcReady((fx.artifactKey || fx.artifactName || 'artifact') + ':' + tag, now, opts?.cooldownMs || 900)) return;
+  const targetEl = opts?.targetEl || ((opts?.target === 'hero' || !mon) ? $('hero-emoji') : monsterFloatAnchor(mon));
+  const frameEl = opts?.frameEl || targetEl?.closest?.('.fighter, .mon-row, #comp-mini');
+  if(!targetEl) return;
+  const label = opts?.label || '✦ 神器触发';
+  showFloat(targetEl, label, '#f5d0fe', {
+    variant:'artifact',
+    scale:opts?.scale || 1.04,
+    duration:opts?.duration || 760,
+    important:true,
+    y:opts?.target === 'hero' ? -6 : 0
+  });
+  if(typeof pulseCombatEl === 'function') pulseCombatEl(targetEl, 'artifact', opts?.pulseDuration || 280);
+  if(frameEl && frameEl !== targetEl && typeof pulseCombatEl === 'function') pulseCombatEl(frameEl, 'artifact', Math.max(opts?.pulseDuration || 280, 340));
+  if(typeof log === 'function'){
+    const targetName = opts?.target === 'hero' ? '你' : (mon?.bossName || mon?.name || '敌人');
+    log(`✦ 神器触发：${fx.artifactName || '未知节点'} · ${targetName}`, 'good');
+  }
+}
+function activeArtifactDamageFx(mon, skillKey){
+  const out = [];
+  for(const fx of (state._artifactFx || [])){
+    if(fx.type === 'vsBoss' && mon?.isBoss && fx.dmgPct) out.push(fx);
+    else if(fx.type === 'executeWindow' && mon && mon.hp > 0 && mon.hp <= mon.hpMax * (fx.threshold || 0.35) && fx.dmgPct) out.push(fx);
+    else if(fx.type === 'vsState' && monsterStateActive(mon, fx.state) && fx.dmgPct) out.push(fx);
+    else if(fx.type === 'skillAmp' && skillMatches(fx, skillKey) && (!fx.state || monsterStateActive(mon, fx.state)) && fx.dmgPct) out.push(fx);
+    else if(fx.type === 'whileAura' && hasTalentAura(fx.auraKey) && (!fx.skill || skillMatches(fx, skillKey)) && fx.dmgPct) out.push(fx);
+    else if(fx.type === 'whileBuff' && buffActive(fx.buffKey) && (!fx.skill || skillMatches(fx, skillKey)) && fx.dmgPct) out.push(fx);
+  }
+  return out;
+}
+function activeArtifactTakenFx(mon){
+  const out = [];
+  for(const fx of (state._artifactFx || [])){
+    if(fx.type === 'vsBoss' && mon?.isBoss && fx.takenPct) out.push(fx);
+    else if(fx.type === 'whileAura' && hasTalentAura(fx.auraKey) && fx.takenPct) out.push(fx);
+    else if(fx.type === 'whileBuff' && buffActive(fx.buffKey) && fx.takenPct) out.push(fx);
+  }
+  return out;
+}
 function consumeNextSkillCrit(sk){
   if(!sk || sk.type !== 'dmg') return false;
   const rt = ensureTalentState();
@@ -515,6 +566,8 @@ function applyHeroDamage(amount, mon, opts){
   }
   const taken = absorbTalentShield(amountIn);
   if(taken <= 0) return 0;
+  const defensiveArtifactFx = activeArtifactTakenFx(mon);
+  if(defensiveArtifactFx.length) artifactProcVisual(defensiveArtifactFx[0], mon, { now, target:'hero', tag:'taken' });
   state.hp -= taken;
   if(state._soulLinkUntil > now && mon && mon.hp > 0){
     const healBack = Math.max(1, Math.floor(taken * 0.25));
@@ -592,6 +645,8 @@ function autoCastSkillEntries(cls){
     });
 }
 function runTalentAction(fx, mon, value, ctx, now){
+  const artifactTarget = (fx.healPct || fx.shieldPct || fx.type === 'afterHeal' || fx.type === 'lowHp') ? 'hero' : 'monster';
+  artifactProcVisual(fx, mon, { now, target:artifactTarget, tag:'trigger' });
   if(fx.aura) addTalentAura(fx.aura, true);
   if(fx.grantCharge && fx.grantCharge.key){
     const gc = fx.grantCharge;
@@ -2425,6 +2480,8 @@ function tickBattle(now){
     const zb=(typeof progressionCombatBonus==='function')?progressionCombatBonus(mon.name):{dmgMult:1};
     if(zb.dmgMult!==1)ap=Math.floor(ap*zb.dmgMult);
     ap=Math.floor(ap*masteryDmgMult());   // 精通:伤害增幅(dmgAmp 专精)
+    const autoArtifactFx = activeArtifactDamageFx(mon, null);
+    if(autoArtifactFx.length) artifactProcVisual(autoArtifactFx[0], mon, { now, target:'monster', tag:'auto' });
     ap=Math.floor(ap*talentDamageMult(mon,null));
     const d=calcDmg(ap,heroTargetDef(mon),state.hero.crit,state.hero.critd,false,mon.lvl,state.hero.lvl);
     let actualDmg = d.dmg;
@@ -3176,6 +3233,8 @@ function castSkill(skillKey,manual){
         if(target.hp<=0) continue;
         const rt=calcSkillRuntimeBonus(skillKey, sk, target, now);
         const forceCrit = baseForceCrit || rt.forceCrit;
+        const artifactDamageFx = activeArtifactDamageFx(target, skillKey);
+        if(artifactDamageFx.length) artifactProcVisual(artifactDamageFx[0], target, { now, target:'monster', tag:'skill:' + skillKey });
         const d=calcDmg(state.hero.atk*sk.mul*cb*talentDamageMult(target,skillKey)*rt.mult,heroTargetDef(target),state.hero.crit,state.hero.critd,forceCrit,target.lvl,state.hero.lvl);
         let dd=d.dmg;
         {const dr=monsterDamageReduction(target, now);if(dr)dd=Math.max(1,Math.floor(dd*(1-dr)));}
@@ -3194,6 +3253,8 @@ function castSkill(skillKey,manual){
     else{
       const rt=calcSkillRuntimeBonus(skillKey, sk, mon, now);
       const forceCrit = baseForceCrit || rt.forceCrit;
+      const artifactDamageFx = activeArtifactDamageFx(mon, skillKey);
+      if(artifactDamageFx.length) artifactProcVisual(artifactDamageFx[0], mon, { now, target:'monster', tag:'skill:' + skillKey });
       const d=calcDmg(state.hero.atk*sk.mul*cb*talentDamageMult(mon,skillKey)*rt.mult,heroTargetDef(mon),state.hero.crit,state.hero.critd,forceCrit,mon.lvl,state.hero.lvl);
       let dd=d.dmg;
       {const dr=monsterDamageReduction(mon, now);if(dr)dd=Math.max(1,Math.floor(dd*(1-dr)));}

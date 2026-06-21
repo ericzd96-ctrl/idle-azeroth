@@ -296,6 +296,12 @@ h1 {
 .impact-danger,
 .impact-bosscast { animation: impactDanger .30s ease-out; }
 .impact-comp { animation: impactComp .22s ease-out; }
+.impact-artifact { animation: impactArtifact .28s ease-out; }
+.fighter.impact-artifact,
+.mon-row.impact-artifact,
+#comp-mini.impact-artifact {
+  border-radius: 10px;
+}
 @keyframes impactHit {
   0% { transform: scale(1); filter: brightness(1); }
   45% { transform: scale(1.06); filter: brightness(1.22); }
@@ -325,6 +331,11 @@ h1 {
   0% { transform: scale(1); filter: brightness(1); }
   40% { transform: scale(1.07); filter: brightness(1.24); }
   100% { transform: scale(1); filter: brightness(1); }
+}
+@keyframes impactArtifact {
+  0% { transform: scale(1); filter: brightness(1); box-shadow:none; }
+  38% { transform: scale(1.1); filter: brightness(1.42) saturate(1.12); box-shadow:0 0 16px rgba(216,180,254,.34); }
+  100% { transform: scale(1); filter: brightness(1); box-shadow:none; }
 }
 .float-dmg {
   --float-scale: 1;
@@ -369,6 +380,10 @@ h1 {
 .float-dmg.comp {
   color: #93c5fd !important;
   text-shadow: 0 1px 4px rgba(0,0,0,.95), 0 0 12px rgba(96,165,250,.28);
+}
+.float-dmg.artifact {
+  color: #f5d0fe !important;
+  text-shadow: 0 1px 4px rgba(0,0,0,.95), 0 0 14px rgba(216,180,254,.42);
 }
 @keyframes floatUp {
   0% { transform: translate(0, 0) scale(var(--float-scale)); opacity: 0; }

@@ -574,6 +574,7 @@ function isImportantLog(text) {
 function inferFloatVariant(text, opts) {
   if (opts?.variant) return opts.variant;
   const s = String(text || '');
+  if (/神器|✦/.test(s)) return 'artifact';
   if (/闪避|格挡|免疫/.test(s)) return 'avoid';
   if (/眩晕|沉默|缴械|恐惧|冻结|残废|破甲|易伤|审判|破绽|净化|击晕|减速/.test(s)) return 'status';
   if (/护盾|🛡️|🔮盾|盾/.test(s)) return /-/.test(s) ? 'shield-break' : 'shield';
@@ -590,7 +591,7 @@ function pulseCombatEl(targetEl, kind, duration) {
   const cls = `impact-${kind || 'hit'}`;
   const token = `impact-${++_impactSeq}`;
   targetEl.dataset.lastImpact = token;
-  targetEl.classList.remove('impact-hit','impact-crit','impact-heal','impact-shield','impact-danger','impact-bosscast','impact-comp');
+  targetEl.classList.remove('impact-hit','impact-crit','impact-heal','impact-shield','impact-danger','impact-bosscast','impact-comp','impact-artifact');
   void targetEl.offsetWidth;
   targetEl.classList.add(cls);
   setTimeout(() => {
@@ -639,7 +640,7 @@ function showFloat(targetEl, text, color, opts) {
   const variant = inferFloatVariant(text, opts);
   const important = !!opts?.important
     || /晕|眩|沉默|缴械|恐惧|冻结|净化|归来|倒下|闪避|必暴|护盾|盾|召来|召唤|升级|掉落/.test(text || '')
-    || ['crit','boss','heal','shield','shield-break','status','dot'].includes(variant);
+    || ['crit','boss','heal','shield','shield-break','status','dot','artifact'].includes(variant);
   if (mobile) {
     const gap = important ? 45 : 120;
     if (!important && now - _lastFloatTs < gap) return;
