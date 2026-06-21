@@ -223,6 +223,52 @@ function companionIconHtml(tpl, size) {
   if (typeof entityIcon === 'function') return entityIcon(tpl.name, size || 18, fallback);
   return tpl.emoji || '';
 }
+// 神器招牌技能 — 战斗界面独立的图标 + 冷却条(每帧更新CD, 仅签名变化时重建DOM)
+let _artiSkillSig = '';
+function renderArtifactSkillBar(now) {
+  const el = $('artifact-skill-bar'); if (!el) return;
+  const rank = (typeof artifactSkillRank === 'function') ? artifactSkillRank() : 0;
+  if (rank <= 0) { if (el.style.display !== 'none') { el.style.display = 'none'; el.innerHTML = ''; _artiSkillSig = ''; } return; }
+  const spec = (typeof activeArtifactSpec === 'function') ? activeArtifactSpec() : null;
+  const def = (typeof artifactSkillDef === 'function') ? artifactSkillDef(state.cls, spec) : null;
+  if (!def || !def.mul) { if (el.style.display !== 'none') { el.style.display = 'none'; el.innerHTML = ''; _artiSkillSig = ''; } return; }
+  const id = (typeof artifactIdentity === 'function') ? artifactIdentity(state.cls, spec) : { color: '#c79c6e' };
+  const sig = `${state.cls}:${spec}:${def.name}:${rank}`;
+  if (sig !== _artiSkillSig) {
+    _artiSkillSig = sig;
+    el.style.display = 'flex';
+    const iconHtml = (typeof symbolIcon === 'function') ? symbolIcon(def.icon, 16, def.name) : def.icon;
+    const tip = `${def.name}｜${(typeof artifactSkillDescText === 'function') ? artifactSkillDescText(def) : ''}`.replace(/"/g, '&quot;');
+    el.innerHTML = `<div class="arti-skill-chip" title="${tip}" style="display:flex;align-items:center;gap:6px;padding:3px 10px;background:var(--panel-2);border:1px solid ${id.color};border-radius:14px">
+      <span style="font-size:15px;line-height:1">${iconHtml}</span>
+      <span style="display:flex;flex-direction:column;line-height:1.2">
+        <b style="font-size:11px;color:${id.color}">神器·${def.name} <span style="opacity:.55;font-weight:normal">${rank}/3</span></b>
+        <span style="display:flex;align-items:center;gap:5px">
+          <span style="width:56px;height:5px;background:rgba(255,255,255,.12);border-radius:3px;overflow:hidden"><i class="arti-cd-fill" style="display:block;height:100%;width:0%;background:${id.color};transition:width .12s linear"></i></span>
+          <span class="arti-cd-txt" style="font-size:10px;min-width:30px"></span>
+        </span>
+      </span>
+    </div>`;
+  }
+  // 每帧更新冷却
+  const readyAt = state.artifactSkillCd || 0;
+  const remain = Math.max(0, readyAt - now);
+  const spdMul = (typeof castSpeedMul === 'function') ? castSpeedMul() : (state.battleSpeed || 1);
+  const fullMs = (def.cd || 20) * 1000 / Math.max(0.1, spdMul);
+  const fill = el.querySelector('.arti-cd-fill');
+  const txt = el.querySelector('.arti-cd-txt');
+  const chip = el.querySelector('.arti-skill-chip');
+  if (remain <= 0) {
+    if (fill) fill.style.width = '100%';
+    if (txt) { txt.textContent = '就绪'; txt.style.color = '#34d399'; }
+    if (chip) chip.style.boxShadow = `0 0 7px ${id.color}`;
+  } else {
+    const frac = Math.max(0, Math.min(1, 1 - remain / fullMs));
+    if (fill) fill.style.width = (frac * 100).toFixed(0) + '%';
+    if (txt) { txt.textContent = (remain / 1000).toFixed(1) + 's'; txt.style.color = 'var(--muted)'; }
+    if (chip) chip.style.boxShadow = 'none';
+  }
+}
 function renderBuffBar() {
   const bar = $('buff-bar'); if (!bar) return;
   const now = Date.now();
@@ -1379,6 +1425,9 @@ function updateBattleVisuals() {
     renderBuffBar();
     _lastBuffBarPaint = now;
   }
+
+  // 神器招牌技能冷却(每帧更新)
+  renderArtifactSkillBar(now);
 
   // stage 样式 / 离开按钮显隐
   const stage = $('stage');
