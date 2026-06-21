@@ -92,6 +92,7 @@ function ensureTalentState(){
   if(!state.talentState.cds) state.talentState.cds = {};
   if(!state.talentState.flags) state.talentState.flags = {};
   if(typeof state.talentState.shield !== 'number') state.talentState.shield = 0;
+  if(typeof state.talentState.shieldExpire !== 'number') state.talentState.shieldExpire = 0;
   return state.talentState;
 }
 function pruneTalentAuras(now){
@@ -116,11 +117,12 @@ function addTalentAura(key, quiet){
   recomputeStats();
   markDirty('hero');
 }
-function addTalentShield(amount, quiet){
+function addTalentShield(amount, quiet, durationMs){
   amount = Math.max(0, Math.floor(amount || 0));
   if(amount <= 0) return 0;
   const rt = ensureTalentState();
   rt.shield += amount;
+  rt.shieldExpire = Math.max(rt.shieldExpire || 0, Date.now() + (durationMs || 10000));   // 护盾有持续时间, 到期自动消失(不再每波清盾)
   if(!quiet) showFloat($('hero-emoji'), '🛡️+' + amount, '#93c5fd', { variant:'shield', scale:1.04 });
   if(typeof pulseCombatEl === 'function') pulseCombatEl($('hero-emoji'), 'shield', 260);
   markDirty('hero');
@@ -1980,9 +1982,8 @@ function overLevelPenalty(mon){
 function spawnMonster(){
   initCompanionHp();state.currentMonsters=[];
   state._currentRareElite = null;
-  // 新战斗清除护盾(随从/天赋)
+  // 新战斗清除随从护盾;英雄护盾改为按持续时间到期(不再每波清盾,否则秒杀刷怪时护盾瞬间消失)
   state._compBarrier = 0;
-  if (state.talentState) state.talentState.shield = 0;
   if(state.mode==='travel')return;
   if(state.mode==='dungeon'||state.mode==='mythic')return spawnDungeonMonster();
   if(state.mode==='tower')return spawnTowerMonster();
@@ -2902,6 +2903,7 @@ function tickBattle(now){
   if(state.mode==='travel'){lastHeroAtk=now;lastMonAtk=now;return;}
   if(pruneTalentAuras(now)) recomputeStats();
   pruneSkillAuras(now);
+  if(state.talentState && state.talentState.shield > 0 && state.talentState.shieldExpire && now > state.talentState.shieldExpire){ state.talentState.shield = 0; state.talentState.shieldExpire = 0; markDirty('hero'); }   // 护盾到期消失
   pruneAllySummons(now);
   reapDeadMonsters();                                   // 先结算上一拍可能死亡的敌人(含 AOE 群杀)
   if(getAliveMonsters().length===0){spawnMonster();lastHeroAtk=now;lastMonAtk=now;return;}
