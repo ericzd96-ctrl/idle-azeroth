@@ -93,7 +93,7 @@ const defaultState = () => ({
   roguelike: { highest:0, totalRuns:0, milestonesClaimed:{}, weeklyHighest:0, weeklyResetAt:0 },
   roguelikeCoin: 0,         // 🤖 幻象币
   // ---- 生活技能 ----
-  life: { mining:{lvl:0,xp:0}, fishing:{lvl:0,xp:0}, herb:{lvl:0,xp:0}, mats:{} },
+  life: { mining:{lvl:0,xp:0}, fishing:{lvl:0,xp:0}, herb:{lvl:0,xp:0}, mats:{}, tools:{ mining:0, fishing:0, herb:0 }, orders:{ nextRefreshAt:0, slots:[] } },
   lifeAction: null,         // { type, startedAt, lastYieldAt }
   lifeBuffs: {},            // { buffKey: expireTs }
   // ---- 神器 ----
@@ -123,7 +123,7 @@ function defaultAccount() {
     gems: {},                 // 宝石库存 {gemKey:count}
     companions: [],           // 随从图鉴 [{key,stars}]
     companionShards: {},      // 随从碎片 {key:count}
-    life: { mining:{lvl:0,xp:0}, fishing:{lvl:0,xp:0}, herb:{lvl:0,xp:0}, mats:{} },  // 采集/生活技能(账号共享,老存档不迁移=清零)
+    life: { mining:{lvl:0,xp:0}, fishing:{lvl:0,xp:0}, herb:{lvl:0,xp:0}, mats:{}, tools:{ mining:0, fishing:0, herb:0 }, orders:{ nextRefreshAt:0, slots:[] } },  // 采集/生活技能(账号共享,老存档不迁移=清零)
     _sharedMigrated: false,   // 公共资源是否已从老角色聚合(防重复)
     // 坐骑(账号共享收藏)
     mounts: {},
@@ -177,7 +177,11 @@ function mergeAccount(saved) {
     gems: saved.gems || {},
     companions: saved.companions || [],
     companionShards: saved.companionShards || {},
-    life: saved.life ? Object.assign({}, d.life, saved.life, { mats: saved.life.mats || {} }) : d.life,
+    life: saved.life ? Object.assign({}, d.life, saved.life, {
+      mats: saved.life.mats || {},
+      tools: Object.assign({}, d.life.tools, saved.life.tools || {}),
+      orders: Object.assign({}, d.life.orders, saved.life.orders || {}, { slots: saved.life.orders?.slots || [] }),
+    }) : d.life,
   });
 }
 
@@ -656,12 +660,14 @@ function showFloat(targetEl, text, color, opts) {
   el.className = `float-dmg ${variant}`;
   el.style.color = color;
   el.textContent = text;
-  const xOffset = opts?.x || 0;
+  const laneRight = opts?.lane === 'ally-right';
+  const xOffset = (opts?.x || 0) + (laneRight ? 60 : 0);
   const yOffset = opts?.y || 0;
   el.style.left = (rect.left - sRect.left + rect.width/2 - 10 + xOffset) + 'px';
   el.style.top = (rect.top - sRect.top + yOffset) + 'px';
   if (opts?.scale) el.style.setProperty('--float-scale', String(opts.scale));
-  if (opts?.dx) el.style.setProperty('--float-dx', opts.dx + 'px');
+  if (opts?.dx != null) el.style.setProperty('--float-dx', opts.dx + 'px');
+  else if (laneRight) el.style.setProperty('--float-dx', '28px');
   if (opts?.dy) el.style.setProperty('--float-dy', opts.dy + 'px');
   if (opts?.duration) el.style.setProperty('--float-duration', opts.duration + 'ms');
   floatLayer.appendChild(el);

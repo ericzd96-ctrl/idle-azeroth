@@ -595,10 +595,12 @@ function stateRequirementMet(mon, req){
 }
 function autoSkillScore(skillKey, sk, mon, ctx){
   const ai = skillAiMeta(skillKey, sk);
-  const tag = ai.priorityTag || 'builder';
-  const base = { heal:120, defBuff:110, buff:80, setup:78, spender:86, execute:92, aoe:74, dot:72, strike:56, builder:40 }[tag] || 40;
+  const summonSkill = sk.type === 'summon' || sk.summonCount;
+  const tag = ai.priorityTag || (summonSkill ? 'summon' : 'builder');
+  const base = { heal:120, defBuff:110, buff:80, summon:88, setup:78, spender:86, execute:92, aoe:74, dot:72, strike:56, builder:40 }[tag] || 40;
   const dotCount = getMonsterDotCount(mon, ctx.now);
   if(sk.type === 'buff' && sk.buff && state.buffs[sk.buff] > ctx.now) return null;
+  if(summonSkill && !canSummonAllies(sk, 'hero', ctx.now)) return null;
   if(ai.useIfBuffMissing && state.buffs[ai.useIfBuffMissing] > ctx.now) return null;
   if(ai.useIfBuffActive && !buffActive(ai.useIfBuffActive, ctx.now)) return null;
   if(ai.onlyOnBoss && !mon.isBoss) return null;
@@ -620,6 +622,11 @@ function autoSkillScore(skillKey, sk, mon, ctx){
   if(tag === 'heal') score += Math.round((1 - ctx.hpFrac) * 120);
   if(tag === 'defBuff') score += Math.round((1 - ctx.hpFrac) * 105);
   if(tag === 'execute') score += Math.round((1 - ctx.targetHpFrac) * 70);
+  if(tag === 'summon'){
+    score += (2 - Math.min(2, allySummonOwnerCount('hero', ctx.now))) * 18;
+    if(mon.isBoss) score += 16;
+    if(ctx.targetHpFrac < 0.2 && !mon.isBoss) score -= 14;
+  }
   if(tag === 'setup' && ai.useIfTargetMissing) score += 16;
   if(tag === 'dot' && ai.useIfTargetMissing) score += 12;
   if(tag === 'dot' && ai.useIfTargetDotKeyMissing) score += 12;
@@ -1396,6 +1403,413 @@ const MON_SUPPORT_SUMMONS = {
   soldier: { icon:'👤', names:['受召守卫','战场援军','狂热卫士'] },
   generic: { icon:'👹', names:['爪牙','仆从','召唤物'] }
 };
+const ALLY_SUMMON_THEMES = {
+  beast:   { icon:'🐺', names:['战狼伙伴','荒野猎犬','迅捷猎豹'], hpPct:0.24, atkPct:0.62, defPct:0.55, spd:1.18, crit:10, critd:155, aggro:0.58, leechPct:0.06, executeBonus:0.18, executeThreshold:0.36, frenzyThreshold:0.45, frenzyAtkBonus:0.16, frenzySpdMul:1.18, skillName:'撕咬扑袭', skillIcon:'🦴', skillMul:1.90, skillCd:7200, skillDotPct:0.14, skillDotMs:7000, skillCrit:10, extraSkills:[{ name:'裂爪撕扯', icon:'🩸', mul:1.78, cdMs:7600, dotPct:0.18, dotMs:8000, desc:'撕裂利爪造成更强流血' }, { name:'猎群奔袭', icon:'🐾', mul:1.88, cdMs:8200, slow:true, slowMs:3200, splashPct:0.18, desc:'迅猛突袭并波及周围目标' }, { name:'狂野怒嚎', icon:'📯', mul:1.96, cdMs:9000, critBonus:12, healSelfPct:0.06, executeBonus:0.18, executeThreshold:0.35, desc:'战吼强化扑杀并回复自身' }] },
+  undead:  { icon:'🧟', names:['骸骨战士','亡者勇士','寒骨侍从'], hpPct:0.26, atkPct:0.58, defPct:0.60, spd:0.96, crit:7, critd:150, aggro:0.52, damageTakenMult:0.92, leechPct:0.04, bonusVsDot:0.16, reviveOnce:true, revivePct:0.34, skillName:'尸群撕扯', skillIcon:'☠️', skillMul:1.82, skillCd:7800, skillDotPct:0.12, skillDotMs:7000, skillSplashPct:0.22, extraSkills:[{ name:'瘟骨投矛', icon:'🦴', mul:1.92, cdMs:8000, dotPct:0.16, dotMs:8000, stateKey:'blighted', stateMs:8000, desc:'投出瘟疫骨矛并附加瘟疫印记' }, { name:'寒墓缠握', icon:'🧊', mul:1.84, cdMs:8600, slow:true, slowMs:4200, stateKey:'chilled', stateMs:8000, desc:'寒墓之手减速并侵蚀敌人' }, { name:'亡魂吞噬', icon:'👻', mul:2.02, cdMs:9200, bonusVsDot:0.24, healSelfPct:0.08, desc:'撕咬受创目标并吞噬生命' }] },
+  demon:   { icon:'🔥', names:['地狱火','邪能恶魔','深渊卫士'], hpPct:0.30, atkPct:0.74, defPct:0.62, spd:0.94, crit:8, critd:165, aggro:0.66, leechPct:0.05, splashPct:0.16, bonusVsState:'torment', bonusStatePct:0.20, skillName:'邪焰践踏', skillIcon:'💥', skillMul:2.18, skillCd:8200, skillDotPct:0.18, skillDotMs:8000, skillSplashPct:0.30, skillStateKey:'torment', skillStateMs:7000, extraSkills:[{ name:'邪能撕咬', icon:'😈', mul:1.94, cdMs:7600, dotPct:0.14, dotMs:7000, stateKey:'torment', stateMs:7000, desc:'邪能啃噬并留下痛苦印记' }, { name:'地狱震波', icon:'🌋', mul:2.04, cdMs:8600, splashPct:0.24, slow:true, slowMs:3500, desc:'震荡烈焰冲击前排并减速' }, { name:'末日灼烧', icon:'☄️', mul:2.28, cdMs:9400, dotPct:0.22, dotMs:9000, critdBonus:20, bonusVsState:'torment', bonusStatePct:0.22, desc:'引爆邪火造成更持久的灼烧' }] },
+  phoenix: { icon:'🦜', names:['炽焰凤凰'], hpPct:0.22, atkPct:0.72, defPct:0.44, spd:1.26, crit:15, critd:170, aggro:0.34, dotPct:0.12, dotMs:6000, damageTakenMult:0.94, splashPct:0.14, bonusVsDot:0.18, reviveOnce:true, revivePct:0.42, skillName:'烈羽焚空', skillIcon:'🪽', skillMul:2.04, skillCd:6800, skillDotPct:0.22, skillDotMs:9000, skillSplashPct:0.20, skillCritd:18, extraSkills:[{ name:'灰烬俯冲', icon:'☄️', mul:2.02, cdMs:7600, dotPct:0.18, dotMs:8000, splashPct:0.18, desc:'俯冲轰炸并洒下大片余烬' }, { name:'涅火尖啸', icon:'🎇', mul:2.10, cdMs:8400, critBonus:14, bonusVsDot:0.24, desc:'对灼烧目标打出更高爆发' }, { name:'焚天回旋', icon:'🔥', mul:2.16, cdMs:9200, slow:true, slowMs:3200, splashPct:0.26, desc:'卷起火羽旋风烧穿敌阵' }] },
+  nature:  { icon:'🌳', names:['自然树人','林地守卫','古树幼灵'], hpPct:0.30, atkPct:0.54, defPct:0.72, spd:0.90, crit:6, critd:150, aggro:0.62, damageTakenMult:0.86, bonusVsState:'rooted', bonusStatePct:0.24, retaliatePct:0.14, skillName:'根须重击', skillIcon:'🌿', skillMul:1.76, skillCd:7600, skillSlow:true, skillSlowMs:4200, skillStateKey:'rooted', skillStateMs:7000, skillHealSelfPct:0.08, extraSkills:[{ name:'藤鞭绞杀', icon:'🌱', mul:1.82, cdMs:7800, stateKey:'rooted', stateMs:9000, bonusVsState:'rooted', bonusStatePct:0.24, desc:'缠绕已被束缚的目标' }, { name:'林泉回息', icon:'💧', mul:1.70, cdMs:8600, healSelfPct:0.10, slow:true, slowMs:3200, desc:'恢复自身并放缓敌人动作' }, { name:'古木震荡', icon:'🌲', mul:1.98, cdMs:9400, stun:true, stunMs:1100, bonusVsState:'rooted', bonusStatePct:0.20, desc:'古树猛砸,对被束缚目标更痛' }] },
+  fire:    { icon:'🔥', names:['火焰之子','余烬化身','熔火幼体'], hpPct:0.20, atkPct:0.68, defPct:0.42, spd:1.10, crit:12, critd:165, aggro:0.38, dotPct:0.10, dotMs:5000, splashPct:0.20, bonusVsDot:0.24, damageTakenMult:0.95, skillName:'熔火爆裂', skillIcon:'🌋', skillMul:2.06, skillCd:7200, skillDotPct:0.20, skillDotMs:8000, skillSplashPct:0.26, extraSkills:[{ name:'烈焰喷溅', icon:'🌋', mul:1.96, cdMs:7600, dotPct:0.20, dotMs:8000, splashPct:0.18, desc:'喷发火浆并灼烧周围敌人' }, { name:'焚烬突进', icon:'🚀', mul:2.08, cdMs:8400, executeBonus:0.26, executeThreshold:0.40, desc:'对残血目标发起灼烧突袭' }, { name:'爆燃冲击', icon:'💥', mul:2.18, cdMs:9200, bonusVsDot:0.28, critdBonus:16, desc:'引爆已有火种造成暴烈爆发' }] },
+  void:    { icon:'🛸', names:['虚空影魔','裂隙幽影','以太仆从'], hpPct:0.23, atkPct:0.66, defPct:0.48, spd:1.08, crit:12, critd:160, aggro:0.42, damageTakenMult:0.90, bonusVsState:'torment', bonusStatePct:0.22, bonusVsSlow:0.18, skillName:'虚空撕裂', skillIcon:'🌌', skillMul:1.94, skillCd:7600, skillSlow:true, skillSlowMs:4500, skillStateKey:'torment', skillStateMs:7000, extraSkills:[{ name:'裂隙侵蚀', icon:'🕳️', mul:1.88, cdMs:7800, stateKey:'torment', stateMs:9000, dotPct:0.16, dotMs:7000, desc:'撕开裂隙持续侵蚀目标' }, { name:'虚空迟滞', icon:'🫧', mul:1.92, cdMs:8600, slow:true, slowMs:4800, bonusVsState:'torment', bonusStatePct:0.20, desc:'让敌人动作滞涩并扩大痛苦印记' }, { name:'以太震爆', icon:'✨', mul:2.12, cdMs:9400, splashPct:0.24, critBonus:10, desc:'震爆虚空余波,扫过周围敌人' }] },
+  soldier: { icon:'🛡️', names:['受命守卫','战场援军','钢铁卫兵'], hpPct:0.28, atkPct:0.56, defPct:0.68, spd:0.92, crit:7, critd:150, aggro:0.70, damageTakenMult:0.84, retaliatePct:0.28, bonusVsState:'sunder', bonusStatePct:0.18, skillName:'盾击压制', skillIcon:'🔨', skillMul:1.86, skillCd:8000, skillStun:true, skillStunMs:900, skillSunder:true, skillSunderMs:14000, extraSkills:[{ name:'列阵突刺', icon:'🗡️', mul:1.84, cdMs:7800, sunder:true, sunderMs:15000, bonusVsState:'sunder', bonusStatePct:0.22, desc:'对破甲目标追加突刺伤害' }, { name:'守卫反击', icon:'🛡️', mul:1.90, cdMs:8600, stun:true, stunMs:1100, critBonus:8, desc:'盾反重击并打断敌人节奏' }, { name:'战旗冲锋', icon:'🚩', mul:2.02, cdMs:9400, splashPct:0.20, slow:true, slowMs:3000, desc:'举旗冲阵并迫使敌方退让' }] },
+  generic: { icon:'🐾', names:['召唤兽','战斗仆从','援护单位'], hpPct:0.24, atkPct:0.58, defPct:0.54, spd:1.00, crit:8, critd:155, aggro:0.44, damageTakenMult:0.96, leechPct:0.04, bonusVsSlow:0.14, skillName:'协同猛袭', skillIcon:'✨', skillMul:1.74, skillCd:7600, skillCrit:6, extraSkills:[{ name:'夹击冲锋', icon:'⚡', mul:1.84, cdMs:7800, critBonus:10, desc:'抓住空隙发动迅猛夹击' }, { name:'援护压制', icon:'🪢', mul:1.88, cdMs:8600, slow:true, slowMs:3600, splashPct:0.16, desc:'援护突击并压制周围敌人' }, { name:'连携猛扑', icon:'💫', mul:1.96, cdMs:9400, executeBonus:0.20, executeThreshold:0.35, healSelfPct:0.06, desc:'协同终结并顺势恢复自身' }] }
+};
+const HERO_SUMMON_BOOST = {
+  power:1.10,
+  hp:3.00,
+  atk:1.24,
+  def:1.08,
+  spd:1.06,
+  crit:3,
+  critd:8,
+};
+const COMPANION_SUMMON_BOOST = {
+  power:1.06,
+  hp:1.89,
+  atk:1.34,
+  def:1.12,
+  spd:1.08,
+  crit:4,
+  critd:8,
+};
+let allySummonUidSeq = 1;
+function ensureAllySummons(){
+  if(!Array.isArray(state._allySummons)) state._allySummons = [];
+  return state._allySummons;
+}
+function allySummonAnchor(unit){
+  if(unit?._uid){
+    const el = document.querySelector(`[data-ally-summon-uid="${unit._uid}"]`);
+    if(el) return el;
+  }
+  return unit?._ownerType === 'companion' ? $('comp-mini') : $('hero-emoji');
+}
+function livingAllySummons(now){
+  const ts = now || Date.now();
+  return ensureAllySummons().filter(unit => unit && unit.hp > 0 && (!unit.expireAt || unit.expireAt > ts));
+}
+function pruneAllySummons(now){
+  const ts = now || Date.now();
+  const pool = ensureAllySummons();
+  const next = pool.filter(unit => unit && unit.hp > 0 && (!unit.expireAt || unit.expireAt > ts));
+  if(next.length !== pool.length){
+    state._allySummons = next;
+    markDirty('stage','companion');
+  }
+}
+function allySummonOwnerCount(ownerId, now){
+  return livingAllySummons(now).filter(unit => unit._ownerId === ownerId).length;
+}
+function allySummonRoom(skill, ownerId, now){
+  const living = livingAllySummons(now);
+  const ownerCap = Math.max(1, skill?.summonCap || skill?.summonCount || 1);
+  const totalCap = Math.max(ownerCap, skill?.summonTotalCap || 5);
+  const ownCount = living.filter(unit => unit._ownerId === ownerId).length;
+  return Math.max(0, Math.min(ownerCap - ownCount, totalCap - living.length));
+}
+function canSummonAllies(skill, ownerId, now){
+  return allySummonRoom(skill, ownerId, now) > 0;
+}
+function allySummonUnlockCount(skill, owner, cfg){
+  const extraCount = Array.isArray(cfg?.extraSkills) ? cfg.extraSkills.length : 0;
+  if(owner?.source === 'companion'){
+    const slots = Math.max(1, owner?.summonSkillSlots || skill?.summonSkillSlots || 2);
+    return Math.max(1, Math.min(1 + extraCount, slots));
+  }
+  if(owner?.source !== 'hero') return 1;
+  const baseLvl = Math.max(1, skill?.unlockLvl || owner?.lvl || state.hero.lvl || 1);
+  const ownerLvl = Math.max(baseLvl, owner?.lvl || state.hero.lvl || baseLvl);
+  return Math.max(1, Math.min(1 + extraCount, 1 + Math.floor(Math.max(0, ownerLvl - baseLvl) / 10)));
+}
+function makeAllySummonSkillPack(skill, cfg, owner, now, index){
+  const primary = {
+    name:skill.summonSkillName || cfg.skillName || '协同猛袭',
+    icon:skill.summonSkillIcon || cfg.skillIcon || skill.summonIcon || cfg.icon || '✨',
+    mul:skill.summonSkillMul || cfg.skillMul || 1.75,
+    cdMs:skill.summonSkillCd || cfg.skillCd || 7800,
+    dotPct:skill.summonSkillDotPct ?? cfg.skillDotPct ?? 0,
+    dotMs:skill.summonSkillDotMs || cfg.skillDotMs || 7000,
+    slow:skill.summonSkillSlow ?? cfg.skillSlow ?? false,
+    slowMs:skill.summonSkillSlowMs || cfg.skillSlowMs || 4000,
+    stun:skill.summonSkillStun ?? cfg.skillStun ?? false,
+    stunMs:skill.summonSkillStunMs || cfg.skillStunMs || 1200,
+    sunder:skill.summonSkillSunder ?? cfg.skillSunder ?? false,
+    sunderMs:skill.summonSkillSunderMs || cfg.skillSunderMs || 12000,
+    splashPct:skill.summonSkillSplashPct ?? cfg.skillSplashPct ?? 0,
+    stateKey:skill.summonSkillStateKey || cfg.skillStateKey || '',
+    stateMs:skill.summonSkillStateMs || cfg.skillStateMs || 7000,
+    critBonus:skill.summonSkillCrit ?? cfg.skillCrit ?? 0,
+    critdBonus:skill.summonSkillCritd ?? cfg.skillCritd ?? 0,
+    healSelfPct:skill.summonSkillHealSelfPct ?? cfg.skillHealSelfPct ?? 0,
+    bonusVsBoss:skill.summonSkillBonusVsBoss ?? cfg.skillBonusVsBoss ?? 0,
+    bonusVsDot:skill.summonSkillBonusVsDot ?? cfg.skillBonusVsDot ?? 0,
+    bonusVsSlow:skill.summonSkillBonusVsSlow ?? cfg.skillBonusVsSlow ?? 0,
+    bonusVsState:skill.summonSkillBonusVsState || cfg.skillBonusVsState || '',
+    bonusStatePct:skill.summonSkillBonusStatePct ?? cfg.skillBonusStatePct ?? 0,
+    executeBonus:skill.summonSkillExecuteBonus ?? cfg.skillExecuteBonus ?? 0,
+    executeThreshold:skill.summonSkillExecuteThreshold ?? cfg.skillExecuteThreshold ?? 0.35,
+    desc:`主动技能 · 冷却 ${((skill.summonSkillCd || cfg.skillCd || 7800) / 1000).toFixed(1).replace(/\.0$/,'')} 秒`
+  };
+  const unlocked = allySummonUnlockCount(skill, owner, cfg);
+  const extras = Array.isArray(cfg.extraSkills) ? cfg.extraSkills.slice(0, Math.max(0, unlocked - 1)) : [];
+  const all = [primary].concat(extras);
+  return all.map((entry, skillIdx) => ({
+    name:entry.name || primary.name,
+    icon:entry.icon || primary.icon,
+    mul:entry.mul || primary.mul,
+    cdMs:entry.cdMs || primary.cdMs,
+    dotPct:entry.dotPct ?? 0,
+    dotMs:entry.dotMs || 7000,
+    slow:!!entry.slow,
+    slowMs:entry.slowMs || 4000,
+    stun:!!entry.stun,
+    stunMs:entry.stunMs || 1200,
+    sunder:!!entry.sunder,
+    sunderMs:entry.sunderMs || 12000,
+    splashPct:entry.splashPct ?? 0,
+    stateKey:entry.stateKey || '',
+    stateMs:entry.stateMs || 7000,
+    critBonus:entry.critBonus || 0,
+    critdBonus:entry.critdBonus || 0,
+    healSelfPct:entry.healSelfPct ?? 0,
+    bonusVsBoss:entry.bonusVsBoss || 0,
+    bonusVsDot:entry.bonusVsDot || 0,
+    bonusVsSlow:entry.bonusVsSlow || 0,
+    bonusVsState:entry.bonusVsState || '',
+    bonusStatePct:entry.bonusStatePct ?? 0,
+    executeBonus:entry.executeBonus || 0,
+    executeThreshold:entry.executeThreshold ?? 0.35,
+    desc:entry.desc || primary.desc,
+    readyAt:now + (owner?.source === 'companion' ? 2800 : 3600) + index * 380 + skillIdx * 620 + rng(0, 520),
+  }));
+}
+function allySummonFrenzyActive(unit){
+  return !!(unit?.frenzyThreshold > 0 && unit?.hp > 0 && unit?.hpMax > 0 && unit.hp <= unit.hpMax * unit.frenzyThreshold);
+}
+function allySummonAttackSpeed(unit){
+  let spd = Math.max(0.45, unit?.spd || 1);
+  if(allySummonFrenzyActive(unit)) spd *= unit.frenzySpdMul || 1;
+  return spd;
+}
+function allySummonDamageMult(unit, mon, skill, now){
+  let mult = 1;
+  const applyBonus = src => {
+    if(!src || !mon) return;
+    if(src.bonusVsBoss && mon.isBoss) mult *= 1 + src.bonusVsBoss;
+    if(src.bonusVsDot && getMonsterDotCount(mon, now) > 0) mult *= 1 + src.bonusVsDot;
+    if(src.bonusVsSlow && mon.slowUntil > now) mult *= 1 + src.bonusVsSlow;
+    if(src.bonusVsState && monsterStateActive(mon, src.bonusVsState)) mult *= 1 + (src.bonusStatePct || 0.3);
+    if(src.executeBonus && mon.hp > 0 && mon.hp <= mon.hpMax * (src.executeThreshold || 0.35)) mult *= 1 + src.executeBonus;
+  };
+  applyBonus(unit);
+  applyBonus(skill);
+  if(allySummonFrenzyActive(unit)) mult *= 1 + (unit.frenzyAtkBonus || 0);
+  return mult;
+}
+function allySummonSkillDisplay(unit){
+  const skills = Array.isArray(unit?._skills) && unit._skills.length ? unit._skills : null;
+  if(!skills){
+    return {
+      icon:unit?._skillIcon || unit?.icon || '✨',
+      name:unit?._skillName || '协同猛袭',
+      readyAt:unit?._skillReadyAt || 0,
+      count:1,
+    };
+  }
+  let soonest = skills[0];
+  for(const skill of skills){
+    if((skill.readyAt || 0) < (soonest.readyAt || 0)) soonest = skill;
+  }
+  return {
+    icon:skills[0].icon || unit?.icon || '✨',
+    name:skills[0].name || '协同猛袭',
+    readyAt:soonest.readyAt || 0,
+    count:skills.length,
+  };
+}
+function pickAllySummonSkill(unit, now){
+  const skills = Array.isArray(unit?._skills) ? unit._skills : [];
+  if(!skills.length) return null;
+  const start = Math.max(0, unit._skillCursor || 0) % skills.length;
+  for(let i = 0; i < skills.length; i++){
+    const idx = (start + i) % skills.length;
+    if((skills[idx].readyAt || 0) <= now){
+      unit._skillCursor = (idx + 1) % skills.length;
+      return skills[idx];
+    }
+  }
+  return null;
+}
+function allySummonDamageSource(unit){
+  return unit?._ownerType === 'companion' ? 'comp' : 'hero';
+}
+function allySideFloatOpts(opts){
+  return Object.assign({ lane:'ally-right' }, opts || {});
+}
+function applyAllySummonSplash(unit, mon, dmg, pct, icon, color){
+  pct = Math.max(0, pct || 0);
+  if(pct <= 0 || !Array.isArray(state.currentMonsters)) return;
+  for(const target of state.currentMonsters){
+    if(target === mon || !target || target.hp <= 0) continue;
+    let splash = Math.max(1, Math.floor(dmg * pct));
+    splash = absorbMonsterBarrier(target, splash, icon || unit?.icon || '💥').remaining;
+    const dr = monsterDamageReduction(target, Date.now());
+    if(dr && splash > 0) splash = Math.max(1, Math.floor(splash * (1 - dr)));
+    if(splash <= 0) continue;
+    target.hp -= splash;
+    trackDmg(allySummonDamageSource(unit), splash, false, unit?._skillName || unit?.baseName || unit?.name);
+    showMonsterFloat(target, (icon || unit?.icon || '💥') + '-' + splash, color || '#fca5a5', allySideFloatOpts({ variant:'comp', scale:1, important:true }));
+  }
+}
+function makeAllySummon(skill, owner, now, index){
+  const theme = skill.summonTheme || 'generic';
+  const cfg = ALLY_SUMMON_THEMES[theme] || ALLY_SUMMON_THEMES.generic;
+  const ownerIsCompanion = owner?.source === 'companion';
+  const ownerBoost = owner?.source === 'companion' ? COMPANION_SUMMON_BOOST : (owner?.source === 'hero' ? HERO_SUMMON_BOOST : null);
+  const summonPower = (skill.summonPower || 1) * (ownerBoost?.power || 1);
+  const summonName = skill.summonName || choice(cfg.names || ['召唤兽']);
+  const summonIcon = skill.summonIcon || cfg.icon || owner.icon || '🐾';
+  const fullName = Array.from(String(summonName || '')).some(ch => /[^\u4e00-\u9fa5A-Za-z0-9]/.test(ch)) ? summonName : `${summonIcon}${summonName}`;
+  const hpPct = (skill.summonHpPct || cfg.hpPct || 0.24) * (ownerBoost?.hp || 1);
+  const atkPct = (skill.summonAtkPct || cfg.atkPct || 0.58) * (ownerBoost?.atk || 1);
+  const defPct = (skill.summonDefPct || cfg.defPct || 0.54) * (ownerBoost?.def || 1);
+  const spd = +((skill.summonSpd || cfg.spd || 1) * (ownerBoost?.spd || 1)).toFixed(2);
+  const durationMs = skill.summonDuration || cfg.duration || 18000;
+  const summonSkills = makeAllySummonSkillPack(skill, cfg, owner, now, index);
+  const displaySkill = summonSkills[0] || {};
+  const skillDisplay = { icon:displaySkill.icon || summonIcon || '✨', name:displaySkill.name || '协同猛袭', readyAt:displaySkill.readyAt || 0 };
+  const unlockedSkills = summonSkills.length;
+  const skillUnlockText = owner?.source === 'hero'
+    ? `主角召唤成长：每高于解锁等级 10 级多解锁 1 个技能（当前 ${unlockedSkills} 个）`
+    : `随从召唤成长：按随从品质/星级解锁额外技能（当前 ${unlockedSkills} 个）`;
+  return {
+    _uid:`ally-${allySummonUidSeq++}`,
+    name:fullName,
+    baseName:summonName,
+    icon:summonIcon,
+    lvl:owner.lvl || state.hero.lvl || 1,
+    hpMax:Math.max(12, Math.floor((owner.hpMax || state.hero.hpMax || 50) * hpPct * summonPower)),
+    hp:0,
+    atk:Math.max(1, Math.floor((owner.atk || state.hero.atk || 1) * atkPct * summonPower)),
+    def:Math.max(0, Math.floor((owner.def || state.hero.def || 0) * defPct * summonPower)),
+    spd,
+    crit:(skill.summonCrit || cfg.crit || Math.max(5, Math.floor((owner.crit || state.hero.crit || 5) * 0.45))) + (ownerBoost?.crit || 0),
+    critd:(skill.summonCritd || cfg.critd || Math.max(150, Math.floor((owner.critd || state.hero.critd || 150) * 0.92))) + (ownerBoost?.critd || 0),
+    aggro:skill.summonAggro ?? cfg.aggro ?? 0.44,
+    dotPct:skill.summonDotPct ?? cfg.dotPct ?? 0,
+    dotMs:skill.summonDotMs || cfg.dotMs || 5000,
+    slow:!!skill.summonSlow,
+    slowMs:skill.summonSlowMs || 3000,
+    splashPct:skill.summonSplashPct ?? cfg.splashPct ?? 0,
+    leechPct:skill.summonLeechPct ?? cfg.leechPct ?? 0,
+    damageTakenMult:skill.summonDamageTakenMult ?? cfg.damageTakenMult ?? 1,
+    bonusVsBoss:skill.summonBonusVsBoss ?? cfg.bonusVsBoss ?? 0,
+    bonusVsDot:skill.summonBonusVsDot ?? cfg.bonusVsDot ?? 0,
+    bonusVsSlow:skill.summonBonusVsSlow ?? cfg.bonusVsSlow ?? 0,
+    bonusVsState:skill.summonBonusVsState || cfg.bonusVsState || '',
+    bonusStatePct:skill.summonBonusStatePct ?? cfg.bonusStatePct ?? 0,
+    executeBonus:skill.summonExecuteBonus ?? cfg.executeBonus ?? 0,
+    executeThreshold:skill.summonExecuteThreshold ?? cfg.executeThreshold ?? 0.35,
+    retaliatePct:skill.summonRetaliatePct ?? cfg.retaliatePct ?? 0,
+    reviveOnce:skill.summonReviveOnce ?? cfg.reviveOnce ?? false,
+    revivePct:skill.summonRevivePct ?? cfg.revivePct ?? 0.35,
+    frenzyThreshold:skill.summonFrenzyThreshold ?? cfg.frenzyThreshold ?? 0,
+    frenzyAtkBonus:skill.summonFrenzyAtkBonus ?? cfg.frenzyAtkBonus ?? 0,
+    frenzySpdMul:skill.summonFrenzySpdMul ?? cfg.frenzySpdMul ?? 1,
+    _skills:summonSkills,
+    _skillCursor:0,
+    _skillName:skillDisplay.name,
+    _skillIcon:skillDisplay.icon,
+    _skillReadyAt:skillDisplay.readyAt,
+    _skillUnlockText:skillUnlockText,
+    _ownerId:owner.id,
+    _ownerName:owner.name,
+    _ownerType:owner.source,
+    _ownerIcon:owner.icon,
+    _ownerSkill:skill.name,
+    _theme:theme,
+    expireAt:now + durationMs,
+    _nextAtkAt:now + (ownerIsCompanion ? 260 : 450) + index * 140 + rng(0, 220),
+  };
+}
+function summonAlliedUnits(skill, now, owner){
+  if(!skill || !owner) return 0;
+  pruneAllySummons(now);
+  const room = allySummonRoom(skill, owner.id, now);
+  const count = Math.max(0, Math.min(skill.summonCount || 1, room));
+  if(count <= 0) return 0;
+  const pool = ensureAllySummons();
+  for(let i = 0; i < count; i++){
+    const summon = makeAllySummon(skill, owner, now, i);
+    summon.hp = summon.hpMax;
+    pool.push(summon);
+  }
+  const anchor = owner.source === 'companion' ? $('comp-mini') : $('hero-emoji');
+  if(anchor) showFloat(anchor, (skill.icon || '🐾') + '召唤', '#93c5fd', { variant:'shield', scale:1.03 });
+  markDirty('stage','companion');
+  return count;
+}
+function applyAllySummonDamage(unit, amount, mon, opts){
+  if(!unit || unit.hp <= 0) return 0;
+  const taken = Math.max(1, Math.floor((amount || 0) * Math.max(0.3, unit.damageTakenMult || 1)));
+  unit.hp = Math.max(0, unit.hp - taken);
+  if(unit.retaliatePct > 0 && mon && mon.hp > 0){
+    const retaliate = Math.max(1, Math.floor(taken * unit.retaliatePct));
+    mon.hp -= retaliate;
+    trackDmg(allySummonDamageSource(unit), retaliate, false, '反击');
+    showMonsterFloat(mon, (unit.icon || '🛡️') + '-' + retaliate, '#fca5a5', allySideFloatOpts({ variant:'comp', scale:1.02 }));
+  }
+  if(opts?.show !== false){
+    const anchor = allySummonAnchor(unit);
+    const text = typeof opts?.label === 'function' ? opts.label(taken) : (opts?.label || ('-' + taken));
+    showFloat(anchor, text, opts?.color || '#ff9aa0', { variant: mon?.isBoss ? 'boss' : 'comp', scale:mon?.isBoss ? 1.05 : 1 });
+  }
+  if(unit.hp <= 0 && unit.reviveOnce && !unit._revived){
+    unit._revived = true;
+    unit.hp = Math.max(1, Math.floor(unit.hpMax * Math.max(0.2, unit.revivePct || 0.35)));
+    unit._nextAtkAt = Date.now() + 900;
+    showFloat(allySummonAnchor(unit), '✨复苏', '#6ee7b7', { variant:'heal', scale:1.06 });
+    log(`${unit.name} 再度站起继续作战!`,'good');
+  } else if(unit.hp <= 0) log(`${unit.name} 被击溃了`,'bad');
+  markDirty('stage');
+  return taken;
+}
+function pickMonsterAttackTarget(now){
+  const choices = [{ kind:'hero', weight:1.05 }];
+  if(companionTargetable()) choices.push({ kind:'companion', weight:Math.max(0.18, compAggroChance() * 1.35) });
+  for(const unit of livingAllySummons(now)) choices.push({ kind:'summon', unit, weight:Math.max(0.12, unit.aggro || 0.35) });
+  let total = 0;
+  for(const choice of choices) total += choice.weight;
+  let roll = Math.random() * total;
+  for(const choice of choices){
+    roll -= choice.weight;
+    if(roll <= 0) return choice;
+  }
+  return choices[0];
+}
+function tickAllySummons(now){
+  pruneAllySummons(now);
+  const summons = livingAllySummons(now);
+  if(!summons.length || getAliveMonsters().length === 0) return;
+  for(const unit of summons){
+    if(unit.hp <= 0 || (unit.expireAt || 0) <= now) continue;
+    if((unit._nextAtkAt || 0) > now) continue;
+    focusHighestThreat();
+    const target = state.currentMonsters.find(mon => mon && mon.hp > 0);
+    if(!target) break;
+    const summonSkill = pickAllySummonSkill(unit, now);
+    const useSkill = !!summonSkill;
+    const skillIcon = useSkill ? (summonSkill.icon || unit.icon || '✨') : (unit.icon || '🐾');
+    const dmgMult = allySummonDamageMult(unit, target, summonSkill, now);
+    const hit = calcDmg(
+      unit.atk * dmgMult * (useSkill ? (summonSkill.mul || 1.75) : 1),
+      monArmor(target),
+      (unit.crit || 5) + (useSkill ? (summonSkill.critBonus || 0) : 0),
+      (unit.critd || 150) + (useSkill ? (summonSkill.critdBonus || 0) : 0),
+      false,
+      target.lvl,
+      unit.lvl || state.hero.lvl
+    );
+    let dealt = absorbMonsterBarrier(target, hit.dmg, skillIcon).remaining;
+    const dr = monsterDamageReduction(target, now);
+    if(dr && dealt > 0) dealt = Math.max(1, Math.floor(dealt * (1 - dr)));
+    target.hp -= dealt;
+    if(dealt > 0){
+      trackDmg(allySummonDamageSource(unit), dealt, hit.crit, useSkill ? (summonSkill.name || unit.baseName || unit.name) : (unit.baseName || unit.name));
+      showMonsterFloat(target, skillIcon + '-' + dealt, hit.crit ? '#fbbf24' : (useSkill ? '#c4b5fd' : '#7dd3fc'), allySideFloatOpts({ variant:hit.crit ? 'crit' : 'comp', scale:(hit.crit || useSkill) ? 1.1 : 1, important:true }));
+      if(unit.dotPct > 0) applyMonsterDot(target, `allysummon:${unit._uid}`, Math.max(1, Math.floor(dealt * unit.dotPct)), unit.dotMs || 5000, { icon:unit.icon || '🔥', name:unit.baseName || unit.name, source:unit._ownerName || '召唤物' });
+      if(unit.slow) target.slowUntil = Math.max(target.slowUntil || 0, now + (unit.slowMs || 3000));
+      if(unit.splashPct > 0) applyAllySummonSplash(unit, target, dealt, unit.splashPct, unit.icon || '💥', '#fda4af');
+      if(unit.leechPct > 0 && unit.hp > 0){
+        const heal = Math.max(1, Math.floor(dealt * unit.leechPct));
+        unit.hp = Math.min(unit.hpMax, unit.hp + heal);
+        showFloat(allySummonAnchor(unit), '+' + heal, '#6ee7b7', { variant:'heal', scale:1.02 });
+      }
+      if(useSkill){
+        showMonsterFloat(target, `${skillIcon}${summonSkill.name || '技能'}`, '#f9a8d4', allySideFloatOpts({ variant:'comp', scale:1.02 }));
+        unit._skillName = summonSkill.name || unit._skillName || '协同猛袭';
+        unit._skillIcon = summonSkill.icon || unit._skillIcon || unit.icon || '✨';
+        if(summonSkill.dotPct > 0) applyMonsterDot(target, `allysummon-skill:${unit._uid}:${summonSkill.name || 'skill'}`, Math.max(1, Math.floor(dealt * summonSkill.dotPct)), summonSkill.dotMs || 7000, { icon:skillIcon, name:summonSkill.name || '召唤技', source:unit.baseName || unit.name });
+        if(summonSkill.slow) target.slowUntil = Math.max(target.slowUntil || 0, now + (summonSkill.slowMs || 4000));
+        if(summonSkill.stun) target.stunUntil = Math.max(target.stunUntil || 0, now + (summonSkill.stunMs || 1200));
+        if(summonSkill.sunder) target.sunderUntil = Math.max(target.sunderUntil || 0, now + (summonSkill.sunderMs || 12000));
+        if(summonSkill.stateKey) applyMonsterState(target, summonSkill.stateKey, summonSkill.stateMs || 7000);
+        if(summonSkill.splashPct > 0) applyAllySummonSplash(unit, target, dealt, summonSkill.splashPct, skillIcon, '#fda4af');
+        if(summonSkill.healSelfPct > 0 && unit.hp > 0){
+          const heal = Math.max(1, Math.floor(unit.hpMax * summonSkill.healSelfPct));
+          unit.hp = Math.min(unit.hpMax, unit.hp + heal);
+          showFloat(allySummonAnchor(unit), '+' + heal, '#6ee7b7', { variant:'comp', scale:1.02 });
+        }
+        summonSkill.readyAt = now + Math.max(4800, summonSkill.cdMs || 7800);
+      }
+    }
+    const skillDisplay = allySummonSkillDisplay(unit);
+    unit._skillName = skillDisplay.name;
+    unit._skillIcon = skillDisplay.icon;
+    unit._skillReadyAt = skillDisplay.readyAt;
+    unit._nextAtkAt = now + Math.max(650, Math.floor(1000 / allySummonAttackSpeed(unit)));
+  }
+}
 const BOSS_SUPPORT_PACKAGES = {
   beast_alpha: ['低吼','硬皮','嗜血','狂暴','呼唤同伴'],
   warlord_command: ['战吼','铁壁','召集守卫','狂暴','弱点洞察'],
@@ -2329,7 +2743,27 @@ function applyCompanionSplash(mon, dmg, pct, icon, color){
     if(splash <= 0) continue;
     target.hp -= splash;
     trackDmg('comp', splash);
-    showMonsterFloat(target, (icon || '💥') + '-' + splash, color || '#fca5a5');
+    showMonsterFloat(target, (icon || '💥') + '-' + splash, color || '#fca5a5', allySideFloatOpts({ variant:'comp' }));
+  }
+}
+function applyCompanionBuffAura(sk, now){
+  if(!sk?.buff) return;
+  const dur = (sk.duration || 15000) + (state.hero.buffDuration || 0) * 1000;
+  if(sk.buffTarget === 'hero'){
+    state.buffs[sk.buff] = now + dur;
+    recomputeStats();
+    markDirty('hero');
+  }else if(sk.buffTarget === 'both'){
+    state.buffs[sk.buff] = now + dur;
+    recomputeStats();
+    markDirty('hero');
+    if(!state._compBuffs) state._compBuffs = {};
+    state._compBuffs[sk.buff] = now + dur;
+    markDirty('companion');
+  }else{
+    if(!state._compBuffs) state._compBuffs = {};
+    state._compBuffs[sk.buff] = now + dur;
+    markDirty('companion');
   }
 }
 function applyCompanionSupportSkill(sk, st, now){
@@ -2437,6 +2871,7 @@ function tickBattle(now){
   if(state.mode==='travel'){lastHeroAtk=now;lastMonAtk=now;return;}
   if(pruneTalentAuras(now)) recomputeStats();
   pruneSkillAuras(now);
+  pruneAllySummons(now);
   reapDeadMonsters();                                   // 先结算上一拍可能死亡的敌人(含 AOE 群杀)
   if(getAliveMonsters().length===0){spawnMonster();lastHeroAtk=now;lastMonAtk=now;return;}
   focusHighestThreat();                                 // 锁定仇恨最高的敌人为焦点([0])
@@ -2597,14 +3032,20 @@ function tickBattle(now){
       }
     }
     m.threat=(m.threat||0)+matk*0.6;
-    // —— 仇恨分配:存活随从按定位概率把这次攻击吸引到自己身上(坦克更高)——
-    if(companionTargetable()&&Math.random()<compAggroChance()){
+    // —— 仇恨分配:英雄 / 随从 / 我方召唤物 共同分担敌方火力——
+    const target = pickMonsterAttackTarget(now);
+    if(target.kind==='companion'){
       const cst=computeCompanionStats();
       const cd=calcDmg(matk,cst?cst.def:0,critRate,(m.critMult?m.critMult*100:150),false,state.hero.lvl,m.lvl);
       const tc=applyCompanionDamage(Math.max(1,cd.dmg),m,{label:t=>(kindFloat?kindFloat+' ':'')+'-'+t,color:'#ff9aa0',now});
       if(typeof pulseCombatEl === 'function') pulseCombatEl($('comp-mini'), (m.isBoss || tc >= ((computeCompanionStats()?.hpMax || 1) * 0.12)) ? 'danger' : 'comp', m.isBoss ? 300 : 220);
       if(kindSkill)skillEffects(kindSkill,m,tc,now,{allowFallback:false,target:'companion'});
       continue;   // 这只怪打了随从,英雄本拍不挨打、不进怒气
+    }
+    if(target.kind==='summon' && target.unit){
+      const sd=calcDmg(matk,target.unit.def || 0,critRate,(m.critMult?m.critMult*100:150),false,state.hero.lvl,m.lvl);
+      applyAllySummonDamage(target.unit,Math.max(1,sd.dmg),m,{label:t=>(kindFloat?kindFloat+' ':'')+'-'+t,color:'#ffb4c1',now});
+      continue;
     }
     // —— 命中英雄(原逻辑) ——
     if(state.hero.dodge&&Math.random()*100<state.hero.dodge){showFloat($('hero-emoji'),'闪避','#9ca3af',{variant:'avoid'});continue;}   // 英雄"闪避"天赋
@@ -2827,6 +3268,7 @@ function clearAllBuffs(){
   state.heroDebuffs = {};
   state._compDebuffs = {};
   state._compBuffs = {};
+  state._allySummons = [];
 }
 function onHeroDeath(){
   log('☠️ 你倒下了…','bad');state._compHp=null;state._compDownUntil=0;   // 复活后随从满血归来
@@ -2845,6 +3287,7 @@ function onHeroDeath(){
   state._brittleUntil = 0;
   state._soulLinkUntil = 0;
   state._decayUntil = 0;
+  state._allySummons = [];
   state.talentState = { cds:{}, flags:{}, shield:0 };
   recomputeStats();
   if(state.mode !== 'roguelike'){
@@ -3065,6 +3508,7 @@ function resetCombatState(){
     state.heroStunUntil=0;state.heroSilenceUntil=0;state.heroDisarmUntil=0;
     state._compBarrier=0;state._compStunUntil=0;state._compSilenceUntil=0;state._compDisarmUntil=0;state._compSoulLinkUntil=0;state._compFrenzyUntil=0;state._compDecayUntil=0;state._compLastDotTick=0;
     state._brittleUntil=0;state._soulLinkUntil=0;state._decayUntil=0;
+    state._allySummons=[];
     state.talentState={cds:{},flags:{},shield:0};
   }
   if(typeof lastCompAtk==='number')lastCompAtk=0;
@@ -3221,31 +3665,46 @@ function tickCast(now){
             const cd=calcDmg(rawAtk,cst?cst.def:mon.def,critRate,mon.critMult?mon.critMult*100:150,bc.alwaysCrit,state.hero.lvl,mon.lvl);
             const ct=applyCompanionDamage(cd.dmg,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ff9aa0',now});
             skillEffects(bc,mon,ct,now,{target:'companion'});}
+          for(const unit of livingAllySummons(now)){
+            const sd=calcDmg(rawAtk,unit.def || 0,critRate,mon.critMult?mon.critMult*100:150,bc.alwaysCrit,state.hero.lvl,mon.lvl);
+            applyAllySummonDamage(unit,sd.dmg,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ffb4c1',now});
+          }
           if(state.hp<=0)onHeroDeath();
-        }else if(companionTargetable()&&Math.random()<compAggroChance()){
-          const cst=computeCompanionStats();
-          const d2=calcDmg(rawAtk,cst?cst.def:mon.def,critRate,mon.critMult?mon.critMult*100:150,bc.alwaysCrit,state.hero.lvl,mon.lvl);
-          const ct=applyCompanionDamage(d2.dmg,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ff9aa0',now});
-          if(bc.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(d2.dmg*bc.lifeSteal));
-          log('🛡️ 随从替你承受了 '+bc.icon+'!','info');
-          skillEffects(bc,mon,ct,now,{target:'companion'});
         }else{
-          let taken=calcDmg(rawAtk,heroDefAgainst(mon),critRate,mon.critMult?mon.critMult*100:150,bc.alwaysCrit,state.hero.lvl,mon.lvl).dmg;
-          taken=resolveMonsterDamageTaken(mon,taken);
-          taken=applyHeroDamage(taken,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ff4444',now});
-          processTalentLowHp(mon,now);
-          if(typeof passiveOnTakeDamage==='function')passiveOnTakeDamage(mon,taken);
-          if(bc.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(taken*bc.lifeSteal));
-          skillEffects(bc,mon,taken,now);
+          const target = pickMonsterAttackTarget(now);
+          if(target.kind==='companion'){
+            const cst=computeCompanionStats();
+            const d2=calcDmg(rawAtk,cst?cst.def:mon.def,critRate,mon.critMult?mon.critMult*100:150,bc.alwaysCrit,state.hero.lvl,mon.lvl);
+            const ct=applyCompanionDamage(d2.dmg,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ff9aa0',now});
+            if(bc.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(d2.dmg*bc.lifeSteal));
+            log('🛡️ 随从替你承受了 '+bc.icon+'!','info');
+            skillEffects(bc,mon,ct,now,{target:'companion'});
+          }else if(target.kind==='summon'&&target.unit){
+            const unit = target.unit;
+            const d3=calcDmg(rawAtk,unit.def || 0,critRate,mon.critMult?mon.critMult*100:150,bc.alwaysCrit,state.hero.lvl,mon.lvl);
+            applyAllySummonDamage(unit,d3.dmg,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ffb4c1',now});
+            if(bc.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(d3.dmg*bc.lifeSteal));
+            log(`🛡️ ${unit.baseName || unit.name} 挡下了 ${bc.icon || '✨'}!`,'info');
+          }else{
+            let taken=calcDmg(rawAtk,heroDefAgainst(mon),critRate,mon.critMult?mon.critMult*100:150,bc.alwaysCrit,state.hero.lvl,mon.lvl).dmg;
+            taken=resolveMonsterDamageTaken(mon,taken);
+            taken=applyHeroDamage(taken,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ff4444',now});
+            processTalentLowHp(mon,now);
+            if(typeof passiveOnTakeDamage==='function')passiveOnTakeDamage(mon,taken);
+            if(bc.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(taken*bc.lifeSteal));
+            skillEffects(bc,mon,taken,now);
+          }
           if(state.hp<=0)onHeroDeath();}}}}
 }
 function castSkill(skillKey,manual){
   const c=getCls();const sk=c.skills[skillKey];if(!sk)return;
   const ai=skillAiMeta(skillKey, sk);
+  const summonSkill = sk.type==='summon' || sk.summonCount;
   if(!state.unlockedSkills[skillKey]){if(manual)log('技能未解锁','bad');return;}
   if(sk.type==='interrupt'){if(manual)doInterrupt();const cdSec=sk.cd||5;state.skillCooldowns[skillKey]=Date.now()+cdSec*1000/castSpeedMul();return;}
   const now=Date.now();
   if(state.skillCooldowns[skillKey]&&state.skillCooldowns[skillKey]>now){if(manual){const left=Math.ceil((state.skillCooldowns[skillKey]-now)/1000);log(sk.name+' 冷却中('+left+'秒)','bad');}return;}
+  if(summonSkill && !canSummonAllies(sk, 'hero', now)){if(manual)log('召唤物已在场上限','bad');return;}
   let cost=sk.mp;if(state.hero.costReduction>0)cost=Math.max(1,Math.floor(sk.mp*(1-state.hero.costReduction/100)));
   if(sk.consumeRage){cost=Math.min(state.resource,10);}   // 斩杀:至少需10怒,但会消耗全部
   if(state.resource<cost){if(manual)log(c.resource+'不足','bad');return;}
@@ -3310,6 +3769,14 @@ function castSkill(skillKey,manual){
     applySkillHealEffects(skillKey, sk, hr.applied, hr.overheal);
     processTalentAfterHeal(skillKey, hr.applied, hr.overheal);
     processTalentAfterSkill(skillKey, sk, null, hr.applied, { overheal:hr.overheal, cost });
+  }
+  else if(summonSkill){
+    const owner = { id:'hero', source:'hero', name:'你', icon:sk.icon || getCls()?.icon || '🧙', lvl:state.hero.lvl, atk:state.hero.atk, def:state.hero.def, hpMax:state.hero.hpMax, crit:state.hero.crit, critd:state.hero.critd };
+    const summoned = summonAlliedUnits(sk, now, owner);
+    if(summoned > 0){
+      log(`${sk.icon || '🐾'} ${sk.name}! 召唤了 ${summoned} 个单位助战`,'good');
+      processTalentAfterSkill(skillKey, sk, state.currentMonsters[0] || null, 0, { cost, summoned });
+    }
   }
   else if(sk.type==='buff'){const dur=sk.duration+(state.hero.buffDuration||0)*1000;state.buffs[sk.buff]=Date.now()+dur;recomputeStats();log(sk.name+'!','good');}
   if(sk.type==='buff') processTalentAfterSkill(skillKey, sk, state.currentMonsters[0] || null, 0, { cost });
@@ -3390,7 +3857,7 @@ function applyCompanionSignatureHit(sig, st, mon, dmgDone, now){
   let note = '';
   if(sig.bonusVsState && monsterStateActive(mon, sig.bonusVsState)){
     const extra = absorbMonsterBarrier(mon, Math.max(1, Math.floor(dmgDone * (sig.bonusStatePct || 0.3))), sig.icon || '✨').remaining;
-    if(extra > 0){ mon.hp -= extra; trackDmg('comp', extra); showMonsterFloat(mon, (sig.icon || '✨') + '-' + extra, '#fbbf24'); }
+    if(extra > 0){ mon.hp -= extra; trackDmg('comp', extra); showMonsterFloat(mon, (sig.icon || '✨') + '-' + extra, '#fbbf24', allySideFloatOpts({ variant:'crit' })); }
     note = note || '追猎强化';
   }
   if(sig.dotPct) applyMonsterDot(mon, `sig:${st.name}:${sig.name}`, Math.max(1, Math.floor(dmgDone * sig.dotPct)), sig.dotMs || 6000, { icon:sig.icon || '✨', name:sig.name, source:st.name });
@@ -3401,12 +3868,12 @@ function applyCompanionSignatureHit(sig, st, mon, dmgDone, now){
   if(sig.splashPct) applyCompanionSplash(mon, dmgDone, sig.splashPct, sig.icon || '💥', '#fca5a5');
   if(sig.executeBonus && mon.hp > 0 && mon.hp <= mon.hpMax * (sig.executeThreshold || 0.35)){
     const extra = absorbMonsterBarrier(mon, Math.max(1, Math.floor(dmgDone * sig.executeBonus)), sig.icon || '✨').remaining;
-    if(extra > 0){ mon.hp -= extra; trackDmg('comp', extra); showMonsterFloat(mon, (sig.icon || '✨') + '-' + extra, '#fbbf24'); }
+    if(extra > 0){ mon.hp -= extra; trackDmg('comp', extra); showMonsterFloat(mon, (sig.icon || '✨') + '-' + extra, '#fbbf24', allySideFloatOpts({ variant:'crit' })); }
     note = '斩杀强化';
   }
   if(sig.bonusVsBoss && mon.isBoss){
     const extra = absorbMonsterBarrier(mon, Math.max(1, Math.floor(dmgDone * sig.bonusVsBoss)), sig.icon || '👑').remaining;
-    if(extra > 0){ mon.hp -= extra; trackDmg('comp', extra); showMonsterFloat(mon, (sig.icon || '👑') + '-' + extra, '#fbbf24'); }
+    if(extra > 0){ mon.hp -= extra; trackDmg('comp', extra); showMonsterFloat(mon, (sig.icon || '👑') + '-' + extra, '#fbbf24', allySideFloatOpts({ variant:'crit' })); }
     note = note || 'Boss压制';
   }
   if(sig.healPctHero){
@@ -3473,7 +3940,19 @@ function companionSkillPriority(sk, st, mon, now){
   const heroFrac = state.hp / Math.max(1, state.hero.hpMax || 1);
   const compFrac = (state._compHp || 0) / Math.max(1, st.hpMax || 1);
   const targetMode = companionSkillTarget(sk);
+  const comp = getActiveCompanion();
+  const summonSkill = sk.type === 'summon' || sk.summonCount;
   let score = 0;
+  if(summonSkill){
+    const ownerId = comp ? `comp:${comp.key}` : 'companion';
+    if(!canSummonAllies(sk, ownerId, now)) return -999;
+    score = 132 + (sk.summonCount || 1) * 20;
+    if(mon?.isBoss) score += 18;
+    if(st.role === 'dps') score += 8;
+    if(st.role === 'tank') score += 12;
+    if(sk.healPct || sk.shieldPct || sk.buff) score += 20;
+    return score;
+  }
   if(sk.type === 'heal'){
     const targetFrac = targetMode === 'companion' ? compFrac : targetMode === 'hero' ? heroFrac : Math.min(heroFrac, compFrac);
     score = 180 + (1 - targetFrac) * 200 + ((sk.heal || 0) + (sk.healPct || 0)) * 120 + (sk.cleanse ? 26 : 0) + (sk.shieldPct ? 18 : 0);
@@ -3534,7 +4013,7 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
   if((state._compStunUntil||0)>now) return;
   const mon=state.currentMonsters[0];if(!mon)return;
   if(compSkillCd._owner!==comp.key)compSkillCd={_owner:comp.key};   // 换随从:重置技能冷却
-  const interval=1000/(st.spd||0.5);if((state._compDisarmUntil||0)<=now&&(now-lastCompAtk>interval||now-lastCompAtk>5000)){let cm=state.currentMonsters[0];if(cm&&cm.hp>0){const cd=calcDmg(st.atk,monArmor(cm),st.crit,st.critd,false,cm.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(cm, cd.dmg, st.emoji).remaining;cm.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,cd.crit,'普攻');showMonsterFloat(cm,st.emoji+'-'+dealt,'#a0d0ff',{variant:cd.crit?'crit':'comp',scale:cd.crit?1.12:1});}applyCompanionSignatureHit(companionSignature(tpl), st, cm, dealt, now);}lastCompAtk=now;
+  const interval=1000/(st.spd||0.5);if((state._compDisarmUntil||0)<=now&&(now-lastCompAtk>interval||now-lastCompAtk>5000)){let cm=state.currentMonsters[0];if(cm&&cm.hp>0){const cd=calcDmg(st.atk,monArmor(cm),st.crit,st.critd,false,cm.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(cm, cd.dmg, st.emoji).remaining;cm.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,cd.crit,'普攻');showMonsterFloat(cm,st.emoji+'-'+dealt,'#a0d0ff',allySideFloatOpts({variant:cd.crit?'crit':'comp',scale:cd.crit?1.12:1}));}applyCompanionSignatureHit(companionSignature(tpl), st, cm, dealt, now);}lastCompAtk=now;
     // 技能:每个技能按自己的 cd 独立冷却,就绪即放(GCD 2秒,避免一次性全放;优先治疗>buff>伤害)
     if((state._compSilenceUntil||0)<=now&&now-lastCompSkill>2000){
       const ready=[];for(let i=0;i<st.skills.length;i++){if((compSkillCd[i]||0)<=now)ready.push(i);}
@@ -3543,7 +4022,7 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
       if(i!==undefined){const sk=st.skills[i];
         if(sk.type==='dmg'){
           const dmgMult = companionSkillDamageMult(sk, mon, now);
-          const sd=calcDmg(st.atk*sk.mul*dmgMult*COMPANION_SKILL_DMG_BONUS,monArmor(mon),st.crit,st.critd,sk.alwaysCrit,mon.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(mon, sd.dmg, sk.icon || st.emoji).remaining;mon.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,sd.crit,sk.name);showMonsterFloat(mon,st.emoji+sk.icon+'-'+dealt,'#c0a0ff',{variant:sd.crit?'crit':'comp',scale:sd.crit?1.12:1,important:true});}
+          const sd=calcDmg(st.atk*sk.mul*dmgMult*COMPANION_SKILL_DMG_BONUS,monArmor(mon),st.crit,st.critd,sk.alwaysCrit,mon.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(mon, sd.dmg, sk.icon || st.emoji).remaining;mon.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,sd.crit,sk.name);showMonsterFloat(mon,st.emoji+sk.icon+'-'+dealt,'#c0a0ff',allySideFloatOpts({variant:sd.crit?'crit':'comp',scale:sd.crit?1.12:1,important:true}));}
           const dotPct = sk.dotPct || (sk.dot ? 0.12 : 0);
           if(dotPct > 0) applyMonsterDot(mon,`comp:${comp.key}:${i}`,Math.max(1,Math.floor(dealt*dotPct)),sk.dotMs||6000,{icon:sk.icon,name:sk.name,source:st.name});
           if(sk.slow) mon.slowUntil=Math.max(mon.slowUntil||0,Date.now()+(sk.slowMs||4000));
@@ -3578,17 +4057,17 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
           applyCompanionSupportSkill(sk, st, now);
         }
         else if(sk.type==='buff'){
-          const dur=(sk.duration||15000)+(state.hero.buffDuration||0)*1000;
-          if(sk.buffTarget === 'hero'){
-            state.buffs[sk.buff]=Date.now()+dur;recomputeStats();markDirty('hero');
-          }else if(sk.buffTarget === 'both'){
-            state.buffs[sk.buff]=Date.now()+dur;recomputeStats();markDirty('hero');
-            if(!state._compBuffs)state._compBuffs={};state._compBuffs[sk.buff]=Date.now()+dur;markDirty('companion');
-          }else{
-            if(!state._compBuffs)state._compBuffs={};state._compBuffs[sk.buff]=Date.now()+dur;markDirty('companion');
-          }
+          applyCompanionBuffAura(sk, now);
           applyCompanionSupportSkill(sk, st, now);
           log(sk.name+'!','good');
+        }
+        else if(sk.type==='summon' || sk.summonCount){
+          const qualityKey = compQuality(tpl).key;
+          const summonSkillSlots = Math.min(4, Math.max(2, ({ white:2, green:2, blue:3, purple:4, orange:4 }[qualityKey] || 2) + ((comp.stars || 1) >= 5 ? 1 : 0)));
+          const summoned = summonAlliedUnits(sk, now, { id:`comp:${comp.key}`, source:'companion', name:tpl?.name || st.name, icon:tpl?.emoji || st.emoji, lvl:state.hero.lvl, atk:st.atk, def:st.def, hpMax:st.hpMax, crit:st.crit, critd:st.critd, quality:qualityKey, stars:comp.stars || 1, summonSkillSlots });
+          if(sk.buff) applyCompanionBuffAura(sk, now);
+          applyCompanionSupportSkill(sk, st, now);
+          if(summoned > 0) log(sk.name+'! 召唤了 '+summoned+' 个单位助战','good');
         }
         compSkillCd[i]=now+(sk.cd||COMP_SKILL_DEFAULT_CD)*1000;lastCompSkill=now;
       }

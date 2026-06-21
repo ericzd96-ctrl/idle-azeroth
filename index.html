@@ -105,6 +105,10 @@
         <div class="bar hp"><i id="b-comp-hp"></i><span id="t-comp-hp"></span></div>
         <div id="comp-skills" style="display:flex;gap:5px;flex-wrap:wrap;margin-top:3px"></div>
       </div>
+      <div class="ally-summons" id="ally-summons" style="display:none">
+        <div class="ally-summon-title" id="ally-summon-title"></div>
+        <div class="ally-summon-list" id="ally-summon-list"></div>
+      </div>
       <div class="row" style="justify-content:center;gap:8px;flex-wrap:wrap">
         <button id="btn-speed" title="战斗倍速">⏩ 1x</button>
         <button id="btn-leave" class="success" style="display:none"><span data-ui-icon="dungeon" data-ui-size="sm"></span>离开</button>
@@ -147,7 +151,11 @@
       <div class="tab" data-tab="dungeon"><span data-ui-icon="dungeon" data-ui-size="sm"></span></div>
       <div class="tab" data-tab="arena"><span data-ui-icon="arena" data-ui-size="sm"></span></div>
       <div class="tab" data-tab="artifact"><span data-ui-icon="artifact" data-ui-size="sm"></span></div>
-      <div class="tab" data-tab="life"><span data-ui-icon="profession" data-ui-size="sm"></span></div>
+      <div class="tab tab-life" data-tab="life" title="专业">
+        <span data-ui-icon="profession" data-ui-size="sm"></span>
+        <span class="tab-text">专业</span>
+        <span class="tab-badge" id="life-tab-badge" hidden></span>
+      </div>
       <div class="tab" data-tab="progression"><span data-ui-icon="progression" data-ui-size="sm"></span></div>
       <div class="tab" data-tab="events"><span data-ui-icon="events" data-ui-size="sm"></span></div>
       <div class="tab" data-tab="ascend"><span data-ui-icon="ascend" data-ui-size="sm"></span></div>

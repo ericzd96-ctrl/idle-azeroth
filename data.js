@@ -406,6 +406,7 @@ const CLASSES = {
       arcaneShot:   {name:'奥术射击', icon:'🏹', desc:'2倍攻击', mp:15, type:'dmg', mul:2, unlockLvl:1,castTime:0},
       serpentSting: {name:'毒蛇钉刺', icon:'🐍', desc:'3倍攻击,持续中毒', mp:20, type:'dmg', mul:3, dot:true, unlockLvl:12,castTime:0},
       rapidFire:    {name:'急速射击', icon:'⚡', desc:'15秒攻速+60%', mp:35, type:'buff', buff:'rapidFire', duration:15000, unlockLvl:25,castTime:0},
+      summonPet:    {name:'召唤宠物', icon:'🐺', desc:'召唤1只野兽伙伴持续24秒助战', mp:28, type:'summon', summonCount:1, summonCap:1, summonTheme:'beast', summonDuration:24000, summonPower:1.05, unlockLvl:20, castTime:0, cd:18},
       aimed:        {name:'瞄准射击', icon:'🎯', desc:'3倍攻击,必定暴击', mp:35, type:'dmg', mul:4, alwaysCrit:true,castTime:2.5},
       multi:        {name:'多重射击', icon:'🎯', desc:'3倍攻击', mp:30, type:'dmg', mul:3,castTime:0},
       killShot:     {name:'杀戮射击', icon:'💀', desc:'7倍攻击,残血斩杀', mp:42, type:'dmg', mul:7, unlockLvl:45,castTime:0},
@@ -627,7 +628,7 @@ const CLASSES = {
       shadowFury:{name:"暗影之怒",icon:"💢",desc:"3倍范围伤害+减速",mp:42,type:"dmg",mul:5,slow:true,unlockLvl:44,weaken:true},
       soulFire:{name:"灵魂之火",icon:"💀",desc:"3倍伤害,必暴",mp:55,type:"dmg",mul:8,alwaysCrit:true,unlockLvl:62},
       unstableAffliction:{name:'痛苦无常',icon:'💜', desc:'3倍攻击,持续痛苦', mp:38, type:'dmg', mul:4, dot:true, unlockLvl:36,castTime:1.5},
-      inferno:      {name:'召唤地狱火',icon:'🔥', desc:'7倍范围火焰伤害', mp:55, type:'dmg', mul:7, unlockLvl:58,castTime:2.5},
+      inferno:      {name:'召唤地狱火',icon:'🔥', desc:'召唤1只地狱火持续22秒助战', mp:55, type:'summon', summonCount:1, summonCap:1, summonTheme:'demon', summonDuration:22000, summonPower:1.16, unlockLvl:58, castTime:2.5, cd:26},
       metamorphosis:{name:'恶魔变身', icon:'😈', desc:'20秒攻击+50%,吸血+15%', mp:70, type:'buff', buff:'demonForm', duration:20000, unlockLvl:78,castTime:0},
     },
     trees:[

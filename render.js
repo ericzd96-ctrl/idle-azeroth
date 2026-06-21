@@ -105,6 +105,7 @@ let _lastBuffBarPaint = 0;
 let _lastDmgMeterPaint = 0;
 let _lastNonFocusMonPaint = 0;
 let _compMiniHeadSig = '';
+let _allySummonSig = '';
 /* 当前职业的 buff 元信息(key→{icon,name,desc,dr}),从技能定义构建 */
 function buffMetaForClass() {
   const c = getCls(); const map = {};
@@ -502,6 +503,144 @@ function monsterUnitTipHtml(mon, bossData) {
     <div>暴击 ${fmtPctValue(crit, 0)} · 减伤 ${fmtPctValue(dr * 100, 0)} · 吸血 ${fmtPctValue(leech * 100, 0)}</div>
     ${passiveHtml}`;
 }
+function allySummonThemeName(theme) {
+  const map = {
+    beast:'野兽召唤',
+    undead:'亡灵召唤',
+    demon:'恶魔召唤',
+    phoenix:'凤凰召唤',
+    nature:'自然召唤',
+    fire:'火焰召唤',
+    void:'虚空召唤',
+    soldier:'守卫召唤',
+    generic:'通用召唤'
+  };
+  return map[theme] || '召唤单位';
+}
+function allySummonEffectTexts(skill) {
+  if (!skill) return [];
+  const lines = [];
+  if ((skill.mul || 0) > 0) lines.push(`伤害倍率 ${Number(skill.mul || 1).toFixed(2).replace(/\.00$/,'').replace(/(\.\d)0$/,'$1')}x`);
+  if (skill.dotPct > 0) lines.push(`每秒造成 ${compPct(skill.dotPct)}% 本次伤害，持续 ${compSecs(skill.dotMs || 6000)} 秒`);
+  if (skill.slow) lines.push(`减速 ${compSecs(skill.slowMs || 4000)} 秒`);
+  if (skill.stun) lines.push(`击晕 ${compSecs(skill.stunMs || 1200)} 秒`);
+  if (skill.sunder) lines.push(`破甲 ${compSecs(skill.sunderMs || 12000)} 秒`);
+  if (skill.stateKey) lines.push(`施加 ${compStateName(skill.stateKey)} ${compSecs(skill.stateMs || 7000)} 秒`);
+  if (skill.splashPct > 0) lines.push(`溅射 ${compPct(skill.splashPct)}% 伤害`);
+  if (skill.bonusVsBoss) lines.push(`对Boss额外 +${compPct(skill.bonusVsBoss)}% 伤害`);
+  if (skill.bonusVsDot) lines.push(`对持续伤害目标额外 +${compPct(skill.bonusVsDot)}% 伤害`);
+  if (skill.bonusVsSlow) lines.push(`对减速目标额外 +${compPct(skill.bonusVsSlow)}% 伤害`);
+  if (skill.bonusVsState) lines.push(`对${compStateName(skill.bonusVsState)}目标额外 +${compPct(skill.bonusStatePct || 0.3)}% 伤害`);
+  if (skill.executeBonus) lines.push(`对 ${compPct(skill.executeThreshold || 0.35)}% 以下目标额外 +${compPct(skill.executeBonus)}% 伤害`);
+  if (skill.healSelfPct > 0) lines.push(`回复自身 ${compPct(skill.healSelfPct)}% 最大生命`);
+  return lines;
+}
+function allySummonPassiveTexts(unit) {
+  if (!unit) return [];
+  const lines = [];
+  if (unit.damageTakenMult && unit.damageTakenMult < 1) lines.push(`承受伤害降低 ${compPct(1 - unit.damageTakenMult)}%`);
+  if (unit.leechPct > 0) lines.push(`攻击回复 ${compPct(unit.leechPct)}% 造成伤害`);
+  if (unit.splashPct > 0) lines.push(`普攻溅射 ${compPct(unit.splashPct)}% 伤害`);
+  if (unit.bonusVsBoss) lines.push(`对Boss额外 +${compPct(unit.bonusVsBoss)}% 伤害`);
+  if (unit.bonusVsDot) lines.push(`对持续伤害目标额外 +${compPct(unit.bonusVsDot)}% 伤害`);
+  if (unit.bonusVsSlow) lines.push(`对减速目标额外 +${compPct(unit.bonusVsSlow)}% 伤害`);
+  if (unit.bonusVsState) lines.push(`对${compStateName(unit.bonusVsState)}目标额外 +${compPct(unit.bonusStatePct || 0.3)}% 伤害`);
+  if (unit.executeBonus) lines.push(`对 ${compPct(unit.executeThreshold || 0.35)}% 以下目标额外 +${compPct(unit.executeBonus)}% 伤害`);
+  if (unit.retaliatePct > 0) lines.push(`受击反击 ${compPct(unit.retaliatePct)}% 本次伤害`);
+  if (unit.reviveOnce) lines.push(`首次倒下时复苏 ${compPct(unit.revivePct || 0.35)}% 最大生命`);
+  if (unit.frenzyThreshold > 0) {
+    const frenzy = [];
+    if (unit.frenzyAtkBonus > 0) frenzy.push(`伤害 +${compPct(unit.frenzyAtkBonus)}%`);
+    if ((unit.frenzySpdMul || 1) > 1) frenzy.push(`攻速 +${compPct((unit.frenzySpdMul || 1) - 1)}%`);
+    lines.push(`生命低于 ${compPct(unit.frenzyThreshold)}% 时狂暴${frenzy.length ? `（${frenzy.join(' · ')}）` : ''}`);
+  }
+  return lines;
+}
+function allySummonSkillLineHtml(skill, opts) {
+  if (!skill) return '';
+  const cfg = opts || {};
+  const iconHtml = (typeof skillIcon === 'function') ? skillIcon(skill.name, cfg.iconSize || 15, skill.icon || '✨') : (skill.icon || '✨');
+  const readyText = cfg.readyText ? ` <span style="font-size:10px;color:${cfg.readyColor || '#cbd5f5'}">${cfg.readyText}</span>` : '';
+  const desc = `${Number(skill.mul || 1).toFixed(2).replace(/\.00$/,'').replace(/(\.\d)0$/,'$1')}倍伤害`;
+  const effectLines = allySummonEffectTexts(skill);
+  const detailHtml = effectLines.length
+    ? `<div style="margin-top:2px;color:${cfg.tagColor || '#c4b5fd'};font-size:10px;line-height:1.45;word-break:break-word">${effectLines.join(' · ')}</div>`
+    : '';
+  return `<div style="margin:3px 0 6px;padding-bottom:5px;border-bottom:1px dashed rgba(148,163,184,.18)">
+    <div style="color:${cfg.leadColor || 'var(--text)'};line-height:1.5;word-break:break-word">${iconHtml} ${skill.name}${readyText}</div>
+    <div style="font-size:10px;color:var(--muted);line-height:1.45;word-break:break-word">${skill.desc || desc}</div>
+    ${detailHtml}
+  </div>`;
+}
+function allySummonUnitTipHtml(unit) {
+  if (!unit) return '<b>召唤物</b>';
+  const now = Date.now();
+  const iconHtml = (typeof entityIcon === 'function') ? entityIcon(unit.baseName || unit.name, 18, unit.icon || '🐾') : (unit.icon || '🐾');
+  const remainSecs = Math.max(0, Math.ceil(((unit.expireAt || now) - now) / 1000));
+  const activeSkills = Array.isArray(unit._skills) && unit._skills.length
+    ? unit._skills
+    : [{
+        name:unit._skillName || '协同猛袭',
+        icon:unit._skillIcon || unit.icon || '✨',
+        mul:unit._skillMul || 1.75,
+        desc:`主动技能 · 冷却 ${compSecs(unit._skillCdMs || 7800)} 秒`,
+        dotPct:unit._skillDotPct || 0,
+        dotMs:unit._skillDotMs || 7000,
+        slow:!!unit._skillSlow,
+        slowMs:unit._skillSlowMs || 4000,
+        stun:!!unit._skillStun,
+        stunMs:unit._skillStunMs || 1200,
+        sunder:!!unit._skillSunder,
+        sunderMs:unit._skillSunderMs || 12000,
+        stateKey:unit._skillStateKey || '',
+        stateMs:unit._skillStateMs || 7000,
+        splashPct:unit._skillSplashPct || 0,
+        healSelfPct:unit._skillHealSelfPct || 0,
+        readyAt:unit._skillReadyAt || 0
+      }];
+  const basicSkill = {
+    name:'普攻特性',
+    icon:unit.icon || '🐾',
+    mul:1,
+    desc:`普通攻击 · 攻速 ${(unit.spd || 1).toFixed(2)}/s`,
+    dotPct:unit.dotPct || 0,
+    dotMs:unit.dotMs || 5000,
+    slow:!!unit.slow,
+    slowMs:unit.slowMs || 3000
+  };
+  const basicEffects = (basicSkill.dotPct > 0 || basicSkill.slow) ? allySummonSkillLineHtml(basicSkill, {
+    leadColor:'#93c5fd',
+    tagColor:'#93c5fd',
+    readyText:'常驻'
+  }) : '';
+  const activeEffects = activeSkills.map(skill => {
+    const skillCdSecs = Math.max(0, Math.ceil(((skill.readyAt || 0) - now) / 1000));
+    return allySummonSkillLineHtml(skill, {
+      leadColor:'#f9a8d4',
+      tagColor:'#d8b4fe',
+      readyText:skillCdSecs > 0 ? `冷却 ${skillCdSecs}s` : '技能就绪',
+      readyColor:skillCdSecs > 0 ? '#fbbf24' : '#86efac'
+    });
+  }).join('');
+  const passiveTexts = allySummonPassiveTexts(unit);
+  const passiveHtml = passiveTexts.length
+    ? passiveTexts.map(line => `<div class="muted" style="margin:3px 0 0;line-height:1.45;word-break:break-word">${line}</div>`).join('')
+    : '<div class="muted" style="margin:3px 0 0">暂无额外被动特性</div>';
+  const growthLine = unit._skillUnlockText
+    ? `<div class="muted" style="margin-top:3px">${unit._skillUnlockText}</div>`
+    : '';
+  return `<b>${iconHtml} ${unit.baseName || unit.name} · Lv.${unit.lvl || 1}</b>
+    <div>${allySummonThemeName(unit._theme)} · ${unit._ownerType === 'companion' ? '随从召唤' : '主角召唤'}</div>
+    <div class="muted">由 ${unit._ownerName || '我方'} 的 ${unit._ownerSkill || '召唤技能'} 呼出 · 剩余 ${remainSecs} 秒</div>
+    <div>生命 ${hpWithShieldText(unit.hp || 0, unit.hpMax || 0, 0)}</div>
+    <div>攻击 ${fmt(unit.atk || 0)} · 防御 ${fmt(unit.def || 0)} · 攻速 ${(unit.spd || 1).toFixed(2)}/s</div>
+    <div>暴击 ${fmtPctValue(unit.crit || 0, 0)} · 暴伤 ${fmtPctValue(unit.critd || 0, 0)} · 承伤权重 ${fmtPctValue((unit.aggro || 0) * 100, 0)}</div>
+    <div style="margin-top:4px;color:#93c5fd">战斗特性:</div>
+    ${basicEffects || '<div class="muted" style="margin:3px 0 6px">普攻无额外附加效果</div>'}
+    ${passiveHtml}
+    <div style="margin-top:4px;color:#f9a8d4">召唤技能:</div>
+    ${activeEffects}${growthLine}`;
+}
 function worldBossTipHtml(wb) {
   if (!wb) return '<b>世界Boss</b>';
   const mon = (typeof buildWorldBossMonsterData === 'function') ? buildWorldBossMonsterData(wb) : null;
@@ -576,17 +715,13 @@ function bindUnitTip(el, htmlBuilder) {
 }
 function attachFocusBossHover(focus) {
   const emojiEl = $('mon-emoji'); if (!emojiEl) return;
-  const nameEl = $('mon-name');
   if (!focus) return;
 
   // 获取BOSS数据(地图/副本/大秘境)
   let bossData = lookupMonsterBossData(focus);
 
   const hasMobSkills = !!(focus._monSkills?.length || focus._monSkill || focus._monSupportSkills?.length);
-  if (!bossData && !hasMobSkills) {
-    bindUnitTip(emojiEl, () => monsterUnitTipHtml(focus, null));
-    return;
-  }
+  if (!bossData && !hasMobSkills) return;
   const showFocusTip = function(e) {
     let html = monsterUnitTipHtml(focus, bossData);
     if (bossData?.skills) {
@@ -622,7 +757,7 @@ function attachFocusBossHover(focus) {
     tip.style.display = 'block';
     positionTip(tip, e);
   };
-  [emojiEl, nameEl].filter(Boolean).forEach(el => {
+  [emojiEl].filter(Boolean).forEach(el => {
     el.style.cursor = 'help';
     el.onmouseenter = e => { if (!tooltipHoverEnabled()) return; showFocusTip(e); };
     el.onmouseleave = () => { if (!tooltipHoverEnabled()) return; if (!_tipPinned) hideLootTip(); };
@@ -679,13 +814,19 @@ function renderMonList() {
         </div>
       </div>`;
     }).join('');
-    for (const m of all) {
-      const row = wrap.querySelector(`[data-uid="${m._uid}"]`);
-      if (!row) continue;
-      bindUnitTip(row, () => monsterUnitTipHtml(m, lookupMonsterBossData(m)));
-      const iconEl = row.querySelector('.m-emoji');
-      if (iconEl && m !== focus) bindUnitTip(iconEl, () => monsterUnitTipHtml(m, lookupMonsterBossData(m)));
-    }
+    wrap.querySelectorAll('.mon-row').forEach(row => {
+      row.onmouseenter = null;
+      row.onmouseleave = null;
+      row.onmousemove = null;
+      row.style.cursor = '';
+      const nameEl = row.querySelector('.m-name');
+      if (nameEl) {
+        nameEl.onmouseenter = null;
+        nameEl.onmouseleave = null;
+        nameEl.onmousemove = null;
+        nameEl.style.cursor = '';
+      }
+    });
     if (focus) attachFocusBossHover(focus);
   }
 
@@ -733,6 +874,57 @@ function renderMonList() {
     if (de.dataset.s !== s) { de.innerHTML = s; de.dataset.s = s; }
   }
   if (!skipNonFocus) _lastNonFocusMonPaint = now;
+}
+function renderAllySummonBar(now){
+  const wrap = $('ally-summons'); if(!wrap) return;
+  const listEl = $('ally-summon-list');
+  const titleEl = $('ally-summon-title');
+  const summons = (typeof livingAllySummons === 'function') ? livingAllySummons(now) : [];
+  if(!summons.length){
+    wrap.style.display = 'none';
+    if(listEl) listEl.innerHTML = '';
+    if(titleEl) titleEl.textContent = '';
+    _allySummonSig = '';
+    return;
+  }
+  wrap.style.display = '';
+  if(titleEl) titleEl.textContent = `我方召唤物 ${summons.length}`;
+  const sig = summons.map(unit => `${unit._uid}:${unit.baseName}:${unit._ownerName}:${unit.hp > 0 ? 'A' : 'D'}`).join('|');
+  if(sig !== _allySummonSig && listEl){
+    _allySummonSig = sig;
+    listEl.innerHTML = summons.map(unit => {
+      const iconHtml = (typeof entityIcon === 'function') ? entityIcon(unit.baseName || unit.name, 18, unit.icon || '🐾') : (unit.icon || '🐾');
+      return `<div class="ally-summon-card" data-ally-summon-uid="${unit._uid}">
+        <div class="ally-summon-name">${iconHtml}<span>${unit.baseName || unit.name}</span></div>
+        <div class="ally-summon-sub">来自 ${unit._ownerName || '我方'} · ${unit._ownerType === 'companion' ? '随从召唤' : '主角召唤'}</div>
+        <div class="ally-summon-meta">攻击 ${fmt(unit.atk)} · 防御 ${fmt(unit.def)} · 攻速 ${(unit.spd || 1).toFixed(2)}/s</div>
+        <div class="ally-summon-skill"></div>
+        <div class="bar hp"><i></i><span></span></div>
+      </div>`;
+    }).join('');
+    for(const unit of summons){
+      const card = listEl.querySelector(`[data-ally-summon-uid="${unit._uid}"]`);
+      if(!card) continue;
+      bindUnitTip(card, () => allySummonUnitTipHtml(unit));
+    }
+  }
+  if(!listEl) return;
+  for(const unit of summons){
+    const card = listEl.querySelector(`[data-ally-summon-uid="${unit._uid}"]`);
+    if(!card) continue;
+    const fill = card.querySelector('.bar > i');
+    const txt = card.querySelector('.bar > span');
+    const skillEl = card.querySelector('.ally-summon-skill');
+    if(fill) fill.style.width = `${Math.max(0, unit.hp / Math.max(1, unit.hpMax) * 100)}%`;
+    if(txt) txt.textContent = `${hpWithShieldText(unit.hp, unit.hpMax, 0)} · ${Math.max(0, Math.ceil(((unit.expireAt || now) - now) / 1000))}s`;
+    if(skillEl){
+      const skills = Array.isArray(unit._skills) && unit._skills.length ? unit._skills : null;
+      const soonest = skills ? skills.reduce((best, skill) => ((skill.readyAt || 0) < (best.readyAt || 0) ? skill : best), skills[0]) : null;
+      const nextSkill = soonest || (skills && skills[0]) || null;
+      const cdLeft = Math.max(0, Math.ceil((((nextSkill && nextSkill.readyAt) || unit._skillReadyAt || 0) - now) / 1000));
+      skillEl.textContent = `下一个释放 ${(nextSkill && nextSkill.icon) || unit._skillIcon || '✨'} ${(nextSkill && nextSkill.name) || unit._skillName || '协同猛袭'} - ${cdLeft}秒`;
+    }
+  }
 }
 /* ---------- 伤害统计(战斗日志下方) ---------- */
 function updateDmgMeter() {
@@ -1175,6 +1367,7 @@ function updateBattleVisuals() {
     $('comp-mini').style.display='none';
     _compMiniHeadSig = '';
   }
+  renderAllySummonBar(now);
 
   // 技能栏(只在dirty时重建, 否则只更新CD;拖拽排序进行中不重建以免打断)
   if ((!$('skill-bar')?.children?.length || isDirty('skills')) && !skillDragging) renderSkillBar();
@@ -2002,6 +2195,8 @@ function companionSkillTipHtml(sk){
   const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, sk.icon || '✨') : (sk.icon || '✨');
   const lines = [];
   if (sk.type === 'dmg' && sk.mul) { const effMul = sk.mul * ((typeof COMPANION_SKILL_DMG_BONUS === 'number') ? COMPANION_SKILL_DMG_BONUS : 1); lines.push(`${effMul.toFixed(1).replace(/\.0$/,'')}倍伤害`); }
+  if (sk.summonCount) lines.push(`召唤 ${sk.summonCount} 个单位助战`);
+  if (sk.summonDuration) lines.push(`召唤物持续 ${compSecs(sk.summonDuration)}秒`);
   if (sk.alwaysCrit) lines.push('本次必定暴击');
   if (sk.dot || sk.dotPct) lines.push(`每秒造成本次伤害的${compPct(sk.dotPct || 0.12)}%，持续${compSecs(sk.dotMs || 6000)}秒`);
   if (sk.slow) lines.push(`减速 ${compSecs(sk.slowMs || 4000)}秒`);
@@ -2038,7 +2233,7 @@ function companionSkillTipHtml(sk){
   else if (sk.healTarget === 'companion') lines.push('治疗目标：随从');
   else if (sk.healTarget === 'both') lines.push('治疗目标：主角和随从');
   else if (sk.healTarget === 'smart') lines.push('治疗目标：自动选择血量更危险的一方');
-  const mode = sk._signature ? (sk.mode === 'passive' ? '专属被动' : '专属主动') : (sk.type === 'buff' ? '辅助技能' : sk.type === 'heal' ? '治疗技能' : '伤害技能');
+  const mode = sk._signature ? (sk.mode === 'passive' ? '专属被动' : '专属主动') : (sk.type === 'summon' ? '召唤技能' : sk.type === 'buff' ? '辅助技能' : sk.type === 'heal' ? '治疗技能' : '伤害技能');
   const cdText = sk.mode === 'passive' ? mode : `${mode} · 冷却 ${sk.cd || 8}秒`;
   return `<b>${skillIconHtml} ${sk.name}</b><div>${sk.desc || ''}</div>${lines.map(x=>`<div class="muted">${x}</div>`).join('')}<div class="muted">${cdText}</div>`;
 }
@@ -2052,6 +2247,139 @@ function compSkillChips(tpl){
     return `<span class="comp-skill${s._signature?' sig':''}" data-tip="${tip}">${skillIconHtml}<span class="cs-name">${s.name}</span></span>`;
   }).join('');
 }
+const COMPANION_FILTER_DEFAULTS = { ownership:'all', quality:'all', role:'all', trait:'all' };
+let companionFilters = Object.assign({}, COMPANION_FILTER_DEFAULTS);
+const COMPANION_TRAIT_META = {
+  summon: { label:'召唤', tone:'summon' },
+  heal: { label:'治疗', tone:'heal' },
+  support: { label:'辅助', tone:'support' },
+  control: { label:'控制', tone:'control' },
+};
+function companionSkillPool(tpl){
+  const skills = ((tpl&&tpl.skills)||[]).slice();
+  if (tpl?.signature) skills.push(Object.assign({_signature:true}, tpl.signature));
+  return skills.filter(Boolean);
+}
+function companionTraitFlags(tpl){
+  const flags = { summon:false, heal:false, support:false, control:false };
+  for (const sk of companionSkillPool(tpl)) {
+    if (sk.type === 'summon' || sk.summonCount) flags.summon = true;
+    if (sk.type === 'heal' || sk.heal || sk.healPct || sk.healPctHero || sk.healPctComp) flags.heal = true;
+    if (sk.type === 'buff' || sk.buff || sk.shieldPct || sk.shieldPctHero || sk.shieldPctComp || sk.cleanse) flags.support = true;
+    if (sk.stun || sk.slow || sk.silence || sk.cripple || sk.weaken || sk.sunder || sk.debuff === 'sunder' || sk.stateKey) flags.control = true;
+  }
+  return flags;
+}
+function companionRoleLabel(role){
+  return role === 'tank' ? '坦克' : role === 'heal' ? '治疗' : '输出';
+}
+function companionBadge(label, tone){
+  return `<span class="comp-badge is-${tone}">${label}</span>`;
+}
+function companionMetaBadges(tpl){
+  if (!tpl) return '';
+  const q = compQuality(tpl);
+  const traits = companionTraitFlags(tpl);
+  const badges = [
+    companionBadge(q.name, `quality-${q.key}`),
+    companionBadge(companionRoleLabel(tpl.role), tpl.role || 'dps'),
+  ];
+  for (const [key, meta] of Object.entries(COMPANION_TRAIT_META)) {
+    if (traits[key]) badges.push(companionBadge(meta.label, meta.tone));
+  }
+  return `<div class="comp-card-tags">${badges.join('')}</div>`;
+}
+function buildCompanionEntries(){
+  const ownedMap = new Map();
+  (state.companions || []).forEach((comp, idx) => ownedMap.set(comp.key, { comp, idx }));
+  return (COMPANIONS || []).map(tpl => {
+    const owned = ownedMap.get(tpl.key);
+    return {
+      tpl,
+      owned: owned?.comp || null,
+      idx: owned?.idx ?? -1,
+      isOwned: !!owned,
+      isActive: !!owned && owned.idx === state.activeCompanion,
+      quality: compQuality(tpl).key,
+      traits: companionTraitFlags(tpl),
+    };
+  });
+}
+function companionMatchesFilters(entry, filters){
+  if (filters.ownership === 'owned' && !entry.isOwned) return false;
+  if (filters.ownership === 'missing' && entry.isOwned) return false;
+  if (filters.quality !== 'all' && entry.quality !== filters.quality) return false;
+  if (filters.role !== 'all' && entry.tpl.role !== filters.role) return false;
+  if (filters.trait !== 'all' && !entry.traits[filters.trait]) return false;
+  return true;
+}
+function companionFilterCount(entries, group, value){
+  const next = Object.assign({}, companionFilters, { [group]: value });
+  return entries.filter(entry => companionMatchesFilters(entry, next)).length;
+}
+function companionFilterRow(entries, group, label, options){
+  const chips = options.map(opt => {
+    const count = companionFilterCount(entries, group, opt.value);
+    const active = companionFilters[group] === opt.value;
+    return `<button class="comp-filter-chip${active?' active':''}" data-action="compfilter" data-group="${group}" data-value="${opt.value}">${opt.label}<span>${count}</span></button>`;
+  }).join('');
+  return `<div class="comp-filter-row"><span class="comp-filter-label">${label}</span><div class="comp-filter-chips">${chips}</div></div>`;
+}
+function companionFilterSummaryText(){
+  const labels = [];
+  if (companionFilters.ownership === 'owned') labels.push('已拥有');
+  else if (companionFilters.ownership === 'missing') labels.push('未获得');
+  if (companionFilters.quality !== 'all') labels.push({ white:'白色', green:'绿色', blue:'蓝色', purple:'紫色', orange:'橙色' }[companionFilters.quality] || companionFilters.quality);
+  if (companionFilters.role !== 'all') labels.push(companionRoleLabel(companionFilters.role));
+  if (companionFilters.trait !== 'all') labels.push(COMPANION_TRAIT_META[companionFilters.trait]?.label || companionFilters.trait);
+  return labels.length ? labels.join(' / ') : '全部随从';
+}
+function companionFilterPanelHtml(entries){
+  return `<div class="comp-filter-panel">
+    <div class="comp-filter-head">
+      <div>
+        <div style="font-weight:700">分类标签</div>
+        <div class="comp-filter-summary">当前筛选: ${companionFilterSummaryText()}</div>
+      </div>
+      <button class="comp-filter-reset" data-action="compresetfilter">重置筛选</button>
+    </div>
+    ${companionFilterRow(entries, 'ownership', '收集', [
+      { value:'all', label:'全部' },
+      { value:'owned', label:'已拥有' },
+      { value:'missing', label:'未获得' },
+    ])}
+    ${companionFilterRow(entries, 'quality', '品质', [
+      { value:'all', label:'全部' },
+      { value:'orange', label:'橙' },
+      { value:'purple', label:'紫' },
+      { value:'blue', label:'蓝' },
+      { value:'green', label:'绿' },
+      { value:'white', label:'白' },
+    ])}
+    ${companionFilterRow(entries, 'role', '定位', [
+      { value:'all', label:'全部' },
+      { value:'tank', label:'坦克' },
+      { value:'heal', label:'治疗' },
+      { value:'dps', label:'输出' },
+    ])}
+    ${companionFilterRow(entries, 'trait', '特性', [
+      { value:'all', label:'全部' },
+      { value:'summon', label:'召唤' },
+      { value:'heal', label:'治疗' },
+      { value:'support', label:'辅助' },
+      { value:'control', label:'控制' },
+    ])}
+  </div>`;
+}
+function companionSetFilter(group, value){
+  if (!Object.prototype.hasOwnProperty.call(companionFilters, group)) return;
+  companionFilters[group] = companionFilters[group] === value ? 'all' : value;
+  renderCompanion();
+}
+function companionResetFilters(){
+  companionFilters = Object.assign({}, COMPANION_FILTER_DEFAULTS);
+  renderCompanion();
+}
 function companionPanelRenderSig(){
   const compList = (state.companions || []).map(c => `${c.key}:${c.stars||1}`).sort().join('|');
   const shards = state.compUniversalShards
@@ -2059,7 +2387,8 @@ function companionPanelRenderSig(){
     : '';
   const active = `${state.activeCompanion}|${getActiveCompanion()?.key || ''}`;
   const bonds = (typeof activeCompanionBonds==='function' ? activeCompanionBonds() : []).map(b=>b.name).join('|');
-  return [state.cls||'', state.hero?.lvl||0, state.compTickets||0, active, compList, shards, bonds].join('||');
+  const filters = Object.values(companionFilters).join('|');
+  return [state.cls||'', state.hero?.lvl||0, state.compTickets||0, active, compList, shards, bonds, filters].join('||');
 }
 function renderCompanion() {
   $('gem-cost').textContent = '(消耗1🐾随从券 · 全随从统一 5主动 + 1专属，品质/星级决定强度)';
@@ -2069,6 +2398,8 @@ function renderCompanion() {
   if (cl.dataset.renderSig === renderSig && cl.dataset.rendered === '1') return;
   const owned = state.companions.length;
   const bonds = (typeof activeCompanionBonds==='function') ? activeCompanionBonds() : [];
+  const entries = buildCompanionEntries();
+  const filteredEntries = entries.filter(entry => companionMatchesFilters(entry, companionFilters));
   let html = '';
 
   // ---- 收藏 / 羁绊概览 ----
@@ -2098,6 +2429,8 @@ function renderCompanion() {
   }
   html += `</div>`;
 
+  html += companionFilterPanelHtml(entries);
+
   // ---- 出战随从 ----
   const act = getActiveCompanion();
   if (act) {
@@ -2112,6 +2445,7 @@ function renderCompanion() {
     html += `<div class="shop-item" style="border-color:var(--${q.cls==='r-legend'?'legend':q.cls==='r-epic'?'epic':'border'})">
       <div class="row"><b>${compIconHtml} ${tpl?.name}</b><span class="pill" style="background:var(--accent);color:#000">出战中</span></div>
       <div class="muted"><span class="${q.cls}">${q.name}</span> · ${'⭐'.repeat(act.stars||1)} · ${roleTag(tpl?.role)} · 5主动+1专属</div>
+      ${companionMetaBadges(tpl)}
       <div class="muted" style="font-size:10px">参战属性: 攻${fmt(st?.atk||0)} 防${fmt(st?.def||0)} 血${fmt(st?.hpMax||0)}</div>
       <div class="muted" style="font-size:10px;color:#6ee7b7">专属加成: ${ownTxt||'无'}</div>
       <div class="muted" style="font-size:10px;color:#93c5fd">定位加成: ${roleTxt||'无'}</div>
@@ -2123,9 +2457,13 @@ function renderCompanion() {
 
   // ---- 已拥有随从(按品质降序)----
   const qOrder = {orange:0,purple:1,blue:2,green:3,white:4};
-  const ownedList = state.companions.map((c,i)=>({c,i,tpl:COMPANIONS.find(t=>t.key===c.key)})).filter(x=>x.tpl);
-  ownedList.sort((a,b)=>(qOrder[compQuality(a.tpl).key]-qOrder[compQuality(b.tpl).key])||((b.c.stars||1)-(a.c.stars||1)));
-  for (const {c,i,tpl} of ownedList) {
+  const ownedList = filteredEntries.filter(entry => entry.isOwned);
+  ownedList.sort((a,b)=>(qOrder[compQuality(a.tpl).key]-qOrder[compQuality(b.tpl).key])||(((b.owned?.stars)||1)-(((a.owned?.stars)||1))));
+  if (ownedList.some(entry => !entry.isActive)) {
+    html += `<div class="detail-label" style="margin-top:6px">🐾 已拥有 (${ownedList.filter(entry => !entry.isActive).length})</div>`;
+  }
+  for (const entry of ownedList) {
+    const { owned:c, idx:i, tpl } = entry;
     if (act && i===state.activeCompanion) continue;
     const q = compQuality(tpl);
     const cost = getUpgradeCost(c);
@@ -2134,6 +2472,7 @@ function renderCompanion() {
     html += `<div class="shop-item">
       <div class="row"><b>${compIconHtml} ${tpl.name}</b><span class="${q.cls}">${q.name} · 5主动+1专属</span></div>
       <div class="muted" style="font-size:10px">${'⭐'.repeat(c.stars||1)} · ${roleTag(tpl.role)} · ${tpl.desc}</div>
+      ${companionMetaBadges(tpl)}
       ${tpl.signature?`<div class="muted" style="font-size:10px;color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')} ${tpl.signature.name}${tpl.signature.mode==='passive'?' [被动]':''}</div>`:''}
       <div class="comp-skills">${compSkillChips(tpl)}</div>
       <div class="row">
@@ -2147,21 +2486,26 @@ function renderCompanion() {
   }
 
   // ---- 图鉴:未获得(灰色)----
-  const ownedKeys = new Set(state.companions.map(c=>c.key));
-  const missing = COMPANIONS.filter(t=>!ownedKeys.has(t.key));
+  const missing = filteredEntries.filter(entry => !entry.isOwned).map(entry => entry.tpl);
   if (missing.length) {
     missing.sort((a,b)=>qOrder[compQuality(a).key]-qOrder[compQuality(b).key]);
     html += `<div class="detail-label" style="margin-top:6px">📖 未获得 (${missing.length})</div>
-      <div style="display:flex;flex-wrap:wrap;gap:4px">`;
+      <div class="comp-missing-grid">`;
     for (const t of missing) {
       const q = compQuality(t);
       const compIconHtml = companionIconHtml(t, 16);
-      html += `<div title="${t.name} · ${q.name} · ${roleTag(t.role)} · ${t.desc}" style="opacity:.55;border:1px solid var(--border);border-left:3px solid var(--${q.cls==='r-legend'?'legend':q.cls==='r-epic'?'epic':'border'});border-radius:6px;padding:3px 5px;font-size:11px">
-        ${compIconHtml} <span class="${q.cls}">${t.name}</span></div>`;
+      html += `<div class="comp-missing-card" title="${t.name} · ${q.name} · ${roleTag(t.role)} · ${t.desc}">
+        <div><b>${compIconHtml} <span class="${q.cls}">${t.name}</span></b></div>
+        ${companionMetaBadges(t)}
+        <div class="muted" style="font-size:10px">${t.desc}</div>
+      </div>`;
     }
     html += `</div>`;
   }
 
+  if (owned > 0 && !filteredEntries.length) {
+    html += '<div class="muted" style="text-align:center;padding:14px">当前标签下没有符合条件的随从</div>';
+  }
   if (owned===0 && missing.length===COMPANIONS.length) {
     html += '<div class="muted" style="text-align:center;padding:14px">还没有随从,点击「抽随从」获取!</div>';
   }

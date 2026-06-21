@@ -112,6 +112,7 @@ function loop() {
 
       tickBattle(now);
       tickCompanion(now);
+      if (typeof tickAllySummons === 'function') tickAllySummons(now);
       tickTravel(now);
       if (typeof tickLife==='function') tickLife(now);
 
@@ -335,6 +336,9 @@ function setupDelegation() {
       const act = btn.dataset.action;
       if (act === 'lifeSwitch')     { stopLifeAction(); startLifeAction(btn.dataset.key); renderLife(); }
       else if (act === 'lifeCraft') { lifeCraft(btn.dataset.key); renderLife(); }
+      else if (act === 'lifeUpgradeTool') { lifeUpgradeTool(btn.dataset.key); renderLife(); }
+      else if (act === 'lifeOrderClaim') { lifeCompleteOrder(btn.dataset.id); renderLife(); }
+      else if (act === 'lifeOrderRefresh') { lifeRefreshOrders(); renderLife(); }
     });
   }
 
@@ -505,7 +509,10 @@ function setupDelegation() {
   $('companion-list').addEventListener('click', e => {
     const btn=e.target.closest('button[data-action]');
     if(!btn)return;
-    const act=btn.dataset.action,idx=parseInt(btn.dataset.idx);
+    const act=btn.dataset.action;
+    if(act==='compfilter'){ companionSetFilter(btn.dataset.group, btn.dataset.value); return; }
+    if(act==='compresetfilter'){ companionResetFilters(); return; }
+    const idx=parseInt(btn.dataset.idx, 10);
     if(act==='usecomp'){state.activeCompanion=idx;initCompanionHp();recomputeStats();markDirty('companion','hero');log('🐾 随从出战!','good')}
     else if(act==='upgradecomp')upgradeCompanion(idx);
     else if(act==='unequipcomp'){state.activeCompanion=-1;state._compHp=0;recomputeStats();markDirty('companion','hero')}
