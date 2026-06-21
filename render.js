@@ -358,7 +358,29 @@ function updateBuffChipTexts(bar, allItems) {
     if (chips[i].dataset.tip !== tip) chips[i].dataset.tip = tip;
   }
 }
-function effectTags(s) {
+function bossDisplayHealMult() {
+  return (typeof BOSS_SKILL_HEAL_MULT === 'number' && BOSS_SKILL_HEAL_MULT > 0) ? BOSS_SKILL_HEAL_MULT : 1;
+}
+function scaledBossHealPortion(v) {
+  return (v || 0) * bossDisplayHealMult();
+}
+function scaledBossDesc(desc, s) {
+  let text = desc || '';
+  const pick = (raw) => compPct(scaledBossHealPortion(raw));
+  if (s?.healPct) {
+    const pct = pick(s.healPct);
+    text = text.replace(/(恢复|回复|立即回复)(\d+(?:\.\d+)?)%/u, (_, lead) => `${lead}${pct}%`);
+  }
+  if (s?.type === 'heal' && s?.heal) {
+    const pct = pick(s.heal);
+    text = text.replace(/(恢复|回复|立即回复)(\d+(?:\.\d+)?)%/u, (_, lead) => `${lead}${pct}%`);
+  }
+  return text;
+}
+function effectTags(s, opts) {
+  const cfg = opts || {};
+  const heal = cfg.bossScaledHeal ? scaledBossHealPortion(s.heal || 0) : (s.heal || 0);
+  const healPct = cfg.bossScaledHeal ? scaledBossHealPortion(s.healPct || 0) : (s.healPct || 0);
   const t = [];
   if (s.aoe) t.push(`${statusIconHtml('易爆', '💥', 13)}AOE`);
   if (s.stun) t.push(`${statusIconHtml('眩晕', '💫', 13)}眩晕${s.stun===true?'2秒':(s.stun/1000)+'秒'}`);
@@ -367,8 +389,8 @@ function effectTags(s) {
   if (s.weaken) t.push(`${statusIconHtml('虚弱', '💔', 13)}削弱5秒`);
   if (s.sunder) t.push(`${statusIconHtml('易伤', '🩸', 13)}易伤5秒`);
   if (s.spdBuff) t.push(`${statusIconHtml('急速', '⚡', 13)}自加速8秒`);
-  if (s.heal) t.push(`${statusIconHtml('治疗', '💚', 13)}恢复${Math.round((s.heal||0)*100)}%生命`);
-  if (s.healPct) t.push(`${statusIconHtml('治疗', '💚', 13)}恢复${Math.round((s.healPct||0)*100)}%生命`);
+  if (heal) t.push(`${statusIconHtml('治疗', '💚', 13)}恢复${Math.round(heal*100)}%生命`);
+  if (healPct) t.push(`${statusIconHtml('治疗', '💚', 13)}恢复${Math.round(healPct*100)}%生命`);
   if (s.atkBuffSecs) t.push(`${statusIconHtml('战斗怒吼', '📯', 13)}攻击提高${Math.round(s.atkBuffPct||30)}%`);
   if (s.defBuffSecs) t.push(`${statusIconHtml('护盾', '🪨', 13)}防御提高${Math.round(s.defBuffPct||35)}%`);
   if (s.drBuffSecs) t.push(`${statusIconHtml('减伤', '🛡️', 13)}减伤提高${Math.round((s.drBuffPct||0.25)*100)}%`);
@@ -409,7 +431,7 @@ function bossSkillLineHtml(s, opts) {
   };
   const leadColor = cfg.leadColor || threatPalette[s?.threat] || 'var(--text)';
   const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(s.name, iconSize, s.icon) : (s.icon || '✨');
-  const tags = effectTags(s);
+  const tags = effectTags(s, { bossScaledHeal:true });
   const infoTags = [];
   if (s?.threat === 'extreme') infoTags.push('<span style="color:#fecaca">致命</span>');
   else if (s?.threat === 'high') infoTags.push('<span style="color:#fca5a5">高危</span>');
@@ -420,7 +442,7 @@ function bossSkillLineHtml(s, opts) {
   else if (s?.interruptPolicy === 'none') infoTags.push('<span style="color:#93c5fd">不可断</span>');
   const title = `${skillIconHtml} ${s.name}${infoTags.length ? ` <span style="font-size:10px">${infoTags.join(' · ')}</span>` : ''}`;
   const castText = cfg.showCast === false ? '' : ` · ${(s.castTime || 0)}s读条`;
-  const desc = s.desc || ((s.mul || 1) + '倍伤害');
+  const desc = scaledBossDesc(s.desc || ((s.mul || 1) + '倍伤害'), s);
   const tagHtml = tags.length
     ? `<div style="margin-top:2px;color:${tagColor};font-size:10px;line-height:1.45;word-break:break-word">${tags.join(' · ')}</div>`
     : '';
