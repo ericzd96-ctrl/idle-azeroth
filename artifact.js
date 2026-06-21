@@ -12,7 +12,7 @@
 
 const ARTIFACT_UNLOCK_LVL = 10;
 const ARTIFACT_MAX_LVL = 120;            // 软上限(留给无限特性长线);点满核心树约需 ~20 点
-const ARTIFACT_AP_RATE = 0.12;           // 杀怪 XP → AP 转化率(旧版 0.30,收紧)
+const ARTIFACT_AP_RATE = 0.05;           // 杀怪 XP → AP 转化率(旧版 0.30,收紧)
 const ARTIFACT_CORE_GATE = 8;            // 解锁核心三选一前,需在本树次要节点累计花费的点数
 
 const ARTIFACTS = {
@@ -439,6 +439,17 @@ const ARTIFACT_INFINITE = {
   desc:'每阶: 攻击 +0.5% · 生命 +0.6% · 防御 +0.4%(可无限提升,消耗溢出神器点)',
 };
 
+/* 神器招牌技能(由"神器觉醒"入门节点解锁, 自动释放不占技能栏, 阶数=威力档位)
+   战士参考 WoW 军团神器主动技; 其余职业用 _generic, 后续逐职业替换 */
+const ARTIFACT_SKILLS = {
+  _generic: { name:'神器爆发', icon:'✦', cd:20, mul:[3,4,5], aoe:true, desc:'释放神器之力, 对全体敌人造成 ATK× 伤害。' },
+  warrior: {
+    arms: { name:'破城', icon:'🪓', cd:16, mul:[3,4,5], aoe:true, sunder:true, desc:'横扫全体敌人, 造成 ATK× 伤害并破甲(防御-30%, 15秒)。' },          // Warbreaker
+    fury: { name:'奥丁之怒', icon:'🔥', cd:20, mul:[4,5.5,7], aoe:true, desc:'引爆奥丁之怒, 对全体敌人造成 ATK× 烈焰爆发伤害。' },                    // Odyn's Fury
+    prot: { name:'死翼之怒', icon:'🐲', cd:18, mul:[2.5,3.5,4.5], selfShieldPct:0.08, desc:'喷吐烈焰对焦点造成 ATK× 伤害, 并获得最大生命护盾。' },     // Neltharion's Fury
+  },
+};
+
 const ARTIFACT_MILESTONES = {
   warrior: milestoneList('strPct'),
   mage: milestoneList('intPct'),
@@ -531,8 +542,9 @@ function artifactMinorNodes(cls, spec){
   const baseTraits = (ARTIFACT_TRAITS[cls]||[]).filter(t => t.tree === spec);
   const extra = (SPEC_EXTRA_MINORS[cls] && SPEC_EXTRA_MINORS[cls][spec]) || [];
   const minors = baseTraits.concat(extra);
-  const entry = { key:`art_${cls}_${spec}_entry`, tree:spec, name:'神器觉醒', icon:'✦', maxRank:3, ring:0, branch:null,
-    mod:{ atkPct:2, hpPct:2, defPct:2 }, desc:'神器觉醒: 攻击 / 生命 / 防御 +2%/4%/6%。' };
+  const skDef = artifactSkillDef(cls, spec);
+  const entry = { key:`art_${cls}_${spec}_entry`, tree:spec, name:`神器觉醒 · ${skDef.name}`, icon:skDef.icon, maxRank:3, ring:0, branch:null, isSkill:true,
+    desc:`解锁神器招牌技能【${skDef.name}】(自动释放, 不占技能栏)。${artifactSkillDescText(skDef)} 投入越多阶威力越高。` };
   const branchA = [], branchB = [];
   minors.forEach((m,i)=>{ (i % 2 === 0 ? branchA : branchB).push(m); });
   const out = [entry];
@@ -552,6 +564,27 @@ function artifactCapstoneList(cls, spec){
   return bespoke || GENERIC_CAPSTONES;
 }
 function artifactCapstoneByKey(key, cls, spec){ return artifactCapstoneList(cls, spec).find(c => c.key === key) || null; }
+
+// ---- 神器招牌技能(入门节点解锁, 战斗中自动释放) ----
+function artifactSkillDef(cls, spec){
+  cls = cls || state.cls; spec = spec || activeArtifactSpec();
+  const bySpec = ARTIFACT_SKILLS[cls] && ARTIFACT_SKILLS[cls][spec];
+  return bySpec || ARTIFACT_SKILLS._generic;
+}
+function artifactSkillDescText(def){
+  if(!def) return '';
+  const mulTxt = Array.isArray(def.mul) ? def.mul.join('/') : def.mul;
+  let s = (def.desc || '').replace('ATK×', `ATK×${mulTxt}`);
+  s += ` 冷却 ${def.cd||20} 秒。`;
+  return s;
+}
+// 当前激活专精的神器技能阶数(0=未解锁); 战斗每拍调用
+function artifactSkillRank(){
+  if(!artifactUnlocked()) return 0;
+  const spec = activeArtifactSpec(); if(!spec) return 0;
+  const b = artifactBucket(spec); if(!b) return 0;
+  return b.traits[`art_${state.cls}_${spec}_entry`] || 0;
+}
 
 // ---- 点数核算 ----
 function artifactMinorSpent(spec){

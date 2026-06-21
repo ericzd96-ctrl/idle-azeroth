@@ -2867,6 +2867,37 @@ function resolveMonsterDamageTaken(mon, rawDamage, opts){
 
 /* ---------- 战斗主循环 ---------- */
 let lastHeroAtk=0,lastMonAtk=0,lastRegen=0,dotTick=0,lastBossSkill=0,bossSkillIdx=0,lastAutoCast=0,burnTick=0;
+// 神器招牌技能: 入门节点解锁后, 战斗中按自身CD自动释放(不占技能栏)
+function tickArtifactSkill(now){
+  if(typeof artifactSkillRank!=='function'||typeof artifactSkillDef!=='function')return;
+  const rank=artifactSkillRank();if(rank<=0)return;
+  const spec=(typeof activeArtifactSpec==='function')?activeArtifactSpec():null;
+  const def=artifactSkillDef(state.cls,spec);if(!def||!def.mul)return;
+  if(state.artifactSkillCd&&state.artifactSkillCd>now)return;
+  const alive=getAliveMonsters();if(!alive.length)return;
+  const focus=state.currentMonsters[0];if(!focus||focus.hp<=0)return;
+  const cdMul=(typeof castSpeedMul==='function')?castSpeedMul():(state.battleSpeed||1);
+  state.artifactSkillCd=now+(def.cd||20)*1000/Math.max(0.1,cdMul);
+  const tier=Math.max(0,Math.min(def.mul.length-1,rank-1));
+  const mul=def.mul[tier];
+  const targets=def.aoe?alive:[focus];
+  let total=0,anyCrit=false;
+  for(const t of targets){
+    if(t.hp<=0)continue;
+    const base=state.hero.atk*mul*((typeof masteryDmgMult==='function')?masteryDmgMult():1);
+    const d=calcDmg(base,heroTargetDef(t),state.hero.crit,state.hero.critd,false,t.lvl,state.hero.lvl);
+    let dd=d.dmg;const dr=monsterDamageReduction(t,now);if(dr)dd=Math.max(1,Math.floor(dd*(1-dr)));
+    t.hp-=dd;total+=dd;anyCrit=anyCrit||d.crit;
+    trackDmg('hero',dd,d.crit,def.name);
+    showMonsterFloat(t,(def.icon||'✦')+'-'+dd,d.crit?'#fbbf24':'#f59e0b',{variant:d.crit?'crit':'hit',scale:d.crit?1.18:1.06,important:true});
+    if(def.sunder)t.sunderUntil=now+15000;
+    if(d.crit)processTalentOnCrit(t,dd,{skillKey:null});
+  }
+  if(def.selfShieldPct&&typeof addTalentShield==='function')addTalentShield(Math.floor(state.hero.hpMax*def.selfShieldPct*(1+tier*0.5)));
+  if(def.healPct&&typeof healHeroAmount==='function'){const h=Math.floor(state.hero.hpMax*def.healPct*(1+tier*0.4));healHeroAmount(h,def.icon||'✦','#6ee7b7');}
+  log(`${def.icon||'✦'} 神器·${def.name}! ${def.aoe?('群体 '+total+' 伤害'):(total+' 伤害')}${def.sunder?' · 破甲':''}`,'epic');
+}
+
 function tickBattle(now){
   if(state.mode==='travel'){lastHeroAtk=now;lastMonAtk=now;return;}
   if(pruneTalentAuras(now)) recomputeStats();
@@ -2894,6 +2925,7 @@ function tickBattle(now){
     const dotDmg = tickMonsterDots(m, now, dotInterval);
     if(dotDmg > 0 && m === mon) showMonsterFloat(mon, '☠️-' + dotDmg, '#f97316');
   }
+  tickArtifactSkill(now);                               // 神器招牌技能自动释放
   // 英雄身上的灼烧/中毒(boss debuff)持续掉血
   {const bd=state.heroDebuffs&&state.heroDebuffs.burn;
    if(bd&&bd.expire>now&&now-burnTick>1000/spdMul){burnTick=now;const bdmg=Math.max(1,bd.dps||1);applyHeroDamage(bdmg,mon,{label:t=>'☠️-'+t,color:'#a3e635',now});processTalentLowHp(mon,now);if(state.hp<=0)return;}}
@@ -3509,6 +3541,7 @@ function resetCombatState(){
     state._compBarrier=0;state._compStunUntil=0;state._compSilenceUntil=0;state._compDisarmUntil=0;state._compSoulLinkUntil=0;state._compFrenzyUntil=0;state._compDecayUntil=0;state._compLastDotTick=0;
     state._brittleUntil=0;state._soulLinkUntil=0;state._decayUntil=0;
     state._allySummons=[];
+    state.artifactSkillCd=0;                            // 神器招牌技能冷却
     state.talentState={cds:{},flags:{},shield:0};
   }
   if(typeof lastCompAtk==='number')lastCompAtk=0;
