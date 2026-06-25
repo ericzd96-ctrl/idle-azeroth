@@ -30,6 +30,15 @@ const AFFIX_POOL = [
   { key:'arcane',    name:'秘法的',    mod:'intPct',       tierVals:[[2,4],[4,8],[8,14]] },
   { key:'spiritual', name:'圣灵的',    mod:'spiPct',       tierVals:[[2,4],[4,8],[8,14]] },
   { key:'enduring',  name:'不朽的',    mod:'staPct',       tierVals:[[2,4],[4,8],[8,14]] },
+  // 副属性词缀回归(数值偏低,受 recomputeStats 末尾的吸血/全能/极速封顶约束;暴伤用扁平 critd)
+  { key:'precise',   name:'精准的',    mod:'crit',         tierVals:[[1,2],[2,3],[3,5]] },
+  { key:'cruel',     name:'残酷的',    mod:'critd',        tierVals:[[3,6],[6,10],[10,16]] },
+  { key:'vampiric',  name:'嗜血的',    mod:'leech',        tierVals:[[1,2],[2,4],[4,6]] },
+  { key:'versatile', name:'全能的',    mod:'vers',         tierVals:[[1,2],[2,4],[4,6]] },
+  { key:'masterful', name:'精通的',    mod:'mastery',      tierVals:[[2,4],[4,7],[7,12]] },
+  { key:'hasty',     name:'迅捷的',    mod:'haste',        tierVals:[[1,2],[2,3],[3,5]] },
+  { key:'evasive',   name:'灵巧的',    mod:'dodge',        tierVals:[[1,2],[2,3],[3,5]] },
+  { key:'vital',     name:'活力的',    mod:'reg',          tierVals:[[2,4],[4,7],[7,12]] },
 ];
 
 const AFFIX_BY_KEY = AFFIX_POOL.reduce((m,a)=>{m[a.key]=a;return m;},{});
@@ -62,70 +71,132 @@ const SOCKET_BY_RARITY = {
 /* ---------- 宝石 ---------- */
 /* 每种宝石: key, name, color, tier, baseStat(stats), matchBonusPct(同色额外%) */
 const GEM_TYPES = {
+  // 红=进攻
   red_t1:    { name:'粗糙红宝石',  color:'red',    tier:1, stats:{atk:8} },
   red_t2:    { name:'精致红宝石',  color:'red',    tier:2, stats:{atk:18} },
   red_t3:    { name:'华丽红宝石',  color:'red',    tier:3, stats:{atk:36} },
+  red_t4:    { name:'璀璨红宝石',  color:'red',    tier:4, stats:{atk:64} },
+  crit_t1:   { name:'锋锐玛瑙',    color:'red',    tier:1, stats:{crit:1} },
+  crit_t2:   { name:'灼炎玛瑙',    color:'red',    tier:2, stats:{crit:2} },
+  crit_t3:   { name:'裂空玛瑙',    color:'red',    tier:3, stats:{crit:3} },
+  mast_t1:   { name:'粗糙琥珀',    color:'red',    tier:1, stats:{mastery:2} },
+  mast_t2:   { name:'精致琥珀',    color:'red',    tier:2, stats:{mastery:4} },
+  mast_t3:   { name:'华丽琥珀',    color:'red',    tier:3, stats:{mastery:7} },
+  // 黄=辅助
   yellow_t1: { name:'粗糙黄玉',    color:'yellow', tier:1, stats:{haste:1} },
   yellow_t2: { name:'精致黄玉',    color:'yellow', tier:2, stats:{haste:2} },
   yellow_t3: { name:'华丽黄玉',    color:'yellow', tier:3, stats:{haste:4} },
+  yellow_t4: { name:'璀璨黄玉',    color:'yellow', tier:4, stats:{haste:6} },
+  vers_t1:   { name:'粗糙黄水晶',  color:'yellow', tier:1, stats:{vers:1} },
+  vers_t2:   { name:'精致黄水晶',  color:'yellow', tier:2, stats:{vers:2} },
+  vers_t3:   { name:'华丽黄水晶',  color:'yellow', tier:3, stats:{vers:4} },
+  dodge_t1:  { name:'流光月长石',  color:'yellow', tier:1, stats:{dodge:1} },
+  dodge_t2:  { name:'迅影月长石',  color:'yellow', tier:2, stats:{dodge:2} },
+  dodge_t3:  { name:'幻形月长石',  color:'yellow', tier:3, stats:{dodge:3} },
+  // 蓝=防御
   blue_t1:   { name:'粗糙蓝宝石',  color:'blue',   tier:1, stats:{hp:40} },
   blue_t2:   { name:'精致蓝宝石',  color:'blue',   tier:2, stats:{hp:90} },
   blue_t3:   { name:'华丽蓝宝石',  color:'blue',   tier:3, stats:{hp:180} },
+  blue_t4:   { name:'璀璨蓝宝石',  color:'blue',   tier:4, stats:{hp:320} },
+  def_t1:    { name:'粗糙石榴石',  color:'blue',   tier:1, stats:{def:6} },
+  def_t2:    { name:'精致石榴石',  color:'blue',   tier:2, stats:{def:14} },
+  def_t3:    { name:'华丽石榴石',  color:'blue',   tier:3, stats:{def:28} },
+  leech_t1:  { name:'粗糙血玉',    color:'blue',   tier:1, stats:{leech:1} },
+  leech_t2:  { name:'精致血玉',    color:'blue',   tier:2, stats:{leech:2} },
+  leech_t3:  { name:'华丽血玉',    color:'blue',   tier:3, stats:{leech:4} },
+  // 彩虹(任意孔均视为同色,享受同色加成)
+  prism_t1:  { name:'微光棱彩石',  color:'prismatic', any:true, tier:1, stats:{atk:5, hp:25} },
+  prism_t2:  { name:'璀璨棱彩石',  color:'prismatic', any:true, tier:2, stats:{atk:11, hp:55} },
+  prism_t3:  { name:'虚空棱彩石',  color:'prismatic', any:true, tier:3, stats:{atk:22, hp:110} },
 };
+/* 宝石掉落:基础色权重高,同色副属性较少,极少彩虹 */
+const GEM_BASIC_PREFIX = { red:'red', yellow:'yellow', blue:'blue' };
+const GEM_SECONDARY_PREFIX = { red:['crit','mast'], yellow:['vers','dodge'], blue:['def','leech'] };
+function randomGemDropKey(tier) {
+  if (tier <= 3 && Math.random() < 0.05) return 'prism_t' + tier;
+  const color = choice(SOCKET_COLORS);
+  const prefix = Math.random() < 0.6 ? GEM_BASIC_PREFIX[color] : choice(GEM_SECONDARY_PREFIX[color]);
+  const key = prefix + '_t' + Math.min(tier, 3);
+  return GEM_TYPES[key] ? key : GEM_BASIC_PREFIX[color] + '_t' + Math.min(tier, 3);
+}
 
 /* 同色宝石嵌入获得额外加成倍率 */
 const SOCKET_MATCH_BONUS = 0.25;
 
 /* ---------- 附魔 ---------- */
 /* 每个槽位有不同的可选附魔。每个附魔有一个加成 */
+/* 每个附魔带品质档 q(common/rare/epic),数值与花费随档提升。同槽位只能存在一个附魔。 */
 const ENCHANT_POOL = {
   weapon: [
-    { key:'wpn_atk',  name:'攻击之力',   mod:{atkPct:6},      cost:{gold:500,essence:3} },
-    { key:'wpn_hst',  name:'急速',       mod:{haste:2},     cost:{gold:500,essence:3} },
-    { key:'wpn_spd',  name:'迅捷打击',   mod:{spdPct:5},      cost:{gold:500,essence:3} },
-    { key:'wpn_pow',  name:'强攻',       mod:{atkPct:9},      cost:{gold:800,essence:5} },
+    { key:'wpn_atk',  name:'攻击之力',   q:'common', mod:{atkPct:6},        cost:{gold:500,essence:3} },
+    { key:'wpn_spd',  name:'迅捷打击',   q:'common', mod:{spdPct:5},        cost:{gold:500,essence:3} },
+    { key:'wpn_hst',  name:'急速',       q:'common', mod:{haste:2},         cost:{gold:500,essence:3} },
+    { key:'wpn_pow',  name:'强攻',       q:'rare',   mod:{atkPct:10},       cost:{gold:900,essence:5} },
+    { key:'wpn_crit', name:'锋锐',       q:'rare',   mod:{crit:2},          cost:{gold:900,essence:5} },
+    { key:'wpn_blood',name:'嗜血',       q:'rare',   mod:{leech:2},         cost:{gold:900,essence:5} },
+    { key:'wpn_titan',name:'泰坦杀戮',   q:'epic',   mod:{atkPct:16},       cost:{gold:1600,essence:10} },
   ],
   helmet: [
-    { key:'hlm_int',  name:'智慧',       mod:{intPct:6},      cost:{gold:300,essence:2} },
-    { key:'hlm_sta',  name:'坚毅',       mod:{staPct:6},      cost:{gold:300,essence:2} },
-    { key:'hlm_vers', name:'全能',       mod:{vers:2},     cost:{gold:500,essence:3} },
+    { key:'hlm_int',  name:'智慧',       q:'common', mod:{intPct:6},        cost:{gold:300,essence:2} },
+    { key:'hlm_sta',  name:'坚毅',       q:'common', mod:{staPct:6},        cost:{gold:300,essence:2} },
+    { key:'hlm_vers', name:'全能',       q:'rare',   mod:{vers:2},          cost:{gold:600,essence:4} },
+    { key:'hlm_mast', name:'精通',       q:'rare',   mod:{mastery:4},       cost:{gold:600,essence:4} },
+    { key:'hlm_sage', name:'贤者之冠',   q:'epic',   mod:{intPct:12},       cost:{gold:1400,essence:9} },
   ],
   shoulder: [
-    { key:'sh_atk',   name:'力量',       mod:{atkPct:5},      cost:{gold:300,essence:2} },
-    { key:'sh_leech', name:'吸血',       mod:{leech:2},     cost:{gold:400,essence:3} },
+    { key:'sh_atk',   name:'力量',       q:'common', mod:{atkPct:5},        cost:{gold:300,essence:2} },
+    { key:'sh_def',   name:'守护',       q:'common', mod:{defPct:6},        cost:{gold:300,essence:2} },
+    { key:'sh_leech', name:'吸血',       q:'rare',   mod:{leech:2},         cost:{gold:600,essence:4} },
+    { key:'sh_crit',  name:'凶残',       q:'rare',   mod:{crit:2},          cost:{gold:600,essence:4} },
   ],
   armor: [
-    { key:'arm_hp',   name:'生命',       mod:{hpPct:8},       cost:{gold:400,essence:3} },
-    { key:'arm_def',  name:'防御',       mod:{defPct:8},      cost:{gold:400,essence:3} },
-    { key:'arm_sta',  name:'坚韧',       mod:{staPct:6},      cost:{gold:600,essence:4} },
+    { key:'arm_hp',   name:'生命',       q:'common', mod:{hpPct:8},         cost:{gold:400,essence:3} },
+    { key:'arm_def',  name:'防御',       q:'common', mod:{defPct:8},        cost:{gold:400,essence:3} },
+    { key:'arm_vers', name:'全能',       q:'rare',   mod:{vers:3},          cost:{gold:700,essence:5} },
+    { key:'arm_sta',  name:'坚韧',       q:'rare',   mod:{staPct:8},        cost:{gold:700,essence:5} },
+    { key:'arm_fort', name:'壁垒',       q:'epic',   mod:{defPct:15},       cost:{gold:1400,essence:9} },
   ],
   gloves: [
-    { key:'glv_hst',  name:'急速',       mod:{haste:2},     cost:{gold:300,essence:2} },
-    { key:'glv_extra',name:'连击',       mod:{extraAtk:4},    cost:{gold:500,essence:3} },
+    { key:'glv_hst',  name:'急速',       q:'common', mod:{haste:2},         cost:{gold:300,essence:2} },
+    { key:'glv_extra',name:'连击',       q:'common', mod:{extraAtk:4},      cost:{gold:500,essence:3} },
+    { key:'glv_crit', name:'精准',       q:'rare',   mod:{crit:2},          cost:{gold:600,essence:4} },
+    { key:'glv_mast', name:'巧手',       q:'epic',   mod:{mastery:6},       cost:{gold:1400,essence:9} },
   ],
   belt: [
-    { key:'blt_sta',  name:'耐力',       mod:{staPct:5},      cost:{gold:300,essence:2} },
-    { key:'blt_cd',   name:'冷却',       mod:{cdReduction:3}, cost:{gold:600,essence:4} },
+    { key:'blt_sta',  name:'耐力',       q:'common', mod:{staPct:5},        cost:{gold:300,essence:2} },
+    { key:'blt_cd',   name:'冷却',       q:'common', mod:{cdReduction:3},   cost:{gold:600,essence:4} },
+    { key:'blt_hp',   name:'壮硕',       q:'rare',   mod:{hpPct:8},         cost:{gold:600,essence:4} },
+    { key:'blt_leech',name:'吸血',       q:'rare',   mod:{leech:2},         cost:{gold:600,essence:4} },
   ],
   pants: [
-    { key:'pnt_hp',   name:'生命',       mod:{hpPct:7},       cost:{gold:300,essence:2} },
-    { key:'pnt_atk',  name:'力量',       mod:{atkPct:5},      cost:{gold:400,essence:3} },
+    { key:'pnt_hp',   name:'生命',       q:'common', mod:{hpPct:7},         cost:{gold:300,essence:2} },
+    { key:'pnt_atk',  name:'力量',       q:'common', mod:{atkPct:5},        cost:{gold:400,essence:3} },
+    { key:'pnt_def',  name:'守护',       q:'rare',   mod:{defPct:9},        cost:{gold:700,essence:5} },
+    { key:'pnt_sage', name:'奥能',       q:'epic',   mod:{intPct:11},       cost:{gold:1400,essence:9} },
   ],
   boots: [
-    { key:'bts_spd',  name:'疾步',       mod:{spdPct:5},      cost:{gold:300,essence:2} },
-    { key:'bts_vers', name:'全能',       mod:{vers:2},      cost:{gold:400,essence:3} },
+    { key:'bts_spd',  name:'疾步',       q:'common', mod:{spdPct:5},        cost:{gold:300,essence:2} },
+    { key:'bts_vers', name:'全能',       q:'common', mod:{vers:2},          cost:{gold:400,essence:3} },
+    { key:'bts_dodge',name:'灵巧',       q:'rare',   mod:{dodge:2},         cost:{gold:600,essence:4} },
+    { key:'bts_hst',  name:'疾风',       q:'rare',   mod:{haste:3},         cost:{gold:600,essence:4} },
   ],
   ring: [
-    { key:'rng_atk',  name:'威能',       mod:{atkPct:5},      cost:{gold:400,essence:3} },
-    { key:'rng_hst',  name:'急速',       mod:{haste:2},     cost:{gold:400,essence:3} },
-    { key:'rng_cost', name:'节能',       mod:{costReduction:5},cost:{gold:500,essence:4} },
+    { key:'rng_atk',  name:'威能',       q:'common', mod:{atkPct:5},        cost:{gold:400,essence:3} },
+    { key:'rng_hst',  name:'急速',       q:'common', mod:{haste:2},         cost:{gold:400,essence:3} },
+    { key:'rng_cost', name:'节能',       q:'common', mod:{costReduction:5}, cost:{gold:500,essence:4} },
+    { key:'rng_crit', name:'锐意',       q:'rare',   mod:{crit:2},          cost:{gold:700,essence:5} },
+    { key:'rng_vers', name:'全能',       q:'rare',   mod:{vers:3},          cost:{gold:700,essence:5} },
   ],
   trinket: [
-    { key:'tkt_pow',  name:'狠毒',       mod:{atkPct:6},      cost:{gold:400,essence:3} },
-    { key:'tkt_hp',   name:'通才',       mod:{hpPct:8},       cost:{gold:600,essence:4} },
-    { key:'tkt_vers', name:'全能',       mod:{vers:3},     cost:{gold:600,essence:4} },
+    { key:'tkt_pow',  name:'狠毒',       q:'common', mod:{atkPct:6},        cost:{gold:400,essence:3} },
+    { key:'tkt_hp',   name:'通才',       q:'common', mod:{hpPct:8},         cost:{gold:600,essence:4} },
+    { key:'tkt_vers', name:'全能',       q:'rare',   mod:{vers:3},          cost:{gold:700,essence:5} },
+    { key:'tkt_mast', name:'精通',       q:'rare',   mod:{mastery:5},       cost:{gold:700,essence:5} },
+    { key:'tkt_cruel',name:'残虐',       q:'epic',   mod:{critd:9},         cost:{gold:1600,essence:10} },
   ],
 };
+const ENCHANT_Q_CLS = { common:'', rare:'r-rare', epic:'r-epic' };
+const ENCHANT_Q_LABEL = { common:'普通', rare:'稀有', epic:'史诗' };
 
 /* 分解装备产出 */
 const DISASSEMBLE_TABLE = {
@@ -204,7 +275,7 @@ function collectItemBonuses(item) {
     for (const sk of item.sockets) {
       if (!sk.gem) continue;
       const g = GEM_TYPES[sk.gem]; if (!g) continue;
-      const match = sk.color === g.color ? 1 + SOCKET_MATCH_BONUS : 1;
+      const match = (g.any || sk.color === g.color) ? 1 + SOCKET_MATCH_BONUS : 1;
       for (const [k, v] of Object.entries(g.stats)) {
         if (k in out) out[k] += v * match;
       }
@@ -511,6 +582,56 @@ function rerollAffix(itemId, affixIdx) {
   renderItemDetail(itemId);
 }
 
+/* 转换词缀种类:把某条词缀换成另一种(保留档位,重掷数值);费用随转换次数递增 */
+function convertAffix(itemId, affixIdx) {
+  ensureMats();
+  const found = getItemById(itemId); if (!found) return;
+  const it = found.item;
+  if (!it.affixes || !it.affixes[affixIdx]) return;
+  const af = it.affixes[affixIdx];
+  if (it._lockedAffixes && it._lockedAffixes.includes(af.key)) { log('🔒 该词缀已锁定,无法转换', 'bad'); return; }
+  const conv = af.converts || 0;
+  const gCost = 800 * (1 + conv), eCost = 3 + conv;
+  if (state.gold < gCost) { log('💰 金币不足(' + gCost + ')', 'bad'); return; }
+  if (state.essence < eCost) { log('✨ 精华不足(' + eCost + ')', 'bad'); return; }
+  const used = new Set(it.affixes.map(a => a.key));
+  const cands = AFFIX_POOL.filter(a => !used.has(a.key));
+  if (cands.length === 0) { log('没有可转换的新词缀', 'bad'); return; }
+  state.gold -= gCost; state.essence -= eCost;
+  const na = choice(cands);
+  const tier = af.tier;
+  const [lo, hi] = na.tierVals[tier - 1];
+  const oldName = AFFIX_BY_KEY[af.key]?.name || af.key;
+  it.affixes[affixIdx] = { key: na.key, tier, value: +(lo + Math.random() * (hi - lo)).toFixed(1), rerolls: 0, converts: conv + 1 };
+  log(`🔀 词缀转换 [${oldName}] → [${na.name}]`, 'good');
+  if (typeof progressionOnReroll === 'function') progressionOnReroll();
+  recomputeStats();
+  markDirty('inventory', 'equipment', 'hero');
+  renderItemDetail(itemId);
+}
+
+/* 词缀升阶:T1→T2→T3,提升档位并在新区间重掷数值 */
+function upgradeAffixTier(itemId, affixIdx) {
+  ensureMats();
+  const found = getItemById(itemId); if (!found) return;
+  const it = found.item;
+  if (!it.affixes || !it.affixes[affixIdx]) return;
+  const af = it.affixes[affixIdx];
+  if (af.tier >= 3) { log('该词缀已是最高档(T3)', 'info'); return; }
+  const eCost = 4 * af.tier, gCost = 600 * af.tier;
+  if (state.essence < eCost) { log('✨ 精华不足(' + eCost + ')', 'bad'); return; }
+  if (state.gold < gCost) { log('💰 金币不足(' + gCost + ')', 'bad'); return; }
+  state.essence -= eCost; state.gold -= gCost;
+  const def = AFFIX_BY_KEY[af.key];
+  af.tier++;
+  const [lo, hi] = def.tierVals[af.tier - 1];
+  af.value = +(lo + Math.random() * (hi - lo)).toFixed(1);
+  log(`⬆️ 词缀升阶 [${def.name}] → T${af.tier}`, 'good');
+  recomputeStats();
+  markDirty('inventory', 'equipment', 'hero');
+  renderItemDetail(itemId);
+}
+
 /* ---------- 锁定/解锁副属性与词缀 ---------- */
 function toggleLockStat(itemId, statKey) {
   const found = getItemById(itemId); if (!found) return;
@@ -606,9 +727,8 @@ function disassembleItem(itemId) {
   }
   let gainedGem = null;
   if (Math.random() < tbl.gemChance) {
-    const c = choice(SOCKET_COLORS);
     const tier = it.rarity === 'legend' ? (Math.random()<0.3?2:1) : 1;
-    const key = c + '_t' + tier;
+    const key = randomGemDropKey(tier);
     state.gems[key] = (state.gems[key]||0) + 1;
     gainedGem = GEM_TYPES[key];
   }
@@ -624,12 +744,12 @@ function disassembleItem(itemId) {
 function bossGemDrop(isFinalBoss) {
   ensureMats();
   if (Math.random() < (isFinalBoss?1.0:0.45)) {
-    const c = choice(SOCKET_COLORS);
-    const tier = isFinalBoss ? (Math.random()<0.4?2:1) : 1;
-    const key = c + '_t' + tier;
+    let tier = isFinalBoss ? (Math.random()<0.4?2:1) : 1;
+    if (isFinalBoss && Math.random() < 0.08) tier = 4;       // 终BOSS极小概率掉璀璨(t4)
+    const key = (tier===4) ? GEM_BASIC_PREFIX[choice(SOCKET_COLORS)]+'_t4' : randomGemDropKey(tier);
     state.gems[key] = (state.gems[key]||0) + 1;
     const g = GEM_TYPES[key];
-    log(`💎 获得 [${g.name}]`, 'epic');
+    if (g) log(`💎 获得 [${g.name}]`, 'epic');
   }
   // 副本BOSS也产精华
   if (isFinalBoss) {
@@ -688,12 +808,16 @@ function renderItemDetail(itemId) {
       const def = AFFIX_BY_KEY[af.key]; if (!def) return '';
       const tierCls = af.tier===3?'r-legend':af.tier===2?'r-epic':'r-rare';
       const cost = 200 * (1 + (af.rerolls||0));
+      const convCost = 800 * (1 + (af.converts||0)), convEss = 3 + (af.converts||0);
+      const canUp = af.tier < 3, upG = 600 * af.tier, upE = 4 * af.tier;
       const isAffixLocked = it._lockedAffixes && it._lockedAffixes.includes(af.key);
       const affixLockHtml = `<button class="lock-btn${isAffixLocked?' locked':''}" data-action="lockaffix" data-id="${it.id}" data-afk="${af.key}" title="${isAffixLocked?'已锁定：重洗时保留':'点击锁定：重洗时保留此词缀'}">${isAffixLocked?'🔒':'🔓'}</button>`;
       return `<div class="affix-row">
         ${affixLockHtml}
-        <span class="${tierCls}">${def.name} ${fmtMod(def.mod, af.value)}</span>
-        <button data-action="reroll" data-id="${it.id}" data-idx="${i}" title="重铸: ${cost}💰 + 1精华 (已重铸${af.rerolls||0}次)"${isAffixLocked?' disabled':''}>♻️ ${cost}</button>
+        <span class="${tierCls}">${def.name} <span class="muted" style="font-size:10px">T${af.tier}</span> ${fmtMod(def.mod, af.value)}</span>
+        <button data-action="reroll" data-id="${it.id}" data-idx="${i}" title="重铸数值: ${cost}💰 + 1✨ (已重铸${af.rerolls||0}次)"${isAffixLocked?' disabled':''}>♻️${cost}</button>
+        <button data-action="upgradeaffix" data-id="${it.id}" data-idx="${i}" title="升阶 T${af.tier}${canUp?'→T'+(af.tier+1):'(已满)'}: ${upG}💰 + ${upE}✨"${(isAffixLocked||!canUp)?' disabled':''}>⬆️</button>
+        <button data-action="convertaffix" data-id="${it.id}" data-idx="${i}" title="转换词缀种类(保留档位): ${convCost}💰 + ${convEss}✨"${isAffixLocked?' disabled':''}>🔀</button>
       </div>`;
     }).join('');
   }
@@ -704,8 +828,8 @@ function renderItemDetail(itemId) {
       const info = SOCKET_COLOR_INFO[sk.color];
       if (sk.gem) {
         const g = GEM_TYPES[sk.gem];
-        const match = sk.color === g.color;
-        const matchTxt = match ? '<span style="color:var(--accent)">(同色)</span>' : '<span class="muted">(混色)</span>';
+        const match = g.any || sk.color === g.color;
+        const matchTxt = g.any ? '<span style="color:#c084fc">(彩虹)</span>' : (match ? '<span style="color:var(--accent)">(同色)</span>' : '<span class="muted">(混色)</span>');
         const statTxt = Object.entries(g.stats).map(([k,v])=>{
           const finalV = match ? Math.floor(v*(1+SOCKET_MATCH_BONUS)) : Math.floor(v);
           return fmtMod(k, finalV);
@@ -735,8 +859,10 @@ function renderItemDetail(itemId) {
     enchantHtml = slotEnchs.map(e => {
       const isCur = e.key === curKey;
       const modTxt = Object.entries(e.mod).map(([k,v])=>fmtMod(k, v)).join(' ');
+      const qcls = ENCHANT_Q_CLS[e.q || 'common'];
+      const qlbl = ENCHANT_Q_LABEL[e.q || 'common'];
       return `<div class="enchant-row ${isCur?'cur':''}">
-        <span><b>${e.name}</b> <span class="muted">${modTxt}</span></span>
+        <span><b class="${qcls}">${e.name}</b> <span class="muted" style="font-size:10px">[${qlbl}]</span> <span class="muted">${modTxt}</span></span>
         <button data-action="enchant" data-id="${it.id}" data-ekey="${e.key}" ${isCur?'disabled':''}>
           ${isCur?'✓已附':e.cost.gold+'💰 '+e.cost.essence+'✨'}
         </button>
