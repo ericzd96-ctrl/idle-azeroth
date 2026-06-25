@@ -2900,6 +2900,7 @@ function processDirty() {
   if (isDirty('artifact')&&typeof renderArtifact==='function') { renderArtifact(); clearDirty('artifact'); }
   if (isDirty('mount')&&typeof renderMounts==='function') { renderMounts(); clearDirty('mount'); }
   if (isDirty('arena')&&typeof renderArena==='function') { renderArena(); clearDirty('arena'); }
+  if (isDirty('expedition')&&typeof renderExpedition==='function') { renderExpedition(); clearDirty('expedition'); }
   if (isDirty('stage'))     { clearDirty('stage'); /* stage 信息已在 updateBattleVisuals 处理 */ }
 }
 

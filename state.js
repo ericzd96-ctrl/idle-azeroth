@@ -104,7 +104,7 @@ const defaultState = () => ({
   // ---- 坐骑 ----
   activeMount: null,
   // ---- 竞技场(PvP)----
-  arena: { rating:0, best:0, wins:0, losses:0, streak:0, dailyMatches:0, dailyResetAt:0, vendor:{}, opp:null },
+  arena: { rating:0, best:0, wins:0, losses:0, streak:0, dailyMatches:0, dailyWins:0, dailyResetAt:0, vendor:{}, arsenal:{}, seals:0, tierRewards:{}, dailyRewards:{}, opp:null, tactic:'balanced', crowd:0, lastReport:null },
 });
 
 let state;
@@ -159,6 +159,8 @@ function defaultAccount() {
     season: { startAt:0, endAt:0, points:0, history:[], id:1 },
     // 神器遗物背包(账号共享,未镶嵌的遗物;已镶嵌的存于各专精 state.artifacts[spec].relics)
     relics: [],
+    // 放置小号军团/远征(账号共享):非当前角色被动产出金币/精华/钻石,惰性按时间结算
+    expedition: { level: 0, lastClaim: 0, acc: { gold: 0, essence: 0, gem: 0 } },
   };
 }
 
@@ -177,6 +179,9 @@ function mergeAccount(saved) {
     reputation: saved.reputation || {},
     ascendMilestones: saved.ascendMilestones || {},
     season: mo(d.season, saved.season),
+    expedition: saved.expedition ? Object.assign({}, d.expedition, saved.expedition, {
+      acc: Object.assign({}, d.expedition.acc, saved.expedition.acc || {}),
+    }) : d.expedition,
     mounts: saved.mounts || {},
     relics: Array.isArray(saved.relics) ? saved.relics : [],
     // 公共资源:数值类靠 Object.assign(d,saved) 已带过来;对象/数组做空值保护

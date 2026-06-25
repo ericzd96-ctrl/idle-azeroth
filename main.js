@@ -698,9 +698,22 @@ function setupMainButtons() {
       if(t.dataset.tab==='life'&&typeof renderLife==='function') renderLife();
       if(t.dataset.tab==='artifact'&&typeof renderArtifact==='function') renderArtifact();
       if(t.dataset.tab==='arena'&&typeof renderArena==='function') renderArena();
+      if(t.dataset.tab==='expedition'&&typeof renderExpedition==='function') renderExpedition();
       if (isMobileLayout()) setMobilePanelOpen(true);
     });
   });
+
+  // 远征军团 事件代理
+  const expRoot = $('tab-expedition');
+  if (expRoot) {
+    expRoot.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      const act = btn.dataset.action;
+      if (act === 'expClaim' && typeof claimExpedition === 'function') claimExpedition();
+      else if (act === 'expUpgrade' && typeof upgradeExpedition === 'function') upgradeExpedition();
+    });
+  }
 
   // 竞技场 事件代理
   const arenaRoot = $('tab-arena');
