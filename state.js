@@ -164,6 +164,8 @@ function defaultAccount() {
     expedition: { level: 0, lastClaim: 0, acc: { gold: 0, essence: 0, gem: 0 } },
     // 公会/社团(账号共享):每日捐献→贡献点→公会科技永久加成
     guild: { level: 1, xp: 0, contrib: 0, tech: {}, donatedDay: 0, donatedKeys: [] },
+    // 轮换黑市(账号共享):每日刷新商品,每件每天限购一次
+    market: { day: -1, bought: [] },
   };
 }
 
@@ -189,6 +191,9 @@ function mergeAccount(saved) {
       tech: saved.guild.tech || {},
       donatedKeys: Array.isArray(saved.guild.donatedKeys) ? saved.guild.donatedKeys : [],
     }) : d.guild,
+    market: saved.market ? Object.assign({}, d.market, saved.market, {
+      bought: Array.isArray(saved.market.bought) ? saved.market.bought : [],
+    }) : d.market,
     mounts: saved.mounts || {},
     relics: Array.isArray(saved.relics) ? saved.relics : [],
     // 公共资源:数值类靠 Object.assign(d,saved) 已带过来;对象/数组做空值保护

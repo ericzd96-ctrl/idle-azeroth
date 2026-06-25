@@ -128,6 +128,10 @@ function updateNavBadges() {
     }
     guildTab.classList.toggle('has-badge', avail);
   }
+  const marketTab = document.querySelector('.tab[data-tab="market"]');
+  if (marketTab) {
+    marketTab.classList.toggle('has-badge', (typeof marketHasAffordableDeal === 'function') && marketHasAffordableDeal());
+  }
 }
 
 /* 远征面板可见时,每 ~2s 重渲染让储备数字滚动 */
@@ -2940,6 +2944,7 @@ function processDirty() {
   expeditionLiveTick();
   if (isDirty('expedition')&&typeof renderExpedition==='function') { renderExpedition(); clearDirty('expedition'); }
   if (isDirty('guild')&&typeof renderGuild==='function') { renderGuild(); clearDirty('guild'); }
+  if (isDirty('market')&&typeof renderMarket==='function') { renderMarket(); clearDirty('market'); }
   if (isDirty('stage'))     { clearDirty('stage'); /* stage 信息已在 updateBattleVisuals 处理 */ }
 }
 

@@ -714,6 +714,7 @@ function setupMainButtons() {
       if(t.dataset.tab==='arena'&&typeof renderArena==='function') renderArena();
       if(t.dataset.tab==='expedition'&&typeof renderExpedition==='function') renderExpedition();
       if(t.dataset.tab==='guild'&&typeof renderGuild==='function') renderGuild();
+      if(t.dataset.tab==='market'&&typeof renderMarket==='function') renderMarket();
       if(t.dataset.tab==='talent'&&typeof renderTalents==='function') renderTalents();
       if (isMobileLayout()) setMobilePanelOpen(true);
     });
@@ -740,6 +741,16 @@ function setupMainButtons() {
       const act = btn.dataset.action;
       if (act === 'guildDonate' && typeof donateGuild === 'function') donateGuild(btn.dataset.key);
       else if (act === 'guildResearch' && typeof researchGuildTech === 'function') researchGuildTech(btn.dataset.key);
+    });
+  }
+
+  // 黑市 事件代理
+  const marketRoot = $('tab-market');
+  if (marketRoot) {
+    marketRoot.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      if (btn.dataset.action === 'marketBuy' && typeof buyMarketDeal === 'function') buyMarketDeal(btn.dataset.key);
     });
   }
 
