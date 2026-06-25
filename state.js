@@ -15,6 +15,7 @@ const defaultState = () => ({
   unlockedSkills: {},
   selectedSkills: [],
   specialization: null,   // 选择的专精树key
+  loadouts: [],           // 配装预设 [{name,spec,talents,skills,equipped:{slot:id}}]
   autoSkill: true,
   skillCooldowns: {},
   passivesSeen: {},        // 被动技能已弹过解锁提示的 key(避免重复刷日志)
@@ -329,6 +330,7 @@ function mergeState(saved) {
     hero: Object.assign(d.hero, saved.hero || {}),
     attrs: Object.assign(d.attrs, saved.attrs || {}),
     talents: saved.talents || {},
+    loadouts: Array.isArray(saved.loadouts) ? saved.loadouts : [],
     unlockedSkills: saved.unlockedSkills || {},
     passivesSeen: saved.passivesSeen || {},
     freeRespecUsed: !!saved.freeRespecUsed,

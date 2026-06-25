@@ -270,6 +270,20 @@ function setupDelegation() {
     }
   });
 
+  // 配装预设 事件代理
+  const loBar = $('loadout-bar');
+  if (loBar) loBar.addEventListener('click', e => {
+    const btn = e.target.closest('button[data-action]');
+    if (!btn) return;
+    const idx = parseInt(btn.dataset.idx);
+    const act = btn.dataset.action;
+    if (act === 'loNew' && typeof saveLoadout === 'function') saveLoadout();
+    else if (act === 'loApply' && typeof applyLoadout === 'function') applyLoadout(idx);
+    else if (act === 'loSave' && typeof saveLoadout === 'function') saveLoadout(idx);
+    else if (act === 'loRename' && typeof renameLoadout === 'function') renameLoadout(idx);
+    else if (act === 'loDelete' && typeof deleteLoadout === 'function') deleteLoadout(idx);
+  });
+
   // 掉落预览tip离开容器时隐藏
   $('map-list').addEventListener('mouseleave', () => { if (typeof _tipPinned !== 'undefined' && !_tipPinned) $('compare-tip').style.display = 'none'; });
   $('dungeon-list').addEventListener('mouseleave', () => { if (typeof _tipPinned !== 'undefined' && !_tipPinned) $('compare-tip').style.display = 'none'; });
@@ -700,6 +714,7 @@ function setupMainButtons() {
       if(t.dataset.tab==='arena'&&typeof renderArena==='function') renderArena();
       if(t.dataset.tab==='expedition'&&typeof renderExpedition==='function') renderExpedition();
       if(t.dataset.tab==='guild'&&typeof renderGuild==='function') renderGuild();
+      if(t.dataset.tab==='talent'&&typeof renderTalents==='function') renderTalents();
       if (isMobileLayout()) setMobilePanelOpen(true);
     });
   });

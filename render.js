@@ -1957,6 +1957,7 @@ const ROW_REQ = [0, 5, 10, 15, 20, 25, 28, 30, 46, 56, 66];
 
 function renderTalents() {
   const c = getCls(); if (!c) return;
+  if (typeof renderLoadouts === 'function') renderLoadouts();
   $('talent-points').textContent = state.talentPoints;
   const rb = $('btn-reset-talents'); if (rb) rb.textContent = state.freeRespecUsed ? '洗点 50💎' : '洗点 (首次免费)';
   const tl = $('talent-list');
@@ -2890,6 +2891,7 @@ function processDirty() {
   if (isDirty('shop'))      { renderShop();      clearDirty('shop'); }
   if (isDirty('skills'))    { renderSkills(); if (typeof renderPassives==='function') renderPassives(); clearDirty('skills'); }
   if (isDirty('talents'))   { renderTalents();   clearDirty('talents'); }
+  if (isDirty('loadout')&&typeof renderLoadouts==='function') { renderLoadouts(); clearDirty('loadout'); }
   if (isDirty('map'))       { renderMap();       clearDirty('map'); }
   if (isDirty('dungeon'))   { renderDungeon();   if (typeof renderTowerPanel==='function') renderTowerPanel(); clearDirty('dungeon'); }
   if (isDirty('companion')) { renderCompanion(); clearDirty('companion'); }
