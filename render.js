@@ -1230,6 +1230,13 @@ function updateBattleVisuals() {
   const h = state.hero;
   const now = Date.now();
 
+  // 残血暗角:生命 <25% 时给战斗区加红色脉冲暗角
+  const _st = $('stage');
+  if (_st) {
+    const _ratio = (h && h.hpMax > 0) ? state.hp / h.hpMax : 1;
+    _st.classList.toggle('low-hp', _ratio > 0 && _ratio < 0.25);
+  }
+
   // 头部 stats(签名缓存, 避免每帧 innerHTML)
   const race = RACES[state.race];
   const cls = getCls();
