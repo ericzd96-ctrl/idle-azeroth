@@ -270,6 +270,17 @@ function setupDelegation() {
     }
   });
 
+  // 目标引导:点击建议跳转对应标签页
+  const ngEl = $('next-goal');
+  if (ngEl) ngEl.addEventListener('click', e => {
+    const row = e.target.closest('[data-goto]');
+    if (!row) return;
+    const tab = row.dataset.goto;
+    if (!tab) return;
+    const tabEl = document.querySelector('.tab[data-tab="' + tab + '"]');
+    if (tabEl) tabEl.click();
+  });
+
   // 配装预设 事件代理
   const loBar = $('loadout-bar');
   if (loBar) loBar.addEventListener('click', e => {

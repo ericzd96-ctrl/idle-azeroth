@@ -132,6 +132,9 @@ function updateNavBadges() {
   if (marketTab) {
     marketTab.classList.toggle('has-badge', (typeof marketHasAffordableDeal === 'function') && marketHasAffordableDeal());
   }
+  // 目标引导:地图页可见时一并刷新
+  const mapPanel = document.getElementById('tab-map');
+  if (mapPanel && mapPanel.classList.contains('active') && typeof renderNextGoals === 'function') renderNextGoals();
 }
 
 /* 远征面板可见时,每 ~2s 重渲染让储备数字滚动 */
