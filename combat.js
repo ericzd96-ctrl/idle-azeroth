@@ -572,6 +572,7 @@ function applyHeroDamage(amount, mon, opts){
   const defensiveArtifactFx = activeArtifactTakenFx(mon);
   if(defensiveArtifactFx.length) artifactProcVisual(defensiveArtifactFx[0], mon, { now, target:'hero', tag:'taken' });
   state.hp -= taken;
+  trackTaken(taken);
   if(state._soulLinkUntil > now && mon && mon.hp > 0){
     const healBack = Math.max(1, Math.floor(taken * 0.25));
     mon.hp = Math.min(mon.hpMax, mon.hp + healBack);
@@ -3181,6 +3182,7 @@ function onMonsterDeath(mon){
       if (af.mod.bursting) {
         const burstDmg = Math.max(1, Math.floor(state.hp * 0.05));
         state.hp -= burstDmg;
+        trackTaken(burstDmg);
         showFloat($('hero-emoji'), '💥-'+burstDmg, '#ef4444');
       }
       if (af.mod.sanguine) {
@@ -3884,11 +3886,12 @@ function doInterrupt(){
 /* ---------- 随从 ---------- */
 let lastCompAtk=0,lastCompSkill=0,compSkillIdx=0,lastCompRegen=0;
 /* ---------- 伤害统计(战斗日志下面的伤害条) ---------- */
-let dmgStats={hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,heroHeal:0,compHeal:0,heroHealMax:0,compHealMax:0,heroHealSkills:{},compHealSkills:{},kills:0,heroSkills:{},compSkills:{}};
+let dmgStats={hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,heroHeal:0,compHeal:0,heroHealMax:0,compHealMax:0,heroHealSkills:{},compHealSkills:{},kills:0,heroSkills:{},compSkills:{},taken:0,takenMax:0,takenHits:0,killTs:0,killFast:0,killSlow:0,peakDps:0};
+function trackTaken(amt){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;dmgStats.taken=(dmgStats.taken||0)+amt;dmgStats.takenHits=(dmgStats.takenHits||0)+1;if(amt>(dmgStats.takenMax||0))dmgStats.takenMax=amt;}
 function trackDmg(src,amt,isCrit,skillLabel){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;dmgStats[src]=(dmgStats[src]||0)+amt;const maxKey=src==='hero'?'heroMax':'compMax';if(amt>dmgStats[maxKey])dmgStats[maxKey]=amt;const hitKey=src==='hero'?'heroHits':'compHits';dmgStats[hitKey]=(dmgStats[hitKey]||0)+1;if(isCrit){const critKey=src==='hero'?'heroCrits':'compCrits';dmgStats[critKey]=(dmgStats[critKey]||0)+1;}const cleanLabel=normalizeTrackedSkillLabel(skillLabel);if(cleanLabel){const skKey=src==='hero'?'heroSkills':'compSkills';dmgStats[skKey][cleanLabel]=(dmgStats[skKey][cleanLabel]||0)+amt;}}
 function trackHeal(src,amt,skillLabel){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;const totalKey=src==='hero'?'heroHeal':'compHeal';const maxKey=src==='hero'?'heroHealMax':'compHealMax';const skKey=src==='hero'?'heroHealSkills':'compHealSkills';dmgStats[totalKey]=(dmgStats[totalKey]||0)+amt;if(amt>(dmgStats[maxKey]||0))dmgStats[maxKey]=amt;const cleanLabel=normalizeTrackedSkillLabel(skillLabel);if(cleanLabel)dmgStats[skKey][cleanLabel]=(dmgStats[skKey][cleanLabel]||0)+amt;}
-function trackKill(){dmgStats.kills=(dmgStats.kills||0)+1;}
-function resetDmgStats(){dmgStats={hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,heroHeal:0,compHeal:0,heroHealMax:0,compHealMax:0,heroHealSkills:{},compHealSkills:{},kills:0,heroSkills:{},compSkills:{}};if(typeof markDirty==='function')markDirty('stage');}
+function trackKill(){const now=Date.now();if(dmgStats.killTs){const dt=(now-dmgStats.killTs)/1000;if(dt>0&&dt<600){if(!dmgStats.killFast||dt<dmgStats.killFast)dmgStats.killFast=dt;if(dt>(dmgStats.killSlow||0))dmgStats.killSlow=dt;}}dmgStats.killTs=now;dmgStats.kills=(dmgStats.kills||0)+1;}
+function resetDmgStats(){dmgStats={hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,heroHeal:0,compHeal:0,heroHealMax:0,compHealMax:0,heroHealSkills:{},compHealSkills:{},kills:0,heroSkills:{},compSkills:{},taken:0,takenMax:0,takenHits:0,killTs:0,killFast:0,killSlow:0,peakDps:0};if(typeof markDirty==='function')markDirty('stage');}
 let compSkillCd={};   // 随从每个技能的独立冷却就绪时间戳(键=技能下标;_owner 记录当前随从,换随从自动重置)
 const COMP_SKILL_DEFAULT_CD=8;   // 随从技能默认CD(秒,技能未写 cd 时)
 const COMPANION_COMBAT_QUALITY = { white:0.74, green:0.96, blue:1.18, purple:1.37, orange:1.51 };

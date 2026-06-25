@@ -104,6 +104,7 @@ let _lastMonListPaint = 0;
 let _lastBuffBarPaint = 0;
 let _lastDmgMeterPaint = 0;
 let _invFilterSlot = 'all';   // 背包部位筛选
+let _dmSampleTotal = 0, _dmSampleTs = 0;   // 峰值DPS采样基线
 let _lastNonFocusMonPaint = 0;
 let _compMiniHeadSig = '';
 let _allySummonSig = '';
@@ -991,6 +992,20 @@ function updateDmgMeter() {
     : 0.001;
   const dps = Math.round(total / elapsed);
 
+  // 峰值DPS:按面板刷新间隔采样瞬时DPS,取历史最大(峰值随 dmgStats 一起重置)
+  if (typeof dmgStats !== 'undefined') {
+    const nowTs = Date.now();
+    if (total < _dmSampleTotal) { _dmSampleTotal = total; _dmSampleTs = nowTs; } // 统计被重置→基线归零
+    else if (_dmSampleTs && nowTs > _dmSampleTs) {
+      const dt = (nowTs - _dmSampleTs) / 1000;
+      if (dt >= 0.15) {
+        const inst = (total - _dmSampleTotal) / dt;
+        if (inst > (dmgStats.peakDps || 0)) dmgStats.peakDps = inst;
+        _dmSampleTotal = total; _dmSampleTs = nowTs;
+      }
+    } else { _dmSampleTotal = total; _dmSampleTs = nowTs; }
+  }
+
   // DPS 文本
   const dpsEl = $('dm-dps');
   if (dpsEl) dpsEl.textContent = 'DPS ' + fmt(dps);
@@ -1045,6 +1060,35 @@ function updateDmgMeter() {
   if (killsEl) {
     const k = (typeof dmgStats !== 'undefined') ? (dmgStats.kills || 0) : 0;
     killsEl.textContent = String(k);
+  }
+
+  // 峰值DPS
+  const peakEl = $('dm-peak-dps');
+  if (peakEl) {
+    const pk = (typeof dmgStats !== 'undefined') ? Math.round(dmgStats.peakDps || 0) : 0;
+    peakEl.textContent = pk ? fmt(pk) : '-';
+  }
+
+  // 承受伤害(总 · 每秒 · 最高一次)
+  const takenEl = $('dm-taken');
+  if (takenEl) {
+    const tk = (typeof dmgStats !== 'undefined') ? (dmgStats.taken || 0) : 0;
+    const tkMax = (typeof dmgStats !== 'undefined') ? (dmgStats.takenMax || 0) : 0;
+    if (tk) {
+      const dtps = Math.round(tk / elapsed);
+      takenEl.textContent = `${fmt(tk)} · ${fmt(dtps)}/s · 最高 ${fmt(tkMax)}`;
+    } else takenEl.textContent = '-';
+  }
+
+  // 击杀耗时(平均 · 最快)
+  const ttkEl = $('dm-ttk');
+  if (ttkEl) {
+    const k = (typeof dmgStats !== 'undefined') ? (dmgStats.kills || 0) : 0;
+    const fast = (typeof dmgStats !== 'undefined') ? (dmgStats.killFast || 0) : 0;
+    if (k >= 1 && elapsed > 0.2) {
+      const avg = elapsed / k;
+      ttkEl.textContent = `平均 ${avg.toFixed(1)}s` + (fast ? ` · 最快 ${fast.toFixed(1)}s` : '');
+    } else ttkEl.textContent = '-';
   }
 
   function syncMeterBreakdownRows(container, rows, valueKey, accentColor, fallbackIcon) {
