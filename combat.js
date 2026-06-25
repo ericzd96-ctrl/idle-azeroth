@@ -3128,7 +3128,7 @@ function tickBattle(now){
     if(!bossData){const map=MAPS.find(m=>m.key===state.currentMap);if(map?.boss)bossData=map.boss;}
     const rawCd=((bossData?.skills||[])[bossSkillIdx%(bossData?.skills||[]).length])?.cd||10;
     const skillCd=Math.max(3,Math.floor(rawCd*0.6));   // CD加速40%,但最低3秒间隔
-    if(bossData?.skills?.length&&now-lastBossSkill>skillCd*1000){const sk=bossData.skills[bossSkillIdx%bossData.skills.length];let castTime=sk.castTime!==undefined?sk.castTime:2;const instantChance=typeof mon.instantCastChance==='number'?mon.instantCastChance:(mon.instantCast?0.35:0);const instant=instantChance>0&&Math.random()<instantChance;if(instant)castTime=0;bossCasting={bossName:mon.bossName,name:sk.name,icon:sk.icon,type:sk.type,heal:sk.heal,healPct:sk.healPct,mul:sk.mul,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,spdBuffSecs:sk.spdBuffSecs,spdBuffPct:sk.spdBuffPct,atkBuffSecs:sk.atkBuffSecs,atkBuffPct:sk.atkBuffPct,defBuffSecs:sk.defBuffSecs,defBuffPct:sk.defBuffPct,drBuffSecs:sk.drBuffSecs,drBuffPct:sk.drBuffPct,shieldPct:sk.shieldPct,critBuffSecs:sk.critBuffSecs,critBuffPct:sk.critBuffPct,leechBuffSecs:sk.leechBuffSecs,leechBuffPct:sk.leechBuffPct,summonCount:sk.summonCount,summonTheme:sk.summonTheme,aoe:sk.aoe,silence:sk.silence,disarm:sk.disarm,fear:sk.fear,freeze:sk.freeze,cripple:sk.cripple,decay:sk.decay,wither:sk.wither,manaDrain:sk.manaDrain,bomb:sk.bomb,plague:sk.plague,bleed:sk.bleed,brittle:sk.brittle,soulDrain:sk.soulDrain,soulLink:sk.soulLink,revenge:sk.revenge,frenzy:sk.frenzy,decay2:sk.decay2,mirror:sk.mirror,threat:sk.threat,interruptPolicy:sk.interruptPolicy,startTime:now,duration:castTime*1000};log('💀 '+mon.bossName+(instant?' 瞬发 ':' 开始施放 ')+sk.name+'!'+(instant?'(无法打断)':''),'bad');lastBossSkill=now;bossSkillIdx++;}
+    if(bossData?.skills?.length&&now-lastBossSkill>skillCd*1000){const sk=bossData.skills[bossSkillIdx%bossData.skills.length];let castTime=sk.castTime!==undefined?sk.castTime:2;const instantChance=typeof mon.instantCastChance==='number'?mon.instantCastChance:(mon.instantCast?0.35:0);const instant=instantChance>0&&Math.random()<instantChance;if(instant)castTime=0;bossCasting={bossName:mon.bossName,name:sk.name,icon:sk.icon,type:sk.type,heal:sk.heal,healPct:sk.healPct,mul:sk.mul,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,spdBuffSecs:sk.spdBuffSecs,spdBuffPct:sk.spdBuffPct,atkBuffSecs:sk.atkBuffSecs,atkBuffPct:sk.atkBuffPct,defBuffSecs:sk.defBuffSecs,defBuffPct:sk.defBuffPct,drBuffSecs:sk.drBuffSecs,drBuffPct:sk.drBuffPct,shieldPct:sk.shieldPct,critBuffSecs:sk.critBuffSecs,critBuffPct:sk.critBuffPct,leechBuffSecs:sk.leechBuffSecs,leechBuffPct:sk.leechBuffPct,summonCount:sk.summonCount,summonTheme:sk.summonTheme,aoe:sk.aoe,silence:sk.silence,disarm:sk.disarm,fear:sk.fear,freeze:sk.freeze,cripple:sk.cripple,decay:sk.decay,wither:sk.wither,manaDrain:sk.manaDrain,bomb:sk.bomb,plague:sk.plague,bleed:sk.bleed,brittle:sk.brittle,soulDrain:sk.soulDrain,soulLink:sk.soulLink,revenge:sk.revenge,frenzy:sk.frenzy,decay2:sk.decay2,mirror:sk.mirror,threat:sk.threat,interruptPolicy:sk.interruptPolicy,_empowered:isEmpoweredBossCast(sk),startTime:now,duration:castTime*1000};const _emp=!instant&&isEmpoweredBossCast(sk)&&sk.interruptPolicy!=='none';log('💀 '+mon.bossName+(instant?' 瞬发 ':' 开始施放 ')+sk.name+'!'+(instant?'(无法打断)':(_emp?' ⚡蓄力大招—打断可造成破绽!':'')),'bad');lastBossSkill=now;bossSkillIdx++;}
     // BOSS技巧(独立冷却,避免开场和支援技能一起连发)
     const tricks=bossTrickList(bossData);
     const supportRecently = (mon._lastSupportSkill || 0) > 0 && now - mon._lastSupportSkill < 4500;
@@ -3712,7 +3712,7 @@ function tickCast(now){
     const threatMeta = bossCastThreatMeta(bossCasting);
     const interruptText = bossInterruptTag(bossCasting);
     $('boss-cast-bar-wrap').style.visibility='visible';
-    $('boss-cast-name').textContent='💀 '+(bossCasting.bossName||'BOSS')+' - '+(bossCasting.icon||'')+' '+(bossCasting.name||'施法')+'【'+threatMeta.label+' / '+interruptText+'】';
+    $('boss-cast-name').textContent='💀 '+(bossCasting.bossName||'BOSS')+' - '+(bossCasting.icon||'')+' '+(bossCasting.name||'施法')+'【'+threatMeta.label+' / '+interruptText+(bossCasting._empowered&&bossCasting.interruptPolicy!=='none'?' / ⚡可破绽':'')+'】';
     $('boss-cast-name').style.color = threatMeta.text;
     $('boss-cast-time').textContent=remaining>0?remaining+'s':'';
     $('boss-b-cast').style.background = threatMeta.bar;
@@ -3740,6 +3740,7 @@ function tickCast(now){
           if(typeof passiveOnTakeDamage==='function')passiveOnTakeDamage(mon,taken);
           if(bc.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(taken*bc.lifeSteal));
           skillEffects(bc,mon,taken,now);
+          if(bc._empowered&&state.hp>0){applyHeroDebuff('weaken',4000);log('⚠️ 没能打断蓄力大招,陷入虚弱!下次记得打断','bad');}
           if(companionTargetable()){
             const cst=computeCompanionStats();
             const cd=calcDmg(rawAtk,cst?cst.def:mon.def,critRate,mon.critMult?mon.critMult*100:150,bc.alwaysCrit,state.hero.lvl,mon.lvl);
@@ -3773,6 +3774,7 @@ function tickCast(now){
             if(typeof passiveOnTakeDamage==='function')passiveOnTakeDamage(mon,taken);
             if(bc.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(taken*bc.lifeSteal));
             skillEffects(bc,mon,taken,now);
+            if(bc._empowered&&state.hp>0){applyHeroDebuff('weaken',4000);log('⚠️ 没能打断蓄力大招,陷入虚弱!下次记得打断','bad');}
           }
           if(state.hp<=0)onHeroDeath();}}}}
 }
@@ -3861,6 +3863,16 @@ function castSkill(skillKey,manual){
   else if(sk.type==='buff'){const dur=sk.duration+(state.hero.buffDuration||0)*1000;state.buffs[sk.buff]=Date.now()+dur;recomputeStats();log(sk.name+'!','good');}
   if(sk.type==='buff') processTalentAfterSkill(skillKey, sk, state.currentMonsters[0] || null, 0, { cost });
 }
+/* 蓄力大招判定:高威胁的伤害类施法值得"必须反应"——打断可换破绽 */
+function isEmpoweredBossCast(sk){
+  if(!sk) return false;
+  if(sk.type==='heal'||sk.type==='buff'||sk.type==='support'||sk.type==='summon') return false;
+  if(sk.interruptPolicy==='hard') return true;
+  const mul=sk.mul||0;
+  if(sk.aoe && mul>=2.2) return true;
+  if(mul>=3) return true;
+  return false;
+}
 function doInterrupt(){
   if(!bossCasting){log('没有正在施放的法术','info');return;}
   const bossName=bossCasting.bossName||'BOSS';
@@ -3879,8 +3891,17 @@ function doInterrupt(){
       showMonsterFloat(mon,'⚠️余波','#fda4af',{variant:'boss',scale:1.04});
     }
   }
+  const empowered = bossCasting._empowered;
   hideBossCastBar();
   bossCasting=null;
+  // 打断蓄力大招的奖励:让 BOSS 露出破绽(硬直 + 破甲),AI 会自动抓窗口爆发
+  if(empowered && mon && mon.hp>0){
+    const now=Date.now();
+    mon.stunUntil=Math.max(mon.stunUntil||0, now+2200);
+    mon.sunderUntil=Math.max(mon.sunderUntil||0, now+6000);
+    log('💥 完美打断!'+bossName+' 露出破绽:硬直 + 破甲,抓紧爆发!','epic');
+    if(typeof showMonsterFloat==='function') showMonsterFloat(mon,'💥破绽!','#fde047',{variant:'boss',scale:1.14});
+  }
 }
 
 /* ---------- 随从 ---------- */
