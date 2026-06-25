@@ -103,6 +103,7 @@ let _buffBarStruct = '';     // 增益条结构签名(不含倒计时),变化才
 let _lastMonListPaint = 0;
 let _lastBuffBarPaint = 0;
 let _lastDmgMeterPaint = 0;
+let _invFilterSlot = 'all';   // 背包部位筛选
 let _lastNonFocusMonPaint = 0;
 let _compMiniHeadSig = '';
 let _allySummonSig = '';
@@ -1585,30 +1586,45 @@ function renderInventory() {
     }
   });
 
+  // 部位筛选下拉:首次构建选项 + 同步当前值
+  const fsel = document.getElementById('inv-filter-slot');
+  if (fsel) {
+    if (!fsel.options.length) {
+      const slots = (typeof SLOT_ORDER !== 'undefined') ? SLOT_ORDER : Object.keys(SLOT_INFO);
+      fsel.innerHTML = '<option value="all">全部</option>' +
+        slots.map(k => `<option value="${k}">${SLOT_INFO[k] ? SLOT_INFO[k].label : k}</option>`).join('');
+    }
+    if (fsel.value !== (_invFilterSlot || 'all')) fsel.value = _invFilterSlot || 'all';
+  }
+
   const il = $('inv-list');
   il.innerHTML = '';
   const tip = $('compare-tip');
 
+  let shown = 0;
   for (const it of state.inventory) {
     if (!SLOT_INFO[it.slot]) continue; // 跳过槽位无效的物品
+    if (_invFilterSlot && _invFilterSlot !== 'all' && it.slot !== _invFilterSlot) continue;
+    shown++;
     if (typeof syncItemIdentity === 'function') syncItemIdentity(it);
     const equipped = state.equipped[it.slot];
     const stats = Object.entries(it.stats).map(([k,v])=>fmtMod(k, v)).join(' ');
     const row = document.createElement('div');
-    row.className = 'inv-item ' + it.bcls;
+    row.className = 'inv-item ' + it.bcls + (it.locked ? ' locked' : '');
     row.dataset.id = it.id;
     const extras = (typeof itemBonusSummary==='function') ? itemBonusSummary(it) : '';
     const slotIconHtml = (typeof slotIcon === 'function') ? slotIcon(it.slot, 16, SLOT_INFO[it.slot].icon) : SLOT_INFO[it.slot].icon;
     const itemNameHtml = (typeof itemDisplayNameHtml === 'function') ? itemDisplayNameHtml(it,{slotBadge:true}) : it.name;
     row.innerHTML = `
       <div class="info">
-        <div class="name ${it.cls}">${slotIconHtml} ${itemNameHtml}${extras}</div>
+        <div class="name ${it.cls}">${it.locked?'🔒 ':''}${slotIconHtml} ${itemNameHtml}${extras}</div>
         <div class="stats">${SLOT_INFO[it.slot].label} · ${stats}${it.reqLvl?" · Lv."+it.reqLvl:""}</div>
       </div>
       <div class="btns">
+        <button data-action="lock" data-id="${it.id}" title="${it.locked?'已锁定(点击解锁)':'锁定(防止出售)'}">${it.locked?'🔒':'🔓'}</button>
         <button data-action="detail" data-id="${it.id}" title="详情/词缀/宝石/附魔">🔍</button>
         <button class="primary" data-action="equip" data-id="${it.id}">装备</button>
-        <button data-action="sell" data-id="${it.id}">${it.sell}💰</button>
+        <button data-action="sell" data-id="${it.id}"${it.locked?' disabled title="已锁定"':''}>${it.sell}💰</button>
       </div>`;
 
     const showCompare = e => {
@@ -1630,6 +1646,13 @@ function renderInventory() {
     addTouchPin(row, showCompare);
 
     il.appendChild(row);
+  }
+  if (shown === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'muted';
+    empty.style.cssText = 'padding:12px;text-align:center;font-size:12px';
+    empty.textContent = state.inventory.length ? '该部位没有装备(可切换筛选)' : '背包是空的';
+    il.appendChild(empty);
   }
 }
 

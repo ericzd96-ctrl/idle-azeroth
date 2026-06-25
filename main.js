@@ -189,6 +189,14 @@ function setupDelegation() {
       const labels = {common:'普通',uncommon:'优秀及以下',rare:'精良及以下',off:'关闭'};
       log(`🤖 自动售卖: ${labels[btn.dataset.rarity]||'关闭'}`, 'info');
     } else if (btn.dataset.action === 'sellall') sellAllBelow(btn.dataset.rarity);
+    else if (btn.dataset.action === 'equipbest') equipBestGear();
+  });
+
+  // 背包部位筛选
+  const invFilterSel = $('inv-filter-slot');
+  if (invFilterSel) invFilterSel.addEventListener('change', e => {
+    if (typeof _invFilterSlot !== 'undefined') _invFilterSlot = e.target.value || 'all';
+    markDirty('inventory');
   });
 
   // 背包列表(装备/出售/详情)
@@ -198,6 +206,7 @@ function setupDelegation() {
     const id = parseInt(btn.dataset.id);
     if (btn.dataset.action === 'equip') equipItem(id);
     else if (btn.dataset.action === 'sell') sellItem(id);
+    else if (btn.dataset.action === 'lock') toggleItemLock(id);
     else if (btn.dataset.action === 'detail') openItemDetail(id);
   });
 
@@ -703,7 +712,9 @@ function setupMainButtons() {
       if (act === 'arenaRanked')        { arenaFight(true);  renderArena(); }
       else if (act === 'arenaSkirmish') { arenaFight(false); renderArena(); }
       else if (act === 'arenaReroll')   { arenaRollOpponent(); renderArena(); }
+      else if (act === 'arenaSetTactic') { arenaSetTactic(btn.dataset.key); renderArena(); }
       else if (act === 'arenaBuy')      { arenaBuy(btn.dataset.key); renderArena(); }
+      else if (act === 'arenaBuyArsenal') { arenaBuyArsenal(btn.dataset.key); renderArena(); }
     });
   }
 

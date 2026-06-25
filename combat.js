@@ -999,6 +999,9 @@ function recomputeStats() {
       else if (k==='leech') leech+=v;
       else if (k==='vers') vers+=v;
       else if (k==='mastery') mastery+=v;
+      else if (k==='cdReduction') cdReduction+=v;
+      else if (k==='extraAtk') extraAtk+=v;
+      else if (k==='costReduction') costReduction+=v;
     }
   }
   _saveSrc('竞技场');
@@ -1202,7 +1205,7 @@ function recomputeStats() {
   state.hero.mastery=Math.max(0,mastery); state.hero.cdReduction=Math.min(cdReduction,40);
   state.hero.buffDuration=Math.min(buffDuration,15); state.hero.extraAtk=Math.min(extraAtk,25);
   state.hero.healBonus=Math.min(healBonus,50); state.hero.dotBonus=Math.min(dotBonus,50);
-  state.hero.costReduction=Math.min(costReduction,30); state.hero.executeBonus=Math.min(executeBonus,40);
+  state.hero.costReduction=Math.min(costReduction,15); state.hero.executeBonus=Math.min(executeBonus,40);
   state.hero.reflectDmg=reflectDmg;
   state.hero.armorPen=Math.min(armorPen,40); state.hero.dodge=Math.min(dodge,30); state.hero.stunChance=Math.min(stunChance,15);
   state._talentFx = talentFx;
@@ -2919,8 +2922,15 @@ function tickBattle(now){
     state.hp=Math.min(state.hero.hpMax,state.hp+Math.max(0,Math.floor(state.hero.reg*regenMult)));
     const c=getCls();
     if(c.resKey==='rage')state.resource=Math.max(0,state.resource-3);
-    else if(c.resKey==='energy')state.resource=Math.min(state.resourceMax,state.resource+10);
-    else{const reg=2+Math.floor((state._attrs?.spi||0)*0.3)+state.hero.reg;state.resource=Math.min(state.resourceMax,state.resource+reg);}
+    else if(c.resKey==='energy')state.resource=Math.min(state.resourceMax,state.resource+7);
+    else{
+      const combatManaRegen = Math.max(1, Math.floor(
+        1 +
+        Math.max(0, (state._attrs?.spi || 0)) * 0.05 +
+        Math.max(0, state.hero.reg || 0) * 0.35
+      ));
+      state.resource=Math.min(state.resourceMax,state.resource+combatManaRegen);
+    }
     lastRegen=now;
   }
   const dotInterval = 1000 / spdMul;
@@ -3520,8 +3530,39 @@ function addToInventory(item){
 }
 function equipItem(itemId){const idx=state.inventory.findIndex(i=>i.id===itemId);if(idx<0)return;const item=state.inventory[idx];if(typeof syncItemIdentity==='function') syncItemIdentity(item);if(item.reqLvl&&state.hero.lvl<item.reqLvl){log('需要等级 Lv.'+item.reqLvl,'bad');return;}const prev=state.equipped[item.slot];state.equipped[item.slot]=item;state.inventory.splice(idx,1);if(prev)state.inventory.push(prev);recomputeStats();log('🎽 装备了 '+item.name,'good');markDirty('inventory','equipment','hero');}
 function unequipItem(slotKey){const it=state.equipped[slotKey];if(!it)return;if(state.inventory.length>=40){log('背包已满','bad');return;}state.inventory.push(it);delete state.equipped[slotKey];recomputeStats();markDirty('inventory','equipment','hero');}
-function sellItem(itemId){const idx=state.inventory.findIndex(i=>i.id===itemId);if(idx<0)return;const item=state.inventory[idx];state.gold+=item.sell;state.inventory.splice(idx,1);markDirty('inventory');}
-function sellAllBelow(level){const levelIdx=['common','uncommon','rare','epic','legend'].indexOf(level);let total=0,n=0;state.inventory=state.inventory.filter(i=>{const idx=['common','uncommon','rare','epic','legend'].indexOf(i.rarity);if(idx<=levelIdx){total+=i.sell;n++;return false;}return true;});state.gold+=total;if(n)log('💰 出售 '+n+' 件 +'+total,'info');markDirty('inventory');}
+function sellItem(itemId){const idx=state.inventory.findIndex(i=>i.id===itemId);if(idx<0)return;const item=state.inventory[idx];if(item.locked){log('🔒 已锁定,无法出售 '+item.name,'bad');return;}state.gold+=item.sell;state.inventory.splice(idx,1);markDirty('inventory');}
+function sellAllBelow(level){const levelIdx=['common','uncommon','rare','epic','legend'].indexOf(level);let total=0,n=0;state.inventory=state.inventory.filter(i=>{if(i.locked)return true;const idx=['common','uncommon','rare','epic','legend'].indexOf(i.rarity);if(idx<=levelIdx){total+=i.sell;n++;return false;}return true;});state.gold+=total;if(n)log('💰 出售 '+n+' 件 +'+total,'info');markDirty('inventory');}
+function toggleItemLock(itemId){const item=state.inventory.find(i=>i.id===itemId)||Object.values(state.equipped).find(i=>i&&i.id===itemId);if(!item)return;item.locked=!item.locked;log((item.locked?'🔒 锁定 ':'🔓 解锁 ')+item.name,'info');markDirty('inventory');}
+
+/* 一键穿戴最优:逐部位用"模拟装备→重算→战力评估"挑选最强,不出售任何装备 */
+function equipBestGear(){
+  if(!state||!state.inventory) return;
+  const slots=(typeof SLOT_ORDER!=='undefined')?SLOT_ORDER:Object.keys(SLOT_INFO);
+  const powerOf=(typeof arenaHeroPower==='function')?arenaHeroPower:(()=>state.hero.atk||1);
+  let changed=0;
+  for(const slot of slots){
+    // 候选 = 背包里该部位且等级达标的装备 + 当前已穿
+    const cands=state.inventory.filter(it=>it.slot===slot && (!it.reqLvl||state.hero.lvl>=it.reqLvl));
+    const cur=state.equipped[slot];
+    if(cands.length===0) continue;
+    let best=cur, bestPow=-Infinity;
+    // 先评估当前(空栏=没有 cur)
+    const evalWith=(item)=>{ state.equipped[slot]=item||undefined; recomputeStats(); return powerOf(); };
+    if(cur){ best=cur; bestPow=evalWith(cur); } else { best=null; bestPow=evalWith(null); }
+    for(const it of cands){ if(it===cur) continue; const p=evalWith(it); if(p>bestPow+1e-6){ bestPow=p; best=it; } }
+    // 还原该槽并落实最优
+    state.equipped[slot]=best||undefined;
+    if(best!==cur){
+      // 从背包移除 best,把旧装放回背包
+      if(best){ const bi=state.inventory.indexOf(best); if(bi>=0) state.inventory.splice(bi,1); }
+      if(cur) state.inventory.push(cur);
+      changed++;
+    }
+  }
+  recomputeStats();
+  if(changed>0){ log('🎽 一键装备:更换了 '+changed+' 个部位至最强','good'); markDirty('inventory','equipment','hero'); }
+  else { log('🎽 当前装备已是背包内最强,无需更换','info'); }
+}
 
 /* ---------- 技能 ---------- */
 let casting=null;
