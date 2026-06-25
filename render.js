@@ -105,6 +105,40 @@ let _lastBuffBarPaint = 0;
 let _lastDmgMeterPaint = 0;
 let _invFilterSlot = 'all';   // 背包部位筛选
 let _dmSampleTotal = 0, _dmSampleTs = 0;   // 峰值DPS采样基线
+let _navBadgePaint = 0, _expLivePaint = 0; // 导航红点 / 远征实时刷新节流
+
+/* 导航栏红点:远征储备满 / 公会今日有可做的捐献 */
+function updateNavBadges() {
+  const now = Date.now();
+  if (now - _navBadgePaint < 1500) return;
+  _navBadgePaint = now;
+  const expTab = document.querySelector('.tab[data-tab="expedition"]');
+  if (expTab) {
+    const full = (typeof expeditionStorageFull === 'function') && expeditionStorageFull();
+    expTab.classList.toggle('has-badge', !!full);
+  }
+  const guildTab = document.querySelector('.tab[data-tab="guild"]');
+  if (guildTab && typeof ensureGuildState === 'function' && typeof account !== 'undefined' && account) {
+    if (typeof guildRefreshDaily === 'function') guildRefreshDaily();
+    const g = ensureGuildState();
+    let avail = false;
+    if (g && typeof GUILD_DONATIONS !== 'undefined') {
+      avail = GUILD_DONATIONS.some(d => !g.donatedKeys.includes(d.key) &&
+        Object.entries(d.cost).every(([r, a]) => (account[r] || 0) >= a));
+    }
+    guildTab.classList.toggle('has-badge', avail);
+  }
+}
+
+/* 远征面板可见时,每 ~2s 重渲染让储备数字滚动 */
+function expeditionLiveTick() {
+  const panel = document.getElementById('tab-expedition');
+  if (!panel || !panel.classList.contains('active')) return;
+  const now = Date.now();
+  if (now - _expLivePaint < 2000) return;
+  _expLivePaint = now;
+  if (typeof renderExpedition === 'function') renderExpedition();
+}
 let _lastNonFocusMonPaint = 0;
 let _compMiniHeadSig = '';
 let _allySummonSig = '';
@@ -2902,6 +2936,8 @@ function processDirty() {
   if (isDirty('artifact')&&typeof renderArtifact==='function') { renderArtifact(); clearDirty('artifact'); }
   if (isDirty('mount')&&typeof renderMounts==='function') { renderMounts(); clearDirty('mount'); }
   if (isDirty('arena')&&typeof renderArena==='function') { renderArena(); clearDirty('arena'); }
+  updateNavBadges();
+  expeditionLiveTick();
   if (isDirty('expedition')&&typeof renderExpedition==='function') { renderExpedition(); clearDirty('expedition'); }
   if (isDirty('guild')&&typeof renderGuild==='function') { renderGuild(); clearDirty('guild'); }
   if (isDirty('stage'))     { clearDirty('stage'); /* stage 信息已在 updateBattleVisuals 处理 */ }

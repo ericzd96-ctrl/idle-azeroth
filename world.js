@@ -382,12 +382,25 @@ function applyOfflineProgress() {
 function showOfflineModal(dt, kills, gold, xp, drops) {
   const h = Math.floor(dt/3600), m = Math.floor((dt%3600)/60), s = dt%60;
   $('offline-text').textContent = `离开了 ${h>0?h+'小时':''}${m}分${s}秒`;
+  // 远征军团离线产出(惰性结算后读储备池)
+  let expLine = '';
+  if (typeof expeditionAdvance === 'function') {
+    expeditionAdvance(Date.now());
+    const e = account && account.expedition;
+    if (e && e.acc) {
+      const eg = Math.floor(e.acc.gold || 0), ee = Math.floor(e.acc.essence || 0), em = Math.floor(e.acc.gem || 0);
+      if (eg + ee + em > 0) {
+        expLine = `<div style="margin-top:8px;border-top:1px dashed var(--border);padding-top:6px">🚩 远征军团已攒下 <b>${fmt(eg)}</b>💰 <b>${ee}</b>🔮 <b>${em}</b>💎 <span class="muted" style="font-size:11px">(到远征页领取)</span></div>`;
+      }
+    }
+  }
   $('offline-loot').innerHTML = `
     <div>⚔️ 击杀 <b>${kills}</b> 只</div>
     <div>💰 +${gold} 金币</div>
     <div>✨ +${xp} 经验</div>
     <div>🎁 ${drops.length} 件装备</div>
     ${drops.slice(0,5).map(it => `<div style="font-size:11px">　<span class="${it.cls}">${it.name}${typeof itemEpicRaidBadge==='function'?itemEpicRaidBadge(it,true):''}</span></div>`).join('')}
+    ${expLine}
   `;
   $('modal-offline').classList.add('show');
 }
