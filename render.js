@@ -104,6 +104,7 @@ let _lastMonListPaint = 0;
 let _lastBuffBarPaint = 0;
 let _lastDmgMeterPaint = 0;
 let _invFilterSlot = 'all';   // 背包部位筛选
+let _invFilterRarity = 'all'; // 背包品质筛选
 let _dmSampleTotal = 0, _dmSampleTs = 0;   // 峰值DPS采样基线
 let _navBadgePaint = 0, _expLivePaint = 0; // 导航红点 / 远征实时刷新节流
 
@@ -1661,7 +1662,17 @@ function renderEquipment() {
 function renderInventory() {
   // 清理槽位无效的物品
   state.inventory = state.inventory.filter(it => SLOT_INFO[it.slot]);
-  $('inv-count').textContent = state.inventory.length;
+  const cap = (typeof invCap === 'function') ? invCap() : 60;
+  const cntEl = $('inv-count');
+  cntEl.textContent = state.inventory.length;
+  cntEl.style.color = state.inventory.length >= cap ? '#ef4444' : (state.inventory.length >= cap * 0.9 ? '#f59e0b' : '');
+  const capEl = $('inv-cap'); if (capEl) capEl.textContent = cap;
+  const expBtn = $('btn-expand-inv');
+  if (expBtn && typeof invExpandCost === 'function') {
+    const atMax = (typeof INV_CAP_MAX !== 'undefined') && cap >= INV_CAP_MAX;
+    expBtn.textContent = atMax ? '🎒 已满级' : '🎒 扩容 ' + fmt(invExpandCost()) + '💰';
+    expBtn.disabled = atMax;
+  }
 
   // 按品质→等级排序: 传说>史诗>精良>优秀>普通, 同品质高等级优先
   const rarityOrder = ['legend','epic','rare','uncommon','common'];
@@ -1689,6 +1700,16 @@ function renderInventory() {
     if (fsel.value !== (_invFilterSlot || 'all')) fsel.value = _invFilterSlot || 'all';
   }
 
+  // 品质筛选下拉
+  const rsel = document.getElementById('inv-filter-rarity');
+  if (rsel) {
+    if (!rsel.options.length) {
+      const rs = [['all', '全部'], ['legend', '传说'], ['epic', '史诗'], ['rare', '精良'], ['uncommon', '优秀'], ['common', '普通']];
+      rsel.innerHTML = rs.map(([k, label]) => `<option value="${k}">${label}</option>`).join('');
+    }
+    if (rsel.value !== (_invFilterRarity || 'all')) rsel.value = _invFilterRarity || 'all';
+  }
+
   const il = $('inv-list');
   il.innerHTML = '';
   const tip = $('compare-tip');
@@ -1697,6 +1718,7 @@ function renderInventory() {
   for (const it of state.inventory) {
     if (!SLOT_INFO[it.slot]) continue; // 跳过槽位无效的物品
     if (_invFilterSlot && _invFilterSlot !== 'all' && it.slot !== _invFilterSlot) continue;
+    if (_invFilterRarity && _invFilterRarity !== 'all' && it.rarity !== _invFilterRarity) continue;
     shown++;
     if (typeof syncItemIdentity === 'function') syncItemIdentity(it);
     const equipped = state.equipped[it.slot];
@@ -1743,7 +1765,7 @@ function renderInventory() {
     const empty = document.createElement('div');
     empty.className = 'muted';
     empty.style.cssText = 'padding:12px;text-align:center;font-size:12px';
-    empty.textContent = state.inventory.length ? '该部位没有装备(可切换筛选)' : '背包是空的';
+    empty.textContent = state.inventory.length ? '没有符合筛选条件的装备(可切换筛选)' : '背包是空的';
     il.appendChild(empty);
   }
 }

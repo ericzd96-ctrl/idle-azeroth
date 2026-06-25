@@ -36,6 +36,7 @@ const defaultState = () => ({
   gem: 5,
   honor: 0,
   inventory: [],
+  invCap: 60,              // 背包容量(可花金币扩展)
   equipped: {},
   autoSellRarity: null,
   companions: [],          // [{key,quality,stars,shards}]
@@ -335,6 +336,7 @@ function mergeState(saved) {
     hero: Object.assign(d.hero, saved.hero || {}),
     attrs: Object.assign(d.attrs, saved.attrs || {}),
     talents: saved.talents || {},
+    invCap: Math.max(60, saved.invCap || 0),   // 老存档无此字段→提升到60(基础格子加大)
     loadouts: Array.isArray(saved.loadouts) ? saved.loadouts : [],
     unlockedSkills: saved.unlockedSkills || {},
     passivesSeen: saved.passivesSeen || {},

@@ -3550,11 +3550,24 @@ function addToInventory(item){
   if(typeof syncItemIdentity==='function') syncItemIdentity(item);
   if(item.mythicUnique){state.inventory.push(item);markDirty('inventory');log('🌟 专属传说已入包: '+item.name+' (背包'+state.inventory.length+'件)','loot');return;}
   if(state.autoSellRarity){const itemIdx=RARITY.findIndex(r=>r.key===item.rarity);const sellIdx=RARITY.findIndex(r=>r.key===state.autoSellRarity);if(itemIdx<=sellIdx){state.gold+=item.sell;return;}}
-  if(state.inventory.length>=40){state.gold+=item.sell;log('📦 背包已满,自动出售 '+item.name+' +'+item.sell+'💰','info');return;}
+  if(state.inventory.length>=invCap()){state.gold+=item.sell;log('📦 背包已满,自动出售 '+item.name+' +'+item.sell+'💰','info');return;}
   state.inventory.push(item);markDirty('inventory');
 }
 function equipItem(itemId){const idx=state.inventory.findIndex(i=>i.id===itemId);if(idx<0)return;const item=state.inventory[idx];if(typeof syncItemIdentity==='function') syncItemIdentity(item);if(item.reqLvl&&state.hero.lvl<item.reqLvl){log('需要等级 Lv.'+item.reqLvl,'bad');return;}const prev=state.equipped[item.slot];state.equipped[item.slot]=item;state.inventory.splice(idx,1);if(prev)state.inventory.push(prev);recomputeStats();log('🎽 装备了 '+item.name,'good');markDirty('inventory','equipment','hero');}
-function unequipItem(slotKey){const it=state.equipped[slotKey];if(!it)return;if(state.inventory.length>=40){log('背包已满','bad');return;}state.inventory.push(it);delete state.equipped[slotKey];recomputeStats();markDirty('inventory','equipment','hero');}
+/* ---------- 背包容量 ---------- */
+const INV_CAP_MAX=200, INV_CAP_STEP=10, INV_CAP_BASE=60;
+function invCap(){ return (state&&state.invCap)||INV_CAP_BASE; }
+function invExpandCost(){ const exp=Math.max(0,(invCap()-INV_CAP_BASE)/INV_CAP_STEP); return Math.floor(8000*Math.pow(1.55,exp)); }
+function expandInventory(){
+  if(invCap()>=INV_CAP_MAX){ log('🎒 背包已扩展至上限 '+INV_CAP_MAX+' 格','info'); return; }
+  const cost=invExpandCost();
+  if((state.gold||0)<cost){ log('💰 金币不足,扩展背包需要 '+fmt(cost)+'💰','bad'); return; }
+  state.gold-=cost;
+  state.invCap=invCap()+INV_CAP_STEP;
+  log('🎒 背包扩展至 '+state.invCap+' 格!','good');
+  markDirty('inventory','hero');
+}
+function unequipItem(slotKey){const it=state.equipped[slotKey];if(!it)return;if(state.inventory.length>=invCap()){log('背包已满','bad');return;}state.inventory.push(it);delete state.equipped[slotKey];recomputeStats();markDirty('inventory','equipment','hero');}
 function sellItem(itemId){const idx=state.inventory.findIndex(i=>i.id===itemId);if(idx<0)return;const item=state.inventory[idx];if(item.locked){log('🔒 已锁定,无法出售 '+item.name,'bad');return;}state.gold+=item.sell;state.inventory.splice(idx,1);markDirty('inventory');}
 function sellAllBelow(level){const levelIdx=['common','uncommon','rare','epic','legend'].indexOf(level);let total=0,n=0;state.inventory=state.inventory.filter(i=>{if(i.locked)return true;const idx=['common','uncommon','rare','epic','legend'].indexOf(i.rarity);if(idx<=levelIdx){total+=i.sell;n++;return false;}return true;});state.gold+=total;if(n)log('💰 出售 '+n+' 件 +'+total,'info');markDirty('inventory');}
 function toggleItemLock(itemId){const item=state.inventory.find(i=>i.id===itemId)||Object.values(state.equipped).find(i=>i&&i.id===itemId);if(!item)return;item.locked=!item.locked;log((item.locked?'🔒 锁定 ':'🔓 解锁 ')+item.name,'info');markDirty('inventory');}

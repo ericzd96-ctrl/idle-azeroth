@@ -199,6 +199,19 @@ function setupDelegation() {
     markDirty('inventory');
   });
 
+  // 背包品质筛选
+  const invRaritySel = $('inv-filter-rarity');
+  if (invRaritySel) invRaritySel.addEventListener('change', e => {
+    if (typeof _invFilterRarity !== 'undefined') _invFilterRarity = e.target.value || 'all';
+    markDirty('inventory');
+  });
+
+  // 背包扩容
+  const expandBtn = $('btn-expand-inv');
+  if (expandBtn) expandBtn.addEventListener('click', () => {
+    if (typeof expandInventory === 'function') expandInventory();
+  });
+
   // 背包列表(装备/出售/详情)
   $('inv-list').addEventListener('click', e => {
     const btn = e.target.closest('button[data-action]');

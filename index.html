@@ -183,11 +183,15 @@
     </div>
 
     <div class="tab-panel" id="tab-inv">
-      <div class="muted" style="margin-bottom:6px">背包 <span id="inv-count">0</span>/40</div>
+      <div class="muted" style="margin-bottom:6px">背包 <span id="inv-count">0</span>/<span id="inv-cap">60</span>
+        <button data-action="expandinv" id="btn-expand-inv" style="float:right;font-size:11px" title="花金币扩展背包格子">🎒 扩容</button>
+      </div>
       <div id="inv-toolbar" style="margin-bottom:6px;display:flex;gap:4px;flex-wrap:wrap;align-items:center">
         <button class="primary" data-action="equipbest" title="逐部位自动穿戴背包内战力最高的装备(不会出售)">⚡ 一键穿最优</button>
         <span style="font-size:11px;color:var(--muted)">部位:</span>
         <select id="inv-filter-slot" style="font-size:11px;padding:2px 4px"></select>
+        <span style="font-size:11px;color:var(--muted)">品质:</span>
+        <select id="inv-filter-rarity" style="font-size:11px;padding:2px 4px"></select>
         <span style="flex-basis:100%"></span>
         <span style="font-size:11px;color:var(--muted)">自动卖:</span>
         <button data-action="autosell" data-rarity="off" id="btn-as-off">关闭</button>

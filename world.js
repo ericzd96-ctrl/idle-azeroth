@@ -373,7 +373,7 @@ function applyOfflineProgress() {
   let dropList = [];
   for (let i=0; i<Math.min(drops, 8); i++) {
     const it = rollItem('uncommon', Math.floor(avgLvl));
-    if (state.inventory.length < 40) { state.inventory.push(it); dropList.push(it); }
+    if (state.inventory.length < (typeof invCap === 'function' ? invCap() : 60)) { state.inventory.push(it); dropList.push(it); }
     else state.gold += it.sell;
   }
   showOfflineModal(dt, kills, gold, xp, dropList);
