@@ -699,6 +699,7 @@ function setupMainButtons() {
       if(t.dataset.tab==='artifact'&&typeof renderArtifact==='function') renderArtifact();
       if(t.dataset.tab==='arena'&&typeof renderArena==='function') renderArena();
       if(t.dataset.tab==='expedition'&&typeof renderExpedition==='function') renderExpedition();
+      if(t.dataset.tab==='guild'&&typeof renderGuild==='function') renderGuild();
       if (isMobileLayout()) setMobilePanelOpen(true);
     });
   });
@@ -712,6 +713,18 @@ function setupMainButtons() {
       const act = btn.dataset.action;
       if (act === 'expClaim' && typeof claimExpedition === 'function') claimExpedition();
       else if (act === 'expUpgrade' && typeof upgradeExpedition === 'function') upgradeExpedition();
+    });
+  }
+
+  // 公会 事件代理
+  const guildRoot = $('tab-guild');
+  if (guildRoot) {
+    guildRoot.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      const act = btn.dataset.action;
+      if (act === 'guildDonate' && typeof donateGuild === 'function') donateGuild(btn.dataset.key);
+      else if (act === 'guildResearch' && typeof researchGuildTech === 'function') researchGuildTech(btn.dataset.key);
     });
   }
 

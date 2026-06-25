@@ -2901,6 +2901,7 @@ function processDirty() {
   if (isDirty('mount')&&typeof renderMounts==='function') { renderMounts(); clearDirty('mount'); }
   if (isDirty('arena')&&typeof renderArena==='function') { renderArena(); clearDirty('arena'); }
   if (isDirty('expedition')&&typeof renderExpedition==='function') { renderExpedition(); clearDirty('expedition'); }
+  if (isDirty('guild')&&typeof renderGuild==='function') { renderGuild(); clearDirty('guild'); }
   if (isDirty('stage'))     { clearDirty('stage'); /* stage 信息已在 updateBattleVisuals 处理 */ }
 }
 
