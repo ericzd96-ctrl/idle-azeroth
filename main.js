@@ -715,6 +715,7 @@ function setupMainButtons() {
       if(t.dataset.tab==='expedition'&&typeof renderExpedition==='function') renderExpedition();
       if(t.dataset.tab==='guild'&&typeof renderGuild==='function') renderGuild();
       if(t.dataset.tab==='market'&&typeof renderMarket==='function') renderMarket();
+      if(t.dataset.tab==='leaderboard'&&typeof renderLeaderboard==='function') renderLeaderboard();
       if(t.dataset.tab==='talent'&&typeof renderTalents==='function') renderTalents();
       if (isMobileLayout()) setMobilePanelOpen(true);
     });
