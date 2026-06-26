@@ -1629,7 +1629,9 @@ function renderHero() {
   if (bonusEl && total) {
     const parts = bonusKeys.map(b => {
       const v = total[b.key] || 0;
-      return `<span class="bonus-chip${v>0?' has':''}">${b.label} ${b.fmt(v)}</span>`;
+      const bd = statSourceBreakdown(b.key);
+      const tip = bd ? ` title="${b.label}加成来源:&#10;${bd}"` : '';
+      return `<span class="bonus-chip${v>0?' has':''}"${tip} style="cursor:${bd?'help':'default'}">${b.label} ${b.fmt(v)}</span>`;
     });
     bonusEl.innerHTML = parts.join('');
   } else if (bonusEl) {
@@ -1647,6 +1649,21 @@ function renderHero() {
     setPanel.innerHTML = gateHtml + setHtml;
   }
   bindUnitTip($('hero-emoji'), heroUnitTipHtml);
+}
+
+/* 某加成的"按来源拆分"明细字符串(读 state._statSources,降序);供属性面板 chip 的 tooltip */
+function statSourceBreakdown(key) {
+  const srcs = state._statSources;
+  if (!srcs) return '';
+  const rows = [];
+  for (const [name, d] of Object.entries(srcs)) {
+    if (name === '_total' || !d) continue;
+    const v = d[key] || 0;
+    if (v) rows.push({ name, v });
+  }
+  if (!rows.length) return '';
+  rows.sort((a, b) => b.v - a.v);
+  return rows.map(r => `${r.name} ${r.v > 0 ? '+' : ''}${(+r.v).toFixed(1)}%`).join('\n');
 }
 
 function renderEquipment() {
