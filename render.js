@@ -142,6 +142,10 @@ function updateNavBadges() {
     // vaultHasReward 内部 ensureVaultState 会处理周结算锁入(即使没开宝库页也能按时结算)
     vaultTab.classList.toggle('has-badge', (typeof vaultHasReward === 'function') && vaultHasReward());
   }
+  const paragonTab = document.querySelector('.tab[data-tab="paragon"]');
+  if (paragonTab) {
+    paragonTab.classList.toggle('has-badge', (typeof paragonHasPoints === 'function') && paragonHasPoints());
+  }
   // 目标引导 / 今日事务:地图页可见时一并刷新
   const mapPanel = document.getElementById('tab-map');
   if (mapPanel && mapPanel.classList.contains('active')) {
@@ -2989,11 +2993,13 @@ function processDirty() {
   updateNavBadges();
   expeditionLiveTick();
   if (typeof questLiveTick === 'function') questLiveTick();
+  if (typeof paragonLiveTick === 'function') paragonLiveTick();
   if (isDirty('expedition')&&typeof renderExpedition==='function') { renderExpedition(); clearDirty('expedition'); }
   if (isDirty('guild')&&typeof renderGuild==='function') { renderGuild(); clearDirty('guild'); }
   if (isDirty('market')&&typeof renderMarket==='function') { renderMarket(); clearDirty('market'); }
   if (isDirty('quests')&&typeof renderQuests==='function') { renderQuests(); clearDirty('quests'); }
   if (isDirty('vault')&&typeof renderVault==='function') { renderVault(); clearDirty('vault'); }
+  if (isDirty('paragon')&&typeof renderParagon==='function') { renderParagon(); clearDirty('paragon'); }
   if (isDirty('stage'))     { clearDirty('stage'); /* stage 信息已在 updateBattleVisuals 处理 */ }
 }
 

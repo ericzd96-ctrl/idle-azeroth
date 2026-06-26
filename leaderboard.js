@@ -22,12 +22,17 @@ const LEADERBOARD_NPCS = {
     { n:'幻象法师·瓦内萨', s:20 }, { n:'幻象领主·扎库尔', s:24 }, { n:'幻象君王·奥拉基尔', s:27 },
     { n:'幻象征服者·克苏恩', s:29 }, { n:'幻象终结者·尤格', s:30 },
   ],
+  paragon: [
+    { n:'巅峰行者·初心', s:15 }, { n:'不朽斗士·凯恩', s:45 }, { n:'永恒守望·玛维', s:90 },
+    { n:'传奇征服者·萨鲁法尔', s:160 }, { n:'巅峰领主·伊利丹', s:300 }, { n:'无尽之巅·阿尔萨斯', s:550 },
+  ],
 };
 
 const LEADERBOARD_BOARDS = [
   { kind:'tower',     title:'⛰️ 无尽塔 · 最高层数',  unit:'层',  field:'tower',     prop:'highest', icon:'🪙' },
   { kind:'arena',     title:'⚔️ 竞技场 · 段位评分',  unit:'分',  field:'arena',     prop:'best',    icon:'🏆' },
   { kind:'roguelike', title:'🃏 幻象挑战 · 最深层数', unit:'层', field:'roguelike', prop:'highest', icon:'🤖' },
+  { kind:'paragon',   title:'🌟 巅峰 · 最高等级',     unit:'级', field:'paragon',   prop:'lvl',     icon:'🌟' },
 ];
 
 /* 账号下所有角色在该榜的最佳值 */

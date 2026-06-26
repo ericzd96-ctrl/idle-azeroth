@@ -746,6 +746,7 @@ function setupMainButtons() {
       if(t.dataset.tab==='market'&&typeof renderMarket==='function') renderMarket();
       if(t.dataset.tab==='quests'&&typeof renderQuests==='function') renderQuests();
       if(t.dataset.tab==='vault'&&typeof renderVault==='function') renderVault();
+      if(t.dataset.tab==='paragon'&&typeof renderParagon==='function') renderParagon();
       if(t.dataset.tab==='leaderboard'&&typeof renderLeaderboard==='function') renderLeaderboard();
       if(t.dataset.tab==='talent'&&typeof renderTalents==='function') renderTalents();
       if (isMobileLayout()) setMobilePanelOpen(true);
@@ -804,6 +805,17 @@ function setupMainButtons() {
       const btn = e.target.closest('button[data-action]');
       if (!btn) return;
       if (btn.dataset.action === 'claimVault' && typeof claimVault === 'function') claimVault(btn.dataset.idx);
+    });
+  }
+
+  // 巅峰系统 事件代理
+  const paragonRoot = $('tab-paragon');
+  if (paragonRoot) {
+    paragonRoot.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      if (btn.dataset.action === 'paragonInvest' && typeof paragonInvest === 'function') paragonInvest(btn.dataset.node, btn.dataset.amt);
+      else if (btn.dataset.action === 'paragonReset' && typeof paragonReset === 'function') paragonReset();
     });
   }
 

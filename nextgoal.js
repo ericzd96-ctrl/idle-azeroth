@@ -67,6 +67,10 @@ function collectNextGoals() {
   if (typeof vaultHasReward === 'function' && vaultHasReward())
     goals.push({ prio: 88, icon: '🎁', text: '每周宝库已就绪,去挑选 1 件传说奖励', tab: 'vault' });
 
+  // 巅峰点未分配
+  if (typeof paragonHasPoints === 'function' && paragonHasPoints())
+    goals.push({ prio: 78, icon: '🌟', text: `有 ${state.paragon.points} 点巅峰点未分配,去强化角色`, tab: 'paragon' });
+
   // 黑市有可买
   if (typeof marketHasAffordableDeal === 'function' && marketHasAffordableDeal())
     goals.push({ prio: 50, icon: '🛒', text: '黑市有买得起的商品,消化盈余货币', tab: 'market' });

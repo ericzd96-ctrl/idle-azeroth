@@ -20,6 +20,7 @@ const defaultState = () => ({
   skillCooldowns: {},
   passivesSeen: {},        // 被动技能已弹过解锁提示的 key(避免重复刷日志)
   dungeonAnnounceLvl: 0,   // 已对"新副本开放"提示到的等级(0=未初始化,首检静默对齐当前等级防回填刷屏)
+  paragon: { xp:0, lvl:0, points:0, board:{}, ms:{} },   // 巅峰系统(满级后无限成长,per-char)
   resource: 0,
   resourceMax: 100,
   hp: 50,
@@ -353,6 +354,9 @@ function mergeState(saved) {
     unlockedSkills: saved.unlockedSkills || {},
     passivesSeen: saved.passivesSeen || {},
     dungeonAnnounceLvl: typeof saved.dungeonAnnounceLvl === 'number' ? saved.dungeonAnnounceLvl : 0,
+    paragon: saved.paragon ? Object.assign({ xp:0, lvl:0, points:0, board:{}, ms:{} }, saved.paragon, {
+      board: saved.paragon.board || {}, ms: saved.paragon.ms || {},
+    }) : { xp:0, lvl:0, points:0, board:{}, ms:{} },
     freeRespecUsed: !!saved.freeRespecUsed,
     buffs: saved.buffs || {},
     talentAuras: saved.talentAuras || {},

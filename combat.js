@@ -1025,6 +1025,29 @@ function recomputeStats() {
     }
   }
   _saveSrc('公会');
+  // 巅峰系统(满级无限成长)— 标准 schema,xp/gold/dropMult 由 killMonster 消费
+  _snapSrc();
+  if (typeof collectParagonMod === 'function') {
+    const p = collectParagonMod();
+    for (const [k, v] of Object.entries(p)) {
+      if (!v) continue;
+      if (k==='atkPct') atkPct+=v;
+      else if (k==='hpPct') hpPct+=v;
+      else if (k==='defPct') defPct+=v;
+      else if (k==='critdPct') critdPct+=v;
+      else if (k==='spdPct') spdPct+=v;
+      else if (k==='crit') critFlat+=v;
+      else if (k==='leech') leech+=v;
+      else if (k==='vers') vers+=v;
+      else if (k==='mastery') mastery+=v;
+      else if (k==='regFlat') regFlat+=v;
+      else if (k==='cdReduction') cdReduction+=v;
+      else if (k==='extraAtk') extraAtk+=v;
+      else if (k==='healBonus') healBonus+=v;
+      // xpMult/goldMult/dropMult 在 killMonster 消费
+    }
+  }
+  _saveSrc('巅峰');
   // 被动技能(按等级解锁)— 同 schema
   _snapSrc();
   if (typeof collectPassiveMod === 'function') {
@@ -3237,6 +3260,10 @@ function onMonsterDeath(mon){
   bonus.xpMult  *= 1 + (gm.xpMult||0)/100;
   bonus.goldMult*= 1 + (gm.goldMult||0)/100;
   bonus.dropMult*= 1 + (gm.dropMult||0)/100;
+  const pgm=(typeof collectParagonMod==='function')?collectParagonMod():{xpMult:0,goldMult:0,dropMult:0};
+  bonus.xpMult  *= 1 + (pgm.xpMult||0)/100;
+  bonus.goldMult*= 1 + (pgm.goldMult||0)/100;
+  bonus.dropMult*= 1 + (pgm.dropMult||0)/100;
   const olp=overLevelPenalty(mon);   // 越级惩罚(对级=1)
   let xp=calcXP(mon);xp=Math.floor(xp*bonus.xpMult);
   let goldEarned=Math.floor(mon.goldReward*bonus.goldMult*olp);
@@ -3386,7 +3413,7 @@ function onHeroDeath(){
 }
 
 function gainXP(amt){
-  if(state.hero.lvl>=MAX_LEVEL){state.hero.xp=0;return;}
+  if(state.hero.lvl>=MAX_LEVEL){if(typeof paragonGainXp==='function')paragonGainXp(amt);state.hero.xp=0;return;}
   const activeGate = (typeof currentXpGate==='function') ? currentXpGate() : null;
   if(activeGate && state.hero.lvl >= activeGate.level){
     const now = Date.now();
