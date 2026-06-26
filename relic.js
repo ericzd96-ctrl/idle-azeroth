@@ -26,6 +26,46 @@ const RELIC_STAT_BASE = { atkPct:3, hpPct:4, defPct:3, critdPct:6, crit:2, maste
 const RELIC_SHOP_PRICE = { rare:150, epic:400, legend:1000 };
 const RELIC_SALVAGE_ESS = { rare:20, epic:50, legend:120 };
 
+/* 遗物套装:每件遗物归属一个套装,镶嵌同套装 2/3 件激活套装加成(只有 3 个槽,故 2 件即触发)。
+   mod 只用 collectArtifactMod 消费循环支持的键(见 combat.js:912-937,勿用 haste —— 那条不生效);
+   3 件 fx 只用 combat 已支持的安全类型,并带 key 隔离 proc 冷却桶。 */
+const RELIC_SETS = [
+  { key:'warmonger', name:'战神之怒', icon:'⚔️',
+    bonus2:{ mod:{ atkPct:4 } },
+    bonus3:{ mod:{ atkPct:6, critdPct:14 }, fx:{ type:'onCrit', extraHitMul:0.40, extraHitIcon:'⚔️', cooldown:2500 } } },
+  { key:'bulwark', name:'不朽壁垒', icon:'🛡️',
+    bonus2:{ mod:{ hpPct:5, defPct:3 } },
+    bonus3:{ mod:{ hpPct:8, defPct:5 }, fx:{ type:'lowHp', threshold:0.4, shieldPct:0.12, cooldown:25000 } } },
+  { key:'arcanum', name:'秘能共鸣', icon:'🔮',
+    bonus2:{ mod:{ mastery:5 } },
+    bonus3:{ mod:{ mastery:8, critdPct:10 }, fx:{ type:'vsBoss', dmgPct:12 } } },
+  { key:'reaver', name:'猎杀者', icon:'🩸',
+    bonus2:{ mod:{ crit:3, atkPct:2 } },
+    bonus3:{ mod:{ executeBonus:6, atkPct:4 }, fx:{ type:'executeWindow', threshold:0.4, dmgPct:25 } } },
+];
+function relicSetInfo(key){ return RELIC_SETS.find(s => s.key === key) || null; }
+function ensureRelicSet(r){ if(r && !r.set){ r.set = RELIC_SETS[Math.floor(Math.random()*RELIC_SETS.length)].key; } return r && r.set; }
+function relicSetTagText(r){ const s = relicSetInfo(r && r.set); return s ? `${s.icon}${s.name}` : ''; }
+/* 已镶嵌遗物按套装计数 {setKey:count} */
+function relicSetCounts(){
+  const counts = {};
+  for(const r of socketedRelics()){ const k = ensureRelicSet(r); if(k) counts[k] = (counts[k]||0) + 1; }
+  return counts;
+}
+/* 当前激活的套装加成档(返回 [{set, pieces, tiers:[bonus2?,bonus3?]}]) */
+function activeRelicSetTiers(){
+  const counts = relicSetCounts();
+  const out = [];
+  for(const s of RELIC_SETS){
+    const n = counts[s.key] || 0;
+    if(n < 2) continue;
+    const tiers = [s.bonus2];
+    if(n >= 3) tiers.push(s.bonus3);
+    out.push({ set:s, pieces:n, tiers });
+  }
+  return out;
+}
+
 let _relicIdSeq = 1;
 function relicPick(a){ return a[Math.floor(Math.random() * a.length)]; }
 function nextRelicId(){ return 'rl' + (_relicIdSeq++) + '_' + Math.floor(Math.random() * 99999); }
@@ -57,7 +97,7 @@ function makeRelic(kind, rarity){
     const k = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
     mod[k] = (mod[k] || 0) + Math.max(1, Math.round(RELIC_STAT_BASE[k] * R.mult));
   }
-  const r = { id: nextRelicId(), kind, rarity, mod };
+  const r = { id: nextRelicId(), kind, rarity, mod, set: RELIC_SETS[Math.floor(Math.random()*RELIC_SETS.length)].key };
   if(kind === 'rune'){
     r.bonusRank = rarity === 'legend' ? 2 : 1;
   } else if(kind === 'sigil'){
@@ -109,7 +149,33 @@ function relicEffectText(r){
   if(r.kind === 'rune') parts.push(`最高神器特性 +${r.bonusRank} 阶(突破上限)`);
   else if(r.kind === 'sigil') parts.push(`招牌技伤害 +${r.skillDmgPct}%` + (r.skillCdPct ? ` · 冷却 -${r.skillCdPct}%` : ''));
   else if(r.kind === 'idol' && r.fx) parts.push(`被动: ${relicFxText(r.fx)}`);
+  const setTag = relicSetTagText(r);
+  if(setTag) parts.push(`〖${setTag}〗`);
   return parts.join(' · ');
+}
+function relicSetBonusText(tier){
+  if(!tier) return '';
+  const parts = [];
+  const modTxt = Object.entries(tier.mod || {}).map(([k, v]) => (typeof fmtMod === 'function') ? fmtMod(k, v) : `${k}+${v}`).join(' ');
+  if(modTxt) parts.push(modTxt);
+  if(tier.fx) parts.push(relicFxText(tier.fx));
+  return parts.join(' · ');
+}
+function relicSetSummaryHtml(){
+  const counts = relicSetCounts();
+  let html = `<div class="detail-label" style="font-size:11px">⚜️ 套装加成 <span class="muted" style="font-weight:normal">(镶嵌同套装 2/3 件激活)</span></div>`;
+  html += `<div style="display:flex;flex-direction:column;gap:3px;margin-bottom:6px">`;
+  for(const s of RELIC_SETS){
+    const n = counts[s.key] || 0;
+    const on2 = n >= 2, on3 = n >= 3;
+    html += `<div style="font-size:10px;opacity:${n > 0 ? 1 : 0.45};line-height:1.5">
+      <b>${s.icon} ${s.name}</b> <span class="muted">(${n}/3)</span>
+      <span style="color:${on2 ? '#86efac' : 'var(--muted)'}">· 2件 ${relicSetBonusText(s.bonus2)}</span>
+      <span style="color:${on3 ? '#86efac' : 'var(--muted)'}">· 3件 ${relicSetBonusText(s.bonus3)}</span>
+    </div>`;
+  }
+  html += `</div>`;
+  return html;
 }
 
 // ---- 槽位 ----
@@ -141,6 +207,10 @@ function collectRelicMod(){
   for(const r of socketedRelics()){
     for(const [k, v] of Object.entries(r.mod || {})) out[k] = (out[k] || 0) + v;
   }
+  // 套装属性加成(2件/3件档)
+  for(const a of activeRelicSetTiers()){
+    for(const t of a.tiers){ for(const [k, v] of Object.entries(t.mod || {})) out[k] = (out[k] || 0) + v; }
+  }
   return out;
 }
 function collectRelicFx(){
@@ -148,6 +218,13 @@ function collectRelicFx(){
   for(const r of socketedRelics()){
     if(!r.fx) continue;
     out.push(Object.assign({ key:'relic_' + r.id, artifactKey:'relic_' + r.id, artifactName:relicDisplayName(r), source:'artifact', relic:true }, r.fx));
+  }
+  // 套装 3 件 fx(带 key 隔离 proc 冷却桶)
+  for(const a of activeRelicSetTiers()){
+    for(const t of a.tiers){
+      if(!t.fx) continue;
+      out.push(Object.assign({ key:'relicset_' + a.set.key, artifactKey:'relicset_' + a.set.key, artifactName:a.set.name + ' 套装', source:'artifact', relic:true }, t.fx));
+    }
   }
   return out;
 }
@@ -290,6 +367,7 @@ function renderRelicSection(spec, b){
     }
   }
   html += `</div>`;
+  html += relicSetSummaryHtml();
   html += `<div class="muted" style="font-size:10px;margin-bottom:5px">🛒 遗物商店(随机):
     <button data-action="relicBuy" data-rarity="rare" style="padding:1px 7px;font-size:10px">稀有 ${RELIC_SHOP_PRICE.rare}💎</button>
     <button data-action="relicBuy" data-rarity="epic" style="padding:1px 7px;font-size:10px">史诗 ${RELIC_SHOP_PRICE.epic}💎</button>
