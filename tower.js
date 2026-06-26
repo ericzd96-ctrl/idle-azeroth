@@ -180,11 +180,14 @@ function onTowerMonsterKill(mon) {
   ts.coinThisRun = (ts.coinThisRun||0) + baseCoin;
 
   // 突破最高纪录
-  if (floor > (state.tower.highest||0)) state.tower.highest = floor;
+  const _prevTowerHighest = state.tower.highest||0;
+  if (floor > _prevTowerHighest) state.tower.highest = floor;
   if (floor > (state.tower.weeklyHighest||0)) state.tower.weeklyHighest = floor;
 
   // 坐骑里程碑
   if (typeof mountOnTowerFloorClear === 'function') mountOnTowerFloorClear(floor);
+  // 神器遗物:仅刷新最高层时掉(奖励推塔,不奖励反复刷低层)
+  if (floor > _prevTowerHighest && typeof relicOnTowerFloor === 'function') relicOnTowerFloor(floor);
 
   // 里程碑
   const ms = TOWER_MILESTONES[floor];

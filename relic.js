@@ -38,6 +38,11 @@ function rollRelicIdolFx(rarity){
     { type:'vsBoss', dmgPct:Math.round(8*m) },
     { type:'lowHp', threshold:0.4, shieldPct:Math.round(8*m)/100, cooldown:25000 },
     { type:'executeWindow', threshold:0.35, dmgPct:Math.round(12*m) },
+    // 扩充被动(均为 combat 已支持的安全 fx 类型)
+    { type:'vsState', state:'dot', dmgPct:Math.round(15*m) },
+    { type:'vsState', state:'slow', dmgPct:Math.round(15*m) },
+    { type:'lowHp', threshold:0.4, healPct:Math.round(7*m)/100, cooldown:25000 },
+    { type:'onKill', shieldPct:Math.round(6*m)/100 },
   ];
   return relicPick(opts);
 }
@@ -83,7 +88,16 @@ function relicFxText(fx){
     }
     case 'onCrit': return `暴击追加 ${Math.round((fx.extraHitMul||0)*100)}% 伤害`;
     case 'vsBoss': return `对首领伤害 +${fx.dmgPct}%`;
-    case 'lowHp': return `危急时获得 ${Math.round((fx.shieldPct||0)*100)}% 最大生命护盾`;
+    case 'lowHp': {
+      const parts = [];
+      if(fx.healPct) parts.push(`恢复 ${Math.round((fx.healPct||0)*100)}% 生命`);
+      if(fx.shieldPct) parts.push(`获得 ${Math.round((fx.shieldPct||0)*100)}% 最大生命护盾`);
+      return `危急时${parts.join('并')}`;
+    }
+    case 'vsState': {
+      const sn = { dot:'灼烧/持续伤害', slow:'减速', stun:'眩晕' }[fx.state] || fx.state;
+      return `对带有[${sn}]的目标伤害 +${fx.dmgPct}%`;
+    }
     case 'executeWindow': return `对残血(<${Math.round((fx.threshold||0.35)*100)}%)目标伤害 +${fx.dmgPct}%`;
     default: return '神秘效果';
   }
@@ -227,6 +241,31 @@ function relicOnDungeonClear(dg){
     relicTryDrop(rarity, '副本');
   }
 }
+// 大秘境通关:保底史诗,高层有传说;层数越高掉率越高
+function relicOnMythicClear(level){
+  level = level || 1;
+  const chance = Math.min(0.55, 0.22 + level * 0.02);
+  if(Math.random() < chance){
+    let rarity = 'epic';
+    const roll = Math.random();
+    if(level >= 12 && roll < 0.40) rarity = 'legend';
+    else if(level >= 6 && roll < 0.22) rarity = 'legend';
+    relicTryDrop(rarity, `大秘境+${level}`);
+  }
+}
+// 无尽塔:仅在刷新最高层时掉(奖励推塔,不奖励反复刷低层),层数越高越好
+function relicOnTowerFloor(floor){
+  floor = floor || 1;
+  const chance = Math.min(0.6, 0.12 + floor * 0.006);
+  if(Math.random() < chance){
+    let rarity = 'rare';
+    const roll = Math.random();
+    if(floor >= 60 && roll < 0.25) rarity = 'legend';
+    else if(floor >= 25 && roll < 0.45) rarity = 'epic';
+    else if(roll < 0.22) rarity = 'epic';
+    relicTryDrop(rarity, `无尽塔 ${floor} 层`);
+  }
+}
 
 // ---- 渲染(返回 HTML, 由 renderArtifact 拼接) ----
 function renderRelicSection(spec, b){
@@ -258,7 +297,7 @@ function renderRelicSection(spec, b){
   const bag = relicBag();
   html += `<div class="detail-label" style="font-size:11px">遗物背包 (${bag.length})</div>`;
   if(!bag.length){
-    html += `<div class="muted" style="font-size:10px">暂无未镶嵌遗物 — 打副本掉落或在上方商店购买</div>`;
+    html += `<div class="muted" style="font-size:10px">暂无未镶嵌遗物 — 副本通关 / 大秘境 / 无尽塔刷新最高层掉落,或在上方商店购买</div>`;
   } else {
     const hasFree = b.relics.slice(0, slots).some(x => !x);
     html += `<div style="display:flex;flex-direction:column;gap:3px;max-height:220px;overflow:auto">`;

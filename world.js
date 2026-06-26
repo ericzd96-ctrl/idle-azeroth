@@ -663,6 +663,7 @@ function onMythicClear() {
   if (!dg) return;
   const clearedLevel = ms.level || state.mythicLevel || 1;
   if (typeof questAdvance === 'function') questAdvance('mythic', 1);
+  if (typeof relicOnMythicClear === 'function') relicOnMythicClear(clearedLevel);
   state.pendingMythicAscend = (state.pendingMythicAscend || 0) + 1;
   let pending = state.pendingMythicAscend;
 
