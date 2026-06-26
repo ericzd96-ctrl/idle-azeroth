@@ -899,6 +899,12 @@ function recomputeStats() {
       if (k==='atkPct') atkPct+=v;
       else if (k==='hpPct') hpPct+=v;
       else if (k==='defPct') defPct+=v;
+      else if (k==='critdPct') critdPct+=v;
+      else if (k==='crit') critFlat+=v;
+      else if (k==='leech') leech+=v;
+      else if (k==='vers') vers+=v;
+      else if (k==='mastery') mastery+=v;
+      else if (k==='regFlat') regFlat+=v;
       // xpMult/goldMult/dropMult 在 killMonster 消费
     }
   }

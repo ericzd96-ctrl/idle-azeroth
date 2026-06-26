@@ -61,6 +61,19 @@ const LIFE_RECIPES = [
     cost:{ tuna:1, sungrass:2 }, minLvl:{fishing:30, herb:30}, action:'buff', buffKey:'lifeMightFeast', buffDur:600000, buffMod:{atkPct:15} },
   { key:'fortuneFeast', name:'幸运盛宴', icon:'🥗', desc:'10 分钟内 +25% 金币/掉率',
     cost:{ shark:1, mageroyal:2 }, minLvl:{fishing:45, herb:45}, action:'buff', buffKey:'lifeFortuneFeast', buffDur:600000, buffMod:{goldMult:25, dropMult:25} },
+  // ⚗️ 战斗合剂(炼金):长时(数小时)、更强、彼此互斥(同时只能 1 瓶);与盛宴/食物可叠加。mod 走扩展后的生活块。
+  { key:'flaskMight',   name:'力量合剂',   icon:'⚗️', desc:'2 小时内 +10% 攻击', flask:true,
+    cost:{ sungrass:3, iron:4, essence:30 },        minLvl:{herb:25}, action:'buff', buffKey:'lifeFlaskMight',   buffDur:7200000,  buffMod:{atkPct:10} },
+  { key:'flaskGiant',   name:'巨人合剂',   icon:'⚗️', desc:'2 小时内 +12% 生命 +6% 防御', flask:true,
+    cost:{ sungrass:3, copper:6, essence:30 },      minLvl:{herb:25}, action:'buff', buffKey:'lifeFlaskGiant',   buffDur:7200000,  buffMod:{hpPct:12, defPct:6} },
+  { key:'flaskBerserk', name:'狂战合剂',   icon:'🧪', desc:'3 小时内 +12% 攻击 +6 暴击 +12% 暴伤', flask:true,
+    cost:{ mageroyal:3, mithril:3, essence:60 },    minLvl:{herb:40, mining:40}, action:'buff', buffKey:'lifeFlaskBerserk', buffDur:10800000, buffMod:{atkPct:12, crit:6, critdPct:12} },
+  { key:'flaskStone',   name:'磐石合剂',   icon:'🧪', desc:'3 小时内 +16% 生命 +10% 防御 +6 全能', flask:true,
+    cost:{ mageroyal:3, salmon:4, essence:60 },     minLvl:{herb:40, fishing:40}, action:'buff', buffKey:'lifeFlaskStone',  buffDur:10800000, buffMod:{hpPct:16, defPct:10, vers:6} },
+  { key:'flaskMaster',  name:'大师合剂',   icon:'🌟', desc:'4 小时内 +14% 攻击 +10 精通 +15% 暴伤', flask:true,
+    cost:{ mageroyal:5, thorium:3, essence:120 },   minLvl:{herb:55, mining:55}, action:'buff', buffKey:'lifeFlaskMaster', buffDur:14400000, buffMod:{atkPct:14, mastery:10, critdPct:15} },
+  { key:'flaskUndying', name:'不灭合剂',   icon:'🌟', desc:'4 小时内 +20% 生命 +12% 防御 +6 吸血 +8 精通', flask:true,
+    cost:{ mageroyal:5, shark:3, essence:120 },     minLvl:{herb:55, fishing:55}, action:'buff', buffKey:'lifeFlaskUndying', buffDur:14400000, buffMod:{hpPct:20, defPct:12, leech:6, mastery:8} },
 ];
 
 const LIFE_SKILL_PITCH = {
@@ -268,9 +281,12 @@ function lifeCraft(recipeKey) {
     log(`✨ 熔炼 ${recipe.name},+${reward} 精华`, 'epic');
   } else if (recipe.action === 'buff') {
     const dur = lifeRecipeDuration(recipe);
+    if (recipe.flask) {   // 合剂互斥:同时只能 1 瓶(食物/盛宴不受影响,可叠加)
+      for (const r of LIFE_RECIPES) if (r.flask && r.buffKey !== recipe.buffKey) delete state.lifeBuffs[r.buffKey];
+    }
     state.lifeBuffs[recipe.buffKey] = Date.now() + dur;
     recomputeStats();
-    log(`${recipe.icon} 享用 ${recipe.name},${Math.max(1, Math.round(dur/60000))} 分钟 buff!`, 'epic');
+    log(`${recipe.icon} 享用 ${recipe.name},${lifeBuffDurText(dur)} buff!`, 'epic');
   }
   markDirty('life', 'hero');
 }
@@ -279,7 +295,7 @@ function lifeCraft(recipeKey) {
 function collectLifeMod() {
   ensureLifeState();
   const now = Date.now();
-  const out = { atkPct:0, hpPct:0, defPct:0, xpMult:0, goldMult:0, dropMult:0 };
+  const out = { atkPct:0, hpPct:0, defPct:0, critdPct:0, crit:0, leech:0, vers:0, mastery:0, regFlat:0, xpMult:0, goldMult:0, dropMult:0 };
   const powerMult = lifeBuffPowerMult();
   for (const recipe of LIFE_RECIPES) {
     if (recipe.action !== 'buff') continue;
@@ -552,6 +568,27 @@ function lifeCraftableRecipes() {
   return LIFE_RECIPES.filter(recipe => lifeCanCraft(recipe).ok);
 }
 
+/* 时长文案:>=60 分钟显示小时 */
+function lifeBuffDurText(ms) {
+  const min = Math.max(1, Math.round(ms / 60000));
+  return min >= 60 ? `${(min / 60).toFixed(min % 60 === 0 ? 0 : 1)} 小时` : `${min} 分钟`;
+}
+
+/* 生活 buff 过期 watcher:挂机时 buff 到期不会自动 recompute,这里检测生效集变化后重算
+   (同时修了原盛宴到期不刷新的小问题)。由 render.js processDirty 每帧调,仅集合变化才重算。 */
+let _lifeBuffSig = null;
+function lifeBuffTick() {
+  if (typeof state === 'undefined' || !state || !state.lifeBuffs) return;
+  const now = Date.now();
+  const sig = LIFE_RECIPES.filter(r => r.action === 'buff' && (state.lifeBuffs[r.buffKey] || 0) > now).map(r => r.buffKey).sort().join(',');
+  if (_lifeBuffSig === null) { _lifeBuffSig = sig; return; }
+  if (sig !== _lifeBuffSig) {
+    _lifeBuffSig = sig;
+    if (typeof recomputeStats === 'function') recomputeStats();
+    markDirty('hero', 'life');
+  }
+}
+
 function lifeActiveBuffEntries(now = Date.now()) {
   ensureLifeState();
   return LIFE_RECIPES
@@ -701,13 +738,14 @@ function renderLifeGatherTab(la, currentSkill, nextYieldSec) {
 function renderLifeCraftTab(activeBuffs) {
   let html = '';
   if (activeBuffs.length > 0) {
-    html += `<div class="ascend-box"><div class="detail-label">生效中的盛宴</div>
+    html += `<div class="ascend-box"><div class="detail-label">生效中的增益</div>
       <div class="life-token-row">${activeBuffs.map(x=>`<span class="life-token reward">${x.recipe.icon}${x.recipe.name} ${fmtCd(x.leftSec)}</span>`).join('')}</div>
     </div>`;
   }
   const recipeGroups = [
     { title:'✨ 熔炼台', items:LIFE_RECIPES.filter(x => x.action === 'essence') },
-    { title:'🍽️ 盛宴台', items:LIFE_RECIPES.filter(x => x.action === 'buff') },
+    { title:'🍽️ 盛宴台 (食物 · 短时,可叠加)', items:LIFE_RECIPES.filter(x => x.action === 'buff' && !x.flask) },
+    { title:'⚗️ 炼金台 (合剂 · 长时,同时仅 1 瓶)', items:LIFE_RECIPES.filter(x => x.action === 'buff' && x.flask) },
   ];
   for (const group of recipeGroups) {
     html += `<div class="ascend-box"><div class="detail-label">${group.title}</div>`;
@@ -715,7 +753,7 @@ function renderLifeCraftTab(activeBuffs) {
       const can = lifeCanCraft(recipe);
       const output = recipe.action === 'essence'
         ? `产出 ${lifeRecipeValue(recipe)} ✨精华`
-        : `持续 ${Math.max(1, Math.round(lifeRecipeDuration(recipe)/60000))} 分钟 · 强度 x${lifeBuffPowerMult().toFixed(2)}`;
+        : `持续 ${lifeBuffDurText(lifeRecipeDuration(recipe))} · 强度 x${lifeBuffPowerMult().toFixed(2)}`;
       const lvlTxt = recipe.minLvl ? Object.entries(recipe.minLvl).map(([k,v]) => `${LIFE_SKILLS[k].name}Lv.${v}`).join(' / ') : '无等级要求';
       html += `<div class="life-recipe-card${can.ok ? ' ready' : ''}">
         <div class="life-skill-top">

@@ -3016,6 +3016,7 @@ function processDirty() {
   expeditionLiveTick();
   if (typeof questLiveTick === 'function') questLiveTick();
   if (typeof paragonLiveTick === 'function') paragonLiveTick();
+  if (typeof lifeBuffTick === 'function') lifeBuffTick();
   if (isDirty('expedition')&&typeof renderExpedition==='function') { renderExpedition(); clearDirty('expedition'); }
   if (isDirty('guild')&&typeof renderGuild==='function') { renderGuild(); clearDirty('guild'); }
   if (isDirty('market')&&typeof renderMarket==='function') { renderMarket(); clearDirty('market'); }
