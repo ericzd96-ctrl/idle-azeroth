@@ -37,7 +37,7 @@ function switchSubzone(mapKey, subIdx) {
     else { state.mode = 'world'; state.towerState = null; }
   }
   if (state.mode === 'boss') {
-    if (!confirm('撤离BOSS战?')) return;
+    if (!confirm('撤离首领战?')) return;
     state.mode = 'world';
   }
   if (state.mode === 'travel') {
@@ -104,13 +104,13 @@ function bossCdSec(map) { return Math.min(3600, Math.round((map.boss.lvl || 1) *
 function challengeBoss(mapKey) {
   const map = MAPS.find(m => m.key === mapKey);
   if (!map) return;
-  if (state.hero.lvl < map.boss.lvl - 5) { log(`等级不足 (需 Lv${map.boss.lvl-5}+)`, 'bad'); return; }
+  if (state.hero.lvl < map.boss.lvl - 5) { log(`等级不足 (需 等级${map.boss.lvl-5}+)`, 'bad'); return; }
   if (state.mode === 'travel') { log('正在旅行中', 'bad'); return; }
   if (state.mode !== 'world') { log('请先结束当前战斗', 'bad'); return; }
   const cdEnd = state.bossCd[mapKey] || 0;
   const onCd = cdEnd > Date.now();
-  if (onCd && state.tickets < 1) { log('BOSS挑战冷却中,通用券不足无法跳过', 'bad'); return; }
-  if (onCd) { state.tickets -= 1; log(`⚔️ 挑战 ${map.boss.emoji}${map.boss.name}! (消耗1通用券跳过CD)`, 'epic'); }
+  if (onCd && state.tickets < 1) { log('首领挑战冷却中，通用券不足无法跳过', 'bad'); return; }
+  if (onCd) { state.tickets -= 1; log(`⚔️ 挑战 ${map.boss.emoji}${map.boss.name}! (消耗1通用券跳过冷却)`, 'epic'); }
   else { log(`⚔️ 挑战 ${map.boss.emoji}${map.boss.name}! (免费)`, 'epic'); }
   state.bossCd[mapKey] = Date.now() + bossCdSec(map) * 1000;   // 挑战即进入CD(无论胜负)
   state.currentMap = mapKey;
@@ -135,7 +135,7 @@ function enterDungeon(key) {
   if (onCd && state.tickets < 1) { log('通用券不足,去商店购买', 'bad'); return; }
   if (onCd) {
     state.tickets -= 1;
-    log(`🚪 进入 [${dg.name}] (消耗1通用券跳过CD)`, 'epic');
+    log(`🚪 进入 [${dg.name}] (消耗1通用券跳过冷却)`, 'epic');
   } else {
     log(`🚪 进入 [${dg.name}] (免费)`, 'epic');
   }
@@ -163,7 +163,7 @@ function onDungeonClear(dg) {
   if (typeof vaultAdvance === 'function') vaultAdvance('dungeon', 1);       // 每周宝库·探险
   state.dungeonCd[dg.key] = Date.now() + dg.cd * 1000;
   const lastBoss = (dg.bosses||[])[dg.bosses.length-1];
-  const finalBossName = lastBoss ? lastBoss.name : '最终BOSS';
+  const finalBossName = lastBoss ? lastBoss.name : '最终首领';
 
   // 词缀加成:越多词缀通关奖励越高(呼应"越难越值")
   const affixes = (state.dungeonState && state.dungeonState.affixes) || [];
@@ -224,7 +224,7 @@ function onDungeonClear(dg) {
     : '';
   $('dungeon-clear-text').innerHTML = `
     <div style="font-size:18px;margin:8px 0">🏆 ${dg.name} 通关!</div>
-    <div class="muted">击败了 ${finalBossName} 等 ${(dg.bosses||[]).length} 个BOSS</div>
+    <div class="muted">击败了 ${finalBossName} 等 ${(dg.bosses||[]).length} 名首领</div>
     ${affixHtml}
     <div style="margin:10px 0;text-align:left;font-size:13px">
       <div>💰 金币 +${bonusGold}</div>
@@ -251,7 +251,7 @@ function showDungeonFail() {
     : '<div class="muted">　无</div>';
   $('dungeon-fail-text').innerHTML = `
     <div style="font-size:18px;margin:8px 0">💀 ${dg.name} 挑战失败</div>
-    <div class="muted">击败了 ${allLoot.length > 0 ? '部分' : '0个'}BOSS, 已获得:</div>
+    <div class="muted">击败了 ${allLoot.length > 0 ? '部分' : '0名'}首领，已获得:</div>
     <div style="margin:10px 0;text-align:left;font-size:13px">
       ${lootHtml}
     </div>
@@ -261,7 +261,7 @@ function showDungeonFail() {
   // 失败也计算CD,防止无限刷前几波BOSS
   if (!state.dungeonCd) state.dungeonCd = {};
   state.dungeonCd[dg.key] = Date.now() + (dg.cd || 600) * 1000;
-  log(`💀 副本失败, 保留了 ${allLoot.length} 件装备 (CD已启动)`, 'bad');
+  log(`💀 副本失败，保留了 ${allLoot.length} 件装备 (冷却已启动)`, 'bad');
   leaveDungeon();
 }
 
@@ -409,12 +409,12 @@ function showOfflineModal(dt, kills, gold, xp, drops) {
 function showLevelUp() {
   const c = getCls();
   $('levelup-text').innerHTML = `
-    <div style="font-size:32px">Lv.${state.hero.lvl}</div>
+    <div style="font-size:32px">等级${state.hero.lvl}</div>
     <div class="muted" style="margin-top:6px">+5 属性点 · +1 天赋点</div>
     <div class="muted">职业: ${c.name}</div>
   `;
   $('modal-levelup').classList.add('show');
-  log(`🎉 升到 Lv.${state.hero.lvl}!`, 'good');
+  log(`🎉 升到 等级${state.hero.lvl}!`, 'good');
 }
 
 /* ---------- 大秘境 ---------- */
@@ -467,13 +467,13 @@ function makeMythicUnique(power) {
 
 /* 大秘境词缀 */
 const MYTHIC_AFFIXES = [
-  { key:'fortified',  name:'强韧',     desc:'非BOSS怪物生命+40%',               icon:'🛡️', mod:{trashHp:0.4} },
-  { key:'tyrannical', name:'残暴',     desc:'BOSS生命+30% 伤害+25%',           icon:'👹', mod:{bossHp:0.3, bossDmg:0.25} },
+  { key:'fortified',  name:'强韧',     desc:'非首领怪物生命+40%',               icon:'🛡️', mod:{trashHp:0.4} },
+  { key:'tyrannical', name:'残暴',     desc:'首领生命+30% 伤害+25%',           icon:'👹', mod:{bossHp:0.3, bossDmg:0.25} },
   { key:'bursting',   name:'崩裂',     desc:'击败怪物后对你造成当前生命5%伤害',    icon:'💥', mod:{bursting:true} },
   { key:'sanguine',   name:'血池',     desc:'怪物死亡留下血池,每秒治疗其他怪物3%HP', icon:'🩸', mod:{sanguine:true} },
   { key:'raging',     name:'暴怒',     desc:'怪物HP低于30%时伤害+50%',           icon:'😡', mod:{raging:true} },
   { key:'heArtless',  name:'无心',     desc:'你的治疗效果降低50%',               icon:'💔', mod:{healReduction:0.5} },
-  { key:'arcane',     name:'奥术',     desc:'BOSS每15秒获得一个吸收盾(15%HP)',   icon:'🔮', mod:{arcane:true} },
+  { key:'arcane',     name:'奥术',     desc:'首领每15秒获得一个吸收盾(15%生命)',   icon:'🔮', mod:{arcane:true} },
   { key:'volcanic',   name:'火山',     desc:'战斗中每8秒受到一次火山伤害',         icon:'🌋', mod:{volcanic:true} },
   { key:'ragingWinds',name:'暴风',     desc:'你的攻击速度-15%',                 icon:'💨', mod:{heroSpd:-0.15} },
   { key:'afflicted',  name:'折磨',     desc:'战斗中每5秒受到5%最大HP暗影伤害',     icon:'😈', mod:{afflicted:true} },
@@ -653,7 +653,7 @@ function onMythicBossKill() {
   state.gold += gold;
   if (typeof progressionOnGoldGain === 'function') progressionOnGoldGain(gold);
 
-  const bossName = currentBoss ? currentBoss.emoji + currentBoss.name : 'BOSS';
+  const bossName = currentBoss ? currentBoss.emoji + currentBoss.name : '首领';
   log(`👑 击败 ${bossName}! ✨+${essence} 💎+1 💰+${gold}`, 'legend');
 }
 

@@ -14,17 +14,17 @@ const MOUNTS = [
   { key:'horse_brown',  name:'棕马',     icon:'🐴', tier:'common',   faction:'alliance', mod:{spdPct:5}, src:'联盟起始坐骑' },
   { key:'wolf_gray',    name:'灰狼',     icon:'🐺', tier:'common',   faction:'horde',    mod:{spdPct:5}, src:'部落起始坐骑' },
   // 优秀
-  { key:'raptor',       name:'迅猛龙',   icon:'🦖', tier:'uncommon', mod:{spdPct:8, critdPct:5}, src:'副本BOSS 击杀(2% 概率)' },
-  { key:'kodo',         name:'科多兽',   icon:'🦬', tier:'uncommon', mod:{hpPct:8, defPct:3},    src:'世界Boss 击杀(3% 概率)' },
+  { key:'raptor',       name:'迅猛龙',   icon:'🦖', tier:'uncommon', mod:{spdPct:8, critdPct:5}, src:'副本首领击杀(2% 概率)' },
+  { key:'kodo',         name:'科多兽',   icon:'🦬', tier:'uncommon', mod:{hpPct:8, defPct:3},    src:'世界首领击杀(3% 概率)' },
   { key:'sabertooth',   name:'剑齿虎',   icon:'🐯', tier:'uncommon', mod:{atkPct:5, crit:3},     src:'声望崇敬 (任意阵营)' },
   // 精良
-  { key:'gryphon',      name:'狮鹫',     icon:'🦅', tier:'rare', mod:{spdPct:12, atkPct:5}, src:'累计击败 100 BOSS' },
+  { key:'gryphon',      name:'狮鹫',     icon:'🦅', tier:'rare', mod:{spdPct:12, atkPct:5}, src:'累计击败 100 名首领' },
   { key:'wyvern',       name:'双足飞龙', icon:'🦇', tier:'rare', mod:{spdPct:12, hpPct:5},  src:'觉醒 5 阶' },
   { key:'mechastrider', name:'机械鸵鸟', icon:'🤖', tier:'rare', mod:{spdPct:10, mastery:5}, src:'塔商店 / 500🪙' },
   // 史诗
   { key:'protoDrake',   name:'原始幼龙', icon:'🐉', tier:'epic', mod:{spdPct:15, hpPct:10, atkPct:5}, src:'无尽塔 第 50 层' },
   { key:'cloudSerpent', name:'青龙',     icon:'🐍', tier:'epic', mod:{spdPct:15, atkPct:10, critdPct:5}, src:'觉醒 10 阶' },
-  { key:'shadowHawk',   name:'影月战鹰', icon:'🦉', tier:'epic', mod:{spdPct:15, vers:5, leech:3}, src:'世界Boss 累计 50 次' },
+  { key:'shadowHawk',   name:'影月战鹰', icon:'🦉', tier:'epic', mod:{spdPct:15, vers:5, leech:3}, src:'世界首领累计 50 次' },
   // 传说
   { key:'invincible',   name:'无敌座驾', icon:'🔥', tier:'legend', mod:{spdPct:20, atkPct:15, hpPct:15, leech:5}, src:'无尽塔 第 100 层' },
   { key:'mimiron',      name:'米米隆头颅',icon:'⚙️', tier:'legend', mod:{spdPct:20, hpPct:20, defPct:10, mastery:10}, src:'觉醒 25 阶' },

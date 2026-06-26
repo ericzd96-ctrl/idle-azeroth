@@ -19,11 +19,11 @@ const ARENA_TIERS = [
 ];
 
 const ARENA_VENDOR = [
-  { key:'wpn',  name:'PvP 武器精通', icon:'🗡️', desc:'+1% 攻击 / 级', stat:'atkPct',  per:1, max:20, baseCost:2000 },
-  { key:'res',  name:'PvP 韧性',     icon:'🛡️', desc:'+1% 生命 / 级', stat:'hpPct',   per:1, max:20, baseCost:2000 },
-  { key:'bul',  name:'PvP 壁垒',     icon:'🧱', desc:'+2% 防御 / 级', stat:'defPct',  per:2, max:10, baseCost:3000 },
-  { key:'let',  name:'PvP 致命',     icon:'💥', desc:'+2% 暴伤 / 级', stat:'critdPct',per:2, max:15, baseCost:2500 },
-  { key:'ver',  name:'PvP 全能',     icon:'✴️', desc:'+1 全能 / 级',  stat:'vers',    per:1, max:10, baseCost:4000 },
+  { key:'wpn',  name:'角斗武器精通', icon:'🗡️', desc:'+1% 攻击 / 级', stat:'atkPct',  per:1, max:20, baseCost:2000 },
+  { key:'res',  name:'角斗韧性',     icon:'🛡️', desc:'+1% 生命 / 级', stat:'hpPct',   per:1, max:20, baseCost:2000 },
+  { key:'bul',  name:'角斗壁垒',     icon:'🧱', desc:'+2% 防御 / 级', stat:'defPct',  per:2, max:10, baseCost:3000 },
+  { key:'let',  name:'角斗致命',     icon:'💥', desc:'+2% 暴伤 / 级', stat:'critdPct',per:2, max:15, baseCost:2500 },
+  { key:'ver',  name:'角斗全能',     icon:'✴️', desc:'+1 全能 / 级',  stat:'vers',    per:1, max:10, baseCost:4000 },
 ];
 
 const ARENA_ARSENAL = [
@@ -605,7 +605,7 @@ function arenaFight(ranked) {
         tierUpTxt = `🎖️ 晋级【${after.icon}${after.name}】段位!`;
         if (typeof mountOnArenaTier === 'function') mountOnArenaTier(after.key);   // 段位坐骑
         const rewardTxt = arenaClaimTierReward(after);
-        log(`${tierUpTxt}获得新的 PvP 被动加成`, 'legend');
+        log(`${tierUpTxt}获得新的竞技场被动加成`, 'legend');
         if (rewardTxt) {
           bonusTxt = `晋级奖励: ${rewardTxt}`;
           log(`🎁 ${bonusTxt}`, 'good');
@@ -780,7 +780,7 @@ function arenaBuy(key) {
   if (state.honor < cost) { log(`荣誉不足(需 ${cost}🏅)`, 'bad'); return; }
   state.honor -= cost;
   a.vendor[key] = cur + 1;
-  log(`🛒 购买【${item.name}】Lv.${cur + 1} · -${cost}🏅`, 'good');
+  log(`🛒 购买【${item.name}】等级${cur + 1} · -${cost}🏅`, 'good');
   recomputeStats();
   markDirty('arena', 'hero');
 }
@@ -795,7 +795,7 @@ function arenaBuyArsenal(key) {
   if (a.seals < cost) { log(`征服印记不足(需 ${cost}🪙)`, 'bad'); return; }
   a.seals -= cost;
   a.arsenal[key] = cur + 1;
-  log(`⚒️ 强化【${item.name}】Lv.${cur + 1} · -${cost}🪙`, 'good');
+  log(`⚒️ 强化【${item.name}】等级${cur + 1} · -${cost}🪙`, 'good');
   recomputeStats();
   markDirty('arena', 'hero');
 }
@@ -967,7 +967,7 @@ function renderArena() {
         <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:180px">
           <div style="font-size:20px">${arenaIconHtml(item.icon, 20, item.name, 'spell_holy_powerinfusion')}</div>
           <div style="flex:1;min-width:0">
-            <div style="font-weight:bold;word-break:break-word">${item.name} <span class="muted" style="font-size:10px">Lv.${lv}/${item.max}</span></div>
+            <div style="font-weight:bold;word-break:break-word">${item.name} <span class="muted" style="font-size:10px">等级${lv}/${item.max}</span></div>
             <div class="muted" style="font-size:10px;word-break:break-word">${item.desc}</div>
           </div>
         </div>
@@ -991,7 +991,7 @@ function renderArena() {
         <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:180px">
           <div style="font-size:20px">${arenaIconHtml(item.icon, 20, item.name, 'achievement_arena_3v3_9')}</div>
           <div style="flex:1;min-width:0">
-            <div style="font-weight:bold;word-break:break-word">${item.name} <span class="muted" style="font-size:10px">Lv.${lv}/${item.max}</span></div>
+            <div style="font-weight:bold;word-break:break-word">${item.name} <span class="muted" style="font-size:10px">等级${lv}/${item.max}</span></div>
             <div class="muted" style="font-size:10px;word-break:break-word">${item.desc}</div>
           </div>
         </div>

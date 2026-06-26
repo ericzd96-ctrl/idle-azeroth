@@ -96,7 +96,7 @@ const CLASSES = {
     baseAttrs:{str:22, agi:12, int:5, spi:8, sta:18},
     baseStats:{hpMax:80, mpMax:100, atk:8, def:6, crit:5, critd:150, spd:1.0, reg:1},
     skills:{
-      interrupt:{name:"拳击",icon:"👊",desc:"打断BOSS施法,5秒CD",mp:10,type:"interrupt",cd:5,unlockLvl:1},
+      interrupt:{name:"拳击",icon:"👊",desc:"打断首领施法，冷却5秒",mp:10,type:"interrupt",cd:5,unlockLvl:1},
       cleave:       {name:'顺劈斩', icon:'🗡️', desc:'造成3倍攻击伤害', mp:20, type:'dmg', mul:3, unlockLvl:1},
       thunderClap:  {name:'雷霆一击', icon:'⚡', desc:'2倍攻击,降低敌人攻速', mp:25, type:'dmg', mul:2, slow:true, unlockLvl:12},
       battleShout:  {name:'战斗怒吼', icon:'📯', desc:'15秒攻击+30%', mp:30, type:'buff', buff:'battleShout', duration:15000, unlockLvl:22},
@@ -114,33 +114,33 @@ const CLASSES = {
       {key:'arms', name:'武器', icon:'⚔️', masteryDesc:'致死打击伤害 +2%/精通', talents:[
         {key:'致命武器_9afo', name:'致命武器', desc:'攻击 +1%/层', max:5, mod:{atkPct:1}},
         {key:'残忍_s8po', name:'残忍', desc:'暴击 +1.5%/层', max:5, mod:{crit:1.5}},
-        {key:'战术大师_awyh', name:'战术大师', desc:'技能CD +4%/层', max:3, mod:{cdReduction:4}},
+        {key:'战术大师_awyh', name:'战术大师', desc:'技能冷却 +4%/层', max:3, mod:{cdReduction:4}},
         {key:'武器精通_ixxe', name:'武器精通', desc:'额外攻击 +1%/层', max:5, mod:{extraAtk:2}},
         {key:'破甲_9crt', name:'破甲', desc:'攻击 +1%/层 · 斩杀加成 +3%/层', max:3, mod:{atkPct:1,executeBonus:3}},
         {key:'致死打击_gtmg', name:'致死打击', desc:'解锁: 致死打击', max:1, req:10, unlockSkill:'mortalStrike'},
         {key:'处刑者_mq9q', name:'处刑者', desc:'斩杀加成 +5%/层', max:5, req:15, mod:{executeBonus:5}},
         {key:'剑刃风暴_r5y7', name:'剑刃风暴', desc:'攻速 +5%/层 · 暴伤 +6%/层', max:5, req:18, mod:{spdPct:5,critdPct:6}},
         {key:'致命势头_rhev', name:'致命势头', desc:'攻击 +1%/层 · 斩杀加成 +4%/层', max:3, req:22, mod:{atkPct:1,executeBonus:4}},
-        {key:'武器宗师_9e33', name:'武器宗师', desc:'暴伤 +8%/层 · 技能CD +3%/层', max:5, req:25, mod:{critdPct:8,cdReduction:3}},
+        {key:'武器宗师_9e33', name:'武器宗师', desc:'暴伤 +8%/层 · 技能冷却 +3%/层', max:5, req:25, mod:{critdPct:8,cdReduction:3}},
         {key:'处决_wz7o', name:'处决', desc:'斩杀加成 +6%/层 · 暴击 +2%/层', max:5, req:28, mod:{executeBonus:6,crit:2}},
         {key:'无尽之怒_kl3i', name:'无尽之怒', desc:'攻击 +2%/层 · 攻速 +4%/层', max:5, req:30, mod:{atkPct:2,spdPct:4}},
-        {key:'破甲专精_fqbq', name:'破甲专精', desc:'额外攻击 +2%/层 · 技能CD +4%/层', max:3, req:33, mod:{extraAtk:3,cdReduction:4}},
+        {key:'破甲专精_fqbq', name:'破甲专精', desc:'额外攻击 +2%/层 · 技能冷却 +4%/层', max:3, req:33, mod:{extraAtk:3,cdReduction:4}},
         {key:'致命专注_szok', name:'致命专注', desc:'暴伤 +12%/层 · 精通 +2%/层', max:3, req:36, mod:{critdPct:12,mastery:2}}
       ,
-{key:'tal_3cuo6h', name:'千钧之力', desc:'攻击 +2%/层 · 力量 +6%/层', max:5,req:38,mod:{atkPct:2,strPct:6}},{key:'tal_h0awm3', name:'武器大师', desc:'额外攻击 +1%/层 · 技能CD +5%/层', max:5,req:42,mod:{extraAtk:5,cdReduction:5}},{key:'tal_yq7lc3', name:'战神', desc:'攻击 +1%/层 · 斩杀加成 +8%/层 · 精通 +2%/层', max:3,req:45,mod:{atkPct:4,executeBonus:8,mastery:2}}]},
+{key:'tal_3cuo6h', name:'千钧之力', desc:'攻击 +2%/层 · 力量 +6%/层', max:5,req:38,mod:{atkPct:2,strPct:6}},{key:'tal_h0awm3', name:'武器大师', desc:'额外攻击 +1%/层 · 技能冷却 +5%/层', max:5,req:42,mod:{extraAtk:5,cdReduction:5}},{key:'tal_yq7lc3', name:'战神', desc:'攻击 +1%/层 · 斩杀加成 +8%/层 · 精通 +2%/层', max:3,req:45,mod:{atkPct:4,executeBonus:8,mastery:2}}]},
       {key:'fury', name:'狂暴', icon:'🔥', masteryDesc:'嗜血吸血效果 +4%/精通', talents:[
         {key:'激怒_n0b6', name:'激怒', desc:'攻速 +5%/层', max:5, mod:{spdPct:5}},
         {key:'夺命_1b6c', name:'夺命', desc:'暴伤 +8%/层', max:5, mod:{critdPct:8}},
         {key:'血之狂热_nf2d', name:'血之狂热', desc:'攻速 +4%/层', max:3, mod:{spdPct:4}},
         {key:'狂战士_n468', name:'狂战士', desc:'攻击 +1%/层 · 暴击 +1%/层', max:5, mod:{atkPct:1,crit:1}},
-        {key:'怒气爆发_3ytl', name:'怒气爆发', desc:'技能CD +5%/层', max:3, mod:{cdReduction:5}},
+        {key:'怒气爆发_3ytl', name:'怒气爆发', desc:'技能冷却 +5%/层', max:3, mod:{cdReduction:5}},
         {key:'嗜血_vq9y', name:'嗜血', desc:'解锁: 嗜血', max:1, req:10, unlockSkill:'bloodthirst'},
         {key:'泰坦之握_k9fr', name:'泰坦之握', desc:'攻击 +2%/层', max:5, req:15, mod:{atkPct:2}},
         {key:'鲁莽_343i', name:'鲁莽', desc:'暴击 +2%/层 · 攻速 +3%/层', max:5, req:18, mod:{crit:2,spdPct:3}},
         {key:'血之渴望_jmmi', name:'血之渴望', desc:'吸血 +3%/层 · 额外攻击 +1%/层', max:3, req:22, mod:{leech:3,extraAtk:2}},
         {key:'狂怒_w0x9', name:'狂怒', desc:'攻击 +1%/层 · 暴伤 +5%/层', max:5, req:25, mod:{atkPct:1,critdPct:5}},
         {key:'斩杀强化_3d7b', name:'斩杀强化', desc:'斩杀加成 +5%/层 · 减耗 +4%/层', max:5, req:28, mod:{executeBonus:5,costReduction:4}},
-        {key:'无尽嗜血_2yvj', name:'无尽嗜血', desc:'吸血 +4%/层 · 技能CD +3%/层', max:5, req:30, mod:{leech:4,cdReduction:3}},
+        {key:'无尽嗜血_2yvj', name:'无尽嗜血', desc:'吸血 +4%/层 · 技能冷却 +3%/层', max:5, req:30, mod:{leech:4,cdReduction:3}},
         {key:'狂暴之力_glx9', name:'狂暴之力', desc:'额外攻击 +1%/层 · 攻速 +5%/层', max:3, req:33, mod:{extraAtk:4,spdPct:5}},
         {key:'狂战士之魂_8my2', name:'狂战士之魂', desc:'攻击 +1%/层 · 精通 +2%/层', max:3, req:36, mod:{atkPct:3,mastery:2}}
       ,
@@ -158,7 +158,7 @@ const CLASSES = {
         {key:'铁壁_j6ev', name:'铁壁', desc:'防御 +7%/层 · 生命 +3%/层', max:5, req:25, mod:{defPct:7,hpPct:3}},
         {key:'圣光壁垒_3f09', name:'钢铁壁垒', desc:'生命 +6%/层 · 全能 +3%/层', max:5, req:28, mod:{hpPct:6,vers:3}},
         {key:'守护_2cm4', name:'守护', desc:'防御 +8%/层 · 反伤 +3%/层', max:5, req:30, mod:{defPct:8,reflectDmg:3}},
-        {key:'防护大师_ccej', name:'防护大师', desc:'技能CD +5%/层 · 防御 +5%/层', max:3, req:33, mod:{cdReduction:5,defPct:5}},
+        {key:'防护大师_ccej', name:'防护大师', desc:'技能冷却 +5%/层 · 防御 +5%/层', max:3, req:33, mod:{cdReduction:5,defPct:5}},
         {key:'防护宗师_k7w0', name:'防护宗师', desc:'生命 +10%/层 · 精通 +2%/层', max:3, req:36, mod:{hpPct:10,mastery:2}}
       ,
 {key:'tal_pomgzm', name:'铜墙铁壁', desc:'防御 +8%/层 · 生命 +5%/层', max:5,req:38,mod:{defPct:8,hpPct:5}},{key:'tal_7f5oiq', name:'坚不可摧', desc:'耐力 +8%/层 · 反伤 +5%/层', max:5,req:42,mod:{staPct:8,reflectDmg:5}},{key:'tal_ikwcqv', name:'战神', desc:'生命 +12%/层 · 全能 +6%/层 · 精通 +2%/层', max:3,req:45,mod:{hpPct:12,vers:6,mastery:2}},
@@ -173,7 +173,7 @@ const CLASSES = {
     baseAttrs:{str:5, agi:10, int:22, spi:14, sta:12},
     baseStats:{hpMax:50, mpMax:80, atk:6, def:2, crit:8, critd:150, spd:1.1, reg:1},
     skills:{
-      interrupt:{name:"法术反制",icon:"✋",desc:"打断BOSS施法,5秒CD",mp:15,type:"interrupt",cd:5,unlockLvl:1},
+      interrupt:{name:"法术反制",icon:"✋",desc:"打断首领施法，冷却5秒",mp:15,type:"interrupt",cd:5,unlockLvl:1},
       arcane:       {name:'奥术飞弹', icon:'✨', desc:'造成3倍攻击伤害', mp:15, type:'dmg', mul:3, unlockLvl:1,castTime:1.5},
       arcaneExplosion:{name:'奥术爆炸', icon:'💥', desc:'3倍攻击范围伤害', mp:30, type:'dmg', mul:3, unlockLvl:14,castTime:0},
       fireball:     {name:'火球术',   icon:'🔥', desc:'3倍攻击,引燃灼烧', mp:25, type:'dmg', mul:3, dot:true, unlockLvl:12,castTime:2.5},
@@ -195,26 +195,26 @@ const CLASSES = {
         {key:'奥术强化_2ldc', name:'奥术强化', desc:'攻击 +1%/层', max:5, mod:{atkPct:1}},
         {key:'节能施法_bd03', name:'节能施法', desc:'减耗 +5%/层', max:3, mod:{costReduction:5}},
         {key:'暴风雪_wazr', name:'暴风雪', desc:'解锁: 暴风雪', max:1, req:10, unlockSkill:'blizzard'},
-        {key:'奥术涌动_vju1', name:'奥术涌动', desc:'攻击 +2%/层 · 技能CD +3%/层', max:5, req:15, mod:{atkPct:2,cdReduction:3}},
+        {key:'奥术涌动_vju1', name:'奥术涌动', desc:'攻击 +2%/层 · 技能冷却 +3%/层', max:5, req:15, mod:{atkPct:2,cdReduction:3}},
         {key:'奥术回响_b8cj', name:'奥术回响', desc:'额外攻击 +1%/层 · 暴伤 +6%/层', max:5, req:18, mod:{extraAtk:2,critdPct:6}},
-        {key:'超凡入圣_ki0e', name:'超凡入圣', desc:'智力 +6%/层 · 技能CD +4%/层', max:3, req:22, mod:{intPct:6,cdReduction:4}},
-        {key:'魔网_xhrf', name:'魔网', desc:'技能CD +5%/层 · 攻速 +4%/层', max:5, req:25, mod:{cdReduction:5,spdPct:4}},
+        {key:'超凡入圣_ki0e', name:'超凡入圣', desc:'智力 +6%/层 · 技能冷却 +4%/层', max:3, req:22, mod:{intPct:6,cdReduction:4}},
+        {key:'魔网_xhrf', name:'魔网', desc:'技能冷却 +5%/层 · 攻速 +4%/层', max:5, req:25, mod:{cdReduction:5,spdPct:4}},
         {key:'法力专家_bk0b', name:'法力专家', desc:'减耗 +5%/层 · 攻击 +1%/层', max:5, req:28, mod:{costReduction:5,atkPct:1}},
         {key:'奥术之力_25md', name:'奥术之力', desc:'攻击 +2%/层 · 暴伤 +8%/层', max:5, req:30, mod:{atkPct:2,critdPct:8}},
         {key:'灵风_qnj3', name:'灵风', desc:'攻速 +6%/层 · 减耗 +4%/层', max:3, req:33, mod:{spdPct:6,costReduction:4}},
         {key:'奥术宗师_dh7l', name:'奥术宗师', desc:'攻击 +1%/层 · 精通 +2%/层', max:3, req:36, mod:{atkPct:3,mastery:2}}
       ,
-{key:'tal_vy68we', name:'奥术洪流', desc:'攻击 +2%/层 · 减耗 +5%/层', max:5,req:38,mod:{atkPct:2,costReduction:5}},{key:'tal_uw6vj0', name:'法力风暴', desc:'智力 +8%/层 · 技能CD +5%/层', max:5,req:42,mod:{intPct:8,cdReduction:5}},{key:'tal_ytx7oz', name:'大法师', desc:'攻击 +1%/层 · 暴伤 +10%/层 · 精通 +2%/层', max:3,req:45,mod:{atkPct:4,critdPct:10,mastery:2}}]},
+{key:'tal_vy68we', name:'奥术洪流', desc:'攻击 +2%/层 · 减耗 +5%/层', max:5,req:38,mod:{atkPct:2,costReduction:5}},{key:'tal_uw6vj0', name:'法力风暴', desc:'智力 +8%/层 · 技能冷却 +5%/层', max:5,req:42,mod:{intPct:8,cdReduction:5}},{key:'tal_ytx7oz', name:'大法师', desc:'攻击 +1%/层 · 暴伤 +10%/层 · 精通 +2%/层', max:3,req:45,mod:{atkPct:4,critdPct:10,mastery:2}}]},
       {key:'fire', name:'火焰', icon:'🔥', masteryDesc:'火球术灼烧伤害 +4%/精通', talents:[
         {key:'引燃_xwmm', name:'引燃', desc:'攻击 +1%/层', max:5, mod:{atkPct:1}},
         {key:'临界点_of9n', name:'临界点', desc:'暴击 +1.5%/层', max:5, mod:{crit:1.5}},
         {key:'灼烧之魂_1cba', name:'灼烧之魂', desc:'暴伤 +8%/层', max:3, mod:{critdPct:8}},
         {key:'烈焰之心_qe0c', name:'烈焰之心', desc:'持续伤害 +5%/层', max:5, mod:{dotBonus:5}},
-        {key:'火焰冲击_o93d', name:'火焰冲击', desc:'技能CD +4%/层', max:3, mod:{cdReduction:4}},
+        {key:'火焰冲击_o93d', name:'火焰冲击', desc:'技能冷却 +4%/层', max:3, mod:{cdReduction:4}},
         {key:'火球术_wshg', name:'火球术', desc:'解锁: 火球术', max:1, req:10, unlockSkill:'fireball'},
         {key:'燃烧_ddyk', name:'燃烧', desc:'攻击 +2%/层', max:5, req:15, mod:{atkPct:2}},
         {key:'永恒烈焰_9e2d', name:'永恒烈焰', desc:'持续伤害 +6%/层 · 暴伤 +5%/层', max:5, req:18, mod:{dotBonus:6,critdPct:5}},
-        {key:'凤凰烈焰_h7gd', name:'凤凰烈焰', desc:'暴击 +2%/层 · 技能CD +3%/层', max:3, req:22, mod:{crit:2,cdReduction:3}},
+        {key:'凤凰烈焰_h7gd', name:'凤凰烈焰', desc:'暴击 +2%/层 · 技能冷却 +3%/层', max:3, req:22, mod:{crit:2,cdReduction:3}},
         {key:'灼热_4nud', name:'灼热', desc:'攻击 +1%/层 · 吸血 +2%/层', max:5, req:25, mod:{atkPct:1,leech:2}},
         {key:'焦灼_fslr', name:'焦灼', desc:'斩杀加成 +5%/层 · 暴伤 +7%/层', max:5, req:28, mod:{executeBonus:5,critdPct:7}},
         {key:'炎爆_m7ik', name:'炎爆', desc:'攻击 +2%/层 · 暴击 +2%/层', max:5, req:30, mod:{atkPct:2,crit:2}},
@@ -232,7 +232,7 @@ const CLASSES = {
         {key:'深度冻结_ljp1', name:'深度冻结', desc:'暴伤 +10%/层', max:5, req:15, mod:{critdPct:10}},
         {key:'冰川_evvy', name:'冰川', desc:'防御 +4%/层 · 全能 +2%/层', max:5, req:18, mod:{defPct:4,vers:2}},
         {key:'寒冬_nnx5', name:'寒冬', desc:'攻击 +1%/层 · 暴击 +1.5%/层', max:3, req:22, mod:{atkPct:1,crit:1.5}},
-        {key:'冰霜之咬_xdgt', name:'冰霜之咬', desc:'技能CD +4%/层 · 暴伤 +6%/层', max:5, req:25, mod:{cdReduction:4,critdPct:6}},
+        {key:'冰霜之咬_xdgt', name:'冰霜之咬', desc:'技能冷却 +4%/层 · 暴伤 +6%/层', max:5, req:25, mod:{cdReduction:4,critdPct:6}},
         {key:'急冻_d4uy', name:'急冻', desc:'额外攻击 +2%/层 · 攻击 +1%/层', max:5, req:28, mod:{extraAtk:3,atkPct:1}},
         {key:'零度_vil0', name:'零度', desc:'暴击 +2.5%/层 · 减耗 +4%/层', max:5, req:30, mod:{crit:2.5,costReduction:4}},
         {key:'冰封_11lc', name:'冰封', desc:'防御 +6%/层 · 全能 +3%/层', max:3, req:33, mod:{defPct:6,vers:3}},
@@ -249,7 +249,7 @@ const CLASSES = {
     baseAttrs:{str:6, agi:8, int:20, spi:18, sta:13},
     baseStats:{hpMax:55, mpMax:90, atk:5, def:2, crit:5, critd:150, spd:0.9, reg:2},
     skills:{
-      interrupt:{name:"沉默",icon:"🤫",desc:"打断BOSS施法,5秒CD",mp:12,type:"interrupt",cd:5,unlockLvl:1},
+      interrupt:{name:"沉默",icon:"🤫",desc:"打断首领施法，冷却5秒",mp:12,type:"interrupt",cd:5,unlockLvl:1},
       smite:      {name:'惩击',     icon:'✝️', desc:'2倍神圣伤害', mp:15, type:'dmg', mul:2, unlockLvl:1,castTime:1.5},
       shadowWord: {name:'暗言术·痛',icon:'🌑', desc:'3倍攻击,持续暗影伤害', mp:20, type:'dmg', mul:3, dot:true, unlockLvl:12,castTime:0},
       shield:     {name:'真言术盾', icon:'🛡️', desc:'15秒防御+50%', mp:30, type:'buff', buff:'shield', duration:15000,castTime:0},
@@ -269,7 +269,7 @@ const CLASSES = {
         {key:'心灵强化_zcy9', name:'心灵强化', desc:'智力 +5%/层', max:5, mod:{intPct:5}},
         {key:'心灵之火_jxpm', name:'心灵之火', desc:'防御 +6%/层', max:3, mod:{defPct:6}},
         {key:'意志之力_234q', name:'意志之力', desc:'全能 +3%/层', max:5, mod:{vers:3}},
-        {key:'启迪_4qwr', name:'启迪', desc:'技能CD +3%/层', max:3, mod:{cdReduction:3}},
+        {key:'启迪_4qwr', name:'启迪', desc:'技能冷却 +3%/层', max:3, mod:{cdReduction:3}},
         {key:'真言术盾_4ecx', name:'真言术盾', desc:'解锁: 真言术盾', max:1, req:10, unlockSkill:'shield'},
         {key:'救赎_5a4x', name:'救赎', desc:'攻击 +2%/层', max:5, req:15, mod:{atkPct:2}},
         {key:'灵魂之壳_4vdj', name:'灵魂之壳', desc:'防御 +5%/层 · 精神 +3%/层', max:5, req:18, mod:{defPct:5,spiPct:3}},
@@ -277,10 +277,10 @@ const CLASSES = {
         {key:'屏障_69ik', name:'屏障', desc:'防御 +6%/层 · 全能 +2%/层', max:5, req:25, mod:{defPct:6,vers:2}},
         {key:'救赎之魂_bl9j', name:'救赎之魂', desc:'治疗 +6%/层 · 回复 +3%/层', max:5, req:28, mod:{healBonus:6,regFlat:3}},
         {key:'意志_qvaw', name:'意志', desc:'生命 +6%/层 · 治疗 +5%/层', max:5, req:30, mod:{hpPct:6,healBonus:5}},
-        {key:'戒律之力_31no', name:'戒律之力', desc:'技能CD +5%/层 · 攻击 +1%/层', max:3, req:33, mod:{cdReduction:5,atkPct:1}},
+        {key:'戒律之力_31no', name:'戒律之力', desc:'技能冷却 +5%/层 · 攻击 +1%/层', max:3, req:33, mod:{cdReduction:5,atkPct:1}},
         {key:'戒律师宗_0txl', name:'戒律师宗', desc:'治疗 +10%/层 · 精通 +2%/层', max:3, req:36, mod:{healBonus:10,mastery:2}}
       ,
-{key:'tal_6ur2ah', name:'圣光庇护', desc:'防御 +8%/层 · 治疗 +5%/层', max:5,req:38,mod:{defPct:8,healBonus:5}},{key:'tal_tgaqq3', name:'天使', desc:'精神 +8%/层 · 治疗 +7%/层', max:5,req:42,mod:{spiPct:8,healBonus:7}},{key:'tal_gtapc7', name:'大祭司', desc:'治疗 +15%/层 · 技能CD +5%/层 · 精通 +2%/层', max:3,req:45,mod:{healBonus:15,cdReduction:5,mastery:2}}]},
+{key:'tal_6ur2ah', name:'圣光庇护', desc:'防御 +8%/层 · 治疗 +5%/层', max:5,req:38,mod:{defPct:8,healBonus:5}},{key:'tal_tgaqq3', name:'天使', desc:'精神 +8%/层 · 治疗 +7%/层', max:5,req:42,mod:{spiPct:8,healBonus:7}},{key:'tal_gtapc7', name:'大祭司', desc:'治疗 +15%/层 · 技能冷却 +5%/层 · 精通 +2%/层', max:3,req:45,mod:{healBonus:15,cdReduction:5,mastery:2}}]},
       {key:'holy', name:'神圣', icon:'✝️', masteryDesc:'治疗术回复量 +5%/精通', talents:[
         {key:'光明_uz4j', name:'光明', desc:'精神 +5%/层', max:5, mod:{spiPct:5}},
         {key:'神性_6o1u', name:'神性', desc:'智力 +5%/层', max:5, mod:{intPct:5}},
@@ -294,17 +294,17 @@ const CLASSES = {
         {key:'圣光_5dw8', name:'圣光', desc:'生命 +6%/层 · 回复 +2%/层', max:5, req:25, mod:{hpPct:6,regFlat:2}},
         {key:'圣疗_1dq5', name:'圣疗', desc:'治疗 +8%/层 · 精神 +3%/层', max:5, req:28, mod:{healBonus:8,spiPct:3}},
         {key:'神圣_2532', name:'神圣', desc:'生命 +7%/层 · 治疗 +5%/层', max:5, req:30, mod:{hpPct:7,healBonus:5}},
-        {key:'圣光大师_tci1', name:'圣光大师', desc:'技能CD +4%/层 · 治疗 +5%/层', max:3, req:33, mod:{cdReduction:4,healBonus:5}},
+        {key:'圣光大师_tci1', name:'圣光大师', desc:'技能冷却 +4%/层 · 治疗 +5%/层', max:3, req:33, mod:{cdReduction:4,healBonus:5}},
         {key:'神圣宗师_33ld', name:'神圣宗师', desc:'治疗 +12%/层 · 精通 +2%/层', max:3, req:36, mod:{healBonus:12,mastery:2}}
       ,
 {key:'tal_o3gedr', name:'神圣眷顾', desc:'治疗 +8%/层 · 生命 +5%/层', max:5,req:38,mod:{healBonus:8,hpPct:5}},{key:'tal_1nketb', name:'永恒之光', desc:'精神 +8%/层 · 回复 +3%/层', max:5,req:42,mod:{spiPct:8,regFlat:3}},{key:'tal_06hcy6', name:'大祭司', desc:'治疗 +15%/层 · 全能 +5%/层 · 精通 +2%/层', max:3,req:45,mod:{healBonus:15,vers:5,mastery:2}},
-{key:'tal_xwcf0i', name:'圣光洗礼', desc:'治疗 +8%/层 · 精神 +5%/层', max:5,req:38,mod:{healBonus:8,spiPct:5}},{key:'tal_2pupt2', name:'黎明之光', desc:'生命 +8%/层 · 治疗 +7%/层', max:5,req:42,mod:{hpPct:8,healBonus:7}},{key:'tal_whu9yf', name:'圣光化身', desc:'治疗 +15%/层 · 技能CD +5%/层 · 精通 +2%/层', max:3,req:45,mod:{healBonus:15,cdReduction:5,mastery:2}}]},
+{key:'tal_xwcf0i', name:'圣光洗礼', desc:'治疗 +8%/层 · 精神 +5%/层', max:5,req:38,mod:{healBonus:8,spiPct:5}},{key:'tal_2pupt2', name:'黎明之光', desc:'生命 +8%/层 · 治疗 +7%/层', max:5,req:42,mod:{hpPct:8,healBonus:7}},{key:'tal_whu9yf', name:'圣光化身', desc:'治疗 +15%/层 · 技能冷却 +5%/层 · 精通 +2%/层', max:3,req:45,mod:{healBonus:15,cdReduction:5,mastery:2}}]},
       {key:'shadow', name:'暗影', icon:'🌑', masteryDesc:'心灵震爆伤害 +3%/精通', talents:[
         {key:'暗影成型_dje7', name:'暗影成型', desc:'攻击 +1%/层', max:5, mod:{atkPct:1}},
         {key:'吸血鬼之触_jdbz', name:'吸血鬼之触', desc:'暴伤 +8%/层', max:5, mod:{critdPct:8}},
         {key:'黑暗思维_mlvw', name:'黑暗思维', desc:'暴击 +2%/层', max:3, mod:{crit:2}},
         {key:'暗影之力_kjt8', name:'暗影之力', desc:'持续伤害 +5%/层', max:5, mod:{dotBonus:5}},
-        {key:'心灵尖刺_kji8', name:'心灵尖刺', desc:'技能CD +4%/层', max:3, mod:{cdReduction:4}},
+        {key:'心灵尖刺_kji8', name:'心灵尖刺', desc:'技能冷却 +4%/层', max:3, mod:{cdReduction:4}},
         {key:'心灵震爆_47e3', name:'心灵震爆', desc:'解锁: 心灵震爆', max:1, req:10, unlockSkill:'mindBlast'},
         {key:'虚空形态_18n3', name:'虚空形态', desc:'攻击 +2%/层', max:5, req:15, mod:{atkPct:2}},
         {key:'暗影魔_ylie', name:'暗影魔', desc:'攻击 +1%/层 · 吸血 +2%/层', max:5, req:18, mod:{atkPct:1,leech:2}},
@@ -312,7 +312,7 @@ const CLASSES = {
         {key:'疯狂_bowy', name:'疯狂', desc:'攻击 +1%/层 · 攻速 +3%/层', max:5, req:25, mod:{atkPct:1,spdPct:3}},
         {key:'暗影之痛_m7pe', name:'暗影之痛', desc:'持续伤害 +7%/层 · 斩杀加成 +4%/层', max:5, req:28, mod:{dotBonus:7,executeBonus:4}},
         {key:'天启_uank', name:'天启', desc:'攻击 +2%/层 · 暴击 +2%/层', max:5, req:30, mod:{atkPct:2,crit:2}},
-        {key:'混沌_uaof', name:'混沌', desc:'技能CD +5%/层 · 持续伤害 +5%/层', max:3, req:33, mod:{cdReduction:5,dotBonus:5}},
+        {key:'混沌_uaof', name:'混沌', desc:'技能冷却 +5%/层 · 持续伤害 +5%/层', max:3, req:33, mod:{cdReduction:5,dotBonus:5}},
         {key:'暗影宗师_zywn', name:'暗影宗师', desc:'攻击 +1%/层 · 精通 +2%/层', max:3, req:36, mod:{atkPct:3,mastery:2}}
       ,
 {key:'tal_olt688', name:'暗影幻灵', desc:'持续伤害 +8%/层 · 吸血 +3%/层', max:5,req:38,mod:{dotBonus:8,leech:3}},{key:'tal_wcgwwu', name:'虚空', desc:'攻击 +2%/层 · 暴击 +3%/层', max:5,req:42,mod:{atkPct:2,crit:3}},{key:'tal_bf4hdm', name:'暗影祭司', desc:'攻击 +1%/层 · 斩杀加成 +8%/层 · 精通 +2%/层', max:3,req:45,mod:{atkPct:4,executeBonus:8,mastery:2}}]},
@@ -326,7 +326,7 @@ const CLASSES = {
     baseAttrs:{str:12, agi:24, int:6, spi:7, sta:14},
     baseStats:{hpMax:60, mpMax:100, atk:7, def:3, crit:10, critd:160, spd:1.4, reg:2},
     skills:{
-      interrupt:{name:"脚踢",icon:"🦶",desc:"打断BOSS施法,5秒CD",mp:15,type:"interrupt",cd:5,unlockLvl:1},
+      interrupt:{name:"脚踢",icon:"🦶",desc:"打断首领施法，冷却5秒",mp:15,type:"interrupt",cd:5,unlockLvl:1},
       sinister:    {name:'邪恶打击', icon:'🗡️', desc:'造成2倍攻击', mp:20, type:'dmg', mul:2, unlockLvl:1},
       backstab:    {name:'背刺',     icon:'🔪', desc:'3倍攻击伤害', mp:30, type:'dmg', mul:3},
       poison:      {name:'毒刃',     icon:'🐍', desc:'3倍攻击,持续中毒', mp:25, type:'dmg', mul:3, dot:true},
@@ -346,7 +346,7 @@ const CLASSES = {
         {key:'谋杀_m3cw', name:'谋杀', desc:'攻击 +1%/层', max:5, mod:{atkPct:1}},
         {key:'毒药专精_og6n', name:'毒药专精', desc:'暴伤 +8%/层', max:3, mod:{critdPct:8}},
         {key:'致命毒药_rx7b', name:'致命毒药', desc:'持续伤害 +5%/层', max:5, mod:{dotBonus:5}},
-        {key:'暗影步_za55', name:'暗影步', desc:'技能CD +5%/层', max:3, mod:{cdReduction:5}},
+        {key:'暗影步_za55', name:'暗影步', desc:'技能冷却 +5%/层', max:3, mod:{cdReduction:5}},
         {key:'毒刃_rg3r', name:'毒刃', desc:'解锁: 毒刃', max:1, req:10, unlockSkill:'poison'},
         {key:'放血_m5bp', name:'放血', desc:'攻击 +2%/层', max:5, req:15, mod:{atkPct:2}},
         {key:'剧毒_v4hv', name:'剧毒', desc:'吸血 +2%/层 · 持续伤害 +4%/层', max:5, req:18, mod:{leech:2,dotBonus:4}},
@@ -354,7 +354,7 @@ const CLASSES = {
         {key:'刺客之道_6wkb', name:'刺客之道', desc:'斩杀加成 +5%/层 · 攻击 +1%/层', max:5, req:25, mod:{executeBonus:5,atkPct:1}},
         {key:'暗杀_42j5', name:'暗杀', desc:'暴伤 +10%/层 · 额外攻击 +1%/层', max:5, req:28, mod:{critdPct:10,extraAtk:2}},
         {key:'死亡标记_bu1r', name:'死亡标记', desc:'攻击 +2%/层 · 暴击 +2%/层', max:5, req:30, mod:{atkPct:2,crit:2}},
-        {key:'毒药大师_jgpa', name:'毒药大师', desc:'持续伤害 +8%/层 · 技能CD +4%/层', max:3, req:33, mod:{dotBonus:8,cdReduction:4}},
+        {key:'毒药大师_jgpa', name:'毒药大师', desc:'持续伤害 +8%/层 · 技能冷却 +4%/层', max:3, req:33, mod:{dotBonus:8,cdReduction:4}},
         {key:'刺杀宗师_rwpy', name:'刺杀宗师', desc:'攻击 +1%/层 · 精通 +2%/层', max:3, req:36, mod:{atkPct:3,mastery:2}}
       ,
 {key:'tal_4gq2h5', name:'致命毒液', desc:'持续伤害 +8%/层 · 吸血 +3%/层', max:5,req:38,mod:{dotBonus:8,leech:3}},{key:'tal_er31mp', name:'暗杀大师', desc:'暴伤 +12%/层 · 斩杀加成 +5%/层', max:5,req:42,mod:{critdPct:12,executeBonus:5}},{key:'tal_za0dpi', name:'影舞者', desc:'攻击 +1%/层 · 暴击 +3%/层 · 精通 +2%/层', max:3,req:45,mod:{atkPct:4,crit:3,mastery:2}}]},
@@ -366,29 +366,29 @@ const CLASSES = {
         {key:'还击_6dqu', name:'还击', desc:'反伤 +2%/层', max:3, mod:{reflectDmg:2}},
         {key:'背刺_27cb', name:'背刺', desc:'解锁: 背刺', max:1, req:10, unlockSkill:'backstab'},
         {key:'肾上腺素_4krm', name:'肾上腺素', desc:'攻速 +8%/层', max:5, req:15, mod:{spdPct:8}},
-        {key:'无尽能量_wmpq', name:'无尽能量', desc:'技能CD +4%/层 · 暴击 +1.5%/层', max:5, req:18, mod:{cdReduction:4,crit:1.5}},
+        {key:'无尽能量_wmpq', name:'无尽能量', desc:'技能冷却 +4%/层 · 暴击 +1.5%/层', max:5, req:18, mod:{cdReduction:4,crit:1.5}},
         {key:'剑刃冲锋_ln9o', name:'剑刃冲锋', desc:'攻击 +1%/层 · 攻速 +4%/层', max:3, req:22, mod:{atkPct:1,spdPct:4}},
         {key:'战斗狂热_ypmy', name:'战斗狂热', desc:'攻击 +1%/层 · 吸血 +2%/层', max:5, req:25, mod:{atkPct:1,leech:2}},
         {key:'致命打击_nc4p', name:'致命打击', desc:'暴伤 +8%/层 · 额外攻击 +2%/层', max:5, req:28, mod:{critdPct:8,extraAtk:3}},
         {key:'杀戮_0rw8', name:'杀戮', desc:'攻击 +2%/层 · 攻速 +4%/层', max:5, req:30, mod:{atkPct:2,spdPct:4}},
-        {key:'战斗精通_qy0g', name:'战斗精通', desc:'技能CD +5%/层 · 减耗 +5%/层', max:3, req:33, mod:{cdReduction:5,costReduction:5}},
+        {key:'战斗精通_qy0g', name:'战斗精通', desc:'技能冷却 +5%/层 · 减耗 +5%/层', max:3, req:33, mod:{cdReduction:5,costReduction:5}},
         {key:'战斗宗师_z8hj', name:'战斗宗师', desc:'攻击 +1%/层 · 精通 +2%/层', max:3, req:36, mod:{atkPct:3,mastery:2}}
       ,
-{key:'tal_8x4uoo', name:'利刃', desc:'额外攻击 +1%/层 · 攻速 +6%/层', max:5,req:38,mod:{extraAtk:5,spdPct:6}},{key:'tal_iki3mc', name:'战斗大师', desc:'攻击 +2%/层 · 暴伤 +8%/层', max:5,req:42,mod:{atkPct:2,critdPct:8}},{key:'tal_h7prev', name:'剑圣', desc:'攻击 +1%/层 · 技能CD +6%/层 · 精通 +2%/层', max:3,req:45,mod:{atkPct:4,cdReduction:6,mastery:2}}]},
+{key:'tal_8x4uoo', name:'利刃', desc:'额外攻击 +1%/层 · 攻速 +6%/层', max:5,req:38,mod:{extraAtk:5,spdPct:6}},{key:'tal_iki3mc', name:'战斗大师', desc:'攻击 +2%/层 · 暴伤 +8%/层', max:5,req:42,mod:{atkPct:2,critdPct:8}},{key:'tal_h7prev', name:'剑圣', desc:'攻击 +1%/层 · 技能冷却 +6%/层 · 精通 +2%/层', max:3,req:45,mod:{atkPct:4,cdReduction:6,mastery:2}}]},
       {key:'subtlety', name:'敏锐', icon:'👤', masteryDesc:'影遁攻击加成 +5%/精通', talents:[
         {key:'机会_1w3o', name:'机会', desc:'暴伤 +8%/层', max:5, mod:{critdPct:8}},
         {key:'闪避_273f', name:'闪避', desc:'防御 +5%/层', max:5, mod:{defPct:5}},
         {key:'暗影之舞_8eb9', name:'暗影之舞', desc:'敏捷 +5%/层', max:3, mod:{agiPct:5}},
         {key:'暗影斗篷_pzzm', name:'暗影斗篷', desc:'全能 +3%/层', max:5, mod:{vers:3}},
-        {key:'潜伏_bruu', name:'潜伏', desc:'技能CD +4%/层', max:3, mod:{cdReduction:4}},
+        {key:'潜伏_bruu', name:'潜伏', desc:'技能冷却 +4%/层', max:3, mod:{cdReduction:4}},
         {key:'影遁_3u1p', name:'影遁', desc:'解锁: 影遁', max:1, req:10, unlockSkill:'shadow'},
         {key:'弱点_ae8r', name:'弱点', desc:'暴伤 +8%/层', max:5, req:15, mod:{critdPct:8}},
         {key:'暗夜之刃_de22', name:'暗夜之刃', desc:'攻击 +1%/层 · 敏捷 +4%/层', max:5, req:18, mod:{atkPct:1,agiPct:4}},
-        {key:'深影_31zb', name:'深影', desc:'攻击 +1%/层 · 技能CD +3%/层', max:3, req:22, mod:{atkPct:1,cdReduction:3}},
+        {key:'深影_31zb', name:'深影', desc:'攻击 +1%/层 · 技能冷却 +3%/层', max:3, req:22, mod:{atkPct:1,cdReduction:3}},
         {key:'暗影步_hu73', name:'暗影步', desc:'攻速 +5%/层 · 额外攻击 +2%/层', max:5, req:25, mod:{spdPct:5,extraAtk:3}},
         {key:'暗影之击_zpfd', name:'暗影之击', desc:'攻击 +2%/层 · 暴伤 +6%/层', max:5, req:28, mod:{atkPct:2,critdPct:6}},
         {key:'黑暗_9tr5', name:'黑暗', desc:'攻击 +1%/层 · 暴击 +2%/层', max:5, req:30, mod:{atkPct:1,crit:2}},
-        {key:'暗影大师_szx0', name:'暗影大师', desc:'斩杀加成 +6%/层 · 技能CD +4%/层', max:3, req:33, mod:{executeBonus:6,cdReduction:4}},
+        {key:'暗影大师_szx0', name:'暗影大师', desc:'斩杀加成 +6%/层 · 技能冷却 +4%/层', max:3, req:33, mod:{executeBonus:6,cdReduction:4}},
         {key:'敏锐宗师_r0wm', name:'敏锐宗师', desc:'攻击 +1%/层 · 精通 +2%/层', max:3, req:36, mod:{atkPct:3,mastery:2}}
       ,
 {key:'tal_d22q05', name:'影刃', desc:'攻击 +2%/层 · 斩杀加成 +5%/层', max:5,req:38,mod:{atkPct:2,executeBonus:5}},{key:'tal_sxtqtx', name:'暗杀大师', desc:'额外攻击 +1%/层 · 暴伤 +8%/层', max:5,req:42,mod:{extraAtk:5,critdPct:8}},{key:'tal_u69oap', name:'影舞者', desc:'攻击 +1%/层 · 全能 +6%/层 · 精通 +2%/层', max:3,req:45,mod:{atkPct:4,vers:6,mastery:2}}]},
@@ -402,7 +402,7 @@ const CLASSES = {
     baseAttrs:{str:10, agi:22, int:8, spi:10, sta:15},
     baseStats:{hpMax:65, mpMax:80, atk:7, def:4, crit:8, critd:155, spd:1.2, reg:1},
     skills:{
-      interrupt:{name:"反制射击",icon:"🏹",desc:"打断BOSS施法,5秒CD",mp:15,type:"interrupt",cd:5,unlockLvl:1},
+      interrupt:{name:"反制射击",icon:"🏹",desc:"打断首领施法，冷却5秒",mp:15,type:"interrupt",cd:5,unlockLvl:1},
       arcaneShot:   {name:'奥术射击', icon:'🏹', desc:'2倍攻击', mp:15, type:'dmg', mul:2, unlockLvl:1,castTime:0},
       serpentSting: {name:'毒蛇钉刺', icon:'🐍', desc:'3倍攻击,持续中毒', mp:20, type:'dmg', mul:3, dot:true, unlockLvl:12,castTime:0},
       rapidFire:    {name:'急速射击', icon:'⚡', desc:'15秒攻速+60%', mp:35, type:'buff', buff:'rapidFire', duration:15000, unlockLvl:25,castTime:0},
@@ -427,11 +427,11 @@ const CLASSES = {
         {key:'狂野怒火_jho5', name:'狂野怒火', desc:'解锁: 狂野怒火', max:1, req:10, unlockSkill:'bestialWrath'},
         {key:'兽王_mpa1', name:'兽王', desc:'攻击 +2%/层', max:5, req:15, mod:{atkPct:2}},
         {key:'兽群之力_elhz', name:'兽群之力', desc:'攻速 +6%/层 · 攻击 +2%/层', max:5, req:18, mod:{spdPct:6,atkPct:1}},
-        {key:'野性呼唤_z4zm', name:'野性呼唤', desc:'技能CD +5%/层 · 攻击 +1%/层', max:3, req:22, mod:{cdReduction:5,atkPct:1}},
+        {key:'野性呼唤_z4zm', name:'野性呼唤', desc:'技能冷却 +5%/层 · 攻击 +1%/层', max:3, req:22, mod:{cdReduction:5,atkPct:1}},
         {key:'兽群_ds5h', name:'兽群', desc:'攻击 +1%/层 · 吸血 +2%/层', max:5, req:25, mod:{atkPct:1,leech:2}},
         {key:'凶暴_1761', name:'凶暴', desc:'暴伤 +8%/层 · 额外攻击 +2%/层', max:5, req:28, mod:{critdPct:8,extraAtk:3}},
         {key:'兽王之力_lugl', name:'兽王之力', desc:'攻击 +2%/层 · 暴击 +1.5%/层', max:5, req:30, mod:{atkPct:2,crit:1.5}},
-        {key:'野兽大师_e4rr', name:'野兽大师', desc:'技能CD +5%/层 · 斩杀加成 +4%/层', max:3, req:33, mod:{cdReduction:5,executeBonus:4}},
+        {key:'野兽大师_e4rr', name:'野兽大师', desc:'技能冷却 +5%/层 · 斩杀加成 +4%/层', max:3, req:33, mod:{cdReduction:5,executeBonus:4}},
         {key:'兽王宗师_l5ob', name:'兽王宗师', desc:'攻击 +1%/层 · 精通 +2%/层', max:3, req:36, mod:{atkPct:3,mastery:2}}
       ,
 {key:'tal_belq97', name:'兽群呼唤', desc:'攻击 +2%/层 · 额外攻击 +1%/层', max:5,req:38,mod:{atkPct:2,extraAtk:4}},{key:'tal_pr5je7', name:'万兽之王', desc:'敏捷 +8%/层 · 暴击 +3%/层', max:5,req:42,mod:{agiPct:8,crit:3}},{key:'tal_s5oa1w', name:'兽王至尊', desc:'攻击 +1%/层 · 吸血 +6%/层 · 精通 +2%/层', max:3,req:45,mod:{atkPct:4,leech:6,mastery:2}}]},
@@ -440,14 +440,14 @@ const CLASSES = {
         {key:'夺命射击_w4jc', name:'夺命射击', desc:'暴伤 +8%/层', max:5, mod:{critdPct:8}},
         {key:'穿透射击_19gc', name:'穿透射击', desc:'攻击 +1%/层', max:3, mod:{atkPct:1}},
         {key:'精确瞄准_69ig', name:'精确瞄准', desc:'额外攻击 +2%/层', max:5, mod:{extraAtk:3}},
-        {key:'鹰眼_w2ji', name:'鹰眼', desc:'技能CD +4%/层', max:3, mod:{cdReduction:4}},
+        {key:'鹰眼_w2ji', name:'鹰眼', desc:'技能冷却 +4%/层', max:3, mod:{cdReduction:4}},
         {key:'瞄准射击_pdqq', name:'瞄准射击', desc:'解锁: 瞄准射击', max:1, req:10, unlockSkill:'aimed'},
         {key:'正中靶心_qm7b', name:'正中靶心', desc:'暴伤 +8%/层', max:5, req:15, mod:{critdPct:8}},
         {key:'狙击_1tn3', name:'狙击', desc:'攻击 +1%/层 · 暴击 +1.5%/层', max:5, req:18, mod:{atkPct:1,crit:1.5}},
         {key:'专注_79lf', name:'专注', desc:'攻速 +5%/层 · 减耗 +5%/层', max:3, req:22, mod:{spdPct:5,costReduction:5}},
         {key:'精确_63eb', name:'精确', desc:'攻击 +1%/层 · 暴伤 +5%/层', max:5, req:25, mod:{atkPct:1,critdPct:5}},
         {key:'远距射击_6oex', name:'远距射击', desc:'攻击 +2%/层 · 斩杀加成 +4%/层', max:5, req:28, mod:{atkPct:2,executeBonus:4}},
-        {key:'神射手_ekaa', name:'神射手', desc:'暴伤 +10%/层 · 技能CD +3%/层', max:5, req:30, mod:{critdPct:10,cdReduction:3}},
+        {key:'神射手_ekaa', name:'神射手', desc:'暴伤 +10%/层 · 技能冷却 +3%/层', max:5, req:30, mod:{critdPct:10,cdReduction:3}},
         {key:'射击大师_ws7s', name:'射击大师', desc:'额外攻击 +1%/层 · 暴击 +2%/层', max:3, req:33, mod:{extraAtk:4,crit:2}},
         {key:'射击宗师_rqg8', name:'射击宗师', desc:'攻击 +1%/层 · 精通 +2%/层', max:3, req:36, mod:{atkPct:3,mastery:2}}
       ,
@@ -479,7 +479,7 @@ const CLASSES = {
     baseAttrs:{str:14, agi:12, int:18, spi:14, sta:14},
     baseStats:{hpMax:65, mpMax:85, atk:7, def:4, crit:6, critd:150, spd:1.0, reg:2},
     skills:{
-      interrupt:{name:"风剪",icon:"💨",desc:"打断BOSS施法,5秒CD",mp:12,type:"interrupt",cd:5,unlockLvl:1},
+      interrupt:{name:"风剪",icon:"💨",desc:"打断首领施法，冷却5秒",mp:12,type:"interrupt",cd:5,unlockLvl:1},
       lightning:      {name:'闪电箭', icon:'⚡', desc:'3倍攻击', mp:20, type:'dmg', mul:3, unlockLvl:1,castTime:2},
       flameShock:     {name:'烈焰震击',icon:'🔥', desc:'3倍攻击,持续灼烧', mp:22, type:'dmg', mul:3, dot:true, unlockLvl:14,castTime:0},
       earthShield:    {name:'大地之盾',icon:'🪨', desc:'15秒防御+50%', mp:35, type:'buff', buff:'earthShield', duration:15000, unlockLvl:28,castTime:0},
@@ -499,35 +499,35 @@ const CLASSES = {
         {key:'元素之怒_55mh', name:'元素之怒', desc:'暴伤 +8%/层', max:5, mod:{critdPct:8}},
         {key:'回响_4yt4', name:'回响', desc:'攻速 +5%/层', max:3, mod:{spdPct:5}},
         {key:'风暴之眼_tj2t', name:'风暴之眼', desc:'额外攻击 +1%/层', max:5, mod:{extraAtk:2}},
-        {key:'元素掌握_5s91', name:'元素掌握', desc:'技能CD +4%/层', max:3, mod:{cdReduction:4}},
+        {key:'元素掌握_5s91', name:'元素掌握', desc:'技能冷却 +4%/层', max:3, mod:{cdReduction:4}},
         {key:'闪电链_f5nb', name:'闪电链', desc:'解锁: 闪电链', max:1, req:10, unlockSkill:'chainLightning'},
         {key:'升腾_tp00', name:'升腾', desc:'攻击 +2%/层', max:5, req:15, mod:{atkPct:2}},
-        {key:'风暴守护者_icnc', name:'风暴守护者', desc:'暴击 +1.5%/层 · 技能CD +3%/层', max:5, req:18, mod:{crit:1.5,cdReduction:3}},
+        {key:'风暴守护者_icnc', name:'风暴守护者', desc:'暴击 +1.5%/层 · 技能冷却 +3%/层', max:5, req:18, mod:{crit:1.5,cdReduction:3}},
         {key:'原始之力_14gr', name:'原始之力', desc:'攻击 +1%/层 · 智力 +3%/层', max:3, req:22, mod:{atkPct:1,intPct:3}},
         {key:'过载_64ei', name:'过载', desc:'攻击 +1%/层 · 暴伤 +5%/层', max:5, req:25, mod:{atkPct:1,critdPct:5}},
         {key:'闪电奔涌_4thr', name:'闪电奔涌', desc:'暴击 +2%/层 · 攻速 +4%/层', max:5, req:28, mod:{crit:2,spdPct:4}},
         {key:'元素之力_8obu', name:'元素之力', desc:'攻击 +2%/层 · 额外攻击 +2%/层', max:5, req:30, mod:{atkPct:2,extraAtk:3}},
-        {key:'风暴_kx6t', name:'风暴', desc:'技能CD +5%/层 · 减耗 +5%/层', max:3, req:33, mod:{cdReduction:5,costReduction:5}},
+        {key:'风暴_kx6t', name:'风暴', desc:'技能冷却 +5%/层 · 减耗 +5%/层', max:3, req:33, mod:{cdReduction:5,costReduction:5}},
         {key:'元素宗师_97ag', name:'元素宗师', desc:'攻击 +1%/层 · 精通 +2%/层', max:3, req:36, mod:{atkPct:3,mastery:2}}
       ,
-{key:'tal_mo6x3r', name:'雷霆之怒', desc:'攻击 +2%/层 · 技能CD +5%/层', max:5,req:38,mod:{atkPct:2,cdReduction:5}},{key:'tal_z1lero', name:'元素掌控', desc:'暴伤 +12%/层 · 额外攻击 +1%/层', max:5,req:42,mod:{critdPct:12,extraAtk:4}},{key:'tal_2kpfcs', name:'元素领主', desc:'攻击 +1%/层 · 减耗 +8%/层 · 精通 +2%/层', max:3,req:45,mod:{atkPct:4,costReduction:8,mastery:2}}]},
+{key:'tal_mo6x3r', name:'雷霆之怒', desc:'攻击 +2%/层 · 技能冷却 +5%/层', max:5,req:38,mod:{atkPct:2,cdReduction:5}},{key:'tal_z1lero', name:'元素掌控', desc:'暴伤 +12%/层 · 额外攻击 +1%/层', max:5,req:42,mod:{critdPct:12,extraAtk:4}},{key:'tal_2kpfcs', name:'元素领主', desc:'攻击 +1%/层 · 减耗 +8%/层 · 精通 +2%/层', max:3,req:45,mod:{atkPct:4,costReduction:8,mastery:2}}]},
       {key:'enhancement', name:'增强', icon:'💨', masteryDesc:'风怒武器攻速加成 +6%/精通', talents:[
         {key:'武器专精_wx6r', name:'武器专精', desc:'攻击 +1%/层', max:5, mod:{atkPct:1}},
         {key:'怒火_x06t', name:'怒火', desc:'攻速 +5%/层', max:5, mod:{spdPct:5}},
         {key:'静电_rqij', name:'静电', desc:'暴击 +2%/层', max:3, mod:{crit:2}},
         {key:'毁灭之风_oz70', name:'毁灭之风', desc:'额外攻击 +2%/层', max:5, mod:{extraAtk:3}},
-        {key:'风暴之力_6wd5', name:'风暴之力', desc:'技能CD +4%/层', max:3, mod:{cdReduction:4}},
+        {key:'风暴之力_6wd5', name:'风暴之力', desc:'技能冷却 +4%/层', max:3, mod:{cdReduction:4}},
         {key:'风怒武器_jjta', name:'风怒武器', desc:'解锁: 风怒武器', max:1, req:10, unlockSkill:'windfury'},
         {key:'漩涡之力_r509', name:'漩涡之力', desc:'攻击 +2%/层', max:5, req:15, mod:{atkPct:2}},
         {key:'风暴之怒_g93o', name:'风暴之怒', desc:'攻速 +5%/层 · 攻击 +2%/层', max:5, req:18, mod:{spdPct:5,atkPct:1}},
-        {key:'闪电打击_j65p', name:'闪电打击', desc:'暴击 +2%/层 · 技能CD +3%/层', max:3, req:22, mod:{crit:2,cdReduction:3}},
+        {key:'闪电打击_j65p', name:'闪电打击', desc:'暴击 +2%/层 · 技能冷却 +3%/层', max:3, req:22, mod:{crit:2,cdReduction:3}},
         {key:'元素武器_bm2r', name:'元素武器', desc:'攻击 +1%/层 · 吸血 +2%/层', max:5, req:25, mod:{atkPct:1,leech:2}},
         {key:'风怒_ctkt', name:'风怒', desc:'攻速 +7%/层 · 额外攻击 +1%/层', max:5, req:28, mod:{spdPct:7,extraAtk:2}},
         {key:'漩涡_26cn', name:'漩涡', desc:'攻击 +2%/层 · 暴伤 +5%/层', max:5, req:30, mod:{atkPct:2,critdPct:5}},
-        {key:'增强大师_8hsm', name:'增强大师', desc:'技能CD +5%/层 · 减耗 +4%/层', max:3, req:33, mod:{cdReduction:5,costReduction:4}},
+        {key:'增强大师_8hsm', name:'增强大师', desc:'技能冷却 +5%/层 · 减耗 +4%/层', max:3, req:33, mod:{cdReduction:5,costReduction:4}},
         {key:'增强宗师_7xq2', name:'增强宗师', desc:'攻击 +1%/层 · 精通 +2%/层', max:3, req:36, mod:{atkPct:3,mastery:2}}
       ,
-{key:'tal_r11ajl', name:'风暴', desc:'攻速 +8%/层 · 额外攻击 +1%/层', max:5,req:38,mod:{spdPct:8,extraAtk:4}},{key:'tal_8s2vb6', name:'狂怒风暴', desc:'攻击 +2%/层 · 暴击 +3%/层', max:5,req:42,mod:{atkPct:2,crit:3}},{key:'tal_hr0iny', name:'风暴领主', desc:'攻击 +1%/层 · 技能CD +6%/层 · 精通 +2%/层', max:3,req:45,mod:{atkPct:4,cdReduction:6,mastery:2}}]},
+{key:'tal_r11ajl', name:'风暴', desc:'攻速 +8%/层 · 额外攻击 +1%/层', max:5,req:38,mod:{spdPct:8,extraAtk:4}},{key:'tal_8s2vb6', name:'狂怒风暴', desc:'攻击 +2%/层 · 暴击 +3%/层', max:5,req:42,mod:{atkPct:2,crit:3}},{key:'tal_hr0iny', name:'风暴领主', desc:'攻击 +1%/层 · 技能冷却 +6%/层 · 精通 +2%/层', max:3,req:45,mod:{atkPct:4,cdReduction:6,mastery:2}}]},
       {key:'restoration', name:'恢复', icon:'🌊', masteryDesc:'治疗波回复量 +5%/精通', talents:[
         {key:'潮汐专精_iuma', name:'潮汐专精', desc:'精神 +5%/层', max:5, mod:{spiPct:5}},
         {key:'水之护盾_mxli', name:'水之护盾', desc:'防御 +5%/层', max:5, mod:{defPct:5}},
@@ -541,7 +541,7 @@ const CLASSES = {
         {key:'大地之盾_86t6', name:'大地之盾', desc:'防御 +5%/层 · 全能 +2%/层', max:5, req:25, mod:{defPct:5,vers:2}},
         {key:'先祖_ee1y', name:'先祖', desc:'治疗 +7%/层 · 生命 +4%/层', max:5, req:28, mod:{healBonus:7,hpPct:4}},
         {key:'潮汐_j3tn', name:'潮汐', desc:'回复 +4%/层 · 治疗 +5%/层', max:5, req:30, mod:{regFlat:4,healBonus:5}},
-        {key:'恢复大师_m48a', name:'恢复大师', desc:'技能CD +5%/层 · 治疗 +5%/层', max:3, req:33, mod:{cdReduction:5,healBonus:5}},
+        {key:'恢复大师_m48a', name:'恢复大师', desc:'技能冷却 +5%/层 · 治疗 +5%/层', max:3, req:33, mod:{cdReduction:5,healBonus:5}},
         {key:'恢复宗师_fqhg', name:'恢复宗师', desc:'治疗 +12%/层 · 精通 +2%/层', max:3, req:36, mod:{healBonus:12,mastery:2}}
       ,
 {key:'tal_qw36s6', name:'生命之泉', desc:'治疗 +8%/层 · 回复 +3%/层', max:5,req:38,mod:{healBonus:8,regFlat:3}},{key:'tal_sz1bbs', name:'先祖智慧', desc:'精神 +8%/层 · 治疗 +6%/层', max:5,req:42,mod:{spiPct:8,healBonus:6}},{key:'tal_sy9xob', name:'灵魂行者', desc:'治疗 +15%/层 · 全能 +5%/层 · 精通 +2%/层', max:3,req:45,mod:{healBonus:15,vers:5,mastery:2}}]},
@@ -555,7 +555,7 @@ const CLASSES = {
     baseAttrs:{str:18, agi:10, int:12, spi:12, sta:16},
     baseStats:{hpMax:75, mpMax:90, atk:7, def:6, crit:5, critd:150, spd:1.0, reg:2},
     skills:{
-      interrupt:{name:"责难",icon:"⚖️",desc:"打断BOSS施法,5秒CD",mp:15,type:"interrupt",cd:5,unlockLvl:1},
+      interrupt:{name:"责难",icon:"⚖️",desc:"打断首领施法，冷却5秒",mp:15,type:"interrupt",cd:5,unlockLvl:1},
       judgement:    {name:'审判',       icon:'⚖️', desc:'2倍神圣伤害', mp:20, type:'dmg', mul:2, unlockLvl:1,castTime:0},
       consecration: {name:'奉献',       icon:'🔥', desc:'3倍攻击,范围圣光', mp:25, type:'dmg', mul:3, unlockLvl:12,castTime:0},
       holyLight:    {name:'圣光术',     icon:'✨', desc:'恢复40%生命', mp:35, type:'heal', heal:0.4,castTime:2.5},
@@ -595,7 +595,7 @@ const CLASSES = {
         {key:'圣洁_d4ul', name:'圣洁', desc:'暴伤 +8%/层', max:5, mod:{critdPct:8}},
         {key:'狂热_tq6y', name:'狂热', desc:'攻速 +5%/层', max:3, mod:{spdPct:5}},
         {key:'审判官_x8uo', name:'审判官', desc:'额外攻击 +1%/层', max:5, mod:{extraAtk:2}},
-        {key:'圣战_554n', name:'圣战', desc:'技能CD +4%/层', max:3, mod:{cdReduction:4}},
+        {key:'圣战_554n', name:'圣战', desc:'技能冷却 +4%/层', max:3, mod:{cdReduction:4}},
         {key:'十字军打击_eeqv', name:'十字军打击', desc:'解锁: 十字军打击', max:1, req:10, unlockSkill:'crusader'},
         {key:'圣殿骑士_erj9', name:'圣殿骑士', desc:'攻击 +2%/层', max:5, req:15, mod:{atkPct:2}},
         {key:'神圣风暴_gg1s', name:'神圣风暴', desc:'攻击 +1%/层 · 攻速 +4%/层', max:5, req:18, mod:{atkPct:1,spdPct:4}},
@@ -603,7 +603,7 @@ const CLASSES = {
         {key:'神圣之力_qr4h', name:'神圣之力', desc:'攻击 +1%/层 · 暴伤 +5%/层', max:5, req:25, mod:{atkPct:1,critdPct:5}},
         {key:'圣光之刃_3unr', name:'圣光之刃', desc:'攻击 +2%/层 · 暴击 +1.5%/层', max:5, req:28, mod:{atkPct:2,crit:1.5}},
         {key:'黎明_g4ek', name:'黎明', desc:'攻击 +1%/层 · 额外攻击 +2%/层', max:5, req:30, mod:{atkPct:1,extraAtk:3}},
-        {key:'惩戒大师_psyh', name:'惩戒大师', desc:'技能CD +5%/层 · 斩杀加成 +4%/层', max:3, req:33, mod:{cdReduction:5,executeBonus:4}},
+        {key:'惩戒大师_psyh', name:'惩戒大师', desc:'技能冷却 +5%/层 · 斩杀加成 +4%/层', max:3, req:33, mod:{cdReduction:5,executeBonus:4}},
         {key:'惩戒宗师_c3xi', name:'惩戒宗师', desc:'攻击 +1%/层 · 精通 +2%/层', max:3, req:36, mod:{atkPct:3,mastery:2}}
       ,
 {key:'tal_v97irx', name:'神圣复仇', desc:'攻击 +2%/层 · 暴伤 +6%/层', max:5,req:38,mod:{atkPct:2,critdPct:6}},{key:'tal_j4xnxx', name:'圣光之怒', desc:'额外攻击 +1%/层 · 斩杀加成 +5%/层', max:5,req:42,mod:{extraAtk:5,executeBonus:5}},{key:'tal_6df7gn', name:'复仇天使', desc:'攻击 +1%/层 · 暴击 +3%/层 · 精通 +2%/层', max:3,req:45,mod:{atkPct:4,crit:3,mastery:2}}]},
@@ -617,7 +617,7 @@ const CLASSES = {
     baseAttrs:{str:7, agi:9, int:22, spi:14, sta:13},
     baseStats:{hpMax:55, mpMax:90, atk:6, def:2, crit:7, critd:150, spd:1.0, reg:2},
     skills:{
-      interrupt:{name:"法术封锁",icon:"🔇",desc:"打断BOSS施法,5秒CD",mp:12,type:"interrupt",cd:5,unlockLvl:1},
+      interrupt:{name:"法术封锁",icon:"🔇",desc:"打断首领施法，冷却5秒",mp:12,type:"interrupt",cd:5,unlockLvl:1},
       shadowBolt: {name:'暗影箭',   icon:'🌑', desc:'3倍攻击', mp:20, type:'dmg', mul:3, unlockLvl:1,castTime:2.5},
       immolate:   {name:'献祭',     icon:'🔥', desc:'3倍攻击,持续灼烧', mp:22, type:'dmg', mul:3, dot:true, unlockLvl:12,castTime:1.5},
       corruption: {name:'腐蚀术',   icon:'🧿', desc:'3倍攻击,持续腐蚀', mp:25, type:'dmg', mul:3, dot:true,castTime:0},
@@ -640,7 +640,7 @@ const CLASSES = {
         {key:'灵魂虹吸_swlw', name:'灵魂虹吸', desc:'吸血 +2%/层', max:3, mod:{leech:2}},
         {key:'腐蚀术_any9', name:'腐蚀术', desc:'解锁: 腐蚀术', max:1, req:10, unlockSkill:'corruption'},
         {key:'痛苦无常_g3z5', name:'痛苦无常', desc:'攻击 +2%/层', max:5, req:15, mod:{atkPct:2}},
-        {key:'无尽痛苦_h7bz', name:'无尽痛苦', desc:'持续伤害 +6%/层 · 技能CD +3%/层', max:5, req:18, mod:{dotBonus:6,cdReduction:3}},
+        {key:'无尽痛苦_h7bz', name:'无尽痛苦', desc:'持续伤害 +6%/层 · 技能冷却 +3%/层', max:5, req:18, mod:{dotBonus:6,cdReduction:3}},
         {key:'灵魂交换_czti', name:'灵魂交换', desc:'暴伤 +8%/层 · 智力 +3%/层', max:3, req:22, mod:{critdPct:8,intPct:3}},
         {key:'苦痛_154n', name:'苦痛', desc:'攻击 +1%/层 · 持续伤害 +4%/层', max:5, req:25, mod:{atkPct:1,dotBonus:4}},
         {key:'瘟疫_j23m', name:'瘟疫', desc:'持续伤害 +7%/层 · 斩杀加成 +3%/层', max:5, req:28, mod:{dotBonus:7,executeBonus:3}},
@@ -662,7 +662,7 @@ const CLASSES = {
         {key:'邪能领主_ko0x', name:'邪能领主', desc:'攻击 +1%/层 · 全能 +2%/层', max:5, req:25, mod:{atkPct:1,vers:2}},
         {key:'恶魔之力_93ih', name:'恶魔之力', desc:'攻击 +2%/层 · 吸血 +2%/层', max:5, req:28, mod:{atkPct:2,leech:2}},
         {key:'黑暗_da7r', name:'黑暗', desc:'生命 +6%/层 · 攻击 +1%/层', max:5, req:30, mod:{hpPct:6,atkPct:1}},
-        {key:'恶魔大师_u7up', name:'恶魔大师', desc:'反伤 +4%/层 · 技能CD +3%/层', max:3, req:33, mod:{reflectDmg:4,cdReduction:3}},
+        {key:'恶魔大师_u7up', name:'恶魔大师', desc:'反伤 +4%/层 · 技能冷却 +3%/层', max:3, req:33, mod:{reflectDmg:4,cdReduction:3}},
         {key:'恶魔宗师_w3lg', name:'恶魔宗师', desc:'攻击 +1%/层 · 精通 +2%/层', max:3, req:36, mod:{atkPct:3,mastery:2}}
       ,
 {key:'tal_ymsi4c', name:'恶魔军团', desc:'攻击 +2%/层 · 攻速 +5%/层', max:5,req:38,mod:{atkPct:2,spdPct:5}},{key:'tal_kt8luu', name:'邪能', desc:'生命 +8%/层 · 反伤 +5%/层', max:5,req:42,mod:{hpPct:8,reflectDmg:5}},{key:'tal_frgmc2', name:'恶魔之王', desc:'攻击 +1%/层 · 吸血 +6%/层 · 精通 +2%/层', max:3,req:45,mod:{atkPct:4,leech:6,mastery:2}}]},
@@ -671,18 +671,18 @@ const CLASSES = {
         {key:'毁灭_b9eu', name:'毁灭', desc:'暴伤 +8%/层', max:5, mod:{critdPct:8}},
         {key:'爆燃_q33b', name:'爆燃', desc:'攻速 +5%/层', max:3, mod:{spdPct:5}},
         {key:'余烬风暴_6dz6', name:'余烬风暴', desc:'额外攻击 +1%/层', max:5, mod:{extraAtk:2}},
-        {key:'火焰之雨_qu0x', name:'火焰之雨', desc:'技能CD +4%/层', max:3, mod:{cdReduction:4}},
+        {key:'火焰之雨_qu0x', name:'火焰之雨', desc:'技能冷却 +4%/层', max:3, mod:{cdReduction:4}},
         {key:'烧尽_9vg7', name:'烧尽', desc:'解锁: 烧尽', max:1, req:10, unlockSkill:'incinerate'},
         {key:'浩劫_t70a', name:'浩劫', desc:'攻击 +2%/层', max:5, req:15, mod:{atkPct:2}},
         {key:'毁灭烈焰_mf6z', name:'毁灭烈焰', desc:'暴伤 +8%/层 · 攻击 +2%/层', max:5, req:18, mod:{critdPct:8,atkPct:1}},
         {key:'大灾变_s7bc', name:'大灾变', desc:'攻击 +1%/层 · 减耗 +5%/层', max:3, req:22, mod:{atkPct:1,costReduction:5}},
-        {key:'混沌_35iu', name:'混沌', desc:'暴伤 +8%/层 · 技能CD +3%/层', max:5, req:25, mod:{critdPct:8,cdReduction:3}},
+        {key:'混沌_35iu', name:'混沌', desc:'暴伤 +8%/层 · 技能冷却 +3%/层', max:5, req:25, mod:{critdPct:8,cdReduction:3}},
         {key:'火雨_vd37', name:'火雨', desc:'攻击 +2%/层 · 额外攻击 +1%/层', max:5, req:28, mod:{atkPct:2,extraAtk:2}},
         {key:'末日_xdn3', name:'末日', desc:'攻击 +1%/层 · 斩杀加成 +5%/层', max:5, req:30, mod:{atkPct:1,executeBonus:5}},
-        {key:'毁灭大师_hocz', name:'毁灭大师', desc:'技能CD +5%/层 · 暴击 +2%/层', max:3, req:33, mod:{cdReduction:5,crit:2}},
+        {key:'毁灭大师_hocz', name:'毁灭大师', desc:'技能冷却 +5%/层 · 暴击 +2%/层', max:3, req:33, mod:{cdReduction:5,crit:2}},
         {key:'毁灭宗师_g5ki', name:'毁灭宗师', desc:'攻击 +1%/层 · 精通 +2%/层', max:3, req:36, mod:{atkPct:3,mastery:2}}
       ,
-{key:'tal_b7fe6p', name:'混沌之雨', desc:'攻击 +2%/层 · 暴伤 +6%/层', max:5,req:38,mod:{atkPct:2,critdPct:6}},{key:'tal_4qj3im', name:'末日降临', desc:'斩杀加成 +8%/层 · 技能CD +5%/层', max:5,req:42,mod:{executeBonus:8,cdReduction:5}},{key:'tal_hw275i', name:'毁灭之王', desc:'攻击 +1%/层 · 暴击 +4%/层 · 精通 +2%/层', max:3,req:45,mod:{atkPct:4,crit:4,mastery:2}}]},
+{key:'tal_b7fe6p', name:'混沌之雨', desc:'攻击 +2%/层 · 暴伤 +6%/层', max:5,req:38,mod:{atkPct:2,critdPct:6}},{key:'tal_4qj3im', name:'末日降临', desc:'斩杀加成 +8%/层 · 技能冷却 +5%/层', max:5,req:42,mod:{executeBonus:8,cdReduction:5}},{key:'tal_hw275i', name:'毁灭之王', desc:'攻击 +1%/层 · 暴击 +4%/层 · 精通 +2%/层', max:3,req:45,mod:{atkPct:4,crit:4,mastery:2}}]},
     ],
   },
 
@@ -693,7 +693,7 @@ const CLASSES = {
     baseAttrs:{str:14, agi:16, int:14, spi:13, sta:14},
     baseStats:{hpMax:65, mpMax:85, atk:7, def:4, crit:7, critd:150, spd:1.1, reg:2},
     skills:{
-      interrupt:{name:"日光术",icon:"☀️",desc:"打断BOSS施法,5秒CD",mp:12,type:"interrupt",cd:5,unlockLvl:1},
+      interrupt:{name:"日光术",icon:"☀️",desc:"打断首领施法，冷却5秒",mp:12,type:"interrupt",cd:5,unlockLvl:1},
       wrath:       {name:'愤怒',     icon:'🌿', desc:'2倍自然伤害', mp:15, type:'dmg', mul:2, unlockLvl:1,castTime:1.5},
       swipe:       {name:'横扫',     icon:'🐾', desc:'2倍攻击范围伤害', mp:22, type:'dmg', mul:2, unlockLvl:12,castTime:0},
       rejuvenation:{name:'回春术',   icon:'🍃', desc:'恢复35%生命', mp:28, type:'heal', heal:0.35, unlockLvl:22,castTime:0},
@@ -713,24 +713,24 @@ const CLASSES = {
         {key:'自然之握_0jxw', name:'自然之握', desc:'暴击 +1.5%/层', max:5, mod:{crit:1.5}},
         {key:'日月之蚀_v65a', name:'日月之蚀', desc:'暴伤 +8%/层', max:3, mod:{critdPct:8}},
         {key:'星辰耀斑_pd4e', name:'星辰耀斑', desc:'持续伤害 +5%/层', max:5, mod:{dotBonus:5}},
-        {key:'繁星_eh0f', name:'繁星', desc:'技能CD +4%/层', max:3, mod:{cdReduction:4}},
+        {key:'繁星_eh0f', name:'繁星', desc:'技能冷却 +4%/层', max:3, mod:{cdReduction:4}},
         {key:'月火术_25hh', name:'月火术', desc:'解锁: 月火术', max:1, req:10, unlockSkill:'moonfire'},
         {key:'星辰坠落_4ilg', name:'星辰坠落', desc:'攻击 +2%/层', max:5, req:15, mod:{atkPct:2}},
         {key:'月火之雨_jaxm', name:'月火之雨', desc:'攻击 +1%/层 · 智力 +3%/层', max:5, req:18, mod:{atkPct:1,intPct:3}},
-        {key:'天体_nrrx', name:'天体', desc:'攻击 +1%/层 · 技能CD +3%/层', max:3, req:22, mod:{atkPct:1,cdReduction:3}},
+        {key:'天体_nrrx', name:'天体', desc:'攻击 +1%/层 · 技能冷却 +3%/层', max:3, req:22, mod:{atkPct:1,cdReduction:3}},
         {key:'自然之力_se1j', name:'自然之力', desc:'持续伤害 +6%/层 · 攻速 +3%/层', max:5, req:25, mod:{dotBonus:6,spdPct:3}},
         {key:'星辰_p1jw', name:'星辰', desc:'攻击 +2%/层 · 暴伤 +5%/层', max:5, req:28, mod:{atkPct:2,critdPct:5}},
         {key:'宇宙_l0zt', name:'宇宙', desc:'攻击 +1%/层 · 暴击 +2%/层', max:5, req:30, mod:{atkPct:1,crit:2}},
-        {key:'平衡大师_jz5z', name:'平衡大师', desc:'技能CD +5%/层 · 持续伤害 +5%/层', max:3, req:33, mod:{cdReduction:5,dotBonus:5}},
+        {key:'平衡大师_jz5z', name:'平衡大师', desc:'技能冷却 +5%/层 · 持续伤害 +5%/层', max:3, req:33, mod:{cdReduction:5,dotBonus:5}},
         {key:'平衡宗师_kn9s', name:'平衡宗师', desc:'攻击 +1%/层 · 精通 +2%/层', max:3, req:36, mod:{atkPct:3,mastery:2}}
       ,
-{key:'tal_bji6d5', name:'星辰之怒', desc:'攻击 +2%/层 · 持续伤害 +5%/层', max:5,req:38,mod:{atkPct:2,dotBonus:5}},{key:'tal_n2ivt5', name:'银河', desc:'智力 +8%/层 · 技能CD +5%/层', max:5,req:42,mod:{intPct:8,cdReduction:5}},{key:'tal_0ntb43', name:'星界行者', desc:'攻击 +1%/层 · 暴伤 +10%/层 · 精通 +2%/层', max:3,req:45,mod:{atkPct:4,critdPct:10,mastery:2}}]},
+{key:'tal_bji6d5', name:'星辰之怒', desc:'攻击 +2%/层 · 持续伤害 +5%/层', max:5,req:38,mod:{atkPct:2,dotBonus:5}},{key:'tal_n2ivt5', name:'银河', desc:'智力 +8%/层 · 技能冷却 +5%/层', max:5,req:42,mod:{intPct:8,cdReduction:5}},{key:'tal_0ntb43', name:'星界行者', desc:'攻击 +1%/层 · 暴伤 +10%/层 · 精通 +2%/层', max:3,req:45,mod:{atkPct:4,critdPct:10,mastery:2}}]},
       {key:'feral', name:'野性', icon:'🐺', masteryDesc:'凶猛撕咬伤害 +4%/精通', talents:[
         {key:'掠食者_kl5n', name:'掠食者', desc:'攻击 +1%/层', max:5, mod:{atkPct:1}},
         {key:'锋利利爪_f0ll', name:'锋利利爪', desc:'攻速 +5%/层', max:5, mod:{spdPct:5}},
         {key:'野蛮咆哮_1zls', name:'野蛮咆哮', desc:'敏捷 +5%/层', max:3, mod:{agiPct:5}},
         {key:'血爪_9sso', name:'血爪', desc:'吸血 +2%/层', max:5, mod:{leech:2}},
-        {key:'野性之心_gnjw', name:'野性之心', desc:'技能CD +4%/层', max:3, mod:{cdReduction:4}},
+        {key:'野性之心_gnjw', name:'野性之心', desc:'技能冷却 +4%/层', max:3, mod:{cdReduction:4}},
         {key:'凶猛撕咬_stqc', name:'凶猛撕咬', desc:'解锁: 凶猛撕咬', max:1, req:10, unlockSkill:'bite'},
         {key:'顶级掠食者_j56p', name:'顶级掠食者', desc:'攻击 +2%/层', max:5, req:15, mod:{atkPct:2}},
         {key:'兽群之王_7p9m', name:'兽群之王', desc:'暴击 +2%/层 · 攻速 +3%/层', max:5, req:18, mod:{crit:2,spdPct:3}},
@@ -738,7 +738,7 @@ const CLASSES = {
         {key:'掠食本能_ezb2', name:'掠食本能', desc:'攻击 +1%/层 · 吸血 +2%/层', max:5, req:25, mod:{atkPct:1,leech:2}},
         {key:'撕咬_hpp3', name:'撕咬', desc:'攻击 +2%/层 · 斩杀加成 +4%/层', max:5, req:28, mod:{atkPct:2,executeBonus:4}},
         {key:'狂野_vjm0', name:'狂野', desc:'暴伤 +8%/层 · extraAtk +3%/层', max:5, req:30, mod:{critdPct:8,extraAtk:3}},
-        {key:'野性大师_035n', name:'野性大师', desc:'技能CD +5%/层 · 暴击 +2%/层', max:3, req:33, mod:{cdReduction:5,crit:2}},
+        {key:'野性大师_035n', name:'野性大师', desc:'技能冷却 +5%/层 · 暴击 +2%/层', max:3, req:33, mod:{cdReduction:5,crit:2}},
         {key:'野性宗师_016z', name:'野性宗师', desc:'攻击 +1%/层 · 精通 +2%/层', max:3, req:36, mod:{atkPct:3,mastery:2}}
       ,
 {key:'tal_dw1ibr', name:'掠食本能', desc:'攻击 +2%/层 · 吸血 +4%/层', max:5,req:38,mod:{atkPct:2,leech:4}},{key:'tal_cx76zw', name:'兽群之王', desc:'攻速 +8%/层 · 暴击 +3%/层', max:5,req:42,mod:{spdPct:8,crit:3}},{key:'tal_n4yxop', name:'荒野之王', desc:'攻击 +1%/层 · 斩杀加成 +8%/层 · 精通 +2%/层', max:3,req:45,mod:{atkPct:4,executeBonus:8,mastery:2}}]},
@@ -747,7 +747,7 @@ const CLASSES = {
         {key:'自然学家_x0a2', name:'自然学家', desc:'生命 +5%/层', max:5, mod:{hpPct:5}},
         {key:'自然之赐_ycok', name:'自然之赐', desc:'回复 +2%/层', max:3, mod:{regFlat:2}},
         {key:'萌芽_jq1m', name:'萌芽', desc:'治疗 +5%/层', max:5, mod:{healBonus:5}},
-        {key:'繁盛_0e50', name:'繁盛', desc:'技能CD +3%/层', max:3, mod:{cdReduction:3}},
+        {key:'繁盛_0e50', name:'繁盛', desc:'技能冷却 +3%/层', max:3, mod:{cdReduction:3}},
         {key:'树皮术_jx8a', name:'树皮术', desc:'解锁: 树皮术', max:1, req:10, unlockSkill:'barkskin'},
         {key:'生命之树_bsfg', name:'生命之树', desc:'生命 +6%/层', max:5, req:15, mod:{hpPct:6}},
         {key:'春花_avkt', name:'春花', desc:'精神 +5%/层 · 治疗 +4%/层', max:5, req:18, mod:{spiPct:5,healBonus:4}},
@@ -755,10 +755,10 @@ const CLASSES = {
         {key:'自然守护_iaf5', name:'自然守护', desc:'防御 +5%/层 · 全能 +2%/层', max:5, req:25, mod:{defPct:5,vers:2}},
         {key:'愈合_plpk', name:'愈合', desc:'治疗 +7%/层 · 回复 +2%/层', max:5, req:28, mod:{healBonus:7,regFlat:2}},
         {key:'复苏_qv2o', name:'复苏', desc:'生命 +6%/层 · 治疗 +5%/层', max:5, req:30, mod:{hpPct:6,healBonus:5}},
-        {key:'恢复大师_u0aa', name:'恢复大师', desc:'技能CD +4%/层 · 治疗 +5%/层', max:3, req:33, mod:{cdReduction:4,healBonus:5}},
+        {key:'恢复大师_u0aa', name:'恢复大师', desc:'技能冷却 +4%/层 · 治疗 +5%/层', max:3, req:33, mod:{cdReduction:4,healBonus:5}},
         {key:'恢复宗师_f473', name:'恢复宗师', desc:'治疗 +12%/层 · 精通 +2%/层', max:3, req:36, mod:{healBonus:12,mastery:2}}
       ,
-{key:'tal_dq1zl9', name:'自然之愈', desc:'治疗 +8%/层 · 生命 +5%/层', max:5,req:38,mod:{healBonus:8,hpPct:5}},{key:'tal_gvfwv6', name:'永续', desc:'回复 +5%/层 · 精神 +6%/层', max:5,req:42,mod:{regFlat:5,spiPct:6}},{key:'tal_tsnlze', name:'自然之灵', desc:'治疗 +15%/层 · 技能CD +5%/层 · 精通 +2%/层', max:3,req:45,mod:{healBonus:15,cdReduction:5,mastery:2}}]},
+{key:'tal_dq1zl9', name:'自然之愈', desc:'治疗 +8%/层 · 生命 +5%/层', max:5,req:38,mod:{healBonus:8,hpPct:5}},{key:'tal_gvfwv6', name:'永续', desc:'回复 +5%/层 · 精神 +6%/层', max:5,req:42,mod:{regFlat:5,spiPct:6}},{key:'tal_tsnlze', name:'自然之灵', desc:'治疗 +15%/层 · 技能冷却 +5%/层 · 精通 +2%/层', max:3,req:45,mod:{healBonus:15,cdReduction:5,mastery:2}}]},
     ],
   },
 };
@@ -855,7 +855,7 @@ const MAPS = [
     boss:{ name:'沙鳞之翼', emoji:'🦂', lvl:27, desc:'贫瘠之地的传奇巨蝎',
       passive:{dodgeChance:0.1,
       tricks: [{name:"双刃",icon:"⚔️",desc:"下一次攻击造成双倍伤害",nextDouble:1},{name:"闪电反射",icon:"⚡",desc:"接下来5秒攻速+60%且必定暴击",spdBuff:5,critBuff:5},{name:"战斗狂怒",icon:"🔥",desc:"接下来5秒攻击+40%且吸血15%",atkBuff:5,leechBuff:5}] },
-      skills:[{name:"毒刺",icon:"🦂",desc:"3倍伤害+中毒",type:"dmg",mul:3,dot:true,castTime:1},{name:"沙暴",icon:"🏜️",desc:"3.5倍AOE伤害",type:"dmg",mul:3.5,castTime:2}] } },
+      skills:[{name:"毒刺",icon:"🦂",desc:"3倍伤害+中毒",type:"dmg",mul:3,dot:true,castTime:1},{name:"沙暴",icon:"🏜️",desc:"3.5倍范围伤害",type:"dmg",mul:3.5,castTime:2}] } },
   { key:'wetlands', name:'湿地', icon:'🌊', faction:'联盟', lvlRange:[20,30],
     desc:'布满沼泽与龙类的水域',
     sub:[
@@ -865,7 +865,7 @@ const MAPS = [
     boss:{ name:'萨格雷·烈焰之心', emoji:'🐲', lvl:32, desc:'湿地的火龙首领',
       passive:{dmgReduction:0.15,critChance:0.15,
       tricks: [{name:"致命连击",icon:"💥",desc:"下一次攻击造成双倍且必定暴击",nextDouble:1,critBuff:5},{name:"终极防御",icon:"🛡️",desc:"回复20%生命且接下来5秒防御+50%",defBuff:5,healPct:0.2}] },
-      skills:[{name:"烈焰之息",icon:"🔥",desc:"3.5倍火焰伤害+灼烧",type:"dmg",mul:3.5,dot:true,castTime:2},{name:"火焰风暴",icon:"🌋",desc:"5倍AOE伤害",type:"dmg",mul:5,castTime:3}] } },
+      skills:[{name:"烈焰之息",icon:"🔥",desc:"3.5倍火焰伤害+灼烧",type:"dmg",mul:3.5,dot:true,castTime:2},{name:"火焰风暴",icon:"🌋",desc:"5倍范围伤害",type:"dmg",mul:5,castTime:3}] } },
   { key:'duskwood', name:'暮色森林', icon:'🌑', faction:'中立', lvlRange:[20,30],
     desc:'被诅咒的暗影森林,亡灵游荡之地',
     sub:[
@@ -908,7 +908,7 @@ const MAPS = [
     boss:{ name:'黑石氏族督军', emoji:'👹', lvl:52, desc:'黑石氏族的暴君',
       passive:{atkBonus:0.2,dmgReduction:0.1,
       tricks: [{name:"再生",icon:"💚",desc:"立即回复25%最大生命",healPct:0.25},{name:"铁壁",icon:"🛡️",desc:"接下来5秒防御提升50%",defBuff:5},{name:"坚韧",icon:"🧱",desc:"接下来8秒防御提升40%",defBuff:8}] },
-      skills:[{name:"战争践踏",icon:"🦶",desc:"4倍伤害+减速",type:"dmg",mul:4,slow:true,castTime:2,stun:true},{name:"旋风斩",icon:"🌀",desc:"5倍AOE伤害",type:"dmg",mul:5,castTime:3,stun:true}] } },
+      skills:[{name:"战争践踏",icon:"🦶",desc:"4倍伤害+减速",type:"dmg",mul:4,slow:true,castTime:2,stun:true},{name:"旋风斩",icon:"🌀",desc:"5倍范围伤害",type:"dmg",mul:5,castTime:3,stun:true}] } },
   { key:'burning', name:'燃烧平原', icon:'🌋', faction:'中立', lvlRange:[45,55],
     desc:'通往火源之界的炽热焦土',
     sub:[
@@ -918,7 +918,7 @@ const MAPS = [
     boss:{ name:'拉格纳罗斯的仆从', emoji:'🔥', lvl:57, desc:'萨弗隆元素领主的爪牙',
       passive:{critChance:0.25,dmgReduction:0.1,
       tricks: [{name:"坚韧",icon:"🧱",desc:"接下来8秒防御提升40%",defBuff:8},{name:"连斩",icon:"🗡️",desc:"下一次攻击造成两次伤害",nextDouble:2}] },
-      skills:[{name:"熔岩爆裂",icon:"🌋",desc:"5倍火焰伤害+灼烧",type:"dmg",mul:5,dot:true,castTime:2},{name:"火焰新星",icon:"💥",desc:"6倍AOE伤害",type:"dmg",mul:6,castTime:3.5}] } },
+      skills:[{name:"熔岩爆裂",icon:"🌋",desc:"5倍火焰伤害+灼烧",type:"dmg",mul:5,dot:true,castTime:2},{name:"火焰新星",icon:"💥",desc:"6倍范围伤害",type:"dmg",mul:6,castTime:3.5}] } },
   { key:'ungoro', name:'安戈洛环形山', icon:'🦖', faction:'中立', lvlRange:[48,55],
     desc:'隐藏在火山口中的史前生态',
     sub:[
@@ -928,7 +928,7 @@ const MAPS = [
     boss:{ name:'雷加什·烈日', emoji:'🦖', lvl:57, desc:'史前龙王',
       passive:{atkBonus:0.2,critChance:0.2,
       tricks: [{name:"坚韧",icon:"🧱",desc:"接下来8秒防御提升40%",defBuff:8},{name:"再生",icon:"💚",desc:"立即回复25%最大生命",healPct:0.25}] },
-      skills:[{name:"太阳耀斑",icon:"☀️",desc:"5倍火焰伤害",type:"dmg",mul:5,castTime:2},{name:"远古咆哮",icon:"🦖",desc:"6倍AOE伤害",type:"dmg",mul:6,castTime:3}] } },
+      skills:[{name:"太阳耀斑",icon:"☀️",desc:"5倍火焰伤害",type:"dmg",mul:5,castTime:2},{name:"远古咆哮",icon:"🦖",desc:"6倍范围伤害",type:"dmg",mul:6,castTime:3}] } },
   { key:'silithus', name:'希利苏斯', icon:'🐛', faction:'中立', lvlRange:[55,60],
     desc:'异虫巢穴,克苏恩的影响之地',
     sub:[
@@ -948,7 +948,7 @@ const MAPS = [
     boss:{ name:'克尔苏加德的密使', emoji:'🦴', lvl:62, desc:'天灾军团特使',
       passive:{critChance:0.2,dmgReduction:0.1,dodgeChance:0.1,
       tricks: [{name:"再生",icon:"💚",desc:"立即回复25%最大生命",healPct:0.25},{name:"不死之躯",icon:"💀",desc:"接下来5秒防御+50%且吸血20%",defBuff:5,leechBuff:5}] },
-      skills:[{name:"寒冰箭",icon:"❄️",desc:"5倍冰霜伤害+减速",type:"dmg",mul:5,slow:true,castTime:2},{name:"死亡凋零",icon:"💀",desc:"6倍AOE暗影伤害",type:"dmg",mul:6,castTime:3},{name:'冰霜之触',icon:'❄️',desc:'5倍冰霜伤害',type:'dmg',mul:5,castTime:2}] } },
+      skills:[{name:"寒冰箭",icon:"❄️",desc:"5倍冰霜伤害+减速",type:"dmg",mul:5,slow:true,castTime:2},{name:"死亡凋零",icon:"💀",desc:"6倍范围暗影伤害",type:"dmg",mul:6,castTime:3},{name:'冰霜之触',icon:'❄️',desc:'5倍冰霜伤害',type:'dmg',mul:5,castTime:2}] } },
   { key:'hellfire', name:'地狱火半岛', icon:'😈', faction:'外域', lvlRange:[58,63],
     desc:'外域的入口,燃烧军团的前线',
     sub:[
@@ -968,7 +968,7 @@ const MAPS = [
     boss:{ name:'邦多', emoji:'👹', lvl:70, desc:'纳格兰食人魔之王',
       passive:{atkBonus:0.2,dmgReduction:0.15,dodgeChance:0.1,stunChance:0.1,
       tricks: [{name:"致命连击",icon:"💥",desc:"下一次攻击造成双倍且必定暴击",nextDouble:1,critBuff:5},{name:"战斗狂怒",icon:"🔥",desc:"接下来5秒攻击+40%且吸血15%",atkBuff:5,leechBuff:5},{name:"复苏",icon:"💚",desc:"立即回复15%最大生命",healPct:0.15}] },
-      skills:[{name:"粉碎打击",icon:"🔨",desc:"5倍伤害",type:"dmg",mul:5,castTime:2},{name:"狂暴冲锋",icon:"👹",desc:"6倍伤害",type:"dmg",mul:6,castTime:3,stun:true},{name:'食人魔之锤',icon:'🔨',desc:'7倍伤害',type:'dmg',mul:7,castTime:3},{name:'战争咆哮',icon:'💢',desc:'6倍AOE+减速',type:'dmg',mul:6,slow:true,castTime:3}] } },
+      skills:[{name:"粉碎打击",icon:"🔨",desc:"5倍伤害",type:"dmg",mul:5,castTime:2},{name:"狂暴冲锋",icon:"👹",desc:"6倍伤害",type:"dmg",mul:6,castTime:3,stun:true},{name:'食人魔之锤',icon:'🔨',desc:'7倍伤害',type:'dmg',mul:7,castTime:3},{name:'战争咆哮',icon:'💢',desc:'6倍范围+减速',type:'dmg',mul:6,slow:true,castTime:3}] } },
   { key:'shadowmoon', name:'影月谷', icon:'🌑', faction:'外域', lvlRange:[67,70],
     desc:'伊利丹的黑暗神殿所在',
     sub:[
@@ -978,7 +978,7 @@ const MAPS = [
     boss:{ name:'伊利丹·怒风', emoji:'😈', lvl:72, desc:'背叛者',
       passive:{dodgeChance:0.25,critChance:0.25,dmgReduction:0.1,atkBonus:0.1,stunChance:0.15,
       tricks: [{name:"复苏",icon:"💚",desc:"立即回复15%最大生命",healPct:0.15},{name:"狂怒",icon:"💢",desc:"接下来5秒攻击力提升50%",atkBuff:5}] },
-      skills:[{name:"埃辛诺斯之刃",icon:"🗡️",desc:"7倍伤害",type:"dmg",mul:7,castTime:2},{name:"恶魔变形",icon:"😈",desc:"8倍AOE暗影伤害",type:"dmg",mul:8,castTime:4},{name:'眼棱',icon:'👁️',desc:'7倍火焰伤害',type:'dmg',mul:7,castTime:2.5},{name:'法力燃烧',icon:'🔥',desc:'6倍伤害+灼烧',type:'dmg',mul:6,dot:true,castTime:3}] } },
+      skills:[{name:"埃辛诺斯之刃",icon:"🗡️",desc:"7倍伤害",type:"dmg",mul:7,castTime:2},{name:"恶魔变形",icon:"😈",desc:"8倍范围暗影伤害",type:"dmg",mul:8,castTime:4},{name:'眼棱',icon:'👁️',desc:'7倍火焰伤害',type:'dmg',mul:7,castTime:2.5},{name:'法力燃烧',icon:'🔥',desc:'6倍伤害+灼烧',type:'dmg',mul:6,dot:true,castTime:3}] } },
   { key:'borean', name:'北风苔原', icon:'❄️', faction:'诺森德', lvlRange:[68,72],
     desc:'诺森德的西部入口,鲜花与冰雪并存',
     sub:[
@@ -998,17 +998,17 @@ const MAPS = [
     boss:{ name:'索林姆', emoji:'⚡', lvl:82, desc:'雷电之王',
       passive:{critChance:0.3,dmgReduction:0.15,dodgeChance:0.15,stunChance:0.15,atkBonus:0.1,
       tricks: [{name:"疾风",icon:"💨",desc:"接下来5秒攻速提升60%",spdBuff:5},{name:"复苏",icon:"💚",desc:"立即回复15%最大生命",healPct:0.15},{name:"不死之躯",icon:"💀",desc:"接下来5秒防御+50%且吸血20%",defBuff:5,leechBuff:5}] },
-      skills:[{name:"雷霆之怒",icon:"⚡",desc:"7倍自然伤害",type:"dmg",mul:7,castTime:2.5,stun:true},{name:"闪电风暴",icon:"🌩️",desc:"8倍AOE伤害",type:"dmg",mul:8,castTime:4,stun:true},{name:'雷霆万钧',icon:'⚡',desc:'8倍自然伤害',type:'dmg',mul:8,castTime:3},{name:'风暴之锤',icon:'🔨',desc:'7倍伤害+击晕',type:'dmg',mul:7,castTime:3,stun:true},{name:'雷神之怒',icon:'🌩️',desc:'9倍AOE伤害',type:'dmg',mul:9,castTime:4}] } },
+      skills:[{name:"雷霆之怒",icon:"⚡",desc:"7倍自然伤害",type:"dmg",mul:7,castTime:2.5,stun:true},{name:"闪电风暴",icon:"🌩️",desc:"8倍范围伤害",type:"dmg",mul:8,castTime:4,stun:true},{name:'雷霆万钧',icon:'⚡',desc:'8倍自然伤害',type:'dmg',mul:8,castTime:3},{name:'风暴之锤',icon:'🔨',desc:'7倍伤害+击晕',type:'dmg',mul:7,castTime:3,stun:true},{name:'雷神之怒',icon:'🌩️',desc:'9倍范围伤害',type:'dmg',mul:9,castTime:4}] } },
   { key:'icecrown', name:'冰冠冰川', icon:'🏰', faction:'诺森德', lvlRange:[78,80],
     desc:'巫妖王的领地,天灾军团总部',
     sub:[
       { name:'冰雾村',     lvl:[78,79], mobs:'🧟天灾士兵|🦴亡灵骑士|❄️冰元素|🐉霜龙' },
       { name:'巫妖王大殿', lvl:[79,80], mobs:'🧟瘟疫食尸鬼|🦴骨爬行者|💀亡灵法师|🐲霜龙' },
     ],
-    boss:{ name:'阿尔萨斯·巫妖王', emoji:'☠️', lvl:83, desc:'寒冰之王,游戏终极BOSS' ,
+    boss:{ name:'阿尔萨斯·巫妖王', emoji:'☠️', lvl:83, desc:'寒冰之王,游戏终极首领' ,
       passive:{dmgReduction:0.25,critChance:0.3,dodgeChance:0.2,atkBonus:0.2,leech:0.15,
       tricks: [{name:"狂怒",icon:"💢",desc:"接下来5秒攻击力提升50%",atkBuff:5},{name:"双刃",icon:"⚔️",desc:"下一次攻击造成双倍伤害",nextDouble:1}] },
-      skills:[{name:"霜之哀伤",icon:"🗡️",desc:"7倍伤害+吸血30%",type:"dmg",mul:7,lifeSteal:0.3,castTime:2},{name:"死亡缠绕",icon:"💀",desc:"8倍暗影伤害",type:"dmg",mul:8,castTime:3},{name:"寒冰风暴",icon:"❄️",desc:"8倍AOE+减速",type:"dmg",mul:8,slow:true,castTime:3.5},{name:"亡者大军",icon:"🧟",desc:"9倍伤害",type:"dmg",mul:9,castTime:4,stun:true},{name:"巫妖王之怒",icon:"👑",desc:"10倍AOE暗影伤害",type:"dmg",mul:10,castTime:5}] } },
+      skills:[{name:"霜之哀伤",icon:"🗡️",desc:"7倍伤害+吸血30%",type:"dmg",mul:7,lifeSteal:0.3,castTime:2},{name:"死亡缠绕",icon:"💀",desc:"8倍暗影伤害",type:"dmg",mul:8,castTime:3},{name:"寒冰风暴",icon:"❄️",desc:"8倍范围+减速",type:"dmg",mul:8,slow:true,castTime:3.5},{name:"亡者大军",icon:"🧟",desc:"9倍伤害",type:"dmg",mul:9,castTime:4,stun:true},{name:"巫妖王之怒",icon:"👑",desc:"10倍范围暗影伤害",type:"dmg",mul:10,castTime:5}] } },
   { key:'lochmodan', name:'洛克莫丹', icon:'🏔️', faction:'联盟', lvlRange:[10,18],
     desc:'丹莫罗之外的雪山湖泊',
     sub:[
@@ -1048,7 +1048,7 @@ const MAPS = [
     boss:{ name:'瑟莱德丝公主', emoji:'👹', lvl:47, desc:'玛拉顿的腐化之源' ,
       passive:{dodgeChance:0.1,critChance:0.15,
       tricks: [{name:"疾风",icon:"💨",desc:"接下来5秒攻速提升60%",spdBuff:5},{name:"狂怒",icon:"💢",desc:"接下来5秒攻击力提升50%",atkBuff:5}] },
-      skills:[{name:"腐化",icon:"👹",desc:"4倍伤害+中毒",type:"dmg",mul:4,dot:true,castTime:2},{name:"地震",icon:"🌍",desc:"5倍AOE伤害",type:"dmg",mul:5,castTime:3,stun:true,slow:true}] } },
+      skills:[{name:"腐化",icon:"👹",desc:"4倍伤害+中毒",type:"dmg",mul:4,dot:true,castTime:2},{name:"地震",icon:"🌍",desc:"5倍范围伤害",type:"dmg",mul:5,castTime:3,stun:true,slow:true}] } },
   { key:'feralas', name:'菲拉斯', icon:'🌴', faction:'中立', lvlRange:[40,50],
     desc:'羽月要塞所在的远古丛林',
     sub:[
@@ -1076,7 +1076,7 @@ const MAPS = [
     boss:{ name:'瓦斯琪', emoji:'🐍', lvl:67, desc:'盘牙水库的纳迦女巫' ,
       passive:{dodgeChance:0.2,critChance:0.2,dmgReduction:0.1,
       tricks: [{name:"迅捷",icon:"⚡",desc:"接下来8秒攻速提升40%",spdBuff:8},{name:"坚韧",icon:"🧱",desc:"接下来8秒防御提升40%",defBuff:8},{name:"疾风",icon:"💨",desc:"接下来5秒攻速提升60%",spdBuff:5}] },
-      skills:[{name:"闪电箭",icon:"⚡",desc:"5倍自然伤害",type:"dmg",mul:5,castTime:2},{name:"叉状闪电",icon:"🌩️",desc:"6倍AOE伤害",type:"dmg",mul:6,castTime:3},{name:"毒蛇之咬",icon:"🐍",desc:"7倍伤害+中毒",type:"dmg",mul:7,dot:true,castTime:3.5}] } },
+      skills:[{name:"闪电箭",icon:"⚡",desc:"5倍自然伤害",type:"dmg",mul:5,castTime:2},{name:"叉状闪电",icon:"🌩️",desc:"6倍范围伤害",type:"dmg",mul:6,castTime:3},{name:"毒蛇之咬",icon:"🐍",desc:"7倍伤害+中毒",type:"dmg",mul:7,dot:true,castTime:3.5}] } },
   { key:'dragonblight', name:'龙骨荒野', icon:'🐉', faction:'诺森德', lvlRange:[72,76],
     desc:'巨龙军团的神圣墓地,诺森德中心',
     sub:[
@@ -1086,7 +1086,7 @@ const MAPS = [
     boss:{ name:'辛达苟萨', emoji:'🐉', lvl:78, desc:'冰霜女王,阿尔萨斯的龙骨巨龙' ,
       passive:{dmgReduction:0.2,critChance:0.2,dodgeChance:0.15,atkBonus:0.1,
       tricks: [{name:"狂怒",icon:"💢",desc:"接下来5秒攻击力提升50%",atkBuff:5},{name:"再生",icon:"💚",desc:"立即回复25%最大生命",healPct:0.25},{name:"血之渴望",icon:"🩸",desc:"接下来5秒攻击吸血20%",leechBuff:5}] },
-      skills:[{name:"冰霜吐息",icon:"❄️",desc:"6倍冰霜伤害+减速",type:"dmg",mul:6,slow:true,castTime:2},{name:"冰霜之墓",icon:"🧊",desc:"7倍伤害",type:"dmg",mul:7,castTime:3,slow:true},{name:"尾击",icon:"🐉",desc:"8倍AOE伤害",type:"dmg",mul:8,castTime:3.5,stun:true},{name:"冰冷之握",icon:"💀",desc:"8倍伤害+减速",type:"dmg",mul:8,slow:true,castTime:4}] } },
+      skills:[{name:"冰霜吐息",icon:"❄️",desc:"6倍冰霜伤害+减速",type:"dmg",mul:6,slow:true,castTime:2},{name:"冰霜之墓",icon:"🧊",desc:"7倍伤害",type:"dmg",mul:7,castTime:3,slow:true},{name:"尾击",icon:"🐉",desc:"8倍范围伤害",type:"dmg",mul:8,castTime:3.5,stun:true},{name:"冰冷之握",icon:"💀",desc:"8倍伤害+减速",type:"dmg",mul:8,slow:true,castTime:4}] } },
   { key:'stonetalon', name:'石爪山脉', icon:'⛰️', faction:'部落', lvlRange:[15,25],
     desc:'贫瘠之地以西的崇山峻岭',
     sub:[
@@ -1106,7 +1106,7 @@ const MAPS = [
     boss:{ name:'赫洛德', emoji:'⚔️', lvl:32, desc:'血色十字军的狂热勇士' ,
       passive:{atkBonus:0.15,critChance:0.1,
       tricks: [{name:"战吼",icon:"📯",desc:"接下来8秒攻击力提升30%",atkBuff:8},{name:"不死之躯",icon:"💀",desc:"接下来5秒防御+50%且吸血20%",defBuff:5,leechBuff:5}] },
-      skills:[{name:"旋风斩",icon:"🌀",desc:"3.5倍AOE伤害",type:"dmg",mul:3.5,castTime:2,stun:true},{name:"狂热",icon:"🔥",desc:"3倍伤害+攻速提升",type:"dmg",mul:3,castTime:1.5,spdBuff:true}] } },
+      skills:[{name:"旋风斩",icon:"🌀",desc:"3.5倍范围伤害",type:"dmg",mul:3.5,castTime:2,stun:true},{name:"狂热",icon:"🔥",desc:"3倍伤害+攻速提升",type:"dmg",mul:3,castTime:1.5,spdBuff:true}] } },
   { key:'dustwallow', name:'尘泥沼泽', icon:'🌫️', faction:'中立', lvlRange:[35,45],
     desc:'塞拉摩以南的阴暗沼泽,黑龙巢穴所在',
     sub:[
@@ -1116,7 +1116,7 @@ const MAPS = [
     boss:{ name:'奥妮克希亚', emoji:'🐲', lvl:47, desc:'黑龙公主,塞拉摩的阴影' ,
       passive:{dmgReduction:0.15,critChance:0.2,
       tricks: [{name:"铁壁",icon:"🛡️",desc:"接下来5秒防御提升50%",defBuff:5},{name:"再生",icon:"💚",desc:"立即回复25%最大生命",healPct:0.25}] },
-      skills:[{name:"龙息术",icon:"🔥",desc:"4.5倍火焰伤害",type:"dmg",mul:4.5,castTime:2,dot:true},{name:"扫尾",icon:"🐉",desc:"5倍AOE伤害",type:"dmg",mul:5,castTime:3,stun:true}] } },
+      skills:[{name:"龙息术",icon:"🔥",desc:"4.5倍火焰伤害",type:"dmg",mul:4.5,castTime:2,dot:true},{name:"扫尾",icon:"🐉",desc:"5倍范围伤害",type:"dmg",mul:5,castTime:3,stun:true}] } },
   { key:'blasted', name:'诅咒之地', icon:'🌑', faction:'中立', lvlRange:[50,60],
     desc:'黑暗之门所在的焦土,恶魔横行',
     sub:[
@@ -1126,7 +1126,7 @@ const MAPS = [
     boss:{ name:'卡扎克', emoji:'😈', lvl:62, desc:'诅咒之地的末日领主' ,
       passive:{atkBonus:0.2,critChance:0.2,dmgReduction:0.1,
       tricks: [{name:"坚韧",icon:"🧱",desc:"接下来8秒防御提升40%",defBuff:8},{name:"疾风",icon:"💨",desc:"接下来5秒攻速提升60%",spdBuff:5}] },
-      skills:[{name:"暗影箭雨",icon:"🌑",desc:"5倍暗影伤害",type:"dmg",mul:5,castTime:2},{name:"卡扎克之握",icon:"👊",desc:"6倍伤害+减速",type:"dmg",mul:6,slow:true,castTime:3},{name:"恶魔之怒",icon:"😈",desc:"7倍AOE伤害",type:"dmg",mul:7,castTime:3.5}] } },
+      skills:[{name:"暗影箭雨",icon:"🌑",desc:"5倍暗影伤害",type:"dmg",mul:5,castTime:2},{name:"卡扎克之握",icon:"👊",desc:"6倍伤害+减速",type:"dmg",mul:6,slow:true,castTime:3},{name:"恶魔之怒",icon:"😈",desc:"7倍范围伤害",type:"dmg",mul:7,castTime:3.5}] } },
   { key:'terokkar', name:'泰罗卡森林', icon:'🦅', faction:'外域', lvlRange:[62,67],
     desc:'外域的森林,奥金顿的遗迹所在',
     sub:[
@@ -1136,7 +1136,7 @@ const MAPS = [
     boss:{ name:'摩摩尔', emoji:'🌪️', lvl:69, desc:'奥金顿地下的音爆之王' ,
       passive:{dmgReduction:0.2,critChance:0.15,dodgeChance:0.1,
       tricks: [{name:"吸血光环",icon:"🩸",desc:"接下来8秒攻击吸血15%",leechBuff:8},{name:"复苏",icon:"💚",desc:"立即回复15%最大生命",healPct:0.15},{name:"双刃",icon:"⚔️",desc:"下一次攻击造成双倍伤害",nextDouble:1}] },
-      skills:[{name:"音爆",icon:"💥",desc:"5倍伤害",type:"dmg",mul:5,castTime:2},{name:"共鸣",icon:"🌀",desc:"6倍AOE伤害",type:"dmg",mul:6,castTime:3},{name:"摩摩尔之怒",icon:"😡",desc:"7倍伤害+减速",type:"dmg",mul:7,slow:true,castTime:3.5}] } },
+      skills:[{name:"音爆",icon:"💥",desc:"5倍伤害",type:"dmg",mul:5,castTime:2},{name:"共鸣",icon:"🌀",desc:"6倍范围伤害",type:"dmg",mul:6,castTime:3},{name:"摩摩尔之怒",icon:"😡",desc:"7倍伤害+减速",type:"dmg",mul:7,slow:true,castTime:3.5}] } },
   { key:'bladesedge', name:'刀锋山', icon:'🗡️', faction:'外域', lvlRange:[65,70],
     desc:'外域的锋利山峰,戈隆的领地',
     sub:[
@@ -1146,7 +1146,7 @@ const MAPS = [
     boss:{ name:'屠龙者格鲁尔', emoji:'👹', lvl:72, desc:'刀锋山的戈隆之王' ,
       passive:{atkBonus:0.25,critChance:0.2,dmgReduction:0.15,dodgeChance:0.1,
       tricks: [{name:"闪电反射",icon:"⚡",desc:"接下来5秒攻速+60%且必定暴击",spdBuff:5,critBuff:5},{name:"弱点感知",icon:"👁️",desc:"接下来8秒必定暴击",critBuff:8},{name:"狂暴之怒",icon:"😡",desc:"接下来5秒攻击+50%且攻速+30%",atkBuff:5,spdBuff:5}] },
-      skills:[{name:"巨力猛击",icon:"👊",desc:"6倍伤害",type:"dmg",mul:6,castTime:2},{name:"碎裂",icon:"💢",desc:"7倍伤害+减速",type:"dmg",mul:7,slow:true,castTime:3},{name:"地陷",icon:"🌍",desc:"7倍AOE伤害",type:"dmg",mul:7,castTime:3.5},{name:"屠龙之怒",icon:"🐉",desc:"8倍伤害",type:"dmg",mul:8,castTime:4}] } },
+      skills:[{name:"巨力猛击",icon:"👊",desc:"6倍伤害",type:"dmg",mul:6,castTime:2},{name:"碎裂",icon:"💢",desc:"7倍伤害+减速",type:"dmg",mul:7,slow:true,castTime:3},{name:"地陷",icon:"🌍",desc:"7倍范围伤害",type:"dmg",mul:7,castTime:3.5},{name:"屠龙之怒",icon:"🐉",desc:"8倍伤害",type:"dmg",mul:8,castTime:4}] } },
   { key:'netherstorm', name:'虚空风暴', icon:'🌀', faction:'外域', lvlRange:[68,72],
     desc:'外域的虚空能量漩涡,凯尔萨斯的领地',
     sub:[
@@ -1156,7 +1156,7 @@ const MAPS = [
     boss:{ name:'凯尔萨斯·逐日者', emoji:'🧝', lvl:74, desc:'风暴要塞的血精灵之王' ,
       passive:{critChance:0.25,dodgeChance:0.15,dmgReduction:0.1,atkBonus:0.15,
       tricks: [{name:"闪电反射",icon:"⚡",desc:"接下来5秒攻速+60%且必定暴击",spdBuff:5,critBuff:5},{name:"连斩",icon:"🗡️",desc:"下一次攻击造成两次伤害",nextDouble:2},{name:"双刃",icon:"⚔️",desc:"下一次攻击造成双倍伤害",nextDouble:1}] },
-      skills:[{name:"炎爆术",icon:"☄️",desc:"6倍火焰伤害",type:"dmg",mul:6,castTime:2},{name:"凤凰",icon:"🔥",desc:"7倍AOE+灼烧",type:"dmg",mul:7,dot:true,castTime:3},{name:"奥术风暴",icon:"🌀",desc:"7倍奥术伤害",type:"dmg",mul:7,castTime:3},{name:"引力失常",icon:"💫",desc:"8倍伤害",type:"dmg",mul:8,castTime:4}] } },
+      skills:[{name:"炎爆术",icon:"☄️",desc:"6倍火焰伤害",type:"dmg",mul:6,castTime:2},{name:"凤凰",icon:"🔥",desc:"7倍范围+灼烧",type:"dmg",mul:7,dot:true,castTime:3},{name:"奥术风暴",icon:"🌀",desc:"7倍奥术伤害",type:"dmg",mul:7,castTime:3},{name:"引力失常",icon:"💫",desc:"8倍伤害",type:"dmg",mul:8,castTime:4}] } },
   { key:'howling', name:'嚎风峡湾', icon:'⛵', faction:'诺森德', lvlRange:[68,73],
     desc:'诺森德东南部,维库人的家园',
     sub:[
@@ -1166,7 +1166,7 @@ const MAPS = [
     boss:{ name:'掠夺者因格瓦尔', emoji:'👤', lvl:75, desc:'乌特加德的维库之王' ,
       passive:{atkBonus:0.2,critChance:0.2,dmgReduction:0.15,dodgeChance:0.1,
       tricks: [{name:"迅捷",icon:"⚡",desc:"接下来8秒攻速提升40%",spdBuff:8},{name:"连斩",icon:"🗡️",desc:"下一次攻击造成两次伤害",nextDouble:2}] },
-      skills:[{name:"黑暗斩击",icon:"🗡️",desc:"6倍伤害",type:"dmg",mul:6,castTime:2,weaken:true},{name:"暗影之怒",icon:"💢",desc:"7倍AOE伤害",type:"dmg",mul:7,castTime:3,weaken:true},{name:"掠夺",icon:"👹",desc:"7倍伤害+吸血30%",type:"dmg",mul:7,lifeSteal:0.3,castTime:3},{name:"天灾之握",icon:"💀",desc:"8倍暗影伤害",type:"dmg",mul:8,castTime:4,weaken:true}] } },
+      skills:[{name:"黑暗斩击",icon:"🗡️",desc:"6倍伤害",type:"dmg",mul:6,castTime:2,weaken:true},{name:"暗影之怒",icon:"💢",desc:"7倍范围伤害",type:"dmg",mul:7,castTime:3,weaken:true},{name:"掠夺",icon:"👹",desc:"7倍伤害+吸血30%",type:"dmg",mul:7,lifeSteal:0.3,castTime:3},{name:"天灾之握",icon:"💀",desc:"8倍暗影伤害",type:"dmg",mul:8,castTime:4,weaken:true}] } },
   { key:'grizzly', name:'灰熊丘陵', icon:'🐻', faction:'诺森德', lvlRange:[73,77],
     desc:'诺森德的原始森林,熊怪与狼群的领地',
     sub:[
@@ -1176,7 +1176,7 @@ const MAPS = [
     boss:{ name:'达克萨隆巨熊', emoji:'🐻', lvl:79, desc:'灰熊丘陵的远古巨熊之灵' ,
       passive:{atkBonus:0.25,dmgReduction:0.2,critChance:0.15,dodgeChance:0.1,
       tricks: [{name:"复苏",icon:"💚",desc:"立即回复15%最大生命",healPct:0.15},{name:"不死之躯",icon:"💀",desc:"接下来5秒防御+50%且吸血20%",defBuff:5,leechBuff:5},{name:"狂怒",icon:"💢",desc:"接下来5秒攻击力提升50%",atkBuff:5}] },
-      skills:[{name:"熊之怒",icon:"🐻",desc:"6倍伤害",type:"dmg",mul:6,castTime:2},{name:"横扫",icon:"🐾",desc:"7倍AOE伤害",type:"dmg",mul:7,castTime:3},{name:"狂暴",icon:"💢",desc:"7倍伤害+吸血20%",type:"dmg",mul:7,lifeSteal:0.2,castTime:3,spdBuff:true},{name:"巨熊之握",icon:"🐻",desc:"8倍伤害+减速",type:"dmg",mul:8,slow:true,castTime:4}] } },
+      skills:[{name:"熊之怒",icon:"🐻",desc:"6倍伤害",type:"dmg",mul:6,castTime:2},{name:"横扫",icon:"🐾",desc:"7倍范围伤害",type:"dmg",mul:7,castTime:3},{name:"狂暴",icon:"💢",desc:"7倍伤害+吸血20%",type:"dmg",mul:7,lifeSteal:0.2,castTime:3,spdBuff:true},{name:"巨熊之握",icon:"🐻",desc:"8倍伤害+减速",type:"dmg",mul:8,slow:true,castTime:4}] } },
   { key:'sholazar', name:'索拉查盆地', icon:'🌴', faction:'诺森德', lvlRange:[75,78],
     desc:'诺森德的热带奇迹,泰坦生态实验场',
     sub:[
@@ -1186,7 +1186,7 @@ const MAPS = [
     boss:{ name:'洛卡纳哈', emoji:'🐅', lvl:80, desc:'索拉查的稀有灵魂兽' ,
       passive:{dodgeChance:0.25,critChance:0.25,dmgReduction:0.15,atkBonus:0.15,stunChance:0.1,
       tricks: [{name:"再生",icon:"💚",desc:"立即回复25%最大生命",healPct:0.25},{name:"疾风",icon:"💨",desc:"接下来5秒攻速提升60%",spdBuff:5},{name:"致命连击",icon:"💥",desc:"下一次攻击造成双倍且必定暴击",nextDouble:1,critBuff:5}] },
-      skills:[{name:"灵魂撕裂",icon:"🦁",desc:"6倍伤害",type:"dmg",mul:6,castTime:2},{name:"幽灵步",icon:"👻",desc:"7倍伤害",type:"dmg",mul:7,castTime:2.5},{name:"兽王之怒",icon:"💢",desc:"8倍AOE伤害",type:"dmg",mul:8,castTime:3},{name:"洛卡纳哈之灵",icon:"✨",desc:"8倍伤害+吸血25%",type:"dmg",mul:8,lifeSteal:0.25,castTime:3.5},{name:"灵魂风暴",icon:"🌪️",desc:"9倍AOE伤害",type:"dmg",mul:9,castTime:4}] } },
+      skills:[{name:"灵魂撕裂",icon:"🦁",desc:"6倍伤害",type:"dmg",mul:6,castTime:2},{name:"幽灵步",icon:"👻",desc:"7倍伤害",type:"dmg",mul:7,castTime:2.5},{name:"兽王之怒",icon:"💢",desc:"8倍范围伤害",type:"dmg",mul:8,castTime:3},{name:"洛卡纳哈之灵",icon:"✨",desc:"8倍伤害+吸血25%",type:"dmg",mul:8,lifeSteal:0.25,castTime:3.5},{name:"灵魂风暴",icon:"🌪️",desc:"9倍范围伤害",type:"dmg",mul:9,castTime:4}] } },
 ];
 
 const RARE_ELITE_SKILLSETS = {
@@ -1424,7 +1424,7 @@ const DUNGEONS = [{
     },{
       name: '火焰之雨',
       icon: '🌧️',
-      desc: '3倍AOE',
+      desc: '3倍范围',
       type: 'dmg',
       mul: 4,
       cd: 20,
@@ -1612,7 +1612,7 @@ const DUNGEONS = [{
     , weaken: true},{
       name: '暗潮',
       icon: '🌊',
-      desc: '3倍AOE',
+      desc: '3倍范围',
       type: 'dmg',
       mul: 3,
       cd: 18,
@@ -1828,7 +1828,7 @@ const DUNGEONS = [{
     skills: [{
       name: '旋风斩',
       icon: '🌀',
-      desc: '3倍AOE',
+      desc: '3倍范围',
       type: 'dmg',
       mul: 4,
       cd: 14,
@@ -1925,7 +1925,7 @@ const DUNGEONS = [{
     , slow: true},{
       name: '冰霜新星',
       icon: '💠',
-      desc: '3倍AOE+减速',
+      desc: '3倍范围+减速',
       type: 'dmg',
       mul: 5,
       slow: true,
@@ -1986,7 +1986,7 @@ const DUNGEONS = [{
     , weaken: true},{
       name: '岩石风暴',
       icon: '🪨',
-      desc: '3倍AOE',
+      desc: '3倍范围',
       type: 'dmg',
       mul: 6,
       cd: 24,
@@ -2046,7 +2046,7 @@ const DUNGEONS = [{
     },{
       name: '地震',
       icon: '🌍',
-      desc: '3倍AOE',
+      desc: '3倍范围',
       type: 'dmg',
       mul: 6,
       cd: 26,
@@ -2299,7 +2299,7 @@ const DUNGEONS = [{
     , dot: true},{
       name: '熔火之心',
       icon: '🌋',
-      desc: '3倍AOE',
+      desc: '3倍范围',
       type: 'dmg',
       mul: 6,
       cd: 30,
@@ -2373,7 +2373,7 @@ const DUNGEONS = [{
     , weaken: true},{
       name: '亡灵大军',
       icon: '🧟',
-      desc: '3倍AOE',
+      desc: '3倍范围',
       type: 'dmg',
       mul: 7,
       cd: 30,
@@ -2409,7 +2409,7 @@ const DUNGEONS = [{
           skills: [
             {name: "火焰吐息", icon: "🔥", desc: "5倍火焰伤害+灼烧", type: "dmg", mul: 5, castTime: 2, dot: true,
           tricks: [{name:"不死之躯",icon:"💀",desc:"接下来5秒防御+50%且吸血20%",defBuff:5,leechBuff:5},{name:"迅捷",icon:"⚡",desc:"接下来8秒攻速提升40%",spdBuff:8}] },
-            {name: "恐惧咆哮", icon: "💢", desc: "4倍AOE+减速", type: "dmg", mul: 4, castTime: 3, slow: true, aoe: true}
+            {name: "恐惧咆哮", icon: "💢", desc: "4倍范围+减速", type: "dmg", mul: 4, castTime: 3, slow: true, aoe: true}
           ],
           passive: {critChance: 0.1, dmgReduction: 0.1, atkBonus: 0.2}
         },
@@ -2418,7 +2418,7 @@ const DUNGEONS = [{
           emoji: "🔥",
           wave: 8,
           skills: [
-            {name: "火焰之雨", icon: "🌋", desc: "5倍AOE火焰伤害", type: "dmg", mul: 5, castTime: 3, aoe: true,
+            {name: "火焰之雨", icon: "🌋", desc: "5倍范围火焰伤害", type: "dmg", mul: 5, castTime: 3, aoe: true,
           tricks: [{name:"血之渴望",icon:"🩸",desc:"接下来5秒攻击吸血20%",leechBuff:5},{name:"铁壁",icon:"🛡️",desc:"接下来5秒防御提升50%",defBuff:5}] },
             {name: "熔岩护盾", icon: "🛡️", desc: "4倍伤害+减伤", type: "dmg", mul: 4, castTime: 2,dot:true}
           ],
@@ -2431,7 +2431,7 @@ const DUNGEONS = [{
           skills: [
             {name: "岩石投掷", icon: "🪨", desc: "5倍伤害", type: "dmg", mul: 5, castTime: 2,stun:true,
           tricks: [{name:"致命专注",icon:"🎯",desc:"接下来5秒必定暴击",critBuff:5},{name:"战吼",icon:"📯",desc:"接下来8秒攻击力提升30%",atkBuff:8},{name:"狂暴之怒",icon:"😡",desc:"接下来5秒攻击+50%且攻速+30%",atkBuff:5,spdBuff:5}] },
-            {name: "地震", icon: "🌍", desc: "6倍AOE伤害", type: "dmg", mul: 6, castTime: 3, aoe: true},
+            {name: "地震", icon: "🌍", desc: "6倍范围伤害", type: "dmg", mul: 6, castTime: 3, aoe: true},
             {name: "岩浆爆发", icon: "🌋", desc: "7倍伤害+灼烧", type: "dmg", mul: 7, castTime: 3.5, dot: true}
           ],
           passive: {critChance: 0.15, dmgReduction: 0.2, atkBonus: 0.15}
@@ -2443,9 +2443,9 @@ const DUNGEONS = [{
           skills: [
             {name: "萨弗拉斯之击", icon: "🔨", desc: "7倍火焰伤害", type: "dmg", mul: 7, castTime: 3,dot:true,
           tricks: [{name:"致命连击",icon:"💥",desc:"下一次攻击造成双倍且必定暴击",nextDouble:1,critBuff:5},{name:"战吼",icon:"📯",desc:"接下来8秒攻击力提升30%",atkBuff:8}] },
-            {name: "熔岩爆发", icon: "🌋", desc: "8倍AOE+灼烧", type: "dmg", mul: 8, castTime: 3.5, dot: true, aoe: true},
+            {name: "熔岩爆发", icon: "🌋", desc: "8倍范围+灼烧", type: "dmg", mul: 8, castTime: 3.5, dot: true, aoe: true},
             {name: "火焰之子", icon: "🔥", desc: "6倍伤害+召唤", type: "dmg", mul: 6, castTime: 2.5,dot:true},
-            {name: "炎魔之怒", icon: "💥", desc: "9倍AOE伤害", type: "dmg", mul: 9, castTime: 4, aoe: true}
+            {name: "炎魔之怒", icon: "💥", desc: "9倍范围伤害", type: "dmg", mul: 9, castTime: 4, aoe: true}
           ],
           passive: {dodgeChance: 0.15, critChance: 0.25, dmgReduction: 0.25, atkBonus: 0.2}
         }
@@ -2527,7 +2527,7 @@ const DUNGEONS = [{
           skills: [
             {name: "龙息术", icon: "🔥", desc: "5倍火焰伤害", type: "dmg", mul: 5, castTime: 2,dot:true,
           tricks: [{name:"战斗狂怒",icon:"🔥",desc:"接下来5秒攻击+40%且吸血15%",atkBuff:5,leechBuff:5},{name:"不死之躯",icon:"💀",desc:"接下来5秒防御+50%且吸血20%",defBuff:5,leechBuff:5},{name:"终极防御",icon:"🛡️",desc:"回复20%生命且接下来5秒防御+50%",defBuff:5,healPct:0.2}] },
-            {name: "扫尾", icon: "🌀", desc: "6倍AOE伤害", type: "dmg", mul: 6, castTime: 3, aoe: true}
+            {name: "扫尾", icon: "🌀", desc: "6倍范围伤害", type: "dmg", mul: 6, castTime: 3, aoe: true}
           ],
           passive: {dodgeChance: 0.2, critChance: 0.15, dmgReduction: 0.1}
         },
@@ -2538,7 +2538,7 @@ const DUNGEONS = [{
           skills: [
             {name: "暗影烈焰", icon: "🔥", desc: "6倍暗影火焰伤害", type: "dmg", mul: 6, castTime: 2.5,weaken:true,
           tricks: [{name:"终极防御",icon:"🛡️",desc:"回复20%生命且接下来5秒防御+50%",defBuff:5,healPct:0.2},{name:"弱点感知",icon:"👁️",desc:"接下来8秒必定暴击",critBuff:8}] },
-            {name: "龙翼打击", icon: "💢", desc: "5倍AOE+减速", type: "dmg", mul: 5, castTime: 3, slow: true, aoe: true}
+            {name: "龙翼打击", icon: "💢", desc: "5倍范围+减速", type: "dmg", mul: 5, castTime: 3, slow: true, aoe: true}
           ],
           passive: {critChance: 0.1, dmgReduction: 0.2, atkBonus: 0.15}
         },
@@ -2549,7 +2549,7 @@ const DUNGEONS = [{
           skills: [
             {name: "时光扭曲", icon: "🌀", desc: "5倍伤害+减速", type: "dmg", mul: 5, castTime: 2.5, slow: true,
           tricks: [{name:"双刃",icon:"⚔️",desc:"下一次攻击造成双倍伤害",nextDouble:1},{name:"坚韧",icon:"🧱",desc:"接下来8秒防御提升40%",defBuff:8},{name:"再生",icon:"💚",desc:"立即回复25%最大生命",healPct:0.25}] },
-            {name: "多种吐息", icon: "🌈", desc: "7倍AOE伤害", type: "dmg", mul: 7, castTime: 3.5, aoe: true},
+            {name: "多种吐息", icon: "🌈", desc: "7倍范围伤害", type: "dmg", mul: 7, castTime: 3.5, aoe: true},
             {name: "龙血之怒", icon: "💢", desc: "8倍伤害", type: "dmg", mul: 8, castTime: 4,dot:true}
           ],
           passive: {dodgeChance: 0.1, critChance: 0.2, dmgReduction: 0.2}
@@ -2561,9 +2561,9 @@ const DUNGEONS = [{
           skills: [
             {name: "暗影烈焰", icon: "🔥", desc: "7倍暗影火焰伤害", type: "dmg", mul: 7, castTime: 3,weaken:true,
           tricks: [{name:"双刃",icon:"⚔️",desc:"下一次攻击造成双倍伤害",nextDouble:1},{name:"连斩",icon:"🗡️",desc:"下一次攻击造成两次伤害",nextDouble:2},{name:"坚韧",icon:"🧱",desc:"接下来8秒防御提升40%",defBuff:8}] },
-            {name: "龙族召唤", icon: "🐲", desc: "8倍AOE伤害", type: "dmg", mul: 8, castTime: 4, aoe: true},
+            {name: "龙族召唤", icon: "🐲", desc: "8倍范围伤害", type: "dmg", mul: 8, castTime: 4, aoe: true},
             {name: "奈法利安之怒", icon: "💢", desc: "9倍伤害+恐惧", type: "dmg", mul: 9, castTime: 4,weaken:true,fear:true},
-            {name: "黑龙之息", icon: "🔥", desc: "10倍AOE火焰伤害", type: "dmg", mul: 10, castTime: 5, dot: true, aoe: true}
+            {name: "黑龙之息", icon: "🔥", desc: "10倍范围火焰伤害", type: "dmg", mul: 10, castTime: 5, dot: true, aoe: true}
           ],
           passive: {dodgeChance: 0.15, critChance: 0.25, dmgReduction: 0.25, atkBonus: 0.2}
         }
@@ -2636,7 +2636,7 @@ const DUNGEONS = [{
           skills: [
             {name: "穿刺", icon: "🗡️", desc: "5倍伤害", type: "dmg", mul: 5, castTime: 2,stun:true,
           tricks: [{name:"连斩",icon:"🗡️",desc:"下一次攻击造成两次伤害",nextDouble:2},{name:"双刃",icon:"⚔️",desc:"下一次攻击造成双倍伤害",nextDouble:1}] },
-            {name: "虫群风暴", icon: "🦗", desc: "6倍AOE伤害", type: "dmg", mul: 6, castTime: 3, aoe: true}
+            {name: "虫群风暴", icon: "🦗", desc: "6倍范围伤害", type: "dmg", mul: 6, castTime: 3, aoe: true}
           ],
           passive: {dodgeChance: 0.2, critChance: 0.15, dmgReduction: 0.1}
         },
@@ -2656,7 +2656,7 @@ const DUNGEONS = [{
           emoji: "🧟",
           wave: 9,
           skills: [
-            {name: "疾病之云", icon: "☁️", desc: "6倍AOE+灼烧", type: "dmg", mul: 6, castTime: 3, dot: true, aoe: true,
+            {name: "疾病之云", icon: "☁️", desc: "6倍范围+灼烧", type: "dmg", mul: 6, castTime: 3, dot: true, aoe: true,
           tricks: [{name:"弱点感知",icon:"👁️",desc:"接下来8秒必定暴击",critBuff:8},{name:"闪电反射",icon:"⚡",desc:"接下来5秒攻速+60%且必定暴击",spdBuff:5,critBuff:5},{name:"战斗狂怒",icon:"🔥",desc:"接下来5秒攻击+40%且吸血15%",atkBuff:5,leechBuff:5}] },
             {name: "天灾之握", icon: "💀", desc: "7倍伤害", type: "dmg", mul: 7, castTime: 3.5,weaken:true},
             {name: "腐烂", icon: "🦠", desc: "6倍伤害+减速", type: "dmg", mul: 6, castTime: 3, slow: true}
@@ -2670,7 +2670,7 @@ const DUNGEONS = [{
           skills: [
             {name: "闪电链", icon: "⚡", desc: "7倍自然伤害", type: "dmg", mul: 7, castTime: 3,stun:true,
           tricks: [{name:"铁壁",icon:"🛡️",desc:"接下来5秒防御提升50%",defBuff:5},{name:"不死之躯",icon:"💀",desc:"接下来5秒防御+50%且吸血20%",defBuff:5,leechBuff:5}] },
-            {name: "极性转换", icon: "🔄", desc: "6倍AOE伤害", type: "dmg", mul: 6, castTime: 3, aoe: true}
+            {name: "极性转换", icon: "🔄", desc: "6倍范围伤害", type: "dmg", mul: 6, castTime: 3, aoe: true}
           ],
           passive: {dodgeChance: 0.1, critChance: 0.25, dmgReduction: 0.15}
         },
@@ -2682,7 +2682,7 @@ const DUNGEONS = [{
             {name: "冰霜冲击", icon: "❄️", desc: "8倍冰霜伤害", type: "dmg", mul: 8, castTime: 3,slow:true,
           tricks: [{name:"再生",icon:"💚",desc:"立即回复25%最大生命",healPct:0.25},{name:"坚韧",icon:"🧱",desc:"接下来8秒防御提升40%",defBuff:8},{name:"致命专注",icon:"🎯",desc:"接下来5秒必定暴击",critBuff:5}] },
             {name: "暗影裂隙", icon: "🌑", desc: "9倍暗影伤害", type: "dmg", mul: 9, castTime: 4,weaken:true},
-            {name: "亡者大军", icon: "🧟", desc: "8倍AOE伤害", type: "dmg", mul: 8, castTime: 3.5, aoe: true},
+            {name: "亡者大军", icon: "🧟", desc: "8倍范围伤害", type: "dmg", mul: 8, castTime: 3.5, aoe: true},
             {name: "巫妖之怒", icon: "👑", desc: "10倍伤害+灼烧", type: "dmg", mul: 10, castTime: 5, dot: true}
           ],
           passive: {dodgeChance: 0.2, critChance: 0.3, dmgReduction: 0.3, atkBonus: 0.25}
@@ -2765,7 +2765,7 @@ const DUNGEONS = [{
           skills: [
             {name: "冲锋", icon: "💨", desc: "5倍伤害", type: "dmg", mul: 5, castTime: 2,stun:true,
           tricks: [{name:"吸血光环",icon:"🩸",desc:"接下来8秒攻击吸血15%",leechBuff:8},{name:"复苏",icon:"💚",desc:"立即回复15%最大生命",healPct:0.15},{name:"疾风",icon:"💨",desc:"接下来5秒攻速提升60%",spdBuff:5}] },
-            {name: "暗影践踏", icon: "🌑", desc: "6倍AOE伤害", type: "dmg", mul: 6, castTime: 3, aoe: true}
+            {name: "暗影践踏", icon: "🌑", desc: "6倍范围伤害", type: "dmg", mul: 6, castTime: 3, aoe: true}
           ],
           passive: {dodgeChance: 0.15, critChance: 0.1, atkBonus: 0.2}
         },
@@ -2798,7 +2798,7 @@ const DUNGEONS = [{
           skills: [
             {name: "奥术弹幕", icon: "🌀", desc: "6倍奥术伤害", type: "dmg", mul: 6, castTime: 2.5,weaken:true,
           tricks: [{name:"双刃",icon:"⚔️",desc:"下一次攻击造成双倍伤害",nextDouble:1},{name:"终极防御",icon:"🛡️",desc:"回复20%生命且接下来5秒防御+50%",defBuff:5,healPct:0.2}] },
-            {name: "能量过载", icon: "⚡", desc: "7倍AOE伤害", type: "dmg", mul: 7, castTime: 3.5, aoe: true},
+            {name: "能量过载", icon: "⚡", desc: "7倍范围伤害", type: "dmg", mul: 7, castTime: 3.5, aoe: true},
             {name: "电弧", icon: "⚡", desc: "6倍伤害+减速", type: "dmg", mul: 6, castTime: 3, slow: true}
           ],
           passive: {dodgeChance: 0.1, critChance: 0.2, dmgReduction: 0.2}
@@ -2810,7 +2810,7 @@ const DUNGEONS = [{
           skills: [
             {name: "奥术弹幕", icon: "🌀", desc: "7倍奥术伤害", type: "dmg", mul: 7, castTime: 3, weaken: true,
           tricks: [{name:"坚韧",icon:"🧱",desc:"接下来8秒防御提升40%",defBuff:8},{name:"双刃",icon:"⚔️",desc:"下一次攻击造成双倍伤害",nextDouble:1}] },
-            {name: "火焰之雨", icon: "🔥", desc: "8倍AOE+灼烧", type: "dmg", mul: 8, castTime: 4, aoe: true, dot: true},
+            {name: "火焰之雨", icon: "🔥", desc: "8倍范围+灼烧", type: "dmg", mul: 8, castTime: 4, aoe: true, dot: true},
             {name: "乌鸦形态", icon: "🐦", desc: "6倍伤害+吸血25%", type: "dmg", mul: 6, castTime: 2.5, lifeSteal: 0.25}
           ],
           passive: {critChance: 0.3, dmgReduction: 0.2, dodgeChance: 0.15, atkBonus: 0.15}
@@ -2820,11 +2820,11 @@ const DUNGEONS = [{
           emoji: "😈",
           wave: 12,
           skills: [
-            {name: "暗影新星", icon: "💥", desc: "7倍暗影AOE", type: "dmg", mul: 7, castTime: 3, aoe: true,
+            {name: "暗影新星", icon: "💥", desc: "7倍暗影范围", type: "dmg", mul: 7, castTime: 3, aoe: true,
           tricks: [{name:"复苏",icon:"💚",desc:"立即回复15%最大生命",healPct:0.15},{name:"不死之躯",icon:"💀",desc:"接下来5秒防御+50%且吸血20%",defBuff:5,leechBuff:5},{name:"致命专注",icon:"🎯",desc:"接下来5秒必定暴击",critBuff:5}] },
             {name: "地狱火", icon: "🔥", desc: "8倍火焰伤害+灼烧", type: "dmg", mul: 8, castTime: 4, dot: true},
             {name: "恐惧", icon: "👻", desc: "7倍伤害+减速", type: "dmg", mul: 7, castTime: 3, slow: true, fear:true},
-            {name: "军团之怒", icon: "😈", desc: "9倍AOE伤害", type: "dmg", mul: 9, castTime: 4.5, aoe: true}
+            {name: "军团之怒", icon: "😈", desc: "9倍范围伤害", type: "dmg", mul: 9, castTime: 4.5, aoe: true}
           ],
           passive: {dodgeChance: 0.15, critChance: 0.25, dmgReduction: 0.25, atkBonus: 0.2}
         }
@@ -2880,7 +2880,7 @@ const DUNGEONS = [{
     , stun: true},{
       name: '雷霆万钧',
       icon: '⛈️',
-      desc: '3倍AOE必暴',
+      desc: '3倍范围必暴',
       type: 'dmg',
       mul: 7,
       alwaysCrit: true,
@@ -2982,7 +2982,7 @@ const DUNGEONS = [{
           skills: [
             {name: "陨石打击", icon: "☄️", desc: "7倍火焰伤害", type: "dmg", mul: 7, castTime: 3,dot:true,
           tricks: [{name:"迅捷",icon:"⚡",desc:"接下来8秒攻速提升40%",spdBuff:8},{name:"双刃",icon:"⚔️",desc:"下一次攻击造成双倍伤害",nextDouble:1},{name:"终极防御",icon:"🛡️",desc:"回复20%生命且接下来5秒防御+50%",defBuff:5,healPct:0.2}] },
-            {name: "燃烧", icon: "🔥", desc: "6倍AOE+灼烧", type: "dmg", mul: 6, castTime: 3, dot: true, aoe: true}
+            {name: "燃烧", icon: "🔥", desc: "6倍范围+灼烧", type: "dmg", mul: 6, castTime: 3, dot: true, aoe: true}
           ],
           passive: {critChance: 0.1, dmgReduction: 0.15, atkBonus: 0.25}
         },
@@ -2993,7 +2993,7 @@ const DUNGEONS = [{
           skills: [
             {name: "暗影之怒", icon: "💢", desc: "7倍暗影伤害", type: "dmg", mul: 7, castTime: 3,weaken:true,
           tricks: [{name:"双刃",icon:"⚔️",desc:"下一次攻击造成双倍伤害",nextDouble:1},{name:"疾风",icon:"💨",desc:"接下来5秒攻速提升60%",spdBuff:5}] },
-            {name: "负能量", icon: "🖤", desc: "8倍AOE伤害", type: "dmg", mul: 8, castTime: 4, aoe: true},
+            {name: "负能量", icon: "🖤", desc: "8倍范围伤害", type: "dmg", mul: 8, castTime: 4, aoe: true},
             {name: "熵", icon: "🌀", desc: "7倍伤害+减速", type: "dmg", mul: 7, castTime: 3, slow: true}
           ],
           passive: {dodgeChance: 0.1, critChance: 0.25, dmgReduction: 0.2}
@@ -3005,9 +3005,9 @@ const DUNGEONS = [{
           skills: [
             {name: "欺诈者之触", icon: "👿", desc: "8倍暗影伤害", type: "dmg", mul: 8, castTime: 3,weaken:true,
           tricks: [{name:"致命连击",icon:"💥",desc:"下一次攻击造成双倍且必定暴击",nextDouble:1,critBuff:5},{name:"战斗狂怒",icon:"🔥",desc:"接下来5秒攻击+40%且吸血15%",atkBuff:5,leechBuff:5},{name:"弱点感知",icon:"👁️",desc:"接下来8秒必定暴击",critBuff:8}] },
-            {name: "末日火雨", icon: "🌋", desc: "9倍AOE火焰伤害", type: "dmg", mul: 9, castTime: 4, dot: true, aoe: true},
+            {name: "末日火雨", icon: "🌋", desc: "9倍范围火焰伤害", type: "dmg", mul: 9, castTime: 4, dot: true, aoe: true},
             {name: "黑暗", icon: "🌑", desc: "8倍伤害+减速", type: "dmg", mul: 8, castTime: 3.5, slow: true},
-            {name: "军团之怒", icon: "😈", desc: "10倍AOE伤害", type: "dmg", mul: 10, castTime: 5, aoe: true}
+            {name: "军团之怒", icon: "😈", desc: "10倍范围伤害", type: "dmg", mul: 10, castTime: 5, aoe: true}
           ],
           passive: {dodgeChance: 0.2, critChance: 0.3, dmgReduction: 0.3, atkBonus: 0.25}
         }
@@ -3029,7 +3029,7 @@ const DUNGEONS = [{
           skills: [
             {name: "火焰喷射", icon: "🔥", desc: "6倍火焰伤害", type: "dmg", mul: 6, castTime: 2.5,dot:true,
           tricks: [{name:"血之渴望",icon:"🩸",desc:"接下来5秒攻击吸血20%",leechBuff:5},{name:"疾风",icon:"💨",desc:"接下来5秒攻速提升60%",spdBuff:5}] },
-            {name: "炮击", icon: "💣", desc: "7倍AOE伤害", type: "dmg", mul: 7, castTime: 3.5, aoe: true}
+            {name: "炮击", icon: "💣", desc: "7倍范围伤害", type: "dmg", mul: 7, castTime: 3.5, aoe: true}
           ],
           passive: {dmgReduction: 0.25, atkBonus: 0.15}
         },
@@ -3040,7 +3040,7 @@ const DUNGEONS = [{
           skills: [
             {name: "重力炸弹", icon: "💣", desc: "7倍伤害", type: "dmg", mul: 7, castTime: 3,weaken:true,bomb:true,
           tricks: [{name:"致命专注",icon:"🎯",desc:"接下来5秒必定暴击",critBuff:5},{name:"连斩",icon:"🗡️",desc:"下一次攻击造成两次伤害",nextDouble:2},{name:"迅捷",icon:"⚡",desc:"接下来8秒攻速提升40%",spdBuff:8}] },
-            {name: "拆解", icon: "🔧", desc: "6倍AOE+减速", type: "dmg", mul: 6, castTime: 3, slow: true, aoe: true}
+            {name: "拆解", icon: "🔧", desc: "6倍范围+减速", type: "dmg", mul: 6, castTime: 3, slow: true, aoe: true}
           ],
           passive: {dodgeChance: 0.1, critChance: 0.2, dmgReduction: 0.2}
         },
@@ -3051,7 +3051,7 @@ const DUNGEONS = [{
           skills: [
             {name: "闪电链", icon: "⚡", desc: "7倍自然伤害", type: "dmg", mul: 7, castTime: 3,stun:true,
           tricks: [{name:"铁壁",icon:"🛡️",desc:"接下来5秒防御提升50%",defBuff:5},{name:"不死之躯",icon:"💀",desc:"接下来5秒防御+50%且吸血20%",defBuff:5,leechBuff:5}] },
-            {name: "过载", icon: "💥", desc: "8倍AOE伤害", type: "dmg", mul: 8, castTime: 4, aoe: true}
+            {name: "过载", icon: "💥", desc: "8倍范围伤害", type: "dmg", mul: 8, castTime: 4, aoe: true}
           ],
           passive: {dodgeChance: 0.15, critChance: 0.25, dmgReduction: 0.15}
         },
@@ -3062,7 +3062,7 @@ const DUNGEONS = [{
           skills: [
             {name: "暗影撞击", icon: "🌑", desc: "8倍暗影伤害", type: "dmg", mul: 8, castTime: 3.5,weaken:true,
           tricks: [{name:"双刃",icon:"⚔️",desc:"下一次攻击造成双倍伤害",nextDouble:1},{name:"狂怒",icon:"💢",desc:"接下来5秒攻击力提升50%",atkBuff:5}] },
-            {name: "无面者之怒", icon: "💢", desc: "7倍AOE伤害", type: "dmg", mul: 7, castTime: 3, aoe: true},
+            {name: "无面者之怒", icon: "💢", desc: "7倍范围伤害", type: "dmg", mul: 7, castTime: 3, aoe: true},
             {name: "虚空", icon: "🌌", desc: "8倍伤害+减速", type: "dmg", mul: 8, castTime: 4, slow: true}
           ],
           passive: {critChance: 0.2, dmgReduction: 0.2, atkBonus: 0.25}
@@ -3074,9 +3074,9 @@ const DUNGEONS = [{
           skills: [
             {name: "精神鞭笞", icon: "🌀", desc: "8倍暗影伤害", type: "dmg", mul: 8, castTime: 3,weaken:true,
           tricks: [{name:"战吼",icon:"📯",desc:"接下来8秒攻击力提升30%",atkBuff:8},{name:"不死之躯",icon:"💀",desc:"接下来5秒防御+50%且吸血20%",defBuff:5,leechBuff:5}] },
-            {name: "疯狂", icon: "👁️", desc: "9倍AOE+灼烧", type: "dmg", mul: 9, castTime: 4, dot: true, aoe: true},
+            {name: "疯狂", icon: "👁️", desc: "9倍范围+灼烧", type: "dmg", mul: 9, castTime: 4, dot: true, aoe: true},
             {name: "千喉之兽", icon: "🐙", desc: "8倍伤害+减速", type: "dmg", mul: 8, castTime: 3.5, slow: true},
-            {name: "尤格萨隆之影", icon: "💀", desc: "10倍暗影AOE", type: "dmg", mul: 10, castTime: 5, aoe: true}
+            {name: "尤格萨隆之影", icon: "💀", desc: "10倍暗影范围", type: "dmg", mul: 10, castTime: 5, aoe: true}
           ],
           passive: {dodgeChance: 0.2, critChance: 0.3, dmgReduction: 0.3, atkBonus: 0.25}
         }
@@ -3133,7 +3133,7 @@ const DUNGEONS = [{
     , weaken: true},{
       name: '灵魂风暴',
       icon: '💀',
-      desc: '3倍AOE必暴',
+      desc: '3倍范围必暴',
       type: 'dmg',
       mul: 8,
       alwaysCrit: true,
@@ -3159,7 +3159,7 @@ const DUNGEONS = [{
           skills: [
             {name: "火焰之息", icon: "🔥", desc: "6倍火焰伤害+灼烧", type: "dmg", mul: 6, castTime: 2.5, dot: true,
           tricks: [{name:"吸血光环",icon:"🩸",desc:"接下来8秒攻击吸血15%",leechBuff:8},{name:"血之渴望",icon:"🩸",desc:"接下来5秒攻击吸血20%",leechBuff:5}] },
-            {name: "龙翼打击", icon: "💢", desc: "7倍AOE伤害", type: "dmg", mul: 7, castTime: 3.5, aoe: true}
+            {name: "龙翼打击", icon: "💢", desc: "7倍范围伤害", type: "dmg", mul: 7, castTime: 3.5, aoe: true}
           ],
           passive: {critChance: 0.2, dmgReduction: 0.2}
         },
@@ -3170,7 +3170,7 @@ const DUNGEONS = [{
           skills: [
             {name: "暗影烈焰", icon: "🔥", desc: "7倍暗影火焰伤害", type: "dmg", mul: 7, castTime: 3,weaken:true,
           tricks: [{name:"连斩",icon:"🗡️",desc:"下一次攻击造成两次伤害",nextDouble:2},{name:"双刃",icon:"⚔️",desc:"下一次攻击造成双倍伤害",nextDouble:1},{name:"吸血光环",icon:"🩸",desc:"接下来8秒攻击吸血15%",leechBuff:8}] },
-            {name: "暮光之息", icon: "🌑", desc: "8倍AOE伤害", type: "dmg", mul: 8, castTime: 4, aoe: true},
+            {name: "暮光之息", icon: "🌑", desc: "8倍范围伤害", type: "dmg", mul: 8, castTime: 4, aoe: true},
             {name: "暮光屏障", icon: "🛡️", desc: "6倍伤害+减伤", type: "dmg", mul: 6, castTime: 3,spdBuff:true}
           ],
           passive: {critChance: 0.15, dmgReduction: 0.2, atkBonus: 0.25}
@@ -3182,8 +3182,8 @@ const DUNGEONS = [{
           skills: [
             {name: "暮光切割", icon: "🌗", desc: "8倍暗影伤害", type: "dmg", mul: 8, castTime: 3,weaken:true,
           tricks: [{name:"吸血光环",icon:"🩸",desc:"接下来8秒攻击吸血15%",leechBuff:8},{name:"疾风",icon:"💨",desc:"接下来5秒攻速提升60%",spdBuff:5},{name:"不死之躯",icon:"💀",desc:"接下来5秒防御+50%且吸血20%",defBuff:5,leechBuff:5}] },
-            {name: "虚空之息", icon: "🌌", desc: "9倍AOE+灼烧", type: "dmg", mul: 9, castTime: 4, dot: true, aoe: true},
-            {name: "暮光毁灭", icon: "💥", desc: "10倍AOE伤害", type: "dmg", mul: 10, castTime: 5, aoe: true}
+            {name: "虚空之息", icon: "🌌", desc: "9倍范围+灼烧", type: "dmg", mul: 9, castTime: 4, dot: true, aoe: true},
+            {name: "暮光毁灭", icon: "💥", desc: "10倍范围伤害", type: "dmg", mul: 10, castTime: 5, aoe: true}
           ],
           passive: {dodgeChance: 0.15, critChance: 0.3, dmgReduction: 0.25, atkBonus: 0.2}
         }
@@ -3205,7 +3205,7 @@ const DUNGEONS = [{
           skills: [
             {name: "骨刺", icon: "🦴", desc: "6倍伤害", type: "dmg", mul: 6, castTime: 2.5,weaken:true,
           tricks: [{name:"血之渴望",icon:"🩸",desc:"接下来5秒攻击吸血20%",leechBuff:5},{name:"不死之躯",icon:"💀",desc:"接下来5秒防御+50%且吸血20%",defBuff:5,leechBuff:5}] },
-            {name: "白骨风暴", icon: "💀", desc: "7倍AOE伤害", type: "dmg", mul: 7, castTime: 3.5, aoe: true}
+            {name: "白骨风暴", icon: "💀", desc: "7倍范围伤害", type: "dmg", mul: 7, castTime: 3.5, aoe: true}
           ],
           passive: {critChance: 0.2, dmgReduction: 0.2}
         },
@@ -3225,7 +3225,7 @@ const DUNGEONS = [{
           emoji: "🧪",
           wave: 9,
           skills: [
-            {name: "瘟疫爆发", icon: "🦠", desc: "7倍AOE+灼烧", type: "dmg", mul: 7, castTime: 3.5, dot: true, aoe: true, plague:true,
+            {name: "瘟疫爆发", icon: "🦠", desc: "7倍范围+灼烧", type: "dmg", mul: 7, castTime: 3.5, dot: true, aoe: true, plague:true,
           tricks: [{name:"铁壁",icon:"🛡️",desc:"接下来5秒防御提升50%",defBuff:5},{name:"复苏",icon:"💚",desc:"立即回复15%最大生命",healPct:0.15},{name:"终极防御",icon:"🛡️",desc:"回复20%生命且接下来5秒防御+50%",defBuff:5,healPct:0.2}] },
             {name: "突变", icon: "🧬", desc: "8倍伤害", type: "dmg", mul: 8, castTime: 3,weaken:true}
           ],
@@ -3238,7 +3238,7 @@ const DUNGEONS = [{
           skills: [
             {name: "冰霜吐息", icon: "❄️", desc: "8倍冰霜伤害+减速", type: "dmg", mul: 8, castTime: 3, slow: true,
           tricks: [{name:"双刃",icon:"⚔️",desc:"下一次攻击造成双倍伤害",nextDouble:1},{name:"铁壁",icon:"🛡️",desc:"接下来5秒防御提升50%",defBuff:5}] },
-            {name: "冰霜之墓", icon: "🧊", desc: "7倍AOE伤害", type: "dmg", mul: 7, castTime: 3.5, aoe: true},
+            {name: "冰霜之墓", icon: "🧊", desc: "7倍范围伤害", type: "dmg", mul: 7, castTime: 3.5, aoe: true},
             {name: "冰冷之握", icon: "💀", desc: "7倍伤害+减速", type: "dmg", mul: 7, castTime: 3, slow: true}
           ],
           passive: {dodgeChance: 0.2, critChance: 0.2, dmgReduction: 0.25}
@@ -3250,9 +3250,9 @@ const DUNGEONS = [{
           skills: [
             {name: "霜之哀伤", icon: "🗡️", desc: "9倍伤害+吸血30%", type: "dmg", mul: 9, castTime: 3, lifeSteal: 0.3,lifeSteal:0.2,
           tricks: [{name:"不死之躯",icon:"💀",desc:"接下来5秒防御+50%且吸血20%",defBuff:5,leechBuff:5},{name:"连斩",icon:"🗡️",desc:"下一次攻击造成两次伤害",nextDouble:2},{name:"战斗狂怒",icon:"🔥",desc:"接下来5秒攻击+40%且吸血15%",atkBuff:5,leechBuff:5}] },
-            {name: "亡者大军", icon: "🧟", desc: "10倍AOE伤害", type: "dmg", mul: 10, castTime: 4, aoe: true},
-            {name: "污染", icon: "☠️", desc: "8倍AOE+灼烧", type: "dmg", mul: 8, castTime: 3.5, dot: true, aoe: true},
-            {name: "巫妖王之怒", icon: "👑", desc: "12倍AOE暗影伤害", type: "dmg", mul: 12, castTime: 6, aoe: true}
+            {name: "亡者大军", icon: "🧟", desc: "10倍范围伤害", type: "dmg", mul: 10, castTime: 4, aoe: true},
+            {name: "污染", icon: "☠️", desc: "8倍范围+灼烧", type: "dmg", mul: 8, castTime: 3.5, dot: true, aoe: true},
+            {name: "巫妖王之怒", icon: "👑", desc: "12倍范围暗影伤害", type: "dmg", mul: 12, castTime: 6, aoe: true}
           ],
           passive: {dodgeChance: 0.25, critChance: 0.35, dmgReduction: 0.35, atkBonus: 0.3}
         }
@@ -3757,7 +3757,7 @@ const RAID_EXTRA_BOSSES = {
     { name:'迦顿男爵', emoji:'🔥', passive:{critChance:0.18,dmgReduction:0.12,atkBonus:0.16},
       skills:[
         {name:'活体炸弹', icon:'💣', desc:'7倍火焰伤害', type:'dmg', mul:7, castTime:3, bomb:true, dot:true, brittle:true},
-        {name:'地狱烈焰', icon:'🌋', desc:'8倍AOE火焰伤害', type:'dmg', mul:8, castTime:4, aoe:true, dot:true, silence:1600},
+        {name:'地狱烈焰', icon:'🌋', desc:'8倍范围火焰伤害', type:'dmg', mul:8, castTime:4, aoe:true, dot:true, silence:1600},
       ] }
   ],
   bwl: [
@@ -3772,12 +3772,12 @@ const RAID_EXTRA_BOSSES = {
     { name:'帕奇维克', emoji:'🪓', passive:{critChance:0.18,dmgReduction:0.22,atkBonus:0.24},
       skills:[
         {name:'憎恶重殴', icon:'🪓', desc:'9倍伤害', type:'dmg', mul:9, castTime:2.5, stun:1600, bleed:true, brittle:true},
-        {name:'腐臭横扫', icon:'🦠', desc:'8倍AOE伤害', type:'dmg', mul:8, castTime:3.5, aoe:true, plague:true, cripple:true},
+        {name:'腐臭横扫', icon:'🦠', desc:'8倍范围伤害', type:'dmg', mul:8, castTime:3.5, aoe:true, plague:true, cripple:true},
       ] },
     { name:'萨菲隆', emoji:'🐉', passive:{critChance:0.22,dmgReduction:0.22,dodgeChance:0.12,atkBonus:0.18},
       skills:[
         {name:'冰霜吐息', icon:'❄️', desc:'9倍冰霜伤害', type:'dmg', mul:9, castTime:3.5, slow:true, freeze:1800, decay:true},
-        {name:'寒冰爆裂', icon:'🧊', desc:'8倍AOE伤害', type:'dmg', mul:8, castTime:4, aoe:true, freeze:1500, brittle:true},
+        {name:'寒冰爆裂', icon:'🧊', desc:'8倍范围伤害', type:'dmg', mul:8, castTime:4, aoe:true, freeze:1500, brittle:true},
         {name:'死亡严寒', icon:'🥶', desc:'9倍暗影冰霜伤害', type:'dmg', mul:9, castTime:4, weaken:true, decay2:true, manaDrain:50}
       ] }
   ],
@@ -3786,7 +3786,7 @@ const RAID_EXTRA_BOSSES = {
       skills:[
         {name:'烈焰共鸣', icon:'🔥', desc:'8倍火焰伤害', type:'dmg', mul:8, castTime:3, dot:true, silence:1800, brittle:true},
         {name:'暗影缠结', icon:'🌑', desc:'8倍暗影伤害', type:'dmg', mul:8, castTime:3, weaken:true, fear:1800, soulLink:true},
-        {name:'双子爆裂', icon:'💥', desc:'9倍AOE伤害', type:'dmg', mul:9, castTime:4, aoe:true, dot:true, manaDrain:60}
+        {name:'双子爆裂', icon:'💥', desc:'9倍范围伤害', type:'dmg', mul:9, castTime:4, aoe:true, dot:true, manaDrain:60}
       ] }
   ],
   ulduar: [
@@ -3794,7 +3794,7 @@ const RAID_EXTRA_BOSSES = {
       skills:[
         {name:'荆棘缠绕', icon:'🌿', desc:'8倍自然伤害', type:'dmg', mul:8, castTime:3, cripple:true, decay:true},
         {name:'生命凋零', icon:'🍄', desc:'8倍自然伤害', type:'dmg', mul:8, castTime:3.5, plague:true, decay2:true},
-        {name:'古树震击', icon:'🌳', desc:'9倍AOE伤害', type:'dmg', mul:9, castTime:4, aoe:true, stun:1500, weaken:true}
+        {name:'古树震击', icon:'🌳', desc:'9倍范围伤害', type:'dmg', mul:9, castTime:4, aoe:true, stun:1500, weaken:true}
       ] }
   ],
   ruby: [
@@ -3809,7 +3809,7 @@ const RAID_EXTRA_BOSSES = {
     { name:'鲜血女王兰娜瑟尔', emoji:'🩸', passive:{critChance:0.26,dmgReduction:0.2,dodgeChance:0.12,atkBonus:0.22,leech:0.15},
       skills:[
         {name:'鲜血镜像', icon:'🪞', desc:'9倍暗影伤害', type:'dmg', mul:9, castTime:3, mirror:true, weaken:true, soulLink:true},
-        {name:'血色狂宴', icon:'🩸', desc:'10倍AOE伤害', type:'dmg', mul:10, castTime:4, aoe:true, bleed:true, frenzy:true},
+        {name:'血色狂宴', icon:'🩸', desc:'10倍范围伤害', type:'dmg', mul:10, castTime:4, aoe:true, bleed:true, frenzy:true},
         {name:'女王之咬', icon:'🧛', desc:'9倍伤害', type:'dmg', mul:9, castTime:3.5, soulDrain:true, fear:1800, bleed:true}
       ] }
   ]
@@ -3818,51 +3818,51 @@ const GENERATED_BOSS_SKILLS = {
   fire: [
     {name:'烈焰吐息', icon:'🔥', desc:'7倍火焰伤害', type:'dmg', mul:7, castTime:3, dot:true},
     {name:'熔火爆裂', icon:'🌋', desc:'8倍伤害', type:'dmg', mul:8, castTime:3.5, brittle:true},
-    {name:'火雨倾泻', icon:'☄️', desc:'8倍AOE伤害', type:'dmg', mul:8, castTime:4, aoe:true, dot:true},
+    {name:'火雨倾泻', icon:'☄️', desc:'8倍范围伤害', type:'dmg', mul:8, castTime:4, aoe:true, dot:true},
     {name:'灼烧烙印', icon:'🔥', desc:'7倍暗焰伤害', type:'dmg', mul:7, castTime:3, silence:1600}
   ],
   frost: [
     {name:'极寒冲击', icon:'❄️', desc:'7倍冰霜伤害', type:'dmg', mul:7, castTime:3, slow:true},
     {name:'冰墓封印', icon:'🧊', desc:'8倍伤害', type:'dmg', mul:8, castTime:3.5, freeze:1500},
-    {name:'霜暴', icon:'🌨️', desc:'8倍AOE伤害', type:'dmg', mul:8, castTime:4, aoe:true, slow:true},
+    {name:'霜暴', icon:'🌨️', desc:'8倍范围伤害', type:'dmg', mul:8, castTime:4, aoe:true, slow:true},
     {name:'寒魂凋零', icon:'🥶', desc:'8倍冰霜暗影伤害', type:'dmg', mul:8, castTime:3.5, decay:true}
   ],
   shadow: [
     {name:'暗影收割', icon:'🌑', desc:'7倍暗影伤害', type:'dmg', mul:7, castTime:3, weaken:true},
     {name:'恐惧尖啸', icon:'👻', desc:'7倍伤害', type:'dmg', mul:7, castTime:3, fear:1800},
     {name:'灵魂枷锁', icon:'🔗', desc:'8倍暗影伤害', type:'dmg', mul:8, castTime:3.5, soulLink:true, decay:true},
-    {name:'虚空崩解', icon:'🌀', desc:'8倍AOE伤害', type:'dmg', mul:8, castTime:4, aoe:true, manaDrain:50}
+    {name:'虚空崩解', icon:'🌀', desc:'8倍范围伤害', type:'dmg', mul:8, castTime:4, aoe:true, manaDrain:50}
   ],
   poison: [
     {name:'腐毒撕咬', icon:'🦠', desc:'7倍伤害', type:'dmg', mul:7, castTime:3, dot:true, plague:true},
     {name:'毒针穿刺', icon:'🪡', desc:'7倍伤害', type:'dmg', mul:7, castTime:3, cripple:true, dot:true},
-    {name:'腐化喷吐', icon:'🐍', desc:'8倍AOE伤害', type:'dmg', mul:8, castTime:4, aoe:true, dot:true, decay:true}
+    {name:'腐化喷吐', icon:'🐍', desc:'8倍范围伤害', type:'dmg', mul:8, castTime:4, aoe:true, dot:true, decay:true}
   ],
   storm: [
     {name:'雷霆轰击', icon:'⚡', desc:'7倍自然伤害', type:'dmg', mul:7, castTime:3, stun:1400},
     {name:'静电灼烧', icon:'🌩️', desc:'8倍伤害', type:'dmg', mul:8, castTime:3.5, manaDrain:45, silence:1600},
-    {name:'风暴新星', icon:'⛈️', desc:'8倍AOE伤害', type:'dmg', mul:8, castTime:4, aoe:true, stun:1200, weaken:true}
+    {name:'风暴新星', icon:'⛈️', desc:'8倍范围伤害', type:'dmg', mul:8, castTime:4, aoe:true, stun:1200, weaken:true}
   ],
   nature: [
     {name:'根须缠绕', icon:'🌿', desc:'7倍自然伤害', type:'dmg', mul:7, castTime:3, cripple:true},
     {name:'孢子腐蚀', icon:'🍄', desc:'7倍伤害', type:'dmg', mul:7, castTime:3.5, plague:true, decay:true},
-    {name:'自然震荡', icon:'🌳', desc:'8倍AOE伤害', type:'dmg', mul:8, castTime:4, aoe:true, weaken:true}
+    {name:'自然震荡', icon:'🌳', desc:'8倍范围伤害', type:'dmg', mul:8, castTime:4, aoe:true, weaken:true}
   ],
   dragon: [
     {name:'龙炎吐息', icon:'🐉', desc:'8倍火焰伤害', type:'dmg', mul:8, castTime:3, dot:true, weaken:true},
-    {name:'巨尾横扫', icon:'🪽', desc:'8倍AOE伤害', type:'dmg', mul:8, castTime:3.5, aoe:true, stun:1500},
+    {name:'巨尾横扫', icon:'🪽', desc:'8倍范围伤害', type:'dmg', mul:8, castTime:3.5, aoe:true, stun:1500},
     {name:'龙爪撕裂', icon:'🩸', desc:'8倍伤害', type:'dmg', mul:8, castTime:3, bleed:true, cripple:true},
     {name:'龙威压制', icon:'👁️', desc:'9倍伤害', type:'dmg', mul:9, castTime:4, fear:1800, brittle:true}
   ],
   arcane: [
     {name:'奥术震爆', icon:'✨', desc:'7倍奥术伤害', type:'dmg', mul:7, castTime:3, silence:1600},
     {name:'法力崩坏', icon:'💧', desc:'7倍伤害', type:'dmg', mul:7, castTime:3.5, manaDrain:50, weaken:true},
-    {name:'虚空风暴', icon:'🌀', desc:'8倍AOE伤害', type:'dmg', mul:8, castTime:4, aoe:true, mirror:true, silence:2000}
+    {name:'虚空风暴', icon:'🌀', desc:'8倍范围伤害', type:'dmg', mul:8, castTime:4, aoe:true, mirror:true, silence:2000}
   ],
   brute: [
     {name:'粉碎重殴', icon:'🔨', desc:'7倍伤害', type:'dmg', mul:7, castTime:3, stun:1300, brittle:true},
     {name:'裂骨打击', icon:'🪓', desc:'8倍伤害', type:'dmg', mul:8, castTime:3.5, bleed:true, weaken:true},
-    {name:'践踏震击', icon:'🌍', desc:'8倍AOE伤害', type:'dmg', mul:8, castTime:4, aoe:true, stun:1000, cripple:true}
+    {name:'践踏震击', icon:'🌍', desc:'8倍范围伤害', type:'dmg', mul:8, castTime:4, aoe:true, stun:1000, cripple:true}
   ]
 };
 const BOSS_DEBUFF_KEYS = ['dot','slow','stun','weaken','sunder','silence','disarm','fear','freeze','cripple','decay','wither','manaDrain','bomb','plague','bleed','brittle','soulDrain','soulLink','revenge','frenzy','decay2','mirror'];

@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+<!POCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>艾泽拉斯放置勇者 · Idle Azeroth</title>
+<title>艾泽拉斯放置勇者</title>
 <link rel="stylesheet" href="styles.css?v=20260619h">
 </head>
 <body>
@@ -14,10 +14,10 @@
       <span id="h-name" style="cursor:pointer" title="切换角色"><span data-ui-icon="hero" data-ui-size="sm" data-ui-label="角色"></span> <b>-</b></span>
       <span><span data-ui-icon="location" data-ui-size="sm" data-ui-label="位置"></span> <b id="h-zone">-</b></span>
       <span title="金币 — 主货币。用途:装备强化/重铸、背包扩容、觉醒。来源:击杀怪物、副本、远征军团。"><span data-ui-icon="gold" data-ui-size="sm" data-ui-label="金币"></span> <b id="h-gold">0</b></span>
-      <span title="钻石 — 稀有货币(账号共享)。用途:抽随从、扩容、加速、黑市。来源:成就、Boss、每日/每周任务、远征。"><span data-ui-icon="gem" data-ui-size="sm" data-ui-label="宝石"></span> <b id="h-gem">0</b></span>
-      <span title="通用券 — 用途:CD 中跳过副本/地图Boss 直接再战。来源:段位/任务奖励、黑市。"><span data-ui-icon="ticket" data-ui-size="sm" data-ui-label="通用券"></span> <b id="h-tickets">0</b></span>
+      <span title="钻石 — 稀有货币(账号共享)。用途:抽随从、扩容、加速、黑市。来源:成就、首领、每日/每周任务、远征。"><span data-ui-icon="gem" data-ui-size="sm" data-ui-label="宝石"></span> <b id="h-gem">0</b></span>
+      <span title="通用券 — 用途:冷却中跳过副本/地图首领直接再战。来源:段位/任务奖励、黑市。"><span data-ui-icon="ticket" data-ui-size="sm" data-ui-label="通用券"></span> <b id="h-tickets">0</b></span>
       <span title="随从券 — 用途:在随从页抽取随从。来源:每日/每周任务、黑市。"><span data-ui-icon="companion" data-ui-size="sm" data-ui-label="随从券"></span> <b id="h-comp-tickets">0</b></span>
-      <span title="荣誉 — 竞技场货币(账号共享)。用途:荣誉商店 PvP 强化、换对手、黑市。来源:竞技场排位/切磋、任务。"><span data-ui-icon="honor" data-ui-size="sm" data-ui-label="荣誉"></span> <b id="h-honor">0</b></span>
+      <span title="荣誉 — 竞技场货币(账号共享)。用途:荣誉商店竞技场强化、换对手、黑市。来源:竞技场排位/切磋、任务。"><span data-ui-icon="honor" data-ui-size="sm" data-ui-label="荣誉"></span> <b id="h-honor">0</b></span>
       <span title="塔币 — 无尽塔货币。用途:无尽塔商店、黑市兑换。来源:攀爬无尽塔。"><span data-ui-icon="towercoin" data-ui-size="sm" data-ui-label="塔币"></span> <b id="h-towercoin">0</b></span>
       <span title="魔法精华 — 用途:附魔、装备重铸、词缀升阶/转换。来源:副本、任务、远征、黑市。"><span data-ui-icon="essence" data-ui-size="sm" data-ui-label="精华"></span> <b id="h-essence">0</b></span>
       <span class="pill"><span data-ui-icon="clock" data-ui-size="xs" data-ui-label="时钟"></span><b id="h-clock">00:00</b></span>
@@ -32,7 +32,7 @@
     </div>
     <div class="row">
       <span><span id="class-label" class="class-label">职业</span></span>
-      <b>Lv.<span id="s-lvl">1</span></b>
+      <b>等级<span id="s-lvl">1</span></b>
     </div>
     <div class="bar xp" style="margin:6px 0 8px"><i id="b-xp"></i><span id="t-xp">0/10</span></div>
     <div class="bar hp" style="margin-bottom:4px"><i id="b-hp"></i><span id="t-hp"></span></div>
@@ -51,8 +51,8 @@
     <div class="row"><span class="muted">防御</span><b id="s-def">0</b></div>
     <div class="row"><span class="muted">暴击</span><b id="s-crit">5%</b></div>
     <div class="row"><span class="muted">暴伤</span><b id="s-critd">150%</b></div>
-    <div class="row"><span class="muted">攻速</span><b id="s-spd">1.0/s</b></div>
-    <div class="row"><span class="muted">回复</span><b id="s-reg">1/s</b></div>
+    <div class="row"><span class="muted">攻速</span><b id="s-spd">1.0/秒</b></div>
+    <div class="row"><span class="muted">回复</span><b id="s-reg">1/秒</b></div>
 
     <h2 style="margin-top:10px"><span class="ui-label compact"><span data-ui-icon="essence" data-ui-size="sm"></span><span>副属性</span></span></h2>
     <div class="row"><span class="muted">吸血</span><b id="s-leech">0%</b></div>
@@ -83,7 +83,7 @@
         <div class="fighter">
           <div class="emoji" id="hero-emoji">🧙</div>
           <div class="name">你</div>
-          <div class="lvl">Lv.<span id="hero-lvl-tag">1</span></div>
+          <div class="lvl">等级<span id="hero-lvl-tag">1</span></div>
           <div class="bar hp" style="margin-top:6px"><i id="b-hp2"></i><span id="t-hp2"></span></div>
         </div>
         <div class="vs"><span data-ui-icon="battle" data-ui-size="lg"></span></div>
@@ -121,7 +121,7 @@
       <div class="dmg-meter" id="dmg-meter">
         <div class="dm-head">
           <span class="ui-label compact"><span data-ui-icon="stats" data-ui-size="xs"></span><span>伤害统计</span></span>
-          <span class="dm-dps" id="dm-dps">DPS 0</span>
+          <span class="dm-dps" id="dm-dps">秒伤 0</span>
           <button id="btn-dmg-reset" data-action="dmgreset" title="清零统计">重置</button>
         </div>
         <div class="dm-row"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="hero2" data-ui-size="xs"></span><span>英雄</span></span></span><div class="dm-bar"><i id="dm-hero-bar"></i></div><span class="dm-val" id="dm-hero-val">0</span></div>
@@ -131,7 +131,7 @@
         <div class="dm-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="heal" data-ui-size="xs"></span><span>最高治疗</span></span></span><span id="dm-max-heal" style="flex:1">-</span></div>
         <div class="dm-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="guide" data-ui-size="xs"></span><span>暴击率</span></span></span><span id="dm-crit-rate" style="flex:1">-</span></div>
         <div class="dm-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="kills" data-ui-size="xs"></span><span>击杀</span></span></span><span id="dm-kills" style="flex:1">0</span></div>
-        <div class="dm-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="battle" data-ui-size="xs"></span><span>峰值DPS</span></span></span><span id="dm-peak-dps" style="flex:1">-</span></div>
+        <div class="dm-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="battle" data-ui-size="xs"></span><span>峰值秒伤</span></span></span><span id="dm-peak-dps" style="flex:1">-</span></div>
         <div class="dm-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="hero2" data-ui-size="xs"></span><span>承受</span></span></span><span id="dm-taken" style="flex:1">-</span></div>
         <div class="dm-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="kills" data-ui-size="xs"></span><span>击杀耗时</span></span></span><span id="dm-ttk" style="flex:1">-</span></div>
         <div id="dm-skills-breakdown" style="margin-top:4px;border-top:1px dashed var(--border);padding-top:4px;display:none"></div>
@@ -257,7 +257,7 @@
         <span class="sub-tab" data-dgsub="roguelike">🌌 幻象</span>
       </div>
       <div id="dungeon-sub-dungeon">
-        <div class="muted" style="margin-bottom:6px">挑战副本 BOSS,获取传说装备</div>
+        <div class="muted" style="margin-bottom:6px">挑战副本首领，获取传说装备</div>
         <div class="sub-tabs" style="margin-bottom:6px">
           <span class="sub-tab active" data-dgmode="normal"><span data-ui-icon="dungeon" data-ui-size="xs"></span>普通副本</span>
           <span class="sub-tab" data-dgmode="heroic">⭐ 英雄本</span>
@@ -275,7 +275,7 @@
           <div id="heroic-dungeon-list"></div>
         </div>
         <div id="dungeon-mode-epic" style="display:none">
-          <div class="muted" style="margin-bottom:6px">80级史诗团本独立列表 · 高难度 · 必掉史诗紫装 / 全BOSS超低概率橙装</div>
+          <div class="muted" style="margin-bottom:6px">80级史诗团本独立列表 · 高难度 · 必掉史诗紫装 / 全部首领超低概率橙装</div>
           <div id="epic-dungeon-list"></div>
         </div>
       </div>
@@ -298,7 +298,7 @@
     </div>
 
     <div class="tab-panel" id="tab-events">
-      <div class="muted" style="margin-bottom:6px">世界Boss / 日常 / 赛季</div>
+      <div class="muted" style="margin-bottom:6px">世界首领 / 日常 / 赛季</div>
     </div>
 
     <div class="tab-panel" id="tab-expedition"></div>
@@ -400,7 +400,7 @@
   </div>
 </div>
 
-<!-- Dungeon info -->
+<!-- Pungeon info -->
 <div class="modal-bg" id="modal-dungeon-info">
   <div class="modal">
     <h3><span class="ui-label"><span data-ui-icon="dungeon" data-ui-size="sm"></span><span>副本详情</span></span></h3>
@@ -430,7 +430,7 @@
   </div>
 </div>
 
-<!-- Dungeon failed -->
+<!-- Pungeon failed -->
 <div class="modal-bg" id="modal-dungeon-fail">
   <div class="modal">
     <h3><span class="ui-label"><span data-ui-icon="fail" data-ui-size="sm"></span><span>副本失败</span></span></h3>
@@ -439,7 +439,7 @@
   </div>
 </div>
 
-<!-- Dungeon clear -->
+<!-- Pungeon clear -->
 <div class="modal-bg" id="modal-dungeon-clear">
   <div class="modal">
     <h3><span class="ui-label"><span data-ui-icon="clear" data-ui-size="sm"></span><span>副本通关!</span></span></h3>

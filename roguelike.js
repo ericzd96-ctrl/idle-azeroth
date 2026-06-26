@@ -161,7 +161,7 @@ function roguelikeShrineBuy(key) {
   if ((state.roguelikeCoin || 0) < cost) { log(`幻象币不足(需 ${cost}🤖)`, 'bad'); return; }
   state.roguelikeCoin -= cost;
   shrine[key] = rank + 1;
-  log(`🛕 强化【${up.name}】Lv.${rank + 1} · -${cost}🤖`, 'epic');
+  log(`🛕 强化【${up.name}】等级${rank + 1} · -${cost}🤖`, 'epic');
   if (state.mode === 'roguelike' && typeof recomputeStats === 'function') recomputeStats();   // run 内即时生效
   markDirty('hero');
   if (typeof renderRoguelikePanel === 'function') renderRoguelikePanel();
@@ -297,7 +297,7 @@ function spawnRoguelikeMonster() {
   const defMul = isFinal ? 2.0 : (isBoss ? 1.6 : (isElite ? 1.3 : 1.0));
 
   const prefix = isFinal ? '👑终焉之主' : (isBoss ? (['👹','🐉','💀'])[floor%3] : (isElite ? (['🗡️','🧟','⚔️'])[floor%3] : (['👹','🦴','🐺','👻'])[floor%4]));
-  const typeTag = isFinal ? '·最终考验' : (isBoss ? '·Boss' : (isElite ? '·精英' : ''));
+  const typeTag = isFinal ? '·最终考验' : (isBoss ? '·首领' : (isElite ? '·精英' : ''));
   const name = `${prefix} 幻象·${floor}层${typeTag}`;
 
   state.currentMonsters = [{
@@ -456,7 +456,7 @@ function showRoguelikeChoiceModal(choices) {
     const a = choices[i];
     const color = ROGUELIKE_RARITY_COLORS[a.rarity] || '#fff';
     const modText = a.mod ? Object.entries(a.mod).map(([k, v]) => {
-      const labels = { atkPct:'攻', hpPct:'命', defPct:'防', spdPct:'速', critdPct:'暴伤', crit:'暴击', regFlat:'回复', leech:'吸血', vers:'全能', mastery:'精通', haste:'急速率', cdReduction:'冷却', extraAtk:'额外攻', healBonus:'治疗', dotBonus:'Dot', executeBonus:'斩杀', reflectDmg:'反伤', stunChance:'击晕', armorPen:'破甲', dodge:'闪避' };
+      const labels = { atkPct:'攻', hpPct:'命', defPct:'防', spdPct:'速', critdPct:'暴伤', crit:'暴击', regFlat:'回复', leech:'吸血', vers:'全能', mastery:'精通', haste:'急速率', cdReduction:'冷却', extraAtk:'额外攻', healBonus:'治疗', dotBonus:'持续伤害', executeBonus:'斩杀', reflectDmg:'反伤', stunChance:'击晕', armorPen:'破甲', dodge:'闪避' };
       return (labels[k]||k)+'+'+v+(k==='crit'||k==='leech'||k==='vers'||k==='mastery'||k==='haste'||k==='extraAtk'||k==='regFlat'||k==='stunChance'||k==='armorPen'||k==='dodge'?'':(k==='critdPct'||k==='spdPct'?'%':'%'));
     }).join(' · ') : '';
     const buffText = a.type === 'battleBuff' ? '⚡进入战斗触发' : '';
@@ -522,7 +522,7 @@ function renderRoguelikePanel() {
         <div class="muted" style="font-size:10px;line-height:1.5;margin-bottom:8px">
           • 每次进入从零开始，不继承外部装备和属性<br>
           • 每层战斗后从3个随机能力中选择1个(5档稀有度)<br>
-          • 每3层精英、每5层Boss、30层终焉之主<br>
+          • 每3层精英、每5层首领、30层终焉之主<br>
           • 死亡或通关后保留幻象币和里程碑奖励<br>
           • 难度系数: 1.12^(层数-1)
         </div>
@@ -533,7 +533,7 @@ function renderRoguelikePanel() {
     const shrine = ensureRoguelikeShrine();
     html += `<div class="ascend-box">
       <div class="detail-label">🛕 幻象神龛 <span class="muted" style="font-size:10px">(当前 ${state.roguelikeCoin||0}🤖)</span></div>
-      <div class="muted" style="font-size:10px;margin-bottom:6px;line-height:1.5">用幻象币永久强化神龛 —— 加成<b>只在幻象挑战内生效</b>,让每次 run 起点更高、越爬越深。账号共享。</div>`;
+      <div class="muted" style="font-size:10px;margin-bottom:6px;line-height:1.5">用幻象币永久强化神龛 —— 加成<b>只在幻象挑战内生效</b>，让每次挑战起点更高、越爬越深。账号共享。</div>`;
     for (const up of ROGUELIKE_SHRINE) {
       const rank = shrine[up.key] || 0;
       const maxed = rank >= up.max;
@@ -545,7 +545,7 @@ function renderRoguelikePanel() {
           <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:160px">
             <div style="font-size:18px">${up.icon}</div>
             <div style="flex:1;min-width:0">
-              <div style="font-weight:bold">${up.name} <span class="muted" style="font-size:10px">Lv.${rank}/${up.max}</span></div>
+              <div style="font-weight:bold">${up.name} <span class="muted" style="font-size:10px">等级${rank}/${up.max}</span></div>
               <div class="muted" style="font-size:10px">${up.desc}${rank>0?` · 当前 ${(typeof fmtMod==='function')?fmtMod(up.stat,cur):up.stat+'+'+cur}`:''}</div>
             </div>
           </div>

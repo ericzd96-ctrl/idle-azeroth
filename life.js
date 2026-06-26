@@ -135,7 +135,7 @@ function lifeAddXp(skillKey, xp) {
     s.xp -= lifeXpNeeded(s.lvl);
     s.lvl += 1;
     const sk = LIFE_SKILLS[skillKey];
-    log(`${sk.icon} ${sk.name} 升到 Lv.${s.lvl}!`, 'good');
+    log(`${sk.icon} ${sk.name} 升到 等级${s.lvl}!`, 'good');
   }
 }
 
@@ -250,7 +250,7 @@ function lifeCanCraft(recipe) {
   // 等级
   if (recipe.minLvl) {
     for (const [k, v] of Object.entries(recipe.minLvl)) {
-      if ((state.life[k]?.lvl || 0) < v) return { ok:false, why:`需要 ${LIFE_SKILLS[k].name} Lv.${v}` };
+      if ((state.life[k]?.lvl || 0) < v) return { ok:false, why:`需要 ${LIFE_SKILLS[k].name} 等级${v}` };
     }
   }
   // 材料
@@ -286,7 +286,7 @@ function lifeCraft(recipeKey) {
     }
     state.lifeBuffs[recipe.buffKey] = Date.now() + dur;
     recomputeStats();
-    log(`${recipe.icon} 享用 ${recipe.name},${lifeBuffDurText(dur)} buff!`, 'epic');
+    log(`${recipe.icon} 享用 ${recipe.name}，${lifeBuffDurText(dur)}增益已生效！`, 'epic');
   }
   markDirty('life', 'hero');
 }
@@ -367,7 +367,7 @@ function lifeCanUpgradeTool(skillKey) {
   if (rank >= LIFE_TOOL_MAX_RANK) return { ok:false, why:'已满级' };
   const nextRank = rank + 1;
   const cost = lifeToolCost(skillKey, nextRank);
-  if ((state.life[skillKey]?.lvl || 0) < cost.reqLvl) return { ok:false, why:`需要 ${LIFE_SKILLS[skillKey].name} Lv.${cost.reqLvl}` };
+  if ((state.life[skillKey]?.lvl || 0) < cost.reqLvl) return { ok:false, why:`需要 ${LIFE_SKILLS[skillKey].name} 等级${cost.reqLvl}` };
   if ((state.life.mats[cost.matKey] || 0) < cost.qty) return { ok:false, why:`需要 ${cost.matIcon}${cost.matName}×${cost.qty}` };
   if ((state.essence || 0) < cost.essence) return { ok:false, why:`需要 ✨精华×${cost.essence}` };
   return { ok:true, cost, nextRank };
@@ -380,7 +380,7 @@ function lifeUpgradeTool(skillKey) {
   state.essence -= can.cost.essence;
   state.life.tools[skillKey] = can.nextRank;
   recomputeStats();
-  log(`${LIFE_TOOL_DATA[skillKey].icon} ${LIFE_TOOL_DATA[skillKey].name} 升到 Lv.${can.nextRank}!`, 'epic');
+  log(`${LIFE_TOOL_DATA[skillKey].icon} ${LIFE_TOOL_DATA[skillKey].name} 升到 等级${can.nextRank}!`, 'epic');
   markDirty('life', 'hero');
 }
 
@@ -691,17 +691,17 @@ function renderLifeGatherTab(la, currentSkill, nextYieldSec) {
     const cur = s.xp, need = lifeXpNeeded(s.lvl);
     const pct = s.lvl >= LIFE_MAX_LVL ? 100 : Math.floor(cur * 100 / need);
     const isActive = la && la.type === key;
-    const nextTxt = info.next ? `下一档 Lv.${info.next.minLvl} · ${info.next.matIcon}${info.next.matName}` : '所有档位已解锁';
+    const nextTxt = info.next ? `下一档 等级${info.next.minLvl} · ${info.next.matIcon}${info.next.matName}` : '所有档位已解锁';
     const stock = info.unlocked.reduce((sum, t) => sum + (state.life.mats[t.matKey] || 0), 0);
     html += `<div class="life-skill-card${isActive ? ' active' : ''}" style="--life-accent:${sk.color}" data-action="lifeSwitch" data-key="${key}">
       <div class="life-skill-top">
         <div>
           <b>${profIcon(key, 18, sk.icon)} ${sk.name}</b>
-          <div class="life-skill-meta">Lv.${s.lvl} · ${isActive ? '当前采集中' : '点击切换'}</div>
+          <div class="life-skill-meta">等级${s.lvl} · ${isActive ? '当前采集中' : '点击切换'}</div>
         </div>
         <span class="life-rank-badge">工坊 ${lifeToolRank(key)}</span>
       </div>
-      <div class="bar xp" style="margin:6px 0 4px"><i style="width:${pct}%"></i><span>${s.lvl>=LIFE_MAX_LVL?'MAX':`${cur}/${need}`}</span></div>
+      <div class="bar xp" style="margin:6px 0 4px"><i style="width:${pct}%"></i><span>${s.lvl>=LIFE_MAX_LVL?'已满':`${cur}/${need}`}</span></div>
       <div class="life-row"><span>基础产量</span><b>${info.qtyPerTick} / 次</b></div>
       <div class="life-row"><span>库存</span><b>${stock}</b></div>
       <div class="life-row"><span>额外收成</span><b>${Math.round(lifeToolGatherBonusChance(key) * 100)}%</b></div>
@@ -722,12 +722,12 @@ function renderLifeGatherTab(la, currentSkill, nextYieldSec) {
       <div class="life-skill-top">
         <div>
           <b>${tool.icon} ${tool.name}</b>
-          <div class="life-skill-meta">Lv.${rank}/${LIFE_TOOL_MAX_RANK}</div>
+          <div class="life-skill-meta">等级${rank}/${LIFE_TOOL_MAX_RANK}</div>
         </div>
         <span class="life-rank-badge">${tool.effect}+${rank * tool.effectPerRank}%</span>
       </div>
       <div class="life-row"><span>${tool.extra}</span><b>${Math.round(lifeToolGatherBonusChance(key) * 100)}%</b></div>
-      ${cost ? `<div class="life-inline-note">下一级需要 ${cost.matIcon}${cost.matName}×${cost.qty} · ✨${cost.essence} · ${LIFE_SKILLS[key].name} Lv.${cost.reqLvl}</div>` : `<div class="life-inline-note">已达到当前版本满级</div>`}
+      ${cost ? `<div class="life-inline-note">下一级需要 ${cost.matIcon}${cost.matName}×${cost.qty} · ✨${cost.essence} · ${LIFE_SKILLS[key].name} 等级${cost.reqLvl}</div>` : `<div class="life-inline-note">已达到当前版本满级</div>`}
       <button class="${can.ok ? 'gold' : ''}" data-action="lifeUpgradeTool" data-key="${key}" ${can.ok ? '' : 'disabled'}>升级工坊</button>
     </div>`;
   }
@@ -753,8 +753,8 @@ function renderLifeCraftTab(activeBuffs) {
       const can = lifeCanCraft(recipe);
       const output = recipe.action === 'essence'
         ? `产出 ${lifeRecipeValue(recipe)} ✨精华`
-        : `持续 ${lifeBuffDurText(lifeRecipeDuration(recipe))} · 强度 x${lifeBuffPowerMult().toFixed(2)}`;
-      const lvlTxt = recipe.minLvl ? Object.entries(recipe.minLvl).map(([k,v]) => `${LIFE_SKILLS[k].name}Lv.${v}`).join(' / ') : '无等级要求';
+        : `持续 ${lifeBuffDurText(lifeRecipeDuration(recipe))} · 强度倍率 ${lifeBuffPowerMult().toFixed(2)}倍`;
+      const lvlTxt = recipe.minLvl ? Object.entries(recipe.minLvl).map(([k,v]) => `${LIFE_SKILLS[k].name}等级${v}`).join(' / ') : '无等级要求';
       html += `<div class="life-recipe-card${can.ok ? ' ready' : ''}">
         <div class="life-skill-top">
           <div>
@@ -797,7 +797,7 @@ function renderLifeOrderTab(now) {
           <b>${order.icon} ${order.title}</b>
           <div class="life-skill-meta">${done ? '本轮已交付，等待刷新补单' : order.desc}</div>
         </div>
-        <span class="life-rank-badge">${done ? '已完成' : `T${order.difficulty}`}</span>
+        <span class="life-rank-badge">${done ? '已完成' : `难度${order.difficulty}`}</span>
       </div>
       <div class="life-token-row">${lifeRequestHtml(order.request)}</div>
       <div class="life-token-row">${lifeRewardHtml(order.reward)}</div>
@@ -846,7 +846,7 @@ function renderLife() {
       <div class="life-stat-card">
         <span>当前挂机</span>
         <b>${la && currentSkill ? currentSkill.name : '待命'}</b>
-        <small>${la ? `${nextYieldSec}s 后产出` : '进入后自动开始'}</small>
+        <small>${la ? `${nextYieldSec}秒后产出` : '进入后自动开始'}</small>
       </div>
       <div class="life-stat-card">
         <span>仓库材料</span>

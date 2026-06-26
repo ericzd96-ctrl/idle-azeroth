@@ -2,11 +2,11 @@
    artifact.js — 神器系统(职业特效树)
    ----------------------------------------------------------
    规则:
-   - Lv.10 解锁神器
+   - 等级10 解锁神器
    - 神器 AP 从杀怪获得(战斗 XP 的 30%)
    - 每升 1 级给 1 个神器点
    - 12 个节点 × 每个 3 阶 = 共 36 点
-   - 里程碑调整为 Lv.10 / 22 / 36
+   - 里程碑调整为 等级10 / 22 / 36
    - 神器现在以职业特效为主,面板数值为辅
    ========================================================= */
 
@@ -275,7 +275,7 @@ const ARTIFACT_TRAITS = {
 
     skillAmpTrait({ key:'art_pri_shadow_blast', tree:'shadow', name:'虚空尖啸', icon:'🌀', skill:'mindBlast', dmgPct:[10,20,30], mod:{dotBonus:3}, desc:'心灵震爆伤害提高 10/20/30%，并获得持续伤害 +3%/6%/9%。' }),
     onCritTrait({ key:'art_pri_shadow_pain', tree:'shadow', name:'暗痛回响', icon:'🌑', applyDotPct:[0.08,0.12,0.18], dotMs:6000, mod:{atkPct:1}, prereq:'art_pri_shadow_blast', desc:'暴击时追加一层基于本次伤害 8%/12%/18% 的暗影痛楚，持续 6 秒，并获得攻击 +1%/2%/3%。' }),
-    onKillTrait({ key:'art_pri_shadow_spread', tree:'shadow', name:'病灶扩散', icon:'☠️', requireDot:true, spreadDotPct:[0.35,0.5,0.7], mod:{cdReduction:2}, prereq:'art_pri_shadow_pain', desc:'若目标带着持续伤害死亡，会把 35%/50%/70% 的 DOT 蔓延给下一名敌人，并获得技能冷却缩减 +2%/4%/6%。' }),
+    onKillTrait({ key:'art_pri_shadow_spread', tree:'shadow', name:'病灶扩散', icon:'☠️', requireDot:true, spreadDotPct:[0.35,0.5,0.7], mod:{cdReduction:2}, prereq:'art_pri_shadow_pain', desc:'若目标带着持续伤害死亡，会把 35%/50%/70% 的持续伤害蔓延给下一名敌人，并获得技能冷却缩减 +2%/4%/6%。' }),
     vsStateTrait({ key:'art_pri_shadow_void', tree:'shadow', name:'虚空摄食', icon:'🧿', state:'dot', dmgPct:[10,20,30], mod:{atkPct:1}, prereq:'art_pri_shadow_spread', desc:'对带有持续伤害效果的目标造成的伤害提高 10/20/30%，并获得攻击 +1%/2%/3%。' }),
   ],
   rogue: [
@@ -344,7 +344,7 @@ const ARTIFACT_TRAITS = {
   ],
   warlock: [
     skillAmpTrait({ key:'art_wl_aff_curse', tree:'affliction', name:'无尽病灶', icon:'🧿', skill:['corruption','unstableAffliction'], dmgPct:[10,20,30], mod:{dotBonus:3}, desc:'腐蚀术与痛苦无常伤害提高 10/20/30%，并获得持续伤害 +3%/6%/9%。' }),
-    onKillTrait({ key:'art_wl_aff_spread', tree:'affliction', name:'瘟疫外溢', icon:'☠️', requireDot:true, spreadDotPct:[0.35,0.5,0.7], mod:{cdReduction:2}, prereq:'art_wl_aff_curse', desc:'若目标带着持续伤害死亡，会把 35%/50%/70% 的 DOT 蔓延给下一名敌人，并获得技能冷却缩减 +2%/4%/6%。' }),
+    onKillTrait({ key:'art_wl_aff_spread', tree:'affliction', name:'瘟疫外溢', icon:'☠️', requireDot:true, spreadDotPct:[0.35,0.5,0.7], mod:{cdReduction:2}, prereq:'art_wl_aff_curse', desc:'若目标带着持续伤害死亡，会把 35%/50%/70% 的持续伤害蔓延给下一名敌人，并获得技能冷却缩减 +2%/4%/6%。' }),
     vsStateTrait({ key:'art_wl_aff_siphon', tree:'affliction', name:'灵魂虹吸', icon:'🩸', state:'dot', dmgPct:[10,20,30], mod:{atkPct:1}, prereq:'art_wl_aff_spread', desc:'对带有持续伤害效果的目标造成的伤害提高 10/20/30%，并获得攻击 +1%/2%/3%。' }),
     executeTrait({ key:'art_wl_aff_end', tree:'affliction', name:'痛苦收束', icon:'💜', threshold:0.35, dmgPct:[12,24,36], mod:{atkPct:1}, prereq:'art_wl_aff_siphon', desc:'对生命低于 35% 的目标造成的伤害提高 12/24/36%，并获得攻击 +1%/2%/3%。' }),
 
@@ -870,7 +870,7 @@ function artifactGainAp(xpReward){
     b.ap -= artifactApNeeded(b.lvl);
     b.lvl += 1; leveled = true;
     const id = artifactIdentity(state.cls, spec);
-    log(`${id.icon} 神器升到 Lv.${b.lvl}! +1 神器点`, 'epic');
+    log(`${id.icon} 神器升到 等级${b.lvl}! +1 神器点`, 'epic');
     const ms = artifactMilestonesForClass().find(m => m.lvl === b.lvl);
     if(ms) log(`✨ 神器里程碑【${ms.name}】解锁: ${ms.desc}`, 'legend');
   }
@@ -1011,7 +1011,7 @@ function renderArtifact(){
   const specBucket = spec && state.artifacts[spec];
   if(heroLvl < ARTIFACT_UNLOCK_LVL && !(specBucket && specBucket.lvl > 0)){
     const lockedIconHtml = (typeof symbolIcon === 'function') ? symbolIcon('🗡️', 28, '神器', 'inv_sword_39') : '🗡️';
-    root.innerHTML = `<div class="ascend-box"><div style="font-size:14px;font-weight:bold;text-align:center;margin:20px 0">${lockedIconHtml} 神器尚未觉醒</div><div class="muted" style="text-align:center">需达到 Lv.${ARTIFACT_UNLOCK_LVL} 才能开启专属神器</div></div>`;
+    root.innerHTML = `<div class="ascend-box"><div style="font-size:14px;font-weight:bold;text-align:center;margin:20px 0">${lockedIconHtml} 神器尚未觉醒</div><div class="muted" style="text-align:center">需达到 等级${ARTIFACT_UNLOCK_LVL} 才能开启专属神器</div></div>`;
     return;
   }
   if(!spec){
@@ -1074,11 +1074,11 @@ function renderArtifact(){
       <div style="font-size:30px">${artIconHtml}</div>
       <div style="flex:1">
         <div style="font-weight:bold;color:${id.color}">${id.name}</div>
-        <div class="muted" style="font-size:11px">${specName} · 神器 Lv.${b.lvl} · 可用 <b style="color:var(--accent)">${free}</b> 点 · 已加 ${spent}</div>
+        <div class="muted" style="font-size:11px">${specName} · 神器 等级${b.lvl} · 可用 <b style="color:var(--accent)">${free}</b> 点 · 已加 ${spent}</div>
       </div>
     </div>
-    <div class="bar xp" style="margin:6px 0"><i style="width:${pct}%;background:${id.color}"></i><span>${b.lvl>=ARTIFACT_MAX_LVL?'MAX':`${b.ap}/${need} AP`}</span></div>
-    <div class="muted" style="font-size:10px">${lightningIconHtml} 杀敌获得 ${Math.round(ARTIFACT_AP_RATE*100)}% XP 作为 AP(仅当前专精) · <button class="danger" data-action="artifactReset" style="float:right;padding:2px 8px;font-size:11px">重置 100💎</button></div>
+    <div class="bar xp" style="margin:6px 0"><i style="width:${pct}%;background:${id.color}"></i><span>${b.lvl>=ARTIFACT_MAX_LVL?'已满':`${b.ap}/${need} 神器能量`}</span></div>
+    <div class="muted" style="font-size:10px">${lightningIconHtml} 杀敌获得 ${Math.round(ARTIFACT_AP_RATE*100)}% 经验作为神器能量(仅当前专精) · <button class="danger" data-action="artifactReset" style="float:right;padding:2px 8px;font-size:11px">重置 100💎</button></div>
   </div>`;
 
   html += `<div class="ascend-box" style="border-left:3px solid ${id.color}"><div class="detail-label" style="color:${id.color}">✦ 觉醒</div>${entry?renderNode(entry):''}</div>`;
@@ -1108,7 +1108,7 @@ function renderArtifact(){
     const reached = (b.lvl||0) >= ms.lvl;
     const modTxt = Object.entries(ms.mod||{}).map(e => (typeof fmtMod==='function') ? fmtMod(e[0], e[1]) : `${e[0]}+${e[1]}`).join(' · ');
     html += `<div class="ascend-milestone ${reached?'reached':''}">
-      <div><b>Lv.${ms.lvl} ${ms.name}</b> ${reached?'<span class="r-legend">✓</span>':'<span class="muted">🔒</span>'}</div>
+      <div><b>等级${ms.lvl} ${ms.name}</b> ${reached?'<span class="r-legend">✓</span>':'<span class="muted">🔒</span>'}</div>
       <div class="muted" style="font-size:10px;line-height:1.45">${ms.desc}${modTxt?` · ${modTxt}`:''}</div>
     </div>`;
   }

@@ -4,7 +4,7 @@
    核心思路:
    1) 动作触发 markDirty('xxx'),loop 中只重建该面板
    2) 战斗血条/数字直接更新 textContent / style.width,不重建 DOM
-   3) BOSS/副本 CD 通过查找已有元素直接更新文本,不整列表重建
+   3) BOSS/副本 冷却 通过查找已有元素直接更新文本,不整列表重建
    ========================================================= */
 
 /* ---------- 每帧轻量更新(不重建 DOM) ---------- */
@@ -105,7 +105,7 @@ let _lastBuffBarPaint = 0;
 let _lastDmgMeterPaint = 0;
 let _invFilterSlot = 'all';   // 背包部位筛选
 let _invFilterRarity = 'all'; // 背包品质筛选
-let _dmSampleTotal = 0, _dmSampleTs = 0;   // 峰值DPS采样基线
+let _dmSampleTotal = 0, _dmSampleTs = 0;   // 峰值秒伤采样基线
 let _navBadgePaint = 0, _expLivePaint = 0; // 导航红点 / 远征实时刷新节流
 
 /* 导航栏红点:远征储备满 / 公会今日有可做的捐献 */
@@ -494,7 +494,7 @@ function effectTags(s, opts) {
   const heal = cfg.bossScaledHeal ? scaledBossHealPortion(s.heal || 0) : (s.heal || 0);
   const healPct = cfg.bossScaledHeal ? scaledBossHealPortion(s.healPct || 0) : (s.healPct || 0);
   const t = [];
-  if (s.aoe) t.push(`${statusIconHtml('易爆', '💥', 13)}AOE`);
+  if (s.aoe) t.push(`${statusIconHtml('易爆', '💥', 13)}范围伤害`);
   if (s.stun) t.push(`${statusIconHtml('眩晕', '💫', 13)}眩晕${s.stun===true?'2秒':(s.stun/1000)+'秒'}`);
   if (s.slow) t.push(`${statusIconHtml('减速', '❄️', 13)}减速5秒`);
   if (s.dot) t.push(`${statusIconHtml('灼烧/中毒', '☠️', 13)}灼烧6秒`);
@@ -553,7 +553,7 @@ function bossSkillLineHtml(s, opts) {
   else if (s?.interruptPolicy === 'soft') infoTags.push('<span style="color:#c4b5fd">断后削弱</span>');
   else if (s?.interruptPolicy === 'none') infoTags.push('<span style="color:#93c5fd">不可断</span>');
   const title = `${skillIconHtml} ${s.name}${infoTags.length ? ` <span style="font-size:10px">${infoTags.join(' · ')}</span>` : ''}`;
-  const castText = cfg.showCast === false ? '' : ` · ${(s.castTime || 0)}s读条`;
+  const castText = cfg.showCast === false ? '' : ` · ${(s.castTime || 0)}秒读条`;
   const desc = scaledBossDesc(s.desc || ((s.mul || 1) + '倍伤害'), s);
   const tagHtml = tags.length
     ? `<div style="margin-top:2px;color:${tagColor};font-size:10px;line-height:1.45;word-break:break-word">${tags.join(' · ')}</div>`
@@ -582,7 +582,7 @@ function heroUnitTipHtml() {
     : `<div class="muted" style="margin-top:4px">当前没有已激活套装效果</div>`;
   return `<b>${state.name || '冒险者'}${cls ? ` · ${cls.name}` : ''}</b>
     <div>生命 ${hpWithShieldText(state.hp || 0, hero.hpMax || 0, shield)} · 资源 ${fmt(state.resource || 0)}/${fmt(state.resourceMax || 0)}</div>
-    <div>攻击 ${fmt(hero.atk || 0)} · 防御 ${fmt(hero.def || 0)} · 攻速 ${(hero.spd || 0).toFixed(2)}/s</div>
+    <div>攻击 ${fmt(hero.atk || 0)} · 防御 ${fmt(hero.def || 0)} · 攻速 ${(hero.spd || 0).toFixed(2)}/秒</div>
     <div>暴击 ${fmtPctValue(hero.crit || 0, 1)} · 暴伤 ${fmtPctValue(hero.critd || 0, 0)} · 吸血 ${fmtPctValue(hero.leech || 0, 1)}</div>
     <div>全能 ${fmtPctValue(hero.vers || 0, 1)} · 极速 ${fmtPctValue(hero.haste || 0, 1)} · 精通 ${fmt(hero.mastery || 0)}</div>
     ${activeSetHtml}`;
@@ -607,10 +607,10 @@ function monsterUnitTipHtml(mon, bossData) {
   if (bossData?.passive?.atkBonus) passiveTags.push(`攻击 ${fmtPctValue((bossData.passive.atkBonus || 0) * 100, 0)}`);
   if (bossData?.passive?.dmgReduction) passiveTags.push(`减伤 ${fmtPctValue((bossData.passive.dmgReduction || 0) * 100, 0)}`);
   const passiveHtml = passiveTags.length ? `<div class="muted">被动: ${passiveTags.join(' · ')}</div>` : '';
-  return `<b>${mon.name} · Lv.${mon.lvl}</b>
+  return `<b>${mon.name} · 等级${mon.lvl}</b>
     ${sourceLine}
     <div>生命 ${hpWithShieldText(mon.hp || 0, mon.hpMax || 0, shield)}</div>
-    <div>攻击 ${fmt(atk)} · 防御 ${fmt(def)} · 攻速 ${aps.toFixed(2)}/s</div>
+    <div>攻击 ${fmt(atk)} · 防御 ${fmt(def)} · 攻速 ${aps.toFixed(2)}/秒</div>
     <div>暴击 ${fmtPctValue(crit, 0)} · 减伤 ${fmtPctValue(dr * 100, 0)} · 吸血 ${fmtPctValue(leech * 100, 0)}</div>
     ${passiveHtml}`;
 }
@@ -631,14 +631,14 @@ function allySummonThemeName(theme) {
 function allySummonEffectTexts(skill) {
   if (!skill) return [];
   const lines = [];
-  if ((skill.mul || 0) > 0) lines.push(`伤害倍率 ${Number(skill.mul || 1).toFixed(2).replace(/\.00$/,'').replace(/(\.\d)0$/,'$1')}x`);
+  if ((skill.mul || 0) > 0) lines.push(`伤害倍率 ${Number(skill.mul || 1).toFixed(2).replace(/\.00$/,'').replace(/(\.\d)0$/,'$1')}倍`);
   if (skill.dotPct > 0) lines.push(`每秒造成 ${compPct(skill.dotPct)}% 本次伤害，持续 ${compSecs(skill.dotMs || 6000)} 秒`);
   if (skill.slow) lines.push(`减速 ${compSecs(skill.slowMs || 4000)} 秒`);
   if (skill.stun) lines.push(`击晕 ${compSecs(skill.stunMs || 1200)} 秒`);
   if (skill.sunder) lines.push(`破甲 ${compSecs(skill.sunderMs || 12000)} 秒`);
   if (skill.stateKey) lines.push(`施加 ${compStateName(skill.stateKey)} ${compSecs(skill.stateMs || 7000)} 秒`);
   if (skill.splashPct > 0) lines.push(`溅射 ${compPct(skill.splashPct)}% 伤害`);
-  if (skill.bonusVsBoss) lines.push(`对Boss额外 +${compPct(skill.bonusVsBoss)}% 伤害`);
+  if (skill.bonusVsBoss) lines.push(`对首领额外 +${compPct(skill.bonusVsBoss)}% 伤害`);
   if (skill.bonusVsDot) lines.push(`对持续伤害目标额外 +${compPct(skill.bonusVsDot)}% 伤害`);
   if (skill.bonusVsSlow) lines.push(`对减速目标额外 +${compPct(skill.bonusVsSlow)}% 伤害`);
   if (skill.bonusVsState) lines.push(`对${compStateName(skill.bonusVsState)}目标额外 +${compPct(skill.bonusStatePct || 0.3)}% 伤害`);
@@ -652,7 +652,7 @@ function allySummonPassiveTexts(unit) {
   if (unit.damageTakenMult && unit.damageTakenMult < 1) lines.push(`承受伤害降低 ${compPct(1 - unit.damageTakenMult)}%`);
   if (unit.leechPct > 0) lines.push(`攻击回复 ${compPct(unit.leechPct)}% 造成伤害`);
   if (unit.splashPct > 0) lines.push(`普攻溅射 ${compPct(unit.splashPct)}% 伤害`);
-  if (unit.bonusVsBoss) lines.push(`对Boss额外 +${compPct(unit.bonusVsBoss)}% 伤害`);
+  if (unit.bonusVsBoss) lines.push(`对首领额外 +${compPct(unit.bonusVsBoss)}% 伤害`);
   if (unit.bonusVsDot) lines.push(`对持续伤害目标额外 +${compPct(unit.bonusVsDot)}% 伤害`);
   if (unit.bonusVsSlow) lines.push(`对减速目标额外 +${compPct(unit.bonusVsSlow)}% 伤害`);
   if (unit.bonusVsState) lines.push(`对${compStateName(unit.bonusVsState)}目标额外 +${compPct(unit.bonusStatePct || 0.3)}% 伤害`);
@@ -713,7 +713,7 @@ function allySummonUnitTipHtml(unit) {
     name:'普攻特性',
     icon:unit.icon || '🐾',
     mul:1,
-    desc:`普通攻击 · 攻速 ${(unit.spd || 1).toFixed(2)}/s`,
+    desc:`普通攻击 · 攻速 ${(unit.spd || 1).toFixed(2)}/秒`,
     dotPct:unit.dotPct || 0,
     dotMs:unit.dotMs || 5000,
     slow:!!unit.slow,
@@ -740,11 +740,11 @@ function allySummonUnitTipHtml(unit) {
   const growthLine = unit._skillUnlockText
     ? `<div class="muted" style="margin-top:3px">${unit._skillUnlockText}</div>`
     : '';
-  return `<b>${iconHtml} ${unit.baseName || unit.name} · Lv.${unit.lvl || 1}</b>
+  return `<b>${iconHtml} ${unit.baseName || unit.name} · 等级${unit.lvl || 1}</b>
     <div>${allySummonThemeName(unit._theme)} · ${unit._ownerType === 'companion' ? '随从召唤' : '主角召唤'}</div>
     <div class="muted">由 ${unit._ownerName || '我方'} 的 ${unit._ownerSkill || '召唤技能'} 呼出 · 剩余 ${remainSecs} 秒</div>
     <div>生命 ${hpWithShieldText(unit.hp || 0, unit.hpMax || 0, 0)}</div>
-    <div>攻击 ${fmt(unit.atk || 0)} · 防御 ${fmt(unit.def || 0)} · 攻速 ${(unit.spd || 1).toFixed(2)}/s</div>
+    <div>攻击 ${fmt(unit.atk || 0)} · 防御 ${fmt(unit.def || 0)} · 攻速 ${(unit.spd || 1).toFixed(2)}/秒</div>
     <div>暴击 ${fmtPctValue(unit.crit || 0, 0)} · 暴伤 ${fmtPctValue(unit.critd || 0, 0)} · 承伤权重 ${fmtPctValue((unit.aggro || 0) * 100, 0)}</div>
     <div style="margin-top:4px;color:#93c5fd">战斗特性:</div>
     ${basicEffects || '<div class="muted" style="margin:3px 0 6px">普攻无额外附加效果</div>'}
@@ -753,7 +753,7 @@ function allySummonUnitTipHtml(unit) {
     ${activeEffects}${growthLine}`;
 }
 function worldBossTipHtml(wb) {
-  if (!wb) return '<b>世界Boss</b>';
+  if (!wb) return '<b>世界首领</b>';
   const mon = (typeof buildWorldBossMonsterData === 'function') ? buildWorldBossMonsterData(wb) : null;
   let html = monsterUnitTipHtml(mon, wb);
   if (wb.skills?.length) {
@@ -919,7 +919,7 @@ function renderMonList() {
       return `<div class="mon-row${isFocus?' focus':''}${isDead?' dead':''}${summonCls}" data-uid="${m._uid}">
         <div class="m-emoji"${isFocus?' id="mon-emoji"':''}>${monIconHtml}</div>
         <div class="m-mid">
-          <div class="m-name"${isFocus?' id="mon-name"':''}>${nm}<span class="m-lvl">Lv.${m.lvl}</span><span class="m-debuffs"></span></div>
+          <div class="m-name"${isFocus?' id="mon-name"':''}>${nm}<span class="m-lvl">等级${m.lvl}</span><span class="m-debuffs"></span></div>
           ${summonLine}
           <div class="bar hp"><i${isFocus?' id="b-mhp"':''}></i><span${isFocus?' id="t-mhp"':''}></span></div>
         </div>
@@ -977,7 +977,7 @@ function renderMonList() {
       if (dots.length) {
         const total = dots.reduce((sum, dot) => sum + (dot.dps || 0), 0);
         const names = dots.map(dot => `${dot.icon || '🔥'}${dot.name || '持续伤害'}:${fmt(dot.dps || 0)}/秒`).join(' · ');
-        s += `<span title="${names}">${statusIconHtml(dots[0]?.name || '持续伤害', dots[0]?.icon || '🔥', 13)}${dots.length > 1 ? 'x' + dots.length : ''}:${fmt(total)}</span>`;
+        s += `<span title="${names}">${statusIconHtml(dots[0]?.name || '持续伤害', dots[0]?.icon || '🔥', 13)}${dots.length > 1 ? '×' + dots.length : ''}:${fmt(total)}</span>`;
       }
     } else if (m.dot > 0 && m.dotEnd > now) s += `<span title="灼烧/中毒:每秒 ${fmt(m.dot)} 伤害">${statusIconHtml('灼烧/中毒', '🔥', 13)}</span>`;
     if (m.sunderUntil > now) s += `<span title="破甲:防御降低30%">${statusIconHtml('破甲', '🔨', 13)}</span>`;
@@ -1008,7 +1008,7 @@ function renderAllySummonBar(now){
       return `<div class="ally-summon-card" data-ally-summon-uid="${unit._uid}">
         <div class="ally-summon-name">${iconHtml}<span>${unit.baseName || unit.name}</span></div>
         <div class="ally-summon-sub">来自 ${unit._ownerName || '我方'} · ${unit._ownerType === 'companion' ? '随从召唤' : '主角召唤'}</div>
-        <div class="ally-summon-meta">攻击 ${fmt(unit.atk)} · 防御 ${fmt(unit.def)} · 攻速 ${(unit.spd || 1).toFixed(2)}/s</div>
+        <div class="ally-summon-meta">攻击 ${fmt(unit.atk)} · 防御 ${fmt(unit.def)} · 攻速 ${(unit.spd || 1).toFixed(2)}/秒</div>
         <div class="ally-summon-skill"></div>
         <div class="bar hp"><i></i><span></span></div>
       </div>`;
@@ -1027,7 +1027,7 @@ function renderAllySummonBar(now){
     const txt = card.querySelector('.bar > span');
     const skillEl = card.querySelector('.ally-summon-skill');
     if(fill) fill.style.width = `${Math.max(0, unit.hp / Math.max(1, unit.hpMax) * 100)}%`;
-    if(txt) txt.textContent = `${hpWithShieldText(unit.hp, unit.hpMax, 0)} · ${Math.max(0, Math.ceil(((unit.expireAt || now) - now) / 1000))}s`;
+    if(txt) txt.textContent = `${hpWithShieldText(unit.hp, unit.hpMax, 0)} · ${Math.max(0, Math.ceil(((unit.expireAt || now) - now) / 1000))}秒`;
     if(skillEl){
       const skills = Array.isArray(unit._skills) && unit._skills.length ? unit._skills : null;
       const soonest = skills ? skills.reduce((best, skill) => ((skill.readyAt || 0) < (best.readyAt || 0) ? skill : best), skills[0]) : null;
@@ -1050,7 +1050,7 @@ function updateDmgMeter() {
     : 0.001;
   const dps = Math.round(total / elapsed);
 
-  // 峰值DPS:按面板刷新间隔采样瞬时DPS,取历史最大(峰值随 dmgStats 一起重置)
+  // 峰值秒伤:按面板刷新间隔采样瞬时秒伤,取历史最大(峰值随 dmgStats 一起重置)
   if (typeof dmgStats !== 'undefined') {
     const nowTs = Date.now();
     if (total < _dmSampleTotal) { _dmSampleTotal = total; _dmSampleTs = nowTs; } // 统计被重置→基线归零
@@ -1064,9 +1064,9 @@ function updateDmgMeter() {
     } else { _dmSampleTotal = total; _dmSampleTs = nowTs; }
   }
 
-  // DPS 文本
+  // 秒伤 文本
   const dpsEl = $('dm-dps');
-  if (dpsEl) dpsEl.textContent = 'DPS ' + fmt(dps);
+  if (dpsEl) dpsEl.textContent = '秒伤 ' + fmt(dps);
 
   // 英雄条
   const heroBar = $('dm-hero-bar');
@@ -1120,7 +1120,7 @@ function updateDmgMeter() {
     killsEl.textContent = String(k);
   }
 
-  // 峰值DPS
+  // 峰值秒伤
   const peakEl = $('dm-peak-dps');
   if (peakEl) {
     const pk = (typeof dmgStats !== 'undefined') ? Math.round(dmgStats.peakDps || 0) : 0;
@@ -1134,7 +1134,7 @@ function updateDmgMeter() {
     const tkMax = (typeof dmgStats !== 'undefined') ? (dmgStats.takenMax || 0) : 0;
     if (tk) {
       const dtps = Math.round(tk / elapsed);
-      takenEl.textContent = `${fmt(tk)} · ${fmt(dtps)}/s · 最高 ${fmt(tkMax)}`;
+      takenEl.textContent = `${fmt(tk)} · ${fmt(dtps)}/秒 · 最高 ${fmt(tkMax)}`;
     } else takenEl.textContent = '-';
   }
 
@@ -1145,7 +1145,7 @@ function updateDmgMeter() {
     const fast = (typeof dmgStats !== 'undefined') ? (dmgStats.killFast || 0) : 0;
     if (k >= 1 && elapsed > 0.2) {
       const avg = elapsed / k;
-      ttkEl.textContent = `平均 ${avg.toFixed(1)}s` + (fast ? ` · 最快 ${fast.toFixed(1)}s` : '');
+      ttkEl.textContent = `平均 ${avg.toFixed(1)}秒` + (fast ? ` · 最快 ${fast.toFixed(1)}秒` : '');
     } else ttkEl.textContent = '-';
   }
 
@@ -1235,7 +1235,7 @@ function updateDmgMeter() {
     syncMeterBreakdownRows(shEl, top, 'heal', '#6ee7b7', 'spell_holy_heal');
   }
   if (totalEl) {
-    let text = '总伤 ' + fmt(total) + ' · ' + Math.floor(elapsed) + 's';
+    let text = '总伤 ' + fmt(total) + ' · ' + Math.floor(elapsed) + '秒';
     if (healTotal > 0) text += ' · 总疗 ' + fmt(healTotal);
     totalEl.textContent = text;
   }
@@ -1264,7 +1264,7 @@ function updateBattleVisuals() {
     _hNameLastSig = hNameSig;
     const titleHtml = curTitle ? `<span class="pill" style="background:var(--gold);color:#000;font-weight:bold" title="成就称号">${curTitle}</span> ` : '';
     const heroChip = (typeof uiIcon === 'function') ? uiIcon('hero', 'xs', '角色') : (race?.icon || '👤');
-    $('h-name').innerHTML = `${heroChip} <b>${state.name||'冒险者'}</b> ${titleHtml}<span class="pill">${classIcon(state.cls, 16, cls?.icon||'')} Lv.${state.hero.lvl}</span>`;
+    $('h-name').innerHTML = `${heroChip} <b>${state.name||'冒险者'}</b> ${titleHtml}<span class="pill">${classIcon(state.cls, 16, cls?.icon||'')} 等级${state.hero.lvl}</span>`;
   }
   $('h-name').title = '点击切换角色';
   $('h-gold').textContent = fmt(state.gold);
@@ -1274,11 +1274,11 @@ function updateBattleVisuals() {
   $('h-honor').textContent = fmt(state.honor);
   if ($('h-towercoin')) $('h-towercoin').textContent = fmt(state.towerCoin || 0);
   if ($('h-essence')) $('h-essence').textContent = fmt(state.essence || 0);
-  if ($('btn-speed')) { const bs = state.battleSpeed || 1; const lbl = `⏩ ${bs}x`; if ($('btn-speed').textContent !== lbl) { $('btn-speed').textContent = lbl; $('btn-speed').classList.toggle('gold', bs > 1); } }
+  if ($('btn-speed')) { const bs = state.battleSpeed || 1; const lbl = `⏩ ${bs}倍`; if ($('btn-speed').textContent !== lbl) { $('btn-speed').textContent = lbl; $('btn-speed').classList.toggle('gold', bs > 1); } }
 
   // XP / HP / 资源条
   setBar($('b-xp'), h.lvl >= MAX_LEVEL ? 100 : h.xp / xpNeeded(h.lvl) * 100,
-    h.lvl >= MAX_LEVEL ? 'MAX' : `${fmt(h.xp)}/${fmt(xpNeeded(h.lvl))}`);
+    h.lvl >= MAX_LEVEL ? '已满' : `${fmt(h.xp)}/${fmt(xpNeeded(h.lvl))}`);
   const heroShield = Math.max(0, state?.talentState?.shield || 0);
   setBar($('b-hp'), state.hp/h.hpMax*100, hpWithShieldText(state.hp, h.hpMax, heroShield));
   setBar($('b-hp2'), state.hp/h.hpMax*100, hpWithShieldText(state.hp, h.hpMax, heroShield));
@@ -1339,15 +1339,15 @@ function updateBattleVisuals() {
       const subKills = state.subzoneKills[subKey] || 0;
       const cleared = state.subzoneCleared[subKey];
       $('h-zone').innerHTML = `${mapIconHtml} ${map.name} · ${sub.name}`;
-      $('zone-name').innerHTML = `${mapIconHtml} ${map.name} · ${sub.name} (Lv ${sub.lvl[0]}-${sub.lvl[1]})`;
+      $('zone-name').innerHTML = `${mapIconHtml} ${map.name} · ${sub.name} (等级${sub.lvl[0]}-${sub.lvl[1]})`;
       $('progress-text').innerHTML = `探索进度 <b>${Math.min(subKills,50)}</b> / 50 ${cleared?'✅':''}`;
     }
   } else if (state.mode === 'boss') {
     const map = getMap();
     const mapIconHtml = symbolIconHtml(map.icon, 16, map.name, 'inv_misc_map_01');
-    const bossBattleIconHtml = statusIconHtml('Boss战', '⚔️', 16);
-    $('h-zone').innerHTML = `${mapIconHtml} ${map.name} · ${bossBattleIconHtml}BOSS战`;
-    $('zone-name').innerHTML = `${bossBattleIconHtml} ${mapIconHtml} ${map.name} · BOSS战`;
+    const bossBattleIconHtml = statusIconHtml('首领战', '⚔️', 16);
+    $('h-zone').innerHTML = `${mapIconHtml} ${map.name} · ${bossBattleIconHtml}首领战`;
+    $('zone-name').innerHTML = `${bossBattleIconHtml} ${mapIconHtml} ${map.name} · 首领战`;
     $('progress-text').innerHTML = `<b>${map.boss.name}</b>`;
   } else if (state.mode === 'dungeon') {
     const dg = DUNGEONS.find(d => d.key === state.dungeonState.key);
@@ -1371,7 +1371,7 @@ function updateBattleVisuals() {
       if (tags.length) bossExtra += ' <span style=\"font-size:10px;color:#6ee7b7\">'+tags.join(' ')+'</span>';
     }
     const bossTag = curBoss ? ` ⚔️<b style=\"color:var(--legend)\">${curBoss.name}</b>${bossExtra}` : '';
-    $('progress-text').innerHTML = `波次 ${state.dungeonState.wave}/${dg.waves} · BOSS ${killedBosses}/${bossList.length}${bossTag}`;
+    $('progress-text').innerHTML = `波次 ${state.dungeonState.wave}/${dg.waves} · 首领 ${killedBosses}/${bossList.length}${bossTag}`;
   } else if (state.mode === 'mythic') {
     const ms = state.mythicState;
     const dg = DUNGEONS.find(d => d.key === ms.key);
@@ -1398,12 +1398,12 @@ function updateBattleVisuals() {
     const mythicIconHtml = (typeof uiIcon === 'function') ? uiIcon('ascend', 'sm', '大秘境') : '🌟';
     $('h-zone').innerHTML = `${mythicIconHtml} 大秘境 +${ms.level||state.mythicLevel}`;
     $('zone-name').innerHTML = `${mythicIconHtml} 大秘境 +${ms.level||state.mythicLevel} · ${dg.name}${affixStr}`;
-    $('progress-text').innerHTML = `波次 ${ms.wave}/${dg.waves} · BOSS ${killedBosses}/${bossList.length}${bossTag}`;
+    $('progress-text').innerHTML = `波次 ${ms.wave}/${dg.waves} · 首领 ${killedBosses}/${bossList.length}${bossTag}`;
   } else if (state.mode === 'tower') {
     const ts = state.towerState;
     if (ts) {
       const type = (typeof towerMonsterType === 'function') ? towerMonsterType(ts.floor) : 'normal';
-      const typeTag = type==='boss'?` ${symbolIconHtml('👑', 14, 'Boss', 'achievement_boss_lichking')}BOSS`:type==='elite'?` ${symbolIconHtml('🗡️', 14, '精英', 'ability_rogue_eviscerate')}精英`:'';
+      const typeTag = type==='boss'?` ${symbolIconHtml('👑', 14, '首领', 'achievement_boss_lichking')}首领`:type==='elite'?` ${symbolIconHtml('🗡️', 14, '精英', 'ability_rogue_eviscerate')}精英`:'';
       const towerIconHtml = symbolIconHtml('⛰️', 16, '无尽塔', 'achievement_dungeon_naxxramas');
       $('h-zone').innerHTML = `${towerIconHtml} 无尽塔 · 第${ts.floor}层`;
       $('zone-name').innerHTML = `${towerIconHtml} 无尽塔 · 第${ts.floor}层${typeTag}`;
@@ -1423,7 +1423,7 @@ function updateBattleVisuals() {
     const reviveLeft=compDown?Math.ceil(((state._compDownUntil)-Date.now())/1000):0;
     $('comp-mini').style.display='';
     $('comp-mini').style.opacity=compDown?'0.5':'1';
-    const statusTag=compDown?` · <span style="color:#fde047">💫倒下 ${reviveLeft}s</span>`:'';
+    const statusTag=compDown?` · <span style="color:#fde047">💫倒下 ${reviveLeft}秒</span>`:'';
     const sigBadge = tpl?.signature ? ` · <span style="color:#fcd34d">${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')}专属</span>` : '';
     const compIconHtml = companionIconHtml(tpl, 18);
     const compMiniName = $('comp-mini-name');
@@ -1441,8 +1441,8 @@ function updateBattleVisuals() {
       _compMiniHeadSig = headSig;
       compMiniName.innerHTML=`${compIconHtml} ${tpl?.name} · <span class="${q.cls||''}">${q.name}</span> ${'⭐'.repeat(comp.stars||1)}${sigBadge} · 攻${fmt(st.atk)} 防${fmt(st.def)}${statusTag}`;
     }
-    setBar($('b-comp-hp'),Math.max(0,compHp)/st.hpMax*100,compDown?`倒下 ${reviveLeft}s`:hpWithShieldText(compHp, st.hpMax, Math.max(0, state._compBarrier || 0)));
-    // 随从技能 CD 展示:仅在随从/技能数变化时重建(避免每帧churn打断 title 悬浮),每帧只刷新剩余CD
+    setBar($('b-comp-hp'),Math.max(0,compHp)/st.hpMax*100,compDown?`倒下 ${reviveLeft}秒`:hpWithShieldText(compHp, st.hpMax, Math.max(0, state._compBarrier || 0)));
+    // 随从技能 冷却 展示:仅在随从/技能数变化时重建(避免每帧churn打断 title 悬浮),每帧只刷新剩余CD
     const csEl=$('comp-skills');
     if(csEl){
       const sig=comp.key+':'+((st.skills&&st.skills.length)||0);
@@ -1477,7 +1477,7 @@ function updateBattleVisuals() {
       csEl.querySelectorAll('.comp-cd-skill').forEach(span=>{
         const i=+span.dataset.i;const left=(typeof companionSkillCdLeft==='function')?companionSkillCdLeft(i):0;
         const op=left>0?'0.45':'1';if(span.style.opacity!==op)span.style.opacity=op;
-        const sub=span.querySelector('.cs-cd');if(sub){const txt=left>0?Math.ceil(left/1000)+'s':'';if(sub.textContent!==txt)sub.textContent=txt;}
+        const sub=span.querySelector('.cs-cd');if(sub){const txt=left>0?Math.ceil(left/1000)+'秒':'';if(sub.textContent!==txt)sub.textContent=txt;}
       });
     }
     const showCompDetail = function(e){
@@ -1487,7 +1487,7 @@ function updateBattleVisuals() {
         for (const [k, expire] of Object.entries(state._compBuffs)) {
           if (!(expire > nowTs)) continue;
           const fx = (typeof BUFF_FX === 'object' && BUFF_FX[k]) ? BUFF_FX[k] : null;
-          compBuffs.push((fx?.icon || '✨') + (fx?.name || k) + ' ' + Math.ceil((expire - nowTs) / 1000) + 's');
+          compBuffs.push((fx?.icon || '✨') + (fx?.name || k) + ' ' + Math.ceil((expire - nowTs) / 1000) + '秒');
         }
       }
       const compDebuffs = [];
@@ -1496,14 +1496,14 @@ function updateBattleVisuals() {
           const d = state._compDebuffs[k];
           if (!(d.expire > nowTs)) continue;
           const fx = DEBUFF_FX[k]; if (!fx) continue;
-          compDebuffs.push((fx.icon || '☠️') + fx.name + ' ' + Math.ceil((d.expire - nowTs) / 1000) + 's');
+          compDebuffs.push((fx.icon || '☠️') + fx.name + ' ' + Math.ceil((d.expire - nowTs) / 1000) + '秒');
         }
       }
       const compBarrier = state._compBarrier || 0;
       const sig = tpl?.signature;
       const compIconHtml = companionIconHtml(tpl, 18);
       const html=`<b>${compIconHtml} ${tpl?.name}</b><div>${q.name} ${'⭐'.repeat(comp.stars||1)} · ${tpl?.role==='tank'?'🛡️坦克':tpl?.role==='heal'?'💚治疗':'⚔️输出'}</div>
-        <div>攻击${fmt(st.atk)} 防御${fmt(st.def)} 生命${fmt(st.hpMax)} 攻速${st.spd?.toFixed(2)}/s</div>
+        <div>攻击${fmt(st.atk)} 防御${fmt(st.def)} 生命${fmt(st.hpMax)} 攻速${st.spd?.toFixed(2)}/秒</div>
         <div class="muted">参战强度已按品质、星级与定位折算</div>
         <div class="muted">定位:${tpl?.role==='tank'?'🛡️坦克 负责扛压/控场':tpl?.role==='dps'?'⚔️输出 均衡承伤/技能爆发':'💚辅助 更强续航/净化/护持'}</div>
         ${sig?`<div style="color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(sig.name, 14, sig.icon||'✨') : (sig.icon||'✨')} ${sig.name} · ${sig.desc||''}${sig.mode==='passive'?' (被动)':''}</div>`:''}
@@ -1599,8 +1599,8 @@ function renderHero() {
   $('s-def').textContent = fmt(h.def);
   $('s-crit').textContent = h.crit.toFixed(1)+'%';
   $('s-critd').textContent = h.critd.toFixed(0)+'%';
-  $('s-spd').textContent = h.spd.toFixed(2)+'/s';
-  $('s-reg').textContent = fmt(h.reg)+'/s';
+  $('s-spd').textContent = h.spd.toFixed(2)+'/秒';
+  $('s-reg').textContent = fmt(h.reg)+'/秒';
 
   $('talent-points').textContent = state.talentPoints;
 
@@ -1644,7 +1644,7 @@ function renderHero() {
   if (setPanel) {
     const gate = (typeof currentXpGate === 'function') ? currentXpGate() : null;
     const gateHtml = gate
-      ? `<div class="stage-gate-note"><b>阶段试炼:</b> 已卡在 Lv.${gate.level}，击败 <b>${gate.name}</b> 后继续获得经验</div>`
+      ? `<div class="stage-gate-note"><b>阶段试炼:</b> 已卡在 等级${gate.level}，击败 <b>${gate.name}</b> 后继续获得经验</div>`
       : '';
     const setHtml = (typeof renderSetPanelHtml === 'function')
       ? renderSetPanelHtml()
@@ -1687,7 +1687,7 @@ function renderEquipment() {
       const itemNameHtml = (typeof itemDisplayNameHtml === 'function') ? itemDisplayNameHtml(it,{slotBadge:true}) : it.name;
       div.innerHTML = `<div class="label">${slotIconHtml} ${SLOT_INFO[k].label}</div>
         <div class="name ${it.cls}">${itemNameHtml}${extras}</div>
-        <div class="stats">${stats}${it.reqLvl?' · Lv.'+it.reqLvl:''}</div>`;
+        <div class="stats">${stats}${it.reqLvl?' · 等级'+it.reqLvl:''}</div>`;
       div.title = '点击查看详情/卸下';
     } else {
       div.innerHTML = `<div class="label">${slotIconHtml} ${SLOT_INFO[k].label}</div>
@@ -1770,7 +1770,7 @@ function renderInventory() {
     row.innerHTML = `
       <div class="info">
         <div class="name ${it.cls}">${it.locked?'🔒 ':''}${slotIconHtml} ${itemNameHtml}${extras}</div>
-        <div class="stats">${SLOT_INFO[it.slot].label} · ${stats}${it.reqLvl?" · Lv."+it.reqLvl:""}</div>
+        <div class="stats">${SLOT_INFO[it.slot].label} · ${stats}${it.reqLvl?" · 等级"+it.reqLvl:""}</div>
       </div>
       <div class="btns">
         <button data-action="lock" data-id="${it.id}" title="${it.locked?'已锁定(点击解锁)':'锁定(防止出售)'}">${it.locked?'🔒':'🔓'}</button>
@@ -1916,7 +1916,7 @@ function renderShop() {
   $('shop-list').innerHTML = `
     <div style="margin-bottom:12px;padding:10px;background:var(--panel-2);border-radius:8px;border:1px solid var(--gold)">
       <div style="font-weight:bold;margin-bottom:4px">🎫 通用券商店</div>
-      <div class="muted" style="margin-bottom:4px">地图BOSS和副本首次免费,冷却中用通用券跳过CD立即再战</div>
+      <div class="muted" style="margin-bottom:4px">地图首领和副本首次免费，冷却中可用通用券立即再战</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
         <button class="gold" data-action="buyticket" data-type="normal" data-amount="1" data-price="${ticketPrice}" ${state.gold < ticketPrice ? 'disabled' : ''}>
           🎫×1 — ${ticketPrice}💰
@@ -1937,19 +1937,19 @@ function renderShop() {
       </div>
     </div>
     <div class="muted" style="margin-bottom:8px">📊 升级时全属性自动+1 · 装备和天赋为主要成长途径</div>
-    <div class="shop-item"><b>💪 力量 (STR)</b>
+    <div class="shop-item"><b>💪 力量</b>
       <div class="muted">每点: 攻击力 +${primary==='str'?'1.5':'0'} · ${primary==='str'?'<span style="color:var(--accent)">当前职业主属性</span>':'战士/圣骑士主属性'}</div>
     </div>
-    <div class="shop-item"><b>🏃 敏捷 (AGI)</b>
-      <div class="muted">每点: 暴击率 +0.05% · 攻击力 +${primary==='agi'?'1.5':'0'}${primary==='agi'?' <span style="color:var(--accent)">(主属性)</span>':''}<br>盗贼/猎人/德鲁伊主属性</div>
+    <div class="shop-item"><b>🏃 敏捷</b>
+      <div class="muted">每点: 暴击率 +0.05% · 攻击力 +${primary==='agi'?'1.5':'0'}${primary==='agi'?' <span style="color:var(--accent)">（主属性）</span>':''}<br>盗贼/猎人/德鲁伊主属性</div>
     </div>
-    <div class="shop-item"><b>📚 智力 (INT)</b>
-      <div class="muted">每点: 法力上限 +5 · 攻击力 +${primary==='int'?'1.5':'0'}${primary==='int'?' <span style="color:var(--accent)">(主属性)</span>':''}<br>法师/牧师/萨满/术士主属性</div>
+    <div class="shop-item"><b>📚 智力</b>
+      <div class="muted">每点: 法力上限 +5 · 攻击力 +${primary==='int'?'1.5':'0'}${primary==='int'?' <span style="color:var(--accent)">（主属性）</span>':''}<br>法师/牧师/萨满/术士主属性</div>
     </div>
-    <div class="shop-item"><b>🕯️ 精神 (SPI)</b>
+    <div class="shop-item"><b>🕯️ 精神</b>
       <div class="muted">每点: 生命回复 +0.2/秒 · 法力回复 +0.3/秒<br>影响战斗中资源续航</div>
     </div>
-    <div class="shop-item"><b>❤️ 耐力 (STA)</b>
+    <div class="shop-item"><b>❤️ 耐力</b>
       <div class="muted">每点: 生命上限 +10 · 防御 +0.3<br>全职业通用生存属性</div>
     </div>
     <div class="muted" style="margin-top:8px">🎯 <b>当前主属性: ${primaryName}</b> — 每点主属性提供 1.5 攻击力</div>
@@ -2025,11 +2025,11 @@ function renderSkills() {
     const div = document.createElement('div');
     div.className = 'skill-item';
     div.style.borderColor = isSel ? 'var(--accent)' : '';
-    const lockInfo = sk.unlockLvl ? `(Lv.${sk.unlockLvl})` : '(天赋解锁)';
+    const lockInfo = sk.unlockLvl ? `(等级${sk.unlockLvl})` : '(天赋解锁)';
     const baseDesc = sk._baseDesc || sk.desc || '';
     const detailDesc = sk._detailDesc || '';
     const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, skillVisualFallback(sk)) : sk.icon;
-    const castLabel = sk.castTime > 0 ? `${sk.castTime}s读条` : '瞬发';
+    const castLabel = sk.castTime > 0 ? `${sk.castTime}秒读条` : '瞬发';
     div.innerHTML = `
       <div class="row">
         <b style="color:${unlocked?'inherit':'var(--muted)'}">${skillIconHtml} ${sk.name}</b>
@@ -2038,7 +2038,7 @@ function renderSkills() {
       <div class="muted">${baseDesc}</div>
       ${detailDesc ? `<div class="muted" style="margin-top:4px;color:#cbd5e1;font-size:11px;line-height:1.45">联动: ${detailDesc}</div>` : ''}
       <div class="row">
-        <span class="muted">${c.resource} ${sk.mp} · CD ${cdSec}秒 · ${castLabel}</span>
+        <span class="muted">${c.resource} ${sk.mp} · 冷却 ${cdSec}秒 · ${castLabel}</span>
         ${unlocked ? `<button class="${isSel?'success':''}" data-action="selectskill" data-key="${skKey}">${isSel?'取消':'选用'}</button>` : ''}
       </div>`;
     skl.appendChild(div);
@@ -2207,13 +2207,13 @@ function renderSkillBar() {
     const hasMp = state.resource >= sk.mp;
     const baseDesc = sk._baseDesc || sk.desc || '';
     const detailDesc = sk._detailDesc ? `\n联动: ${sk._detailDesc}` : '';
-    const tip = `${sk.name} · ${baseDesc}${detailDesc}\n${c.resource} ${sk.mp} · CD ${getSkillCd(sk)}秒`.replace(/"/g, '&quot;');
+    const tip = `${sk.name} · ${baseDesc}${detailDesc}\n${c.resource} ${sk.mp} · 冷却 ${getSkillCd(sk)}秒`.replace(/"/g, '&quot;');
     const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, sk.icon) : sk.icon;
     return `<button class="skill-btn ${onCd?'on-cd':''}" data-skill="${key}" draggable="true" title="${tip}"
       style="${!onCd&&hasMp?'border-color:var(--accent)':''}">
       <span>${skillIconHtml} ${sk.name}</span>
       <span class="mp-cost">${sk.mp}${c.resKey==='rage'?'怒':c.resKey==='energy'?'能':'蓝'}</span>
-      ${onCd?`<div class="cd-overlay">${cdLeft}s</div>`:''}
+      ${onCd?`<div class="cd-overlay">${cdLeft}秒</div>`:''}
     </button>`;
   }).join('');
 }
@@ -2229,8 +2229,8 @@ function updateSkillBarCd() {
     const overlay = btn.querySelector('.cd-overlay');
     if (cdLeft > 0) {
       btn.classList.add('on-cd');
-      if (overlay) overlay.textContent = cdLeft + 's';
-      else { const d=document.createElement('div');d.className='cd-overlay';d.textContent=cdLeft+'s';btn.appendChild(d); }
+      if (overlay) overlay.textContent = cdLeft + '秒';
+      else { const d=document.createElement('div');d.className='cd-overlay';d.textContent=cdLeft+'秒';btn.appendChild(d); }
     } else {
       btn.classList.remove('on-cd');
       if (overlay) overlay.remove();
@@ -2243,7 +2243,7 @@ function renderMap() {
   if (mapCur) {
     const subCur = mapCur.sub[state.currentSubzone];
     const mapCurIconHtml = symbolIconHtml(mapCur.icon, 16, mapCur.name, 'inv_misc_map_01');
-    if (subCur) $('cur-location').innerHTML = `${mapCurIconHtml} ${mapCur.name} · ${subCur.name} (Lv ${subCur.lvl[0]}-${subCur.lvl[1]})`;
+    if (subCur) $('cur-location').innerHTML = `${mapCurIconHtml} ${mapCur.name} · ${subCur.name} (等级${subCur.lvl[0]}-${subCur.lvl[1]})`;
     else $('cur-location').innerHTML = `${mapCurIconHtml} ${mapCur.name}`;
   }
   const ml = $('map-list');
@@ -2268,7 +2268,7 @@ function renderMap() {
     let html = `
       <div class="map-head">
         <span class="mname">${mapIconHtml} ${m.name}</span>
-        <span><span class="map-faction faction-${m.faction}">${m.faction}</span> <span class="pill">Lv ${m.lvlRange[0]}-${m.lvlRange[1]}</span></span>
+        <span><span class="map-faction faction-${m.faction}">${m.faction}</span> <span class="pill">等级${m.lvlRange[0]}-${m.lvlRange[1]}</span></span>
       </div>
       <div class="map-desc">${m.desc}${tooHigh?' · ⚠️ 等级过低,小心怪物':''}</div>
       <div class="sub-list">`;
@@ -2278,7 +2278,7 @@ function renderMap() {
       const cleared = state.subzoneCleared[subKey];
       html += `<button class="sub-btn ${active?'active':''}" data-action="subzone" data-map="${m.key}" data-sub="${idx}">
         ${cleared?'<span class="sub-cleared">✅ </span>':''}${s.name}
-        <span class="sub-lvl">Lv ${s.lvl[0]}-${s.lvl[1]}</span>
+        <span class="sub-lvl">等级${s.lvl[0]}-${s.lvl[1]}</span>
       </button>`;
     });
     html += `</div>`;
@@ -2291,11 +2291,11 @@ function renderMap() {
     const canBoss = bCanFree || bCanTicket;
     const bossText = !bLvlOk ? '等级不足'
       : (!bOnCd ? '挑战(免费)'
-      : (bCanTicket ? `🎫挑战 (CD ${fmtCd(bCdLeft)})` : `CD ${fmtCd(bCdLeft)}`));
+      : (bCanTicket ? `🎫挑战 (冷却 ${fmtCd(bCdLeft)})` : `冷却 ${fmtCd(bCdLeft)}`));
     html += `
       <div class="boss-row">
         <div class="boss-info">
-          <div><span class="bname boss-name-tip" data-bosskey="${m.key}">${bossPanelIcon} ${m.boss.name}</span> <span class="pill">Lv ${m.boss.lvl}</span></div>
+          <div><span class="bname boss-name-tip" data-bosskey="${m.key}">${bossPanelIcon} ${m.boss.name}</span> <span class="pill">等级${m.boss.lvl}</span></div>
           <div class="muted">${m.boss.desc}</div>
         </div>
         <button class="boss-btn ${canBoss?'epic':''}" data-action="boss" data-map="${m.key}" ${canBoss?'':'disabled'}>${bossText}</button>
@@ -2307,7 +2307,7 @@ function renderMap() {
       html += `
         <div class="boss-row" style="margin-top:6px;border-top:1px dashed rgba(148,163,184,.18);padding-top:6px">
           <div class="boss-info">
-            <div><span class="bname rare-name-tip" data-rarekey="${rare.key}" style="cursor:help">${rareIconHtml} ${rare.name}</span> <span class="pill">Lv ${rare.lvl}</span></div>
+            <div><span class="bname rare-name-tip" data-rarekey="${rare.key}" style="cursor:help">${rareIconHtml} ${rare.name}</span> <span class="pill">等级${rare.lvl}</span></div>
             <div class="muted">${rare.desc}</div>
           </div>
           <div class="muted" style="font-size:11px;text-align:right">${rareSeen ? '已现身' : `野外约 ${Math.round((rare.spawnChance || 0.025) * 1000) / 10}% 遭遇`}</div>
@@ -2319,7 +2319,7 @@ function renderMap() {
     if (nameEl && m.boss.skills) {
       nameEl.style.cursor = 'help';
       const showBossTip = e => {
-        let tip = '<b>'+bossPanelIcon+' '+m.boss.name+' Lv.'+m.boss.lvl+'</b>';
+        let tip = '<b>'+bossPanelIcon+' '+m.boss.name+' 等级'+m.boss.lvl+'</b>';
         if (m.boss.skills) {
           tip += '<div style=\"margin-top:3px;color:#fbbf24\">技能:</div>';
           m.boss.skills.forEach(s => {
@@ -2355,13 +2355,13 @@ function renderMap() {
           {name:'💰 金币 ×'+(m.boss.lvl*30),rarity:'common',stats:{}},
           {name:'✨ 经验 ×'+(m.boss.lvl*15),rarity:'common',stats:{}},
           isHighBoss
-            ? {name:'🎁 必掉 Lv.'+m.boss.lvl+' 紫装 ×1',rarity:'epic',stats:{}}
-            : {name:'🎁 必掉 Lv.'+m.boss.lvl+' 蓝装 ×1',rarity:'rare',stats:{}},
+            ? {name:'🎁 必掉 等级'+m.boss.lvl+' 紫装 ×1',rarity:'epic',stats:{}}
+            : {name:'🎁 必掉 等级'+m.boss.lvl+' 蓝装 ×1',rarity:'rare',stats:{}},
           isHighBoss
             ? {name:'🎉 15% 额外掉落 橙装 ×1',rarity:'legend',stats:{}}
             : {name:'🎉 15% 额外掉落 紫装 ×1',rarity:'epic',stats:{}},
           {name:'💎 钻石 ×3~8',rarity:'rare',stats:{}},
-          {name:'📊 首次免费 · CD最高1小时 · CD中🎫跳过',rarity:'legend',stats:{}},
+          {name:'📊 首次免费 · 冷却最高1小时 · 冷却中🎫跳过',rarity:'legend',stats:{}},
         ];
         showLootTip(e, bossDrops, `${bossPanelIcon} ${m.boss.name} 掉落`);
       };
@@ -2436,7 +2436,7 @@ function companionSkillTipHtml(sk){
   if (sk.splashPct) lines.push(`对其他敌人溅射 ${compPct(sk.splashPct)}% 伤害`);
   if (sk.aoePct) lines.push(`额外波及其他敌人 ${compPct(sk.aoePct)}% 伤害`);
   if (sk.executeBonus) lines.push(`对 ${compPct(sk.executeThreshold || 0.35)}% 以下目标额外 +${compPct(sk.executeBonus)}% 伤害`);
-  if (sk.bonusVsBoss) lines.push(`对Boss额外 +${compPct(sk.bonusVsBoss)}% 伤害`);
+  if (sk.bonusVsBoss) lines.push(`对首领额外 +${compPct(sk.bonusVsBoss)}% 伤害`);
   if (sk.bonusVsDot) lines.push(`对持续伤害目标额外 +${compPct(sk.bonusVsDot)}% 伤害`);
   if (sk.bonusVsSlow) lines.push(`对减速目标额外 +${compPct(sk.bonusVsSlow)}% 伤害`);
   if (sk.bonusVsSunder) lines.push(`对破甲目标额外 +${compPct(sk.bonusVsSunder)}% 伤害`);
@@ -2768,13 +2768,13 @@ function buildDungeonInfoHtml(dg) {
   let html = `
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
       <div style="font-weight:700;font-size:16px">${dungeonIconHtml} ${dg.name}</div>
-      <div class="pill">Lv.${dg.reqLvl}</div>
+      <div class="pill">等级${dg.reqLvl}</div>
     </div>
     <div class="muted" style="margin-bottom:10px;line-height:1.6">
       ${isEpicRaid?'<span style="color:#fb7185">[史诗团本]</span> ':(isRaid?'<span style="color:#fbbf24">[团本]</span> ':'<span style="color:#6ee7b7">[5人本]</span> ')}
       ${dg.desc}<br>
-      推荐波次: ${dg.waves || '?'} · BOSS数量: ${(dg.bosses || []).length}
-      ${dg.type==='raid'?(isEpicRaid?' · 掉落: 史诗级紫装 / 全BOSS超低概率橙装':' · 掉落: 常规团本装备 / 关底低概率橙武'):''}
+      推荐波次: ${dg.waves || '?'} · 首领数量: ${(dg.bosses || []).length}
+      ${dg.type==='raid'?(isEpicRaid?' · 掉落: 史诗级紫装 / 全部首领超低概率橙装':' · 掉落: 常规团本装备 / 关底低概率橙武'):''}
     </div>`;
   if (dgAffixes.length) {
     html += `<div style="margin-bottom:10px;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.03)">
@@ -2898,7 +2898,7 @@ function renderDungeon() {
         })()
       : null;
     const statusText = !lvlOk ? '等级不足'
-      : onCd ? `CD ${fmtCd(cdLeft)}${canTicket ? ' · 🎫跳过' : ''}`
+      : onCd ? `冷却 ${fmtCd(cdLeft)}${canTicket ? ' · 🎫跳过' : ''}`
       : '可挑战(免费)';
     const btnText = canFree ? '免费进入' : (canTicket ? '🎫进入' : '进入');
     const div = document.createElement('div');
@@ -2911,9 +2911,9 @@ function renderDungeon() {
     div.innerHTML = `
       <div class="row">
         <span><span class="icon">${dungeonIconHtml}</span> <b>${dg.name}</b></span>
-        <span>${firstClearBadge}<span class="pill">Lv.${dg.reqLvl}</span></span>
+        <span>${firstClearBadge}<span class="pill">等级${dg.reqLvl}</span></span>
       </div>
-      <div class="muted">${isEpicRaid?'<span style="color:#fb7185">[史诗团本]</span> ':(dg.type==='raid'?'<span style=\"color:#fbbf24\">[团本]</span> ':'<span style=\"color:#6ee7b7\">[5人本]</span> ')}${dg.desc} · ${(dg.bosses||[]).length}个BOSS · 最终: ${((dg.bosses||[])[dg.bosses.length-1]||{}).name||'??'}${dg.type==='raid'?(isEpicRaid?' · 掉落:史诗级紫装/全BOSS超低概率橙装':' · 掉落:常规团本装备/关底低概率橙武'):''}</div>
+      <div class="muted">${isEpicRaid?'<span style="color:#fb7185">[史诗团本]</span> ':(dg.type==='raid'?'<span style=\"color:#fbbf24\">[团本]</span> ':'<span style=\"color:#6ee7b7\">[5人本]</span> ')}${dg.desc} · ${(dg.bosses||[]).length}名首领 · 最终: ${((dg.bosses||[])[dg.bosses.length-1]||{}).name||'??'}${dg.type==='raid'?(isEpicRaid?' · 掉落:史诗级紫装/全部首领超低概率橙装':' · 掉落:常规团本装备/关底低概率橙武'):''}</div>
       ${affixLine}
       ${setTierInfo ? `<div class="dungeon-set-track compact">当前职业套装: ${setTierInfo.setName} · ${setTierInfo.bandName}</div>` : ''}
       <div class="row">
@@ -2954,7 +2954,7 @@ function updateCdDisplays() {
     const canBoss = bCanFree || bCanTicket;
     const newText = !bLvlOk ? '等级不足'
       : (!bOnCd ? '挑战(免费)'
-      : (bCanTicket ? `🎫挑战 (CD ${fmtCd(bCdLeft)})` : `CD ${fmtCd(bCdLeft)}`));
+      : (bCanTicket ? `🎫挑战 (冷却 ${fmtCd(bCdLeft)})` : `冷却 ${fmtCd(bCdLeft)}`));
     if (btn.textContent !== newText) btn.textContent = newText;
     btn.disabled = !canBoss;
     btn.classList.toggle('epic', canBoss);
@@ -2973,7 +2973,7 @@ function updateCdDisplays() {
     const canTicket = lvlOk && onCd && state.tickets >= 1 && state.mode === 'world';
     const canEnter = canFree || canTicket;
     const statusText = !lvlOk ? '等级不足'
-      : onCd ? `CD ${fmtCd(cdLeft)}${canTicket ? ' · 🎫跳过' : ''}`
+      : onCd ? `冷却 ${fmtCd(cdLeft)}${canTicket ? ' · 🎫跳过' : ''}`
       : '可挑战(免费)';
     const btnText = canFree ? '免费进入' : (canTicket ? '🎫进入' : '进入');
     if (cdSpan && cdSpan.textContent !== statusText) cdSpan.textContent = statusText;
