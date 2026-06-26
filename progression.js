@@ -251,6 +251,31 @@ function getRepNext(rep) {
   return null;
 }
 
+/* 崇拜(满阶)后无限"声望宝箱":每超出 REP_CACHE_STEP 声望可领 1 个资源宝箱 */
+const REP_CACHE_STEP = 50000;
+const REP_CACHE_REWARD = { gold:50000, essence:20, honor:200, gem:15 };
+function repExaltedRep() { return REPUTATION_TIERS[REPUTATION_TIERS.length - 1].rep; }
+function repCachesEarned(rep) { const ex = repExaltedRep(); return rep >= ex ? Math.floor((rep - ex) / REP_CACHE_STEP) : 0; }
+function repCachesAvailable(fac) {
+  const acc = accEns();
+  const rep = acc.reputation[fac] || 0;
+  const claimed = (acc.repCaches && acc.repCaches[fac]) || 0;
+  return Math.max(0, repCachesEarned(rep) - claimed);
+}
+function claimRepCache(fac) {
+  const acc = accEns();
+  if (!acc.repCaches) acc.repCaches = {};
+  const avail = repCachesAvailable(fac);
+  if (avail <= 0) { log('暂无可领声望宝箱', 'bad'); return false; }
+  acc.repCaches[fac] = (acc.repCaches[fac] || 0) + avail;
+  const r = REP_CACHE_REWARD;
+  state.gold += r.gold * avail; state.essence += r.essence * avail;
+  state.honor += r.honor * avail; state.gem += r.gem * avail;
+  log(`🎁 ${fac} 崇拜宝箱 ×${avail}: +${fmt(r.gold * avail)}💰 +${r.essence * avail}✨ +${r.honor * avail}🏅 +${r.gem * avail}💎`, 'legend');
+  markDirty('progression', 'hero');
+  return true;
+}
+
 /* 获取当前地图所在势力的加成 */
 function progressionZoneMultiplier() {
   const map = (typeof getMap==='function') ? getMap() : null;
@@ -533,6 +558,13 @@ function renderRepSubtab() {
       </div>
       <div class="bar xp" style="height:7px;margin:3px 0"><i style="width:${pct}%;background:${info.color}"></i></div>
       <div class="muted" style="font-size:11px">+${t.xpPct}%XP · +${t.goldPct}%金 · +${t.dropPct}%掉率 · +${t.dmgPct}%伤害</div>
+      ${rep >= repExaltedRep() ? (() => {
+        const avail = repCachesAvailable(fac);
+        const toNext = REP_CACHE_STEP - ((rep - repExaltedRep()) % REP_CACHE_STEP);
+        return `<div style="font-size:10px;margin-top:3px">🎁 崇拜宝箱: ${avail > 0
+          ? `<button class="gold" data-action="claimrepcache" data-fac="${fac}" style="padding:1px 8px;font-size:10px">领取 ×${avail}</button>`
+          : `<span class="muted">再攒 ${fmt(toNext)} 声望开下一个</span>`}</div>`;
+      })() : ''}
     </div>`;
   }
   html += '</div>';

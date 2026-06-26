@@ -155,6 +155,7 @@ function defaultAccount() {
     bestiary: {},           // {mobName: killCount}
     // 声望(账号合并)
     reputation: {},         // {factionName: amount}
+    repCaches: {},          // {factionName: 已领崇拜后宝箱数}
     // 光辉值(账号共享)
     ascendLvl: 0,
     ascendCount: 0,
@@ -191,6 +192,7 @@ function mergeAccount(saved) {
     subzonesCleared: saved.subzonesCleared || {},
     bestiary: saved.bestiary || {},
     reputation: saved.reputation || {},
+    repCaches: saved.repCaches || {},
     ascendMilestones: saved.ascendMilestones || {},
     season: mo(d.season, saved.season),
     expedition: saved.expedition ? Object.assign({}, d.expedition, saved.expedition, {

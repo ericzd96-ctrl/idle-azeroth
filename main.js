@@ -851,6 +851,10 @@ function setupMainButtons() {
         if (typeof claimReputationLine === 'function' && claimReputationLine(btn.dataset.fac, parseInt(btn.dataset.rep, 10))) {
           renderProgression();
         }
+      } else if (btn.dataset.action === 'claimrepcache') {
+        if (typeof claimRepCache === 'function' && claimRepCache(btn.dataset.fac)) {
+          renderProgression();
+        }
       } else if (btn.dataset.action === 'equiptitle') {
         if (setActiveTitle(btn.dataset.title)) {
           log(`👑 已切换称号: ${btn.dataset.title}`, 'good');
