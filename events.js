@@ -46,6 +46,33 @@ for (const wb of WORLD_BOSSES) {
 const WBOSS_CD_HOURS = 8;
 const SHARD_EXCHANGE_COST = 50; // 50 碎片 = 1 自选橙装
 
+/* 世界Boss 累计击杀里程碑(per-char,达标一次性奖励) */
+const WBOSS_KILL_MILESTONES = [
+  { n:5,   reward:{ gem:20,  essence:15 } },
+  { n:15,  reward:{ gem:50,  essence:40,  shards:5 } },
+  { n:30,  reward:{ gem:120, essence:80,  shards:10 }, title:'屠龙者' },
+  { n:60,  reward:{ gem:300, essence:150, shards:20 }, title:'世界Boss征服者' },
+  { n:100, reward:{ gem:600, essence:300, shards:30 } },
+];
+function worldBossCheckKillMilestone() {
+  if (!state.worldBoss.killMs) state.worldBoss.killMs = {};
+  const total = state.worldBoss.totalKilled || 0;
+  for (const m of WBOSS_KILL_MILESTONES) {
+    if (total >= m.n && !state.worldBoss.killMs[m.n]) {
+      state.worldBoss.killMs[m.n] = true;
+      const r = m.reward || {};
+      if (r.gem) state.gem += r.gem;
+      if (r.essence) state.essence += r.essence;
+      if (r.shards) state.worldBoss.shards = (state.worldBoss.shards || 0) + r.shards;
+      if (m.title && typeof unlockTitle === 'function') unlockTitle(m.title);
+      const parts = [];
+      if (r.gem) parts.push(r.gem + '💎'); if (r.essence) parts.push(r.essence + '✨');
+      if (r.shards) parts.push(r.shards + '🧩'); if (m.title) parts.push(`称号「${m.title}」`);
+      log(`🏆 世界Boss 累计击杀 ${m.n} 次里程碑! ${parts.join(' ')}`, 'legend');
+    }
+  }
+}
+
 function ensureEventState() {
   if (!state.worldBoss) state.worldBoss = { lastKill:{}, shards:0, totalKilled:0, stageClears:{}, rareKills:{} };
   if (!state.worldBoss.lastKill) state.worldBoss.lastKill = {};
@@ -253,6 +280,7 @@ function onWorldBossKill(mon) {
   const wb = getWorldBossDef(key); if (!wb) return;
   state.worldBoss.lastKill[key] = Date.now();
   state.worldBoss.totalKilled = (state.worldBoss.totalKilled||0) + 1;
+  worldBossCheckKillMilestone();
   if (typeof mountOnWorldBossKill==='function') mountOnWorldBossKill();
   state.gem += wb.rewards?.gem || 0;
   if (typeof ensureMats==='function') ensureMats();
@@ -594,8 +622,11 @@ function renderWorldBossSub() {
   const gateHtml = gate
     ? `<div class="stage-gate-note" style="margin-bottom:8px"><b>当前卡级:</b> Lv.${gate.level} · 击败 <b>${gate.name}</b> 后继续获得经验</div>`
     : '';
-  let html = `<div class="prog-summary muted">${gateHtml}橙装碎片: <b style="color:var(--legend)">${state.worldBoss.shards||0}</b> / ${SHARD_EXCHANGE_COST} · 累计击败 ${state.worldBoss.totalKilled||0} 次
+  const _wbTotal = state.worldBoss.totalKilled||0;
+  const _wbNext = WBOSS_KILL_MILESTONES.find(m => _wbTotal < m.n);
+  let html = `<div class="prog-summary muted">${gateHtml}橙装碎片: <b style="color:var(--legend)">${state.worldBoss.shards||0}</b> / ${SHARD_EXCHANGE_COST} · 累计击败 ${_wbTotal} 次
     ${(state.worldBoss.shards||0)>=SHARD_EXCHANGE_COST ? '<button class="gold" data-action="exchangeshards" style="margin-left:8px">合成橙装</button>' : ''}
+    <div style="font-size:10px;margin-top:3px">🏆 击杀里程碑: ${WBOSS_KILL_MILESTONES.map(m=>`<span style="opacity:${_wbTotal>=m.n?1:0.5}">${_wbTotal>=m.n?'✅':'🔒'}${m.n}${m.title?'👑':''}</span>`).join(' · ')}${_wbNext?` · 下一档还需 ${_wbNext.n-_wbTotal} 次`:' · 全部达成'}</div>
   </div>`;
   const renderRewardLine = wb => {
     const parts = [];
