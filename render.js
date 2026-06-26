@@ -1609,6 +1609,9 @@ function renderHero() {
   $('s-vers').textContent = (state.hero.vers||0).toFixed(1)+'%';
   if ($('s-haste')) $('s-haste').textContent = (state.hero.haste||0).toFixed(1)+'%';
   $('s-mastery').textContent = fmt(state.hero.mastery||0);
+  // 副属性来源明细(全能/精通,单位一致);hover 数值查看
+  { const bv = statSourceBreakdown('vers'); $('s-vers').title = bv ? '全能加成来源:\n' + bv : ''; if ($('s-vers')) $('s-vers').style.cursor = bv ? 'help' : 'default'; }
+  { const bm = statSourceBreakdown('mastery', false); $('s-mastery').title = bm ? '精通加成来源:\n' + bm : ''; $('s-mastery').style.cursor = bm ? 'help' : 'default'; }
   if ($('s-dodge')) $('s-dodge').textContent = (state.hero.dodge||0).toFixed(1)+'%';
 
   // 精通效果
@@ -1651,8 +1654,10 @@ function renderHero() {
   bindUnitTip($('hero-emoji'), heroUnitTipHtml);
 }
 
-/* 某加成的"按来源拆分"明细字符串(读 state._statSources,降序);供属性面板 chip 的 tooltip */
-function statSourceBreakdown(key) {
+/* 某加成的"按来源拆分"明细字符串(读 state._statSources,降序);供属性面板 tooltip。
+   pct=true 加 % 后缀(攻击/生命/全能等),false 为扁平值(精通) */
+function statSourceBreakdown(key, pct) {
+  if (pct === undefined) pct = true;
   const srcs = state._statSources;
   if (!srcs) return '';
   const rows = [];
@@ -1663,7 +1668,7 @@ function statSourceBreakdown(key) {
   }
   if (!rows.length) return '';
   rows.sort((a, b) => b.v - a.v);
-  return rows.map(r => `${r.name} ${r.v > 0 ? '+' : ''}${(+r.v).toFixed(1)}%`).join('\n');
+  return rows.map(r => `${r.name} ${r.v > 0 ? '+' : ''}${(+r.v).toFixed(1)}${pct ? '%' : ''}`).join('\n');
 }
 
 function renderEquipment() {
