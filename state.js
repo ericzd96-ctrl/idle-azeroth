@@ -167,6 +167,8 @@ function defaultAccount() {
     guild: { level: 1, xp: 0, contrib: 0, tech: {}, donatedDay: 0, donatedKeys: [] },
     // 轮换黑市(账号共享):每日刷新商品,每件每天限购一次
     market: { day: -1, bought: [] },
+    // 每日/每周任务板(账号共享):自动刷新目标 → 完成领奖
+    quests: { day: -1, week: -1, daily: [], weekly: [], dailyBonusClaimed: false, weeklyBonusClaimed: false },
   };
 }
 
@@ -195,6 +197,10 @@ function mergeAccount(saved) {
     market: saved.market ? Object.assign({}, d.market, saved.market, {
       bought: Array.isArray(saved.market.bought) ? saved.market.bought : [],
     }) : d.market,
+    quests: saved.quests ? Object.assign({}, d.quests, saved.quests, {
+      daily: Array.isArray(saved.quests.daily) ? saved.quests.daily : [],
+      weekly: Array.isArray(saved.quests.weekly) ? saved.quests.weekly : [],
+    }) : d.quests,
     mounts: saved.mounts || {},
     relics: Array.isArray(saved.relics) ? saved.relics : [],
     // 公共资源:数值类靠 Object.assign(d,saved) 已带过来;对象/数组做空值保护

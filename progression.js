@@ -287,7 +287,9 @@ function progressionOnKill(mon) {
   if (mon && mon.isBoss && state.mode === 'boss') {
     const k = state.currentMap;
     acc.bossesKilled[k] = (acc.bossesKilled[k]||0) + 1;
+    if (typeof questAdvance === 'function') questAdvance('boss', 1);
   }
+  if (typeof questAdvance === 'function') questAdvance('kill', 1);
   progressionCheckAch();
 }
 
@@ -300,6 +302,7 @@ function progressionOnGoldGain(amount) {
   const acc = accEns();
   const before = acc.lifetimeGold || 0;
   acc.lifetimeGold = before + amount;
+  if (typeof questAdvance === 'function' && amount > 0) questAdvance('gold', amount);
   // 跨过 1000 边界时检测一次
   if (Math.floor(acc.lifetimeGold/1000) !== Math.floor(before/1000)) progressionCheckAch();
 }
@@ -307,6 +310,7 @@ function progressionOnGoldGain(amount) {
 function progressionOnDungeonClear(dgKey) {
   const acc = accEns();
   acc.dungeonClearsTotal = (acc.dungeonClearsTotal||0) + 1;
+  if (typeof questAdvance === 'function') questAdvance('dungeon', 1);
   const dg = (typeof DUNGEONS!=='undefined') ? DUNGEONS.find(d=>d.key===dgKey) : null;
   const fac = dg ? (dg.faction || '中立') : '中立';
   acc.reputation[fac] = (acc.reputation[fac]||0) + 200;
@@ -316,6 +320,7 @@ function progressionOnDungeonClear(dgKey) {
 function progressionOnGem() {
   const acc = accEns();
   acc.gemsInserted = (acc.gemsInserted||0) + 1;
+  if (typeof questAdvance === 'function') questAdvance('gem', 1);
   progressionCheckAch();
 }
 function progressionOnEnchant() {

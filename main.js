@@ -741,6 +741,7 @@ function setupMainButtons() {
       if(t.dataset.tab==='expedition'&&typeof renderExpedition==='function') renderExpedition();
       if(t.dataset.tab==='guild'&&typeof renderGuild==='function') renderGuild();
       if(t.dataset.tab==='market'&&typeof renderMarket==='function') renderMarket();
+      if(t.dataset.tab==='quests'&&typeof renderQuests==='function') renderQuests();
       if(t.dataset.tab==='leaderboard'&&typeof renderLeaderboard==='function') renderLeaderboard();
       if(t.dataset.tab==='talent'&&typeof renderTalents==='function') renderTalents();
       if (isMobileLayout()) setMobilePanelOpen(true);
@@ -778,6 +779,16 @@ function setupMainButtons() {
       const btn = e.target.closest('button[data-action]');
       if (!btn) return;
       if (btn.dataset.action === 'marketBuy' && typeof buyMarketDeal === 'function') buyMarketDeal(btn.dataset.key);
+    });
+  }
+
+  // 任务板 事件代理
+  const questsRoot = $('tab-quests');
+  if (questsRoot) {
+    questsRoot.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      if (btn.dataset.action === 'claimQuest' && typeof claimQuest === 'function') claimQuest(btn.dataset.key);
     });
   }
 

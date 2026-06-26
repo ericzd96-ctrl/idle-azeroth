@@ -133,6 +133,10 @@ function updateNavBadges() {
   if (marketTab) {
     marketTab.classList.toggle('has-badge', (typeof marketHasAffordableDeal === 'function') && marketHasAffordableDeal());
   }
+  const questsTab = document.querySelector('.tab[data-tab="quests"]');
+  if (questsTab) {
+    questsTab.classList.toggle('has-badge', (typeof questHasClaimable === 'function') && questHasClaimable());
+  }
   // 目标引导:地图页可见时一并刷新
   const mapPanel = document.getElementById('tab-map');
   if (mapPanel && mapPanel.classList.contains('active') && typeof renderNextGoals === 'function') renderNextGoals();
@@ -2974,9 +2978,11 @@ function processDirty() {
   if (isDirty('arena')&&typeof renderArena==='function') { renderArena(); clearDirty('arena'); }
   updateNavBadges();
   expeditionLiveTick();
+  if (typeof questLiveTick === 'function') questLiveTick();
   if (isDirty('expedition')&&typeof renderExpedition==='function') { renderExpedition(); clearDirty('expedition'); }
   if (isDirty('guild')&&typeof renderGuild==='function') { renderGuild(); clearDirty('guild'); }
   if (isDirty('market')&&typeof renderMarket==='function') { renderMarket(); clearDirty('market'); }
+  if (isDirty('quests')&&typeof renderQuests==='function') { renderQuests(); clearDirty('quests'); }
   if (isDirty('stage'))     { clearDirty('stage'); /* stage 信息已在 updateBattleVisuals 处理 */ }
 }
 

@@ -581,6 +581,7 @@ function arenaFight(ranked) {
       ratingDelta = delta;
       honorGained = honor;
       sealsGained = seals;
+      if (typeof questAdvance === 'function') questAdvance('arena', 1);
 
       log(`🏟️ 排位胜利! ${plan.tactic.icon}${plan.tactic.name} 成功压过 ${opp.icon}${opp.name} · 评分+${delta}→${a.rating} · +${honor}🏅 · +${seals}🪙`, 'good');
       const after = arenaTierFor(a.rating);
