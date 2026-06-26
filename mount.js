@@ -29,6 +29,22 @@ const MOUNTS = [
   { key:'invincible',   name:'无敌座驾', icon:'🔥', tier:'legend', mod:{spdPct:20, atkPct:15, hpPct:15, leech:5}, src:'无尽塔 第 100 层' },
   { key:'mimiron',      name:'米米隆头颅',icon:'⚙️', tier:'legend', mod:{spdPct:20, hpPct:20, defPct:10, mastery:10}, src:'觉醒 25 阶' },
   { key:'ashes',        name:'灰烬使者', icon:'🦃', tier:'legend', mod:{spdPct:20, atkPct:15, critdPct:10, dropMult:10}, src:'无尽塔 第 200 层' },
+  // 新增:接入 endgame 系统(大秘境/竞技场/巅峰)—— mod 只用 atk/hp/def/spd/mastery(crit/critd/leech/vers 会被 spd_tuning 从 MOUNTS 剥离)
+  { key:'warbear',      name:'板甲战熊',   icon:'🐻', tier:'rare',   mod:{spdPct:12, hpPct:8, defPct:5},            src:'竞技场 大师段位' },
+  { key:'felRaptor',    name:'魔誓迅猛龙', icon:'😈', tier:'epic',   mod:{spdPct:15, atkPct:10, mastery:6},          src:'大秘境 +8 通关' },
+  { key:'paragonHawk',  name:'巅峰之翼',   icon:'🌟', tier:'epic',   mod:{spdPct:15, atkPct:8, mastery:8},           src:'巅峰等级 50' },
+  { key:'gladiatorDrake',name:'角斗士之龙',icon:'🐲', tier:'legend', mod:{spdPct:20, atkPct:12, hpPct:12, defPct:8}, src:'竞技场 角斗士段位' },
+  { key:'voidPhoenix',  name:'虚空凤凰',   icon:'🦅', tier:'legend', mod:{spdPct:20, atkPct:14, hpPct:10, mastery:8},src:'大秘境 +15 通关' },
+  { key:'eternalDragon',name:'永恒巨龙',   icon:'🐉', tier:'legend', mod:{spdPct:20, atkPct:15, hpPct:15, mastery:10},src:'巅峰等级 150' },
+];
+
+/* 坐骑收藏里程碑(拥有 N 只自动激活;mod 在 collectMountMod 直接加,不被 spd_tuning 剥离,
+   故可用 critdPct 等;避免 spdPct(里程碑不在 walk 容器,不会被归一化)) */
+const MOUNT_MILESTONES = [
+  { n:5,  mod:{ atkPct:3, hpPct:3 } },
+  { n:10, mod:{ atkPct:5, hpPct:5, critdPct:8 } },
+  { n:15, mod:{ atkPct:8, hpPct:8, critdPct:12, goldMult:10 } },
+  { n:18, mod:{ atkPct:12, hpPct:12, critdPct:15, dropMult:15 }, title:'坐骑大师' },   // 18 而非满20:单阵营账号只能得 1 个起始坐骑(另一阵营起始无其它来源),18 任何账号可达
 ];
 
 const MOUNT_TIER = {
@@ -60,6 +76,7 @@ function mountGrant(key) {
   log(`🐎 获得新坐骑【${m.name}】(${MOUNT_TIER[m.tier].name})!`, 'legend');
   // 第一只时自动出战
   if (!state.activeMount) state.activeMount = key;
+  if (typeof mountCheckMilestoneTitle === 'function') mountCheckMilestoneTitle();
   recomputeStats();
   markDirty('mount', 'hero');
   return true;
@@ -134,14 +151,47 @@ function collectMountMod() {
       for (const [k, v] of Object.entries(m.mod||{})) out[k] = (out[k]||0) + v;
     }
   }
-  // 收藏被动
+  // 收藏被动(线性)
   const ownedCount = Object.values(account.mounts||{}).filter(m => m && m.obtained).length;
   if (ownedCount > 0) {
     out.atkPct  += ownedCount * 0.2;
     out.goldMult += ownedCount * 0.5;
     out.dropMult += ownedCount * 0.5;
   }
+  // 收藏里程碑(达标自动激活)
+  for (const ms of MOUNT_MILESTONES) {
+    if (ownedCount >= ms.n) for (const [k, v] of Object.entries(ms.mod||{})) out[k] = (out[k]||0) + v;
+  }
   return out;
+}
+
+function mountOwnedCount() {
+  ensureMountState();
+  return Object.values(account.mounts||{}).filter(m => m && m.obtained).length;
+}
+/* 里程碑称号(达标一次性解锁;在 mountGrant 后调) */
+function mountCheckMilestoneTitle() {
+  const n = mountOwnedCount();
+  for (const ms of MOUNT_MILESTONES) {
+    if (ms.title && n >= ms.n && typeof unlockTitle === 'function' && account.unlockedTitles && !account.unlockedTitles.includes(ms.title)) {
+      unlockTitle(ms.title);
+      log(`🏆 坐骑收藏里程碑:解锁称号「${ms.title}」!`, 'legend');
+    }
+  }
+}
+
+/* ---------- endgame 来源钩子 ---------- */
+function mountOnMythicClear(level) {
+  if ((level||0) >= 8)  mountGrant('felRaptor');
+  if ((level||0) >= 15) mountGrant('voidPhoenix');
+}
+function mountOnArenaTier(tierKey) {
+  if (tierKey === 'master') mountGrant('warbear');
+  if (tierKey === 'glad')   mountGrant('gladiatorDrake');
+}
+function mountOnParagonLevel(lvl) {
+  if ((lvl||0) >= 50)  mountGrant('paragonHawk');
+  if ((lvl||0) >= 150) mountGrant('eternalDragon');
 }
 
 /* ---------- 渲染 ---------- */
@@ -154,8 +204,17 @@ function renderMounts() {
   let html = `<div class="ascend-box">
     <div style="font-weight:bold">🐎 坐骑收藏 <span class="muted" style="font-size:11px">(账号共享)</span></div>
     <div class="muted" style="font-size:11px;margin:4px 0">已收集 <b style="color:var(--accent)">${ownedCount}</b>/${total}</div>
-    <div class="muted" style="font-size:10px">收藏被动: +${(ownedCount*0.2).toFixed(1)}% 攻击 · +${(ownedCount*0.5).toFixed(1)}% 金币 · +${(ownedCount*0.5).toFixed(1)}% 掉率</div>
-  </div>`;
+    <div class="muted" style="font-size:10px">收藏被动: +${(ownedCount*0.2).toFixed(1)}% 攻击 · +${(ownedCount*0.5).toFixed(1)}% 金币 · +${(ownedCount*0.5).toFixed(1)}% 掉率</div>`;
+  // 收藏里程碑
+  html += `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px">`;
+  for (const ms of MOUNT_MILESTONES) {
+    const on = ownedCount >= ms.n;
+    const modTxt = Object.entries(ms.mod||{}).map(([k,v]) => (typeof fmtMod==='function')?fmtMod(k,v):k+'+'+v).join(' ');
+    html += `<div style="font-size:9px;padding:3px 7px;border:1px solid ${on?'var(--accent)':'var(--border)'};border-radius:8px;opacity:${on?1:0.5}" title="${modTxt}${ms.title?' · 称号「'+ms.title+'」':''}">
+      ${on?'✅':'🔒'} ${ms.n}只: ${modTxt}${ms.title?' 👑':''}
+    </div>`;
+  }
+  html += `</div></div>`;
 
   // 按 tier 分组
   const byTier = {};

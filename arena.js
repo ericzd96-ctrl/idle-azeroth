@@ -603,6 +603,7 @@ function arenaFight(ranked) {
       const after = arenaTierFor(a.rating);
       if (after.key !== before.key && after.min > before.min) {
         tierUpTxt = `🎖️ 晋级【${after.icon}${after.name}】段位!`;
+        if (typeof mountOnArenaTier === 'function') mountOnArenaTier(after.key);   // 段位坐骑
         const rewardTxt = arenaClaimTierReward(after);
         log(`${tierUpTxt}获得新的 PvP 被动加成`, 'legend');
         if (rewardTxt) {

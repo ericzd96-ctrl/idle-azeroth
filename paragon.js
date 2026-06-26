@@ -116,7 +116,11 @@ function paragonGainXp(amt) {
     leveled = true;
     paragonCheckMilestone(p.lvl);
   }
-  if (leveled) { log(`🌟 巅峰等级提升至 ${p.lvl}! 获得巅峰点(+${p.points > 0 ? 1 : 1})`, 'legend'); markDirty('paragon'); }
+  if (leveled) {
+    log(`🌟 巅峰等级提升至 ${p.lvl}! 获得巅峰点`, 'legend');
+    if (typeof mountOnParagonLevel === 'function') mountOnParagonLevel(p.lvl);   // 巅峰坐骑
+    markDirty('paragon');
+  }
 }
 
 function paragonCheckMilestone(lvl) {

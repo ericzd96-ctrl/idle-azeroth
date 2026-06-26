@@ -666,6 +666,7 @@ function onMythicClear() {
   if (typeof questAdvance === 'function') questAdvance('mythic', 1);
   if (typeof vaultAdvance === 'function') vaultAdvance('mythic', 1);   // 每周宝库·险境
   if (typeof relicOnMythicClear === 'function') relicOnMythicClear(clearedLevel);
+  if (typeof mountOnMythicClear === 'function') mountOnMythicClear(clearedLevel);   // 大秘境坐骑
   state.pendingMythicAscend = (state.pendingMythicAscend || 0) + 1;
   let pending = state.pendingMythicAscend;
 
