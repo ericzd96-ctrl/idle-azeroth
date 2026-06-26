@@ -38,6 +38,28 @@ const PARAGON_BOARD = [
   ]},
 ];
 
+/* 巅峰核心节点 / Keystones:在某一大类累计投入达阈值即自动解锁强力专属加成。
+   鼓励"专精一类"而非平铺。mod 键须是 recompute 巅峰块支持的(含特色:executeBonus/
+   reflectDmg/armorPen/dodge/dotBonus/costReduction/xpMult/goldMult/dropMult)。 */
+const PARAGON_KEYSTONES = {
+  offense: [
+    { key:'ks_focus',  name:'致命专注', icon:'🎯', req:25, mod:{ crit:5, critdPct:15 },   desc:'专精杀伐 25 点:暴击 +5 · 暴伤 +15%' },
+    { key:'ks_reaper', name:'斩杀宗师', icon:'💀', req:75, mod:{ executeBonus:10, atkPct:8 }, desc:'专精杀伐 75 点:斩杀加成 +10 · 攻击 +8%' },
+  ],
+  defense: [
+    { key:'ks_wall',   name:'坚不可摧', icon:'🧱', req:25, mod:{ defPct:8, hpPct:8 },      desc:'专精坚韧 25 点:防御 +8% · 生命 +8%' },
+    { key:'ks_thorns', name:'荆棘领域', icon:'🌵', req:75, mod:{ reflectDmg:10, dodge:8 },  desc:'专精坚韧 75 点:反伤 +10 · 闪避 +8' },
+  ],
+  utility: [
+    { key:'ks_haste',  name:'急速领悟', icon:'⚡', req:25, mod:{ cdReduction:8, extraAtk:6 }, desc:'专精增幅 25 点:冷却缩减 +8% · 额外攻击 +6%' },
+    { key:'ks_pierce', name:'破甲大师', icon:'🗡️', req:75, mod:{ armorPen:15, spdPct:6 },    desc:'专精增幅 75 点:破甲 +15 · 攻速 +6%' },
+  ],
+  fortune: [
+    { key:'ks_midas',  name:'黄金触感', icon:'🪙', req:25, mod:{ goldMult:20, dropMult:10 },  desc:'专精富集 25 点:金币 +20% · 掉率 +10%' },
+    { key:'ks_sage',   name:'贤者之石', icon:'💠', req:75, mod:{ xpMult:25, goldMult:30 },    desc:'专精富集 75 点:经验 +25% · 金币 +30%' },
+  ],
+};
+
 const PARAGON_MILESTONES = [
   { lvl:10,  reward:{ gem:30 } },
   { lvl:25,  reward:{ gem:60, essence:40 } },
@@ -53,8 +75,9 @@ const PARAGON_STAT_LABEL = {
   mastery:'精通', vers:'全能', leech:'吸血', spdPct:'攻速', cdReduction:'冷却缩减',
   extraAtk:'额外攻击', healBonus:'治疗', regFlat:'生命回复',
   goldMult:'金币', dropMult:'掉率', xpMult:'经验',
+  executeBonus:'斩杀', reflectDmg:'反伤', armorPen:'破甲', dodge:'闪避', dotBonus:'持续伤害', costReduction:'减耗',
 };
-const PARAGON_PCT_STATS = new Set(['atkPct','hpPct','defPct','critdPct','spdPct','cdReduction','extraAtk','healBonus','goldMult','dropMult','xpMult']);
+const PARAGON_PCT_STATS = new Set(['atkPct','hpPct','defPct','critdPct','spdPct','cdReduction','extraAtk','healBonus','goldMult','dropMult','xpMult','dotBonus','costReduction']);
 function paragonStatText(stat, val) {
   const name = PARAGON_STAT_LABEL[stat] || stat;
   const v = Math.round(val * 10) / 10;
@@ -137,16 +160,39 @@ function paragonReset() {
   log(`♻️ 已重置巅峰盘,返还 ${spent} 巅峰点`, 'good');
 }
 
+/* 某一大类已投入的总点数(用于 keystone 解锁判定) */
+function paragonCategoryPoints(catKey) {
+  if (!state || !state.paragon || !state.paragon.board) return 0;
+  const cat = PARAGON_BOARD.find(c => c.key === catKey); if (!cat) return 0;
+  let sum = 0;
+  for (const node of cat.nodes) sum += state.paragon.board[node.key] || 0;
+  return sum;
+}
+/* 已解锁的 keystone 列表 */
+function activeParagonKeystones() {
+  const out = [];
+  for (const cat of PARAGON_BOARD) {
+    const pts = paragonCategoryPoints(cat.key);
+    for (const ks of (PARAGON_KEYSTONES[cat.key] || [])) if (pts >= ks.req) out.push(ks);
+  }
+  return out;
+}
+
 /* 加成收集:stat 类经 recompute 巅峰块,xp/gold/dropMult 经 killMonster */
 function collectParagonMod() {
   const out = { atkPct:0, hpPct:0, defPct:0, critdPct:0, spdPct:0, crit:0, leech:0, vers:0, mastery:0,
-    regFlat:0, cdReduction:0, extraAtk:0, healBonus:0, xpMult:0, goldMult:0, dropMult:0 };
+    regFlat:0, cdReduction:0, extraAtk:0, healBonus:0, dotBonus:0, costReduction:0,
+    executeBonus:0, reflectDmg:0, armorPen:0, dodge:0, stunChance:0, xpMult:0, goldMult:0, dropMult:0 };
   if (!state || !state.paragon || !state.paragon.board) return out;
   for (const cat of PARAGON_BOARD) {
     for (const node of cat.nodes) {
       const rank = state.paragon.board[node.key] || 0;
       if (rank > 0) out[node.stat] = (out[node.stat] || 0) + rank * node.per;
     }
+  }
+  // 核心节点(keystone)加成
+  for (const ks of activeParagonKeystones()) {
+    for (const [k, v] of Object.entries(ks.mod || {})) out[k] = (out[k] || 0) + v;
   }
   return out;
 }
@@ -206,6 +252,15 @@ function renderParagon() {
           <button class="${p.points > 0 ? 'success' : ''}" data-action="paragonInvest" data-node="${node.key}" data-amt="1" ${p.points > 0 ? '' : 'disabled'} style="padding:2px 8px;font-size:11px">+1</button>
           <button class="${p.points >= 10 ? 'success' : ''}" data-action="paragonInvest" data-node="${node.key}" data-amt="10" ${p.points >= 10 ? '' : 'disabled'} style="padding:2px 6px;font-size:10px">+10</button>
         </div>
+      </div>`;
+    }
+    // 核心节点(keystone)
+    const catPts = paragonCategoryPoints(cat.key);
+    for (const ks of (PARAGON_KEYSTONES[cat.key] || [])) {
+      const on = catPts >= ks.req;
+      html += `<div style="margin-top:4px;padding:5px 6px;border:1px solid ${on ? cat.color : 'var(--border)'};border-radius:8px;background:${on ? cat.color + '1a' : 'transparent'};opacity:${on ? 1 : 0.6}">
+        <div style="font-size:11px"><b>${on ? '✨' : '🔒'} ${ks.icon} ${ks.name}</b> <span class="muted" style="font-size:9px">${on ? '已激活' : `${catPts}/${ks.req} 点`}</span></div>
+        <div class="muted" style="font-size:9px;line-height:1.4">${ks.desc}</div>
       </div>`;
     }
     html += `</div>`;

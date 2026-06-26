@@ -1044,6 +1044,13 @@ function recomputeStats() {
       else if (k==='cdReduction') cdReduction+=v;
       else if (k==='extraAtk') extraAtk+=v;
       else if (k==='healBonus') healBonus+=v;
+      else if (k==='dotBonus') dotBonus+=v;
+      else if (k==='costReduction') costReduction+=v;
+      else if (k==='executeBonus') executeBonus+=v;
+      else if (k==='reflectDmg') reflectDmg+=v;
+      else if (k==='armorPen') armorPen+=v;
+      else if (k==='dodge') dodge+=v;
+      else if (k==='stunChance') stunChance+=v;
       // xpMult/goldMult/dropMult 在 killMonster 消费
     }
   }
