@@ -2102,24 +2102,34 @@ function spawnDungeonMonster(){
   const trashSupportSkillCount = !isBoss ? (isRaid ? 2 : 1) : 0;
   const bossSupportSkillCount = isBoss ? (boss.supportCount || (isRaid ? (isFinalBoss ? 4 : 2) : (isFinalBoss ? 2 : 1))) : 0;
   const monSkills = !isBoss ? pickMonSkills(name, null, power, trashDamageSkillCount) : [];
+  const _dgTier = (typeof gearTierForDungeon==='function') ? gearTierForDungeon(dg.key) : (isEpicRaid?3:0);
+  const req = dg.reqLvl || power;
+  const curveLow = Math.max(0, Math.min(1, (req - 20) / 25));
+  const curveMid = Math.max(0, Math.min(1, (req - 45) / 25));
+  const curveHigh = Math.max(0, Math.min(1, (req - 70) / 10));
+  const curve = {
+    hp: 1 + curveLow * 0.18 + curveMid * 0.42 + curveHigh * 0.72,
+    atk: 1 + curveLow * 0.15 + curveMid * 0.55 + curveHigh * 0.95,
+    def: 1 + curveLow * 0.08 + curveMid * 0.24 + curveHigh * 0.42,
+  };
+  const atkTempo = 1 + curveLow * 0.04 + curveMid * 0.08 + curveHigh * 0.12;
   state.currentMonsters.push({name,isBoss,bossName:isBoss?boss.name:null,
     lvl:isEpicRaid ? 80 : Math.max(1,Math.floor(power*1.05)),
-    hpMax:Math.floor((100+power*power*7.5)*(isBoss?25.5:4.0)*scale),hp:Math.floor((100+power*power*7.5)*(isBoss?25.5:4.0)*scale),
-    atk:Math.floor((10+power*3.2)*(isBoss?2.0:1.6)*scale*1.1),def:Math.floor((3+power*1.5)*(isBoss?1.5:1.6)*scale),
+    hpMax:Math.floor((100+power*power*8.6)*(isBoss?29.5:4.8)*scale*curve.hp),hp:Math.floor((100+power*power*8.6)*(isBoss?29.5:4.8)*scale*curve.hp),
+    atk:Math.floor((12+power*3.7+Math.pow(power,1.18)*1.45)*(isBoss?2.35:1.85)*scale*curve.atk),def:Math.floor((4+power*1.7)*(isBoss?1.62:1.72)*scale*curve.def),
     baseGold:Math.floor(10+power*3),baseXp:Math.floor(35+power*5),
     goldReward:Math.floor((10+power*3)*(isBoss?15:1.5)*scale),honorReward:isBoss?Math.floor(25+power*2.5):2,
     dropRate:isBoss?1.0:0.35,gemChance:isBoss?0.8:0.05,maxRarity:bossMaxRarity,fromDungeon:true,_uid:monUidSeq++,
     _dots:{},_dotLegacyImported:true,_lastDotTick:0,
     _isRaidFinal:isRaid&&isFinalBoss,_isRaid:isRaid,_isEpicRaid:isEpicRaid,
     _monSkills:isBoss?[]:monSkills,_monSkill:isBoss?null:(monSkills[0]||null),_monSupportSkills:buildMonsterSupportPool(isBoss?boss.name:name,null,power,isBoss,isBoss?bossSupportSkillCount:trashSupportSkillCount),_supportSkillCooldowns:{},_lastSupportSkill:Date.now()-rng(3000,9000),_lastSkill:Date.now()-rng(1000,4000),_lastTrick:0,_nextTrickAt:isBoss?(Date.now()+8000+rng(0,2500)):0,
-    atkInterval:(isBoss?1400:1700)+rng(-200,200),_lastAtk:Date.now()-rng(0,1200)});
+    atkInterval:Math.max(isBoss?900:1080, Math.floor(((isBoss?1400:1700)/atkTempo)+rng(-160,160))),_lastAtk:Date.now()-rng(0,1200)});
   // 来源难度梯队:怪物强度 普通(0) < 英雄(1) < 团本(2) < 史诗团本(3=原史诗团本值,不变)
   const mon = state.currentMonsters[state.currentMonsters.length-1];
-  const _dgTier = (typeof gearTierForDungeon==='function') ? gearTierForDungeon(dg.key) : (isEpicRaid?3:0);
   const DG_TIER_MON = {
-    1:{ trash:{hp:1.40,atk:1.22,def:1.18}, boss:{hp:1.60,atk:1.35,def:1.25}, final:{hp:1.85,atk:1.48,def:1.32} },   // 英雄
-    2:{ trash:{hp:1.60,atk:1.30,def:1.22}, boss:{hp:2.00,atk:1.55,def:1.40}, final:{hp:2.20,atk:1.70,def:1.50} },   // 团本
-    3:{ trash:{hp:1.72,atk:1.38,def:1.26}, boss:{hp:2.10,atk:1.62,def:1.48}, final:{hp:2.45,atk:1.85,def:1.72} },   // 史诗团本
+    1:{ trash:{hp:1.55,atk:1.34,def:1.20}, boss:{hp:1.90,atk:1.56,def:1.34}, final:{hp:2.20,atk:1.74,def:1.42} },   // 英雄
+    2:{ trash:{hp:1.95,atk:1.56,def:1.28}, boss:{hp:2.60,atk:1.95,def:1.48}, final:{hp:3.10,atk:2.24,def:1.64} },   // 团本
+    3:{ trash:{hp:2.25,atk:1.74,def:1.34}, boss:{hp:3.05,atk:2.18,def:1.60}, final:{hp:3.80,atk:2.52,def:1.84} },   // 史诗团本
   };
   const _tm = DG_TIER_MON[_dgTier];
   if (_tm) {
