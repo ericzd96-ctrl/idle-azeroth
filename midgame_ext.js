@@ -840,7 +840,7 @@
     if (allMod.extraAtk) { state.hero.extraAtk = Math.min(25, (state.hero.extraAtk || 0) + allMod.extraAtk); src.extraAtk = allMod.extraAtk; }
     if (allMod.healBonus) { state.hero.healBonus = Math.min(50, (state.hero.healBonus || 0) + allMod.healBonus); src.healBonus = allMod.healBonus; }
     if (allMod.dotBonus) { state.hero.dotBonus = Math.min(50, (state.hero.dotBonus || 0) + allMod.dotBonus); src.dotBonus = allMod.dotBonus; }
-    if (allMod.costReduction) { state.hero.costReduction = Math.min(30, (state.hero.costReduction || 0) + allMod.costReduction); src.costReduction = allMod.costReduction; }
+    if (allMod.costReduction) { state.hero.costReduction = Math.min(15, (state.hero.costReduction || 0) + allMod.costReduction); src.costReduction = allMod.costReduction; }
     if (allMod.executeBonus) { state.hero.executeBonus = Math.min(40, (state.hero.executeBonus || 0) + allMod.executeBonus); src.executeBonus = allMod.executeBonus; }
     if (allMod.reflectDmg) { state.hero.reflectDmg = (state.hero.reflectDmg || 0) + allMod.reflectDmg; src.reflectDmg = allMod.reflectDmg; }
     state.hp = Math.min(state.hp, state.hero.hpMax);
