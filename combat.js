@@ -3521,6 +3521,18 @@ function genName(slotKey,rarity){
   return choice(wowAdj[rarity.key])+SLOT_INFO[slotKey].label;
 }
 function getPoolStatBonus(slotKey,rarityKey){const pool=ITEM_POOLS[slotKey]?.[rarityKey];if(pool&&pool.length>0)return pool[rng(0,pool.length-1)].stats||{};return{};}
+/* 装备来源功率梯队:普通副本(0) < 英雄副本(1) < 团本(2) < 史诗团本(3)。
+   决定 finishItem 的属性倍率,使同级(80)装备按来源难度拉开强度。 */
+function gearTierForDungeon(dungeonKey){
+  if(!dungeonKey) return 0;
+  if(typeof isEpicRaidKey==='function' && isEpicRaidKey(dungeonKey)) return 3;
+  const dg=(typeof DUNGEONS!=='undefined')?DUNGEONS.find(d=>d.key===dungeonKey):null;
+  if(!dg) return 0;
+  if(dg.epicRaid) return 3;
+  if(dg.type==='raid') return 2;
+  if(dg.heroic) return 1;
+  return 0;
+}
 function rollItem(maxRarity,fromLvl,dungeonKey,bossName,opts){
   const slotKey=choice(SLOT_ORDER);const slot=SLOT_INFO[slotKey];const rarity=pickRarity(maxRarity);
   const ds=state.dungeonState||state.mythicState;
@@ -3546,10 +3558,10 @@ function rollItem(maxRarity,fromLvl,dungeonKey,bossName,opts){
     let __r=Math.random()*__tw;let pick=lootPool[lootPool.length-1];
     for(const p of lootPool){__r-=(p.dropWeight||RARITY.find(r=>r.key===p.rarity)?.weight||1);if(__r<=0){pick=p;break;}}
     const pickRarity=RARITY.find(r=>r.key===pick.rarity)||rarity;
-    const poolItem={id:itemIdSeq++,slot:pick.slot||slotKey,name:pick.name,rarity:pick.rarity,rarityName:pickRarity.name,cls:pickRarity.cls,bcls:pickRarity.bcls,stats:{},sell:0,epicRaid:!!pick.epicRaid,setKey:pick.setKey,setName:pick.setName};
+    const poolItem={id:itemIdSeq++,slot:pick.slot||slotKey,name:pick.name,rarity:pick.rarity,rarityName:pickRarity.name,cls:pickRarity.cls,bcls:pickRarity.bcls,stats:{},sell:0,epicRaid:!!pick.epicRaid,setKey:pick.setKey,setName:pick.setName,gearTier:gearTierForDungeon(dungeonKey)};
     return finishItem(poolItem,pick.slot||slotKey,pickRarity,power,pick.stats||{});
   }}
-  const item={id:itemIdSeq++,slot:slotKey,name:genName(slotKey,rarity),rarity:rarity.key,rarityName:rarity.name,cls:rarity.cls,bcls:rarity.bcls,stats:{},sell:0};
+  const item={id:itemIdSeq++,slot:slotKey,name:genName(slotKey,rarity),rarity:rarity.key,rarityName:rarity.name,cls:rarity.cls,bcls:rarity.bcls,stats:{},sell:0,gearTier:dungeonKey?gearTierForDungeon(dungeonKey):0};
   const poolStats=getPoolStatBonus(slotKey,rarity.key);return finishItem(item,slotKey,rarity,power,poolStats);
 }
 /* 生成一件“指定品质”的随机槽位装备(绕过 pickRarity 的权重),用于必爆掉落 */
@@ -3566,6 +3578,7 @@ function finishItem(item,slotKey,rarity,power,extraStats){
   item._rollPower=power;
   item._baseExtraStats=JSON.parse(JSON.stringify(extraStats||{}));
   if(typeof normalizeItemNameForSlot==='function') item.name=normalizeItemNameForSlot(item);
+  if(item.gearTier===1 && item.name && !/·英雄$/.test(item.name)) item.name+='·英雄';   // 英雄副本掉落带后缀
   if(!item._baseName) item._baseName=item.name;
   const slot=SLOT_INFO[slotKey];
   const lvlBonus=1+power*0.01; // 等级越高属性越多(2026-06-16 0.02→0.01:压平后期二次膨胀)
@@ -3585,10 +3598,12 @@ function finishItem(item,slotKey,rarity,power,extraStats){
   const SURPRISE_CHANCE=0.15;
   const SURPRISE={leech:{rare:1,epic:2,legend:4},vers:{rare:1,epic:2,legend:4},haste:{rare:1,epic:2,legend:4},mastery:{rare:1,epic:2,legend:4},dodge:{rare:1,epic:2,legend:4},crit:{rare:1,epic:2,legend:3},critd:{rare:3,epic:6,legend:12}};
   for(const sk in SURPRISE){const v=SURPRISE[sk][rarity.key];if(v&&Math.random()<SURPRISE_CHANCE)item.stats[sk]=(item.stats[sk]||0)+v;}
-  if(item.epicRaid){
-    const mult=item.rarity==='legend'?1.18:1.28;
+  // 来源功率梯队:普通(0) < 英雄(1) < 团本(2) < 史诗团本(3),同级装备按来源难度递增属性
+  const _gearTier=(typeof item.gearTier==='number')?item.gearTier:(item.epicRaid?3:0);
+  const _tierMult={0:1.0,1:1.10,2:1.20,3:1.30}[_gearTier]||1.0;
+  if(_tierMult!==1.0){
     for(const [k,v] of Object.entries(item.stats||{})){
-      if(typeof v==='number') item.stats[k]=Math.max(1,Math.floor(v*mult));
+      if(typeof v==='number') item.stats[k]=Math.max(1,Math.floor(v*_tierMult));
     }
   }
   // 安全帽:暴击/暴伤/极速/闪避上限(防止任何路径溢出)
