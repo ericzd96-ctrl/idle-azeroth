@@ -3415,6 +3415,20 @@ function checkSkillUnlocks(){
   const c=getCls();if(!c)return;
   for(const[key,sk]of Object.entries(c.skills)){if(sk.unlockLvl&&state.hero.lvl>=sk.unlockLvl&&!state.unlockedSkills[key]){state.unlockedSkills[key]=true;if(state.selectedSkills.length===0)state.selectedSkills.push(key);log('✨ 学会了 ['+sk.name+']','good');markDirty('skills');}}
   if(typeof passiveCheckUnlocks==='function'){passiveCheckUnlocks();markDirty('skills');}
+  checkDungeonUnlocks();
+}
+/* 新副本/团本按 reqLvl 跨级解锁时一次性提示(副本页易被遗忘)。
+   state.dungeonAnnounceLvl=0 视作未初始化→静默对齐当前等级,杜绝老存档/高级新号回填刷屏。 */
+function checkDungeonUnlocks(){
+  if(typeof DUNGEONS==='undefined'||!Array.isArray(DUNGEONS))return;
+  const lvl=state.hero.lvl||1;
+  if(!state.dungeonAnnounceLvl){state.dungeonAnnounceLvl=lvl;return;}
+  if(lvl<=state.dungeonAnnounceLvl)return;
+  const opened=DUNGEONS.filter(d=>d.reqLvl>state.dungeonAnnounceLvl&&d.reqLvl<=lvl)
+                       .sort((a,b)=>(a.reqLvl||0)-(b.reqLvl||0));
+  for(const d of opened) log(`🔓 新${d.type==='raid'?'团本':'副本'}开放:【${d.name}】(Lv.${d.reqLvl}) — 去 ⚔️副本 挑战`,'legend');
+  if(opened.length)markDirty('dungeon');
+  state.dungeonAnnounceLvl=lvl;
 }
 
 /* ---------- 物品 ---------- */

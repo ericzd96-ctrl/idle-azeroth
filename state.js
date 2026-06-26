@@ -19,6 +19,7 @@ const defaultState = () => ({
   autoSkill: true,
   skillCooldowns: {},
   passivesSeen: {},        // 被动技能已弹过解锁提示的 key(避免重复刷日志)
+  dungeonAnnounceLvl: 0,   // 已对"新副本开放"提示到的等级(0=未初始化,首检静默对齐当前等级防回填刷屏)
   resource: 0,
   resourceMax: 100,
   hp: 50,
@@ -346,6 +347,7 @@ function mergeState(saved) {
     loadouts: Array.isArray(saved.loadouts) ? saved.loadouts : [],
     unlockedSkills: saved.unlockedSkills || {},
     passivesSeen: saved.passivesSeen || {},
+    dungeonAnnounceLvl: typeof saved.dungeonAnnounceLvl === 'number' ? saved.dungeonAnnounceLvl : 0,
     freeRespecUsed: !!saved.freeRespecUsed,
     buffs: saved.buffs || {},
     talentAuras: saved.talentAuras || {},
