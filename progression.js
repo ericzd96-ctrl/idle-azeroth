@@ -326,11 +326,13 @@ function progressionOnGem() {
 function progressionOnEnchant() {
   const acc = accEns();
   acc.enchantsApplied = (acc.enchantsApplied||0) + 1;
+  if (typeof questAdvance === 'function') questAdvance('enhance', 1);
   progressionCheckAch();
 }
 function progressionOnReroll() {
   const acc = accEns();
   acc.rerollsDone = (acc.rerollsDone||0) + 1;
+  if (typeof questAdvance === 'function') questAdvance('enhance', 1);
   progressionCheckAch();
 }
 

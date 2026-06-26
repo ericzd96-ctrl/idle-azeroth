@@ -213,6 +213,7 @@ function lifeYieldTicks(skillKey, ticks) {
     const desc = Object.entries(yieldsByMat).map(([n,q]) => `${n}×${q}`).join(' ');
     const sk = LIFE_SKILLS[skillKey];
     log(`${sk.icon} ${sk.name}: ${desc}`, 'loot');
+    if (typeof questAdvance === 'function') questAdvance('gather', yieldCount);
   }
 }
 

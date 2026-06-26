@@ -662,6 +662,7 @@ function onMythicClear() {
   const dg = DUNGEONS.find(d => d.key === ms.key);
   if (!dg) return;
   const clearedLevel = ms.level || state.mythicLevel || 1;
+  if (typeof questAdvance === 'function') questAdvance('mythic', 1);
   state.pendingMythicAscend = (state.pendingMythicAscend || 0) + 1;
   let pending = state.pendingMythicAscend;
 

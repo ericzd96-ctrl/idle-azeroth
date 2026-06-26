@@ -22,6 +22,8 @@ const QUEST_DAILY_POOL = [
   { key:'d_arena', type:'arena',   icon:'🏟️', goal:3,     label:n=>`竞技场排位胜利 ${n} 场`, reward:{ honor:400,  gem:5 } },
   { key:'d_gem',   type:'gem',     icon:'💎', goal:2,     label:n=>`镶嵌 ${n} 颗宝石`,       reward:{ gold:10000, essence:6 } },
   { key:'d_gold',  type:'gold',    icon:'💰', goal:60000, label:n=>`赚取 ${fmt(n)} 金币`,    reward:{ gem:6,      honor:150 } },
+  { key:'d_gather',type:'gather',  icon:'🛠️', goal:40,    label:n=>`采集 ${n} 个生活材料`,   reward:{ gold:9000,  essence:8 } },
+  { key:'d_enhance',type:'enhance',icon:'✨', goal:3,     label:n=>`附魔/重铸装备 ${n} 次`,   reward:{ essence:14, gold:8000 } },
 ];
 const QUEST_DAILY_BONUS = { gold:30000, gem:12, essence:10 };
 
@@ -32,6 +34,8 @@ const QUEST_WEEKLY_POOL = [
   { key:'w_dgn',   type:'dungeon', icon:'🏰', goal:12,   label:n=>`本周通关 ${n} 个副本`,          reward:{ essence:80, gem:60, tickets:3 } },
   { key:'w_arena', type:'arena',   icon:'🏟️', goal:15,   label:n=>`本周竞技场胜利 ${n} 场`,        reward:{ honor:3000, gem:50 } },
   { key:'w_gem',   type:'gem',     icon:'💎', goal:20,   label:n=>`本周镶嵌 ${n} 颗宝石`,          reward:{ gold:150000, essence:40 } },
+  { key:'w_gather',type:'gather',  icon:'🛠️', goal:400,  label:n=>`本周采集 ${fmt(n)} 个生活材料`,  reward:{ gold:130000, essence:50 } },
+  { key:'w_mythic',type:'mythic',  icon:'🌀', goal:8,    label:n=>`本周完成 ${n} 次大秘境`,        reward:{ essence:90, gem:60, tickets:2 } },
 ];
 const QUEST_WEEKLY_BONUS = { gold:300000, gem:80, essence:60, tickets:2 };
 
