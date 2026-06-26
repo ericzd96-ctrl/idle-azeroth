@@ -4344,6 +4344,36 @@ function extendDungeonCatalog(){
         { name:'伊利达雷议会', emoji:'⚖️', skills:[dmg('协同裁决','⚖️',9,{ aoe:true, weaken:true, mirror:true }), dmg('黑暗命令','🌑',9.2,{ silence:1800, manaDrain:50 })] },
         { name:'伊利丹·怒风', emoji:'😈', skills:[dmg('阿古斯之焰','😈',10,{ dot:true, aoe:true, brittle:true }), dmg('埃辛诺斯处刑','🗡️',10.5,{ sunder:true, fear:1600, weaken:true })] }
       ]
+    },
+    {
+      key:'firelands', name:'火焰之地', icon:'🌋', type:'raid', reqLvl:76, waves:12, desc:'炎魔之王麾下烈焰泰坦的炽热领域',
+      bosses:[
+        { name:'贝丝缇拉克', emoji:'🕷️', skills:[dmg('炽焰蛛网','🕸️',8.5,{ dot:true, cripple:true })] },
+        { name:'熔岩之王莱奥利斯', emoji:'🌋', skills:[dmg('火山喷发','🌋',9,{ aoe:true, brittle:true, stun:1400 })] },
+        { name:'巴尔洛戈斯', emoji:'🐶', skills:[dmg('烈焰撕咬','🔥',9,{ bleed:true, frenzy:true })] },
+        { name:'炎鹰阿莱索德', emoji:'🦅', skills:[dmg('烈日之矛','☀️',9.5,{ aoe:true, silence:1800, dot:true })] },
+        { name:'拉格纳罗斯', emoji:'🔥', skills:[dmg('元素崩裂','🌋',10.5,{ aoe:true, dot:true, weaken:true }), dmg('萨弗拉斯之锤','🔨',11,{ sunder:true, fear:1700, brittle:true })] }
+      ]
+    },
+    {
+      key:'throne', name:'雷霆王座', icon:'⚡', type:'raid', reqLvl:78, waves:12, desc:'赞达拉巨魔帝国与雷神残响盘踞的天空堡垒',
+      bosses:[
+        { name:'赞达拉守卫贾林', emoji:'🦖', skills:[dmg('远古践踏','🦖',9,{ stun:1400, bleed:true })] },
+        { name:'风暴祭司莱杉', emoji:'🌩️', skills:[dmg('雷霆链','⚡',9.5,{ aoe:true, silence:1800 })] },
+        { name:'三头巨龙米伽拉', emoji:'🐉', skills:[dmg('多头吐息','🐉',9.5,{ dot:true, brittle:true, freeze:1400 })] },
+        { name:'织雾者吉安娜', emoji:'🌫️', skills:[dmg('迷雾箭雨','🌫️',10,{ dot:true, weaken:true, fear:1600 })] },
+        { name:'雷电之王雷神', emoji:'👑', skills:[dmg('雷霆之力','⚡',11,{ aoe:true, stun:1600, brittle:true }), dmg('帝国终裁','🗡️',11.5,{ sunder:true, fear:1800, soulLink:true })] }
+      ]
+    },
+    {
+      key:'dragonsoul', name:'巨龙之魂', icon:'🐲', type:'raid', reqLvl:79, waves:12, desc:'对抗灭世者死亡之翼的终局决战',
+      bosses:[
+        { name:'晨曦荒野之莫戈尔', emoji:'🐢', skills:[dmg('腐蚀践踏','🟣',9,{ aoe:true, weaken:true })] },
+        { name:'亡语者', emoji:'💀', skills:[dmg('亡者低语','👻',9.5,{ fear:1700, soulDrain:true })] },
+        { name:'死亡之翼背脊', emoji:'🐲', skills:[dmg('熔岩之触','🌋',9.5,{ dot:true, brittle:true })] },
+        { name:'瓦里奥那与塞拉图斯', emoji:'⚡', skills:[dmg('风暴撕裂','⚡',10,{ aoe:true, slow:true, silence:1800 })] },
+        { name:'死亡之翼·灭世者', emoji:'🐉', skills:[dmg('大决战','🌌',11.5,{ aoe:true, decay2:true, fear:1800 }), dmg('灭世烈焰','🔥',12,{ sunder:true, soulLink:true, brittle:true })] }
+      ]
     }
   ];
 
@@ -4420,7 +4450,28 @@ function extendDungeonCatalog(){
       '莎赫拉丝主母':[L('主母魅影匕首','weapon','epic',{atk:2,agi:2}),L('黑暗诱惑腰带','belt','rare',{def:1,agi:1})],
       '伊利达雷议会':[L('议会裁决法杖','weapon','epic',{atk:2,int:2}),L('议会典礼胸铠','armor','epic',{def:2,spi:2})],
       '伊利丹·怒风':[L('埃辛诺斯战刃·左','weapon','legend',{atk:4,agi:3}),L('埃辛诺斯战刃·右','weapon','legend',{atk:4,agi:3}),L('背叛者胸甲','armor','legend',{def:4,agi:3}),L('恶魔猎手兜帽','helmet','legend',{def:4,agi:3})]
-    }, trash:[L('影月护手','gloves','rare',{agi:1}),L('伊利达雷腰带','belt','rare',{def:1,sta:1})] }
+    }, trash:[L('影月护手','gloves','rare',{agi:1}),L('伊利达雷腰带','belt','rare',{def:1,sta:1})] },
+    firelands: { bosses:{
+      '贝丝缇拉克':[L('炽焰蛛丝缠腕','gloves','epic',{atk:2,agi:2}),L('蛛网束带','belt','rare',{def:1,agi:1})],
+      '熔岩之王莱奥利斯':[L('熔岩之核','trinket','epic',{sta:2,str:2}),L('火山护腿','pants','rare',{hp:1,str:1})],
+      '巴尔洛戈斯':[L('烈焰獠牙战刃','weapon','epic',{atk:2,str:2}),L('炎犬护肩','shoulder','rare',{atk:1,sta:1})],
+      '炎鹰阿莱索德':[L('烈日羽冠','helmet','epic',{def:2,int:2}),L('炎鹰之戒','ring','rare',{int:1,haste:1})],
+      '拉格纳罗斯':[L('萨弗拉斯·炎魔之手','weapon','legend',{atk:4,str:3}),L('烈焰之地胸甲','armor','legend',{def:4,sta:3}),L('炎王踏火战靴','boots','legend',{atk:3,critd:2}),L('熔火之心徽记','trinket','epic',{sta:2,str:2})]
+    }, trash:[L('烈焰护手','gloves','rare',{str:1}),L('余烬腰带','belt','rare',{def:1,sta:1})] },
+    throne: { bosses:{
+      '赞达拉守卫贾林':[L('远古巨颚战斧','weapon','epic',{atk:2,str:2}),L('赞达拉护腕','gloves','rare',{sta:1})],
+      '风暴祭司莱杉':[L('雷鸣祭杖','weapon','epic',{atk:2,int:2}),L('风暴祭袍','armor','rare',{def:1,int:1})],
+      '三头巨龙米伽拉':[L('三头龙鳞肩甲','shoulder','epic',{atk:2,agi:2}),L('多头之环','ring','rare',{agi:1})],
+      '织雾者吉安娜':[L('迷雾织者法典','weapon','epic',{atk:2,int:2}),L('雾隐长靴','boots','rare',{int:1})],
+      '雷电之王雷神':[L('雷神之握','gloves','legend',{atk:3,str:3}),L('雷霆王座胸铠','armor','legend',{def:4,sta:3}),L('帝国统御长裤','pants','legend',{hp:4,str:3}),L('雷神之核','trinket','epic',{sta:2,str:2})]
+    }, trash:[L('赞达拉护腿','pants','rare',{hp:1,agi:1}),L('风暴长靴','boots','rare',{int:1})] },
+    dragonsoul: { bosses:{
+      '晨曦荒野之莫戈尔':[L('远古龟壳盾','trinket','epic',{def:2,sta:2}),L('腐蚀护手','gloves','rare',{sta:1})],
+      '亡语者':[L('亡魂低语之杖','weapon','epic',{atk:2,int:2}),L('枯萎腰带','belt','rare',{def:1,spi:1})],
+      '死亡之翼背脊':[L('熔岩龙鳞护肩','shoulder','epic',{atk:2,str:2}),L('炽甲护腿','pants','rare',{hp:1,str:1})],
+      '瓦里奥那与塞拉图斯':[L('风暴双子之戒','ring','epic',{atk:2,haste:2}),L('雷鸣护腕','gloves','rare',{agi:1})],
+      '死亡之翼·灭世者':[L('灭世者巨刃','weapon','legend',{atk:5,str:3}),L('死亡之翼龙鳞胸甲','armor','legend',{def:5,sta:4}),L('暮光统御头盔','helmet','legend',{def:4,int:3}),L('灭世徽记','trinket','legend',{sta:3,str:3})]
+    }, trash:[L('暮光护肩','shoulder','rare',{atk:1,sta:1}),L('巨龙之魂战靴','boots','rare',{sta:1})] }
   };
 
   for (const dg of extraDungeons) ensureDungeon(dg, extraLoot[dg.key]);
@@ -4465,6 +4516,9 @@ const EPIC_RAID_SET_THEME = {
   ulduar:{ tier:'T8', name:'奥杜尔', short:'泰坦' },
   ruby:{ tier:'T10.5', name:'红玉圣殿', short:'暮光' },
   icc:{ tier:'T10', name:'冰冠堡垒', short:'冰冠' },
+  firelands:{ tier:'T12', name:'火焰之地', short:'烈焰' },
+  throne:{ tier:'T15', name:'雷霆王座', short:'雷神' },
+  dragonsoul:{ tier:'T13', name:'巨龙之魂', short:'灭世' },
 };
 const EPIC_RAID_SET_LABELS = {
   mc:{
