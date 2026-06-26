@@ -2622,7 +2622,9 @@ function renderCompanion() {
     for (const b of COMPANION_BONDS) {
       const on = bonds.includes(b);
       const modTxt = Object.entries(b.mod).map(([k,v])=>(typeof fmtMod==='function')?fmtMod(k,v):k+'+'+v).join(' ');
-      html += `<div class="muted" style="font-size:10px;opacity:${on?1:0.45}" title="${b.desc}">${on?'✅':'🔒'} ${b.name}: ${modTxt}</div>`;
+      const ownedCnt = b.keys.filter(k=>ownedM[k]).length;
+      const prog = on ? '' : ` <span style="opacity:.85">(${ownedCnt}/${b.keys.length})</span>`;
+      html += `<div class="muted" style="font-size:10px;opacity:${on?1:0.45}" title="${b.desc}">${on?'✅':'🔒'} ${b.name}${prog}: ${modTxt}</div>`;
     }
     html += `</div>`;
   }

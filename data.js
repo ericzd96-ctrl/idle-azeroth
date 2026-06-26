@@ -4803,13 +4803,30 @@ const ROLE_BONUS={
   dps:{atkPct:3}};
 /* 羁绊:集齐 keys 中全部随从即激活,给主角额外加成 */
 const COMPANION_BONDS=[
-  {name:"守护者之力", keys:["medivh","jaina"],            mod:{atkPct:1},   desc:"麦迪文 + 吉安娜"},
+  // ---- 双人羁绊(拥有 2 名即激活)----
+  {name:"守护者之力", keys:["medivh","jaina"],            mod:{atkPct:1},          desc:"麦迪文 + 吉安娜"},
   {name:"燃烧军团",   keys:["kiljaeden","azshara"],       mod:{atkPct:1,critdPct:8},desc:"基尔加丹 + 艾萨拉"},
   {name:"天灾降临",   keys:["lichking","kelthuzad"],      mod:{atkPct:1,leech:6},  desc:"巫妖王 + 克尔苏加德"},
   {name:"怒风兄弟",   keys:["illidan","malfurion"],       mod:{atkPct:1,hpPct:5},  desc:"伊利丹 + 玛法里奥"},
   {name:"乌瑞恩王室", keys:["varian","anduin"],           mod:{hpPct:6,atkPct:1},  desc:"瓦里安 + 安度因"},
   {name:"大酋长之路", keys:["thrall","saurfang"],         mod:{atkPct:1,vers:4},   desc:"萨尔 + 萨鲁法尔"},
   {name:"白银之手",   keys:["fordring","maraad"],         mod:{hpPct:6,defPct:4},  desc:"提里奥 + 玛拉达尔"},
+  {name:"地狱咆哮",   keys:["grommash","garrosh"],        mod:{atkPct:2,critdPct:6},desc:"格罗玛什 + 加尔鲁什(父子)"},
+  {name:"守望与背叛", keys:["illidan","maiev"],           mod:{atkPct:1,crit:4},   desc:"伊利丹 + 玛维"},
+  {name:"半神之林",   keys:["cenarius","malfurion"],      mod:{hpPct:5,regFlat:5}, desc:"塞纳留斯 + 玛法里奥"},
+  {name:"生命圣约",   keys:["alexstrasza","velen"],       mod:{hpPct:5,regFlat:5}, desc:"阿莱克丝塔萨 + 维伦"},
+  {name:"灰烬王座",   keys:["bolvar","lichking"],         mod:{hpPct:6,leech:4},   desc:"伯瓦尔 + 巫妖王"},
+  {name:"部落之握",   keys:["cairne","thrall"],           mod:{hpPct:5,defPct:3},  desc:"凯恩 + 萨尔"},
+  {name:"暗影游侠",   keys:["sylvanas","voljin"],         mod:{crit:3,leech:4},    desc:"希尔瓦娜斯 + 沃金"},
+  {name:"哨兵之誓",   keys:["tyrande","maiev"],           mod:{atkPct:1,crit:3},   desc:"泰兰德 + 玛维"},
+  {name:"灰舌叛逃",   keys:["akama","maiev"],             mod:{atkPct:2,defPct:2}, desc:"阿卡玛 + 玛维"},
+  // ---- 三人羁绊(拥有 3 名即激活,奖励更厚 —— 收藏向终极目标)----
+  {name:"天灾军团",   keys:["arthas","kelthuzad","lichking"],  mod:{atkPct:3,leech:6},     desc:"阿尔萨斯 + 克尔苏加德 + 巫妖王"},
+  {name:"圣光教廷",   keys:["anduin","maraad","velen"],        mod:{hpPct:6,regFlat:6},    desc:"安度因 + 玛拉达尔 + 维伦"},
+  {name:"部落战帅",   keys:["thrall","saurfang","garrosh"],    mod:{atkPct:3,vers:4},      desc:"萨尔 + 萨鲁法尔 + 加尔鲁什"},
+  {name:"守护者议会", keys:["medivh","khadgar","jaina"],       mod:{atkPct:3,crit:4},      desc:"麦迪文 + 卡德加 + 吉安娜"},
+  {name:"背叛者同盟", keys:["illidan","kael","azshara"],       mod:{atkPct:3,critdPct:8},  desc:"伊利丹 + 凯尔萨斯 + 艾萨拉"},
+  {name:"自然守望",   keys:["malfurion","cenarius","tyrande"], mod:{hpPct:6,vers:4},       desc:"玛法里奥 + 塞纳留斯 + 泰兰德"},
 ];
 function compQuality(tpl){ return COMPANION_QUALITY.find(q=>q.key===(tpl&&tpl.quality)) || COMPANION_QUALITY[0]; }
 const COMPANIONS=[{key:"fordring",name:"提里奥·弗丁",emoji:"👴",role:"tank",desc:"白银之手大领主",skills:[{name:"圣光审判",icon:"⚖️",desc:"2倍伤害,回复5%HP",type:"dmg",mul:2,heal:0.05,cd:10},{name:"圣盾守护",icon:"🛡️",desc:"8秒减伤40%",type:"buff",buff:"shield",cd:22},{name:"灰烬觉醒",icon:"✨",desc:"3倍伤害",type:"dmg",mul:4,cd:20},{name:"圣疗术",icon:"💚",desc:"恢复25%HP",type:"heal",heal:0.25,cd:30}]},{key:"varian",name:"瓦里安·乌瑞恩",emoji:"👑",role:"tank",desc:"暴风城国王",skills:[{name:"冲锋",icon:"💨",desc:"2倍伤害",type:"dmg",mul:2,cd:6},{name:"破甲",icon:"🔨",desc:"3倍伤害降防",type:"dmg",mul:3,cd:12},{name:"剑刃风暴",icon:"🌀",desc:"3倍伤害",type:"dmg",mul:5,cd:25},{name:"怒吼",icon:"📯",desc:"10秒攻击+15%",type:"buff",buff:"battleShout",cd:30}]},{key:"thrall",name:"萨尔",emoji:"👊",role:"tank",desc:"部落大酋长",skills:[{name:"闪电箭",icon:"⚡",desc:"2倍伤害",type:"dmg",mul:2,cd:6},{name:"大地之盾",icon:"🪨",desc:"8秒防御+40%",type:"buff",buff:"earthShield",cd:20},{name:"雷霆风暴",icon:"⛈️",desc:"3倍伤害",type:"dmg",mul:4,cd:18},{name:"治疗波",icon:"🌊",desc:"恢复20%HP",type:"heal",heal:0.2,cd:25}]},{key:"illidan",name:"伊利丹·怒风",emoji:"😈",role:"dps",desc:"背叛者",skills:[{name:"恶魔之咬",icon:"🦷",desc:"3倍伤害",type:"dmg",mul:3,cd:8},{name:"眼棱",icon:"👁️",desc:"3倍必暴",type:"dmg",mul:3,alwaysCrit:true,cd:16},{name:"恶魔变形",icon:"😈",desc:"10秒攻击+30%",type:"buff",buff:"bestial",cd:28},{name:"混沌打击",icon:"💥",desc:"3倍伤害",type:"dmg",mul:5,cd:24}]},{key:"arthas",name:"阿尔萨斯",emoji:"⚔️",role:"dps",desc:"洛丹伦王子",skills:[{name:"死亡缠绕",icon:"💀",desc:"3倍伤害吸血20%",type:"dmg",mul:3,lifeSteal:0.2,cd:10},{name:"凛风冲击",icon:"❄️",desc:"3倍伤害",type:"dmg",mul:3,cd:14},{name:"亡者大军",icon:"🧟",desc:"3倍伤害",type:"dmg",mul:5,cd:22,stun:true},{name:"巫妖之怒",icon:"☠️",desc:"10秒攻速+40%",type:"buff",buff:"rapidFire",cd:30}]},{key:"jaina",name:"吉安娜",emoji:"🧙‍♀️",role:"dps",desc:"肯瑞托大法师",skills:[{name:"寒冰箭",icon:"❄️",desc:"2倍伤害减速",type:"dmg",mul:2,cd:7,slow:true},{name:"冰霜新星",icon:"💠",desc:"3倍伤害",type:"dmg",mul:3,cd:15,slow:true},{name:"暴风雪",icon:"🌨️",desc:"3倍伤害",type:"dmg",mul:4,cd:20},{name:"奥术智慧",icon:"📖",desc:"10秒攻击+20%",type:"buff",buff:"battleShout",cd:28}]},{key:"sylvanas",name:"希尔瓦娜斯",emoji:"🏹",role:"dps",desc:"黑暗游侠",skills:[{name:"暗影箭",icon:"🏹",desc:"2倍伤害",type:"dmg",mul:2,cd:7},{name:"毒蛇射击",icon:"🐍",desc:"3倍中毒",type:"dmg",mul:3,dot:true,cd:12},{name:"黑暗之怒",icon:"🌑",desc:"3倍伤害",type:"dmg",mul:4,cd:18},{name:"亡灵意志",icon:"💀",desc:"10秒吸血+10%",type:"buff",buff:"shadowstep",cd:26}]},{key:"anduin",name:"安度因·乌瑞恩",emoji:"✝️",role:"heal",desc:"暴风城王子",skills:[{name:"惩击",icon:"✨",desc:"2倍伤害",type:"dmg",mul:2,cd:6},{name:"治疗术",icon:"💚",desc:"恢复30%HP",type:"heal",heal:0.3,cd:14},{name:"真言术盾",icon:"🛡️",desc:"8秒防御+30%",type:"buff",buff:"shield",cd:20},{name:"神圣赞美诗",icon:"🎵",desc:"恢复40%HP",type:"heal",heal:0.4,cd:28}]},{key:"tyrande",name:"泰兰德·语风",emoji:"🌙",role:"heal",desc:"月之女祭司",skills:[{name:"月火术",icon:"🌙",desc:"2倍伤害",type:"dmg",mul:2,cd:8},{name:"治疗之触",icon:"🌿",desc:"恢复25%HP",type:"heal",heal:0.25,cd:12},{name:"星陨术",icon:"🌟",desc:"3倍伤害",type:"dmg",mul:3,cd:18},{name:"宁静",icon:"🍃",desc:"恢复35%HP",type:"heal",heal:0.35,cd:26}]},{key:"malfurion",name:"玛法里奥·怒风",emoji:"🍂",role:"heal",desc:"大德鲁伊",skills:[{name:"愤怒",icon:"🌿",desc:"2倍伤害",type:"dmg",mul:2,cd:6},{name:"回春术",icon:"🌱",desc:"恢复20%HP",type:"heal",heal:0.2,cd:10},{name:"树皮术",icon:"🪵",desc:"8秒防御+35%",type:"buff",buff:"bark",cd:18},{name:"自然之力",icon:"🌳",desc:"恢复35%HP",type:"heal",heal:0.35,cd:24}]}];
