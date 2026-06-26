@@ -801,7 +801,7 @@ function setupMainButtons() {
       const act = btn.dataset.action;
       if (act === 'arenaRanked')        { arenaFight(true);  renderArena(); }
       else if (act === 'arenaSkirmish') { arenaFight(false); renderArena(); }
-      else if (act === 'arenaReroll')   { arenaRollOpponent(); renderArena(); }
+      else if (act === 'arenaReroll')   { arenaReroll(); renderArena(); }
       else if (act === 'arenaSetTactic') { arenaSetTactic(btn.dataset.key); renderArena(); }
       else if (act === 'arenaBuy')      { arenaBuy(btn.dataset.key); renderArena(); }
       else if (act === 'arenaBuyArsenal') { arenaBuyArsenal(btn.dataset.key); renderArena(); }

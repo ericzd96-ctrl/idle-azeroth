@@ -140,6 +140,7 @@ function claimQuest(key) {
     if (item.prog < def.goal) { log('任务尚未完成', 'bad'); return; }
     item.claimed = true;
     questGrant(def.reward);
+    if (typeof seasonAddPoints === 'function') seasonAddPoints(isWeekly ? 300 : 80, '任务');
     log(`📋 ${isWeekly ? '周常' : '日常'}任务完成「${def.label(def.goal)}」· ${questRewardText(def.reward)}`, 'epic');
     questCheckBonus(q);
     markDirty('quests', 'hero');

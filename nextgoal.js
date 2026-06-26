@@ -59,6 +59,10 @@ function collectNextGoals() {
       goals.push({ prio: 55, icon: '🏰', text: '公会今日还能捐献,攒贡献点换永久加成', tab: 'guild' });
   }
 
+  // 任务已完成可领奖
+  if (typeof questHasClaimable === 'function' && questHasClaimable())
+    goals.push({ prio: 75, icon: '📋', text: '有任务已完成,去任务板领奖', tab: 'quests' });
+
   // 黑市有可买
   if (typeof marketHasAffordableDeal === 'function' && marketHasAffordableDeal())
     goals.push({ prio: 50, icon: '🛒', text: '黑市有买得起的商品,消化盈余货币', tab: 'market' });

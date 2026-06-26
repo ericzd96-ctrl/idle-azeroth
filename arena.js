@@ -356,6 +356,21 @@ function arenaRollOpponent() {
   };
 }
 
+/* 换对手费用(防止免费无限刷到顺手流派/场地再打) */
+function arenaRerollCost() {
+  ensureArenaState();
+  return 40 + Math.floor((state.arena.rating || 0) / 20);
+}
+function arenaReroll() {
+  ensureArenaState();
+  const cost = arenaRerollCost();
+  if (state.honor < cost) { log(`荣誉不足,更换对手需 ${cost}🏅`, 'bad'); return; }
+  state.honor -= cost;
+  arenaRollOpponent();
+  log(`🔄 更换对手 · -${cost}🏅`, 'info');
+  markDirty('arena', 'hero');
+}
+
 function arenaTierFor(rating) {
   let t = ARENA_TIERS[0];
   for (const x of ARENA_TIERS) if (rating >= x.min) t = x;
@@ -914,7 +929,7 @@ function renderArena() {
     <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
       <button class="gold" data-action="arenaRanked" ${matchesLeft <= 0 ? 'disabled' : ''} style="flex:2;min-width:180px">⚔️ 排位赛 (${matchesLeft}/${ARENA_DAILY_MATCHES})</button>
       <button class="success" data-action="arenaSkirmish" style="flex:1;min-width:120px">🤺 切磋</button>
-      <button data-action="arenaReroll" title="更换对手">🔄</button>
+      <button data-action="arenaReroll" ${state.honor < arenaRerollCost() ? 'disabled' : ''} title="更换对手 (${arenaRerollCost()}🏅)">🔄 ${arenaRerollCost()}🏅</button>
     </div>
     <div class="muted" style="font-size:10px;margin-top:6px;word-break:break-word">当前方案: ${plan.tactic.icon}${plan.tactic.name} · ${plan.report[0]}</div>
     <div class="muted" style="font-size:10px;margin-top:3px;word-break:break-word">你的战力评估: ${fmt(heroPow)}</div>
