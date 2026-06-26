@@ -3634,7 +3634,7 @@ function getBaseDungeonBossLoot(dungeonKey, bossName) {
   const alias = DUNGEON_LOOT_ALIASES[dungeonKey]?.[bossName];
   return loot.bosses[bossName] || (alias ? loot.bosses[alias] : null) || null;
 }
-function baseDungeonKey(dungeonKey) { return String(dungeonKey || '').replace(/_epic$/, ''); }
+function baseDungeonKey(dungeonKey) { return String(dungeonKey || '').replace(/_(epic|heroic)$/, ''); }
 function isEpicRaidKey(dungeonKey) { return /_epic$/.test(String(dungeonKey || '')); }
 function getDungeonDef(dungeonKey) { return DUNGEONS.find(d => d.key === dungeonKey) || null; }
 const WORLD_BOSS_SKILLSETS = {
@@ -4346,6 +4346,38 @@ function extendDungeonCatalog(){
       ]
     },
     {
+      key:'ubrs', name:'黑石塔上层', icon:'🔥', reqLvl:63, waves:8, desc:'黑石氏族最高处的兽人将军议事厅',
+      bosses:[
+        { name:'督军沃克', emoji:'🪓', skills:[dmg('狂暴战吼','🪓',5,{ frenzy:true, stun:1200 })] },
+        { name:'烈焰使者索拉卡尔', emoji:'🔥', skills:[dmg('烈焰风暴','🔥',5.5,{ aoe:true, dot:true })] },
+        { name:'将军勒什雷尔', emoji:'🐲', skills:[dmg('龙人裁决','🐲',6.5,{ brittle:true, weaken:true }), dmg('黑石处刑','🩸',7,{ bleed:true, fear:1400 })] }
+      ]
+    },
+    {
+      key:'freehold', name:'自由镇', icon:'🏴‍☠️', reqLvl:72, waves:9, desc:'库尔提拉斯海盗盘踞的无法之港',
+      bosses:[
+        { name:'断牙海狗', emoji:'🦈', skills:[dmg('鲨鱼狂袭','🦈',6,{ bleed:true, frenzy:true })] },
+        { name:'酒桶炸药师', emoji:'🛢️', skills:[dmg('火药桶','💥',6.5,{ aoe:true, stun:1300 })] },
+        { name:'船长贾雷德', emoji:'🦜', skills:[dmg('掠夺者乱斗','⚔️',7,{ aoe:true, cripple:true }), dmg('夺命斩','🗡️',7.5,{ weaken:true, bleed:true })] }
+      ]
+    },
+    {
+      key:'mechagon', name:'麦卡贡', icon:'⚙️', reqLvl:75, waves:9, desc:'机械侏儒打造的废土发明工坊',
+      bosses:[
+        { name:'回收机器人', emoji:'🤖', skills:[dmg('废料喷射','⚙️',6.5,{ dot:true, brittle:true })] },
+        { name:'爆破专家', emoji:'💣', skills:[dmg('集束炸弹','💣',7,{ aoe:true, stun:1400 })] },
+        { name:'机械之王梅卡托克', emoji:'👑', skills:[dmg('过载射线','⚡',7.5,{ silence:1700, weaken:true }), dmg('终极防御矩阵','🛡️',8,{ aoe:true, brittle:true, manaDrain:45 })] }
+      ]
+    },
+    {
+      key:'boralus', name:'围攻伯拉勒斯', icon:'⚓', reqLvl:77, waves:10, desc:'库尔提拉斯海军要塞的巷战与码头攻防',
+      bosses:[
+        { name:'海军统领', emoji:'⚓', skills:[dmg('齐射炮火','💥',7,{ aoe:true, dot:true })] },
+        { name:'巡夜指挥官', emoji:'🐕', skills:[dmg('猎犬扑咬','🐕',7.5,{ bleed:true, cripple:true })] },
+        { name:'维克雷斯女勋爵', emoji:'🗡️', skills:[dmg('影刃突袭','🗡️',8,{ weaken:true, fear:1500 }), dmg('女巫献祭','🕯️',8.5,{ soulDrain:true, dot:true, brittle:true })] }
+      ]
+    },
+    {
       key:'firelands', name:'火焰之地', icon:'🌋', type:'raid', reqLvl:76, waves:12, desc:'炎魔之王麾下烈焰泰坦的炽热领域',
       bosses:[
         { name:'贝丝缇拉克', emoji:'🕷️', skills:[dmg('炽焰蛛网','🕸️',8.5,{ dot:true, cripple:true })] },
@@ -4471,7 +4503,27 @@ function extendDungeonCatalog(){
       '死亡之翼背脊':[L('熔岩龙鳞护肩','shoulder','epic',{atk:2,str:2}),L('炽甲护腿','pants','rare',{hp:1,str:1})],
       '瓦里奥那与塞拉图斯':[L('风暴双子之戒','ring','epic',{atk:2,haste:2}),L('雷鸣护腕','gloves','rare',{agi:1})],
       '死亡之翼·灭世者':[L('灭世者巨刃','weapon','legend',{atk:5,str:3}),L('死亡之翼龙鳞胸甲','armor','legend',{def:5,sta:4}),L('暮光统御头盔','helmet','legend',{def:4,int:3}),L('灭世徽记','trinket','legend',{sta:3,str:3})]
-    }, trash:[L('暮光护肩','shoulder','rare',{atk:1,sta:1}),L('巨龙之魂战靴','boots','rare',{sta:1})] }
+    }, trash:[L('暮光护肩','shoulder','rare',{atk:1,sta:1}),L('巨龙之魂战靴','boots','rare',{sta:1})] },
+    ubrs: { bosses:{
+      '督军沃克':[L('督军战斧','weapon','rare',{atk:1,str:1}),L('黑石护肩','shoulder','rare',{atk:1,sta:1})],
+      '烈焰使者索拉卡尔':[L('烈焰法杖','weapon','rare',{atk:1,int:1}),L('炎使腰带','belt','rare',{def:1,int:1})],
+      '将军勒什雷尔':[L('勒什雷尔的龙牙刃','weapon','epic',{atk:3,str:2}),L('黑石将军胸铠','armor','epic',{def:2,sta:2}),L('龙人统御指环','ring','epic',{str:2})]
+    }, trash:[L('黑石战靴','boots','rare',{sta:1}),L('兽人裹手','gloves','rare',{str:1})] },
+    freehold: { bosses:{
+      '断牙海狗':[L('鲨齿匕首','weapon','rare',{atk:1,agi:1}),L('海狗护腕','gloves','rare',{agi:1})],
+      '酒桶炸药师':[L('火药桶投掷器','weapon','rare',{atk:1,agi:1}),L('炸药师腰带','belt','rare',{def:1,sta:1})],
+      '船长贾雷德':[L('贾雷德的掠夺者弯刀','weapon','epic',{atk:3,agi:2}),L('海盗船长帽','helmet','epic',{def:2,agi:2}),L('无法之港护符','trinket','epic',{sta:2,agi:2})]
+    }, trash:[L('海盗皮靴','boots','rare',{agi:1}),L('自由镇腰带','belt','rare',{def:1,agi:1})] },
+    mechagon: { bosses:{
+      '回收机器人':[L('废料喷射臂','gloves','rare',{atk:1,int:1}),L('机械护腿','pants','rare',{hp:1,sta:1})],
+      '爆破专家':[L('集束炸弹背包','trinket','rare',{sta:1,int:1}),L('防爆腰带','belt','rare',{def:1,sta:1})],
+      '机械之王梅卡托克':[L('梅卡托克的过载射线枪','weapon','epic',{atk:3,int:2}),L('机械之王王冠','helmet','epic',{def:2,int:2}),L('麦卡贡能量核心','trinket','epic',{sta:2,int:2})]
+    }, trash:[L('机械护手','gloves','rare',{int:1}),L('废土行者战靴','boots','rare',{sta:1})] },
+    boralus: { bosses:{
+      '海军统领':[L('齐射火炮','weapon','rare',{atk:1,agi:1}),L('海军护肩','shoulder','rare',{atk:1,sta:1})],
+      '巡夜指挥官':[L('巡夜者长枪','weapon','rare',{atk:1,str:1}),L('猎犬皮护腿','pants','rare',{hp:1,agi:1})],
+      '维克雷斯女勋爵':[L('维克雷斯仪式匕首','weapon','epic',{atk:3,agi:2}),L('女巫会斗篷','armor','epic',{def:2,int:2}),L('暗夜献祭指环','ring','epic',{agi:2})]
+    }, trash:[L('要塞守卫腰带','belt','rare',{def:1,sta:1}),L('码头工人护手','gloves','rare',{str:1})] }
   };
 
   for (const dg of extraDungeons) ensureDungeon(dg, extraLoot[dg.key]);
@@ -4835,6 +4887,42 @@ function createEpicRaidCatalog() {
   }
 }
 createEpicRaidCatalog();
+
+/* 英雄级 5 人副本:仿史诗团本,给较高级 5 人本(reqLvl>=HEROIC_MIN_REQ)自动生成 80 级
+   高难度版(<key>_heroic)。掉落复用基础本(baseDungeonKey 已剥离 _heroic)但按 80 级 power 缩放。 */
+const HEROIC_MIN_REQ = 67;
+function createHeroicDungeonCatalog() {
+  const bases = DUNGEONS.filter(d => d.type !== 'raid' && !d.epicRaid && !d.heroic && (d.reqLvl || 0) >= HEROIC_MIN_REQ);
+  for (const base of bases) {
+    const key = `${base.key}_heroic`;
+    if (DUNGEONS.some(d => d.key === key)) continue;
+    const clone = JSON.parse(JSON.stringify(base));
+    clone.key = key;
+    clone.baseKey = base.key;
+    clone.name = `${base.name}·英雄`;
+    clone.desc = `80级英雄5人本 · ${base.name} 的高难度版本`;
+    clone.reqLvl = 80;
+    clone.cd = Math.max(base.cd || 0, 1200);
+    clone.heroic = true;
+    clone.bosses = (clone.bosses || []).map((boss, idx, arr) => {
+      const isFinal = idx === arr.length - 1;
+      boss.passive = Object.assign({}, boss.passive || {}, {
+        dmgReduction: Math.max(boss.passive?.dmgReduction || 0, isFinal ? 0.20 : 0.13),
+        critChance: Math.max(boss.passive?.critChance || 0, isFinal ? 0.22 : 0.14),
+        atkBonus: Math.max(boss.passive?.atkBonus || 0, isFinal ? 0.24 : 0.14),
+      });
+      boss.skills = (boss.skills || []).map(sk => {
+        const out = Object.assign({}, sk);
+        if (typeof out.mul === 'number') out.mul = +(out.mul + (isFinal ? 1.8 : 1.0)).toFixed(1);
+        return out;
+      });
+      return boss;
+    });
+    enhanceBossCollection(clone.bosses, { kind:'dungeon', lvl:clone.reqLvl, finalAt:(clone.bosses.length - 1) });
+    DUNGEONS.push(clone);
+  }
+}
+createHeroicDungeonCatalog();
 /* 修复:部分副本(diremaul/lbrs/aq40等)缺失 cd 字段,导致 onDungeonClear 写入 NaN→永远无CD可无限刷。
    归一化:给任何无有效 cd 的副本按 type/reqLvl 补一个与邻居对齐的冷却。 */
 for (const d of DUNGEONS) {
