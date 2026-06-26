@@ -137,9 +137,12 @@ function updateNavBadges() {
   if (questsTab) {
     questsTab.classList.toggle('has-badge', (typeof questHasClaimable === 'function') && questHasClaimable());
   }
-  // 目标引导:地图页可见时一并刷新
+  // 目标引导 / 今日事务:地图页可见时一并刷新
   const mapPanel = document.getElementById('tab-map');
-  if (mapPanel && mapPanel.classList.contains('active') && typeof renderNextGoals === 'function') renderNextGoals();
+  if (mapPanel && mapPanel.classList.contains('active')) {
+    if (typeof renderNextGoals === 'function') renderNextGoals();
+    if (typeof renderDailyHub === 'function') renderDailyHub();
+  }
 }
 
 /* 远征面板可见时,每 ~2s 重渲染让储备数字滚动 */

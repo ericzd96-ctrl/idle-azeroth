@@ -285,16 +285,19 @@ function setupDelegation() {
     }
   });
 
-  // 目标引导:点击建议跳转对应标签页
-  const ngEl = $('next-goal');
-  if (ngEl) ngEl.addEventListener('click', e => {
+  // 目标引导 / 今日事务:点击建议或药丸跳转对应标签页
+  const gotoJump = e => {
     const row = e.target.closest('[data-goto]');
     if (!row) return;
     const tab = row.dataset.goto;
     if (!tab) return;
     const tabEl = document.querySelector('.tab[data-tab="' + tab + '"]');
     if (tabEl) tabEl.click();
-  });
+  };
+  const ngEl = $('next-goal');
+  if (ngEl) ngEl.addEventListener('click', gotoJump);
+  const dhEl = $('daily-hub');
+  if (dhEl) dhEl.addEventListener('click', gotoJump);
 
   // 配装预设 事件代理
   const loBar = $('loadout-bar');
