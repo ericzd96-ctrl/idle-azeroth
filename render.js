@@ -137,6 +137,11 @@ function updateNavBadges() {
   if (questsTab) {
     questsTab.classList.toggle('has-badge', (typeof questHasClaimable === 'function') && questHasClaimable());
   }
+  const vaultTab = document.querySelector('.tab[data-tab="vault"]');
+  if (vaultTab) {
+    // vaultHasReward 内部 ensureVaultState 会处理周结算锁入(即使没开宝库页也能按时结算)
+    vaultTab.classList.toggle('has-badge', (typeof vaultHasReward === 'function') && vaultHasReward());
+  }
   // 目标引导 / 今日事务:地图页可见时一并刷新
   const mapPanel = document.getElementById('tab-map');
   if (mapPanel && mapPanel.classList.contains('active')) {
@@ -2988,6 +2993,7 @@ function processDirty() {
   if (isDirty('guild')&&typeof renderGuild==='function') { renderGuild(); clearDirty('guild'); }
   if (isDirty('market')&&typeof renderMarket==='function') { renderMarket(); clearDirty('market'); }
   if (isDirty('quests')&&typeof renderQuests==='function') { renderQuests(); clearDirty('quests'); }
+  if (isDirty('vault')&&typeof renderVault==='function') { renderVault(); clearDirty('vault'); }
   if (isDirty('stage'))     { clearDirty('stage'); /* stage 信息已在 updateBattleVisuals 处理 */ }
 }
 

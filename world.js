@@ -160,6 +160,7 @@ function onDungeonClear(dg) {
   if (typeof progressionOnDungeonClear === 'function') progressionOnDungeonClear(dg.key);
   if (typeof eventsOnDungeonClear === 'function') eventsOnDungeonClear();
   if (typeof relicOnDungeonClear === 'function') relicOnDungeonClear(dg);   // 神器遗物掉落
+  if (typeof vaultAdvance === 'function') vaultAdvance('dungeon', 1);       // 每周宝库·探险
   state.dungeonCd[dg.key] = Date.now() + dg.cd * 1000;
   const lastBoss = (dg.bosses||[])[dg.bosses.length-1];
   const finalBossName = lastBoss ? lastBoss.name : '最终BOSS';
@@ -663,6 +664,7 @@ function onMythicClear() {
   if (!dg) return;
   const clearedLevel = ms.level || state.mythicLevel || 1;
   if (typeof questAdvance === 'function') questAdvance('mythic', 1);
+  if (typeof vaultAdvance === 'function') vaultAdvance('mythic', 1);   // 每周宝库·险境
   if (typeof relicOnMythicClear === 'function') relicOnMythicClear(clearedLevel);
   state.pendingMythicAscend = (state.pendingMythicAscend || 0) + 1;
   let pending = state.pendingMythicAscend;

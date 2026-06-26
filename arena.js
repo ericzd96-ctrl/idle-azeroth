@@ -597,6 +597,7 @@ function arenaFight(ranked) {
       honorGained = honor;
       sealsGained = seals;
       if (typeof questAdvance === 'function') questAdvance('arena', 1);
+      if (typeof vaultAdvance === 'function') vaultAdvance('arena', 1);   // 每周宝库·征服
 
       log(`🏟️ 排位胜利! ${plan.tactic.icon}${plan.tactic.name} 成功压过 ${opp.icon}${opp.name} · 评分+${delta}→${a.rating} · +${honor}🏅 · +${seals}🪙`, 'good');
       const after = arenaTierFor(a.rating);

@@ -170,6 +170,8 @@ function defaultAccount() {
     market: { day: -1, bought: [] },
     // 每日/每周任务板(账号共享):自动刷新目标 → 完成领奖
     quests: { day: -1, week: -1, daily: [], weekly: [], dailyBonusClaimed: false, weeklyBonusClaimed: false },
+    // 每周宝库(账号共享):积累 endgame 活跃度 → 周结算锁入 → 挑 1 件领取
+    vault: { week: -1, prog: { dungeon:0, mythic:0, arena:0 }, reward: null },
   };
 }
 
@@ -202,6 +204,9 @@ function mergeAccount(saved) {
       daily: Array.isArray(saved.quests.daily) ? saved.quests.daily : [],
       weekly: Array.isArray(saved.quests.weekly) ? saved.quests.weekly : [],
     }) : d.quests,
+    vault: saved.vault ? Object.assign({}, d.vault, saved.vault, {
+      prog: Object.assign({}, d.vault.prog, saved.vault.prog || {}),
+    }) : d.vault,
     mounts: saved.mounts || {},
     relics: Array.isArray(saved.relics) ? saved.relics : [],
     // 公共资源:数值类靠 Object.assign(d,saved) 已带过来;对象/数组做空值保护

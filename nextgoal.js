@@ -63,6 +63,10 @@ function collectNextGoals() {
   if (typeof questHasClaimable === 'function' && questHasClaimable())
     goals.push({ prio: 75, icon: '📋', text: '有任务已完成,去任务板领奖', tab: 'quests' });
 
+  // 每周宝库可领(高优先,限时)
+  if (typeof vaultHasReward === 'function' && vaultHasReward())
+    goals.push({ prio: 88, icon: '🎁', text: '每周宝库已就绪,去挑选 1 件传说奖励', tab: 'vault' });
+
   // 黑市有可买
   if (typeof marketHasAffordableDeal === 'function' && marketHasAffordableDeal())
     goals.push({ prio: 50, icon: '🛒', text: '黑市有买得起的商品,消化盈余货币', tab: 'market' });

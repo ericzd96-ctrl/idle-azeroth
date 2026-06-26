@@ -186,8 +186,9 @@ function onTowerMonsterKill(mon) {
 
   // 坐骑里程碑
   if (typeof mountOnTowerFloorClear === 'function') mountOnTowerFloorClear(floor);
-  // 神器遗物:仅刷新最高层时掉(奖励推塔,不奖励反复刷低层)
+  // 神器遗物 + 每周宝库·险境:仅刷新最高层时计入(奖励推塔,不奖励反复刷低层)
   if (floor > _prevTowerHighest && typeof relicOnTowerFloor === 'function') relicOnTowerFloor(floor);
+  if (floor > _prevTowerHighest && typeof vaultAdvance === 'function') vaultAdvance('mythic', 1);
 
   // 里程碑
   const ms = TOWER_MILESTONES[floor];

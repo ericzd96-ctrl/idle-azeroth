@@ -745,6 +745,7 @@ function setupMainButtons() {
       if(t.dataset.tab==='guild'&&typeof renderGuild==='function') renderGuild();
       if(t.dataset.tab==='market'&&typeof renderMarket==='function') renderMarket();
       if(t.dataset.tab==='quests'&&typeof renderQuests==='function') renderQuests();
+      if(t.dataset.tab==='vault'&&typeof renderVault==='function') renderVault();
       if(t.dataset.tab==='leaderboard'&&typeof renderLeaderboard==='function') renderLeaderboard();
       if(t.dataset.tab==='talent'&&typeof renderTalents==='function') renderTalents();
       if (isMobileLayout()) setMobilePanelOpen(true);
@@ -793,6 +794,16 @@ function setupMainButtons() {
       if (!btn) return;
       if (btn.dataset.action === 'claimQuest' && typeof claimQuest === 'function') claimQuest(btn.dataset.key);
       else if (btn.dataset.action === 'claimAllQuests' && typeof claimAllQuests === 'function') claimAllQuests();
+    });
+  }
+
+  // 每周宝库 事件代理
+  const vaultRoot = $('tab-vault');
+  if (vaultRoot) {
+    vaultRoot.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      if (btn.dataset.action === 'claimVault' && typeof claimVault === 'function') claimVault(btn.dataset.idx);
     });
   }
 

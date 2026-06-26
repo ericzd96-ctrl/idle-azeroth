@@ -94,6 +94,11 @@ function collectDailyTasks() {
     });
   }
 
+  // 每周宝库(有可领时才显示,周常)
+  if (typeof vaultHasReward === 'function' && vaultHasReward()) {
+    out.push({ icon:'🎁', name:'宝库', tab:'vault', status:'avail', detail:'可挑选领取' });
+  }
+
   // 生活订单
   if (typeof lifeReadyOrderCount === 'function' && state.life && state.life.orders) {
     const ready = lifeReadyOrderCount();
