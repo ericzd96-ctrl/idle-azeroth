@@ -2113,18 +2113,24 @@ function spawnDungeonMonster(){
     _isRaidFinal:isRaid&&isFinalBoss,_isRaid:isRaid,_isEpicRaid:isEpicRaid,
     _monSkills:isBoss?[]:monSkills,_monSkill:isBoss?null:(monSkills[0]||null),_monSupportSkills:buildMonsterSupportPool(isBoss?boss.name:name,null,power,isBoss,isBoss?bossSupportSkillCount:trashSupportSkillCount),_supportSkillCooldowns:{},_lastSupportSkill:Date.now()-rng(3000,9000),_lastSkill:Date.now()-rng(1000,4000),_lastTrick:0,_nextTrickAt:isBoss?(Date.now()+8000+rng(0,2500)):0,
     atkInterval:(isBoss?1400:1700)+rng(-200,200),_lastAtk:Date.now()-rng(0,1200)});
-  // 大秘境词缀:修改怪物属性
+  // 来源难度梯队:怪物强度 普通(0) < 英雄(1) < 团本(2) < 史诗团本(3=原史诗团本值,不变)
   const mon = state.currentMonsters[state.currentMonsters.length-1];
-  if (isEpicRaid) {
-    const hpMult = isBoss ? (isFinalBoss ? 2.45 : 2.1) : 1.72;
-    const atkMult = isBoss ? (isFinalBoss ? 1.85 : 1.62) : 1.38;
-    const defMult = isBoss ? (isFinalBoss ? 1.72 : 1.48) : 1.26;
-    mon.hpMax = Math.floor(mon.hpMax * hpMult);
-    mon.hp = mon.hpMax;
-    mon.atk = Math.floor(mon.atk * atkMult);
-    mon.def = Math.floor(mon.def * defMult);
-    mon.goldReward = Math.floor(mon.goldReward * (isBoss ? 1.5 : 1.25));
-    mon.baseXp = Math.floor(mon.baseXp * (isBoss ? 1.45 : 1.2));
+  const _dgTier = (typeof gearTierForDungeon==='function') ? gearTierForDungeon(dg.key) : (isEpicRaid?3:0);
+  const DG_TIER_MON = {
+    1:{ trash:{hp:1.40,atk:1.22,def:1.18}, boss:{hp:1.60,atk:1.35,def:1.25}, final:{hp:1.85,atk:1.48,def:1.32} },   // 英雄
+    2:{ trash:{hp:1.60,atk:1.30,def:1.22}, boss:{hp:2.00,atk:1.55,def:1.40}, final:{hp:2.20,atk:1.70,def:1.50} },   // 团本
+    3:{ trash:{hp:1.72,atk:1.38,def:1.26}, boss:{hp:2.10,atk:1.62,def:1.48}, final:{hp:2.45,atk:1.85,def:1.72} },   // 史诗团本
+  };
+  const _tm = DG_TIER_MON[_dgTier];
+  if (_tm) {
+    const m = isBoss ? (isFinalBoss ? _tm.final : _tm.boss) : _tm.trash;
+    mon.hpMax = Math.floor(mon.hpMax * m.hp); mon.hp = mon.hpMax;
+    mon.atk = Math.floor(mon.atk * m.atk);
+    mon.def = Math.floor(mon.def * m.def);
+    if (_dgTier >= 2) {   // 团本/史诗团本额外给奖励(英雄本的回报来自更高品质装备梯队)
+      mon.goldReward = Math.floor(mon.goldReward * (isBoss ? 1.5 : 1.25));
+      mon.baseXp = Math.floor(mon.baseXp * (isBoss ? 1.45 : 1.2));
+    }
   }
   // 副本/大秘境 BOSS 被动:优先读数据中的passive,否则用默认
   if (isBoss) {

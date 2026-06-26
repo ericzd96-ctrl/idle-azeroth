@@ -2852,8 +2852,10 @@ function openDungeonInfo(dungeonKey) {
 function renderDungeon() {
   const dl = $('dungeon-list');
   const epicDl = $('epic-dungeon-list');
+  const heroicDl = $('heroic-dungeon-list');
   if (dl) dl.innerHTML = '';
   if (epicDl) epicDl.innerHTML = '';
+  if (heroicDl) heroicDl.innerHTML = '';
   // 更新按钮状态
   const btn5 = $('btn-dg-5man'), btnR = $('btn-dg-raid');
   if (btn5) { btn5.classList.toggle('active', dgFilter === 'all' || dgFilter === '5man'); }
@@ -2868,12 +2870,13 @@ function renderDungeon() {
     return aDist - bDist;
   });
   const normalDungeons = sortedDungeons.filter(dg => {
-    if (dg.epicRaid) return false;
+    if (dg.epicRaid || dg.heroic) return false;   // 英雄本归入专属页
     if (dgFilter === '5man') return dg.type !== 'raid';
     if (dgFilter === 'raid') return dg.type === 'raid';
     return true;
   });
   const epicDungeons = sortedDungeons.filter(dg => !!dg.epicRaid);
+  const heroicDungeons = sortedDungeons.filter(dg => !!dg.heroic);
   const renderDungeonCard = (dg, target) => {
     if (!target) return;
     const cdEnd = state.dungeonCd[dg.key] || 0;
@@ -2924,6 +2927,10 @@ function renderDungeon() {
   };
   for (const dg of normalDungeons) renderDungeonCard(dg, dl);
   for (const dg of epicDungeons) renderDungeonCard(dg, epicDl);
+  for (const dg of heroicDungeons) renderDungeonCard(dg, heroicDl);
+  if (heroicDl && !heroicDungeons.length) {
+    heroicDl.innerHTML = '<div class="muted" style="text-align:center;padding:12px">暂无英雄副本(达到对应等级后开放)</div>';
+  }
   if (dl && !normalDungeons.length) {
     dl.innerHTML = '<div class="muted" style="text-align:center;padding:12px">当前筛选下暂无普通副本</div>';
   }

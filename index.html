@@ -260,6 +260,7 @@
         <div class="muted" style="margin-bottom:6px">挑战副本 BOSS,获取传说装备</div>
         <div class="sub-tabs" style="margin-bottom:6px">
           <span class="sub-tab active" data-dgmode="normal"><span data-ui-icon="dungeon" data-ui-size="xs"></span>普通副本</span>
+          <span class="sub-tab" data-dgmode="heroic">⭐ 英雄本</span>
           <span class="sub-tab" data-dgmode="epic"><span data-ui-icon="raid" data-ui-size="xs"></span>史诗团本</span>
         </div>
         <div id="dungeon-mode-normal">
@@ -268,6 +269,10 @@
           <button id="btn-dg-raid" style="flex:1;padding:4px 8px;font-size:11px"><span data-ui-icon="raid" data-ui-size="xs"></span>团本</button>
         </div>
         <div id="dungeon-list"></div>
+        </div>
+        <div id="dungeon-mode-heroic" style="display:none">
+          <div class="muted" style="margin-bottom:6px">⭐ 80级英雄5人副本 · 怪物显著强化(普通&lt;英雄&lt;团本&lt;史诗团本) · 掉落带「·英雄」后缀、属性高于普通本</div>
+          <div id="heroic-dungeon-list"></div>
         </div>
         <div id="dungeon-mode-epic" style="display:none">
           <div class="muted" style="margin-bottom:6px">80级史诗团本独立列表 · 高难度 · 必掉史诗紫装 / 全BOSS超低概率橙装</div>

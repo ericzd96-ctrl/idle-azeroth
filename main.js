@@ -357,6 +357,7 @@ function setupDelegation() {
       const key = modeTab.dataset.dgmode;
       document.querySelectorAll('#dungeon-sub-dungeon > .sub-tabs .sub-tab').forEach(x => x.classList.toggle('active', x.dataset.dgmode === key));
       $('dungeon-mode-normal').style.display = key === 'normal' ? '' : 'none';
+      $('dungeon-mode-heroic').style.display = key === 'heroic' ? '' : 'none';
       $('dungeon-mode-epic').style.display = key === 'epic' ? '' : 'none';
       return;
     }
