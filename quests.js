@@ -154,6 +154,43 @@ function claimQuest(key) {
   }
 }
 
+/* 一键领取所有已完成任务(日常+周常) */
+function claimAllQuests() {
+  const q = ensureQuestState(); if (!q) return;
+  let count = 0;
+  const totals = {};
+  for (const [list, isWeekly] of [[q.daily, false], [q.weekly, true]]) {
+    for (const item of list) {
+      const def = questDef(item, isWeekly);
+      if (!def || item.claimed || item.prog < def.goal) continue;
+      item.claimed = true;
+      questGrant(def.reward);
+      if (typeof seasonAddPoints === 'function') seasonAddPoints(isWeekly ? 300 : 80, '任务');
+      for (const [k, v] of Object.entries(def.reward || {})) totals[k] = (totals[k] || 0) + v;
+      count++;
+    }
+  }
+  if (count === 0) { log('没有可领取的任务', 'info'); return; }
+  log(`📋 一键领取 ${count} 个任务 · ${questRewardText(totals)}`, 'epic');
+  questCheckBonus(q);   // 全清额外赏(自带日志)
+  markDirty('quests', 'hero');
+  if (typeof renderQuests === 'function') renderQuests();
+  if (typeof saveState === 'function') saveState();
+}
+
+/* 当前可领取任务数(按钮/红点用) */
+function questClaimableCount() {
+  const q = ensureQuestState(); if (!q) return 0;
+  let n = 0;
+  for (const [list, isWeekly] of [[q.daily, false], [q.weekly, true]]) {
+    for (const item of list) {
+      const def = questDef(item, isWeekly);
+      if (def && !item.claimed && item.prog >= def.goal) n++;
+    }
+  }
+  return n;
+}
+
 /* 全清额外赏 */
 function questCheckBonus(q) {
   if (!q.dailyBonusClaimed && q.daily.length && q.daily.every(it => it.claimed)) {
@@ -217,9 +254,13 @@ function renderQuests() {
   const dailyDone = q.daily.filter(it => it.claimed).length;
   const weeklyDone = q.weekly.filter(it => it.claimed).length;
 
-  let html = `<div style="margin-bottom:8px">
-    <div style="font-weight:bold;font-size:15px">📋 任务板</div>
-    <div class="muted" style="font-size:11px;margin-top:2px">每日 / 每周自动刷新一批目标,完成靠正常游玩自动累计。全清额外加赏。</div>
+  const claimable = questClaimableCount();
+  let html = `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+    <div style="min-width:0;flex:1">
+      <div style="font-weight:bold;font-size:15px">📋 任务板</div>
+      <div class="muted" style="font-size:11px;margin-top:2px">每日 / 每周自动刷新一批目标,完成靠正常游玩自动累计。全清额外加赏。</div>
+    </div>
+    ${claimable > 0 ? `<button class="gold" data-action="claimAllQuests" style="padding:6px 12px;white-space:nowrap">🎁 一键领取 (${claimable})</button>` : ''}
   </div>`;
 
   html += `<div class="ascend-box">

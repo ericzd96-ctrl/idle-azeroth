@@ -792,6 +792,7 @@ function setupMainButtons() {
       const btn = e.target.closest('button[data-action]');
       if (!btn) return;
       if (btn.dataset.action === 'claimQuest' && typeof claimQuest === 'function') claimQuest(btn.dataset.key);
+      else if (btn.dataset.action === 'claimAllQuests' && typeof claimAllQuests === 'function') claimAllQuests();
     });
   }
 
