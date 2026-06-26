@@ -173,6 +173,8 @@ function defaultAccount() {
     quests: { day: -1, week: -1, daily: [], weekly: [], dailyBonusClaimed: false, weeklyBonusClaimed: false },
     // 每周宝库(账号共享):积累 endgame 活跃度 → 周结算锁入 → 挑 1 件领取
     vault: { week: -1, prog: { dungeon:0, mythic:0, arena:0 }, reward: null },
+    // 幻象神龛(账号共享):幻象币买的常驻强化,仅幻象 run 内生效
+    roguelikeShrine: {},
   };
 }
 
@@ -208,6 +210,7 @@ function mergeAccount(saved) {
     vault: saved.vault ? Object.assign({}, d.vault, saved.vault, {
       prog: Object.assign({}, d.vault.prog, saved.vault.prog || {}),
     }) : d.vault,
+    roguelikeShrine: saved.roguelikeShrine && typeof saved.roguelikeShrine === 'object' ? saved.roguelikeShrine : {},
     mounts: saved.mounts || {},
     relics: Array.isArray(saved.relics) ? saved.relics : [],
     // 公共资源:数值类靠 Object.assign(d,saved) 已带过来;对象/数组做空值保护

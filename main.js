@@ -431,6 +431,7 @@ function setupDelegation() {
         if (!confirm('确定放弃幻象挑战?(已得幻象币保留)')) return;
         if(typeof leaveRoguelike==='function') leaveRoguelike();
       }
+      else if (act === 'roguelikeShrineBuy') { if(typeof roguelikeShrineBuy==='function') roguelikeShrineBuy(btn.dataset.key); }
     });
   }
   // Roguelike 子标签切换

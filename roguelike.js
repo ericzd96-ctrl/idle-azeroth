@@ -136,17 +136,51 @@ function weightedRandomPick(pool, floor) {
   return pool[pool.length - 1];
 }
 
+/* ---------- 幻象神龛(账号级常驻强化,幻象币购买,仅 run 内生效)---------- */
+const ROGUELIKE_SHRINE = [
+  { key:'sh_atk',     name:'力量神龛', icon:'⚔️', stat:'atkPct',   per:3, max:12, base:80,  desc:'进入幻象时 +3% 攻击 / 级' },
+  { key:'sh_hp',      name:'坚壁神龛', icon:'❤️', stat:'hpPct',    per:4, max:12, base:80,  desc:'进入幻象时 +4% 生命 / 级' },
+  { key:'sh_def',     name:'壁垒神龛', icon:'🛡️', stat:'defPct',   per:3, max:10, base:80,  desc:'进入幻象时 +3% 防御 / 级' },
+  { key:'sh_critd',   name:'锋锐神龛', icon:'💥', stat:'critdPct', per:5, max:8,  base:120, desc:'进入幻象时 +5% 暴伤 / 级' },
+  { key:'sh_crit',    name:'精准神龛', icon:'🎯', stat:'crit',     per:2, max:8,  base:120, desc:'进入幻象时 +2 暴击 / 级' },
+  { key:'sh_leech',   name:'汲取神龛', icon:'🩸', stat:'leech',    per:2, max:6,  base:150, desc:'进入幻象时 +2 吸血 / 级' },
+  { key:'sh_mastery', name:'专精神龛', icon:'🌀', stat:'mastery',  per:3, max:8,  base:120, desc:'进入幻象时 +3 精通 / 级' },
+];
+function ensureRoguelikeShrine() {
+  if (typeof account === 'undefined' || !account) return {};
+  if (!account.roguelikeShrine || typeof account.roguelikeShrine !== 'object') account.roguelikeShrine = {};
+  return account.roguelikeShrine;
+}
+function roguelikeShrineCost(up, rank) { return up.base * (rank + 1); }
+function roguelikeShrineBuy(key) {
+  const up = ROGUELIKE_SHRINE.find(x => x.key === key); if (!up) return;
+  const shrine = ensureRoguelikeShrine();
+  const rank = shrine[key] || 0;
+  if (rank >= up.max) { log('该神龛已满级', 'bad'); return; }
+  const cost = roguelikeShrineCost(up, rank);
+  if ((state.roguelikeCoin || 0) < cost) { log(`幻象币不足(需 ${cost}🤖)`, 'bad'); return; }
+  state.roguelikeCoin -= cost;
+  shrine[key] = rank + 1;
+  log(`🛕 强化【${up.name}】Lv.${rank + 1} · -${cost}🤖`, 'epic');
+  if (state.mode === 'roguelike' && typeof recomputeStats === 'function') recomputeStats();   // run 内即时生效
+  markDirty('hero');
+  if (typeof renderRoguelikePanel === 'function') renderRoguelikePanel();
+}
+
 /* ---------- 属性收集(供 recomputeStats 调用) ---------- */
 function collectRoguelikeMod() {
   const out = { atkPct:0, hpPct:0, defPct:0, spdPct:0, critdPct:0, crit:0, regFlat:0, leech:0, vers:0, mastery:0, haste:0, cdReduction:0, extraAtk:0, healBonus:0, dotBonus:0, costReduction:0, executeBonus:0, reflectDmg:0, stunChance:0, armorPen:0, dodge:0 };
   const rs = state.roguelikeState;
-  if (!rs || !rs.chosenAbilities) return out;
-  for (const ability of rs.chosenAbilities) {
-    if (ability.mod) {
-      for (const [k, v] of Object.entries(ability.mod)) {
-        out[k] = (out[k] || 0) + v;
-      }
-    }
+  if (!rs) return out;   // 不在幻象中 → 神龛与能力都不生效
+  // 神龛常驻强化(账号,仅 run 内)
+  const shrine = ensureRoguelikeShrine();
+  for (const up of ROGUELIKE_SHRINE) {
+    const r = shrine[up.key] || 0;
+    if (r > 0) out[up.stat] = (out[up.stat] || 0) + r * up.per;
+  }
+  // 本局已选能力
+  if (rs.chosenAbilities) for (const ability of rs.chosenAbilities) {
+    if (ability.mod) for (const [k, v] of Object.entries(ability.mod)) out[k] = (out[k] || 0) + v;
   }
   return out;
 }
@@ -469,6 +503,7 @@ function renderRoguelikePanel() {
 
   html += `<div class="sub-tabs">
     <span class="sub-tab ${roguelikeSubTab==='roguelike'?'active':''}" data-roguesub="roguelike">🌌 挑战</span>
+    <span class="sub-tab ${roguelikeSubTab==='shrine'?'active':''}" data-roguesub="shrine">🛕 神龛</span>
     <span class="sub-tab ${roguelikeSubTab==='milestone'?'active':''}" data-roguesub="milestone">🏆 里程碑</span>
   </div>`;
 
@@ -494,6 +529,31 @@ function renderRoguelikePanel() {
         <button class="legend" data-action="enterRoguelike" style="width:100%;padding:10px">🌌 进入幻象挑战</button>
       </div>`;
     }
+  } else if (roguelikeSubTab === 'shrine') {
+    const shrine = ensureRoguelikeShrine();
+    html += `<div class="ascend-box">
+      <div class="detail-label">🛕 幻象神龛 <span class="muted" style="font-size:10px">(当前 ${state.roguelikeCoin||0}🤖)</span></div>
+      <div class="muted" style="font-size:10px;margin-bottom:6px;line-height:1.5">用幻象币永久强化神龛 —— 加成<b>只在幻象挑战内生效</b>,让每次 run 起点更高、越爬越深。账号共享。</div>`;
+    for (const up of ROGUELIKE_SHRINE) {
+      const rank = shrine[up.key] || 0;
+      const maxed = rank >= up.max;
+      const cost = roguelikeShrineCost(up, rank);
+      const afford = (state.roguelikeCoin||0) >= cost;
+      const cur = rank * up.per;
+      html += `<div class="ascend-milestone ${rank>0?'reached':''}" style="padding:6px;margin-top:4px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:160px">
+            <div style="font-size:18px">${up.icon}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:bold">${up.name} <span class="muted" style="font-size:10px">Lv.${rank}/${up.max}</span></div>
+              <div class="muted" style="font-size:10px">${up.desc}${rank>0?` · 当前 ${(typeof fmtMod==='function')?fmtMod(up.stat,cur):up.stat+'+'+cur}`:''}</div>
+            </div>
+          </div>
+          <button class="${afford&&!maxed?'gold':''}" data-action="roguelikeShrineBuy" data-key="${up.key}" ${maxed||!afford?'disabled':''} style="padding:4px 8px;font-size:11px">${maxed?'已满':`${cost}🤖`}</button>
+        </div>
+      </div>`;
+    }
+    html += `</div>`;
   } else if (roguelikeSubTab === 'milestone') {
     html += `<div class="ascend-box"><div style="font-weight:bold;margin-bottom:8px">🏆 里程碑奖励</div>`;
     for (const [floor, ms] of Object.entries(ROGUELIKE_MILESTONES)) {
