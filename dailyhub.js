@@ -68,6 +68,22 @@ function collectDailyTasks() {
     }
   }
 
+  // 事件日常
+  if (typeof ensureEventState === 'function') {
+    ensureEventState();
+    if (typeof checkDailyRollover === 'function') checkDailyRollover();
+    const tasks = (state.daily && Array.isArray(state.daily.tasks)) ? state.daily.tasks : [];
+    if (tasks.length) {
+      const claimable = tasks.some(t => !t.claimed && t.cur >= t.goal);
+      const claimed = tasks.filter(t => t.claimed).length;
+      out.push({
+        icon: '🎯', name: '日常', tab: 'events',
+        status: claimable ? 'avail' : (claimed >= tasks.length ? 'done' : 'progress'),
+        detail: claimable ? '可领奖' : `${claimed}/${tasks.length}`,
+      });
+    }
+  }
+
   // 远征储备
   if (typeof expeditionStorageFull === 'function') {
     const full = expeditionStorageFull();
@@ -75,6 +91,17 @@ function collectDailyTasks() {
       icon: '🚩', name: '远征', tab: 'expedition',
       status: full ? 'avail' : 'progress',
       detail: full ? '储备满可领' : '产出中',
+    });
+  }
+
+  // 生活订单
+  if (typeof lifeReadyOrderCount === 'function' && state.life && state.life.orders) {
+    const ready = lifeReadyOrderCount();
+    const incomplete = (state.life.orders.slots || []).filter(o => !o.completed).length;
+    out.push({
+      icon: '🛠️', name: '生活', tab: 'life',
+      status: incomplete === 0 ? 'done' : (ready > 0 ? 'avail' : 'progress'),
+      detail: incomplete === 0 ? '已交付' : (ready > 0 ? `${ready} 单可交` : '材料不足'),
     });
   }
 
