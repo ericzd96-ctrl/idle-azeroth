@@ -4238,6 +4238,8 @@ function trackKill(){const now=Date.now();if(dmgStats.killTs){const dt=(now-dmgS
 function resetDmgStats(){dmgStats={hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,heroHeal:0,compHeal:0,heroHealMax:0,compHealMax:0,heroHealSkills:{},compHealSkills:{},kills:0,heroSkills:{},compSkills:{},taken:0,takenMax:0,takenHits:0,killTs:0,killFast:0,killSlow:0,peakDps:0};if(typeof markDirty==='function')markDirty('stage');}
 let compSkillCd={};   // 随从每个技能的独立冷却就绪时间戳(键=技能下标;_owner 记录当前随从,换随从自动重置)
 const COMP_SKILL_DEFAULT_CD=8;   // 随从技能默认CD(秒,技能未写 cd 时)
+const COMPANION_SKILL_CD_MULT=0.35;   // 随从技能冷却大幅缩短:实际CD=配置CD×35%
+const COMPANION_SKILL_GCD_MS=900;     // 随从技能公共间隔,避免同一帧把所有技能打空
 const COMPANION_COMBAT_QUALITY = { white:0.74, green:0.96, blue:1.18, purple:1.37, orange:1.51 };
 const COMPANION_ROLE_PROFILE = {
   tank: { atk:0.65, def:1.30, hp:0.68, spd:0.72, reg:0.60, critd:0.78 },
@@ -4248,6 +4250,12 @@ const COMPANION_STAR_GROWTH = 0.15;   // 每星成长
 const COMPANION_SKILL_DMG_BONUS = 1.43;  // 随从技能伤害全局加成
 const COMPANION_HEAL_SCALE = 1.25;        // 随从治疗统一收口
 function companionSkillCdLeft(i){ return Math.max(0, ((compSkillCd&&compSkillCd[i])||0) - Date.now()); }   // 供 UI 显示剩余CD(毫秒)
+function companionEffectiveSkillCdMs(sk){
+  const base = Math.max(0.5, (sk?.cd || COMP_SKILL_DEFAULT_CD)) * 1000;
+  const floor = sk?._signature ? 3000 : 1500;
+  return Math.max(floor, Math.floor(base * COMPANION_SKILL_CD_MULT));
+}
+function companionEffectiveSkillCdSec(sk){ return +(companionEffectiveSkillCdMs(sk) / 1000).toFixed(1); }
 function getActiveCompanion(){if(state.activeCompanion<0||!state.companions[state.activeCompanion])return null;return state.companions[state.activeCompanion];}
 function companionSignature(tpl){ return tpl?.signature || null; }
 function notifyCompanionSignature(sig, tpl, text, now){
@@ -4439,8 +4447,8 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
   const mon=state.currentMonsters[0];if(!mon)return;
   if(compSkillCd._owner!==comp.key)compSkillCd={_owner:comp.key};   // 换随从:重置技能冷却
   const interval=1000/(st.spd||0.5);if((state._compDisarmUntil||0)<=now&&(now-lastCompAtk>interval||now-lastCompAtk>5000)){let cm=state.currentMonsters[0];if(cm&&cm.hp>0){const cd=calcDmg(st.atk,monArmor(cm),st.crit,st.critd,false,cm.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(cm, cd.dmg, st.emoji).remaining;cm.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,cd.crit,'普攻');showMonsterFloat(cm,st.emoji+'-'+dealt,'#a0d0ff',allySideFloatOpts({variant:cd.crit?'crit':'comp',scale:cd.crit?1.12:1}));}applyCompanionSignatureHit(companionSignature(tpl), st, cm, dealt, now);}lastCompAtk=now;
-    // 技能:每个技能按自己的 cd 独立冷却,就绪即放(GCD 2秒,避免一次性全放;优先治疗>buff>伤害)
-    if((state._compSilenceUntil||0)<=now&&now-lastCompSkill>2000){
+    // 技能:每个技能按自己的 cd 独立冷却,就绪即放(GCD 0.9秒,避免一次性全放;优先治疗>buff>伤害)
+    if((state._compSilenceUntil||0)<=now&&now-lastCompSkill>COMPANION_SKILL_GCD_MS){
       const ready=[];for(let i=0;i<st.skills.length;i++){if((compSkillCd[i]||0)<=now)ready.push(i);}
       ready.sort((a,b)=>companionSkillPriority(st.skills[b],st,mon,now)-companionSkillPriority(st.skills[a],st,mon,now)||a-b);
       const i=ready[0];
@@ -4494,7 +4502,7 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
           applyCompanionSupportSkill(sk, st, now);
           if(summoned > 0) log(sk.name+'! 召唤了 '+summoned+' 个单位助战','good');
         }
-        compSkillCd[i]=now+(sk.cd||COMP_SKILL_DEFAULT_CD)*1000;lastCompSkill=now;
+        compSkillCd[i]=now+companionEffectiveSkillCdMs(sk);lastCompSkill=now;
       }
     }
   }}

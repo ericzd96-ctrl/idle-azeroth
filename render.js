@@ -2494,7 +2494,8 @@ function companionSkillTipHtml(sk){
   else if (sk.healTarget === 'both') lines.push('治疗目标：主角和随从');
   else if (sk.healTarget === 'smart') lines.push('治疗目标：自动选择血量更危险的一方');
   const mode = sk._signature ? (sk.mode === 'passive' ? '专属被动' : '专属主动') : (sk.type === 'summon' ? '召唤技能' : sk.type === 'buff' ? '辅助技能' : sk.type === 'heal' ? '治疗技能' : '伤害技能');
-  const cdText = sk.mode === 'passive' ? mode : `${mode} · 冷却 ${sk.cd || 8}秒`;
+  const cdSec = (typeof companionEffectiveSkillCdSec === 'function') ? companionEffectiveSkillCdSec(sk) : (sk.cd || 8);
+  const cdText = sk.mode === 'passive' ? mode : `${mode} · 冷却 ${String(cdSec).replace(/\.0$/,'')}秒`;
   return `<b>${skillIconHtml} ${sk.name}</b><div>${sk.desc || ''}</div>${lines.map(x=>`<div class="muted">${x}</div>`).join('')}<div class="muted">${cdText}</div>`;
 }
 /* 随从技能 → 可悬浮小图标(指向看描述) */
