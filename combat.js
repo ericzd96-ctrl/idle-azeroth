@@ -1796,9 +1796,18 @@ function applyAllySummonDamage(unit, amount, mon, opts){
   markDirty('stage');
   return taken;
 }
+function activeCompanionIsTank(){
+  const comp=getActiveCompanion();if(!comp)return false;
+  const tpl=COMPANIONS.find(c=>c.key===comp.key);
+  return !!(tpl&&tpl.role==='tank');
+}
 function pickMonsterAttackTarget(now){
+  // 坦克随从在场且存活时,90% 的火力被它吸走(纯坦克高可靠吸仇恨)
+  const tankPresent = companionTargetable() && activeCompanionIsTank();
+  if(tankPresent && Math.random()<0.90) return { kind:'companion' };
   const choices = [{ kind:'hero', weight:1.05 }];
-  if(companionTargetable()) choices.push({ kind:'companion', weight:Math.max(0.18, compAggroChance() * 1.7) });
+  // 坦克随从已由上面的 90% 短路处理,剩余 10% 只在 英雄/召唤物 间分配;非坦克随从仍按仇恨权重参与
+  if(companionTargetable() && !tankPresent) choices.push({ kind:'companion', weight:Math.max(0.18, compAggroChance() * 1.7) });
   for(const unit of livingAllySummons(now)) choices.push({ kind:'summon', unit, weight:Math.max(0.12, unit.aggro || 0.35) });
   let total = 0;
   for(const choice of choices) total += choice.weight;
