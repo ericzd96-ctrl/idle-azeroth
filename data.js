@@ -3865,6 +3865,62 @@ const GENERATED_BOSS_SKILLS = {
     {name:'践踏震击', icon:'🌍', desc:'8倍范围伤害', type:'dmg', mul:8, castTime:4, aoe:true, stun:1000, cripple:true}
   ]
 };
+const BOSS_SIGNATURE_SKILL_KITS = {
+  fire: [
+    { suffix:'熔核裁决', icon:'🔥', desc:'火焰伤害并灼烧', mul:7.4, castTime:3.0, dot:true, brittle:true },
+    { suffix:'灰烬审判', icon:'🌋', desc:'范围火焰伤害', mul:8.1, castTime:3.6, aoe:true, dot:true },
+    { suffix:'烈焰烙印', icon:'☄️', desc:'火焰伤害并沉默', mul:7.8, castTime:3.2, silence:1700, weaken:true },
+    { suffix:'焚世回响', icon:'🔥', desc:'高危火焰爆发', mul:8.8, castTime:4.0, aoe:true, alwaysCrit:true },
+  ],
+  frost: [
+    { suffix:'冰墓裁决', icon:'🧊', desc:'冰霜伤害并冻结', mul:7.4, castTime:3.0, freeze:1500 },
+    { suffix:'寒潮裂隙', icon:'❄️', desc:'冰霜伤害并减速', mul:7.8, castTime:3.2, slow:true, brittle:true },
+    { suffix:'霜魂风暴', icon:'🌨️', desc:'范围冰霜伤害', mul:8.2, castTime:3.8, aoe:true, slow:true },
+    { suffix:'凛冬终结', icon:'🥶', desc:'高危冰霜暗影伤害', mul:8.8, castTime:4.0, decay:true, freeze:1200 },
+  ],
+  shadow: [
+    { suffix:'暗影裁决', icon:'🌑', desc:'暗影伤害并虚弱', mul:7.5, castTime:3.0, weaken:true },
+    { suffix:'灵魂裂隙', icon:'🔗', desc:'暗影伤害并链接灵魂', mul:8.0, castTime:3.4, soulLink:true, decay:true },
+    { suffix:'恐惧回响', icon:'👻', desc:'范围暗影伤害并恐惧', mul:8.1, castTime:3.8, aoe:true, fear:1700 },
+    { suffix:'虚无吞噬', icon:'🌀', desc:'高危暗影爆发', mul:8.9, castTime:4.0, manaDrain:55, decay2:true },
+  ],
+  poison: [
+    { suffix:'腐毒裁决', icon:'🦠', desc:'自然伤害并感染', mul:7.4, castTime:3.0, dot:true, plague:true },
+    { suffix:'毒脉穿刺', icon:'🪡', desc:'毒性伤害并致残', mul:7.8, castTime:3.2, cripple:true, dot:true },
+    { suffix:'腐化喷涌', icon:'🐍', desc:'范围毒性伤害', mul:8.2, castTime:3.8, aoe:true, decay:true, plague:true },
+    { suffix:'疫病爆发', icon:'☣️', desc:'高危疫病伤害', mul:8.8, castTime:4.0, plague:true, weaken:true },
+  ],
+  storm: [
+    { suffix:'雷霆裁决', icon:'⚡', desc:'自然伤害并晕眩', mul:7.4, castTime:3.0, stun:1300 },
+    { suffix:'静电裂解', icon:'🌩️', desc:'风暴伤害并沉默', mul:7.9, castTime:3.3, silence:1700, manaDrain:45 },
+    { suffix:'风暴新星', icon:'⛈️', desc:'范围风暴伤害', mul:8.3, castTime:3.8, aoe:true, weaken:true },
+    { suffix:'天雷终局', icon:'⚡', desc:'高危雷霆爆发', mul:8.9, castTime:4.0, stun:1200, alwaysCrit:true },
+  ],
+  nature: [
+    { suffix:'根须裁决', icon:'🌿', desc:'自然伤害并致残', mul:7.3, castTime:3.0, cripple:true },
+    { suffix:'孢子爆裂', icon:'🍄', desc:'自然伤害并腐蚀', mul:7.8, castTime:3.3, plague:true, decay:true },
+    { suffix:'野性震荡', icon:'🌳', desc:'范围自然伤害', mul:8.2, castTime:3.8, aoe:true, weaken:true },
+    { suffix:'生命凋零', icon:'🥀', desc:'高危自然暗影伤害', mul:8.8, castTime:4.0, decay2:true, dot:true },
+  ],
+  dragon: [
+    { suffix:'龙息裁决', icon:'🐉', desc:'龙焰伤害并灼烧', mul:7.8, castTime:3.0, dot:true, weaken:true },
+    { suffix:'巨尾碾压', icon:'🪽', desc:'范围物理伤害', mul:8.2, castTime:3.5, aoe:true, stun:1400 },
+    { suffix:'龙爪撕裂', icon:'🩸', desc:'物理伤害并流血', mul:8.0, castTime:3.2, bleed:true, cripple:true },
+    { suffix:'龙威终结', icon:'👁️', desc:'高危龙威伤害', mul:9.0, castTime:4.0, fear:1800, brittle:true },
+  ],
+  arcane: [
+    { suffix:'奥术裁决', icon:'✨', desc:'奥术伤害并沉默', mul:7.4, castTime:3.0, silence:1600 },
+    { suffix:'法力裂解', icon:'💧', desc:'奥术伤害并燃烧法力', mul:7.8, castTime:3.4, manaDrain:55, weaken:true },
+    { suffix:'虚空矩阵', icon:'🌀', desc:'范围奥术伤害', mul:8.2, castTime:3.8, aoe:true, mirror:true },
+    { suffix:'星界崩塌', icon:'🌌', desc:'高危奥术爆发', mul:8.8, castTime:4.0, silence:2000, brittle:true },
+  ],
+  brute: [
+    { suffix:'裂骨裁决', icon:'🪓', desc:'重击并流血', mul:7.4, castTime:3.0, bleed:true, weaken:true },
+    { suffix:'战槌震荡', icon:'🔨', desc:'重击并晕眩', mul:7.9, castTime:3.3, stun:1300, brittle:true },
+    { suffix:'践踏冲击', icon:'🌍', desc:'范围物理伤害', mul:8.2, castTime:3.8, aoe:true, cripple:true },
+    { suffix:'破甲终结', icon:'💥', desc:'高危破甲伤害', mul:8.8, castTime:4.0, sunder:true, alwaysCrit:true },
+  ],
+};
 const BOSS_DEBUFF_KEYS = ['dot','slow','stun','weaken','sunder','silence','disarm','fear','freeze','cripple','decay','wither','manaDrain','bomb','plague','bleed','brittle','soulDrain','soulLink','revenge','frenzy','decay2','mirror'];
 function bossDebuffCount(sk){
   return BOSS_DEBUFF_KEYS.reduce((sum, key)=>sum + (sk && sk[key] ? 1 : 0), 0);
@@ -3899,6 +3955,46 @@ function isBossSupportSkill(skill){
     skill.heal || skill.healPct || skill.shieldPct || skill.summonCount || skill.atkBuffSecs || skill.spdBuffSecs ||
     skill.defBuffSecs || skill.drBuffSecs || skill.critBuffSecs || skill.leechBuffSecs || skill.nextDouble));
 }
+function bossSignatureToken(name){
+  const clean = String(name || '首领')
+    .replace(/^[^\u4e00-\u9fa5A-Za-z]+/, '')
+    .replace(/·.*/, '')
+    .replace(/[,，].*/, '')
+    .replace(/的化身|之影|之灵|大王|领主|将军|女王|王子|国王|酋长|督军|守卫者|守护者/g, '')
+    .trim();
+  return (clean || String(name || '首领')).slice(0, 6);
+}
+function makeBossSignatureSkill(theme, bossName, idx, ctx){
+  const kits = BOSS_SIGNATURE_SKILL_KITS[theme] || BOSS_SIGNATURE_SKILL_KITS.brute;
+  const kit = kits[idx % kits.length];
+  const token = bossSignatureToken(bossName);
+  const scale = Math.floor(idx / kits.length);
+  const out = Object.assign({}, kit, {
+    name: `${token}·${kit.suffix}`,
+    type: 'dmg',
+    mul: +(kit.mul + Math.min(1.2, scale * 0.35) + ((ctx.lvl || 1) >= 70 ? 0.6 : ((ctx.lvl || 1) >= 40 ? 0.3 : 0))).toFixed(1),
+  });
+  return out;
+}
+function addBossPassiveTrick(boss, trick){
+  if(!boss || !trick) return;
+  boss.passive = Object.assign({}, boss.passive || {});
+  const list = Array.isArray(boss.passive.tricks) ? boss.passive.tricks.slice() : [];
+  const passiveTrick = Object.assign({}, trick, { passiveTrigger:true });
+  delete passiveTrick.castTime;
+  passiveTrick.cd = passiveTrick.cd || 14;
+  if(!list.some(x => x.name === passiveTrick.name)) list.push(passiveTrick);
+  boss.passive.tricks = list;
+}
+function moveBossSupportSkillsToPassive(boss){
+  if(!boss || !Array.isArray(boss.skills)) return;
+  const kept = [];
+  for(const sk of boss.skills){
+    if(isBossSupportSkill(sk)) addBossPassiveTrick(boss, sk);
+    else kept.push(sk);
+  }
+  boss.skills = kept;
+}
 /* 各档位 boss 想要的"辅助读条技"数量(召唤/buff/治疗 的多样性) */
 function bossSupportVariety(ctx){
   if(ctx.kind === 'raid') return ctx.final ? 3 : 2;
@@ -3907,18 +4003,18 @@ function bossSupportVariety(ctx){
   if(ctx.kind === 'map') return (ctx.final && (ctx.lvl || 1) >= 50) ? 2 : 1;
   return 1;
 }
-/* 生成专属的"读条"辅助技:召唤 / buff / 治疗(均带 castTime,会走施法条) */
-function makeBossCastSkill(type, theme, ctx){
+/* 生成专属的被动辅助技:召唤 / buff / 治疗(挂到 passive.tricks,不占 BOSS 读条技能栏) */
+function makeBossPassiveSkill(type, theme, ctx){
   const strong = (ctx.lvl || 1) >= 70 || ctx.final;
-  if(type === 'summon') return { name:'召集援军', icon:'📯', type:'summon', desc:'读条召唤援军助战', castTime:2.8, cd:18, summonCount: strong ? 2 : 1, summonTheme:'soldier' };
-  if(type === 'heal')   return { name:'血肉愈合', icon:'💚', type:'heal',   desc:'读条恢复大量生命', castTime:2.6, cd:17, heal: strong ? 0.16 : 0.10 };
-  // buff:在"强化普攻"的三种风味里随机一种(增伤+攻速 / 普攻暴击 / 普攻追击),让 BOSS 的狂暴窗口更有辨识度
+  const token = bossSignatureToken(ctx.name);
+  if(type === 'summon') return { name:`${token}·战场号令`, icon:'📯', type:'summon', desc:'被动召唤援军助战', cd:18, summonCount: strong ? 2 : 1, summonTheme:bossSummonThemeFor({ name:ctx.name, skills:[{ name:theme }] }) };
+  if(type === 'heal')   return { name:`${token}·生命回涌`, icon:'💚', type:'heal', desc:'被动恢复生命', cd:17, healPct: strong ? 0.12 : 0.08 };
   const buffKits = [
-    { name:'狂暴号令', icon:'💢', type:'buff', desc:'读条强化攻击与攻速', castTime:2.3, cd:16, atkBuffSecs:8, atkBuffPct: strong ? 28 : 20, spdBuffSecs:8, spdBuffPct: strong ? 18 : 12 },
-    { name:'致命专注', icon:'🎯', type:'buff', desc:'读条大幅提高普攻暴击', castTime:2.3, cd:16, critBuffSecs:8, critBuffPct: strong ? 35 : 24, atkBuffSecs:8, atkBuffPct: strong ? 16 : 10 },
-    { name:'连击姿态', icon:'⚔️', type:'buff', desc:'读条后接下来数次普攻追击', castTime:2.3, cd:17, nextDouble: strong ? 3 : 2, spdBuffSecs:6, spdBuffPct: strong ? 14 : 10 },
+    { name:`${token}·狂怒节奏`, icon:'💢', type:'buff', desc:'被动强化攻击与攻速', cd:16, atkBuffSecs:8, atkBuffPct: strong ? 28 : 20, spdBuffSecs:8, spdBuffPct: strong ? 18 : 12 },
+    { name:`${token}·致命凝视`, icon:'🎯', type:'buff', desc:'被动提高普攻暴击', cd:16, critBuffSecs:8, critBuffPct: strong ? 35 : 24, atkBuffSecs:8, atkBuffPct: strong ? 16 : 10 },
+    { name:`${token}·连击姿态`, icon:'⚔️', type:'buff', desc:'被动让普攻追加打击', cd:17, nextDouble: strong ? 3 : 2, spdBuffSecs:6, spdBuffPct: strong ? 14 : 10 },
   ];
-  return buffKits[Math.floor(Math.random() * buffKits.length)];
+  return buffKits[((ctx.lvl || 1) + String(ctx.name || '').length) % buffKits.length];
 }
 function bossControlScore(skill){
   let score = 0;
@@ -3987,9 +4083,9 @@ function ensureBossSkillDebuffs(sk, ctx){
   return skill;
 }
 function bossMinSkillCount(ctx){
-  if(ctx.kind === 'world') return (ctx.lvl || 1) >= 70 ? 5 : 4;
-  if(ctx.kind === 'raid') return ctx.final ? 4 : 3;
-  if(ctx.kind === 'dungeon') return ctx.final ? 3 : 2;
+  if(ctx.kind === 'world') return (ctx.lvl || 1) >= 70 ? 6 : 5;
+  if(ctx.kind === 'raid') return ctx.final ? 6 : 5;
+  if(ctx.kind === 'dungeon') return ctx.final ? 4 : 3;
   return (ctx.lvl||1) >= 70 ? 4 : ((ctx.lvl||1) >= 35 ? 3 : 2);
 }
 function bossSupportCount(ctx){
@@ -4011,6 +4107,7 @@ function chooseBossInterruptPolicy(skill, ctx){
 function makeBossRotationSupportSkill(theme, ctx){
   const base = BOSS_ROTATION_SUPPORT_SKILLS[theme] || BOSS_ROTATION_SUPPORT_SKILLS.brute;
   const skill = Object.assign({}, base);
+  skill.name = `${bossSignatureToken(ctx.name)}·${skill.name}`;
   if((ctx.lvl || 1) >= 70){
     if(skill.healPct) skill.healPct = +(skill.healPct + 0.02).toFixed(3);
     if(skill.shieldPct) skill.shieldPct = +(skill.shieldPct + 0.02).toFixed(3);
@@ -4079,22 +4176,23 @@ function normalizeBossSkillProfile(skill, ctx, idx, total){
 function ensureBossRotationMix(boss, ctx){
   const theme = inferBossTheme(ctx.name, boss.skills?.[0] || { name: ctx.name });
   boss.skills = boss.skills || [];
-  if((ctx.lvl || 1) >= 18 && !boss.skills.some(isBossSupportSkill)){
+  moveBossSupportSkillsToPassive(boss);
+  if((ctx.lvl || 1) >= 18){
     const supportSkill = makeBossRotationSupportSkill(theme, ctx);
-    boss.skills.splice(Math.min(1, boss.skills.length), 0, supportSkill);
+    addBossPassiveTrick(boss, supportSkill);
   }
-  // 按档位补齐 召唤 / buff / 治疗 读条辅助技,丰富 boss 循环(总辅助技数量受 variety 限制,避免一直读条不攻击)
+  // 召唤 / buff / 治疗只进入被动技巧池,不再污染读条技能栏。
   if((ctx.lvl || 1) >= 30){
     const variety = bossSupportVariety(ctx);
     const present = () => ({
-      summon: boss.skills.some(s => s.summonCount || s.type === 'summon'),
-      buff:   boss.skills.some(s => s.atkBuffSecs || s.spdBuffSecs || s.defBuffSecs || s.drBuffSecs || s.critBuffSecs || s.leechBuffSecs),
-      heal:   boss.skills.some(s => s.type === 'heal' || s.healPct),
+      summon: (boss.passive?.tricks || []).some(s => s.summonCount || s.type === 'summon'),
+      buff:   (boss.passive?.tricks || []).some(s => s.atkBuffSecs || s.spdBuffSecs || s.defBuffSecs || s.drBuffSecs || s.critBuffSecs || s.leechBuffSecs || s.nextDouble),
+      heal:   (boss.passive?.tricks || []).some(s => s.type === 'heal' || s.healPct),
     });
     for(const t of ['summon', 'buff', 'heal']){
-      if(boss.skills.filter(isBossSupportSkill).length >= variety) break;
+      if((boss.passive?.tricks || []).filter(isBossSupportSkill).length >= variety) break;
       if(present()[t]) continue;
-      boss.skills.splice(Math.min(2, boss.skills.length), 0, makeBossCastSkill(t, theme, ctx));
+      addBossPassiveTrick(boss, makeBossPassiveSkill(t, theme, ctx));
     }
   }
   boss.skills = (boss.skills || []).map((sk, idx, arr) => normalizeBossSkillProfile(sk, ctx, idx, arr.length));
@@ -4126,17 +4224,14 @@ function ensureBossRotationMix(boss, ctx){
 }
 function ensureBossSkills(boss, ctx){
   ensureBossPassivePressure(boss, ctx);
+  moveBossSupportSkillsToPassive(boss);
   boss.skills = (boss.skills || []).map(sk => ensureBossSkillDebuffs(sk, ctx));
   const theme = inferBossTheme(ctx.name, boss.skills[0] || { name: ctx.name });
-  const templates = GENERATED_BOSS_SKILLS[theme] || GENERATED_BOSS_SKILLS.brute;
   let idx = 0;
-  while(boss.skills.length < bossMinSkillCount(ctx) && idx < templates.length * 2){
-    const tpl = templates[idx % templates.length];
+  while(boss.skills.length < bossMinSkillCount(ctx) && idx < 16){
+    const extra = makeBossSignatureSkill(theme, ctx.name, idx, ctx);
     idx++;
-    if(boss.skills.some(sk => sk.name === tpl.name)) continue;
-    const extra = Object.assign({}, tpl);
-    if((ctx.lvl||1) >= 70) extra.mul += 1;
-    else if((ctx.lvl||1) >= 40) extra.mul += 0.5;
+    if(boss.skills.some(sk => sk.name === extra.name)) continue;
     boss.skills.push(ensureBossSkillDebuffs(extra, ctx));
   }
   ensureBossRotationMix(boss, ctx);
@@ -5638,11 +5733,9 @@ function addFinalBossPhaseKit(fb, opts){
   const maxMul = Math.max(minMul, ...fb.skills.map(s => s.mul || 0));
   const ultMul = Math.max(minMul, +(maxMul * (opts.ultScale || 0.5)).toFixed(1));
   const st = bossSummonThemeFor(fb);
-  fb.skills.push(
-    mkBuffSkill('狂暴形态', '😤', '进入狂暴:攻击/攻速/减伤大幅提升', { hpBelow:0.6, atkBuffSecs:14, atkBuffPct:opts.atkPct||42, spdBuffSecs:14, spdBuffPct:opts.spdPct||28, drBuffSecs:14, drBuffPct:opts.drPct||0.22, cd:24 }),
-    mkSummonSkill('召唤援军', '📣', '召唤爪牙助战并护盾护体', { hpBelow:0.35, summonCount:opts.summonCount||2, summonTheme:st, shieldPct:opts.shieldPct||0.2, cd:26 }),
-    mkDmgSkill('终极爆发', '💥', ultMul, 2.6, { hpBelow:0.3, aoe:true, dot:true, fear:1900, brittle:true, alwaysCrit:true, cd:16 })
-  );
+  addBossPassiveTrick(fb, mkBuffSkill(`${bossSignatureToken(fb.name)}·狂暴形态`, '😤', '阶段被动:攻击/攻速/减伤大幅提升', { hpBelow:0.6, atkBuffSecs:14, atkBuffPct:opts.atkPct||42, spdBuffSecs:14, spdBuffPct:opts.spdPct||28, drBuffSecs:14, drBuffPct:opts.drPct||0.22, cd:24 }));
+  addBossPassiveTrick(fb, mkSummonSkill(`${bossSignatureToken(fb.name)}·召唤援军`, '📣', '阶段被动:召唤爪牙助战并护盾护体', { hpBelow:0.35, summonCount:opts.summonCount||2, summonTheme:st, shieldPct:opts.shieldPct||0.2, cd:26 }));
+  fb.skills.push(mkDmgSkill(`${bossSignatureToken(fb.name)}·终极爆发`, '💥', ultMul, 2.6, { hpBelow:0.3, aoe:true, dot:true, fear:1900, brittle:true, alwaysCrit:true, cd:16 }));
 }
 /* 给所有"老团本"尾王注入阶段技(在 createEpicRaidCatalog 之前调用,使史诗团版同步继承) */
 function injectOldRaidPhaseKits(){
@@ -5693,6 +5786,7 @@ function createEpicRaidCatalog() {
         if (typeof out.castTime === 'number') out.castTime = +(out.castTime + Math.min(0.4, 0.1 + prog.order * 0.01)).toFixed(1);
         return out;
       });
+      moveBossSupportSkillsToPassive(boss);
       return boss;
     });
     enhanceBossCollection(clone.bosses, { kind:'raid', lvl:clone.powerLvl, finalAt:(clone.bosses.length - 1) });
@@ -5780,10 +5874,11 @@ function createEpic5DungeonCatalog() {
       boss.skills.push(mkDmgSkill('狂怒重击', '💢', +(_mm * 0.7).toFixed(1), 2.2, { aoe:true, dot:true, weaken:true, cd:11 }));
       boss.skills.push(mkDmgSkill('湮灭压制', '🌀', +(_mm * 0.6).toFixed(1), 2.4, { silence:1800, stun:1300, cripple:true, cd:12 }));
       if (isFinal) {
-        boss.skills.push(mkBuffSkill('狂暴形态', '😤', '狂暴:攻击/攻速/减伤提升', { hpBelow:0.6, atkBuffSecs:12, atkBuffPct:35, spdBuffSecs:12, spdBuffPct:24, drBuffSecs:12, drBuffPct:0.2, cd:22 }));
-        boss.skills.push(mkSummonSkill('召唤援军', '📣', '召唤爪牙助战并护盾护体', { hpBelow:0.35, summonCount:2, summonTheme:_st, shieldPct:0.16, cd:24 }));
-        boss.skills.push(mkDmgSkill('终极爆发', '💥', +(_mm * 0.8).toFixed(1), 2.6, { hpBelow:0.3, aoe:true, dot:true, fear:1700, brittle:true, alwaysCrit:true, cd:14 }));
+        addBossPassiveTrick(boss, mkBuffSkill(`${bossSignatureToken(boss.name)}·狂暴形态`, '😤', '阶段被动:攻击/攻速/减伤提升', { hpBelow:0.6, atkBuffSecs:12, atkBuffPct:35, spdBuffSecs:12, spdBuffPct:24, drBuffSecs:12, drBuffPct:0.2, cd:22 }));
+        addBossPassiveTrick(boss, mkSummonSkill(`${bossSignatureToken(boss.name)}·召唤援军`, '📣', '阶段被动:召唤爪牙助战并护盾护体', { hpBelow:0.35, summonCount:2, summonTheme:_st, shieldPct:0.16, cd:24 }));
+        boss.skills.push(mkDmgSkill(`${bossSignatureToken(boss.name)}·终极爆发`, '💥', +(_mm * 0.8).toFixed(1), 2.6, { hpBelow:0.3, aoe:true, dot:true, fear:1700, brittle:true, alwaysCrit:true, cd:14 }));
       }
+      moveBossSupportSkillsToPassive(boss);
       return boss;
     });
     enhanceBossCollection(clone.bosses, { kind:'dungeon', lvl:clone.reqLvl, finalAt:(clone.bosses.length - 1) });

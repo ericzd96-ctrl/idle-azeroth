@@ -861,6 +861,12 @@ function attachFocusBossHover(focus) {
       if (p.dmgReduction) html += '<div>🛡️ 减伤 +'+(p.dmgReduction*100)+'%</div>';
       if (p.atkBonus) html += '<div>⚔️ 攻击 +'+(p.atkBonus*100)+'%</div>';
       if (p.leech) html += '<div>🩸 吸血 +'+(p.leech*100)+'%</div>';
+      if (p.tricks?.length) {
+        html += '<div style="margin-top:3px;color:#93c5fd">被动触发:</div>';
+        p.tricks.forEach(s => {
+          html += bossSkillLineHtml(s, { iconSize:16, tagColor:'#93c5fd', showCast:false });
+        });
+      }
     }
     const tip = $('compare-tip');
     tip.querySelector('.compare-head').innerHTML = html;
@@ -2832,6 +2838,14 @@ function buildDungeonInfoHtml(dg) {
       html += `<div style="margin:0 0 8px 8px">`;
       bossData.skills.forEach(s => {
         html += bossSkillLineHtml(s, { iconSize: 15, tagColor: '#fbbf24' });
+      });
+      html += `</div>`;
+    }
+    if (bossData?.passive?.tricks?.length) {
+      html += `<div style="margin:0 0 8px 8px">`;
+      html += `<div style="font-size:11px;color:#93c5fd;margin-bottom:3px">被动触发:</div>`;
+      bossData.passive.tricks.forEach(s => {
+        html += bossSkillLineHtml(s, { iconSize: 15, tagColor: '#93c5fd', showCast:false });
       });
       html += `</div>`;
     }

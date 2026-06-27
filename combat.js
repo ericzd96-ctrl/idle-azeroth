@@ -2411,6 +2411,19 @@ function getReadyMonsterSupportSkill(mon, now){
   });
   return pickWeightedSkill(scored);
 }
+function isPassiveMonsterSupportTrick(skill){
+  if(!skill) return false;
+  return !!(skill.passiveTrigger || skill.type === 'support' || skill.type === 'buff' || skill.type === 'summon' || skill.type === 'heal' ||
+    skill.healPct || skill.shieldPct || skill.summonCount || skill.atkBuffSecs || skill.spdBuffSecs ||
+    skill.defBuffSecs || skill.drBuffSecs || skill.critBuffSecs || skill.leechBuffSecs || skill.nextDouble);
+}
+function bossTrickAvailable(mon, trick, hpFrac, now){
+  if(!trick) return false;
+  if(typeof trick.hpBelow === 'number' && hpFrac > trick.hpBelow) return false;
+  if(typeof trick.hpAbove === 'number' && hpFrac < trick.hpAbove) return false;
+  if(isPassiveMonsterSupportTrick(trick) && !canUseMonsterSupportSkill(mon, trick, now || Date.now())) return false;
+  return true;
+}
 function monsterSkillDangerLevel(skill){
   if(!skill) return 0;
   if(skill.threat === 'extreme') return 2;
@@ -3228,7 +3241,7 @@ function tickBattle(now){
   if(mon.isBoss&&!bossCasting){let bossData=getMonsterBossData(mon);
     if(!bossData){const map=MAPS.find(m=>m.key===state.currentMap);if(map?.boss)bossData=map.boss;}
     // 阶段技能:按 BOSS 当前血量% 过滤可用技能(sk.hpBelow=血量跌破该比例才解锁的阶段技;sk.hpAbove=仅高血量时使用的开场技);首次跨过新阶段线→立即施放该阶段技并播报
-    const _allBossSkills=bossData?.skills||[];
+    const _allBossSkills=(bossData?.skills||[]).filter(sk => !isPassiveMonsterSupportTrick(sk));
     const _hpFrac=mon.hpMax>0?mon.hp/mon.hpMax:1;
     let _forcedPhaseSk=null;
     for(const _s of _allBossSkills){ if(typeof _s.hpBelow==='number'&&_hpFrac<=_s.hpBelow){ mon._phasesSeen=mon._phasesSeen||{}; if(!mon._phasesSeen[_s.name]){ mon._phasesSeen[_s.name]=1; _forcedPhaseSk=_s; } } }
@@ -3239,44 +3252,49 @@ function tickBattle(now){
     const skillCd=Math.max(3,Math.floor(rawCd*0.6));   // CD加速40%,但最低3秒间隔
     if(_allBossSkills.length&&now-lastBossSkill>skillCd*1000){const sk=_pickSk;let castTime=sk.castTime!==undefined?sk.castTime:2;const instantChance=typeof mon.instantCastChance==='number'?mon.instantCastChance:(mon.instantCast?0.35:0);let instant=instantChance>0&&Math.random()<instantChance;if(instant&&isEmpoweredBossCast(sk))instant=false;/* 大伤害/灭团技(蓄力大招)绝不瞬发,必须读条可打断 */if(instant)castTime=0;bossCasting={bossName:mon.bossName,name:sk.name,icon:sk.icon,type:sk.type,heal:sk.heal,healPct:sk.healPct,mul:sk.mul,dotSkill:sk.dotSkill,dotSecs:sk.dotSecs,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,spdBuffSecs:sk.spdBuffSecs,spdBuffPct:sk.spdBuffPct,atkBuffSecs:sk.atkBuffSecs,atkBuffPct:sk.atkBuffPct,defBuffSecs:sk.defBuffSecs,defBuffPct:sk.defBuffPct,drBuffSecs:sk.drBuffSecs,drBuffPct:sk.drBuffPct,shieldPct:sk.shieldPct,critBuffSecs:sk.critBuffSecs,critBuffPct:sk.critBuffPct,leechBuffSecs:sk.leechBuffSecs,leechBuffPct:sk.leechBuffPct,summonCount:sk.summonCount,summonTheme:sk.summonTheme,aoe:sk.aoe,silence:sk.silence,disarm:sk.disarm,fear:sk.fear,freeze:sk.freeze,cripple:sk.cripple,decay:sk.decay,wither:sk.wither,manaDrain:sk.manaDrain,bomb:sk.bomb,plague:sk.plague,bleed:sk.bleed,brittle:sk.brittle,soulDrain:sk.soulDrain,soulLink:sk.soulLink,revenge:sk.revenge,frenzy:sk.frenzy,decay2:sk.decay2,mirror:sk.mirror,threat:sk.threat,interruptPolicy:sk.interruptPolicy,_empowered:isEmpoweredBossCast(sk),startTime:now,duration:castTime*1000};const _bt=bossCastTargetInfo(sk,now);bossCasting._targetDesc=_bt.desc;bossCasting._target=_bt.target;const _emp=!instant&&isEmpoweredBossCast(sk)&&sk.interruptPolicy!=='none';const _aoeLog=(sk.type!=='heal'&&sk.type!=='buff'&&!sk.summonCount&&typeof sk.mul==='number'&&sk.mul>0)?(sk.aoe?' [🌀群体]':' [🎯单体]'):'';log('💀 '+mon.bossName+(instant?' 瞬发 ':' 开始施放 ')+sk.name+_aoeLog+'!'+(instant?'(无法打断)':(_emp?' ⚡蓄力大招—打断可造成破绽!':'')),'bad');lastBossSkill=now;bossSkillIdx++;}
     // BOSS技巧(独立冷却,避免开场和支援技能一起连发)
-    const tricks=bossTrickList(bossData);
+    const tricks=bossTrickList(bossData).filter(trick => bossTrickAvailable(mon, trick, _hpFrac, now));
     const supportRecently = (mon._lastSupportSkill || 0) > 0 && now - mon._lastSupportSkill < 4500;
     const trickReady = tricks.length && now >= (mon._nextTrickAt || 0) && !supportRecently;
     if(tricks.length&&trickReady){
       const trick=tricks[Math.floor(Math.random()*tricks.length)];
-      log('⚡ '+mon.bossName+' 使用技巧 '+trick.icon+trick.name+'!','bad');
+      const passiveSupport = isPassiveMonsterSupportTrick(trick);
+      log('⚡ '+mon.bossName+(passiveSupport?' 被动触发 ':' 使用技巧 ')+(trick.icon||'')+trick.name+'!','bad');
       mon._lastTrick=now;
       const enrageWindow = mon.hp < mon.hpMax * 0.35;
       mon._nextTrickAt = now + rng(enrageWindow ? 9000 : 12000, enrageWindow ? 12000 : 16000);
-      if(trick.nextDouble){
-        mon._nextAtkDouble=(mon._nextAtkDouble||0)+trick.nextDouble;
-        setMonsterTrickAura(mon,'nextDouble',trick,0,{stacks:mon._nextAtkDouble, desc: trick.nextDouble>1 ? `接下来 ${trick.nextDouble} 次攻击会追加打击` : '下一次攻击会追加打击'});
-      }
-      if(trick.atkBuff){
-        mon._trickAtkBuff=now+trick.atkBuff*1000;
-        mon._trickAtkPct=trick.atkBuffPct||50;
-        setMonsterTrickAura(mon,'atk',trick,mon._trickAtkBuff);
-      }
-      if(trick.spdBuff){
-        mon._trickSpdBuff=now+trick.spdBuff*1000;
-        mon._trickSpdPct=trick.spdBuffPct||50;
-        setMonsterTrickAura(mon,'spd',trick,mon._trickSpdBuff);
-      }
-      if(trick.defBuff){
-        mon._trickDefBuff=now+trick.defBuff*1000;
-        mon._trickDefPct=trick.defBuffPct||50;
-        setMonsterTrickAura(mon,'def',trick,mon._trickDefBuff);
-      }
-      if(trick.healPct)mon.hp=Math.min(mon.hpMax,mon.hp+bossSkillHealAmount(mon, trick.healPct));
-      if(trick.leechBuff){
-        mon._trickLeech=now+trick.leechBuff*1000;
-        mon._trickLeechPct=trick.leechBuffPct||20;
-        setMonsterTrickAura(mon,'leech',trick,mon._trickLeech);
-      }
-      if(trick.critBuff){
-        mon._trickCrit=now+trick.critBuff*1000;
-        mon._trickCritPct=trick.critBuffPct||100;
-        setMonsterTrickAura(mon,'crit',trick,mon._trickCrit);
+      if(passiveSupport){
+        applyMonsterSupportSkill(mon, trick, now, { announce:false });
+      } else {
+        if(trick.nextDouble){
+          mon._nextAtkDouble=(mon._nextAtkDouble||0)+trick.nextDouble;
+          setMonsterTrickAura(mon,'nextDouble',trick,0,{stacks:mon._nextAtkDouble, desc: trick.nextDouble>1 ? `接下来 ${trick.nextDouble} 次攻击会追加打击` : '下一次攻击会追加打击'});
+        }
+        if(trick.atkBuff){
+          mon._trickAtkBuff=now+trick.atkBuff*1000;
+          mon._trickAtkPct=trick.atkBuffPct||50;
+          setMonsterTrickAura(mon,'atk',trick,mon._trickAtkBuff);
+        }
+        if(trick.spdBuff){
+          mon._trickSpdBuff=now+trick.spdBuff*1000;
+          mon._trickSpdPct=trick.spdBuffPct||50;
+          setMonsterTrickAura(mon,'spd',trick,mon._trickSpdBuff);
+        }
+        if(trick.defBuff){
+          mon._trickDefBuff=now+trick.defBuff*1000;
+          mon._trickDefPct=trick.defBuffPct||50;
+          setMonsterTrickAura(mon,'def',trick,mon._trickDefBuff);
+        }
+        if(trick.healPct)mon.hp=Math.min(mon.hpMax,mon.hp+bossSkillHealAmount(mon, trick.healPct));
+        if(trick.leechBuff){
+          mon._trickLeech=now+trick.leechBuff*1000;
+          mon._trickLeechPct=trick.leechBuffPct||20;
+          setMonsterTrickAura(mon,'leech',trick,mon._trickLeech);
+        }
+        if(trick.critBuff){
+          mon._trickCrit=now+trick.critBuff*1000;
+          mon._trickCritPct=trick.critBuffPct||100;
+          setMonsterTrickAura(mon,'crit',trick,mon._trickCrit);
+        }
       }
     }}
   if(state.hp<=0)onHeroDeath();
