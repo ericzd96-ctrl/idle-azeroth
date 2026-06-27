@@ -788,17 +788,16 @@ function renderItemDetail(itemId) {
       <div class="muted" style="font-size:11px">${SLOT_INFO[it.slot].label} · [${it.rarityName}]${it.epicRaid?' · <span style="color:#22c55e">[史诗团本]</span>':''}${it.reqLvl?' · Lv.'+it.reqLvl:''}${found.source==='equip'?' · <span style="color:var(--accent)">已装备</span>':''}</div>
     </div>`;
   const setHtml = renderItemSetEffectsHtml(it);
-  // 基础属性
-  const mainStatKey = SLOT_INFO[it.slot]?.mainStat;
+  // 基础属性:基础维度(攻击/防御/力量/敏捷/智力/精神/耐力/生命)= 主属性;暴击/暴伤/吸血/全能/精通/极速/闪避/回复 = 随机副属性
+  const SECONDARY_STAT_KEYS = ['crit','critd','critdPct','leech','vers','haste','mastery','dodge','reg'];
   const baseStats = Object.entries(it.stats||{}).map(([k,v]) => {
-    const isMain = k === mainStatKey;
+    const isMain = !SECONDARY_STAT_KEYS.includes(k);
     const isLocked = it._lockedStats && it._lockedStats.includes(k);
     const tagHtml = isMain
       ? '<span class="stat-type-tag main">主属性</span>'
       : '<span class="stat-type-tag sec">副属性</span>';
-    const lockHtml = !isMain
-      ? `<button class="lock-btn${isLocked?' locked':''}" data-action="lockstat" data-id="${it.id}" data-sk="${k}" title="${isLocked?'已锁定：重洗时保留':'点击锁定：重洗时保留此属性'}">${isLocked?'🔒':'🔓'}</button>`
-      : '';
+    // 主属性现在也带品质浮动(×0.8~1.2),重洗会重掷,故同样可锁定保留
+    const lockHtml = `<button class="lock-btn${isLocked?' locked':''}" data-action="lockstat" data-id="${it.id}" data-sk="${k}" title="${isLocked?'已锁定：重洗时保留':'点击锁定：重洗时保留此属性'}">${isLocked?'🔒':'🔓'}</button>`;
     return `<div class="stat-row">${tagHtml}${lockHtml}${fmtStatName(k)} <b>+${v}${isPercentStat(k)?'%':''}</b></div>`;
   }).join('');
   // 词缀
