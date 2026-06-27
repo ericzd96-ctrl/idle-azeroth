@@ -3921,6 +3921,158 @@ const BOSS_SIGNATURE_SKILL_KITS = {
     { suffix:'破甲终结', icon:'💥', desc:'高危破甲伤害', mul:8.8, castTime:4.0, sunder:true, alwaysCrit:true },
   ],
 };
+const BOSS_CANONICAL_SKILL_NAMES = {
+  鲁西弗隆:['鲁西弗隆的诅咒','暗影震击','末日降临','统御之言','暗影冲击','末日诅咒'],
+  玛格曼达:['恐慌','熔岩喷溅','狂乱','火焰吐息','熔岩炸弹','熔火护甲'],
+  基赫纳斯:['基赫纳斯的诅咒','火焰之雨','暗影箭','熔岩护盾','烈焰冲击','火焰新星'],
+  加尔:['反魔法脉冲','大地震颤','岩浆镣铐','岩石投掷','地震','岩浆爆发'],
+  迦顿男爵:['活体炸弹','地狱火','法力燃烧','熔岩爆裂','爆燃','烈焰之环'],
+  拉格纳罗斯:['萨弗拉斯之击','熔岩爆裂','岩浆喷发','元素火焰','熔岩冲击','火焰之子','炎魔之怒','烈焰喷发'],
+  狂野的拉佐格尔:['烈焰吐息','战争践踏','火球术','龙人打击','控制宝珠','扫尾'],
+  勒什雷尔:['暗影烈焰','冲击波','致死打击','龙翼打击','狂乱','震荡猛击'],
+  克洛玛古斯:['龙血之痛','点燃躯体','时间流逝','冰霜灼烧','腐蚀酸液','多彩吐息'],
+  堕落的瓦拉斯塔兹:['燃烧刺激','火焰新星','顺劈斩','烈焰吐息','红龙精华','生命灼烧'],
+  奈法利安:['暗影烈焰','龙族召唤','暗影箭雨','恐惧咆哮','群体暗影箭','奈法利安之怒','黑龙之息','暗影烈焰吐息'],
+  阿努布雷坎:['穿刺','腐肉虫群','虫群风暴','召唤地穴卫士','地穴甲壳','酸液喷溅'],
+  瘟疫使者诺斯:['瘟疫使者的诅咒','闪现','召唤骷髅','瘟疫','亡者诅咒','暗影震击'],
+  肮脏的希尔盖:['喷涌','疾病之云','法术干扰','腐烂','天灾之握','瘟疫爆发'],
+  塔迪乌斯:['极性转换','闪电链','球状闪电','电荷过载','雷霆震击','能量涌动'],
+  帕奇维克:['仇恨打击','狂暴','憎恶重殴','腐臭横扫','碾压','撕裂重击'],
+  萨菲隆:['冰霜光环','生命吸取','寒冰箭雨','冰霜吐息','寒冰爆裂','死亡严寒'],
+  克尔苏加德:['冰霜冲击','暗影裂隙','寒冰箭','法力爆炸','寒冰皇冠守护者','亡者大军','巫妖之怒','冰霜爆破'],
+  午夜:['冲锋','暗影践踏','击倒','马蹄践踏','狂野奔袭','暗影冲击'],
+  猎手阿图门:['暗影顺劈','无形诅咒','暗影冲锋','缴械','诅咒','骑乘冲锋'],
+  莫罗斯:['锁喉','致盲','凿击','消失','致残打击','暗杀'],
+  馆长:['奥术弹幕','唤醒','仇恨箭','能量过载','电弧','奥术爆发'],
+  麦迪文:['奥术飞弹','火焰之雨','变形术','乌鸦形态','奥术弹幕','魔爆术'],
+  玛克扎尔王子:['暗影新星','地狱火','魔能灌注','暗言术:痛','恐惧','军团之怒','灵魂震击','暗影震荡'],
+  卡雷苟斯:['奥术打击','冰霜吐息','狂野魔法','奥术吐息','冰霜之触','法力灌注'],
+  布鲁塔卢斯:['流星猛击','燃烧','践踏','顺劈斩','陨石打击','灼热创伤'],
+  穆鲁:['负能量','黑暗','暗影脉冲','熵','暗影之怒','虚空哨兵'],
+  艾瑞达双子:['暗影之刃','烈焰灼烧','暗影新星','烈焰共鸣','暗影缠结','双子爆裂'],
+  基尔加丹:['灵魂鞭笞','火焰之花','军团闪电','末日决战','欺诈者之触','末日火雨','黑暗','千魂之暗'],
+  烈焰巨兽:['火焰喷射','导弹弹幕','烈焰喷射器','炮击','焦油','攻城撞击'],
+  'XT-002拆解者':['灼热之光','重力炸弹','鼓膜破裂','心脏暴露','拆解','地震践踏'],
+  钢铁议会:['闪电链','过载','熔化护甲','符文打击','静电瓦解','风暴之锤'],
+  维扎克斯将军:['暗影撞击','灼热烈焰','黑暗涌动','无面者印记','无面者之怒','虚空'],
+  芙蕾雅:['日光术','自然之怒','生命束缚','荆棘缠绕','生命凋零','古树震击'],
+  '尤格-萨隆':['理智之触','精神鞭笞','疯狂凝视','暗影信标','疯狂','千喉之兽','尤格萨隆之影','疯狂诱导'],
+  '暮光龙·萨维安娜':['烈焰吐息','燃烧印记','飞扑','火焰之息','龙翼打击','暮光吐息'],
+  巴尔萨鲁斯:['暮光之刃','分裂','暗影烈焰','暮光之息','暮光屏障','暮光切割'],
+  扎里斯利安将军:['破甲顺劈','恐吓怒吼','召唤暮光传送门','暮光战吼','暮光冲锋','龙炎斩'],
+  海里昂:['暮光切割','流星打击','燃烧印记','灵魂吞噬','虚空之息','暮光毁灭','暮光领域','暮光脉动'],
+  玛洛加尔领主:['骨刺坟墓','白骨风暴','冷焰','军刀猛刺','骨刺','白骨旋风'],
+  死亡使者萨鲁法尔:['沸血','血魄符文','堕落勇士印记','血兽','鲜血之力','死亡之握'],
+  普崔塞德教授:['不稳定的软泥怪','延展黏液','窒息毒气弹','突变瘟疫','瘟疫爆发','突变'],
+  辛达苟萨:['冰霜吐息','冰霜信标','冰霜炸弹','寒冰坟墓','冰冷之握','秘法连击'],
+  鲜血女王兰娜瑟尔:['鲜血镜像','黑暗堕落契约','暮光血箭','蜂拥之影','血色狂宴','女王之咬'],
+  巫妖王:['霜之哀伤','污染','灵魂收割','冷酷严冬','召唤瓦格里','亡者大军','巫妖王之怒','收割灵魂'],
+  预言者斯克拉姆:['奥术爆炸','心灵控制','大地震击','闪现','心智震爆','幻象分身'],
+  战争守卫沙尔图拉:['旋风斩','击倒','顺劈斩','锋刃狂舞','破甲攻击','狂怒'],
+  顽强的范克瑞斯:['召唤虫群','致死伤口','沙尘喷吐','沙尘毒刺','毒性冲锋','虫群吞噬'],
+  双子皇帝:['治疗兄弟','暗影箭暴','奥术爆炸','上钩拳','皇权共鸣','其拉斩决'],
+  克苏恩:['眼棱','黑暗闪耀','巨眼触须','胃酸','湮灭视线','古神腹鸣','疯狂低语','巨眼凝视'],
+  不稳定的海度斯:['水之墓','不稳定之毒','水箭齐射','冰霜震击','净化光环','毒性震击'],
+  盲眼者莱欧瑟拉斯:['旋风斩','混乱冲击','内心恶魔','恶魔形态','致命投掷','盲眼怒火'],
+  深水领主卡拉瑟雷斯:['灾难之箭','多重射击','治疗波','潮汐涌动','深水之墓','水箭齐射'],
+  瓦丝琪:['射击','多重射击','静电充能','叉状闪电','毒性孢子','盘牙召唤','多重射击齐射'],
+  空灵机甲:['奥术宝珠','重击','击退','奥术过载','虚空震击','能量喷射'],
+  奥:['烈焰打击','火焰羽毛','重生','流星','凤凰烈焰','俯冲'],
+  大星术师索兰莉安:['奥术飞弹','星术师之怒','星界传送','奥术爆炸','群星坍缩','虚空星辰'],
+  凯尔萨斯·逐日者:['炎爆术','奥术扰乱','烈焰风暴','心灵控制','凤凰重生','引力失效','震爆'],
+  '雷基·冬寒':['死亡凋零','冰霜新星','冰箭','寒冰箭雨','凛冬寒风','巫妖之触'],
+  安纳塞隆:['腐臭蜂群','催眠','吸血光环','地狱火','腐臭撕咬','恐惧'],
+  阿兹加洛:['厄运','顺劈斩','沉默','火焰之雨','军团之怒','末日守卫'],
+  阿克蒙德:['空气爆裂','毁灭之火','恐惧','灵魂充能','死亡之指','末日烈焰','军团之握'],
+  高阶督军纳因图斯:['穿刺之脊','潮汐之盾','针刺之雨','海潮冲击','破浪斩','深海投掷'],
+  灵魂之匣:['灵魂震击','灵魂尖啸','怨恨','欲望之触','痛苦之怒','灵魂消耗'],
+  莎赫拉丝主母:['致命吸引','军刀猛刺','沉默尖啸','光束','暗影之拥','魅惑'],
+  伊利达雷议会:['奉献','暴风雪','烈焰风暴','治疗之环','审判','毒药瓶'],
+  伊利丹·怒风:['剪切','烈焰冲撞','暗影魔','眼棱','恶魔变形','埃辛诺斯之焰','背叛者之怒'],
+  贝丝缇拉克:['流星燃烧','烬网喷吐','燃烧酸液','寡妇之吻','熔火蛛网','灰烬毒液'],
+  熔岩之王莱奥利斯:['震荡践踏','火山喷发','熔岩流','践踏','熔岩护甲','黑曜猛击'],
+  巴尔洛戈斯:['折磨','水晶碎片','地狱火刃','烈焰之刃','倒计时','灭火'],
+  炎鹰阿莱索德:['火焰风暴','炽热爪击','烈焰之羽','燃烧之爪','火焰旋风','飞掠'],
+  赞达拉守卫贾林:['穿刺长矛','沙尘旋风','野蛮冲锋','赞达拉战吼','长矛投掷','裂伤'],
+  风暴祭司莱杉:['闪电风暴','电弧闪电','雷霆震击','静电冲击','风暴图腾','导电水域'],
+  三头巨龙米伽拉:['冰霜吐息','烈焰吐息','毒性吐息','狂乱','剧毒撕咬','冰封之头'],
+  织雾者吉安娜:['寒冰箭','冰霜之环','寒冰屏障','暴风雪','水元素','深度冻结'],
+  雷电之王雷神:['雷霆打击','静电震击','闪电鞭笞','斩首','超载','雷神之怒','导电能量'],
+  晨曦荒野之莫戈尔:['腐蚀践踏','黑血爆发','大地裂变','暮光碾压','腐蚀之血','暗影践踏'],
+  亡语者:['虚空箭','暗影新星','暮光腐蚀','暮光召唤','暗言术:灭','黑暗祷言'],
+  死亡之翼背脊:['熔岩之触','灼热血浆','翻滚','爆裂触须','炽热之握','肌腱撕裂'],
+  瓦里奥那与塞拉图斯:['暮光吐息','黑暗昏迷','吞噬魔法','昏天暗地','双龙俯冲','暮光流星'],
+  死亡之翼·灭世者:['大灾变','元素箭','源质箭','灼热血浆','大决战','灭世烈焰','死亡之翼之怒','源质灾变'],
+  不洁之溢:['腐蚀喷吐','不洁爆发','污染之池','腐化之触','暗影喷涌','恶臭扩散'],
+  傲慢之煞:['傲慢爆发','自负','腐蚀牢笼','傲慢之击','膨胀的傲慢','腐化投射'],
+  钢铁巨像:['震荡波','迫击炮弹幕','激光灼烧','焦油爆裂','钢铁践踏','爆破冲击'],
+  达克沙将军:['战歌','旋风斩','破甲猛击','地狱咆哮之怒','战旗','毁灭打击'],
+  克拉希克综合体:['虫群指令','琥珀爆炸','音波共振','剧毒注射','寄生虫','甲壳硬化'],
+  加尔鲁什·地狱咆哮:['亵渎','旋风斩','亚煞极之触','钢铁之星','强化腐蚀','地狱咆哮之怒','绝望之握'],
+  钢铁掠袭者:['炮火','闪电冲刺','火炮弹幕','燃烧弹','毁灭冲击','空中阶段'],
+  寇莫克:['猛击','爆裂符文','邪能喷发','攫取之手','暗影能量','跃击'],
+  死眼基洛格:['死亡幻象','撕裂嚎叫','心脏打击','血液飞溅','邪能腐蚀','死亡凝视'],
+  邪能领主扎昆:['裂魂','毁灭之种','重砍','邪能水晶','污染之斧','灵魂裂隙'],
+  玛诺洛斯:['邪能地狱火','暗影之力','末日印记','凝视','军团召唤','巨刃连击'],
+  戈罗斯:['碎裂星辰','地狱火尖刺','熔火护甲','灼烧护甲','燃烧之雨','地狱火冲撞'],
+  恶魔审判官:['痛苦折磨','骨锯','暗影箭','折磨爆发','审判凝视','邪能喷射'],
+  莎萨拉恩女勋爵:['深渊之拥','鱼叉','水花飞溅','召唤海潮','静电新星','海妖之歌'],
+  守护之少女:['净化协议','光明回响','神圣之锤','灌注','护盾爆炸','清算'],
+  堕落的萨格拉斯化身:['混乱之刃','破裂现实','暗影之刃','毁灭之触','堕落之触','末日裂隙'],
+  加洛希世界破坏者:['屠戮','歼灭','毁灭者','炮击模式','邪能轰炸','世界破坏者'],
+  萨格拉斯的地狱犬:['灼热撕咬','暗影撕咬','吞噬领域','熔火之触','阴燃腐蚀','双犬扑击'],
+  灵魂猎手伊莫纳:['催眠毒气','脉冲手雷','震荡榴弹','追踪导弹','裂片爆炸','电击陷阱'],
+  金加洛斯:['歼灭协议','屠戮者','锻造打击','毁灭者协议','构造体激活','邪能轰击'],
+  阿格拉玛:['泰沙拉克之焰','烈焰撕裂','烈焰风暴','灼热风暴','炽热之刃','熔火之击'],
+  寂灭者阿古斯:['灵魂炸弹','死亡之雾','天界之赐','宇宙射线','星辰陨落','世界终结','寂灭之镰','万物终结'],
+  魔血之触:['腐血爆发','血液腐蚀','感染撕咬','腐化之触','血疫喷吐','沸腾之血'],
+  垫脚石:['崩解践踏','岩石碎裂','石化凝视','碎地重击','构造冲击','地震波'],
+  禁锢者泽克伏斯:['腐化注入','虚空箭','泰坦火花','眼棱','异种虫群','腐蚀新星'],
+  米斯拉克斯:['湮灭之球','精华碎裂','虚空回响','湮灭之沙','黑暗裂隙','虚空冲击'],
+  恐惧之臂沃舒:['精神腐蚀','恐惧之握','暗影触须','腐化猛击','心智撕裂','黑暗低语'],
+  戈霍恩:['腐化之血','爆发囊肿','恶性生长','腐败浪潮','古神低语','血之盛宴','终极腐化','腐化爆发'],
+  尼提兹:['梦魇之茧','腐蚀之网','剧毒喷吐','暗影爆发','蛛网缠绕','梦魇毒液'],
+  噩梦巨龙:['腐蚀吐息','梦魇花粉','沉睡之雾','龙息','梦魇印记','腐蚀梦境'],
+  乌索克之灵:['压倒性冲击','专注凝视','撕裂血肉','狂怒撕咬','践踏','咆哮'],
+  梦魇之龙伊瑟拉:['堕落之梦','翡翠吐息','梦境腐蚀','梦魇绽放','龙息','梦境撕裂'],
+  萨维斯:['梦魇之刃','黑化灵魂','腐蚀新星','梦魇大军','腐化之握','恐惧幻象','梦魇之力'],
+  蝎钳魔:['破甲钳击','奥术猛击','毒性几丁质','蝎尾扫击','水晶碎片','毒刺'],
+  提克迪奥斯:['腐肉瘟疫','吸血光环','暗夜之牙','黏液喷涌','邪能虫群','腐臭之血'],
+  占星师埃塔莉丝:['群星坍缩','星界冲击','大爆炸','星座碎片','星辰新星','重力牵引'],
+  克罗苏斯:['燃烧践踏','毁灭之球','灼热烙印','邪能光束','烈焰崩塌','破桥猛击'],
+  大魔导师艾利桑德:['时光消逝','递归元素','时光炸弹','奥术宝珠','时间停止','时光加速'],
+  古尔丹:['邪能风暴','古尔丹之眼','邪能镰刀','灵魂虹吸','虚空降临','湮灭风暴','恶魔变身'],
+  黑龙王子拉希奥:['灼热气息','烈焰之翼','裂地尾击','腐化烈焰','黑龙之怒','燃烧护甲'],
+  先知斯基特拉:['幻象箭雨','撕裂心智','幻影投射','心灵震爆','暗影冲击','幻象分身'],
+  暗影审讯官沙奈什:['心智折磨','虚空仪式','灵魂剥离','暗影鞭笞','痛苦之环','黑暗审讯'],
+  沙德拉:['腐化吐息','毒性喷吐','蛛网爆发','暗影吐息','毒云','腐化撕咬'],
+  维克希翁:['湮灭之翼','腐化俯冲','暗影烈焰','暮光毁灭','腐蚀吐息','黑暗利爪'],
+  恩佐斯:['妄念','痛苦之握','收割思想','虚空凝视','万物归虚','古神低语','终末低语'],
+  尖啸之翼:['回声尖啸','刺耳尖啸','声波脉冲','黑暗俯冲','鲜血撕咬','声纳尖啸'],
+  猎手阿尔提莫:['猎犬撕咬','罪孽箭','撕裂射击','狩猎标记','猎手之眼','掠食冲锋'],
+  噬渴灭世者:['饥渴吞噬','精华虹吸','暴食冲锋','吞噬裂隙','饥渴猛击','能量喷涌'],
+  达克文女勋爵:['血池献祭','圣罐爆裂','罪孽箭','血红刺击','心能之雨','血腥冲锋'],
+  鲜血议会:['贵族夜宴','黑暗伴舞','血色狂宴','心能喷泉','舞会号令','吸血之咬'],
+  主宰者德纳修斯:['罪碑之刃','毁灭痛苦','屠戮镜像','噬渊降临','湮灭之触','雷纳索尔之怒'],
+  暗鳞军团:['深海齐射','水箭齐射','尖刺珊瑚','深渊冲击','黑水弹幕','纳迦战吼'],
+  飘雾艾尔:['迷雾毒针','剧毒孢子','毒雾','水流喷射','深海之毒','潮汐毒液'],
+  深渊指挥官西瓦拉:['寒潮冻结','剧毒标记','冰霜震击','绝对零度','冰毒交织','寒冰长矛'],
+  黑暗预言者:['虚空低语','黑暗预言','暗影箭雨','梦魇幻象','虚空裂隙','黑暗启示'],
+  深渊领主:['深渊缠绕','水压猛击','深海碾压','潮汐波','暗流冲击','深渊之握'],
+  阿兹莎拉女王:['奥术震爆','女王法令','奥术易伤','女王魔咒','深渊洪流','星辰之怒'],
+  卡赞:['奥术湮灭','奥术宝珠','魔网爆发','奥术撕裂','法力涌动','虚空回响'],
+  焚化者拉什卡尔:['熔火喷涌','烈焰风暴','燃烧之矛','熔岩爆裂','火焰新星','焚化'],
+  鲜血法师沙拉嘎:['血肉重塑','鲜血箭','血之新星','猩红仪式','血液虹吸','血肉爆裂'],
+  禁锢魔像:['崩解打击','禁锢射线','碎裂护甲','构造践踏','奥术束缚','禁锢冲击'],
+  黑龙萨拉塔斯:['暗影烈焰','黑龙吐息','暗影裂隙','腐化利爪','暮光灼烧','黑龙之怒'],
+  化身奈萨里奥:['熔岩崩裂','暗影虹吸','湮灭烈焰','裂地猛击','黑龙烈焰','奈萨里奥之怒'],
+  古加冯:['远古践踏','尖刺冲锋','巨角猛击','裂地践踏','狂暴践踏','野性冲撞'],
+  史矛莱什:['腐化吐息','剧毒之云','酸液喷吐','腐烂撕咬','毒性爆裂','感染毒液'],
+  拉莎农:['烈风箭雨','风暴俯冲','电荷吐息','风暴之翼','雷云爆发','迅翼冲锋'],
+  织焰巫女:['梦火灼烧','火焰之地','余烬箭','梦火新星','烈焰编织','灼热梦境'],
+  暮光化身:['暗影裂解','暮光爆发','虚空撕裂','暮光新星','暗影之握','虚空灌注'],
+  炎魔之王弗拉戈斯:['焚梦烈焰','世界树之殇','末日烈焰','熔火之怒','火焰之王的召唤','焚世烈焰'],
+};
 const BOSS_DEBUFF_KEYS = ['dot','slow','stun','weaken','sunder','silence','disarm','fear','freeze','cripple','decay','wither','manaDrain','bomb','plague','bleed','brittle','soulDrain','soulLink','revenge','frenzy','decay2','mirror'];
 function bossDebuffCount(sk){
   return BOSS_DEBUFF_KEYS.reduce((sum, key)=>sum + (sk && sk[key] ? 1 : 0), 0);
@@ -3964,13 +4116,33 @@ function bossSignatureToken(name){
     .trim();
   return (clean || String(name || '首领')).slice(0, 6);
 }
+function bossCanonicalSkillNames(name){
+  const raw = String(name || '');
+  if(BOSS_CANONICAL_SKILL_NAMES[raw]) return BOSS_CANONICAL_SKILL_NAMES[raw];
+  const clean = raw.replace(/^[^\u4e00-\u9fa5A-Za-z]+/, '').replace(/·.*/, '').trim();
+  if(BOSS_CANONICAL_SKILL_NAMES[clean]) return BOSS_CANONICAL_SKILL_NAMES[clean];
+  return [];
+}
+function bossCanonicalSkillName(name, idx, fallback){
+  const names = bossCanonicalSkillNames(name);
+  if(names.length) return names[idx % names.length];
+  return fallback;
+}
+function bossUnusedCanonicalSkillName(name, usedNames, startIdx, fallback){
+  const names = bossCanonicalSkillNames(name);
+  const used = usedNames instanceof Set ? usedNames : new Set(usedNames || []);
+  for(let i = 0; i < names.length; i++){
+    const candidate = names[(startIdx + i) % names.length];
+    if(!used.has(candidate)) return candidate;
+  }
+  return used.has(fallback) ? `${fallback}${Math.max(2, used.size + 1)}` : fallback;
+}
 function makeBossSignatureSkill(theme, bossName, idx, ctx){
   const kits = BOSS_SIGNATURE_SKILL_KITS[theme] || BOSS_SIGNATURE_SKILL_KITS.brute;
   const kit = kits[idx % kits.length];
-  const token = bossSignatureToken(bossName);
   const scale = Math.floor(idx / kits.length);
   const out = Object.assign({}, kit, {
-    name: `${token}·${kit.suffix}`,
+    name: bossCanonicalSkillName(bossName, idx, kit.suffix),
     type: 'dmg',
     mul: +(kit.mul + Math.min(1.2, scale * 0.35) + ((ctx.lvl || 1) >= 70 ? 0.6 : ((ctx.lvl || 1) >= 40 ? 0.3 : 0))).toFixed(1),
   });
@@ -4006,13 +4178,12 @@ function bossSupportVariety(ctx){
 /* 生成专属的被动辅助技:召唤 / buff / 治疗(挂到 passive.tricks,不占 BOSS 读条技能栏) */
 function makeBossPassiveSkill(type, theme, ctx){
   const strong = (ctx.lvl || 1) >= 70 || ctx.final;
-  const token = bossSignatureToken(ctx.name);
-  if(type === 'summon') return { name:`${token}·战场号令`, icon:'📯', type:'summon', desc:'被动召唤援军助战', cd:18, summonCount: strong ? 2 : 1, summonTheme:bossSummonThemeFor({ name:ctx.name, skills:[{ name:theme }] }) };
-  if(type === 'heal')   return { name:`${token}·生命回涌`, icon:'💚', type:'heal', desc:'被动恢复生命', cd:17, healPct: strong ? 0.12 : 0.08 };
+  if(type === 'summon') return { name:bossCanonicalSkillName(ctx.name, 5, '召唤援军'), icon:'📯', type:'summon', desc:'被动召唤援军助战', cd:18, summonCount: strong ? 2 : 1, summonTheme:bossSummonThemeFor({ name:ctx.name, skills:[{ name:theme }] }) };
+  if(type === 'heal')   return { name:bossCanonicalSkillName(ctx.name, 4, '生命回涌'), icon:'💚', type:'heal', desc:'被动恢复生命', cd:17, healPct: strong ? 0.12 : 0.08 };
   const buffKits = [
-    { name:`${token}·狂怒节奏`, icon:'💢', type:'buff', desc:'被动强化攻击与攻速', cd:16, atkBuffSecs:8, atkBuffPct: strong ? 28 : 20, spdBuffSecs:8, spdBuffPct: strong ? 18 : 12 },
-    { name:`${token}·致命凝视`, icon:'🎯', type:'buff', desc:'被动提高普攻暴击', cd:16, critBuffSecs:8, critBuffPct: strong ? 35 : 24, atkBuffSecs:8, atkBuffPct: strong ? 16 : 10 },
-    { name:`${token}·连击姿态`, icon:'⚔️', type:'buff', desc:'被动让普攻追加打击', cd:17, nextDouble: strong ? 3 : 2, spdBuffSecs:6, spdBuffPct: strong ? 14 : 10 },
+    { name:bossCanonicalSkillName(ctx.name, 3, '狂怒'), icon:'💢', type:'buff', desc:'被动强化攻击与攻速', cd:16, atkBuffSecs:8, atkBuffPct: strong ? 28 : 20, spdBuffSecs:8, spdBuffPct: strong ? 18 : 12 },
+    { name:bossCanonicalSkillName(ctx.name, 2, '致命专注'), icon:'🎯', type:'buff', desc:'被动提高普攻暴击', cd:16, critBuffSecs:8, critBuffPct: strong ? 35 : 24, atkBuffSecs:8, atkBuffPct: strong ? 16 : 10 },
+    { name:bossCanonicalSkillName(ctx.name, 1, '连击姿态'), icon:'⚔️', type:'buff', desc:'被动让普攻追加打击', cd:17, nextDouble: strong ? 3 : 2, spdBuffSecs:6, spdBuffPct: strong ? 14 : 10 },
   ];
   return buffKits[((ctx.lvl || 1) + String(ctx.name || '').length) % buffKits.length];
 }
@@ -4107,7 +4278,7 @@ function chooseBossInterruptPolicy(skill, ctx){
 function makeBossRotationSupportSkill(theme, ctx){
   const base = BOSS_ROTATION_SUPPORT_SKILLS[theme] || BOSS_ROTATION_SUPPORT_SKILLS.brute;
   const skill = Object.assign({}, base);
-  skill.name = `${bossSignatureToken(ctx.name)}·${skill.name}`;
+  skill.name = bossCanonicalSkillName(ctx.name, 2, skill.name);
   if((ctx.lvl || 1) >= 70){
     if(skill.healPct) skill.healPct = +(skill.healPct + 0.02).toFixed(3);
     if(skill.shieldPct) skill.shieldPct = +(skill.shieldPct + 0.02).toFixed(3);
@@ -5733,9 +5904,13 @@ function addFinalBossPhaseKit(fb, opts){
   const maxMul = Math.max(minMul, ...fb.skills.map(s => s.mul || 0));
   const ultMul = Math.max(minMul, +(maxMul * (opts.ultScale || 0.5)).toFixed(1));
   const st = bossSummonThemeFor(fb);
-  addBossPassiveTrick(fb, mkBuffSkill(`${bossSignatureToken(fb.name)}·狂暴形态`, '😤', '阶段被动:攻击/攻速/减伤大幅提升', { hpBelow:0.6, atkBuffSecs:14, atkBuffPct:opts.atkPct||42, spdBuffSecs:14, spdBuffPct:opts.spdPct||28, drBuffSecs:14, drBuffPct:opts.drPct||0.22, cd:24 }));
-  addBossPassiveTrick(fb, mkSummonSkill(`${bossSignatureToken(fb.name)}·召唤援军`, '📣', '阶段被动:召唤爪牙助战并护盾护体', { hpBelow:0.35, summonCount:opts.summonCount||2, summonTheme:st, shieldPct:opts.shieldPct||0.2, cd:26 }));
-  fb.skills.push(mkDmgSkill(`${bossSignatureToken(fb.name)}·终极爆发`, '💥', ultMul, 2.6, { hpBelow:0.3, aoe:true, dot:true, fear:1900, brittle:true, alwaysCrit:true, cd:16 }));
+  const used = new Set((fb.skills || []).map(s => s.name));
+  const buffName = bossUnusedCanonicalSkillName(fb.name, used, 3, '狂暴形态'); used.add(buffName);
+  const summonName = bossUnusedCanonicalSkillName(fb.name, used, 5, '召唤援军'); used.add(summonName);
+  const ultName = bossUnusedCanonicalSkillName(fb.name, used, 6, '终极爆发');
+  addBossPassiveTrick(fb, mkBuffSkill(buffName, '😤', '阶段被动:攻击/攻速/减伤大幅提升', { hpBelow:0.6, atkBuffSecs:14, atkBuffPct:opts.atkPct||42, spdBuffSecs:14, spdBuffPct:opts.spdPct||28, drBuffSecs:14, drBuffPct:opts.drPct||0.22, cd:24 }));
+  addBossPassiveTrick(fb, mkSummonSkill(summonName, '📣', '阶段被动:召唤爪牙助战并护盾护体', { hpBelow:0.35, summonCount:opts.summonCount||2, summonTheme:st, shieldPct:opts.shieldPct||0.2, cd:26 }));
+  fb.skills.push(mkDmgSkill(ultName, '💥', ultMul, 2.6, { hpBelow:0.3, aoe:true, dot:true, fear:1900, brittle:true, alwaysCrit:true, cd:16 }));
 }
 /* 给所有"老团本"尾王注入阶段技(在 createEpicRaidCatalog 之前调用,使史诗团版同步继承) */
 function injectOldRaidPhaseKits(){
@@ -5874,9 +6049,13 @@ function createEpic5DungeonCatalog() {
       boss.skills.push(mkDmgSkill('狂怒重击', '💢', +(_mm * 0.7).toFixed(1), 2.2, { aoe:true, dot:true, weaken:true, cd:11 }));
       boss.skills.push(mkDmgSkill('湮灭压制', '🌀', +(_mm * 0.6).toFixed(1), 2.4, { silence:1800, stun:1300, cripple:true, cd:12 }));
       if (isFinal) {
-        addBossPassiveTrick(boss, mkBuffSkill(`${bossSignatureToken(boss.name)}·狂暴形态`, '😤', '阶段被动:攻击/攻速/减伤提升', { hpBelow:0.6, atkBuffSecs:12, atkBuffPct:35, spdBuffSecs:12, spdBuffPct:24, drBuffSecs:12, drBuffPct:0.2, cd:22 }));
-        addBossPassiveTrick(boss, mkSummonSkill(`${bossSignatureToken(boss.name)}·召唤援军`, '📣', '阶段被动:召唤爪牙助战并护盾护体', { hpBelow:0.35, summonCount:2, summonTheme:_st, shieldPct:0.16, cd:24 }));
-        boss.skills.push(mkDmgSkill(`${bossSignatureToken(boss.name)}·终极爆发`, '💥', +(_mm * 0.8).toFixed(1), 2.6, { hpBelow:0.3, aoe:true, dot:true, fear:1700, brittle:true, alwaysCrit:true, cd:14 }));
+        const _used = new Set((boss.skills || []).map(s => s.name));
+        const _buffName = bossUnusedCanonicalSkillName(boss.name, _used, 3, '狂暴形态'); _used.add(_buffName);
+        const _summonName = bossUnusedCanonicalSkillName(boss.name, _used, 5, '召唤援军'); _used.add(_summonName);
+        const _ultName = bossUnusedCanonicalSkillName(boss.name, _used, 6, '终极爆发');
+        addBossPassiveTrick(boss, mkBuffSkill(_buffName, '😤', '阶段被动:攻击/攻速/减伤提升', { hpBelow:0.6, atkBuffSecs:12, atkBuffPct:35, spdBuffSecs:12, spdBuffPct:24, drBuffSecs:12, drBuffPct:0.2, cd:22 }));
+        addBossPassiveTrick(boss, mkSummonSkill(_summonName, '📣', '阶段被动:召唤爪牙助战并护盾护体', { hpBelow:0.35, summonCount:2, summonTheme:_st, shieldPct:0.16, cd:24 }));
+        boss.skills.push(mkDmgSkill(_ultName, '💥', +(_mm * 0.8).toFixed(1), 2.6, { hpBelow:0.3, aoe:true, dot:true, fear:1700, brittle:true, alwaysCrit:true, cd:14 }));
       }
       moveBossSupportSkillsToPassive(boss);
       return boss;
@@ -5886,6 +6065,46 @@ function createEpic5DungeonCatalog() {
   }
 }
 createEpic5DungeonCatalog();
+function generatedBossSkillNameNeedsRepair(name){
+  return /·|熔核裁决|灰烬审判|暗影裁决|灵魂裂隙|裂骨裁决|战槌震荡|践踏冲击|腐毒裁决|毒脉穿刺|破甲终结|终极爆发/.test(String(name || ''));
+}
+function bossFallbackLoreSkillName(theme, idx){
+  const pool = {
+    fire:['烈焰风暴','熔岩喷发','火焰冲击','灼热之焰'],
+    frost:['寒冰箭雨','冰霜冲击','冰霜新星','极寒之触'],
+    shadow:['暗影箭雨','精神鞭笞','暗影裂隙','虚空冲击'],
+    poison:['毒性喷吐','腐蚀之血','疫病爆发','剧毒新星'],
+    storm:['闪电链','雷霆震击','静电冲击','风暴新星'],
+    nature:['荆棘缠绕','自然之怒','生命凋零','孢子爆裂'],
+    dragon:['烈焰吐息','扫尾','龙翼打击','龙爪撕裂'],
+    arcane:['奥术弹幕','奥术爆炸','法力燃烧','虚空震击'],
+    brute:['碾压','顺劈斩','震荡猛击','破甲攻击'],
+  }[theme] || ['碾压','顺劈斩','震荡猛击','破甲攻击'];
+  return pool[idx % pool.length];
+}
+function repairGeneratedBossSkillNames(){
+  for(const dg of DUNGEONS){
+    for(const boss of (dg.bosses || [])){
+      const theme = inferBossTheme(boss.name, (boss.skills || [])[0] || { name:boss.name });
+      const used = new Set();
+      for(const sk of (boss.skills || [])){
+        if(!sk) continue;
+        if(generatedBossSkillNameNeedsRepair(sk.name)){
+          sk.name = bossUnusedCanonicalSkillName(boss.name, used, used.size, bossFallbackLoreSkillName(theme, used.size));
+        }
+        used.add(sk.name);
+      }
+      for(const sk of (boss.passive?.tricks || [])){
+        if(!sk) continue;
+        if(generatedBossSkillNameNeedsRepair(sk.name) || used.has(sk.name)){
+          sk.name = bossUnusedCanonicalSkillName(boss.name, used, used.size, bossFallbackLoreSkillName(theme, used.size));
+        }
+        used.add(sk.name);
+      }
+    }
+  }
+}
+repairGeneratedBossSkillNames();
 /* 部分技能改为 DoT(持续伤害)类:把已经是"灼烧/瘟疫/流血"主题的、非最强、非阶段技的伤害技,
    改成 dotSkill(combat 里不一次出伤,摊成持续灼烧)。每个 BOSS 最多转 1 个,保证仍有爆发技,
    且只转"原本就该是 DoT"的技能 → 体感:威胁分散、有治疗/吸血反应空间,而不是一发尖峰。 */
