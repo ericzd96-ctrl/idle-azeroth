@@ -3638,6 +3638,11 @@ function finishItem(item,slotKey,rarity,power,extraStats){
   // 副属性只能来自下方"惊喜roll",不从命名装/池子的预设 stats 注入
   const SURPRISE_KEYS=['crit','critd','critdPct','leech','vers','haste','mastery','dodge'];
   if(extraStats){for(const[k,v]of Object.entries(extraStats)){if(SURPRISE_KEYS.includes(k))continue;item.stats[k]=(item.stats[k]||0)+Math.max(1,Math.floor(baseVal[k]*0.5*v*rarity.mult));}}
+  // 品质浮动:每条主属性独立 ×0.8~1.2,使同名同品装备也有强弱差异(如 100攻/100力 可能滚出 120攻/80力)
+  for(const k in item.stats){
+    if(SURPRISE_KEYS.includes(k)) continue;   // 惊喜副属性本身已是随机层,不再二次浮动
+    item.stats[k]=Math.max(1,Math.round(item.stats[k]*(0.8+Math.random()*0.4)));
+  }
   // ---- 惊喜副属性 ----
   // 仅蓝装(rare)以上才可能出现,各自独立低概率,不占常规副属分配(额外附加),可同时出现也可能都不出现。
   // 数值随品质 蓝/紫/橙:吸血/全能/极速/暴击/精通/闪避 = 1/2/4;暴伤倍率更高 = 3/6/12。
