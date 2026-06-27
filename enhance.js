@@ -838,11 +838,24 @@ function renderItemDetail(itemId) {
           <button data-action="unsocket" data-id="${it.id}" data-idx="${i}" title="拆除: 50💰">🪛</button>
         </div>`;
       } else {
-        // 列出可镶嵌的宝石
-        const opts = Object.entries(GEM_TYPES).filter(([k,g])=>state.gems&&(state.gems[k]||0)>0)
-          .map(([k,g])=>`<option value="${k}">${g.name} (${state.gems[k]})</option>`).join('');
+        // 列出可镶嵌的宝石:显示每颗宝石在【该孔】的实际属性(含同色加成)+ 同色/混色/彩虹标记 + 数量,便于直接比较
+        const owned = Object.entries(GEM_TYPES).filter(([k,g])=>state.gems&&(state.gems[k]||0)>0);
+        owned.sort((a,b)=>{
+          const ma=(a[1].any||a[1].color===sk.color)?1:0, mb=(b[1].any||b[1].color===sk.color)?1:0;
+          if(ma!==mb) return mb-ma;                 // 同色/彩虹优先
+          return (b[1].tier||0)-(a[1].tier||0);      // 再按品阶降序
+        });
+        const opts = owned.map(([k,g])=>{
+          const match = g.any || g.color===sk.color;
+          const st = Object.entries(g.stats||{}).map(([sk2,v])=>{
+            const fv = match ? Math.floor(v*(1+SOCKET_MATCH_BONUS)) : Math.floor(v);
+            return `${fmtStatName(sk2)}+${fv}${isPercentStat(sk2)?'%':''}`;
+          }).join(' ');
+          const tag = g.any?'彩虹':(match?'同色':'混色');
+          return `<option value="${k}">${g.name}｜${st}｜${tag} ×${state.gems[k]}</option>`;
+        }).join('');
         return `<div class="socket-row">
-          <span>${info.icon} ${info.name}色空孔</span>
+          <span>${info.icon} ${info.name}色空孔 <span class="muted" style="font-size:10px">(同色宝石 +${Math.round(SOCKET_MATCH_BONUS*100)}%)</span></span>
           <select data-role="gempick" data-id="${it.id}" data-idx="${i}">
             <option value="">选择宝石...</option>${opts}
           </select>
