@@ -4238,7 +4238,7 @@ function trackKill(){const now=Date.now();if(dmgStats.killTs){const dt=(now-dmgS
 function resetDmgStats(){dmgStats={hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,heroHeal:0,compHeal:0,heroHealMax:0,compHealMax:0,heroHealSkills:{},compHealSkills:{},kills:0,heroSkills:{},compSkills:{},taken:0,takenMax:0,takenHits:0,killTs:0,killFast:0,killSlow:0,peakDps:0};if(typeof markDirty==='function')markDirty('stage');}
 let compSkillCd={};   // 随从每个技能的独立冷却就绪时间戳(键=技能下标;_owner 记录当前随从,换随从自动重置)
 const COMP_SKILL_DEFAULT_CD=8;   // 随从技能默认CD(秒,技能未写 cd 时)
-const COMPANION_SKILL_CD_MULT=0.35;   // 随从技能冷却大幅缩短:实际CD=配置CD×35%
+const COMPANION_SKILL_CD_MULT=0.75;   // 随从技能冷却缩短:实际CD=配置CD×75%
 const COMPANION_SKILL_GCD_MS=900;     // 随从技能公共间隔,避免同一帧把所有技能打空
 const COMPANION_COMBAT_QUALITY = { white:0.74, green:0.96, blue:1.18, purple:1.37, orange:1.51 };
 const COMPANION_ROLE_PROFILE = {
