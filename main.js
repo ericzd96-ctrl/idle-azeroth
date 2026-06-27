@@ -185,9 +185,11 @@ function setupDelegation() {
     if (!btn) return;
     if (btn.dataset.action === 'autosell') {
       state.autoSellRarity = btn.dataset.rarity === 'off' ? null : btn.dataset.rarity;
-      markDirty('inventory');
       const labels = {common:'普通',uncommon:'优秀及以下',rare:'精良及以下',off:'关闭'};
       log(`🤖 自动售卖: ${labels[btn.dataset.rarity]||'关闭'}`, 'info');
+      // 开启/调整阈值时立即清理背包内现有的 ≤阈值 装备(锁定除外),使设置立即生效
+      if (state.autoSellRarity && typeof sellAllBelow === 'function') sellAllBelow(state.autoSellRarity);
+      markDirty('inventory');
     } else if (btn.dataset.action === 'sellall') sellAllBelow(btn.dataset.rarity);
     else if (btn.dataset.action === 'equipbest') equipBestGear();
   });
