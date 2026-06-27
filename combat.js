@@ -3876,11 +3876,11 @@ function tickCast(now){
   // 英雄施法
   if(casting){
     const elapsed=now-casting.startTime;const pct=Math.min(100,elapsed/casting.duration*100);
-    const remaining=Math.max(0,Math.ceil((casting.duration-elapsed)/1000));
+    const remainMs=Math.max(0,casting.duration-elapsed);
     const c=getCls();const sk=c?.skills[casting.skillKey||''];
     $('hero-cast-bar-wrap').style.visibility='visible';
     $('hero-cast-name').textContent=(sk?.icon||'')+' '+(sk?.name||'施法中');
-    $('hero-cast-time').textContent=remaining>0?remaining+'s':'';
+    $('hero-cast-time').textContent=remainMs>0?(remainMs/1000).toFixed(1)+'s':'';
     $('hero-b-cast').style.width=pct+'%';
     if(elapsed>=casting.duration){
       hideHeroCastBar();
@@ -3892,7 +3892,7 @@ function tickCast(now){
   if(bossCasting){
     if(!$('mon-emoji') && typeof renderMonList === 'function') renderMonList();
     const elapsed=now-bossCasting.startTime;const pct=Math.min(100,elapsed/bossCasting.duration*100);
-    const remaining=Math.max(0,Math.ceil((bossCasting.duration-elapsed)/1000));
+    const remainMs=Math.max(0,bossCasting.duration-elapsed);
     const threatMeta = bossCastThreatMeta(bossCasting);
     const interruptText = bossInterruptTag(bossCasting);
     // 是否伤害类施法 → 标注 群体(AOE)/ 单体
@@ -3901,7 +3901,7 @@ function tickCast(now){
     $('boss-cast-bar-wrap').style.visibility='visible';
     $('boss-cast-name').textContent='💀 '+(bossCasting.bossName||'BOSS')+' - '+(bossCasting.icon||'')+' '+(bossCasting.name||'施法')+'【'+(aoeTag?aoeTag+' / ':'')+threatMeta.label+' / '+interruptText+(bossCasting._empowered&&bossCasting.interruptPolicy!=='none'?' / ⚡可破绽':'')+'】';
     $('boss-cast-name').style.color = threatMeta.text;
-    $('boss-cast-time').textContent=remaining>0?remaining+'s':'';
+    $('boss-cast-time').textContent=remainMs>0?(remainMs/1000).toFixed(1)+'s':'';
     $('boss-b-cast').style.background = threatMeta.bar;
     $('boss-b-cast').style.width=pct+'%';
     if(elapsed>=bossCasting.duration){
