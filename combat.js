@@ -3343,9 +3343,11 @@ function onMonsterDeath(mon){
   const adjDrop=(mon.isBoss&&(state.mode==='dungeon'||state.mode==='mythic'))?1:Math.min(1,mon.dropRate*bonus.dropMult*olp);
   if(Math.random()<adjDrop){
     const dKey=mon.fromDungeon?((state.dungeonState||state.mythicState)?.key):null;
+    const _dgTier=(dKey&&typeof gearTierForDungeon==='function')?gearTierForDungeon(dKey):0;
+    const _minR=_dgTier>=1?'epic':null;   // 英雄本及以上(英雄/史诗5人本/团本/史诗团本)只掉紫装以上
     const it=(mon._isRaid && dKey)
-      ? rollItem('epic',mon.lvl,dKey,mon.isBoss?mon.bossName:null,{ exactRarity: !!mon._isEpicRaid })
-      : rollItem(mon.maxRarity,mon.lvl,dKey,mon.isBoss?mon.bossName:null);
+      ? rollItem('epic',mon.lvl,dKey,mon.isBoss?mon.bossName:null,{ exactRarity: !!mon._isEpicRaid, minRarity:_minR })
+      : rollItem(_dgTier>=1?'legend':mon.maxRarity,mon.lvl,dKey,mon.isBoss?mon.bossName:null,{ minRarity:_minR });
     if((state.mode==='dungeon'||state.mode==='mythic')&&(state.dungeonState||state.mythicState))(state.dungeonState||state.mythicState).loot.push(it);addToInventory(it);if(typeof eventsOnItemGet==='function') eventsOnItemGet(it);if(it.rarity==='legend'&&typeof progressionOnLegendary==='function') progressionOnLegendary();const c=it.rarity==='legend'?'legend':(it.rarity==='epic'?'epic':'loot');log('🎁 掉落 '+it.name+(it.epicRaid?' [史诗团本]':''),c);
   }
   if(mon._isRaid && mon.fromDungeon){
@@ -3574,7 +3576,10 @@ function gearTierForDungeon(dungeonKey){
   return 0;
 }
 function rollItem(maxRarity,fromLvl,dungeonKey,bossName,opts){
-  const slotKey=choice(SLOT_ORDER);const slot=SLOT_INFO[slotKey];const rarity=pickRarity(maxRarity);
+  const slotKey=choice(SLOT_ORDER);const slot=SLOT_INFO[slotKey];
+  const _minRank=(opts&&opts.minRarity&&typeof lootRarityRank==='function')?lootRarityRank(opts.minRarity):-1;   // 最低品质门槛(英雄本+ = 史诗)
+  let rarity=pickRarity(maxRarity);
+  if(_minRank>=0&&lootRarityRank(rarity.key)<_minRank)rarity=RARITY.find(r=>r.key===opts.minRarity)||rarity;
   const ds=state.dungeonState||state.mythicState;
   const power=(fromLvl||state.hero.lvl)+(ds?2:0);
   if(dungeonKey){
@@ -3597,8 +3602,9 @@ function rollItem(maxRarity,fromLvl,dungeonKey,bossName,opts){
     let __tw=0;for(const p of lootPool)__tw+=(p.dropWeight||RARITY.find(r=>r.key===p.rarity)?.weight||1);
     let __r=Math.random()*__tw;let pick=lootPool[lootPool.length-1];
     for(const p of lootPool){__r-=(p.dropWeight||RARITY.find(r=>r.key===p.rarity)?.weight||1);if(__r<=0){pick=p;break;}}
-    const pickRarity=RARITY.find(r=>r.key===pick.rarity)||rarity;
-    const poolItem={id:itemIdSeq++,slot:pick.slot||slotKey,name:pick.name,rarity:pick.rarity,rarityName:pickRarity.name,cls:pickRarity.cls,bcls:pickRarity.bcls,stats:{},sell:0,epicRaid:!!pick.epicRaid,setKey:pick.setKey,setName:pick.setName,setEffects:pick.setEffects?JSON.parse(JSON.stringify(pick.setEffects)):undefined,setPieces:pick.setPieces,gearTier:gearTierForDungeon(dungeonKey)};
+    let pickRarity=RARITY.find(r=>r.key===pick.rarity)||rarity;
+    if(_minRank>=0&&lootRarityRank(pick.rarity)<_minRank)pickRarity=RARITY.find(r=>r.key===opts.minRarity)||pickRarity;   // 英雄本及以上:低于史诗的池内物品提升为史诗(保留主题名)
+    const poolItem={id:itemIdSeq++,slot:pick.slot||slotKey,name:pick.name,rarity:pickRarity.key,rarityName:pickRarity.name,cls:pickRarity.cls,bcls:pickRarity.bcls,stats:{},sell:0,epicRaid:!!pick.epicRaid,setKey:pick.setKey,setName:pick.setName,setEffects:pick.setEffects?JSON.parse(JSON.stringify(pick.setEffects)):undefined,setPieces:pick.setPieces,gearTier:gearTierForDungeon(dungeonKey)};
     return finishItem(poolItem,pick.slot||slotKey,pickRarity,power,pick.stats||{});
   }}
   const item={id:itemIdSeq++,slot:slotKey,name:genName(slotKey,rarity),rarity:rarity.key,rarityName:rarity.name,cls:rarity.cls,bcls:rarity.bcls,stats:{},sell:0,gearTier:dungeonKey?gearTierForDungeon(dungeonKey):0};
@@ -3623,7 +3629,8 @@ function itemMainStats(slotKey, clsKey){
     default:        return melee ? ['def', primary, 'atk', 'sta'] : ['def', primary, 'sta'];
   }
 }
-function finishItem(item,slotKey,rarity,power,extraStats){
+function finishItem(item,slotKey,rarity,power,extraStats,opts){
+  const _noRand=!!(opts&&opts.noRandom);   // 预览用:跳过随机浮动/惊喜副属/词缀宝石,得到稳定的"典型主属性"
   item.slot=slotKey;
   item.stats={};
   item._rollSlot=slotKey;
@@ -3652,7 +3659,7 @@ function finishItem(item,slotKey,rarity,power,extraStats){
   const SURPRISE_KEYS=['crit','critd','critdPct','leech','vers','haste','mastery','dodge'];
   if(extraStats){for(const[k,v]of Object.entries(extraStats)){if(SURPRISE_KEYS.includes(k))continue;item.stats[k]=(item.stats[k]||0)+Math.max(1,Math.floor(baseVal[k]*0.5*v*rarity.mult));}}
   // 品质浮动:每条主属性独立 ×0.8~1.2,使同名同品装备也有强弱差异(如 100攻/100力 可能滚出 120攻/80力)
-  for(const k in item.stats){
+  if(!_noRand) for(const k in item.stats){
     if(SURPRISE_KEYS.includes(k)) continue;   // 惊喜副属性本身已是随机层,不再二次浮动
     item.stats[k]=Math.max(1,Math.round(item.stats[k]*(0.8+Math.random()*0.4)));
   }
@@ -3661,7 +3668,7 @@ function finishItem(item,slotKey,rarity,power,extraStats){
   // 数值随品质 蓝/紫/橙:吸血/全能/极速/暴击/精通/闪避 = 1/2/4;暴伤倍率更高 = 3/6/12。
   const SURPRISE_CHANCE=0.15;
   const SURPRISE={leech:{rare:1,epic:2,legend:4},vers:{rare:1,epic:2,legend:4},haste:{rare:1,epic:2,legend:4},mastery:{rare:1,epic:2,legend:4},dodge:{rare:1,epic:2,legend:4},crit:{rare:1,epic:2,legend:3},critd:{rare:3,epic:6,legend:12}};
-  for(const sk in SURPRISE){const v=SURPRISE[sk][rarity.key];if(v&&Math.random()<SURPRISE_CHANCE)item.stats[sk]=(item.stats[sk]||0)+v;}
+  if(!_noRand) for(const sk in SURPRISE){const v=SURPRISE[sk][rarity.key];if(v&&Math.random()<SURPRISE_CHANCE)item.stats[sk]=(item.stats[sk]||0)+v;}
   // 来源功率梯队(2026-06-27 拉大,让"英雄/史诗5人本/团本"在同级时明显更强,不被±20%浮动盖过):
   // 普通(0)1.0 < 英雄(1)1.18 < 史诗5人本(4)1.28 < 团本(2)1.40 < 史诗团本(3)1.55
   const _gearTier=(typeof item.gearTier==='number')?item.gearTier:(item.epicRaid?3:0);
@@ -3677,7 +3684,7 @@ function finishItem(item,slotKey,rarity,power,extraStats){
   if(item.stats.haste>4)item.stats.haste=4;
   if(item.stats.dodge>4)item.stats.dodge=4;
   item.reqLvl=Math.max(1,Math.floor(power*0.9));item.sell=Math.floor(10*rarity.mult*(1+power*0.5));
-  if(typeof enhanceItemOnCreate==='function') enhanceItemOnCreate(item,rarity,power);
+  if(!_noRand && typeof enhanceItemOnCreate==='function') enhanceItemOnCreate(item,rarity,power);
   return item;
 }
 /* 自动售卖反馈:按品质自动卖出是高频事件,逐件日志会刷屏 → 累计后节流(每6秒/或强制)汇总一条 */

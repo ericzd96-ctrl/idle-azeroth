@@ -2815,10 +2815,17 @@ function buildDungeonInfoHtml(dg) {
       const previewPool = items.filter(it => !it.lowChanceLegend);
       const tw = Math.max(1, previewPool.reduce((sum, it) => sum + ((it.dropWeight) || (RARITY.find(r => r.key === it.rarity)?.weight || 1)), 0));
       html += `<div style="display:flex;flex-direction:column;gap:4px">`;
+      const _previewTier = (typeof gearTierForDungeon === 'function') ? gearTierForDungeon(dg.key) : (isEpicRaid ? 3 : 0);
       for (const it of items) {
         const r = RARITY.find(x => x.key === it.rarity);
-        const scaledStats = scaleLootStats(it.stats || {}, it.rarity, Math.max(power, isEpicRaid ? 90 : power));
-        const statsText = Object.entries(scaledStats).map(([k, v]) => fmtMod(k, v)).join(' ');
+        // 用真实掉落公式(finishItem,跳过随机浮动/惊喜)生成"典型属性",保证预览=实际(不再用过时的 scaleLootStats)
+        let statsText;
+        if (typeof finishItem === 'function' && r) {
+          const _pi = finishItem({ slot:it.slot, name:it.name, rarity:it.rarity, epicRaid:it.epicRaid, gearTier:_previewTier }, it.slot, r, Math.max(power, isEpicRaid ? 90 : power), it.stats || {}, { noRandom:true });
+          statsText = Object.entries(_pi.stats || {}).map(([k, v]) => fmtMod(k, v)).join(' ') + ' <span style="opacity:.5">(±20%浮动)</span>';
+        } else {
+          statsText = Object.entries(scaleLootStats(it.stats || {}, it.rarity, power)).map(([k, v]) => fmtMod(k, v)).join(' ');
+        }
         const itemRate = it.dropChance
           ? `${Math.round(it.dropChance * 100)}%`
           : `${Math.round((((it.dropWeight) || (RARITY.find(r2 => r2.key === it.rarity)?.weight || 1)) / tw) * 100)}%`;
