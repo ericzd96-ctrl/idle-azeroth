@@ -3095,11 +3095,23 @@ function tickBattle(now){
     lastHeroAtk=now;
     if(getCls().resKey==='rage')state.resource=Math.min(state.resourceMax,state.resource+(d.crit?12:8));
     // 智能自动施法:读取当前职业全部已解锁技能;技能栏仅作为手动快捷栏
-    if(state.autoSkill&&!casting){
+    if(state.autoSkill){
       const now2=Date.now();const aliveN=getAliveMonsters().length;
       const hpFrac=state.hp/Math.max(1,state.hero.hpMax);
       const targetHpFrac=mon&&mon.hp>0?mon.hp/Math.max(1,mon.hpMax):1;
       const autoSkills=autoCastSkillEntries(getCls());
+      if(casting){
+        // 读条期间:可以穿插释放"瞬发buff"技能,不打断当前读条(瞬发→castSkill 不动 casting)
+        for(const [skKey, sk] of autoSkills){
+          if(!sk||sk.type!=='buff'||getCastTime(sk)>0)continue;   // 仅瞬发buff
+          if(state.skillCooldowns[skKey]&&state.skillCooldowns[skKey]>now2)continue;
+          let cost=sk.mp;if(state.hero.costReduction>0)cost=Math.max(1,Math.floor(sk.mp*(1-state.hero.costReduction/100)));
+          if(state.resource<cost)continue;
+          if(autoSkillScore(skKey,sk,mon,{now:now2,aliveN,hpFrac,targetHpFrac})==null)continue;   // buff已生效会返回null,避免重复上
+          castSkill(skKey,false);
+          break;   // 一拍只穿插一个,避免同帧连放
+        }
+      } else {
       const ready=[];
       for(let order=0;order<autoSkills.length;order++){
         const [skKey, sk] = autoSkills[order];
@@ -3121,6 +3133,7 @@ function tickBattle(now){
           startCast(top.skKey,false);
           lastAutoCast=now2;
         }
+      }
       }
     }
   }
