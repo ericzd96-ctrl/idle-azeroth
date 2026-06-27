@@ -449,6 +449,118 @@ const SPEC_EXTRA_MINORS = {
       vsStateTrait({ key:'art_war_prot_ex_crush', tree:'prot', name:'碎甲突进', icon:'🔨', state:'sunder', dmgPct:[8,16,24], mod:{atkPct:1}, desc:'对被破甲目标造成的伤害提高 8/16/24%,并获得攻击 +1%/2%/3%。' }),
     ],
   },
+  mage: {
+    arcane: [
+      bossTrait({ key:'art_mage_arcane_ex_focus', tree:'arcane', name:'法阵贯注', icon:'🔮', dmgPct:[6,12,18], mod:{critdPct:4}, desc:'对首领造成的伤害提高 6/12/18%,并获得暴伤 +4%/8%/12%。' }),
+      onKillTrait({ key:'art_mage_arcane_ex_surge', tree:'arcane', name:'奥能回响', icon:'✨', nextSkillCrit:1, resource:[8,12,16], mod:{atkPct:1}, desc:'击杀敌人后,下一次伤害技能必暴并恢复 8/12/16 法力,并获得攻击 +1%/2%/3%。' }),
+    ],
+    fire: [
+      vsStateTrait({ key:'art_mage_fire_ex_burn', tree:'fire', name:'烈焰蔓延', icon:'🔥', state:'dot', dmgPct:[8,16,24], mod:{dotBonus:3}, desc:'对带有灼烧的目标造成的伤害提高 8/16/24%,并获得持续伤害 +3/6/9。' }),
+      executeTrait({ key:'art_mage_fire_ex_pyre', tree:'fire', name:'焚化', icon:'🌋', threshold:0.35, dmgPct:[10,20,30], mod:{atkPct:1}, desc:'对生命低于 35% 的目标造成的伤害提高 10/20/30%,并获得攻击 +1%/2%/3%。' }),
+    ],
+    frost: [
+      vsStateTrait({ key:'art_mage_frost_ex_chill', tree:'frost', name:'刺骨寒霜', icon:'❄️', state:'slow', dmgPct:[8,16,24], mod:{critdPct:4}, desc:'对被减速目标造成的伤害提高 8/16/24%,并获得暴伤 +4%/8%/12%。' }),
+      lowHpTrait({ key:'art_mage_frost_ex_barrier', tree:'frost', name:'寒冰护壁', icon:'🛡️', threshold:0.4, cooldown:30000, shieldPct:[0.05,0.09,0.13], mod:{hpPct:2}, desc:'生命低于 40% 时获得 5%/9%/13% 最大生命护盾(30秒冷却),并获得生命 +2%/4%/6%。' }),
+    ],
+  },
+  priest: {
+    discipline: [
+      lowHpTrait({ key:'art_priest_disc_ex_aegis', tree:'discipline', name:'救赎护壁', icon:'🛡️', threshold:0.45, cooldown:28000, healPct:[0.06,0.1,0.14], shieldPct:[0.04,0.07,0.1], mod:{healBonus:2}, desc:'生命低于 45% 时恢复 6%/10%/14% 生命并获得 4%/7%/10% 护盾(28秒冷却),并获得治疗 +2%/4%/6%。' }),
+      bossTrait({ key:'art_priest_disc_ex_ward', tree:'discipline', name:'戒律护持', icon:'⚖️', takenPct:[5,10,15], mod:{hpPct:2}, desc:'受到首领伤害降低 5/10/15%,并获得生命 +2%/4%/6%。' }),
+    ],
+    holy: [
+      onKillTrait({ key:'art_priest_holy_ex_grace', tree:'holy', name:'圣光涌动', icon:'✨', shieldPct:[0.05,0.08,0.11], healPct:[0.04,0.07,0.1], mod:{healBonus:2}, desc:'击杀敌人后恢复 4%/7%/10% 生命并获得 5%/8%/11% 护盾,并获得治疗 +2%/4%/6%。' }),
+      bossTrait({ key:'art_priest_holy_ex_ward', tree:'holy', name:'神圣壁垒', icon:'👼', takenPct:[5,10,15], mod:{hpPct:2}, desc:'受到首领伤害降低 5/10/15%,并获得生命 +2%/4%/6%。' }),
+    ],
+    shadow: [
+      vsStateTrait({ key:'art_priest_shadow_ex_decay', tree:'shadow', name:'暗影蔓延', icon:'🌑', state:'dot', dmgPct:[8,16,24], mod:{dotBonus:3}, desc:'对带有持续伤害的目标造成的伤害提高 8/16/24%,并获得持续伤害 +3/6/9。' }),
+      executeTrait({ key:'art_priest_shadow_ex_void', tree:'shadow', name:'湮灭', icon:'☠️', threshold:0.35, dmgPct:[10,20,30], mod:{atkPct:1}, desc:'对生命低于 35% 的目标造成的伤害提高 10/20/30%,并获得攻击 +1%/2%/3%。' }),
+    ],
+  },
+  rogue: {
+    assassination: [
+      vsStateTrait({ key:'art_rogue_assn_ex_venom', tree:'assassination', name:'毒囊横流', icon:'☠️', state:'dot', dmgPct:[8,16,24], mod:{dotBonus:3}, desc:'对中毒/流血的目标造成的伤害提高 8/16/24%,并获得持续伤害 +3/6/9。' }),
+      executeTrait({ key:'art_rogue_assn_ex_throat', tree:'assassination', name:'见血封喉', icon:'🩸', threshold:0.35, dmgPct:[10,20,30], mod:{atkPct:1}, desc:'对生命低于 35% 的目标造成的伤害提高 10/20/30%,并获得攻击 +1%/2%/3%。' }),
+    ],
+    combat: [
+      onCritTrait({ key:'art_rogue_combat_ex_riposte', tree:'combat', name:'连刃反击', icon:'🗡️', extraHitMul:[0.3,0.45,0.6], extraHitIcon:'🗡️', cooldown:2500, mod:{critdPct:4}, desc:'暴击后追加一次 30%/45%/60% 伤害的连刃(2.5秒冷却),并获得暴伤 +4%/8%/12%。' }),
+      bossTrait({ key:'art_rogue_combat_ex_hunt', tree:'combat', name:'猎首', icon:'🎯', dmgPct:[6,12,18], mod:{atkPct:1}, desc:'对首领造成的伤害提高 6/12/18%,并获得攻击 +1%/2%/3%。' }),
+    ],
+    subtlety: [
+      executeTrait({ key:'art_rogue_sub_ex_garrote', tree:'subtlety', name:'喉切', icon:'🪢', threshold:0.35, dmgPct:[10,20,30], mod:{atkPct:1}, desc:'对生命低于 35% 的目标造成的伤害提高 10/20/30%,并获得攻击 +1%/2%/3%。' }),
+      bossTrait({ key:'art_rogue_sub_ex_mark', tree:'subtlety', name:'猎物标记', icon:'🔍', dmgPct:[6,12,18], mod:{critdPct:4}, desc:'对首领造成的伤害提高 6/12/18%,并获得暴伤 +4%/8%/12%。' }),
+    ],
+  },
+  hunter: {
+    bm: [
+      bossTrait({ key:'art_hunter_bm_ex_apex', tree:'bm', name:'顶级猎食', icon:'👑', dmgPct:[6,12,18], mod:{atkPct:1}, desc:'对首领造成的伤害提高 6/12/18%,并获得攻击 +1%/2%/3%。' }),
+      onKillTrait({ key:'art_hunter_bm_ex_call', tree:'bm', name:'兽群呼应', icon:'🐾', nextSkillCrit:1, resource:[6,10,14], mod:{spdPct:1}, desc:'击杀敌人后,下一次伤害技能必暴并恢复 6/10/14 集中值,并获得攻速 +1%/2%/3%。' }),
+    ],
+    marks: [
+      executeTrait({ key:'art_hunter_marks_ex_kill', tree:'marks', name:'断头狙杀', icon:'💀', threshold:0.35, dmgPct:[12,24,36], mod:{atkPct:1}, desc:'对生命低于 35% 的目标造成的伤害提高 12/24/36%,并获得攻击 +1%/2%/3%。' }),
+      bossTrait({ key:'art_hunter_marks_ex_mark', tree:'marks', name:'瞄准弱点', icon:'🎯', dmgPct:[6,12,18], mod:{critdPct:4}, desc:'对首领造成的伤害提高 6/12/18%,并获得暴伤 +4%/8%/12%。' }),
+    ],
+    survival: [
+      vsStateTrait({ key:'art_hunter_surv_ex_trap', tree:'survival', name:'陷阱毒伤', icon:'🪤', state:'dot', dmgPct:[8,16,24], mod:{dotBonus:3}, desc:'对带有持续伤害的目标造成的伤害提高 8/16/24%,并获得持续伤害 +3/6/9。' }),
+      lowHpTrait({ key:'art_hunter_surv_ex_wild', tree:'survival', name:'荒野韧性', icon:'🌿', threshold:0.4, cooldown:30000, shieldPct:[0.05,0.09,0.13], mod:{hpPct:2}, desc:'生命低于 40% 时获得 5%/9%/13% 最大生命护盾(30秒冷却),并获得生命 +2%/4%/6%。' }),
+    ],
+  },
+  shaman: {
+    element: [
+      bossTrait({ key:'art_shaman_ele_ex_focus', tree:'element', name:'雷霆聚焦', icon:'🌩️', dmgPct:[6,12,18], mod:{critdPct:4}, desc:'对首领造成的伤害提高 6/12/18%,并获得暴伤 +4%/8%/12%。' }),
+      onKillTrait({ key:'art_shaman_ele_ex_echo', tree:'element', name:'元素回响', icon:'🌀', nextSkillCrit:1, resource:[6,10,14], mod:{atkPct:1}, desc:'击杀敌人后,下一次伤害技能必暴并恢复 6/10/14 法力,并获得攻击 +1%/2%/3%。' }),
+    ],
+    enhancement: [
+      onCritTrait({ key:'art_shaman_enh_ex_storm', tree:'enhancement', name:'风暴打击', icon:'⚡', extraHitMul:[0.3,0.45,0.6], extraHitIcon:'⚡', cooldown:2500, mod:{spdPct:1}, desc:'暴击后追加一次 30%/45%/60% 伤害的风暴打击(2.5秒冷却),并获得攻速 +1%/2%/3%。' }),
+      executeTrait({ key:'art_shaman_enh_ex_finish', tree:'enhancement', name:'雷霆终结', icon:'💀', threshold:0.35, dmgPct:[10,20,30], mod:{atkPct:1}, desc:'对生命低于 35% 的目标造成的伤害提高 10/20/30%,并获得攻击 +1%/2%/3%。' }),
+    ],
+    restoration: [
+      lowHpTrait({ key:'art_shaman_rest_ex_tide', tree:'restoration', name:'潮汐护壁', icon:'🌊', threshold:0.45, cooldown:28000, healPct:[0.06,0.1,0.14], shieldPct:[0.04,0.07,0.1], mod:{healBonus:2}, desc:'生命低于 45% 时恢复 6%/10%/14% 生命并获得 4%/7%/10% 护盾(28秒冷却),并获得治疗 +2%/4%/6%。' }),
+      onKillTrait({ key:'art_shaman_rest_ex_spring', tree:'restoration', name:'生命之泉', icon:'💧', shieldPct:[0.05,0.08,0.11], mod:{healBonus:2}, desc:'击杀敌人后获得 5%/8%/11% 最大生命护盾,并获得治疗 +2%/4%/6%。' }),
+    ],
+  },
+  paladin: {
+    holy: [
+      onKillTrait({ key:'art_paladin_holy_ex_dawn', tree:'holy', name:'黎明恩泽', icon:'✨', shieldPct:[0.05,0.08,0.11], healPct:[0.04,0.07,0.1], mod:{healBonus:2}, desc:'击杀敌人后恢复 4%/7%/10% 生命并获得 5%/8%/11% 护盾,并获得治疗 +2%/4%/6%。' }),
+      bossTrait({ key:'art_paladin_holy_ex_ward', tree:'holy', name:'神圣壁垒', icon:'👼', takenPct:[5,10,15], mod:{hpPct:2}, desc:'受到首领伤害降低 5/10/15%,并获得生命 +2%/4%/6%。' }),
+    ],
+    prot: [
+      lowHpTrait({ key:'art_paladin_prot_ex_aegis', tree:'prot', name:'圣盾壁垒', icon:'🛡️', threshold:0.4, cooldown:30000, shieldPct:[0.06,0.1,0.14], mod:{defPct:1}, desc:'生命低于 40% 时获得 6%/10%/14% 最大生命护盾(30秒冷却),并获得防御 +1%/2%/3%。' }),
+      bossTrait({ key:'art_paladin_prot_ex_bastion', tree:'prot', name:'正义壁垒', icon:'⛰️', takenPct:[6,12,18], mod:{hpPct:2}, desc:'受到首领伤害降低 6/12/18%,并获得生命 +2%/4%/6%。' }),
+    ],
+    ret: [
+      executeTrait({ key:'art_paladin_ret_ex_judge', tree:'ret', name:'终极审判', icon:'😇', threshold:0.35, dmgPct:[10,20,30], mod:{atkPct:1}, desc:'对生命低于 35% 的目标造成的伤害提高 10/20/30%,并获得攻击 +1%/2%/3%。' }),
+      bossTrait({ key:'art_paladin_ret_ex_sanction', tree:'ret', name:'制裁强敌', icon:'⚖️', dmgPct:[6,12,18], mod:{critdPct:4}, desc:'对首领造成的伤害提高 6/12/18%,并获得暴伤 +4%/8%/12%。' }),
+    ],
+  },
+  warlock: {
+    affliction: [
+      vsStateTrait({ key:'art_warlock_aff_ex_corrupt', tree:'affliction', name:'灵魂腐蚀', icon:'☠️', state:'dot', dmgPct:[10,20,30], mod:{dotBonus:3}, desc:'对带有持续伤害的目标造成的伤害提高 10/20/30%,并获得持续伤害 +3/6/9。' }),
+      executeTrait({ key:'art_warlock_aff_ex_agony', tree:'affliction', name:'痛苦终结', icon:'💜', threshold:0.35, dmgPct:[10,20,30], mod:{atkPct:1}, desc:'对生命低于 35% 的目标造成的伤害提高 10/20/30%,并获得攻击 +1%/2%/3%。' }),
+    ],
+    demonology: [
+      bossTrait({ key:'art_warlock_demo_ex_command', tree:'demonology', name:'恶魔统御', icon:'👿', dmgPct:[6,12,18], mod:{atkPct:1}, desc:'对首领造成的伤害提高 6/12/18%,并获得攻击 +1%/2%/3%。' }),
+      lowHpTrait({ key:'art_warlock_demo_ex_shell', tree:'demonology', name:'魔壳护体', icon:'🧱', threshold:0.4, cooldown:30000, shieldPct:[0.05,0.09,0.13], mod:{hpPct:2}, desc:'生命低于 40% 时获得 5%/9%/13% 最大生命护盾(30秒冷却),并获得生命 +2%/4%/6%。' }),
+    ],
+    destruction: [
+      executeTrait({ key:'art_warlock_dest_ex_doom', tree:'destruction', name:'末日焚决', icon:'💀', threshold:0.35, dmgPct:[10,20,30], mod:{atkPct:1}, desc:'对生命低于 35% 的目标造成的伤害提高 10/20/30%,并获得攻击 +1%/2%/3%。' }),
+      onCritTrait({ key:'art_warlock_dest_ex_chaos', tree:'destruction', name:'混沌预燃', icon:'🔥', extraHitMul:[0.3,0.45,0.6], extraHitIcon:'🔥', cooldown:2500, mod:{critdPct:4}, desc:'暴击后追加一次 30%/45%/60% 伤害的混沌灼烧(2.5秒冷却),并获得暴伤 +4%/8%/12%。' }),
+    ],
+  },
+  druid: {
+    balance: [
+      vsStateTrait({ key:'art_druid_bal_ex_moon', tree:'balance', name:'月蚀灼烧', icon:'🌙', state:'dot', dmgPct:[8,16,24], mod:{dotBonus:3}, desc:'对带有持续伤害的目标造成的伤害提高 8/16/24%,并获得持续伤害 +3/6/9。' }),
+      bossTrait({ key:'art_druid_bal_ex_focus', tree:'balance', name:'星界聚焦', icon:'🪐', dmgPct:[6,12,18], mod:{critdPct:4}, desc:'对首领造成的伤害提高 6/12/18%,并获得暴伤 +4%/8%/12%。' }),
+    ],
+    feral: [
+      vsStateTrait({ key:'art_druid_feral_ex_rend', tree:'feral', name:'血牙撕裂', icon:'🩸', state:'dot', dmgPct:[8,16,24], mod:{atkPct:1}, desc:'对流血的目标造成的伤害提高 8/16/24%,并获得攻击 +1%/2%/3%。' }),
+      executeTrait({ key:'art_druid_feral_ex_savage', tree:'feral', name:'血牙终袭', icon:'🐺', threshold:0.35, dmgPct:[10,20,30], mod:{atkPct:1}, desc:'对生命低于 35% 的目标造成的伤害提高 10/20/30%,并获得攻击 +1%/2%/3%。' }),
+    ],
+    resto: [
+      lowHpTrait({ key:'art_druid_resto_ex_bloom', tree:'resto', name:'繁花护壁', icon:'🌺', threshold:0.45, cooldown:28000, healPct:[0.06,0.1,0.14], shieldPct:[0.04,0.07,0.1], mod:{healBonus:2}, desc:'生命低于 45% 时恢复 6%/10%/14% 生命并获得 4%/7%/10% 护盾(28秒冷却),并获得治疗 +2%/4%/6%。' }),
+      onKillTrait({ key:'art_druid_resto_ex_renew', tree:'resto', name:'回春涌流', icon:'🌿', healPct:[0.04,0.07,0.1], mod:{healBonus:2}, desc:'击杀敌人后恢复 4%/7%/10% 生命,并获得治疗 +2%/4%/6%。' }),
+    ],
+  },
 };
 
 // 核心三选一(战士手写;每项 = 一种 build 方向)
