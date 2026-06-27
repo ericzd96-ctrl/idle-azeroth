@@ -145,6 +145,7 @@ function enterDungeon(key) {
   if (typeof resetCombatState === 'function') resetCombatState();
   else if (typeof clearAllBuffs === 'function') clearAllBuffs();
   if (typeof recomputeStats === 'function') recomputeStats();   // 清增益后重算面板,再回满血
+  if (typeof initCompanionHp === 'function') initCompanionHp();  // 随从满血进本(spawnDungeonMonster 不会初始化,resetCombatState 已置空_compHp)
   state.hp = state.hero.hpMax;
   state.resource = state.resourceMax;
   if (typeof resetDmgStats === 'function') resetDmgStats();
