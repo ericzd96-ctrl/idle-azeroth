@@ -2097,7 +2097,8 @@ function spawnDungeonMonster(){
   const dg=DUNGEONS.find(d=>d.key===ds.key);if(!dg)return;
   const boss=(dg.bosses||[]).find(b=>b.wave===ds.wave);const isBoss=!!boss;
   const isEpicRaid=!!dg.epicRaid;
-  const power=dg.reqLvl+(isBoss?3:0);
+  const dungeonPower=(typeof dg.powerLvl==='number'&&dg.powerLvl>0)?dg.powerLvl:dg.reqLvl;
+  const power=dungeonPower+(isBoss?3:0);
   const scale=ds.scale||1;
   // 小怪名与副本对应:用本副本 BOSS 的 emoji + 角色词(让副本小怪有辨识度)
   const bossEmojis=(dg.bosses||[]).map(b=>b.emoji).filter(Boolean);
@@ -3618,8 +3619,13 @@ function rollItem(maxRarity,fromLvl,dungeonKey,bossName,opts){
     for(const p of lootPool){__r-=(p.dropWeight||RARITY.find(r=>r.key===p.rarity)?.weight||1);if(__r<=0){pick=p;break;}}
     let pickRarity=RARITY.find(r=>r.key===pick.rarity)||rarity;
     if(_minRank>=0&&lootRarityRank(pick.rarity)<_minRank)pickRarity=RARITY.find(r=>r.key===opts.minRarity)||pickRarity;   // 英雄本及以上:低于史诗的池内物品提升为史诗(保留主题名)
-    const poolItem={id:itemIdSeq++,slot:pick.slot||slotKey,name:pick.name,rarity:pickRarity.key,rarityName:pickRarity.name,cls:pickRarity.cls,bcls:pickRarity.bcls,stats:{},sell:0,epicRaid:!!pick.epicRaid,setKey:pick.setKey,setName:pick.setName,setEffects:pick.setEffects?JSON.parse(JSON.stringify(pick.setEffects)):undefined,setPieces:pick.setPieces,gearTier:gearTierForDungeon(dungeonKey)};
-    return finishItem(poolItem,pick.slot||slotKey,pickRarity,power,pick.stats||{});
+    let poolRaidIlvl=pick.raidIlvl;
+    if(typeof poolRaidIlvl==='number'&&pickRarity.key!==pick.rarity&&typeof raidDropIlvl==='function'){
+      poolRaidIlvl=raidDropIlvl(pick.raidBaseKey||((typeof baseDungeonKey==='function')?baseDungeonKey(dungeonKey):dungeonKey),pickRarity.key,!!pick.raidEpicMode,pick.raidBossIndex||0,pick.raidBossCount||1);
+    }
+    const itemPower=(typeof poolRaidIlvl==='number'&&typeof raidDropPowerFromIlvl==='function')?raidDropPowerFromIlvl(poolRaidIlvl):((typeof pick.rollPower==='number'&&pick.rollPower>0)?pick.rollPower:power);
+    const poolItem={id:itemIdSeq++,slot:pick.slot||slotKey,name:pick.name,rarity:pickRarity.key,rarityName:pickRarity.name,cls:pickRarity.cls,bcls:pickRarity.bcls,stats:{},sell:0,epicRaid:!!pick.epicRaid,setKey:pick.setKey,setName:pick.setName,setEffects:pick.setEffects?JSON.parse(JSON.stringify(pick.setEffects)):undefined,setPieces:pick.setPieces,gearTier:gearTierForDungeon(dungeonKey),raidExpansion:pick.raidExpansion,raidOrder:pick.raidOrder,raidTier:pick.raidTier,raidBaseKey:pick.raidBaseKey,raidBossIndex:pick.raidBossIndex,raidBossCount:pick.raidBossCount,raidEpicMode:pick.raidEpicMode,raidIlvl:poolRaidIlvl,reqLvlOverride:pick.reqLvlOverride};
+    return finishItem(poolItem,pick.slot||slotKey,pickRarity,itemPower,pick.stats||{});
   }}
   const item={id:itemIdSeq++,slot:slotKey,name:genName(slotKey,rarity),rarity:rarity.key,rarityName:rarity.name,cls:rarity.cls,bcls:rarity.bcls,stats:{},sell:0,gearTier:dungeonKey?gearTierForDungeon(dungeonKey):0};
   const poolStats=getPoolStatBonus(slotKey,rarity.key);return finishItem(item,slotKey,rarity,power,poolStats);
@@ -3636,6 +3642,7 @@ function rollItemOfRarity(rarityKey,fromLvl){
    与 finishItem 实际属性缩放(power×rarity.mult×_tierMult)同序——品质越高、副本梯队越高,装等越高。 */
 function computeItemLevel(item){
   if(!item) return 0;
+  if(typeof item.raidIlvl==='number'&&item.raidIlvl>0) return Math.max(1,Math.round(item.raidIlvl));
   let power=(typeof item._rollPower==='number'&&item._rollPower>0)?item._rollPower:0;
   if(!power) power=item.reqLvl?Math.round(item.reqLvl/0.9):1;   // 老存档无 _rollPower 时由 reqLvl 反推
   const rk=item.rarity||'common';
@@ -3710,7 +3717,9 @@ function finishItem(item,slotKey,rarity,power,extraStats,opts){
   if(item.stats.critd>12)item.stats.critd=12;
   if(item.stats.haste>4)item.stats.haste=4;
   if(item.stats.dodge>4)item.stats.dodge=4;
-  item.reqLvl=Math.max(1,Math.floor(power*0.9));item.sell=Math.floor(10*rarity.mult*(1+power*0.5));
+  item.reqLvl=Math.max(1,Math.floor(power*0.9));
+  if(typeof item.reqLvlOverride==='number'&&item.reqLvlOverride>0) item.reqLvl=Math.max(1,Math.floor(item.reqLvlOverride));
+  item.sell=Math.floor(10*rarity.mult*(1+power*0.5));
   if(!_noRand && typeof enhanceItemOnCreate==='function') enhanceItemOnCreate(item,rarity,power);
   item.ilvl=computeItemLevel(item);   // 魔兽装等(物品等级),由功率+品质+梯队派生
   return item;

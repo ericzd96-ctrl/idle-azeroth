@@ -5155,6 +5155,36 @@ const EPIC_RAID_SET_THEME = {
   aberrus:{ tier:'T29', name:'厄苏戈尔', short:'熔铸' },
   amirdrassil:{ tier:'T31', name:'阿米德拉希尔', short:'梦境' },
 };
+const RAID_PROGRESSION = {
+  mc:{ order:1, expansion:'经典旧世', epicIlvl:140 },
+  bwl:{ order:2, expansion:'经典旧世', epicIlvl:150 },
+  aq40:{ order:3, expansion:'经典旧世', epicIlvl:160 },
+  naxx:{ order:4, expansion:'经典旧世', epicIlvl:170 },
+  karazhan:{ order:5, expansion:'燃烧的远征', epicIlvl:180 },
+  ssc:{ order:6, expansion:'燃烧的远征', epicIlvl:190 },
+  tk:{ order:7, expansion:'燃烧的远征', epicIlvl:194 },
+  hyjal:{ order:8, expansion:'燃烧的远征', epicIlvl:200 },
+  bt:{ order:9, expansion:'燃烧的远征', epicIlvl:204 },
+  sunwell:{ order:10, expansion:'燃烧的远征', epicIlvl:210 },
+  ulduar:{ order:11, expansion:'巫妖王之怒', epicIlvl:216 },
+  icc:{ order:12, expansion:'巫妖王之怒', epicIlvl:220 },
+  ruby:{ order:13, expansion:'巫妖王之怒', epicIlvl:224 },
+  firelands:{ order:14, expansion:'大地的裂变', epicIlvl:232 },
+  dragonsoul:{ order:15, expansion:'大地的裂变', epicIlvl:240 },
+  throne:{ order:16, expansion:'熊猫人之谜', epicIlvl:252 },
+  soo:{ order:17, expansion:'熊猫人之谜', epicIlvl:264 },
+  hfc:{ order:18, expansion:'德拉诺之王', epicIlvl:276 },
+  nightmare:{ order:19, expansion:'军团再临', epicIlvl:288 },
+  nighthold:{ order:20, expansion:'军团再临', epicIlvl:300 },
+  tomb:{ order:21, expansion:'军团再临', epicIlvl:312 },
+  antorus:{ order:22, expansion:'军团再临', epicIlvl:324 },
+  uldir:{ order:23, expansion:'争霸艾泽拉斯', epicIlvl:336 },
+  eternalpalace:{ order:24, expansion:'争霸艾泽拉斯', epicIlvl:348 },
+  nyalotha:{ order:25, expansion:'争霸艾泽拉斯', epicIlvl:360 },
+  nathria:{ order:26, expansion:'暗影国度', epicIlvl:372 },
+  aberrus:{ order:27, expansion:'巨龙时代', epicIlvl:396 },
+  amirdrassil:{ order:28, expansion:'巨龙时代', epicIlvl:408 },
+};
 const EPIC_RAID_SET_LABELS = {
   mc:{
     warrior:'力量', mage:'奥术师', priest:'预言', rogue:'夜幕杀手', hunter:'巨人追猎者',
@@ -5293,6 +5323,35 @@ function currentLootClassKey(clsKey) {
 function raidTheme(baseKey) {
   return EPIC_RAID_SET_THEME[baseKey] || { tier:'T?', name:baseKey, short:baseKey };
 }
+function raidProgression(baseKey) {
+  const key = (typeof baseDungeonKey === 'function') ? baseDungeonKey(baseKey) : String(baseKey || '').replace(/_epic$/, '');
+  const raw = RAID_PROGRESSION[key];
+  const theme = raidTheme(key);
+  if (!raw) {
+    return {
+      key,
+      order: 0,
+      expansion: '未知资料片',
+      tier: theme.tier,
+      normalIlvl: 140,
+      epicIlvl: 160,
+      normalPowerLvl: 60,
+      epicPowerLvl: 80,
+    };
+  }
+  const epicIlvl = raw.epicIlvl;
+  const normalIlvl = raw.normalIlvl || Math.max(80, epicIlvl - 18);
+  return {
+    key,
+    order: raw.order,
+    expansion: raw.expansion,
+    tier: theme.tier,
+    normalIlvl,
+    epicIlvl,
+    normalPowerLvl: raw.normalPowerLvl || Math.round(52 + raw.order * 2.05),
+    epicPowerLvl: raw.epicPowerLvl || Math.round(68 + raw.order * 2.35),
+  };
+}
 function epicRaidKey(baseKey) { return `${baseKey}_epic`; }
 function isEpicRaidDungeon(dungeonKey) {
   const dg = getDungeonDef(dungeonKey);
@@ -5326,6 +5385,58 @@ function findRaidReferenceItem(baseKey, bossName, slotKey, rarityKey) {
     || bossPool[0]
     || raidBosses[0]
     || null;
+}
+function raidBossIndexInfo(baseKey, bossName, bossIndex, bossCount) {
+  const dg = getDungeonDef(baseKey);
+  const bosses = dg?.bosses || [];
+  const idx = Number.isFinite(bossIndex) ? bossIndex : Math.max(0, bosses.findIndex(b => b.name === bossName));
+  const count = Number.isFinite(bossCount) && bossCount > 0 ? bossCount : Math.max(1, bosses.length);
+  return { bossIndex: Math.max(0, idx), bossCount: count };
+}
+function raidDropIlvl(baseKey, rarityKey, epicMode, bossIndex, bossCount) {
+  const prog = raidProgression(baseKey);
+  const base = epicMode ? prog.epicIlvl : prog.normalIlvl;
+  const ratio = bossCount <= 1 ? 1 : Math.max(0, Math.min(1, bossIndex / (bossCount - 1)));
+  const bossBump = Math.round(ratio * 4);
+  const rarityBump = ({ common:-18, uncommon:-14, rare:-8, epic:0, legend:8 })[rarityKey || 'epic'] || 0;
+  return Math.max(1, Math.round(base + bossBump + rarityBump));
+}
+function raidDropPowerFromIlvl(ilvl) {
+  return Math.max(1, Math.round(ilvl / 3));
+}
+function applyRaidLootProgression(item, baseKey, bossName, epicMode, bossIndex, bossCount) {
+  if (!item) return item;
+  const info = raidBossIndexInfo(baseKey, bossName, bossIndex, bossCount);
+  const prog = raidProgression(baseKey);
+  const ilvl = raidDropIlvl(baseKey, item.rarity, epicMode, info.bossIndex, info.bossCount);
+  item.raidExpansion = prog.expansion;
+  item.raidOrder = prog.order;
+  item.raidTier = prog.tier;
+  item.raidBaseKey = baseKey;
+  item.raidBossIndex = info.bossIndex;
+  item.raidBossCount = info.bossCount;
+  item.raidEpicMode = !!epicMode;
+  item.raidIlvl = ilvl;
+  item.rollPower = raidDropPowerFromIlvl(ilvl);
+  const dg = getDungeonDef(epicMode ? epicRaidKey(baseKey) : baseKey) || getDungeonDef(baseKey);
+  item.reqLvlOverride = Math.max(1, Math.min(80, dg?.reqLvl || (epicMode ? 80 : 60)));
+  return item;
+}
+function applyRaidProgressionToDungeon(dg) {
+  if (!dg || dg.type !== 'raid') return dg;
+  const baseKey = dg.baseKey || ((typeof baseDungeonKey === 'function') ? baseDungeonKey(dg.key) : dg.key);
+  const prog = raidProgression(baseKey);
+  const epicMode = !!dg.epicRaid;
+  dg.raidExpansion = prog.expansion;
+  dg.raidOrder = prog.order;
+  dg.raidTier = prog.tier;
+  dg.raidIlvl = epicMode ? prog.epicIlvl : prog.normalIlvl;
+  dg.powerLvl = epicMode ? prog.epicPowerLvl : Math.max(dg.reqLvl || 1, prog.normalPowerLvl);
+  dg.sortPower = prog.order * 10 + (epicMode ? 1 : 0);
+  return dg;
+}
+function applyRaidProgressionCatalog() {
+  for (const dg of DUNGEONS) applyRaidProgressionToDungeon(dg);
 }
 function makeEpicRaidSetName(baseKey, clsKey, slotKey) {
   return `${epicRaidSetLabel(baseKey, clsKey)}${SLOT_INFO[slotKey]?.label || slotKey}`;
@@ -5410,7 +5521,7 @@ function epicRaidLegendChance(bossIndex, bossCount) {
 }
 function makeEpicRaidSetItem(baseKey, bossName, bossIndex, clsKey) {
   const slotKey = EPIC_RAID_SET_SLOT_ROTATION[bossIndex % EPIC_RAID_SET_SLOT_ROTATION.length];
-  return {
+  return applyRaidLootProgression({
     name: makeEpicRaidSetName(baseKey, clsKey, slotKey),
     slot: slotKey,
     rarity: 'epic',
@@ -5419,22 +5530,22 @@ function makeEpicRaidSetItem(baseKey, bossName, bossIndex, clsKey) {
     setName: epicRaidSetLabel(baseKey, clsKey),
     dropWeight: 52,
     stats: makeEpicRaidSetStats(slotKey, clsKey, bossIndex),
-  };
+  }, baseKey, bossName, true, bossIndex);
 }
 function makeEpicRaidOffpiece(baseKey, bossName, bossIndex, clsKey) {
   const slotKey = EPIC_RAID_OFFPIECE_ROTATION[bossIndex % EPIC_RAID_OFFPIECE_ROTATION.length];
-  return {
+  return applyRaidLootProgression({
     name: makeEpicRaidOffpieceName(baseKey, bossName, slotKey),
     slot: slotKey,
     rarity: 'epic',
     epicRaid: true,
     dropWeight: 38,
     stats: makeEpicRaidOffpieceStats(slotKey, clsKey, bossIndex),
-  };
+  }, baseKey, bossName, true, bossIndex);
 }
 function makeEpicRaidLegendItem(baseKey, bossName, bossIndex, bossCount, clsKey) {
   const slotKey = EPIC_RAID_LEGEND_SLOT_ROTATION[bossIndex % EPIC_RAID_LEGEND_SLOT_ROTATION.length];
-  return {
+  return applyRaidLootProgression({
     name: makeEpicRaidLegendName(baseKey, bossName, slotKey),
     slot: slotKey,
     rarity: 'legend',
@@ -5442,7 +5553,7 @@ function makeEpicRaidLegendItem(baseKey, bossName, bossIndex, bossCount, clsKey)
     dropChance: epicRaidLegendChance(bossIndex, bossCount),
     dropWeight: 1,
     stats: makeEpicRaidLegendStats(slotKey, clsKey, bossIndex, bossCount),
-  };
+  }, baseKey, bossName, true, bossIndex, bossCount);
 }
 function makeNormalRaidFinalWeapon(baseKey, bossName, clsKey) {
   const primary = epicRaidPrimaryAttr(clsKey);
@@ -5476,21 +5587,29 @@ function getNormalRaidBossLoot(dungeonKey, bossName, clsKey, options) {
   const raw = (getBaseDungeonBossLoot(baseKey, bossName) || []).map(cloneLootItem);
   const finalBossName = dg.bosses?.[dg.bosses.length - 1]?.name;
   const isFinal = bossName === finalBossName;
+  const bossIndex = Math.max(0, (dg.bosses || []).findIndex(b => b.name === bossName));
+  const bossCount = Math.max(1, (dg.bosses || []).length);
   let pool = raw.filter(it => it.rarity !== 'legend');
   if (isFinal) {
     let legendWeapons = raw.filter(it => it.rarity === 'legend' && it.slot === 'weapon');
     if (!legendWeapons.length) legendWeapons = [makeNormalRaidFinalWeapon(baseKey, bossName, clsKey)];
     legendWeapons = legendWeapons.map(it => Object.assign(cloneLootItem(it), { lowChanceLegend:true, dropChance: it.dropChance || 0.06 }));
+    legendWeapons = legendWeapons.map(it => applyRaidLootProgression(it, baseKey, bossName, false, bossIndex, bossCount));
     if (options?.rarityKey === 'legend') return filterLootByRarity(legendWeapons, options.rarityKey, options.exactRarity);
     if (!options?.rarityKey) pool = pool.concat(legendWeapons);
   }
+  pool = pool.map(it => applyRaidLootProgression(it, baseKey, bossName, false, bossIndex, bossCount));
   return filterLootByRarity(pool, options?.rarityKey, options?.exactRarity);
 }
 function getDungeonTrashLoot(dungeonKey, clsKey, options) {
   const baseKey = baseDungeonKey(dungeonKey);
   const loot = DUNGEON_LOOT[baseKey] || DUNGEON_LOOT[dungeonKey];
   const pool = (loot?.trash || []).map(cloneLootItem);
-  return filterLootByRarity(pool, options?.rarityKey, options?.exactRarity);
+  const dg = getDungeonDef(baseKey);
+  const progressed = dg?.type === 'raid'
+    ? pool.map(it => applyRaidLootProgression(it, baseKey, null, isEpicRaidDungeon(dungeonKey), 0, Math.max(1, (dg.bosses || []).length)))
+    : pool;
+  return filterLootByRarity(progressed, options?.rarityKey, options?.exactRarity);
 }
 function getDungeonBossLoot(dungeonKey, bossName, clsKey, options) {
   if (isEpicRaidDungeon(dungeonKey) || isEpicRaidKey(dungeonKey)) {
@@ -5535,36 +5654,48 @@ function injectOldRaidPhaseKits(){
   }
 }
 injectOldRaidPhaseKits();
+applyRaidProgressionCatalog();
 
 function createEpicRaidCatalog() {
   const baseRaids = DUNGEONS.filter(d => d.type === 'raid' && !d.epicRaid);
   for (const base of baseRaids) {
     const key = epicRaidKey(base.key);
     if (DUNGEONS.some(d => d.key === key)) continue;
+    const prog = raidProgression(base.key);
     const clone = JSON.parse(JSON.stringify(base));
     clone.key = key;
     clone.baseKey = base.key;
     clone.name = `${base.name}·史诗`;
-    clone.desc = `80级史诗团本 · ${base.name} 的极限难度版本`;
+    clone.desc = `${prog.expansion} · 史诗团本 · 推荐装等 ${prog.epicIlvl} · ${base.name} 的极限难度版本`;
     clone.reqLvl = 80;
+    clone.raidExpansion = prog.expansion;
+    clone.raidOrder = prog.order;
+    clone.raidTier = prog.tier;
+    clone.raidIlvl = prog.epicIlvl;
+    clone.powerLvl = prog.epicPowerLvl;
+    clone.sortPower = prog.order * 10 + 1;
     clone.cd = Math.max(base.cd || 0, 1500);
     clone.epicRaid = true;
     clone.bosses = (clone.bosses || []).map((boss, idx, arr) => {
-      boss.supportCount = Math.max(boss.supportCount || 0, idx === arr.length - 1 ? 4 : 2);
+      const final = idx === arr.length - 1;
+      const rankScale = Math.max(0, prog.order - 1);
+      boss.raidExpansion = prog.expansion;
+      boss.raidOrder = prog.order;
+      boss.supportCount = Math.max(boss.supportCount || 0, final ? Math.min(6, 3 + Math.floor(prog.order / 8)) : Math.min(4, 1 + Math.floor(prog.order / 10)));
       boss.passive = Object.assign({}, boss.passive || {}, {
-        dmgReduction: Math.max(boss.passive?.dmgReduction || 0, idx === arr.length - 1 ? 0.26 : 0.18),
-        critChance: Math.max(boss.passive?.critChance || 0, idx === arr.length - 1 ? 0.28 : 0.18),
-        atkBonus: Math.max(boss.passive?.atkBonus || 0, idx === arr.length - 1 ? 0.32 : 0.18),
+        dmgReduction: Math.max(boss.passive?.dmgReduction || 0, Math.min(final ? 0.38 : 0.30, (final ? 0.20 : 0.13) + rankScale * 0.006)),
+        critChance: Math.max(boss.passive?.critChance || 0, Math.min(final ? 0.36 : 0.28, (final ? 0.20 : 0.12) + rankScale * 0.006)),
+        atkBonus: Math.max(boss.passive?.atkBonus || 0, Math.min(final ? 0.46 : 0.34, (final ? 0.24 : 0.14) + rankScale * 0.008)),
       });
       boss.skills = (boss.skills || []).map(sk => {
         const out = Object.assign({}, sk);
-        if (typeof out.mul === 'number') out.mul = +(out.mul + (idx === arr.length - 1 ? 2.5 : 1.5)).toFixed(1);
-        if (typeof out.castTime === 'number') out.castTime = +(out.castTime + 0.2).toFixed(1);
+        if (typeof out.mul === 'number') out.mul = +(out.mul + (final ? 1.8 : 1.0) + prog.order * 0.08).toFixed(1);
+        if (typeof out.castTime === 'number') out.castTime = +(out.castTime + Math.min(0.4, 0.1 + prog.order * 0.01)).toFixed(1);
         return out;
       });
       return boss;
     });
-    enhanceBossCollection(clone.bosses, { kind:'raid', lvl:clone.reqLvl, finalAt:(clone.bosses.length - 1) });
+    enhanceBossCollection(clone.bosses, { kind:'raid', lvl:clone.powerLvl, finalAt:(clone.bosses.length - 1) });
     DUNGEONS.push(clone);
   }
 }

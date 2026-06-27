@@ -643,7 +643,7 @@ function onMythicBossKill() {
 
   // 装备(尾王保底传说)
   const bossRarity = isLastBoss ? 'legend' : (bossIdx >= Math.floor(bossList.length / 2) ? 'epic' : 'rare');
-  const power = dg.reqLvl + 3;
+  const power = ((typeof dg.powerLvl === 'number' && dg.powerLvl > 0) ? dg.powerLvl : dg.reqLvl) + 3;
   const it = rollItem(bossRarity, power, dg.key, currentBoss ? currentBoss.name : null);
   if (it) {
     ms.loot.push(it);

@@ -2773,7 +2773,7 @@ function renderCompanion() {
 let dgFilter = 'all'; // 'all' | '5man' | 'raid'
 function buildDungeonInfoHtml(dg) {
   if (!dg) return '<div class="muted">未找到副本信息</div>';
-  const power = dg.reqLvl + 5;
+  const power = ((typeof dg.powerLvl === 'number' && dg.powerLvl > 0) ? dg.powerLvl : dg.reqLvl) + 5;
   const isRaid = dg.type === 'raid';
   const isEpicRaid = !!dg.epicRaid;
   const dgAffixes = (typeof getDungeonAffixes === 'function') ? getDungeonAffixes(dg) : [];
@@ -2793,6 +2793,8 @@ function buildDungeonInfoHtml(dg) {
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
       <div style="font-weight:700;font-size:16px">${dungeonIconHtml} ${dg.name}</div>
       <div class="pill">等级${dg.reqLvl}</div>
+      ${dg.raidExpansion ? `<div class="pill">${dg.raidExpansion}</div>` : ''}
+      ${dg.raidIlvl ? `<div class="pill">推荐装等 ${dg.raidIlvl}</div>` : ''}
     </div>
     <div class="muted" style="margin-bottom:10px;line-height:1.6">
       ${isEpicRaid?'<span style="color:#fb7185">[史诗团本]</span> ':(isRaid?'<span style="color:#fbbf24">[团本]</span> ':'<span style="color:#6ee7b7">[5人本]</span> ')}
@@ -2843,7 +2845,8 @@ function buildDungeonInfoHtml(dg) {
         // 用真实掉落公式(finishItem,跳过随机浮动/惊喜)生成"典型属性",保证预览=实际(不再用过时的 scaleLootStats)
         let statsText;
         if (typeof finishItem === 'function' && r) {
-          const _pi = finishItem({ slot:it.slot, name:it.name, rarity:it.rarity, epicRaid:it.epicRaid, gearTier:_previewTier }, it.slot, r, Math.max(power, isEpicRaid ? 90 : power), it.stats || {}, { noRandom:true });
+          const _previewPower = (typeof it.rollPower === 'number' && it.rollPower > 0) ? it.rollPower : power;
+          const _pi = finishItem({ slot:it.slot, name:it.name, rarity:it.rarity, epicRaid:it.epicRaid, gearTier:_previewTier, raidIlvl:it.raidIlvl, raidExpansion:it.raidExpansion, raidOrder:it.raidOrder, raidTier:it.raidTier, reqLvlOverride:it.reqLvlOverride }, it.slot, r, _previewPower, it.stats || {}, { noRandom:true });
           statsText = Object.entries(_pi.stats || {}).map(([k, v]) => fmtMod(k, v)).join(' ') + ' <span style="opacity:.5">(±20%浮动)</span>';
         } else {
           statsText = Object.entries(scaleLootStats(it.stats || {}, it.rarity, power)).map(([k, v]) => fmtMod(k, v)).join(' ');
@@ -2905,7 +2908,9 @@ function renderDungeon() {
     if (aBase === bBase && !!a.epicRaid !== !!b.epicRaid) return a.epicRaid ? 1 : -1;
     const aDist = hl >= a.reqLvl ? hl - a.reqLvl : (a.reqLvl - hl) * 2;
     const bDist = hl >= b.reqLvl ? hl - b.reqLvl : (b.reqLvl - hl) * 2;
-    return aDist - bDist;
+    if (aDist !== bDist) return aDist - bDist;
+    if ((a.type === 'raid' || b.type === 'raid') && (a.raidOrder || 0) !== (b.raidOrder || 0)) return (a.raidOrder || 0) - (b.raidOrder || 0);
+    return (a.powerLvl || a.reqLvl || 0) - (b.powerLvl || b.reqLvl || 0);
   });
   const normalDungeons = sortedDungeons.filter(dg => {
     if (dg.epicRaid || dg.heroic || dg.epic5) return false;   // 英雄/史诗5人本归入专属页
@@ -2966,12 +2971,15 @@ function renderDungeon() {
       : dg.heroic ? '<span style="color:#f6c453">[英雄5人本]</span> '
       : dg.type === 'raid' ? '<span style="color:#fbbf24">[团本]</span> '
       : '<span style="color:#6ee7b7">[5人本]</span> ';
+    const raidProgressLine = dg.type === 'raid' && (dg.raidExpansion || dg.raidIlvl)
+      ? ` · ${dg.raidExpansion || ''}${dg.raidIlvl ? ` · 推荐装等:${dg.raidIlvl}` : ''}`
+      : '';
     div.innerHTML = `
       <div class="row">
         <span><span class="icon">${dungeonIconHtml}</span> <b>${dg.name}</b></span>
         <span>${firstClearBadge}<span class="pill">等级${dg.reqLvl}</span></span>
       </div>
-      <div class="muted">${typeLabel}${dg.desc} · ${(dg.bosses||[]).length}名首领 · 最终: ${((dg.bosses||[])[dg.bosses.length-1]||{}).name||'??'}${dg.type==='raid'?(isEpicRaid?' · 掉落:史诗级紫装/全部首领超低概率橙装':' · 掉落:常规团本装备/关底低概率橙武'):''}</div>
+      <div class="muted">${typeLabel}${dg.desc}${raidProgressLine} · ${(dg.bosses||[]).length}名首领 · 最终: ${((dg.bosses||[])[dg.bosses.length-1]||{}).name||'??'}${dg.type==='raid'?(isEpicRaid?' · 掉落:史诗级紫装/全部首领超低概率橙装':' · 掉落:常规团本装备/关底低概率橙武'):''}</div>
       ${chaseLine}
       ${affixLine}
       ${setTierInfo ? `<div class="dungeon-set-track compact">当前职业套装: ${setTierInfo.setName} · ${setTierInfo.bandName}</div>` : ''}
