@@ -3585,7 +3585,7 @@ function rollItem(maxRarity,fromLvl,dungeonKey,bossName,opts){
     let __r=Math.random()*__tw;let pick=lootPool[lootPool.length-1];
     for(const p of lootPool){__r-=(p.dropWeight||RARITY.find(r=>r.key===p.rarity)?.weight||1);if(__r<=0){pick=p;break;}}
     const pickRarity=RARITY.find(r=>r.key===pick.rarity)||rarity;
-    const poolItem={id:itemIdSeq++,slot:pick.slot||slotKey,name:pick.name,rarity:pick.rarity,rarityName:pickRarity.name,cls:pickRarity.cls,bcls:pickRarity.bcls,stats:{},sell:0,epicRaid:!!pick.epicRaid,setKey:pick.setKey,setName:pick.setName,gearTier:gearTierForDungeon(dungeonKey)};
+    const poolItem={id:itemIdSeq++,slot:pick.slot||slotKey,name:pick.name,rarity:pick.rarity,rarityName:pickRarity.name,cls:pickRarity.cls,bcls:pickRarity.bcls,stats:{},sell:0,epicRaid:!!pick.epicRaid,setKey:pick.setKey,setName:pick.setName,setEffects:pick.setEffects?JSON.parse(JSON.stringify(pick.setEffects)):undefined,setPieces:pick.setPieces,gearTier:gearTierForDungeon(dungeonKey)};
     return finishItem(poolItem,pick.slot||slotKey,pickRarity,power,pick.stats||{});
   }}
   const item={id:itemIdSeq++,slot:slotKey,name:genName(slotKey,rarity),rarity:rarity.key,rarityName:rarity.name,cls:rarity.cls,bcls:rarity.bcls,stats:{},sell:0,gearTier:dungeonKey?gearTierForDungeon(dungeonKey):0};

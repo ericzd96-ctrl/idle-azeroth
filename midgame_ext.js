@@ -503,16 +503,28 @@
     };
   }
 
+  // 由 setKey(形如 set:<base>:<cls> 或 <base>:<cls>)推导套装特效,兜底老装备/掉落未写 setEffects 的情况
+  function deriveSetEffects(it) {
+    if (it.setEffects && it.setEffects.length) return it.setEffects;
+    const sk = it.setKey || '';
+    const parts = sk.replace(/^set:/, '').split(':');
+    const baseKey = parts[0];
+    const clsKey = parts[1] || (state && state.cls) || 'warrior';
+    const dg = (typeof getDungeonDef === 'function')
+      ? (getDungeonDef(baseKey) || getDungeonDef(typeof baseDungeonKey === 'function' ? baseDungeonKey(baseKey) : baseKey))
+      : null;
+    return dg ? makeDungeonSetEffects(dg, clsKey) : [];
+  }
   function getEquippedSetCounts() {
     const counts = {};
     for (const slot of SLOT_ORDER) {
       const it = state?.equipped?.[slot];
       if (!it?.setKey) continue;
-      if (!counts[it.setKey]) counts[it.setKey] = { count:0, name:it.setName || it.setKey, effects:it.setEffects || [], pieces:it.setPieces || 0, items:[] };
+      const eff = deriveSetEffects(it);
+      if (!counts[it.setKey]) counts[it.setKey] = { count:0, name:it.setName || it.setKey, effects:eff, pieces:it.setPieces || (eff[eff.length-1]?.pieces) || 4, items:[] };
       counts[it.setKey].count += 1;
       counts[it.setKey].items.push(it.name);
-      if ((!counts[it.setKey].effects || !counts[it.setKey].effects.length) && it.setEffects) counts[it.setKey].effects = it.setEffects;
-      if (!counts[it.setKey].pieces && it.setPieces) counts[it.setKey].pieces = it.setPieces;
+      if ((!counts[it.setKey].effects || !counts[it.setKey].effects.length) && eff.length) counts[it.setKey].effects = eff;
     }
     return counts;
   }
