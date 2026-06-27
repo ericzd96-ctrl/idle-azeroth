@@ -402,4 +402,36 @@
   setSkill('malfurion','自然之力',{ type:'summon', summonCount:1, summonCap:2, summonTheme:'nature', summonDuration:28000, summonPower:1.06, healPct:0.08, desc:'召来树人持续28秒护战,并引动一次自然回涌' });
   setSkill('ragnaros','火焰之子',{ type:'summon', summonCount:1, summonCap:2, summonTheme:'fire', summonDuration:22000, summonPower:1.12, desc:'召出火焰之子持续22秒扑杀目标' });
   setSkill('kiljaeden','燃烧军团',{ type:'summon', summonCount:2, summonCap:3, summonTheme:'demon', summonDuration:26000, summonPower:1.00, buffTarget:'both', duration:10000, shieldPct:0.08, desc:'召来燃烧军团先遣恶魔持续26秒作战,并强化双方' });
+
+  /* ====== 定位专属技能包(2026-06-27 随从机制重做)======
+     按 role 给每个随从补齐定位"招牌技能",强化定位辨识度:
+     - tank(纯坦克): 自身大幅减伤结界 + 自疗,做可靠的伤害海绵
+     - heal→辅助:    给主角的加速 + 增伤 buff(治疗仍保留原有治疗技),供毕业DPS带辅助提速过本
+     - dps(纯输出):  自身攻击/攻速狂热 buff,堆更多自带伤害
+     去重:已有相同 buff 键 / (坦克)已有自疗技 则跳过,避免冗余叠加 */
+  const ROLE_KIT = {
+    tank: [
+      { name:'铁壁结界', icon:'🛡️', type:'buff', buff:'sacredShield', buffTarget:'companion', duration:8000, cd:16, desc:'8秒大幅提升自身防御与回复(纯坦克减伤)' },
+      { name:'坚韧自愈', icon:'❤️‍🩹', type:'heal', heal:0.18, healTarget:'companion', cd:15, desc:'立即恢复自身18%生命(纯坦克自疗)' },
+    ],
+    heal: [
+      { name:'迅捷祝福', icon:'💨', type:'buff', buff:'rapidFire', buffTarget:'hero', duration:9000, cd:18, desc:'9秒为主角大幅提升攻速(辅助加速)' },
+      { name:'锐意号令', icon:'⚔️', type:'buff', buff:'battleShout', buffTarget:'hero', duration:10000, cd:20, desc:'10秒为主角提升攻击(辅助增伤)' },
+    ],
+    dps: [
+      { name:'嗜血狂热', icon:'💢', type:'buff', buff:'berserk', buffTarget:'companion', duration:9000, cd:16, desc:'9秒大幅提升自身攻击与攻速(纯输出)' },
+    ],
+  };
+  for (const c of COMPANIONS) {
+    const kit = ROLE_KIT[c.role];
+    if (!kit) continue;
+    if (!Array.isArray(c.skills)) c.skills = [];
+    for (const ks of kit) {
+      const dup = c.skills.some(s =>
+        (ks.buff && s.buff === ks.buff) ||
+        (ks.type === 'heal' && s.type === 'heal' && (s.healTarget || '') !== 'hero')
+      );
+      if (!dup) c.skills.push(Object.assign({ _roleKit:true }, ks));
+    }
+  }
 })();

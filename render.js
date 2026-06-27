@@ -1502,10 +1502,10 @@ function updateBattleVisuals() {
       const compBarrier = state._compBarrier || 0;
       const sig = tpl?.signature;
       const compIconHtml = companionIconHtml(tpl, 18);
-      const html=`<b>${compIconHtml} ${tpl?.name}</b><div>${q.name} ${'⭐'.repeat(comp.stars||1)} · ${tpl?.role==='tank'?'🛡️坦克':tpl?.role==='heal'?'💚治疗':'⚔️输出'}</div>
+      const html=`<b>${compIconHtml} ${tpl?.name}</b><div>${q.name} ${'⭐'.repeat(comp.stars||1)} · ${tpl?.role==='tank'?'🛡️坦克':tpl?.role==='heal'?'💚辅助':'⚔️输出'}</div>
         <div>攻击${fmt(st.atk)} 防御${fmt(st.def)} 生命${fmt(st.hpMax)} 攻速${st.spd?.toFixed(2)}/秒</div>
         <div class="muted">参战强度已按品质、星级与定位折算</div>
-        <div class="muted">定位:${tpl?.role==='tank'?'🛡️坦克 负责扛压/控场':tpl?.role==='dps'?'⚔️输出 均衡承伤/技能爆发':'💚辅助 更强续航/净化/护持'}</div>
+        <div class="muted">定位:${tpl?.role==='tank'?'🛡️纯坦克 扛压吸仇恨/减伤结界/自疗':tpl?.role==='dps'?'⚔️纯输出 自带攻击攻速狂热/技能爆发':'💚辅助 加速+增伤+续航(助毕业DPS提速过本)'}</div>
         ${sig?`<div style="color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(sig.name, 14, sig.icon||'✨') : (sig.icon||'✨')} ${sig.name} · ${sig.desc||''}${sig.mode==='passive'?' (被动)':''}</div>`:''}
         ${compBarrier>0?`<div style="color:#93c5fd">护盾: ${fmt(compBarrier)}</div>`:''}
         ${compBuffs.length?`<div>增益: ${compBuffs.join(' · ')}</div>`:''}
@@ -2387,7 +2387,7 @@ function renderMap() {
   }
 }
 
-function roleTag(role){ return role==='tank'?'🛡️坦克':role==='heal'?'💚治疗':'⚔️输出'; }
+function roleTag(role){ return role==='tank'?'🛡️坦克':role==='heal'?'💚辅助':'⚔️输出'; }
 function compPct(v){
   const n = (v || 0) * 100;
   return (Math.round(n * 10) / 10).toFixed(n % 1 ? 1 : 0).replace(/\.0$/,'');
@@ -2501,7 +2501,7 @@ function companionTraitFlags(tpl){
   return flags;
 }
 function companionRoleLabel(role){
-  return role === 'tank' ? '坦克' : role === 'heal' ? '治疗' : '输出';
+  return role === 'tank' ? '坦克' : role === 'heal' ? '辅助' : '输出';
 }
 function companionBadge(label, tone){
   return `<span class="comp-badge is-${tone}">${label}</span>`;
@@ -2589,7 +2589,7 @@ function companionFilterPanelHtml(entries){
     ${companionFilterRow(entries, 'role', '定位', [
       { value:'all', label:'全部' },
       { value:'tank', label:'坦克' },
-      { value:'heal', label:'治疗' },
+      { value:'heal', label:'辅助' },
       { value:'dps', label:'输出' },
     ])}
     ${companionFilterRow(entries, 'trait', '特性', [
@@ -2621,7 +2621,7 @@ function companionPanelRenderSig(){
   return [state.cls||'', state.hero?.lvl||0, state.compTickets||0, active, compList, shards, bonds, filters].join('||');
 }
 function renderCompanion() {
-  $('gem-cost').textContent = '(消耗1🐾随从券 · 全随从统一 5主动 + 1专属，品质/星级决定强度)';
+  $('gem-cost').textContent = '(消耗1🐾随从券 · 技能含定位招牌技+专属技，品质/星级决定强度)';
   const cl = $('companion-list');
   if (!cl) return;
   const renderSig = companionPanelRenderSig();
@@ -2676,7 +2676,7 @@ function renderCompanion() {
     const compIconHtml = companionIconHtml(tpl, 18);
     html += `<div class="shop-item" style="border-color:var(--${q.cls==='r-legend'?'legend':q.cls==='r-epic'?'epic':'border'})">
       <div class="row"><b>${compIconHtml} ${tpl?.name}</b><span class="pill" style="background:var(--accent);color:#000">出战中</span></div>
-      <div class="muted"><span class="${q.cls}">${q.name}</span> · ${'⭐'.repeat(act.stars||1)} · ${roleTag(tpl?.role)} · 5主动+1专属</div>
+      <div class="muted"><span class="${q.cls}">${q.name}</span> · ${'⭐'.repeat(act.stars||1)} · ${roleTag(tpl?.role)} · ${(tpl?.skills?.length||0)}主动${tpl?.signature?'+1专属':''}</div>
       ${companionMetaBadges(tpl)}
       <div class="muted" style="font-size:10px">参战属性: 攻${fmt(st?.atk||0)} 防${fmt(st?.def||0)} 血${fmt(st?.hpMax||0)}</div>
       <div class="muted" style="font-size:10px;color:#6ee7b7">专属加成: ${ownTxt||'无'}</div>
@@ -2702,7 +2702,7 @@ function renderCompanion() {
     const canUp = !cost.maxed && cost.have>=cost.need;
     const compIconHtml = companionIconHtml(tpl, 18);
     html += `<div class="shop-item">
-      <div class="row"><b>${compIconHtml} ${tpl.name}</b><span class="${q.cls}">${q.name} · 5主动+1专属</span></div>
+      <div class="row"><b>${compIconHtml} ${tpl.name}</b><span class="${q.cls}">${q.name} · ${(tpl.skills?.length||0)}主动${tpl.signature?'+1专属':''}</span></div>
       <div class="muted" style="font-size:10px">${'⭐'.repeat(c.stars||1)} · ${roleTag(tpl.role)} · ${tpl.desc}</div>
       ${companionMetaBadges(tpl)}
       ${tpl.signature?`<div class="muted" style="font-size:10px;color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')} ${tpl.signature.name}${tpl.signature.mode==='passive'?' [被动]':''}</div>`:''}

@@ -5212,11 +5212,12 @@ const COMPANION_QUALITY=[
   {key:"purple",name:"史诗", cls:"r-epic",     mult:1.9,  skills:4, weight:6.5, lore:"一方霸主"},
   {key:"orange",name:"传说", cls:"r-legend",   mult:2.8,  skills:5, weight:1.5, lore:"传奇人物"},
 ];
-/* 定位加成(出战随从额外给主角的属性,体现坦克/治疗/输出差异) */
+/* 定位加成(出战随从额外给主角的属性,体现坦克/辅助/输出差异)
+   2026-06-27 重做:坦克=纯防御扛压、辅助(原治疗)=加速增伤+轻续航(供毕业DPS提速过本)、输出=纯输出 */
 const ROLE_BONUS={
-  tank:{defPct:12, hpPct:10},
-  heal:{regFlat:8, hpPct:6, vers:3},
-  dps:{atkPct:3}};
+  tank:{defPct:15, hpPct:12, vers:3},
+  heal:{atkPct:5, mastery:6, regFlat:4},
+  dps:{atkPct:6, crit:3}};
 /* 羁绊:集齐 keys 中全部随从即激活,给主角额外加成 */
 const COMPANION_BONDS=[
   // ---- 双人羁绊(拥有 2 名即激活)----
