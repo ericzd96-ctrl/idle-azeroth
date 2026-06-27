@@ -3881,21 +3881,23 @@ function inferBossTheme(name, sk){
   if(/暗|影|亡|死|魂|暮光|巫妖|克尔苏加德|阿尔萨斯|尤格|克苏恩|卡扎克/.test(text)) return 'shadow';
   return 'brute';
 }
+/* BOSS 循环里的"读条强化"技:以"强化普通攻击"为主(增伤/攻速/普攻暴击/普攻追击),
+   让 BOSS 进入可被打断的"狂暴窗口"时白字真正变痛——而不是一味套盾变肉。各主题风味不同。 */
 const BOSS_ROTATION_SUPPORT_SKILLS = {
-  fire:   { name:'炽焰护体', icon:'🔥', desc:'获得10%护盾并在6秒内攻击+18%', type:'support', castTime:2.4, cd:14, shieldPct:0.10, atkBuffSecs:6, atkBuffPct:18 },
-  frost:  { name:'寒墓壁垒', icon:'🧊', desc:'获得12%护盾并在6秒内减伤15%', type:'support', castTime:2.4, cd:14, shieldPct:0.12, drBuffSecs:6, drBuffPct:0.15 },
-  poison: { name:'蜕皮再生', icon:'🐍', desc:'恢复10%生命并获得10%护盾', type:'support', castTime:2.5, cd:15, healPct:0.10, shieldPct:0.10 },
-  storm:  { name:'风暴蓄能', icon:'⛈️', desc:'6秒攻速+22%，暴击+18%', type:'support', castTime:2.3, cd:14, spdBuffSecs:6, spdBuffPct:22, critBuffSecs:6, critBuffPct:18 },
-  dragon: { name:'龙血苏醒', icon:'🐉', desc:'恢复8%生命并在6秒内攻击+20%', type:'support', castTime:2.6, cd:15, healPct:0.08, atkBuffSecs:6, atkBuffPct:20 },
-  arcane: { name:'奥术护壁', icon:'🌀', desc:'获得14%护盾并在6秒内减伤15%', type:'support', castTime:2.5, cd:15, shieldPct:0.14, drBuffSecs:6, drBuffPct:0.15 },
-  nature: { name:'自然回生', icon:'🌿', desc:'恢复12%生命并在6秒内防御+22%', type:'support', castTime:2.6, cd:15, healPct:0.12, defBuffSecs:6, defBuffPct:22 },
-  shadow: { name:'虚空回响', icon:'🌑', desc:'获得12%护盾并在6秒内吸血+14%', type:'support', castTime:2.6, cd:15, shieldPct:0.12, leechBuffSecs:6, leechBuffPct:14 },
-  brute:  { name:'战吼集结', icon:'📯', desc:'召唤1名援军并在6秒内攻击+18%', type:'support', castTime:2.5, cd:15, summonCount:1, summonTheme:'soldier', atkBuffSecs:6, atkBuffPct:18 },
+  fire:   { name:'焚身狂热', icon:'🔥', desc:'8秒内攻击+24%、攻速+18%', type:'support', castTime:2.4, cd:14, atkBuffSecs:8, atkBuffPct:24, spdBuffSecs:8, spdBuffPct:18 },
+  frost:  { name:'凛冬杀意', icon:'🧊', desc:'8秒内普攻暴击+28%、攻击+18%', type:'support', castTime:2.4, cd:14, critBuffSecs:8, critBuffPct:28, atkBuffSecs:8, atkBuffPct:18 },
+  poison: { name:'狂躁毒液', icon:'🐍', desc:'8秒内攻速+26%,接下来2次普攻追击', type:'support', castTime:2.5, cd:15, spdBuffSecs:8, spdBuffPct:26, nextDouble:2 },
+  storm:  { name:'风暴蓄能', icon:'⛈️', desc:'8秒内攻速+24%、普攻暴击+22%', type:'support', castTime:2.3, cd:14, spdBuffSecs:8, spdBuffPct:24, critBuffSecs:8, critBuffPct:22 },
+  dragon: { name:'巨龙之怒', icon:'🐉', desc:'8秒内攻击+24%,接下来2次普攻追击', type:'support', castTime:2.6, cd:15, atkBuffSecs:8, atkBuffPct:24, nextDouble:2 },
+  arcane: { name:'奥术超载', icon:'🌀', desc:'8秒内攻击+22%、普攻暴击+22%', type:'support', castTime:2.5, cd:15, atkBuffSecs:8, atkBuffPct:22, critBuffSecs:8, critBuffPct:22 },
+  nature: { name:'野性爆发', icon:'🌿', desc:'8秒内攻击+22%、攻速+20%', type:'support', castTime:2.6, cd:15, atkBuffSecs:8, atkBuffPct:22, spdBuffSecs:8, spdBuffPct:20 },
+  shadow: { name:'嗜血渴望', icon:'🌑', desc:'8秒内攻击+22%、吸血+16%', type:'support', castTime:2.6, cd:15, atkBuffSecs:8, atkBuffPct:22, leechBuffSecs:8, leechBuffPct:16 },
+  brute:  { name:'战吼集结', icon:'📯', desc:'召唤1名援军并在8秒内攻击+22%', type:'support', castTime:2.5, cd:15, summonCount:1, summonTheme:'soldier', atkBuffSecs:8, atkBuffPct:22 },
 };
 function isBossSupportSkill(skill){
   return !!(skill && (skill.type === 'support' || skill.type === 'buff' || skill.type === 'summon' || skill.type === 'heal' ||
     skill.heal || skill.healPct || skill.shieldPct || skill.summonCount || skill.atkBuffSecs || skill.spdBuffSecs ||
-    skill.defBuffSecs || skill.drBuffSecs || skill.critBuffSecs || skill.leechBuffSecs));
+    skill.defBuffSecs || skill.drBuffSecs || skill.critBuffSecs || skill.leechBuffSecs || skill.nextDouble));
 }
 /* 各档位 boss 想要的"辅助读条技"数量(召唤/buff/治疗 的多样性) */
 function bossSupportVariety(ctx){
@@ -3910,7 +3912,13 @@ function makeBossCastSkill(type, theme, ctx){
   const strong = (ctx.lvl || 1) >= 70 || ctx.final;
   if(type === 'summon') return { name:'召集援军', icon:'📯', type:'summon', desc:'读条召唤援军助战', castTime:2.8, cd:18, summonCount: strong ? 2 : 1, summonTheme:'soldier' };
   if(type === 'heal')   return { name:'血肉愈合', icon:'💚', type:'heal',   desc:'读条恢复大量生命', castTime:2.6, cd:17, heal: strong ? 0.16 : 0.10 };
-  return { name:'狂暴号令', icon:'💢', type:'buff', desc:'读条强化自身攻击与攻速', castTime:2.3, cd:16, atkBuffSecs:8, atkBuffPct: strong ? 26 : 18, spdBuffSecs:8, spdBuffPct: strong ? 16 : 12 };
+  // buff:在"强化普攻"的三种风味里随机一种(增伤+攻速 / 普攻暴击 / 普攻追击),让 BOSS 的狂暴窗口更有辨识度
+  const buffKits = [
+    { name:'狂暴号令', icon:'💢', type:'buff', desc:'读条强化攻击与攻速', castTime:2.3, cd:16, atkBuffSecs:8, atkBuffPct: strong ? 28 : 20, spdBuffSecs:8, spdBuffPct: strong ? 18 : 12 },
+    { name:'致命专注', icon:'🎯', type:'buff', desc:'读条大幅提高普攻暴击', castTime:2.3, cd:16, critBuffSecs:8, critBuffPct: strong ? 35 : 24, atkBuffSecs:8, atkBuffPct: strong ? 16 : 10 },
+    { name:'连击姿态', icon:'⚔️', type:'buff', desc:'读条后接下来数次普攻追击', castTime:2.3, cd:17, nextDouble: strong ? 3 : 2, spdBuffSecs:6, spdBuffPct: strong ? 14 : 10 },
+  ];
+  return buffKits[Math.floor(Math.random() * buffKits.length)];
 }
 function bossControlScore(skill){
   let score = 0;
@@ -5652,6 +5660,26 @@ function createEpic5DungeonCatalog() {
   }
 }
 createEpic5DungeonCatalog();
+/* 部分技能改为 DoT(持续伤害)类:把已经是"灼烧/瘟疫/流血"主题的、非最强、非阶段技的伤害技,
+   改成 dotSkill(combat 里不一次出伤,摊成持续灼烧)。每个 BOSS 最多转 1 个,保证仍有爆发技,
+   且只转"原本就该是 DoT"的技能 → 体感:威胁分散、有治疗/吸血反应空间,而不是一发尖峰。 */
+function convertSomeBossSkillsToDot(){
+  for(const dg of DUNGEONS){
+    for(const boss of (dg.bosses || [])){
+      const dmgSkills = (boss.skills || []).filter(s => s && s.type !== 'heal' && s.type !== 'buff' && s.type !== 'support' && s.type !== 'summon' && typeof s.mul === 'number' && s.mul > 0);
+      if(dmgSkills.length < 2) continue;   // 至少保留一个爆发技
+      const maxMul = Math.max(...dmgSkills.map(s => s.mul));
+      const cand = dmgSkills.find(s => (s.dot || s.plague || s.bleed) && !s.dotSkill && typeof s.hpBelow !== 'number' && s.mul < maxMul);
+      if(cand){
+        cand.dotSkill = true;
+        cand.dotSecs = cand.dotSecs || 6;
+        cand.castTime = Math.max(cand.castTime || 0, 1.6);
+        cand.desc = `持续 ${cand.dotSecs} 秒灼烧`;
+      }
+    }
+  }
+}
+convertSomeBossSkillsToDot();
 /* 修复:部分副本(diremaul/lbrs/aq40等)缺失 cd 字段,导致 onDungeonClear 写入 NaN→永远无CD可无限刷。
    归一化:给任何无有效 cd 的副本按 type/reqLvl 补一个与邻居对齐的冷却。 */
 for (const d of DUNGEONS) {

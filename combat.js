@@ -2185,11 +2185,11 @@ function armorMitig(def,defLvl){const K=50+(defLvl||1)*40;const d=Math.max(0,def
 /* 等级差伤害修正:攻方等级高于守方→增伤,低于→减伤。每级±3%,封顶 0.4~1.6 倍。
    这让"20级装备打60级怪"不再可行——越级时你的伤害被压到 0.4 倍、对方伤害放大到 1.6 倍。 */
 function lvlDmgMult(atkLvl,defLvl){return Math.max(0.4,Math.min(1.6,1+((atkLvl||1)-(defLvl||1))*0.03));}
-function calcDmg(atk,def,crit,critd,forceCrit,defLvl,atkLvl){
+function calcDmg(atk,def,crit,critd,forceCrit,defLvl,atkLvl,opts){
   const isCrit=forceCrit||Math.random()*100<(crit||0);
   let base=Math.max(1,atk*(1-armorMitig(def,defLvl)));
   if(atkLvl!==undefined)base*=lvlDmgMult(atkLvl,defLvl);   // 传了攻方等级才启用等级差修正
-  base*=0.85+Math.random()*0.3;
+  base*=(opts&&opts.tightVar)?(0.95+Math.random()*0.1):(0.85+Math.random()*0.3);   // tightVar:收口浮动到 ±5%(BOSS技能用,避免随机尖峰)
   if(isCrit)base*=(critd/100);
   return {dmg:Math.max(1,Math.floor(base)),crit:isCrit};
 }
@@ -2527,6 +2527,11 @@ function applyMonsterSupportSkill(mon, skill, now, opts){
     mon._trickCrit = now + skill.critBuffSecs * 1000;
     mon._trickCritPct = skill.critBuffPct || 35;
     setMonsterTrickAura(mon, 'crit', skill, mon._trickCrit);
+    used = true;
+  }
+  if(skill.nextDouble){   // 普攻追击:接下来 N 次普通攻击会追加一次打击
+    mon._nextAtkDouble = (mon._nextAtkDouble || 0) + skill.nextDouble;
+    setMonsterTrickAura(mon, 'nextDouble', skill, 0, { stacks:mon._nextAtkDouble, desc:`接下来 ${mon._nextAtkDouble} 次普攻会追加一次打击` });
     used = true;
   }
   if(skill.summonCount){
@@ -3230,7 +3235,7 @@ function tickBattle(now){
     const _pickSk=_forcedPhaseSk||_phasePool[bossSkillIdx%Math.max(1,_phasePool.length)];
     const rawCd=(_pickSk&&_pickSk.cd)||10;
     const skillCd=Math.max(3,Math.floor(rawCd*0.6));   // CD加速40%,但最低3秒间隔
-    if(_allBossSkills.length&&now-lastBossSkill>skillCd*1000){const sk=_pickSk;let castTime=sk.castTime!==undefined?sk.castTime:2;const instantChance=typeof mon.instantCastChance==='number'?mon.instantCastChance:(mon.instantCast?0.35:0);const instant=instantChance>0&&Math.random()<instantChance;if(instant)castTime=0;bossCasting={bossName:mon.bossName,name:sk.name,icon:sk.icon,type:sk.type,heal:sk.heal,healPct:sk.healPct,mul:sk.mul,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,spdBuffSecs:sk.spdBuffSecs,spdBuffPct:sk.spdBuffPct,atkBuffSecs:sk.atkBuffSecs,atkBuffPct:sk.atkBuffPct,defBuffSecs:sk.defBuffSecs,defBuffPct:sk.defBuffPct,drBuffSecs:sk.drBuffSecs,drBuffPct:sk.drBuffPct,shieldPct:sk.shieldPct,critBuffSecs:sk.critBuffSecs,critBuffPct:sk.critBuffPct,leechBuffSecs:sk.leechBuffSecs,leechBuffPct:sk.leechBuffPct,summonCount:sk.summonCount,summonTheme:sk.summonTheme,aoe:sk.aoe,silence:sk.silence,disarm:sk.disarm,fear:sk.fear,freeze:sk.freeze,cripple:sk.cripple,decay:sk.decay,wither:sk.wither,manaDrain:sk.manaDrain,bomb:sk.bomb,plague:sk.plague,bleed:sk.bleed,brittle:sk.brittle,soulDrain:sk.soulDrain,soulLink:sk.soulLink,revenge:sk.revenge,frenzy:sk.frenzy,decay2:sk.decay2,mirror:sk.mirror,threat:sk.threat,interruptPolicy:sk.interruptPolicy,_empowered:isEmpoweredBossCast(sk),startTime:now,duration:castTime*1000};const _bt=bossCastTargetInfo(sk,now);bossCasting._targetDesc=_bt.desc;bossCasting._target=_bt.target;const _emp=!instant&&isEmpoweredBossCast(sk)&&sk.interruptPolicy!=='none';const _aoeLog=(sk.type!=='heal'&&sk.type!=='buff'&&!sk.summonCount&&typeof sk.mul==='number'&&sk.mul>0)?(sk.aoe?' [🌀群体]':' [🎯单体]'):'';log('💀 '+mon.bossName+(instant?' 瞬发 ':' 开始施放 ')+sk.name+_aoeLog+'!'+(instant?'(无法打断)':(_emp?' ⚡蓄力大招—打断可造成破绽!':'')),'bad');lastBossSkill=now;bossSkillIdx++;}
+    if(_allBossSkills.length&&now-lastBossSkill>skillCd*1000){const sk=_pickSk;let castTime=sk.castTime!==undefined?sk.castTime:2;const instantChance=typeof mon.instantCastChance==='number'?mon.instantCastChance:(mon.instantCast?0.35:0);let instant=instantChance>0&&Math.random()<instantChance;if(instant&&isEmpoweredBossCast(sk))instant=false;/* 大伤害/灭团技(蓄力大招)绝不瞬发,必须读条可打断 */if(instant)castTime=0;bossCasting={bossName:mon.bossName,name:sk.name,icon:sk.icon,type:sk.type,heal:sk.heal,healPct:sk.healPct,mul:sk.mul,dotSkill:sk.dotSkill,dotSecs:sk.dotSecs,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,spdBuffSecs:sk.spdBuffSecs,spdBuffPct:sk.spdBuffPct,atkBuffSecs:sk.atkBuffSecs,atkBuffPct:sk.atkBuffPct,defBuffSecs:sk.defBuffSecs,defBuffPct:sk.defBuffPct,drBuffSecs:sk.drBuffSecs,drBuffPct:sk.drBuffPct,shieldPct:sk.shieldPct,critBuffSecs:sk.critBuffSecs,critBuffPct:sk.critBuffPct,leechBuffSecs:sk.leechBuffSecs,leechBuffPct:sk.leechBuffPct,summonCount:sk.summonCount,summonTheme:sk.summonTheme,aoe:sk.aoe,silence:sk.silence,disarm:sk.disarm,fear:sk.fear,freeze:sk.freeze,cripple:sk.cripple,decay:sk.decay,wither:sk.wither,manaDrain:sk.manaDrain,bomb:sk.bomb,plague:sk.plague,bleed:sk.bleed,brittle:sk.brittle,soulDrain:sk.soulDrain,soulLink:sk.soulLink,revenge:sk.revenge,frenzy:sk.frenzy,decay2:sk.decay2,mirror:sk.mirror,threat:sk.threat,interruptPolicy:sk.interruptPolicy,_empowered:isEmpoweredBossCast(sk),startTime:now,duration:castTime*1000};const _bt=bossCastTargetInfo(sk,now);bossCasting._targetDesc=_bt.desc;bossCasting._target=_bt.target;const _emp=!instant&&isEmpoweredBossCast(sk)&&sk.interruptPolicy!=='none';const _aoeLog=(sk.type!=='heal'&&sk.type!=='buff'&&!sk.summonCount&&typeof sk.mul==='number'&&sk.mul>0)?(sk.aoe?' [🌀群体]':' [🎯单体]'):'';log('💀 '+mon.bossName+(instant?' 瞬发 ':' 开始施放 ')+sk.name+_aoeLog+'!'+(instant?'(无法打断)':(_emp?' ⚡蓄力大招—打断可造成破绽!':'')),'bad');lastBossSkill=now;bossSkillIdx++;}
     // BOSS技巧(独立冷却,避免开场和支援技能一起连发)
     const tricks=bossTrickList(bossData);
     const supportRecently = (mon._lastSupportSkill || 0) > 0 && now - mon._lastSupportSkill < 4500;
@@ -3958,13 +3963,26 @@ function tickCast(now){
         showMonsterFloat(mon, (bc.icon || '✨') + bc.name + '!', '#fda4af');
         applyMonsterSupportSkill(mon, bc, now, { announce:false });
       } else{
+        const mul=bc.mul||2;
+        // DoT 类技能:不一次出伤,把这一发摊成持续灼烧(给治疗/吸血留反应空间);不暴击、读条可打断
+        if(bc.dotSkill){
+          const secs=bc.dotSecs||6;
+          const refHit=calcDmg(Math.floor(monsterAttackValue(mon,now)*mul),heroDefAgainst(mon),0,0,false,state.hero.lvl,mon.lvl,{tightVar:true}).dmg;
+          const dps=Math.max(1,Math.floor(refHit/secs*1.3));   // 摊成 secs 秒、总量略高于单次burst(可被治疗化解)
+          applyHeroDebuff('burn',secs*1000,{dps});
+          log(`💀 ${mon.bossName || mon.name} 释放了 ${bc.name}!持续 ${secs} 秒灼烧(每秒约 ${dps})`,'bad');
+          showMonsterFloat(mon,(bc.icon||'☠️')+bc.name+'!','#a3e635');
+          if(companionTargetable())applyCompanionDebuff('burn',secs*1000,{dps:Math.max(1,Math.floor(dps*0.5))});
+          if(state.hp<=0)onHeroDeath();
+          return;
+        }
         log(`💀 ${mon.bossName || mon.name} 释放了 ${bc.name}!`,'bad');
         showMonsterFloat(mon, (bc.icon || '✨') + bc.name + '!', '#fda4af');
-        const mul=bc.mul||2;
-        const rawAtk=Math.floor(monsterAttackValue(mon, now)*mul);
+        const _flat=bc.alwaysCrit?1.4:1;   // 原 alwaysCrit 改为固定 ×1.4(去掉暴击随机尖峰,保留"大招更痛")
+        const rawAtk=Math.floor(monsterAttackValue(mon, now)*mul*_flat);
         if(bc.aoe){
           // AOE: 同时命中英雄和随从
-          let taken=calcDmg(rawAtk,heroDefAgainst(mon),critRate,mon.critMult?mon.critMult*100:150,bc.alwaysCrit,state.hero.lvl,mon.lvl).dmg;
+          let taken=calcDmg(rawAtk,heroDefAgainst(mon),0,0,false,state.hero.lvl,mon.lvl,{tightVar:true}).dmg;
           taken=resolveMonsterDamageTaken(mon,taken,{aoe:true});
           taken=applyHeroDamage(taken,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ff4444',now});
           processTalentLowHp(mon,now);
@@ -3974,11 +3992,11 @@ function tickCast(now){
           if(bc._empowered&&state.hp>0){applyHeroDebuff('weaken',4000);log('⚠️ 没能打断蓄力大招,陷入虚弱!下次记得打断','bad');}
           if(companionTargetable()){
             const cst=computeCompanionStats();
-            const cd=calcDmg(rawAtk,cst?cst.def:mon.def,critRate,mon.critMult?mon.critMult*100:150,bc.alwaysCrit,state.hero.lvl,mon.lvl);
+            const cd=calcDmg(rawAtk,cst?cst.def:mon.def,0,0,false,state.hero.lvl,mon.lvl,{tightVar:true});
             const ct=applyCompanionDamage(cd.dmg,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ff9aa0',now});
             skillEffects(bc,mon,ct,now,{target:'companion'});}
           for(const unit of livingAllySummons(now)){
-            const sd=calcDmg(rawAtk,unit.def || 0,critRate,mon.critMult?mon.critMult*100:150,bc.alwaysCrit,state.hero.lvl,mon.lvl);
+            const sd=calcDmg(rawAtk,unit.def || 0,0,0,false,state.hero.lvl,mon.lvl,{tightVar:true});
             applyAllySummonDamage(unit,sd.dmg,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ffb4c1',now});
           }
           if(state.hp<=0)onHeroDeath();
@@ -3988,19 +4006,19 @@ function tickCast(now){
           if(!target || (target.kind==='companion' && !companionTargetable()) || (target.kind==='summon' && !(target.unit && target.unit.hp>0))) target = pickMonsterAttackTarget(now);
           if(target.kind==='companion'){
             const cst=computeCompanionStats();
-            const d2=calcDmg(rawAtk,cst?cst.def:mon.def,critRate,mon.critMult?mon.critMult*100:150,bc.alwaysCrit,state.hero.lvl,mon.lvl);
+            const d2=calcDmg(rawAtk,cst?cst.def:mon.def,0,0,false,state.hero.lvl,mon.lvl,{tightVar:true});
             const ct=applyCompanionDamage(d2.dmg,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ff9aa0',now});
             if(bc.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(d2.dmg*bc.lifeSteal));
             log('🛡️ 随从替你承受了 '+bc.icon+'!','info');
             skillEffects(bc,mon,ct,now,{target:'companion'});
           }else if(target.kind==='summon'&&target.unit){
             const unit = target.unit;
-            const d3=calcDmg(rawAtk,unit.def || 0,critRate,mon.critMult?mon.critMult*100:150,bc.alwaysCrit,state.hero.lvl,mon.lvl);
+            const d3=calcDmg(rawAtk,unit.def || 0,0,0,false,state.hero.lvl,mon.lvl,{tightVar:true});
             applyAllySummonDamage(unit,d3.dmg,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ffb4c1',now});
             if(bc.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(d3.dmg*bc.lifeSteal));
             log(`🛡️ ${unit.baseName || unit.name} 挡下了 ${bc.icon || '✨'}!`,'info');
           }else{
-            let taken=calcDmg(rawAtk,heroDefAgainst(mon),critRate,mon.critMult?mon.critMult*100:150,bc.alwaysCrit,state.hero.lvl,mon.lvl).dmg;
+            let taken=calcDmg(rawAtk,heroDefAgainst(mon),0,0,false,state.hero.lvl,mon.lvl,{tightVar:true}).dmg;
             taken=resolveMonsterDamageTaken(mon,taken);
             taken=applyHeroDamage(taken,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ff4444',now});
             processTalentLowHp(mon,now);
