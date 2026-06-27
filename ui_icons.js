@@ -831,6 +831,102 @@
     '毁灭':'spell_fire_selfdestruct'
   });
 
+  // 英雄技能精确图标覆盖: 优先使用原版 WoW 技能图标名, 避免落入 emoji/关键词兜底。
+  Object.assign(SKILL_EXACT, {
+    // 战士
+    '拳击':'inv_gauntlets_04',
+    '挑战怒吼':'ability_warrior_battleshout',
+    '横扫攻击':'ability_warrior_cleave',
+    '剑刃风暴':'ability_whirlwind',
+    '钢铁壁垒':'ability_warrior_shieldwall',
+    '巨人之击':'ability_warrior_sunder',
+    '怒火乱舞':'ability_warrior_innerrage',
+
+    // 法师
+    '奥术飞弹':'spell_nature_starfall',
+    '奥术爆炸':'spell_nature_wispsplode',
+    '寒冰护体':'spell_ice_lament',
+    '变形术':'spell_nature_polymorph',
+    '时间扭曲':'ability_mage_timewarp',
+    '寒冰屏障':'spell_ice_lament',
+    '奥术强化':'spell_arcane_arcanepotency',
+    '奥术弹幕':'spell_arcane_blast',
+    '冰枪术':'spell_frost_frostblast',
+
+    // 牧师
+    '沉默':'spell_shadow_impphaseshift',
+    '惩击':'spell_holy_holysmite',
+    '真言术盾':'spell_holy_powerwordshield',
+    '恢复':'spell_holy_renew',
+    '束缚亡灵':'spell_nature_slow',
+    '神圣之火':'spell_holy_holysmite',
+    '神圣赞美诗':'spell_holy_divinehymn',
+    '暗影形态':'spell_shadow_shadowform',
+    '虚空爆发':'spell_shadow_shadowwordpain',
+    '惩罚':'spell_holy_penance',
+
+    // 盗贼
+    '邪恶打击':'spell_shadow_ritualofsacrifice',
+    '暗影斗篷':'spell_shadow_shadowward',
+    '割裂':'ability_rogue_rupture',
+    '死亡标记':'ability_rogue_eviscerate',
+    '奉毒':'ability_rogue_deadlybrew',
+    '暗袭':'ability_rogue_shadowstrike',
+
+    // 猎人
+    '反制射击':'ability_hunter_focusedaim',
+    '奥术射击':'ability_impalingbolt',
+    '召唤宠物':'ability_hunter_beastcall',
+    '瞄准射击':'ability_hunter_aimedshot',
+    '多重射击':'ability_hunter_quickshot',
+    '狂野怒火':'ability_hunter_bestialdiscipline',
+    '猎人印记':'ability_hunter_markedfordeath',
+    '弹幕射击':'ability_hunter_rapidkilling',
+    '冰冻陷阱':'spell_frost_chainsofice',
+    '协同猛攻':'ability_hunter_beastcall',
+    '奇美拉射击':'ability_hunter_pet_windserpent',
+
+    // 萨满
+    '风剪':'spell_frost_iceshock',
+    '闪电链':'spell_nature_chainlightning',
+    '治疗波':'spell_nature_healingwavegreater',
+    '风怒武器':'spell_nature_windfury',
+    '地震术':'spell_nature_earthquake',
+    '灵魂链接':'spell_shadow_soulleech_3',
+    '雷霆风暴':'spell_shaman_thunderstorm',
+    '大地震击':'spell_nature_earthshock',
+    '熔岩猛击':'spell_shaman_lavaburst',
+
+    // 圣骑士
+    '责难':'spell_holy_rebuke',
+    '奉献':'spell_holy_innerfire',
+    '圣光术':'spell_holy_holybolt',
+    '王者祝福':'spell_magic_greaterblessingofkings',
+    '复仇之怒':'spell_holy_avenginewrath',
+    '圣盾术':'spell_holy_divineshield',
+    '圣洁护盾':'spell_holy_powerwordshield',
+    '圣殿裁决':'ability_paladin_hammeroftherighteous',
+    '愤怒之锤':'spell_paladin_hammerofwrath',
+
+    // 术士
+    '生命分流':'spell_shadow_lifedrain02',
+    '暗影之怒':'spell_shadow_shadowfury',
+    '灵魂之火':'spell_fire_fireball02',
+    '痛苦无常':'spell_shadow_unholyfrenzy',
+    '召唤地狱火':'spell_shadow_summoninfernal',
+    '邪能狂涌':'spell_shadow_rainoffire',
+    '恶魔之箭':'spell_warlock_demonbolt',
+
+    // 德鲁伊
+    '愤怒':'spell_nature_abolishmagic',
+    '横扫':'ability_druid_swipe',
+    '星火术':'spell_arcane_starfire',
+    '野性成长':'ability_druid_flourish',
+    '纠缠根须':'spell_nature_stranglevines',
+    '新月强击':'spell_arcane_starfire',
+    '野性狂怒':'ability_druid_catform'
+  });
+
   function normalizeSize(size) {
     if (typeof size === 'number') return size;
     if (size === 'xs') return 14;
