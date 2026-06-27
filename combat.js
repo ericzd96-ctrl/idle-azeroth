@@ -3649,9 +3649,10 @@ function finishItem(item,slotKey,rarity,power,extraStats){
   const SURPRISE_CHANCE=0.15;
   const SURPRISE={leech:{rare:1,epic:2,legend:4},vers:{rare:1,epic:2,legend:4},haste:{rare:1,epic:2,legend:4},mastery:{rare:1,epic:2,legend:4},dodge:{rare:1,epic:2,legend:4},crit:{rare:1,epic:2,legend:3},critd:{rare:3,epic:6,legend:12}};
   for(const sk in SURPRISE){const v=SURPRISE[sk][rarity.key];if(v&&Math.random()<SURPRISE_CHANCE)item.stats[sk]=(item.stats[sk]||0)+v;}
-  // 来源功率梯队:普通(0) < 英雄(1) < 团本(2) < 史诗团本(3),同级装备按来源难度递增属性
+  // 来源功率梯队(2026-06-27 拉大,让"英雄/史诗5人本/团本"在同级时明显更强,不被±20%浮动盖过):
+  // 普通(0)1.0 < 英雄(1)1.18 < 史诗5人本(4)1.28 < 团本(2)1.40 < 史诗团本(3)1.55
   const _gearTier=(typeof item.gearTier==='number')?item.gearTier:(item.epicRaid?3:0);
-  const _tierMult={0:1.0,1:1.10,2:1.20,3:1.30,4:1.16}[_gearTier]||1.0;
+  const _tierMult={0:1.0,1:1.18,2:1.40,3:1.55,4:1.28}[_gearTier]||1.0;
   if(_tierMult!==1.0){
     for(const [k,v] of Object.entries(item.stats||{})){
       if(typeof v==='number') item.stats[k]=Math.max(1,Math.floor(v*_tierMult));
