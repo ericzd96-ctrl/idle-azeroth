@@ -534,8 +534,9 @@ function setupDelegation() {
     const key = btn.dataset.skill;
     if (!key) return;
     const c = getCls(); const sk = c?.skills[key];
-    // 打断技能随时可用(即使正在读条)
+    // 打断与防御/减伤技能随时可用(即使正在读条)
     if (sk && sk.type === 'interrupt') { castSkill(key, true); return; }
+    if (sk && casting && typeof canWeaveSkillDuringCast === 'function' && canWeaveSkillDuringCast(key, sk)) { castSkill(key, true); return; }
     if (!casting) startCast(key, true);
   });
 

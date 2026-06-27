@@ -3106,9 +3106,10 @@ function tickBattle(now){
       const targetHpFrac=mon&&mon.hp>0?mon.hp/Math.max(1,mon.hpMax):1;
       const autoSkills=autoCastSkillEntries(getCls());
       if(casting){
-        // 读条期间:可以穿插释放"瞬发buff"技能,不打断当前读条(瞬发→castSkill 不动 casting)
+        // 读条期间:瞬发 buff 保持原逻辑;所有防御/减伤 buff 也可穿插,不打断当前读条。
         for(const [skKey, sk] of autoSkills){
-          if(!sk||sk.type!=='buff'||getCastTime(sk)>0)continue;   // 仅瞬发buff
+          if(!sk||sk.type!=='buff')continue;
+          if(getCastTime(sk)>0 && !isDefensiveSkill(skKey, sk))continue;
           if(state.skillCooldowns[skKey]&&state.skillCooldowns[skKey]>now2)continue;
           let cost=sk.mp;if(state.hero.costReduction>0)cost=Math.max(1,Math.floor(sk.mp*(1-state.hero.costReduction/100)));
           if(state.resource<cost)continue;
@@ -3837,6 +3838,19 @@ function hasteFactor(){return 1+((state.hero&&state.hero.haste)||0)/100;}       
 function castSpeedMul(){return (state.battleSpeed||1)*hasteFactor();}             // 读条速度&技能CD 提速 = 战斗倍速 × 极速
 function castDmgBonus(sk){return 1+((sk&&sk.castTime)||0)*0.3;}                   // 法系补偿:带读条的技能按读条时长加伤(读条=投资,换更高爆发)
 function getCastTime(sk){if(sk.type==='interrupt')return 0;if(sk.castTime!==undefined)return sk.castTime;return 0;}
+const DEFENSIVE_SKILL_BUFFS = new Set(['shield','divine','bark','iceBarrier','earthShield','evasion','s_mitigate','s_barrier','s_avatar','w_ironwall','m_iceblock','sacredShield']);
+function isDefensiveSkill(skillKey, sk){
+  if(!sk || sk.type !== 'buff') return false;
+  const buffKey = sk.buff || skillKey;
+  if(DEFENSIVE_SKILL_BUFFS.has(buffKey)) return true;
+  const fx = (typeof BUFF_FX !== 'undefined' && buffKey) ? BUFF_FX[buffKey] : null;
+  if(fx && ((fx.dr || 0) > 0 || (fx.defMul || 1) > 1 || (fx.dmgReduction || 0) > 0)) return true;
+  const text = `${sk.name || ''} ${sk.desc || ''}`;
+  return /减伤|受伤|受到伤害|防御|护盾|盾墙|圣盾|壁垒|护体|树皮|闪避|守护|皮肤/.test(text);
+}
+function canWeaveSkillDuringCast(skillKey, sk){
+  return sk && (sk.type === 'interrupt' || isDefensiveSkill(skillKey, sk));
+}
 function cancelHeroCast(){
   if(!casting) return;
   casting = null;
