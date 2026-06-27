@@ -2203,8 +2203,8 @@ function renderSkillBar() {
     const sk = c.skills[key];
     if (!sk) return '';
     const cdEnd = state.skillCooldowns[key] || 0;
-    const cdLeft = Math.max(0, Math.ceil((cdEnd - now) / 1000));
-    const onCd = cdLeft > 0;
+    const cdMs = Math.max(0, cdEnd - now);
+    const onCd = cdMs > 0;
     const hasMp = state.resource >= sk.mp;
     const baseDesc = sk._baseDesc || sk.desc || '';
     const detailDesc = sk._detailDesc ? `\n联动: ${sk._detailDesc}` : '';
@@ -2214,7 +2214,7 @@ function renderSkillBar() {
       style="${!onCd&&hasMp?'border-color:var(--accent)':''}">
       <span>${skillIconHtml} ${sk.name}</span>
       <span class="mp-cost">${sk.mp}${c.resKey==='rage'?'怒':c.resKey==='energy'?'能':'蓝'}</span>
-      ${onCd?`<div class="cd-overlay">${cdLeft}秒</div>`:''}
+      ${onCd?`<div class="cd-overlay">${(cdMs/1000).toFixed(1)}秒</div>`:''}
     </button>`;
   }).join('');
 }
@@ -2226,12 +2226,13 @@ function updateSkillBarCd() {
     const key = btn.dataset.skill;
     if (!key) return;
     const cdEnd = state.skillCooldowns[key] || 0;
-    const cdLeft = Math.max(0, Math.ceil((cdEnd - now) / 1000));
+    const cdMs = Math.max(0, cdEnd - now);
+    const cdTxt = (cdMs / 1000).toFixed(1) + '秒';
     const overlay = btn.querySelector('.cd-overlay');
-    if (cdLeft > 0) {
+    if (cdMs > 0) {
       btn.classList.add('on-cd');
-      if (overlay) overlay.textContent = cdLeft + '秒';
-      else { const d=document.createElement('div');d.className='cd-overlay';d.textContent=cdLeft+'秒';btn.appendChild(d); }
+      if (overlay) overlay.textContent = cdTxt;
+      else { const d=document.createElement('div');d.className='cd-overlay';d.textContent=cdTxt;btn.appendChild(d); }
     } else {
       btn.classList.remove('on-cd');
       if (overlay) overlay.remove();
