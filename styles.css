@@ -679,6 +679,26 @@ button {
   padding: 4px 8px; font-size: 12px; cursor: pointer;
   transition: background .1s, border-color .1s;
   user-select: none;
+  touch-action: manipulation;
+}
+button,
+[data-action],
+[data-tab],
+[data-cmpsub],
+[data-modal-close],
+.tab,
+.sub-tab,
+.sub-btn,
+.skill-btn,
+.mon-row,
+.attr-cell,
+.equip-slot,
+.inv-item,
+.buff-chip,
+#h-name,
+#comp-mini-name {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 button:hover:not(:disabled) { background: #2d345a; border-color: #3a4170; }
 button:active:not(:disabled) { transform: translateY(1px); }

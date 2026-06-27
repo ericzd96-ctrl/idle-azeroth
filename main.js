@@ -30,6 +30,37 @@ function installMobileZoomLock() {
   _zoomLockInstalled = true;
   let lastTouchEnd = 0;
   const prevent = e => e.preventDefault();
+  const isAppControl = target => {
+    if (!target || !target.closest) return false;
+    return !!target.closest([
+      'button',
+      'select',
+      'input',
+      'textarea',
+      'a',
+      'label',
+      '[role="button"]',
+      '[onclick]',
+      '[data-action]',
+      '[data-tab]',
+      '[data-cmpsub]',
+      '[data-modal-close]',
+      '.tab',
+      '.sub-tab',
+      '.sub-btn',
+      '.skill-btn',
+      '.mon-row',
+      '.race-card',
+      '.class-card',
+      '.faction-card',
+      '.attr-cell',
+      '.equip-slot',
+      '.inv-item',
+      '.buff-chip',
+      '#h-name',
+      '#comp-mini-name'
+    ].join(','));
+  };
   document.addEventListener('gesturestart', prevent, { passive:false });
   document.addEventListener('gesturechange', prevent, { passive:false });
   document.addEventListener('gestureend', prevent, { passive:false });
@@ -39,7 +70,7 @@ function installMobileZoomLock() {
   document.addEventListener('touchend', e => {
     if (!isMobileLayout()) return;
     const now = Date.now();
-    if (now - lastTouchEnd < 320) e.preventDefault();
+    if (now - lastTouchEnd < 320 && !isAppControl(e.target)) e.preventDefault();
     lastTouchEnd = now;
   }, { passive:false });
   document.addEventListener('touchmove', e => {
