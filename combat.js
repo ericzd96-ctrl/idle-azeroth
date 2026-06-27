@@ -3598,6 +3598,18 @@ function rollItemOfRarity(rarityKey,fromLvl){
   const item={id:itemIdSeq++,slot:slotKey,name:genName(slotKey,rarity),rarity:rarity.key,rarityName:rarity.name,cls:rarity.cls,bcls:rarity.bcls,stats:{},sell:0};
   const poolStats=getPoolStatBonus(slotKey,rarity.key);return finishItem(item,slotKey,rarity,power,poolStats);
 }
+/* 装备"主属性集合"(类魔兽原版):由 职业主属性(力量/敏捷/智力)+ 槽位核心(武器→攻击 / 防具→防御)+ 耐力 组成。
+   例:法师胸甲=防御/智力/耐力,法师法杖=攻击/智力/耐力;战士板甲=防御/力量/攻击/耐力。顺序=重要度降序(低品质截断时保留靠前的)。 */
+function itemMainStats(slotKey, clsKey){
+  const primary=(typeof CLASSES!=='undefined'&&CLASSES[clsKey]&&CLASSES[clsKey].attackAttr)||'str';
+  const melee=(primary==='str'||primary==='agi');   // 近战/敏捷系:防具额外带攻击
+  switch(slotKey){
+    case 'weapon':  return ['atk', primary, 'sta'];
+    case 'ring':    return [primary, (melee?'atk':'def'), 'sta'];
+    case 'trinket': return [primary, 'sta', 'def'];
+    default:        return melee ? ['def', primary, 'atk', 'sta'] : ['def', primary, 'sta'];
+  }
+}
 function finishItem(item,slotKey,rarity,power,extraStats){
   item.slot=slotKey;
   item.stats={};
@@ -3611,15 +3623,18 @@ function finishItem(item,slotKey,rarity,power,extraStats){
   const slot=SLOT_INFO[slotKey];
   const lvlBonus=1+power*0.01; // 等级越高属性越多(2026-06-16 0.02→0.01:压平后期二次膨胀)
   const baseVal={atk:Math.floor((3+power*1.0)*lvlBonus),def:Math.floor((2+power*0.55)*lvlBonus),hp:Math.floor((12+power*5)*lvlBonus),crit:1+power*0.1,critd:6+power*0.6,reg:1+power*0.2,str:Math.floor((1.5+power*0.4)*lvlBonus),agi:Math.floor((1.5+power*0.4)*lvlBonus),int:Math.floor((1.5+power*0.4)*lvlBonus),spi:Math.floor((1+power*0.35)*lvlBonus),sta:Math.floor((1.5+power*0.4)*lvlBonus),leech:0.5+power*0.06,vers:0.5+power*0.06,haste:0.5+power*0.06,dodge:0.5+power*0.06};
-  // 以主属性为本:主属性大幅强化(×PRIMARY_MAIN_MULT),作为装备价值的核心;随机副属性收窄为"加成"而非"全靠运气"
-  const PRIMARY_MAIN_MULT=2.6, SECONDARY_MULT=0.42;
-  const primary=slot.mainStat;let pv=baseVal[primary]*rarity.mult*PRIMARY_MAIN_MULT;
-  item.stats[primary]=Math.max(1,Math.floor(pv));
-  item._mainStat=primary;   // 标记主属性,供 UI 高亮
-  const bonusCount={common:1,uncommon:2,rare:3,epic:4,legend:5}[rarity.key];
-  // 吸血/全能/暴击/暴伤/极速/精通/闪避已从常规副属池移除,改为下方"惊喜副属性"
-  const possible=['atk','def','hp','reg','str','agi','int','spi','sta'].filter(k=>k!==primary);
-  for(let i=0;i<bonusCount;i++){const k=possible.splice(rng(0,possible.length-1),1)[0];if(!k)break;item.stats[k]=Math.max(1,Math.floor(baseVal[k]*SECONDARY_MULT*rarity.mult));}
+  // 以主属性为本(类魔兽原版):按 职业主属性 + 槽位核心(武器攻击/防具防御)+ 耐力 组成"主属性集合",作为装备价值的核心。
+  // 品质越高,主属性集合越完整(common/uncommon 截断);随机的"惊喜副属性"(暴击/急速…)只作锦上添花。
+  const clsKeyForItem=(state&&state.cls)||'warrior';
+  const primaryAttr=(typeof CLASSES!=='undefined'&&CLASSES[clsKeyForItem]&&CLASSES[clsKeyForItem].attackAttr)||'str';
+  const slotCore=(slotKey==='weapon')?'atk':(['helmet','shoulder','armor','gloves','belt','pants','boots'].includes(slotKey)?'def':null);
+  const maxMains={common:2,uncommon:3,rare:4,epic:4,legend:4}[rarity.key]||3;
+  const mainSet=itemMainStats(slotKey, clsKeyForItem).slice(0, maxMains);
+  for(const k of mainSet){
+    let w; if(k===slotCore)w=2.4; else if(k===primaryAttr)w=(slotCore?1.6:2.0); else if(k==='sta')w=1.0; else w=1.2;
+    item.stats[k]=(item.stats[k]||0)+Math.max(1,Math.floor(baseVal[k]*rarity.mult*w));
+  }
+  item._mainStats=mainSet.slice(); item._mainStat=slotCore||primaryAttr;   // 供 UI 高亮主属性集合
   // 副属性只能来自下方"惊喜roll",不从命名装/池子的预设 stats 注入
   const SURPRISE_KEYS=['crit','critd','critdPct','leech','vers','haste','mastery','dodge'];
   if(extraStats){for(const[k,v]of Object.entries(extraStats)){if(SURPRISE_KEYS.includes(k))continue;item.stats[k]=(item.stats[k]||0)+Math.max(1,Math.floor(baseVal[k]*0.5*v*rarity.mult));}}
