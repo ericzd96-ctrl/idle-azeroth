@@ -385,6 +385,10 @@
     theater:{ key:'top_battlehorror', chance:0.009 },
     waycrest:{ key:'wm_runehound', chance:0.009 },
     kingsrest:{ key:'kr_goldenpterrordax', chance:0.008 },
+    vortex:{ key:'vtx_stormdrake', chance:0.011 },
+    grimrail:{ key:'gr_ironlocomotive', chance:0.009 },
+    everbloom:{ key:'eb_bloomstag', chance:0.009 },
+    neltharus:{ key:'nlt_obsidiandrake', chance:0.008 },
   };
 
   const EXTRA_MOUNTS = [
@@ -446,6 +450,10 @@
     { key:'top_battlehorror',  name:'苦痛剧场角斗士',  icon:'💀', tier:'epic',     mod:{ spdPct:14, atkPct:6 },          src:'苦痛剧场 尾王极低概率掉落(英雄/史诗本掉率更高)' },
     { key:'wm_runehound',      name:'德鲁斯特符文犬',  icon:'🐕', tier:'epic',     mod:{ spdPct:14, defPct:6 },          src:'维克雷斯庄园 尾王极低概率掉落(英雄/史诗本掉率更高)' },
     { key:'kr_goldenpterrordax', name:'达卡莱黄金翼龙', icon:'🦅', tier:'epic',   mod:{ spdPct:16, atkPct:6, critdPct:5 }, src:'国王之眠 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'vtx_stormdrake',    name:'旋云风暴幼龙',   icon:'🐉', tier:'epic',     mod:{ spdPct:15, hpPct:6, haste:5 },   src:'旋云之巅 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'gr_ironlocomotive', name:'钢铁机车',       icon:'🚂', tier:'epic',     mod:{ spdPct:14, defPct:7 },          src:'铁路深谷 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'eb_bloomstag',      name:'永茂繁花雄鹿',   icon:'🦌', tier:'epic',     mod:{ spdPct:14, hpPct:7, vers:4 },    src:'永茂林地 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'nlt_obsidiandrake', name:'奈萨黑曜巨龙',   icon:'🐲', tier:'epic',     mod:{ spdPct:16, atkPct:6, critdPct:5 }, src:'奈萨利亚熔炉 尾王极低概率掉落(英雄/史诗本掉率更高)' },
   ];
 
   function ensureMidgameState() {

@@ -4246,6 +4246,11 @@ normalizeWorldBossSkillsets();
 function extendDungeonCatalog(){
   const L = (name, slot, rarity, stats) => ({ name, slot, rarity, stats });
   const dmg = (name, icon, mul, extra) => Object.assign({ name, icon, desc:`${mul}倍伤害`, type:'dmg', mul, castTime:2.2 }, extra || {});
+  // 阶段技能助手(combat.js 按 hpBelow/hpAbove 在 BOSS 跌破血线时解锁/立即施放):
+  // dmgP=阶段爆发伤害(读条→可破绽);buffP=阶段自强化(瞬发);summonP=阶段召唤援军(瞬发)
+  const dmgP = (name, icon, mul, hpBelow, extra) => Object.assign({ name, icon, desc:`${mul}倍伤害`, type:'dmg', mul, castTime:2.6, cd:14, hpBelow }, extra || {});
+  const buffP = (name, icon, hpBelow, desc, extra) => Object.assign({ name, icon, desc, type:'buff', castTime:0, cd:24, hpBelow }, extra || {});
+  const summonP = (name, icon, hpBelow, desc, extra) => Object.assign({ name, icon, desc, type:'summon', castTime:0, cd:26, hpBelow }, extra || {});
   const ensureDungeon = (dg, loot) => {
     if (!DUNGEONS.some(x => x.key === dg.key)) DUNGEONS.push(dg);
     if (loot && !DUNGEON_LOOT[dg.key]) DUNGEON_LOOT[dg.key] = loot;
@@ -4635,9 +4640,15 @@ function extendDungeonCatalog(){
         { name:'蝎钳魔', emoji:'🦂', skills:[dmg('破甲钳击','🦂',9,{ sunder:true, aoe:true })] },
         { name:'提克迪奥斯', emoji:'🧪', skills:[dmg('黏液喷涌','🟢',9.5,{ dot:true, cripple:true, brittle:true })] },
         { name:'占星师埃塔莉丝', emoji:'🔭', skills:[dmg('群星坍缩','🌌',10,{ aoe:true, manaDrain:55, silence:1800 })] },
-        { name:'克罗苏斯', emoji:'🔥', skills:[dmg('燃烧践踏','🌋',10,{ aoe:true, dot:true, weaken:true })] },
-        { name:'大魔导师艾利桑德', emoji:'⏳', skills:[dmg('时光消逝','✨',10.5,{ slow:true, mirror:true, brittle:true })] },
-        { name:'古尔丹', emoji:'😈', skills:[dmg('邪能风暴','🟣',11.5,{ aoe:true, dot:true, fear:1800 }), dmg('虚空降临','🌑',12.5,{ soulLink:true, silence:2000, decay2:true })] }
+        { name:'克罗苏斯', emoji:'🔥', skills:[dmg('燃烧践踏','🌋',10,{ aoe:true, dot:true, weaken:true }), dmgP('烈焰崩塌','🌋',5,0.5,{ aoe:true, dot:true, stun:1500, brittle:true, cd:12 })] },
+        { name:'大魔导师艾利桑德', emoji:'⏳', skills:[dmg('时光消逝','✨',10.5,{ slow:true, mirror:true, brittle:true }), buffP('时光加速','⏳',0.5,'加速自身时间流速:攻速大幅提升',{ spdBuffSecs:12, spdBuffPct:45 })] },
+        { name:'古尔丹', emoji:'😈', skills:[
+          dmg('邪能风暴','🟣',11.5,{ aoe:true, dot:true, fear:1800 }),
+          dmg('虚空降临','🌑',12.5,{ soulLink:true, silence:2000, decay2:true }),
+          buffP('恶魔变身','👿',0.6,'化身至高恶魔:攻击/攻速/减伤暴涨',{ atkBuffSecs:14, atkBuffPct:45, spdBuffSecs:14, spdBuffPct:30, drBuffSecs:14, drBuffPct:0.25 }),
+          summonP('军团传送门','🌀',0.35,'撕开传送门,召唤 2 个恶魔爪牙并护盾护体',{ summonCount:2, summonTheme:'void', shieldPct:0.20 }),
+          dmgP('湮灭风暴','💥',6,0.3,{ aoe:true, dot:true, silence:2000, fear:1900, brittle:true, alwaysCrit:true, cd:16 })
+        ] }
       ]
     },
     {
@@ -4647,8 +4658,14 @@ function extendDungeonCatalog(){
         { name:'先知斯基特拉', emoji:'👁️', skills:[dmg('幻象箭雨','🪞',10,{ mirror:true, fear:1700 })] },
         { name:'暗影审讯官沙奈什', emoji:'🟣', skills:[dmg('心智折磨','👁️',10,{ silence:1900, manaDrain:55 })] },
         { name:'沙德拉', emoji:'🦠', skills:[dmg('腐化吐息','🟢',10.5,{ aoe:true, plague:true, decay:true })] },
-        { name:'维克希翁', emoji:'🦂', skills:[dmg('湮灭之翼','🌑',11,{ aoe:true, weaken:true, brittle:true })] },
-        { name:'恩佐斯', emoji:'🐙', skills:[dmg('万物归虚','🌌',12,{ aoe:true, decay2:true, fear:1900 }), dmg('古神低语','👁️',13,{ soulLink:true, silence:2200, mirror:true })] }
+        { name:'维克希翁', emoji:'🦂', skills:[dmg('湮灭之翼','🌑',11,{ aoe:true, weaken:true, brittle:true }), dmgP('腐化俯冲','🌑',5,0.5,{ aoe:true, weaken:true, decay:true, fear:1700, cd:12 })] },
+        { name:'恩佐斯', emoji:'🐙', skills:[
+          dmg('万物归虚','🌌',12,{ aoe:true, decay2:true, fear:1900 }),
+          dmg('古神低语','👁️',13,{ soulLink:true, silence:2200, mirror:true }),
+          buffP('腐化觉醒','🟣',0.6,'古神之力觉醒:攻击与暴击狂涨',{ atkBuffSecs:14, atkBuffPct:50, critBuffSecs:14, critBuffPct:60 }),
+          summonP('虚空降生','🐙',0.35,'召唤 2 个虚空爪牙缠绕你并强化护甲',{ summonCount:2, summonTheme:'void', drBuffSecs:12, drBuffPct:0.22 }),
+          dmgP('终末低语','👁️',6.5,0.3,{ aoe:true, decay2:true, fear:2000, mirror:true, manaDrain:60, alwaysCrit:true, cd:16 })
+        ] }
       ]
     },
     {
@@ -4658,8 +4675,99 @@ function extendDungeonCatalog(){
         { name:'猎手阿尔提莫', emoji:'🏹', skills:[dmg('猎犬撕咬','🐕',9.5,{ bleed:true, cripple:true })] },
         { name:'噬渴灭世者', emoji:'🩸', skills:[dmg('饥渴吞噬','🟣',10,{ aoe:true, soulDrain:true, dot:true })] },
         { name:'达克文女勋爵', emoji:'🩸', skills:[dmg('血池献祭','🟥',10,{ weaken:true, decay2:true })] },
-        { name:'鲜血议会', emoji:'⚖️', skills:[dmg('贵族夜宴','🍷',10.5,{ aoe:true, manaDrain:50, brittle:true })] },
-        { name:'主宰者德纳修斯', emoji:'👑', skills:[dmg('罪碑之刃','🗡️',12,{ aoe:true, sunder:true, weaken:true }), dmg('噬渊降临','🕳️',13,{ soulLink:true, fear:2000, decay2:true })] }
+        { name:'鲜血议会', emoji:'⚖️', skills:[dmg('贵族夜宴','🍷',10.5,{ aoe:true, manaDrain:50, brittle:true }), dmgP('血色狂宴','🍷',5,0.5,{ aoe:true, manaDrain:55, bleed:true, brittle:true, cd:12 })] },
+        { name:'主宰者德纳修斯', emoji:'👑', skills:[
+          dmg('罪碑之刃','🗡️',12,{ aoe:true, sunder:true, weaken:true }),
+          dmg('噬渊降临','🕳️',13,{ soulLink:true, fear:2000, decay2:true }),
+          buffP('噬渊之力','🕳️',0.6,'汲取噬渊之力:攻击/攻速/吸血暴涨',{ atkBuffSecs:14, atkBuffPct:35, spdBuffSecs:14, spdBuffPct:40, leechBuffSecs:14, leechBuffPct:35 }),
+          summonP('石裔大军','🗿',0.35,'唤醒 2 尊石裔魔守卫并护盾护体',{ summonCount:2, summonTheme:'soldier', shieldPct:0.22 }),
+          dmgP('湮灭之触','🩸',6.5,0.3,{ aoe:true, soulDrain:true, soulLink:true, weaken:true, decay2:true, alwaysCrit:true, cd:16 })
+        ] }
+      ]
+    },
+    {
+      key:'vortex', name:'旋云之巅', icon:'🌪️', reqLvl:72, waves:9, desc:'巨石之核上方失控旋转的风暴圣堂,气元素肆虐的浮空回廊',
+      bosses:[
+        { name:'格鲁达鲁', emoji:'💨', skills:[dmg('飓风之拳','🌬️',6.5,{ aoe:true, stun:1400 })] },
+        { name:'大主祭奥兹鲁克', emoji:'🪨', skills:[dmg('坠石轰击','🪨',7,{ brittle:true, sunder:true })] },
+        { name:'阿萨德', emoji:'🌪️', skills:[dmg('元素旋风','🌪️',7.5,{ aoe:true, slow:true, silence:1700 }), dmg('风暴撕裂','⚡',8,{ dot:true, weaken:true })] }
+      ]
+    },
+    {
+      key:'grimrail', name:'铁路深谷', icon:'🚂', reqLvl:74, waves:9, desc:'钢铁部落穿越霜火岭的军用列车,在高速行进中夺取军械',
+      bosses:[
+        { name:'工头泽奥格雷尔', emoji:'⚙️', skills:[dmg('蒸汽鞭笞','💨',7,{ dot:true, cripple:true })] },
+        { name:'永燃者拉克玛雷', emoji:'🔥', skills:[dmg('烈焰炮塔','🔥',7.5,{ aoe:true, dot:true })] },
+        { name:'尼托格', emoji:'🐗', skills:[dmg('钢铁践踏','🦏',8,{ stun:1500, bleed:true }), dmg('军列轰炸','💥',8.5,{ aoe:true, brittle:true, weaken:true })] }
+      ]
+    },
+    {
+      key:'everbloom', name:'永茂林地', icon:'🌺', reqLvl:75, waves:10, desc:'失控的德拉诺自然之力涌入塔拉多,藤蔓与元素疯长的温室裂口',
+      bosses:[
+        { name:'古杉魔藤', emoji:'🌿', skills:[dmg('缠绕荆棘','🌿',7,{ cripple:true, dot:true })] },
+        { name:'喷涌元素', emoji:'🌊', skills:[dmg('洪流冲击','🌊',7.5,{ aoe:true, slow:true })] },
+        { name:'阴森巨兽', emoji:'🐗', skills:[dmg('野性狂袭','🐾',7.5,{ bleed:true, frenzy:true })] },
+        { name:'雅雷昆', emoji:'🌺', skills:[dmg('腐化绽放','💮',8,{ aoe:true, plague:true, dot:true }), dmg('自然之怒','🍃',8.5,{ weaken:true, brittle:true, cripple:true })] }
+      ]
+    },
+    {
+      key:'neltharus', name:'奈萨利亚熔炉', icon:'🌋', reqLvl:76, waves:10, desc:'黑龙军团守护的熔岩兵工厂,炽热的龙裔锻造着毁灭之器',
+      bosses:[
+        { name:'熔铸者卡格尼', emoji:'🔨', skills:[dmg('炽炎重锤','🔨',7.5,{ sunder:true, stun:1400 })] },
+        { name:'守护者陶提斯', emoji:'🛡️', skills:[dmg('熔岩壁垒','🟠',7.5,{ brittle:true, dot:true })] },
+        { name:'盗宝龙裔', emoji:'🐲', skills:[dmg('烈焰俯冲','🔥',8,{ aoe:true, bleed:true })] },
+        { name:'焰炉之主玛吉莫斯', emoji:'🌋', skills:[dmg('熔炉爆发','🌋',8.5,{ aoe:true, dot:true, weaken:true }), dmg('黑龙烈焰','🐉',9,{ silence:1800, brittle:true, fear:1600 })] }
+      ]
+    },
+    {
+      key:'eternalpalace', name:'阿萨拉的永恒王宫', icon:'🔱', type:'raid', reqLvl:79, waves:13, desc:'纳沙塔尔深海之下,女王阿兹莎拉以古神之力召唤暗影的海妖王庭',
+      bosses:[
+        { name:'暗鳞军团', emoji:'🐟', skills:[dmg('深海齐射','🌊',9,{ aoe:true, dot:true })] },
+        { name:'飘雾艾尔', emoji:'🪼', skills:[dmg('迷雾毒针','🟣',9.5,{ plague:true, cripple:true })] },
+        { name:'深渊指挥官西瓦拉', emoji:'❄️', skills:[dmg('寒潮冻结','🧊',10,{ freeze:1600, slow:true, weaken:true }), dmgP('绝对零度','❄️',5,0.5,{ aoe:true, freeze:1700, brittle:true, cd:12 })] },
+        { name:'黑暗预言者', emoji:'👁️', skills:[dmg('虚空低语','🌑',10.5,{ silence:1900, fear:1700, mirror:true })] },
+        { name:'深渊领主', emoji:'🦑', skills:[dmg('深渊缠绕','🐙',11,{ aoe:true, soulLink:true, manaDrain:55 })] },
+        { name:'阿兹莎拉女王', emoji:'👑', skills:[
+          dmg('女王魔咒','💫',12,{ aoe:true, mirror:true, silence:2000 }),
+          dmg('深渊洪流','🌊',13,{ soulLink:true, decay2:true, fear:1900 }),
+          buffP('古神赐福','🐙',0.6,'承接恩佐斯之力:攻击/暴击/攻速暴涨',{ atkBuffSecs:14, atkBuffPct:45, critBuffSecs:14, critBuffPct:55, spdBuffSecs:14, spdBuffPct:25 }),
+          summonP('深渊唤潮','🪼',0.35,'召唤 2 个深渊爪牙并护盾护体',{ summonCount:2, summonTheme:'void', shieldPct:0.22 }),
+          dmgP('星辰之怒','🌌',6.5,0.3,{ aoe:true, decay2:true, silence:2100, fear:2000, mirror:true, alwaysCrit:true, cd:16 })
+        ] }
+      ]
+    },
+    {
+      key:'aberrus', name:'厄苏戈尔,暗影熔炉', icon:'🔥', type:'raid', reqLvl:79, waves:13, desc:'死亡之翼当年的炼成之所,黑龙萨拉塔斯重启了奈萨里奥的禁忌实验',
+      bosses:[
+        { name:'卡赞', emoji:'🌀', skills:[dmg('奥术湮灭','✨',9.5,{ aoe:true, manaDrain:55, silence:1800 })] },
+        { name:'焚化者拉什卡尔', emoji:'🔥', skills:[dmg('熔火喷涌','🌋',10,{ aoe:true, dot:true, brittle:true }), dmgP('烈焰风暴','🔥',5,0.5,{ aoe:true, dot:true, weaken:true, cd:12 })] },
+        { name:'鲜血法师沙拉嘎', emoji:'🩸', skills:[dmg('血肉重塑','💉',10,{ soulDrain:true, plague:true })] },
+        { name:'禁锢魔像', emoji:'🤖', skills:[dmg('崩解打击','⚙️',10.5,{ stun:1600, sunder:true })] },
+        { name:'黑龙萨拉塔斯', emoji:'🐉', skills:[dmg('暗影烈焰','🌑',11,{ aoe:true, dot:true, fear:1700 })] },
+        { name:'化身奈萨里奥', emoji:'🐲', skills:[
+          dmg('熔岩崩裂','🌋',12,{ aoe:true, dot:true, sunder:true }),
+          dmg('暗影虹吸','🖤',13,{ soulDrain:true, soulLink:true, weaken:true }),
+          buffP('熔铸狂怒','🔨',0.6,'熔炉之力灌注全身:攻击/攻速/减伤暴涨',{ atkBuffSecs:14, atkBuffPct:48, spdBuffSecs:14, spdBuffPct:30, drBuffSecs:14, drBuffPct:0.22 }),
+          summonP('熔火造物','🤖',0.35,'熔炉中唤出 2 个炽炎造物助战',{ summonCount:2, summonTheme:'elemental', shieldPct:0.20 }),
+          dmgP('湮灭烈焰','💥',6.5,0.3,{ aoe:true, dot:true, brittle:true, fear:2000, silence:2000, alwaysCrit:true, cd:16 })
+        ] }
+      ]
+    },
+    {
+      key:'amirdrassil', name:'阿米德拉希尔,希望之梦', icon:'🌳', type:'raid', reqLvl:79, waves:14, desc:'守护新生世界之树,抵御炎魔之王弗拉戈斯将梦境付之一炬的终局会战',
+      bosses:[
+        { name:'古加冯', emoji:'🐗', skills:[dmg('远古践踏','🦶',9.5,{ aoe:true, stun:1500 })] },
+        { name:'史矛莱什', emoji:'🐛', skills:[dmg('腐化吐息','🟣',10,{ plague:true, dot:true, weaken:true })] },
+        { name:'拉莎农', emoji:'🦅', skills:[dmg('烈风箭雨','🌬️',10,{ aoe:true, bleed:true }), dmgP('风暴俯冲','⚡',5,0.5,{ aoe:true, slow:true, brittle:true, cd:12 })] },
+        { name:'织焰巫女', emoji:'🔥', skills:[dmg('梦火灼烧','🔥',10.5,{ dot:true, silence:1800 })] },
+        { name:'暮光化身', emoji:'🌑', skills:[dmg('暗影裂解','🌑',11,{ aoe:true, fear:1800, mirror:true })] },
+        { name:'炎魔之王弗拉戈斯', emoji:'🌋', skills:[
+          dmg('焚梦烈焰','🔥',12,{ aoe:true, dot:true, brittle:true }),
+          dmg('世界树之殇','🌳',13,{ soulLink:true, decay2:true, weaken:true }),
+          buffP('炎魔降临','😈',0.6,'炎魔之力全开:攻击/攻速/吸血暴涨',{ atkBuffSecs:14, atkBuffPct:46, spdBuffSecs:14, spdBuffPct:32, leechBuffSecs:14, leechBuffPct:30 }),
+          summonP('烈焰子嗣','🔥',0.35,'从烈焰中唤出 2 个炎魔爪牙',{ summonCount:2, summonTheme:'elemental', drBuffSecs:12, drBuffPct:0.2 }),
+          dmgP('末日烈焰','☄️',7,0.3,{ aoe:true, dot:true, fear:2100, silence:2100, brittle:true, alwaysCrit:true, cd:16 })
+        ] }
       ]
     }
   ];
@@ -4932,7 +5040,53 @@ function extendDungeonCatalog(){
       '达克文女勋爵':[L('血池法典','weapon','epic',{atk:2,int:2}),L('暗脉护肩','shoulder','rare',{atk:1,int:1})],
       '鲜血议会':[L('贵族夜宴之戒','ring','epic',{int:2,spi:1}),L('议会披风','armor','rare',{def:1,int:1})],
       '主宰者德纳修斯':[L('罪碑之刃·夜歌','weapon','legend',{atk:6,str:4}),L('纳斯利亚堡石血胸甲','armor','legend',{def:5,sta:4}),L('主宰者王冠','helmet','legend',{def:4,int:3}),L('噬渊之心徽记','trinket','legend',{sta:3,str:3})]
-    }, trash:[L('雷文德斯护肩','shoulder','rare',{atk:1,sta:1}),L('石裔魔战靴','boots','rare',{sta:1})] }
+    }, trash:[L('雷文德斯护肩','shoulder','rare',{atk:1,sta:1}),L('石裔魔战靴','boots','rare',{sta:1})] },
+    vortex: { bosses:{
+      '格鲁达鲁':[L('飓风之拳护手','gloves','rare',{atk:1,agi:1}),L('气旋腰带','belt','rare',{def:1,agi:1})],
+      '大主祭奥兹鲁克':[L('坠石战锤','weapon','rare',{atk:1,str:1}),L('岩心护腿','pants','rare',{hp:1,sta:1})],
+      '阿萨德':[L('阿萨德的旋风之杖','weapon','epic',{atk:3,int:2}),L('风暴守护兜帽','helmet','epic',{def:2,int:2}),L('旋云之戒','ring','epic',{agi:2,haste:1})]
+    }, trash:[L('气元素护肩','shoulder','rare',{atk:1,int:1}),L('浮空战靴','boots','rare',{agi:1})] },
+    grimrail: { bosses:{
+      '工头泽奥格雷尔':[L('蒸汽鞭','weapon','rare',{atk:1,agi:1}),L('工头护腕','gloves','rare',{str:1})],
+      '永燃者拉克玛雷':[L('烈焰炮塔核心','trinket','rare',{sta:1,int:1}),L('炎使腰带','belt','rare',{def:1,int:1})],
+      '尼托格':[L('尼托格的钢铁巨斧','weapon','epic',{atk:3,str:2}),L('军列重甲','armor','epic',{def:2,sta:2}),L('钢铁码头徽记','trinket','epic',{sta:2,str:2})]
+    }, trash:[L('钢铁部落护肩','shoulder','rare',{atk:1,sta:1}),L('铁路工战靴','boots','rare',{str:1})] },
+    everbloom: { bosses:{
+      '古杉魔藤':[L('荆棘缠绕之杖','weapon','rare',{atk:1,int:1}),L('藤蔓护腕','gloves','rare',{spi:1})],
+      '喷涌元素':[L('洪流坠饰','trinket','rare',{sta:1,spi:1}),L('潮汐腰带','belt','rare',{def:1,int:1})],
+      '阴森巨兽':[L('野性巨爪','weapon','rare',{atk:1,agi:1}),L('兽皮护腿','pants','rare',{hp:1,agi:1})],
+      '雅雷昆':[L('雅雷昆的自然之怒','weapon','epic',{atk:3,agi:2}),L('永茂林冠','helmet','epic',{def:2,spi:2}),L('腐化绽放之戒','ring','epic',{agi:2,spi:1})]
+    }, trash:[L('永茂护肩','shoulder','rare',{atk:1,spi:1}),L('温室行者战靴','boots','rare',{agi:1})] },
+    neltharus: { bosses:{
+      '熔铸者卡格尼':[L('炽炎重锤','weapon','rare',{atk:1,str:1}),L('熔铸护手','gloves','rare',{str:1})],
+      '守护者陶提斯':[L('熔岩壁垒之盾','trinket','rare',{def:1,sta:1}),L('守护者腰带','belt','rare',{def:1,sta:1})],
+      '盗宝龙裔':[L('龙裔烈焰之刃','weapon','rare',{atk:1,agi:1}),L('龙鳞护腿','pants','rare',{hp:1,str:1})],
+      '焰炉之主玛吉莫斯':[L('玛吉莫斯的熔炉之锤','weapon','epic',{atk:3,str:2}),L('黑龙熔铸胸铠','armor','epic',{def:2,sta:2}),L('焰炉徽记','trinket','epic',{sta:2,str:2})]
+    }, trash:[L('黑龙护肩','shoulder','rare',{atk:1,sta:1}),L('熔渣战靴','boots','rare',{str:1})] },
+    eternalpalace: { bosses:{
+      '暗鳞军团':[L('深海齐射之弓','weapon','epic',{atk:2,agi:2}),L('鳞甲护腿','pants','rare',{hp:1,agi:1})],
+      '飘雾艾尔':[L('迷雾毒针匕首','weapon','epic',{atk:2,agi:2}),L('水母护腕','gloves','rare',{agi:1})],
+      '深渊指挥官西瓦拉':[L('寒潮权杖','weapon','epic',{atk:2,int:2}),L('冰封指挥官腰带','belt','rare',{def:1,int:1})],
+      '黑暗预言者':[L('虚空预言兜帽','helmet','epic',{def:2,int:2}),L('低语护肩','shoulder','rare',{atk:1,int:1})],
+      '深渊领主':[L('深渊缠绕指环','ring','epic',{atk:2,vers:1}),L('触须护手','gloves','rare',{str:1})],
+      '阿兹莎拉女王':[L('阿兹莎拉的海妖权杖','weapon','legend',{atk:5,int:4}),L('永恒王宫圣袍','armor','legend',{def:5,int:4}),L('女王王冠','helmet','legend',{def:4,int:3}),L('深海之心徽记','trinket','legend',{sta:3,int:3})]
+    }, trash:[L('纳迦守卫护肩','shoulder','rare',{atk:1,int:1}),L('深海长靴','boots','rare',{agi:1})] },
+    aberrus: { bosses:{
+      '卡赞':[L('奥术湮灭之杖','weapon','epic',{atk:2,int:2}),L('虚空护腕','gloves','rare',{int:1})],
+      '焚化者拉什卡尔':[L('熔火喷涌护肩','shoulder','epic',{atk:2,str:2}),L('炽炎护腿','pants','rare',{hp:1,str:1})],
+      '鲜血法师沙拉嘎':[L('血肉重塑法典','weapon','epic',{atk:2,int:2}),L('鲜血腰带','belt','rare',{def:1,int:1})],
+      '禁锢魔像':[L('崩解护手','gloves','epic',{atk:2,str:2}),L('魔像核心坠饰','trinket','rare',{sta:1,def:1})],
+      '黑龙萨拉塔斯':[L('暗影烈焰指环','ring','epic',{atk:2,int:1}),L('黑龙护肩','shoulder','rare',{atk:1,str:1})],
+      '化身奈萨里奥':[L('奈萨里奥的熔铸巨刃','weapon','legend',{atk:6,str:4}),L('暗影熔炉胸甲','armor','legend',{def:5,sta:4}),L('化身龙鳞头冠','helmet','legend',{def:4,int:3}),L('熔炉之心徽记','trinket','legend',{sta:3,str:3})]
+    }, trash:[L('熔炉守卫护肩','shoulder','rare',{atk:1,sta:1}),L('厄苏戈尔战靴','boots','rare',{str:1})] },
+    amirdrassil: { bosses:{
+      '古加冯':[L('远古践踏护手','gloves','epic',{atk:2,str:2}),L('巨兽护腿','pants','rare',{hp:1,sta:1})],
+      '史矛莱什':[L('腐化吐息之杖','weapon','epic',{atk:2,int:2}),L('蛀虫护腕','gloves','rare',{agi:1})],
+      '拉莎农':[L('烈风长弓','weapon','epic',{atk:2,agi:2}),L('风羽护肩','shoulder','rare',{atk:1,agi:1})],
+      '织焰巫女':[L('梦火法典','weapon','epic',{atk:2,int:2}),L('炽焰腰带','belt','rare',{def:1,int:1})],
+      '暮光化身':[L('暗影裂解指环','ring','epic',{atk:2,vers:1}),L('暮光护腕','gloves','rare',{int:1})],
+      '炎魔之王弗拉戈斯':[L('弗拉戈斯的炎魔之锤','weapon','legend',{atk:6,str:4}),L('希望之梦圣甲','armor','legend',{def:5,spi:4}),L('世界树守护头冠','helmet','legend',{def:4,int:3}),L('梦境之心徽记','trinket','legend',{sta:3,spi:3})]
+    }, trash:[L('梦境守护者护肩','shoulder','rare',{atk:1,spi:1}),L('烈焰之地战靴','boots','rare',{agi:1})] }
   };
 
   for (const dg of extraDungeons) ensureDungeon(dg, extraLoot[dg.key]);
@@ -4989,6 +5143,9 @@ const EPIC_RAID_SET_THEME = {
   nighthold:{ tier:'T19', name:'暗夜要塞', short:'夜之子' },
   nyalotha:{ tier:'T25', name:'尼奥罗萨', short:'恩佐斯' },
   nathria:{ tier:'T26', name:'纳斯利亚堡', short:'德纳修斯' },
+  eternalpalace:{ tier:'T24', name:'永恒王宫', short:'阿萨拉' },
+  aberrus:{ tier:'T29', name:'厄苏戈尔', short:'熔铸' },
+  amirdrassil:{ tier:'T31', name:'阿米德拉希尔', short:'梦境' },
 };
 const EPIC_RAID_SET_LABELS = {
   mc:{
@@ -5090,6 +5247,18 @@ const EPIC_RAID_SET_LABELS = {
   nathria:{
     warrior:'血誓战铠', mage:'罪法师', priest:'赎罪神官', rogue:'夜噬', hunter:'血猎游侠',
     shaman:'石血先知', paladin:'石裔誓约', warlock:'石血契约', druid:'枯叶守护',
+  },
+  eternalpalace:{
+    warrior:'深渊战铠', mage:'潮汐法师', priest:'海歌神官', rogue:'暗鳞杀手', hunter:'渊海游猎',
+    shaman:'怒涛先知', paladin:'珊瑚誓约', warlock:'深渊契约', druid:'海林守护',
+  },
+  aberrus:{
+    warrior:'熔铸战铠', mage:'炎术师', priest:'灰烬神官', rogue:'熔影杀手', hunter:'熔火游猎',
+    shaman:'熔岩先知', paladin:'炽炉誓约', warlock:'邪炎契约', druid:'焦林守护',
+  },
+  amirdrassil:{
+    warrior:'梦境战铠', mage:'织梦师', priest:'翡翠神官', rogue:'梦影杀手', hunter:'林梦游猎',
+    shaman:'梦潮先知', paladin:'生命誓约', warlock:'梦魇契约', druid:'世界树守护',
   },
 };
 const EPIC_RAID_SET_SLOT_ROTATION = ['pants','helmet','shoulder','gloves','armor','boots','belt','ring','trinket','weapon'];
