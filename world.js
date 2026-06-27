@@ -141,12 +141,15 @@ function enterDungeon(key) {
   }
   state.mode = 'dungeon';
   state.dungeonState = { key, wave: 1, loot: [], affixes: getDungeonAffixes(dg) };
+  // 进入副本:全量刷新所有技能CD(英雄/天赋/神器/随从)+清理身上的 buff/debuff/护盾(含随从护盾与随从buff/debuff)
+  if (typeof resetCombatState === 'function') resetCombatState();
+  else if (typeof clearAllBuffs === 'function') clearAllBuffs();
+  if (typeof recomputeStats === 'function') recomputeStats();   // 清增益后重算面板,再回满血
   state.hp = state.hero.hpMax;
   state.resource = state.resourceMax;
   if (typeof resetDmgStats === 'function') resetDmgStats();
-  if (typeof clearAllBuffs === 'function') clearAllBuffs();
   spawnDungeonMonster();
-  markDirty('dungeon', 'stage');
+  markDirty('dungeon', 'stage', 'hero');
 }
 
 function leaveDungeon() {

@@ -3722,6 +3722,7 @@ function resetCombatState(){
     state._brittleUntil=0;state._soulLinkUntil=0;state._decayUntil=0;
     state._allySummons=[];
     state.artifactSkillCd=0;                            // 神器招牌技能冷却
+    state.skillCooldowns={};                             // 英雄技能冷却(全部刷新)
     state.talentState={cds:{},flags:{},shield:0};
   }
   if(typeof lastCompAtk==='number')lastCompAtk=0;
