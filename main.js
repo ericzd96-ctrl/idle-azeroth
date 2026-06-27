@@ -338,6 +338,17 @@ function setupDelegation() {
     if (btn.dataset.action === 'enterdungeon') enterDungeon(btn.dataset.key);
     else if (btn.dataset.action === 'dungeoninfo' && typeof openDungeonInfo === 'function') openDungeonInfo(btn.dataset.key);
   });
+  // 英雄本 / 史诗5人本 列表(此前漏挂事件,导致详情/进入按钮无响应)
+  for (const listId of ['heroic-dungeon-list', 'epic5-dungeon-list']) {
+    const el = $(listId);
+    if (!el) continue;
+    el.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      if (btn.dataset.action === 'enterdungeon') enterDungeon(btn.dataset.key);
+      else if (btn.dataset.action === 'dungeoninfo' && typeof openDungeonInfo === 'function') openDungeonInfo(btn.dataset.key);
+    });
+  }
 
   // 副本/无尽塔 子页切换
   $('tab-dungeon').addEventListener('click', e => {
