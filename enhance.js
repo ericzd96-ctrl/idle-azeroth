@@ -461,13 +461,9 @@ function rerollItemFully(itemId) {
   const cost = getItemFullRerollCost(it);
   if (state.gold < cost.gold) { log('💰 金币不足(' + cost.gold + ')', 'bad'); return; }
   if (state.essence < cost.essence) { log('💎 魔法精华不足(' + cost.essence + ')', 'bad'); return; }
-  const returnKeys = [];
-  if (it.sockets) {
-    for (const sk of it.sockets) {
-      if (!sk.gem) continue;
-      returnKeys.push(sk.gem);
-    }
-  }
+  // 重洗只重掷"基础数值 + 词缀";宝石孔(含已镶嵌宝石)与附魔原样保留,不再随机/清除
+  const savedSockets = it.sockets ? JSON.parse(JSON.stringify(it.sockets)) : null;
+  const savedEnchant = it.enchant || null;
   // ---- 快照锁定数据 ----
   const lockedStatSnap = {};
   if (it._lockedStats) {
@@ -490,14 +486,9 @@ function rerollItemFully(itemId) {
   if (lockedAffixNames) lockedParts.push('词缀: ' + lockedAffixNames);
   const lockedHint = lockedParts.length ? '\n🔒 已锁定保留: ' + lockedParts.join(' | ') : '';
   const costText = `${cost.gold}💰${cost.essence ? ` + ${cost.essence}✨` : ''}`;
-  if (!confirm(`重洗 [${it.name}]？\n将消耗 ${costText}${lockedHint}\n会重掷基础数值、词缀和宝石孔，并清除附魔。\n已镶嵌的宝石会返还到背包。`)) return;
+  if (!confirm(`重洗 [${it.name}]？\n将消耗 ${costText}${lockedHint}\n只重掷基础数值与词缀，保留宝石孔、已镶嵌宝石与附魔。`)) return;
   state.gold -= cost.gold;
   state.essence -= cost.essence;
-  const returns = [];
-  for (const gemKey of returnKeys) {
-    state.gems[gemKey] = (state.gems[gemKey] || 0) + 1;
-    returns.push(GEM_TYPES[gemKey]?.name || gemKey);
-  }
   const rarity = RARITY.find(r => r.key === it.rarity) || RARITY[0];
   const power = estimateItemRollPower(it);
   const extraStats = typeof resolveItemTemplateStats === 'function' ? resolveItemTemplateStats(it) : (it._baseExtraStats || {});
@@ -546,9 +537,11 @@ function rerollItemFully(itemId) {
     }
   }
   it.fullRerolls = preserved.fullRerolls;
+  // 还原宝石孔(含已镶嵌宝石)与附魔:重洗不改变这两项
+  if (savedSockets) it.sockets = savedSockets; else delete it.sockets;
+  if (savedEnchant) it.enchant = savedEnchant; else delete it.enchant;
   syncItemIdentity(it);
-  const returnedText = returns.length ? `，返还宝石 ${returns.join(' / ')}` : '';
-  log(`🎲 重洗完成 [${it.name}]${returnedText}`,'good');
+  log(`🎲 重洗完成 [${it.name}]（保留宝石孔与附魔）`,'good');
   recomputeStats();
   markDirty('inventory','equipment','hero');
   renderItemDetail(itemId);
