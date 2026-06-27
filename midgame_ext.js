@@ -379,6 +379,8 @@
     hor:{ key:'hor_frostgryphon', chance:0.008 },
     toc:{ key:'toc_argentcharger', chance:0.008 },
     forge:{ key:'fos_frostwyrm', chance:0.008 },
+    atonement:{ key:'aton_gravewing', chance:0.009 },
+    plaguefall:{ key:'pf_deathbeetle', chance:0.009 },
   };
 
   const EXTRA_MOUNTS = [
@@ -434,6 +436,8 @@
     { key:'hor_frostgryphon',  name:'冰霜狮鹫',       icon:'🦅', tier:'legend',   mod:{ spdPct:17, hpPct:10 },          src:'映像大厅 尾王极低概率掉落(英雄/史诗本掉率更高)' },
     { key:'toc_argentcharger', name:'银色北伐军战马', icon:'🐎', tier:'legend',   mod:{ spdPct:17, atkPct:10 },         src:'勇气竞技场 尾王极低概率掉落(英雄/史诗本掉率更高)' },
     { key:'fos_frostwyrm',     name:'灵魂熔炉冰霜亡魂',icon:'🐲', tier:'legend',   mod:{ spdPct:18, atkPct:10 },         src:'灵魂熔炉 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'aton_gravewing',    name:'雷文德斯石翼',   icon:'🦇', tier:'epic',     mod:{ spdPct:15, defPct:7 },          src:'赎罪大厅 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'pf_deathbeetle',    name:'玛卓死亡甲虫',   icon:'🪲', tier:'epic',     mod:{ spdPct:15, hpPct:8 },           src:'凋魂之殇 尾王极低概率掉落(英雄/史诗本掉率更高)' },
   ];
 
   function ensureMidgameState() {

@@ -4526,6 +4526,44 @@ function extendDungeonCatalog(){
         { name:'编织者扎克兰', emoji:'🕸️', skills:[dmg('暗影织网','🕸️',8,{ silence:1700, dot:true })] },
         { name:'达萨拉先王雷扎安', emoji:'👑', skills:[dmg('黄金权杖','👑',8.5,{ aoe:true, weaken:true, manaDrain:45 }), dmg('诸王审判','⚔️',9,{ sunder:true, fear:1700, brittle:true })] }
       ]
+    },
+    {
+      key:'uldir', name:'奥迪尔', icon:'🧬', type:'raid', reqLvl:79, waves:13, desc:'泰坦造物实验室,被腐化之血污染的血肉囚牢',
+      bosses:[
+        { name:'魔血之触', emoji:'🩸', skills:[dmg('腐血爆发','🩸',9,{ aoe:true, plague:true, dot:true })] },
+        { name:'垫脚石', emoji:'🪨', skills:[dmg('崩解践踏','🪨',9.5,{ stun:1500, sunder:true })] },
+        { name:'禁锢者泽克伏斯', emoji:'🦠', skills:[dmg('腐化注入','🟢',9.5,{ weaken:true, manaDrain:50, dot:true })] },
+        { name:'米斯拉克斯', emoji:'🪲', skills:[dmg('湮灭之沙','🟡',10,{ aoe:true, brittle:true, decay:true })] },
+        { name:'恐惧之臂沃舒','emoji':'👁️', skills:[dmg('精神腐蚀','👁️',10.5,{ fear:1800, mirror:true, silence:1800 })] },
+        { name:'戈霍恩', emoji:'🫀', skills:[dmg('腐化之血','🩸',11.5,{ aoe:true, plague:true, decay2:true }), dmg('古神低语','🌀',12,{ soulLink:true, fear:1900, weaken:true })] }
+      ]
+    },
+    {
+      key:'nightmare', name:'翡翠梦魇', icon:'🌳', type:'raid', reqLvl:79, waves:13, desc:'翡翠梦境被梦魇侵蚀,萨维斯散播堕落的腐林',
+      bosses:[
+        { name:'尼提兹', emoji:'🐛', skills:[dmg('梦魇之茧','🕸️',9,{ cripple:true, dot:true })] },
+        { name:'噩梦巨龙', emoji:'🐲', skills:[dmg('腐蚀吐息','🟣',9.5,{ aoe:true, decay:true, weaken:true })] },
+        { name:'乌索克之灵', emoji:'🐻', skills:[dmg('狂怒撕咬','🐾',10,{ bleed:true, frenzy:true })] },
+        { name:'梦魇之龙伊瑟拉', emoji:'🐉', skills:[dmg('堕落之梦','💤',10.5,{ fear:1800, dot:true, manaDrain:45 })] },
+        { name:'萨维斯', emoji:'🌑', skills:[dmg('梦魇大军','🌌',11.5,{ aoe:true, fear:1900, decay2:true }), dmg('腐化之握','🩸',12,{ soulDrain:true, brittle:true, silence:1900 })] }
+      ]
+    },
+    {
+      key:'atonement', name:'赎罪大厅', icon:'⛪', reqLvl:73, waves:9, desc:'雷文德斯的哥特式审判殿堂,贪婪者的赎罪之地',
+      bosses:[
+        { name:'石裔典狱官', emoji:'🗿', skills:[dmg('石化打击','🪨',7,{ stun:1400, brittle:true })] },
+        { name:'忏悔者阿德琳娜', emoji:'🕯️', skills:[dmg('罪孽箭雨','🏹',7.5,{ aoe:true, bleed:true })] },
+        { name:'高阶领主哈卡', emoji:'⚖️', skills:[dmg('审判之锤','⚖️',8,{ weaken:true, sunder:true }), dmg('赎罪烈焰','🔥',8.5,{ aoe:true, dot:true, fear:1500 })] }
+      ]
+    },
+    {
+      key:'plaguefall', name:'凋魂之殇', icon:'☣️', reqLvl:75, waves:10, desc:'玛卓克萨斯的瘟疫泥沼,炼金腐化的死亡兵工厂',
+      bosses:[
+        { name:'全球大瘟疫', emoji:'🦠', skills:[dmg('瘟疫喷涌','🟢',7.5,{ plague:true, dot:true, aoe:true })] },
+        { name:'多曼戈斯', emoji:'🧪', skills:[dmg('腐蚀药剂','🧪',8,{ weaken:true, decay:true })] },
+        { name:'瘟疫医师玛拉克斯', emoji:'⚗️', skills:[dmg('剧毒之触','☠️',8,{ dot:true, cripple:true })] },
+        { name:'屠夫斯特拉达玛', emoji:'🔪', skills:[dmg('腐烂收割','🔪',8.5,{ bleed:true, fear:1500 }), dmg('瘟疫风暴','☣️',9,{ aoe:true, plague:true, decay2:true })] }
+      ]
     }
   ];
 
@@ -4724,7 +4762,33 @@ function extendDungeonCatalog(){
       '监护者沃尔卡':[L('黄金壁垒之盾','trinket','rare',{def:1,sta:1}),L('监护者腰带','belt','rare',{def:1,str:1})],
       '编织者扎克兰':[L('暗影织网法杖','weapon','rare',{atk:1,int:1}),L('蛛丝披风','armor','rare',{def:1,int:1})],
       '达萨拉先王雷扎安':[L('雷扎安的黄金权杖','weapon','epic',{atk:3,int:2}),L('赞达拉王冠','helmet','epic',{def:2,int:2}),L('诸王陵墓指环','ring','epic',{str:2,sta:1})]
-    }, trash:[L('赞达拉护肩','shoulder','rare',{atk:1,sta:1}),L('金字塔守卫战靴','boots','rare',{agi:1})] }
+    }, trash:[L('赞达拉护肩','shoulder','rare',{atk:1,sta:1}),L('金字塔守卫战靴','boots','rare',{agi:1})] },
+    uldir: { bosses:{
+      '魔血之触':[L('腐血之爪','gloves','epic',{atk:2,agi:2}),L('血肉护腿','pants','rare',{hp:1,sta:1})],
+      '垫脚石':[L('崩解之核','trinket','epic',{def:2,sta:2}),L('泰坦碎石腰带','belt','rare',{def:1,str:1})],
+      '禁锢者泽克伏斯':[L('腐化禁锢权杖','weapon','epic',{atk:2,int:2}),L('实验体护肩','shoulder','rare',{atk:1,int:1})],
+      '米斯拉克斯':[L('湮灭之沙护手','gloves','epic',{atk:2,str:2}),L('沙王指环','ring','rare',{str:1})],
+      '恐惧之臂沃舒':[L('精神腐蚀法典','weapon','epic',{atk:2,int:2}),L('恐惧兜帽','helmet','rare',{def:1,int:1})],
+      '戈霍恩':[L('古神腐血之刃','weapon','legend',{atk:5,agi:3}),L('腐化泰坦胸甲','armor','legend',{def:5,sta:4}),L('血肉王座头冠','helmet','legend',{def:4,int:3}),L('戈霍恩之心','trinket','epic',{sta:2,int:2})]
+    }, trash:[L('血肉造物护肩','shoulder','rare',{atk:1,sta:1}),L('实验室战靴','boots','rare',{sta:1})] },
+    nightmare: { bosses:{
+      '尼提兹':[L('梦魇蛛丝缠腕','gloves','epic',{atk:2,agi:2}),L('结茧护腿','pants','rare',{hp:1,agi:1})],
+      '噩梦巨龙':[L('腐蚀龙鳞肩甲','shoulder','epic',{atk:2,str:2}),L('堕梦腰带','belt','rare',{def:1,sta:1})],
+      '乌索克之灵':[L('乌索克之爪','weapon','epic',{atk:3,agi:2}),L('熊魂护腕','gloves','rare',{agi:1})],
+      '梦魇之龙伊瑟拉':[L('堕落梦境法杖','weapon','epic',{atk:2,int:2}),L('翡翠之眠长袍','armor','rare',{def:1,spi:1})],
+      '萨维斯':[L('萨维斯的梦魇之镰','weapon','legend',{atk:5,int:3}),L('腐化德鲁伊胸甲','armor','legend',{def:4,spi:4}),L('梦魇统御头冠','helmet','legend',{def:4,int:3}),L('翡翠梦魇之核','trinket','epic',{sta:2,spi:2})]
+    }, trash:[L('梦境守护者护肩','shoulder','rare',{atk:1,spi:1}),L('腐林战靴','boots','rare',{agi:1})] },
+    atonement: { bosses:{
+      '石裔典狱官':[L('石化战锤','weapon','rare',{atk:1,str:1}),L('典狱官护肩','shoulder','rare',{atk:1,sta:1})],
+      '忏悔者阿德琳娜':[L('忏悔长弓','weapon','rare',{atk:1,agi:1}),L('赎罪披风','armor','rare',{def:1,int:1})],
+      '高阶领主哈卡':[L('哈卡的审判之锤','weapon','epic',{atk:3,str:2}),L('雷文德斯王冠','helmet','epic',{def:2,int:2}),L('赎罪圣徽','trinket','epic',{sta:2,spi:2})]
+    }, trash:[L('石裔魔护手','gloves','rare',{str:1}),L('哥特长靴','boots','rare',{sta:1})] },
+    plaguefall: { bosses:{
+      '全球大瘟疫':[L('瘟疫喷射臂铠','gloves','rare',{atk:1,int:1}),L('腐液护腿','pants','rare',{hp:1,sta:1})],
+      '多曼戈斯':[L('腐蚀药剂瓶','trinket','rare',{sta:1,int:1}),L('炼金腰带','belt','rare',{def:1,int:1})],
+      '瘟疫医师玛拉克斯':[L('剧毒之针','weapon','rare',{atk:1,agi:1}),L('瘟疫医师面罩','helmet','rare',{def:1,int:1})],
+      '屠夫斯特拉达玛':[L('斯特拉达玛的腐烂巨刃','weapon','epic',{atk:3,str:2}),L('屠夫围裙','armor','epic',{def:2,sta:2}),L('玛卓克萨斯瘟疫指环','ring','epic',{agi:2,sta:1})]
+    }, trash:[L('泥沼护肩','shoulder','rare',{atk:1,sta:1}),L('瘟疫行者战靴','boots','rare',{sta:1})] }
   };
 
   for (const dg of extraDungeons) ensureDungeon(dg, extraLoot[dg.key]);
@@ -4776,6 +4840,8 @@ const EPIC_RAID_SET_THEME = {
   hfc:{ tier:'T18', name:'地狱火堡垒', short:'地狱火' },
   tomb:{ tier:'T20', name:'萨格拉斯之墓', short:'圣墓' },
   antorus:{ tier:'T21', name:'安托鲁斯', short:'阿古斯' },
+  nightmare:{ tier:'T19', name:'翡翠梦魇', short:'梦魇' },
+  uldir:{ tier:'T23', name:'奥迪尔', short:'血肉' },
 };
 const EPIC_RAID_SET_LABELS = {
   mc:{
@@ -4857,6 +4923,14 @@ const EPIC_RAID_SET_LABELS = {
   antorus:{
     warrior:'阿古斯征服者', mage:'星界法师', priest:'圣裁化身', rogue:'虚空之刃', hunter:'泰坦追猎者',
     shaman:'风暴先知', paladin:'破晓圣骑', warlock:'湮灭使者', druid:'世界之心',
+  },
+  nightmare:{
+    warrior:'枯萎斗士', mage:'梦魇咒法', priest:'腐梦祭司', rogue:'梦魇毒牙', hunter:'梦魇游猎',
+    shaman:'梦魇图腾', paladin:'翡翠圣骑', warlock:'梦魇邪术', druid:'梦魇守护',
+  },
+  uldir:{
+    warrior:'腐化斗士', mage:'血法师', priest:'血肉祭司', rogue:'毒刃', hunter:'瘟疫追猎者',
+    shaman:'腐血先知', paladin:'净化圣骑', warlock:'邪疫术士', druid:'腐化德鲁伊',
   },
 };
 const EPIC_RAID_SET_SLOT_ROTATION = ['pants','helmet','shoulder','gloves','armor','boots','belt','ring','trinket','weapon'];

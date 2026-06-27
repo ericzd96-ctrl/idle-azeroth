@@ -1760,7 +1760,8 @@ function renderInventory() {
     shown++;
     if (typeof syncItemIdentity === 'function') syncItemIdentity(it);
     const equipped = state.equipped[it.slot];
-    const stats = Object.entries(it.stats).map(([k,v])=>fmtMod(k, v)).join(' ');
+    const _mainK = it._mainStat || (SLOT_INFO[it.slot] && SLOT_INFO[it.slot].mainStat);
+    const stats = Object.entries(it.stats).map(([k,v])=> k===_mainK ? `<b style="color:#fde68a">${fmtMod(k, v)}</b>` : fmtMod(k, v)).join(' ');
     const row = document.createElement('div');
     row.className = 'inv-item ' + it.bcls + (it.locked ? ' locked' : '');
     row.dataset.id = it.id;

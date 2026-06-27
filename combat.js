@@ -3611,12 +3611,15 @@ function finishItem(item,slotKey,rarity,power,extraStats){
   const slot=SLOT_INFO[slotKey];
   const lvlBonus=1+power*0.01; // 等级越高属性越多(2026-06-16 0.02→0.01:压平后期二次膨胀)
   const baseVal={atk:Math.floor((3+power*1.0)*lvlBonus),def:Math.floor((2+power*0.55)*lvlBonus),hp:Math.floor((12+power*5)*lvlBonus),crit:1+power*0.1,critd:6+power*0.6,reg:1+power*0.2,str:Math.floor((1.5+power*0.4)*lvlBonus),agi:Math.floor((1.5+power*0.4)*lvlBonus),int:Math.floor((1.5+power*0.4)*lvlBonus),spi:Math.floor((1+power*0.35)*lvlBonus),sta:Math.floor((1.5+power*0.4)*lvlBonus),leech:0.5+power*0.06,vers:0.5+power*0.06,haste:0.5+power*0.06,dodge:0.5+power*0.06};
-  const primary=slot.mainStat;let pv=baseVal[primary]*rarity.mult;
+  // 以主属性为本:主属性大幅强化(×PRIMARY_MAIN_MULT),作为装备价值的核心;随机副属性收窄为"加成"而非"全靠运气"
+  const PRIMARY_MAIN_MULT=2.6, SECONDARY_MULT=0.42;
+  const primary=slot.mainStat;let pv=baseVal[primary]*rarity.mult*PRIMARY_MAIN_MULT;
   item.stats[primary]=Math.max(1,Math.floor(pv));
+  item._mainStat=primary;   // 标记主属性,供 UI 高亮
   const bonusCount={common:1,uncommon:2,rare:3,epic:4,legend:5}[rarity.key];
   // 吸血/全能/暴击/暴伤/极速/精通/闪避已从常规副属池移除,改为下方"惊喜副属性"
   const possible=['atk','def','hp','reg','str','agi','int','spi','sta'].filter(k=>k!==primary);
-  for(let i=0;i<bonusCount;i++){const k=possible.splice(rng(0,possible.length-1),1)[0];if(!k)break;item.stats[k]=Math.max(1,Math.floor(baseVal[k]*0.7*rarity.mult));}
+  for(let i=0;i<bonusCount;i++){const k=possible.splice(rng(0,possible.length-1),1)[0];if(!k)break;item.stats[k]=Math.max(1,Math.floor(baseVal[k]*SECONDARY_MULT*rarity.mult));}
   // 副属性只能来自下方"惊喜roll",不从命名装/池子的预设 stats 注入
   const SURPRISE_KEYS=['crit','critd','critdPct','leech','vers','haste','mastery','dodge'];
   if(extraStats){for(const[k,v]of Object.entries(extraStats)){if(SURPRISE_KEYS.includes(k))continue;item.stats[k]=(item.stats[k]||0)+Math.max(1,Math.floor(baseVal[k]*0.5*v*rarity.mult));}}

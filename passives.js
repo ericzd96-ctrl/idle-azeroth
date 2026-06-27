@@ -19,6 +19,14 @@ const PASSIVES = [
   { key:'lastStand',     name:'不灭意志',   icon:'❤️‍🔥', lvl:24, proc:'lowHpDR', threshold:0.3, dr:0.4, desc:'生命低于 30% 时,受到伤害降低 40%' },
   { key:'thorns',        name:'荆棘壁垒',   icon:'🌵',  lvl:32, proc:'reflect', frac:0.2,  desc:'将受到伤害的 20% 反弹给攻击者' },
   { key:'executioner',   name:'处决者',     icon:'☠️',  lvl:40, proc:'execute', threshold:0.2, bonus:0.5, desc:'攻击生命低于 20% 的敌人时,额外造成 50% 伤害' },
+  // ---- 2026-06-27 扩充:更多被动(复用现有击杀/暴击/命中/受击钩子)----
+  { key:'vampiricKill',  name:'噬血',       icon:'🧛',  lvl:20, proc:'onKillHeal', frac:0.08, desc:'击杀敌人后,立即回复 8% 最大生命' },
+  { key:'igniteCrit',    name:'引燃',       icon:'🔥',  lvl:28, proc:'onCritDot', frac:0.25, ms:5000, desc:'暴击时点燃目标,5秒内持续灼烧(暴击伤害的 25%)' },
+  { key:'frostArmor',    name:'冰霜护甲',   icon:'❄️',  lvl:34, proc:'onTakeSlow', chance:0.25, ms:3000, desc:'受到攻击时 25% 几率冰缚攻击者,使其减速 3 秒' },
+  { key:'momentum',      name:'连击',       icon:'⚔️',  lvl:42, proc:'onHitExtra', chance:0.12, frac:0.35, desc:'普攻 12% 几率追加一次打击(造成 35% 攻击力伤害)' },
+  { key:'warTrance',     name:'战斗专注',   icon:'🎯',  lvl:50, mod:{crit:5, mastery:8}, desc:'暴击 +5% · 精通 +8' },
+  { key:'ironHide',      name:'铁皮',       icon:'🛡️',  lvl:58, mod:{defPct:8, hpPct:6}, desc:'防御 +8% · 生命 +6%' },
+  { key:'avatar',        name:'战争化身',   icon:'⚡',  lvl:66, mod:{atkPct:6, hpPct:6}, desc:'攻击 +6% · 生命 +6%' },
 ];
 
 function passiveActive(p) { return !!(state && state.hero && state.hero.lvl >= p.lvl); }
@@ -41,10 +49,22 @@ function passiveOnKill(mon) {
     if (typeof grantNextSkillCrit === 'function') grantNextSkillCrit(p.val || 1);
     showFloat($('hero-emoji'), '🩸暴', '#fda4af');
   }
+  // 噬血:击杀回血
+  const vk = _passive('vampiricKill');
+  if (vk && typeof healHeroAmount === 'function') {
+    const h = Math.floor(state.hero.hpMax * (vk.frac || 0.08));
+    if (h > 0) healHeroAmount(h, '🧛', '#6ee7b7');
+  }
 }
 function passiveOnCrit(mon, dmg) {
   const p = _passive('arcaneFlow');
   if (p) state.resource = Math.min(state.resourceMax, state.resource + p.val);
+  // 引燃:暴击点燃目标(持续灼烧)
+  const ig = _passive('igniteCrit');
+  if (ig && mon && mon.hp > 0 && typeof applyMonsterDot === 'function') {
+    const per = Math.max(1, Math.floor((dmg || 0) * (ig.frac || 0.25) / Math.max(1, (ig.ms || 5000) / 1000)));
+    applyMonsterDot(mon, 'passive:ignite', per, ig.ms || 5000, { icon:'🔥', name:'点燃', source:'被动' });
+  }
 }
 function passiveOnHit(mon, dmg, ap) {
   // 连锁闪电:弹射到另一名存活敌人(与多敌战斗联动)
@@ -65,6 +85,13 @@ function passiveOnHit(mon, dmg, ap) {
     const bonus = Math.floor(dmg * ex.bonus);
     if (bonus > 0) { mon.hp -= bonus; if (typeof trackDmg === 'function') trackDmg('hero', bonus); showFloat($('mon-emoji'), '☠️-' + bonus, '#f87171'); }
   }
+  // 连击:普攻几率追加一次打击(被敌方护盾吸收)
+  const mo = _passive('momentum');
+  if (mo && mon.hp > 0 && Math.random() < (mo.chance || 0.12)) {
+    let ed = Math.floor((ap || state.hero.atk) * (mo.frac || 0.35));
+    if (typeof absorbMonsterBarrier === 'function') ed = absorbMonsterBarrier(mon, ed, '⚔️').remaining;
+    if (ed > 0) { mon.hp -= ed; if (typeof trackDmg === 'function') trackDmg('hero', ed); showFloat($('mon-emoji'), '⚔️-' + ed, '#fbbf24'); }
+  }
 }
 /* 受击减伤倍率(<1 表示减伤);combat 在结算 taken 时乘上 */
 function passiveDamageTakenMult() {
@@ -76,6 +103,12 @@ function passiveDamageTakenMult() {
 function passiveOnTakeDamage(attacker, taken) {
   const p = _passive('thorns');
   if (p && attacker && attacker.hp > 0) { const r = Math.floor(taken * p.frac); if (r > 0) attacker.hp -= r; }
+  // 冰霜护甲:受击几率冰缚攻击者(减速)
+  const fa = _passive('frostArmor');
+  if (fa && attacker && attacker.hp > 0 && Math.random() < (fa.chance || 0.25)) {
+    attacker.slowUntil = Math.max(attacker.slowUntil || 0, Date.now() + (fa.ms || 3000));
+    if (typeof showMonsterFloat === 'function') showMonsterFloat(attacker, '❄️冰缚', '#7dd3fc');
+  }
 }
 
 /* ---------- 解锁提示 ---------- */
