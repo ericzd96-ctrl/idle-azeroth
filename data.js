@@ -5493,6 +5493,41 @@ function getDungeonBossLoot(dungeonKey, bossName, clsKey, options) {
   const basePool = (getBaseDungeonBossLoot(baseDungeonKey(dungeonKey), bossName) || []).map(cloneLootItem);
   return filterLootByRarity(basePool, options?.rarityKey, options?.exactRarity);
 }
+/* ===== 模块级 BOSS 技能构造助手(供老团本阶段技注入 + 英雄/史诗副本加技能复用) ===== */
+function mkDmgSkill(name, icon, mul, castTime, extra){ return Object.assign({ name, icon, desc:`${mul}倍伤害`, type:'dmg', mul, castTime:castTime||2.2, cd:10 }, extra || {}); }
+function mkBuffSkill(name, icon, desc, extra){ return Object.assign({ name, icon, desc, type:'buff', castTime:0, cd:22 }, extra || {}); }
+function mkSummonSkill(name, icon, desc, extra){ return Object.assign({ name, icon, desc, type:'summon', castTime:0, cd:24 }, extra || {}); }
+/* 按 BOSS 主题推断召唤物阵营(复用 inferBossTheme) */
+function bossSummonThemeFor(boss){
+  const t = (typeof inferBossTheme === 'function') ? inferBossTheme(boss.name, (boss.skills && boss.skills[0]) || { name:boss.name }) : 'brute';
+  return ({ shadow:'void', arcane:'void', fire:'elemental', frost:'elemental', storm:'elemental', nature:'beast', poison:'beast', dragon:'soldier', brute:'soldier' })[t] || 'soldier';
+}
+/* 给"尾王"追加一套三阶段技能(60%变身→35%召援→30%终极),已存在阶段技则跳过 */
+function addFinalBossPhaseKit(fb, opts){
+  opts = opts || {};
+  if(!fb || !Array.isArray(fb.skills)) return;
+  if(fb.skills.some(s => typeof s.hpBelow === 'number')) return;   // 已有阶段技(新团本/已注入)→跳过
+  const minMul = opts.minMul || 5;
+  const maxMul = Math.max(minMul, ...fb.skills.map(s => s.mul || 0));
+  const ultMul = Math.max(minMul, +(maxMul * (opts.ultScale || 0.5)).toFixed(1));
+  const st = bossSummonThemeFor(fb);
+  fb.skills.push(
+    mkBuffSkill('狂暴形态', '😤', '进入狂暴:攻击/攻速/减伤大幅提升', { hpBelow:0.6, atkBuffSecs:14, atkBuffPct:opts.atkPct||42, spdBuffSecs:14, spdBuffPct:opts.spdPct||28, drBuffSecs:14, drBuffPct:opts.drPct||0.22, cd:24 }),
+    mkSummonSkill('召唤援军', '📣', '召唤爪牙助战并护盾护体', { hpBelow:0.35, summonCount:opts.summonCount||2, summonTheme:st, shieldPct:opts.shieldPct||0.2, cd:26 }),
+    mkDmgSkill('终极爆发', '💥', ultMul, 2.6, { hpBelow:0.3, aoe:true, dot:true, fear:1900, brittle:true, alwaysCrit:true, cd:16 })
+  );
+}
+/* 给所有"老团本"尾王注入阶段技(在 createEpicRaidCatalog 之前调用,使史诗团版同步继承) */
+function injectOldRaidPhaseKits(){
+  for(const dg of DUNGEONS){
+    if(dg.type !== 'raid' || dg.epicRaid) continue;
+    const bosses = dg.bosses || [];
+    if(!bosses.length) continue;
+    addFinalBossPhaseKit(bosses[bosses.length - 1], { ultScale:0.5, summonCount:2 });
+  }
+}
+injectOldRaidPhaseKits();
+
 function createEpicRaidCatalog() {
   const baseRaids = DUNGEONS.filter(d => d.type === 'raid' && !d.epicRaid);
   for (const base of baseRaids) {
@@ -5558,6 +5593,10 @@ function createHeroicDungeonCatalog() {
         if (typeof out.mul === 'number') out.mul = +(out.mul + (isFinal ? 1.8 : 1.0)).toFixed(1);
         return out;
       });
+      // 英雄难度:每个 BOSS 多 1 个技能(群体爆发),与普通本区分;尾王额外获得 1 个阶段终结技(<40%血)
+      const _mm = Math.max(4, ...boss.skills.map(s => s.mul || 0));
+      boss.skills.push(mkDmgSkill('狂怒重击', '💢', +(_mm * 0.7).toFixed(1), 2.2, { aoe:true, dot:true, weaken:true, cd:11 }));
+      if (isFinal) boss.skills.push(mkDmgSkill('绝命一击', '💥', +(_mm * 0.85).toFixed(1), 2.6, { hpBelow:0.4, aoe:true, brittle:true, fear:1500, alwaysCrit:true, cd:14 }));
       return boss;
     });
     enhanceBossCollection(clone.bosses, { kind:'dungeon', lvl:clone.reqLvl, finalAt:(clone.bosses.length - 1) });
@@ -5596,6 +5635,16 @@ function createEpic5DungeonCatalog() {
         if (typeof out.mul === 'number') out.mul = +(out.mul + (isFinal ? 2.4 : 1.6)).toFixed(1);
         return out;
       });
+      // 史诗5人难度:每个 BOSS 多 2 个技能(群体爆发 + 控制压制),比英雄更密集;尾王获得完整三阶段套件
+      const _mm = Math.max(4, ...boss.skills.map(s => s.mul || 0));
+      const _st = bossSummonThemeFor(boss);
+      boss.skills.push(mkDmgSkill('狂怒重击', '💢', +(_mm * 0.7).toFixed(1), 2.2, { aoe:true, dot:true, weaken:true, cd:11 }));
+      boss.skills.push(mkDmgSkill('湮灭压制', '🌀', +(_mm * 0.6).toFixed(1), 2.4, { silence:1800, stun:1300, cripple:true, cd:12 }));
+      if (isFinal) {
+        boss.skills.push(mkBuffSkill('狂暴形态', '😤', '狂暴:攻击/攻速/减伤提升', { hpBelow:0.6, atkBuffSecs:12, atkBuffPct:35, spdBuffSecs:12, spdBuffPct:24, drBuffSecs:12, drBuffPct:0.2, cd:22 }));
+        boss.skills.push(mkSummonSkill('召唤援军', '📣', '召唤爪牙助战并护盾护体', { hpBelow:0.35, summonCount:2, summonTheme:_st, shieldPct:0.16, cd:24 }));
+        boss.skills.push(mkDmgSkill('终极爆发', '💥', +(_mm * 0.8).toFixed(1), 2.6, { hpBelow:0.3, aoe:true, dot:true, fear:1700, brittle:true, alwaysCrit:true, cd:14 }));
+      }
       return boss;
     });
     enhanceBossCollection(clone.bosses, { kind:'dungeon', lvl:clone.reqLvl, finalAt:(clone.bosses.length - 1) });
