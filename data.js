@@ -3893,9 +3893,24 @@ const BOSS_ROTATION_SUPPORT_SKILLS = {
   brute:  { name:'战吼集结', icon:'📯', desc:'召唤1名援军并在6秒内攻击+18%', type:'support', castTime:2.5, cd:15, summonCount:1, summonTheme:'soldier', atkBuffSecs:6, atkBuffPct:18 },
 };
 function isBossSupportSkill(skill){
-  return !!(skill && (skill.type === 'support' || skill.type === 'buff' || skill.type === 'summon' ||
-    skill.healPct || skill.shieldPct || skill.summonCount || skill.atkBuffSecs || skill.spdBuffSecs ||
+  return !!(skill && (skill.type === 'support' || skill.type === 'buff' || skill.type === 'summon' || skill.type === 'heal' ||
+    skill.heal || skill.healPct || skill.shieldPct || skill.summonCount || skill.atkBuffSecs || skill.spdBuffSecs ||
     skill.defBuffSecs || skill.drBuffSecs || skill.critBuffSecs || skill.leechBuffSecs));
+}
+/* 各档位 boss 想要的"辅助读条技"数量(召唤/buff/治疗 的多样性) */
+function bossSupportVariety(ctx){
+  if(ctx.kind === 'raid') return ctx.final ? 3 : 2;
+  if(ctx.kind === 'world') return (ctx.lvl || 1) >= 70 ? 3 : 2;
+  if(ctx.kind === 'dungeon') return ctx.final ? 2 : 1;
+  if(ctx.kind === 'map') return (ctx.final && (ctx.lvl || 1) >= 50) ? 2 : 1;
+  return 1;
+}
+/* 生成专属的"读条"辅助技:召唤 / buff / 治疗(均带 castTime,会走施法条) */
+function makeBossCastSkill(type, theme, ctx){
+  const strong = (ctx.lvl || 1) >= 70 || ctx.final;
+  if(type === 'summon') return { name:'召集援军', icon:'📯', type:'summon', desc:'读条召唤援军助战', castTime:2.8, cd:18, summonCount: strong ? 2 : 1, summonTheme:'soldier' };
+  if(type === 'heal')   return { name:'血肉愈合', icon:'💚', type:'heal',   desc:'读条恢复大量生命', castTime:2.6, cd:17, heal: strong ? 0.16 : 0.10 };
+  return { name:'狂暴号令', icon:'💢', type:'buff', desc:'读条强化自身攻击与攻速', castTime:2.3, cd:16, atkBuffSecs:8, atkBuffPct: strong ? 26 : 18, spdBuffSecs:8, spdBuffPct: strong ? 16 : 12 };
 }
 function bossControlScore(skill){
   let score = 0;
@@ -4055,10 +4070,24 @@ function normalizeBossSkillProfile(skill, ctx, idx, total){
 }
 function ensureBossRotationMix(boss, ctx){
   const theme = inferBossTheme(ctx.name, boss.skills?.[0] || { name: ctx.name });
-  if((ctx.lvl || 1) >= 18 && !(boss.skills || []).some(isBossSupportSkill)){
+  boss.skills = boss.skills || [];
+  if((ctx.lvl || 1) >= 18 && !boss.skills.some(isBossSupportSkill)){
     const supportSkill = makeBossRotationSupportSkill(theme, ctx);
-    boss.skills = boss.skills || [];
     boss.skills.splice(Math.min(1, boss.skills.length), 0, supportSkill);
+  }
+  // 按档位补齐 召唤 / buff / 治疗 读条辅助技,丰富 boss 循环(总辅助技数量受 variety 限制,避免一直读条不攻击)
+  if((ctx.lvl || 1) >= 30){
+    const variety = bossSupportVariety(ctx);
+    const present = () => ({
+      summon: boss.skills.some(s => s.summonCount || s.type === 'summon'),
+      buff:   boss.skills.some(s => s.atkBuffSecs || s.spdBuffSecs || s.defBuffSecs || s.drBuffSecs || s.critBuffSecs || s.leechBuffSecs),
+      heal:   boss.skills.some(s => s.type === 'heal' || s.healPct),
+    });
+    for(const t of ['summon', 'buff', 'heal']){
+      if(boss.skills.filter(isBossSupportSkill).length >= variety) break;
+      if(present()[t]) continue;
+      boss.skills.splice(Math.min(2, boss.skills.length), 0, makeBossCastSkill(t, theme, ctx));
+    }
   }
   boss.skills = (boss.skills || []).map((sk, idx, arr) => normalizeBossSkillProfile(sk, ctx, idx, arr.length));
   let hardCount = boss.skills.filter(sk => sk.interruptPolicy === 'hard').length;
