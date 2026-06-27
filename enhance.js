@@ -236,10 +236,19 @@ function rollSocketsForItem(item, rarity) {
   }
 }
 
-/* 在装备生成的最后调用,把词缀和宝石孔挂上 */
+/* 每件装备的"可选附魔"是该槽位附魔池里的随机子集(最多4个);重洗会重掷,出现新的附魔选项 */
+function rollEnchantOptions(item) {
+  const pool = ENCHANT_POOL[item.slot] || [];
+  if (!pool.length) { delete item._enchantOptions; return; }
+  const keys = pool.map(e => e.key);
+  for (let i = keys.length - 1; i > 0; i--) { const j = rng(0, i); [keys[i], keys[j]] = [keys[j], keys[i]]; }
+  item._enchantOptions = keys.slice(0, Math.min(keys.length, 4));
+}
+/* 在装备生成的最后调用,把词缀、宝石孔与可选附魔挂上 */
 function enhanceItemOnCreate(item, rarity, power) {
   rollAffixesForItem(item, rarity, power);
   rollSocketsForItem(item, rarity);
+  rollEnchantOptions(item);
 }
 
 /* ---------- 收集装备的所有 mod ---------- */
@@ -547,9 +556,9 @@ function rerollItemFully(itemId) {
     }
   }
   it.fullRerolls = preserved.fullRerolls;
-  // 重置附魔:随机换一个该槽位的新附魔(该槽无可用附魔则清空)
-  const enchPool = ENCHANT_POOL[it.slot] || [];
-  if (enchPool.length) it.enchant = choice(enchPool).key; else delete it.enchant;
+  // 重置附魔:从本次刷新出的"新附魔选项"里随机应用一个(无选项则清空)
+  const enchOpts = (it._enchantOptions && it._enchantOptions.length) ? it._enchantOptions : (ENCHANT_POOL[it.slot] || []).map(e => e.key);
+  if (enchOpts.length) it.enchant = choice(enchOpts); else delete it.enchant;
   syncItemIdentity(it);
   const returnedText = returns.length ? `，返还宝石 ${returns.join(' / ')}` : '';
   log(`🎲 重洗完成 [${it.name}]（基础/词缀/宝石孔/附魔全部重置）${returnedText}`,'good');
@@ -867,8 +876,13 @@ function renderItemDetail(itemId) {
       }
     }).join('');
   }
-  // 附魔
-  const slotEnchs = ENCHANT_POOL[it.slot] || [];
+  // 附魔:仅展示这件装备本次随机出的附魔选项(重洗会刷新);老装备无 _enchantOptions 时回退到完整池
+  let slotEnchs = ENCHANT_POOL[it.slot] || [];
+  if (it._enchantOptions && it._enchantOptions.length) {
+    const opt = new Set(it._enchantOptions);
+    if (it.enchant) opt.add(it.enchant);   // 当前已附魔的项始终可见
+    slotEnchs = slotEnchs.filter(e => opt.has(e.key));
+  }
   let enchantHtml = '<div class="muted" style="font-size:11px">该槽位无可用附魔</div>';
   if (slotEnchs.length) {
     const curKey = it.enchant;
