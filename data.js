@@ -3634,7 +3634,7 @@ function getBaseDungeonBossLoot(dungeonKey, bossName) {
   const alias = DUNGEON_LOOT_ALIASES[dungeonKey]?.[bossName];
   return loot.bosses[bossName] || (alias ? loot.bosses[alias] : null) || null;
 }
-function baseDungeonKey(dungeonKey) { return String(dungeonKey || '').replace(/_(epic|heroic)$/, ''); }
+function baseDungeonKey(dungeonKey) { return String(dungeonKey || '').replace(/_(epic|heroic|epic5)$/, ''); }
 function isEpicRaidKey(dungeonKey) { return /_epic$/.test(String(dungeonKey || '')); }
 function getDungeonDef(dungeonKey) { return DUNGEONS.find(d => d.key === dungeonKey) || null; }
 const WORLD_BOSS_SKILLSETS = {
@@ -4485,6 +4485,47 @@ function extendDungeonCatalog(){
         { name:'收割者矩阵', emoji:'⚙️', skills:[dmg('收割光束','🔱',7.5,{ aoe:true, brittle:true, stun:1400 })] },
         { name:'缚霜者纳索尔', emoji:'❄️', skills:[dmg('冰霜缚魂','🧊',8,{ freeze:1600, slow:true, weaken:true }), dmg('死灵寒潮','💀',8.5,{ aoe:true, decay2:true, soulDrain:true })] }
       ]
+    },
+    {
+      key:'nexus', name:'魔枢', icon:'💠', reqLvl:68, waves:9, desc:'蓝龙军团守护的奥术螺旋,玛里苟斯的力量核心',
+      bosses:[
+        { name:'冰霜之王托塞德林', emoji:'❄️', skills:[dmg('寒冰尖刺','🧊',6,{ freeze:1500, slow:true })] },
+        { name:'阿诺玛鲁斯', emoji:'🌀', skills:[dmg('虚空裂解','🌀',6.5,{ aoe:true, manaDrain:40 })] },
+        { name:'凯瑞斯托拉兹', emoji:'🐉', skills:[dmg('奥术龙息','✨',7,{ silence:1700, dot:true }), dmg('魔网坍缩','💠',7.5,{ aoe:true, brittle:true, weaken:true })] }
+      ]
+    },
+    {
+      key:'gundrak', name:'古达克', icon:'🐊', reqLvl:71, waves:9, desc:'卓格巴尔巨魔向血神献祭的古老神庙',
+      bosses:[
+        { name:'斯拉德兰', emoji:'🐍', skills:[dmg('毒蛇缠绕','🐍',6.5,{ plague:true, cripple:true })] },
+        { name:'莫拉格', emoji:'🦏', skills:[dmg('犀牛冲撞','🦏',7,{ stun:1500, bleed:true })] },
+        { name:'迦勒鲁什', emoji:'🐊', skills:[dmg('血神之怒','🩸',7.5,{ frenzy:true, soulDrain:true }), dmg('远古践踏','🦶',8,{ aoe:true, brittle:true, fear:1500 })] }
+      ]
+    },
+    {
+      key:'sethekk', name:'塞泰克大厅', icon:'🦅', reqLvl:69, waves:9, desc:'鸦人膜拜乌鸦之神的黑暗大厅',
+      bosses:[
+        { name:'达克丝塔', emoji:'🪶', skills:[dmg('暗影箭雨','🌑',6,{ aoe:true, weaken:true })] },
+        { name:'塞泰克先知', emoji:'🔮', skills:[dmg('预言震爆','🔮',6.5,{ silence:1700, manaDrain:40 })] },
+        { name:'鸦人之王伊瑞尔', emoji:'🦅', skills:[dmg('夺魂之啸','👁️',7,{ fear:1700, soulDrain:true }), dmg('乌鸦风暴','🪶',7.5,{ aoe:true, dot:true, brittle:true })] }
+      ]
+    },
+    {
+      key:'irondocks', name:'钢铁码头', icon:'⚓', reqLvl:74, waves:9, desc:'钢铁部落在德拉诺的军械船坞',
+      bosses:[
+        { name:'尼奥库勒·蒸汽碾', emoji:'⚙️', skills:[dmg('蒸汽碾压','⚙️',7,{ stun:1400, sunder:true })] },
+        { name:'格鲁布', emoji:'🐗', skills:[dmg('野兽狂袭','🐗',7.5,{ bleed:true, frenzy:true })] },
+        { name:'狼王斯卡乌格', emoji:'🐺', skills:[dmg('钢铁狼群','🐺',8,{ aoe:true, cripple:true }), dmg('炮火覆盖','💥',8.5,{ aoe:true, dot:true, weaken:true })] }
+      ]
+    },
+    {
+      key:'ataldazar', name:'阿塔达萨', icon:'🏛️', reqLvl:77, waves:10, desc:'赞达拉黄金金字塔,巨魔诸王长眠的陵墓',
+      bosses:[
+        { name:'瓦兹拉吉', emoji:'🐆', skills:[dmg('神圣狩猎','🐆',7.5,{ bleed:true, frenzy:true })] },
+        { name:'监护者沃尔卡', emoji:'🛡️', skills:[dmg('黄金壁垒','🟡',7.5,{ brittle:true, stun:1400 })] },
+        { name:'编织者扎克兰', emoji:'🕸️', skills:[dmg('暗影织网','🕸️',8,{ silence:1700, dot:true })] },
+        { name:'达萨拉先王雷扎安', emoji:'👑', skills:[dmg('黄金权杖','👑',8.5,{ aoe:true, weaken:true, manaDrain:45 }), dmg('诸王审判','⚔️',9,{ sunder:true, fear:1700, brittle:true })] }
+      ]
     }
   ];
 
@@ -4657,7 +4698,33 @@ function extendDungeonCatalog(){
       '外科医生缝肉':[L('缝合钩链','weapon','rare',{atk:1,str:1}),L('血肉束腰','belt','rare',{def:1,sta:1})],
       '收割者矩阵':[L('收割能量核心','trinket','rare',{sta:1,int:1}),L('玛卓克萨斯护肩','shoulder','rare',{atk:1,sta:1})],
       '缚霜者纳索尔':[L('纳索尔的冰霜权杖','weapon','epic',{atk:3,int:2}),L('缚霜者头冠','helmet','epic',{def:2,int:2}),L('寒霜死灵之戒','ring','epic',{int:2,sta:1})]
-    }, trash:[L('死灵工坊护手','gloves','rare',{int:1}),L('通灵者战靴','boots','rare',{sta:1})] }
+    }, trash:[L('死灵工坊护手','gloves','rare',{int:1}),L('通灵者战靴','boots','rare',{sta:1})] },
+    nexus: { bosses:{
+      '冰霜之王托塞德林':[L('寒冰尖刺权杖','weapon','rare',{atk:1,int:1}),L('霜缚护腕','gloves','rare',{int:1})],
+      '阿诺玛鲁斯':[L('虚空裂解之刃','weapon','rare',{atk:1,agi:1}),L('奥能腰带','belt','rare',{def:1,int:1})],
+      '凯瑞斯托拉兹':[L('凯瑞斯托拉兹的奥能法杖','weapon','epic',{atk:3,int:2}),L('蓝龙鳞片头冠','helmet','epic',{def:2,int:2}),L('魔枢能量指环','ring','epic',{int:2,spi:1})]
+    }, trash:[L('蓝龙守卫护肩','shoulder','rare',{atk:1,int:1}),L('奥术螺旋战靴','boots','rare',{int:1})] },
+    gundrak: { bosses:{
+      '斯拉德兰':[L('毒蛇之牙匕首','weapon','rare',{atk:1,agi:1}),L('蛇鳞护腿','pants','rare',{hp:1,agi:1})],
+      '莫拉格':[L('犀牛角战锤','weapon','rare',{atk:1,str:1}),L('厚甲腰带','belt','rare',{def:1,sta:1})],
+      '迦勒鲁什':[L('血神迦勒鲁什之爪','weapon','epic',{atk:3,str:2}),L('卓格巴尔战盔','helmet','epic',{def:2,sta:2}),L('血神图腾','trinket','epic',{sta:2,str:2})]
+    }, trash:[L('古达克护肩','shoulder','rare',{atk:1,sta:1}),L('神庙行者战靴','boots','rare',{agi:1})] },
+    sethekk: { bosses:{
+      '达克丝塔':[L('暗影之羽长弓','weapon','rare',{atk:1,agi:1}),L('鸦羽护腕','gloves','rare',{agi:1})],
+      '塞泰克先知':[L('先知预言之杖','weapon','rare',{atk:1,int:1}),L('占卜腰带','belt','rare',{def:1,int:1})],
+      '鸦人之王伊瑞尔':[L('伊瑞尔的夺魂法杖','weapon','epic',{atk:3,int:2}),L('乌鸦之神兜帽','helmet','epic',{def:2,int:2}),L('鸦神羽冠之戒','ring','epic',{agi:2,int:1})]
+    }, trash:[L('鸦人护肩','shoulder','rare',{atk:1,agi:1}),L('黑暗大厅长靴','boots','rare',{int:1})] },
+    irondocks: { bosses:{
+      '尼奥库勒·蒸汽碾':[L('蒸汽碾压拳套','gloves','rare',{atk:1,str:1}),L('机械护腿','pants','rare',{hp:1,sta:1})],
+      '格鲁布':[L('野兽獠牙匕首','weapon','rare',{atk:1,agi:1}),L('兽皮腰带','belt','rare',{def:1,agi:1})],
+      '狼王斯卡乌格':[L('斯卡乌格的狼牙战斧','weapon','epic',{atk:3,str:2}),L('钢铁码头胸铠','armor','epic',{def:2,sta:2}),L('狼王徽记','trinket','epic',{sta:2,str:2})]
+    }, trash:[L('钢铁部落护肩','shoulder','rare',{atk:1,sta:1}),L('船坞工人战靴','boots','rare',{str:1})] },
+    ataldazar: { bosses:{
+      '瓦兹拉吉':[L('神圣狩猎长矛','weapon','rare',{atk:1,agi:1}),L('猎豹皮护腕','gloves','rare',{agi:1})],
+      '监护者沃尔卡':[L('黄金壁垒之盾','trinket','rare',{def:1,sta:1}),L('监护者腰带','belt','rare',{def:1,str:1})],
+      '编织者扎克兰':[L('暗影织网法杖','weapon','rare',{atk:1,int:1}),L('蛛丝披风','armor','rare',{def:1,int:1})],
+      '达萨拉先王雷扎安':[L('雷扎安的黄金权杖','weapon','epic',{atk:3,int:2}),L('赞达拉王冠','helmet','epic',{def:2,int:2}),L('诸王陵墓指环','ring','epic',{str:2,sta:1})]
+    }, trash:[L('赞达拉护肩','shoulder','rare',{atk:1,sta:1}),L('金字塔守卫战靴','boots','rare',{agi:1})] }
   };
 
   for (const dg of extraDungeons) ensureDungeon(dg, extraLoot[dg.key]);
@@ -5093,6 +5160,43 @@ function createHeroicDungeonCatalog() {
   }
 }
 createHeroicDungeonCatalog();
+
+/* 史诗5人本(Mythic 难度):给 reqLvl>=EPIC5_MIN_REQ 的基础 5 人本自动生成 80 级史诗版
+   (<key>_epic5)。难度/掉落梯队介于英雄(tier1)与团本(tier2)之间(gearTier=4,×1.16)。
+   掉落复用基础本(baseDungeonKey 已剥离 _epic5),装备名带「·史诗」后缀(finishItem)。 */
+const EPIC5_MIN_REQ = 67;
+function createEpic5DungeonCatalog() {
+  const bases = DUNGEONS.filter(d => d.type !== 'raid' && !d.epicRaid && !d.heroic && !d.epic5 && (d.reqLvl || 0) >= EPIC5_MIN_REQ);
+  for (const base of bases) {
+    const key = `${base.key}_epic5`;
+    if (DUNGEONS.some(d => d.key === key)) continue;
+    const clone = JSON.parse(JSON.stringify(base));
+    clone.key = key;
+    clone.baseKey = base.key;
+    clone.name = `${base.name}·史诗`;
+    clone.desc = `80级史诗5人本 · ${base.name} 的极限难度版本(最强5人内容)`;
+    clone.reqLvl = 80;
+    clone.cd = Math.max(base.cd || 0, 1500);
+    clone.epic5 = true;
+    clone.bosses = (clone.bosses || []).map((boss, idx, arr) => {
+      const isFinal = idx === arr.length - 1;
+      boss.passive = Object.assign({}, boss.passive || {}, {
+        dmgReduction: Math.max(boss.passive?.dmgReduction || 0, isFinal ? 0.24 : 0.16),
+        critChance: Math.max(boss.passive?.critChance || 0, isFinal ? 0.26 : 0.16),
+        atkBonus: Math.max(boss.passive?.atkBonus || 0, isFinal ? 0.28 : 0.16),
+      });
+      boss.skills = (boss.skills || []).map(sk => {
+        const out = Object.assign({}, sk);
+        if (typeof out.mul === 'number') out.mul = +(out.mul + (isFinal ? 2.4 : 1.6)).toFixed(1);
+        return out;
+      });
+      return boss;
+    });
+    enhanceBossCollection(clone.bosses, { kind:'dungeon', lvl:clone.reqLvl, finalAt:(clone.bosses.length - 1) });
+    DUNGEONS.push(clone);
+  }
+}
+createEpic5DungeonCatalog();
 /* 修复:部分副本(diremaul/lbrs/aq40等)缺失 cd 字段,导致 onDungeonClear 写入 NaN→永远无CD可无限刷。
    归一化:给任何无有效 cd 的副本按 type/reqLvl 补一个与邻居对齐的冷却。 */
 for (const d of DUNGEONS) {

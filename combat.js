@@ -2130,6 +2130,7 @@ function spawnDungeonMonster(){
     1:{ trash:{hp:1.55,atk:1.34,def:1.20}, boss:{hp:1.90,atk:1.56,def:1.34}, final:{hp:2.20,atk:1.74,def:1.42} },   // 英雄
     2:{ trash:{hp:1.95,atk:1.56,def:1.28}, boss:{hp:2.60,atk:1.95,def:1.48}, final:{hp:3.10,atk:2.24,def:1.64} },   // 团本
     3:{ trash:{hp:2.25,atk:1.74,def:1.34}, boss:{hp:3.05,atk:2.18,def:1.60}, final:{hp:3.80,atk:2.52,def:1.84} },   // 史诗团本
+    4:{ trash:{hp:1.85,atk:1.50,def:1.28}, boss:{hp:2.45,atk:1.82,def:1.42}, final:{hp:2.85,atk:2.05,def:1.55} },   // 史诗5人本(介于英雄/团本之间)
   };
   const _tm = DG_TIER_MON[_dgTier];
   if (_tm) {
@@ -3546,6 +3547,7 @@ function gearTierForDungeon(dungeonKey){
   if(!dg) return 0;
   if(dg.epicRaid) return 3;
   if(dg.type==='raid') return 2;
+  if(dg.epic5) return 4;   // 史诗5人本:介于英雄(1)与团本(2)之间(倍率 ×1.16)
   if(dg.heroic) return 1;
   return 0;
 }
@@ -3595,6 +3597,7 @@ function finishItem(item,slotKey,rarity,power,extraStats){
   item._baseExtraStats=JSON.parse(JSON.stringify(extraStats||{}));
   if(typeof normalizeItemNameForSlot==='function') item.name=normalizeItemNameForSlot(item);
   if(item.gearTier===1 && item.name && !/·英雄$/.test(item.name)) item.name+='·英雄';   // 英雄副本掉落带后缀
+  if(item.gearTier===4 && item.name && !/·史诗$/.test(item.name)) item.name+='·史诗';   // 史诗5人本掉落带后缀
   if(!item._baseName) item._baseName=item.name;
   const slot=SLOT_INFO[slotKey];
   const lvlBonus=1+power*0.01; // 等级越高属性越多(2026-06-16 0.02→0.01:压平后期二次膨胀)
@@ -3616,7 +3619,7 @@ function finishItem(item,slotKey,rarity,power,extraStats){
   for(const sk in SURPRISE){const v=SURPRISE[sk][rarity.key];if(v&&Math.random()<SURPRISE_CHANCE)item.stats[sk]=(item.stats[sk]||0)+v;}
   // 来源功率梯队:普通(0) < 英雄(1) < 团本(2) < 史诗团本(3),同级装备按来源难度递增属性
   const _gearTier=(typeof item.gearTier==='number')?item.gearTier:(item.epicRaid?3:0);
-  const _tierMult={0:1.0,1:1.10,2:1.20,3:1.30}[_gearTier]||1.0;
+  const _tierMult={0:1.0,1:1.10,2:1.20,3:1.30,4:1.16}[_gearTier]||1.0;
   if(_tierMult!==1.0){
     for(const [k,v] of Object.entries(item.stats||{})){
       if(typeof v==='number') item.stats[k]=Math.max(1,Math.floor(v*_tierMult));

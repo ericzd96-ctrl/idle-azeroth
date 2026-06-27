@@ -337,6 +337,48 @@
     karazhan:{ key:'midnight_steed', chance:0.009 },
     oculus:{ key:'azure_drake', chance:0.01 },
     icc:{ key:'ice_bone_raptor', chance:0.006 },
+    // ===== 每个5人本一个专属必刷坐骑(2026-06-27) =====
+    ragefire:{ key:'rf_firecat', chance:0.013 },
+    deadmines:{ key:'dm_redgryphon', chance:0.013 },
+    wailing:{ key:'wc_cavesaber', chance:0.013 },
+    bfd:{ key:'bfd_seaturtle', chance:0.013 },
+    shadowfang:{ key:'sfk_shadowwolf', chance:0.013 },
+    gnomeregan:{ key:'gno_mechastrider', chance:0.013 },
+    razorfen:{ key:'rfk_battleboar', chance:0.013 },
+    scarlet:{ key:'scarlet_charger', chance:0.013 },
+    razorfend:{ key:'rfd_boneraptor', chance:0.012 },
+    uldaman:{ key:'uld_fossilraptor', chance:0.011 },
+    maraudon:{ key:'mara_emeraldraptor', chance:0.011 },
+    zulfarrak:{ key:'zf_sandfuryraptor', chance:0.011 },
+    sunktemple:{ key:'st_hakkariserpent', chance:0.011 },
+    scholomance:{ key:'scholo_steed', chance:0.011 },
+    brd:{ key:'brd_darkironram', chance:0.011 },
+    diremaul:{ key:'dire_emeraldtiger', chance:0.011 },
+    lbrs:{ key:'lbrs_flamegryphon', chance:0.011 },
+    ubrs:{ key:'ubrs_flamedrake', chance:0.011 },
+    manatombs:{ key:'mt_voidray', chance:0.011 },
+    steamvault:{ key:'sv_tidestrider', chance:0.009 },
+    shattered:{ key:'shh_ironwolf', chance:0.009 },
+    darkheart:{ key:'dh_nightmarestag', chance:0.009 },
+    nexus:{ key:'nx_frostdrake', chance:0.009 },
+    arcatraz:{ key:'arc_netherray', chance:0.009 },
+    sethekk:{ key:'seth_ravenlord', chance:0.009 },
+    valor:{ key:'val_aquilon', chance:0.009 },
+    gundrak:{ key:'gun_warrhino', chance:0.009 },
+    magister:{ key:'mgt_whitehawk', chance:0.009 },
+    freehold:{ key:'fh_parrotdragon', chance:0.009 },
+    culling:{ key:'cot_bronzedrake', chance:0.009 },
+    court:{ key:'cos_manasaber', chance:0.009 },
+    irondocks:{ key:'id_ironwolf', chance:0.009 },
+    pit:{ key:'pit_deathraptor', chance:0.009 },
+    mechagon:{ key:'mech_mechadragon', chance:0.009 },
+    necrotic:{ key:'nw_boneraptor', chance:0.008 },
+    ataldazar:{ key:'atal_goldcat', chance:0.008 },
+    boralus:{ key:'bor_navalcharger', chance:0.008 },
+    hol:{ key:'hol_thunderwolf', chance:0.008 },
+    hor:{ key:'hor_frostgryphon', chance:0.008 },
+    toc:{ key:'toc_argentcharger', chance:0.008 },
+    forge:{ key:'fos_frostwyrm', chance:0.008 },
   };
 
   const EXTRA_MOUNTS = [
@@ -350,6 +392,48 @@
     { key:'midnight_steed', name:'午夜梦魇战马', icon:'🐎', tier:'epic', mod:{ spdPct:16, critdPct:6, vers:4 }, src:'卡拉赞低概率掉落' },
     { key:'azure_drake', name:'碧蓝幼龙', icon:'🐉', tier:'epic', mod:{ spdPct:16, mastery:8, atkPct:4 }, src:'魔环低概率掉落' },
     { key:'ice_bone_raptor', name:'冰骨迅猛龙', icon:'🦖', tier:'legend', mod:{ spdPct:18, atkPct:8, hpPct:8, crit:5 }, src:'冰冠堡垒低概率掉落' },
+    // ===== 5人本专属必刷坐骑(2026-06-27,每个5人本一个,英雄/史诗本掉率更高) =====
+    { key:'rf_firecat',        name:'烈焰豹幼崽',     icon:'🐈', tier:'uncommon', mod:{ spdPct:6, atkPct:3 },           src:'怒焰裂谷 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'dm_redgryphon',     name:'迪菲亚红狮鹫',   icon:'🦅', tier:'uncommon', mod:{ spdPct:6, hpPct:3 },            src:'死亡矿井 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'wc_cavesaber',      name:'洞穴暗夜豹',     icon:'🐅', tier:'uncommon', mod:{ spdPct:6, atkPct:3 },           src:'哀嚎洞穴 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'bfd_seaturtle',     name:'深海巨龟',       icon:'🐢', tier:'uncommon', mod:{ spdPct:6, defPct:3 },           src:'海底神殿 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'sfk_shadowwolf',    name:'影牙座狼',       icon:'🐺', tier:'uncommon', mod:{ spdPct:7, atkPct:3 },           src:'影牙城堡 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'gno_mechastrider',  name:'侏儒机械陆行鸟', icon:'🤖', tier:'uncommon', mod:{ spdPct:7, hpPct:4 },            src:'诺莫瑞根 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'rfk_battleboar',    name:'尖牙战猪',       icon:'🐗', tier:'rare',     mod:{ spdPct:8, hpPct:4 },            src:'刺骨利刃洞穴 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'scarlet_charger',   name:'血色十字军战马', icon:'🐎', tier:'rare',     mod:{ spdPct:9, atkPct:4 },           src:'血色修道院 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'rfd_boneraptor',    name:'枯骨迅猛龙',     icon:'🦖', tier:'rare',     mod:{ spdPct:9, defPct:4 },           src:'剃刀高地 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'uld_fossilraptor',  name:'化石迅猛龙',     icon:'🦴', tier:'rare',     mod:{ spdPct:9, atkPct:4 },           src:'奥达曼 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'mara_emeraldraptor',name:'翡翠迅猛龙',     icon:'🦎', tier:'rare',     mod:{ spdPct:10, mastery:6 },         src:'玛拉顿 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'zf_sandfuryraptor', name:'沙怒迅猛龙',     icon:'🦖', tier:'rare',     mod:{ spdPct:10, atkPct:5 },          src:'祖尔法拉克 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'st_hakkariserpent', name:'哈卡莱毒蛇',     icon:'🐍', tier:'rare',     mod:{ spdPct:11, hpPct:5 },           src:'沉没的神庙 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'scholo_steed',      name:'通灵幽魂马',     icon:'🐴', tier:'rare',     mod:{ spdPct:11, atkPct:5 },          src:'通灵学院 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'brd_darkironram',   name:'黑铁战羊',       icon:'🐐', tier:'rare',     mod:{ spdPct:11, defPct:5 },          src:'黑石深渊 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'dire_emeraldtiger', name:'翡翠丛林虎',     icon:'🐅', tier:'rare',     mod:{ spdPct:11, atkPct:5 },          src:'厄运之槌 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'lbrs_flamegryphon', name:'烈焰狮鹫',       icon:'🦅', tier:'rare',     mod:{ spdPct:12, atkPct:5 },          src:'黑石塔下层 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'ubrs_flamedrake',   name:'黑石烈焰幼龙',   icon:'🐲', tier:'epic',     mod:{ spdPct:12, atkPct:6 },          src:'黑石塔上层 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'mt_voidray',        name:'虚空浮鳐',       icon:'🛸', tier:'epic',     mod:{ spdPct:12, mastery:7 },         src:'法力陵墓 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'sv_tidestrider',    name:'潮汐行者',       icon:'🦞', tier:'epic',     mod:{ spdPct:13, hpPct:6 },           src:'蒸汽地窟 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'shh_ironwolf',      name:'破碎堡垒座狼',   icon:'🐺', tier:'epic',     mod:{ spdPct:13, atkPct:6 },          src:'破碎大厅 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'dh_nightmarestag',  name:'梦魇雄鹿',       icon:'🦌', tier:'epic',     mod:{ spdPct:13, mastery:7 },         src:'黑心林地 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'nx_frostdrake',     name:'魔枢冰霜幼龙',   icon:'🐉', tier:'epic',     mod:{ spdPct:13, hpPct:6 },           src:'魔枢 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'arc_netherray',     name:'禁魔虚空幽鳐',   icon:'🐡', tier:'epic',     mod:{ spdPct:13, atkPct:6 },          src:'禁魔监狱 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'seth_ravenlord',    name:'乌鸦之王',       icon:'🦅', tier:'epic',     mod:{ spdPct:14, atkPct:7 },          src:'塞泰克大厅 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'val_aquilon',       name:'英灵骏鹰',       icon:'🦅', tier:'epic',     mod:{ spdPct:14, defPct:6 },          src:'英灵殿 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'gun_warrhino',      name:'卓格巴尔战犀',   icon:'🦏', tier:'epic',     mod:{ spdPct:14, hpPct:7 },           src:'古达克 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'mgt_whitehawk',     name:'迅捷白色陆行鸟', icon:'🦤', tier:'epic',     mod:{ spdPct:14, atkPct:7 },          src:'魔导师平台 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'fh_parrotdragon',   name:'海盗鹦鹉翼龙',   icon:'🦜', tier:'epic',     mod:{ spdPct:14, mastery:8 },         src:'自由镇 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'cot_bronzedrake',   name:'青铜幼龙',       icon:'🐉', tier:'epic',     mod:{ spdPct:15, mastery:8 },         src:'净化斯坦索姆 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'cos_manasaber',     name:'夜之子魔法豹',   icon:'🐆', tier:'epic',     mod:{ spdPct:15, atkPct:7 },          src:'群星庭院 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'id_ironwolf',       name:'钢铁码头座狼',   icon:'🐺', tier:'epic',     mod:{ spdPct:15, atkPct:8 },          src:'钢铁码头 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'pit_deathraptor',   name:'萨隆死亡迅猛龙', icon:'🦖', tier:'epic',     mod:{ spdPct:15, atkPct:8 },          src:'萨隆矿坑 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'mech_mechadragon',  name:'麦卡贡合金机龙', icon:'🤖', tier:'legend',   mod:{ spdPct:16, hpPct:9 },           src:'麦卡贡 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'nw_boneraptor',     name:'玛卓骸骨陆行鸟', icon:'🦴', tier:'legend',   mod:{ spdPct:16, mastery:9 },         src:'通灵之刺 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'atal_goldcat',      name:'黄金猎豹',       icon:'🐆', tier:'legend',   mod:{ spdPct:16, atkPct:9 },          src:'阿塔达萨 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'bor_navalcharger',  name:'库尔提拉斯军马', icon:'🐎', tier:'legend',   mod:{ spdPct:16, defPct:8 },          src:'围攻伯拉勒斯 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'hol_thunderwolf',   name:'雷霆座狼',       icon:'🐺', tier:'legend',   mod:{ spdPct:17, atkPct:9 },          src:'闪电大厅 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'hor_frostgryphon',  name:'冰霜狮鹫',       icon:'🦅', tier:'legend',   mod:{ spdPct:17, hpPct:10 },          src:'映像大厅 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'toc_argentcharger', name:'银色北伐军战马', icon:'🐎', tier:'legend',   mod:{ spdPct:17, atkPct:10 },         src:'勇气竞技场 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'fos_frostwyrm',     name:'灵魂熔炉冰霜亡魂',icon:'🐲', tier:'legend',   mod:{ spdPct:18, atkPct:10 },         src:'灵魂熔炉 尾王极低概率掉落(英雄/史诗本掉率更高)' },
   ];
 
   function ensureMidgameState() {
@@ -663,7 +747,9 @@
     if (mon?.fromDungeon && mon.isBoss) {
       const dKey = (state.dungeonState || state.mythicState)?.key;
       const mountDrop = DUNGEON_MOUNT_DROPS[(typeof baseDungeonKey === 'function' ? baseDungeonKey(dKey) : dKey)];
-      if (mountDrop && Math.random() < mountDrop.chance) mountGrant(mountDrop.key);
+      // 难度梯队加成:英雄本×1.6 / 史诗5人本×2.6,鼓励刷高难度版本
+      const tierMul = { 0:1, 1:1.6, 4:2.6 }[(typeof gearTierForDungeon === 'function' ? gearTierForDungeon(dKey) : 0)] || 1;
+      if (mountDrop && Math.random() < mountDrop.chance * tierMul) mountGrant(mountDrop.key);
       return;
     }
     if (mon?.isRareElite) {
@@ -927,4 +1013,5 @@
   globalThis.onRareEliteKill = onRareEliteKill;
   globalThis.leaveRareEliteEncounter = leaveRareEliteEncounter;
   globalThis.midgameMountRollOnKill = midgameMountRollOnKill;
+  globalThis.DUNGEON_MOUNT_DROPS = DUNGEON_MOUNT_DROPS;   // 供 render 副本卡片显示「专属坐骑」
 })();

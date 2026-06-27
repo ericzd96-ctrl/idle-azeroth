@@ -2853,9 +2853,11 @@ function renderDungeon() {
   const dl = $('dungeon-list');
   const epicDl = $('epic-dungeon-list');
   const heroicDl = $('heroic-dungeon-list');
+  const epic5Dl = $('epic5-dungeon-list');
   if (dl) dl.innerHTML = '';
   if (epicDl) epicDl.innerHTML = '';
   if (heroicDl) heroicDl.innerHTML = '';
+  if (epic5Dl) epic5Dl.innerHTML = '';
   // 更新按钮状态
   const btn5 = $('btn-dg-5man'), btnR = $('btn-dg-raid');
   if (btn5) { btn5.classList.toggle('active', dgFilter === 'all' || dgFilter === '5man'); }
@@ -2870,13 +2872,14 @@ function renderDungeon() {
     return aDist - bDist;
   });
   const normalDungeons = sortedDungeons.filter(dg => {
-    if (dg.epicRaid || dg.heroic) return false;   // 英雄本归入专属页
+    if (dg.epicRaid || dg.heroic || dg.epic5) return false;   // 英雄/史诗5人本归入专属页
     if (dgFilter === '5man') return dg.type !== 'raid';
     if (dgFilter === 'raid') return dg.type === 'raid';
     return true;
   });
   const epicDungeons = sortedDungeons.filter(dg => !!dg.epicRaid);
   const heroicDungeons = sortedDungeons.filter(dg => !!dg.heroic);
+  const epic5Dungeons = sortedDungeons.filter(dg => !!dg.epic5);
   const renderDungeonCard = (dg, target) => {
     if (!target) return;
     const cdEnd = state.dungeonCd[dg.key] || 0;
@@ -2908,12 +2911,31 @@ function renderDungeon() {
     const dgAffixes = (typeof getDungeonAffixes === 'function') ? getDungeonAffixes(dg) : [];
     const affixLine = dgAffixes.length ? `<div class="muted" style="font-size:11px">⚙️ 词缀: ${dgAffixes.map(a => `${symbolIconHtml(a.icon, 12, a.name, 'spell_holy_powerinfusion')} ${a.name}`).join(' · ')}</div>` : '';
     const firstClearBadge = (!state.dungeonFirstClear || !state.dungeonFirstClear[dg.key]) ? '<span class="pill" style="background:rgba(246,196,83,.18);color:#f6c453">🎁首通</span>' : '';
+    // 必刷专属坐骑提示(读 DUNGEON_MOUNT_DROPS,按基础本key)
+    let chaseLine = '';
+    if (typeof DUNGEON_MOUNT_DROPS !== 'undefined' && typeof MOUNTS !== 'undefined') {
+      const _bk = (typeof baseDungeonKey === 'function') ? baseDungeonKey(dg.key) : dg.key;
+      const _md = DUNGEON_MOUNT_DROPS[_bk];
+      if (_md) {
+        const _mt = MOUNTS.find(m => m.key === _md.key);
+        if (_mt) {
+          const _owned = (typeof account !== 'undefined' && account.mounts && account.mounts[_md.key]);
+          chaseLine = `<div class="muted" style="font-size:11px;color:#f6c453">🐎 专属坐骑: ${_mt.icon || ''}${_mt.name}${_owned ? '<span style="color:#6ee7b7"> ✓已收集</span>' : '(极低概率,英雄/史诗本掉率更高)'}</div>`;
+        }
+      }
+    }
+    const typeLabel = isEpicRaid ? '<span style="color:#fb7185">[史诗团本]</span> '
+      : dg.epic5 ? '<span style="color:#c084fc">[史诗5人本]</span> '
+      : dg.heroic ? '<span style="color:#f6c453">[英雄5人本]</span> '
+      : dg.type === 'raid' ? '<span style="color:#fbbf24">[团本]</span> '
+      : '<span style="color:#6ee7b7">[5人本]</span> ';
     div.innerHTML = `
       <div class="row">
         <span><span class="icon">${dungeonIconHtml}</span> <b>${dg.name}</b></span>
         <span>${firstClearBadge}<span class="pill">等级${dg.reqLvl}</span></span>
       </div>
-      <div class="muted">${isEpicRaid?'<span style="color:#fb7185">[史诗团本]</span> ':(dg.type==='raid'?'<span style=\"color:#fbbf24\">[团本]</span> ':'<span style=\"color:#6ee7b7\">[5人本]</span> ')}${dg.desc} · ${(dg.bosses||[]).length}名首领 · 最终: ${((dg.bosses||[])[dg.bosses.length-1]||{}).name||'??'}${dg.type==='raid'?(isEpicRaid?' · 掉落:史诗级紫装/全部首领超低概率橙装':' · 掉落:常规团本装备/关底低概率橙武'):''}</div>
+      <div class="muted">${typeLabel}${dg.desc} · ${(dg.bosses||[]).length}名首领 · 最终: ${((dg.bosses||[])[dg.bosses.length-1]||{}).name||'??'}${dg.type==='raid'?(isEpicRaid?' · 掉落:史诗级紫装/全部首领超低概率橙装':' · 掉落:常规团本装备/关底低概率橙武'):''}</div>
+      ${chaseLine}
       ${affixLine}
       ${setTierInfo ? `<div class="dungeon-set-track compact">当前职业套装: ${setTierInfo.setName} · ${setTierInfo.bandName}</div>` : ''}
       <div class="row">
@@ -2928,8 +2950,12 @@ function renderDungeon() {
   for (const dg of normalDungeons) renderDungeonCard(dg, dl);
   for (const dg of epicDungeons) renderDungeonCard(dg, epicDl);
   for (const dg of heroicDungeons) renderDungeonCard(dg, heroicDl);
+  for (const dg of epic5Dungeons) renderDungeonCard(dg, epic5Dl);
   if (heroicDl && !heroicDungeons.length) {
     heroicDl.innerHTML = '<div class="muted" style="text-align:center;padding:12px">暂无英雄副本(达到对应等级后开放)</div>';
+  }
+  if (epic5Dl && !epic5Dungeons.length) {
+    epic5Dl.innerHTML = '<div class="muted" style="text-align:center;padding:12px">暂无史诗5人本(达到对应等级后开放)</div>';
   }
   if (dl && !normalDungeons.length) {
     dl.innerHTML = '<div class="muted" style="text-align:center;padding:12px">当前筛选下暂无普通副本</div>';
