@@ -460,8 +460,11 @@
     return labels[Math.max(0, Math.min(labels.length - 1, tierIndex))];
   }
   function dungeonSetKey(dungeonKey, clsKey) {
-    const baseKey = typeof baseDungeonKey === 'function' ? baseDungeonKey(dungeonKey) : dungeonKey;
-    return `set:${baseKey}:${clsKey}`;
+    // 套装名按"阶段(band)+职业"命名(如 天穹法衣=巅峰阶段法师),故 setKey 也按 band+职业,
+    // 让同阶段不同副本掉落的同名套装件能正确累计(2/4 件),而不是各算各的 1/4。
+    const dg = (typeof getDungeonDef === 'function') ? getDungeonDef(typeof baseDungeonKey === 'function' ? baseDungeonKey(dungeonKey) : dungeonKey) : null;
+    const band = dg ? setBandForDungeon(dg) : null;
+    return `set:${band ? band.key : 'x'}:${clsKey}`;
   }
   function makeDungeonSetEffects(dg, clsKey) {
     const tierIndex = Math.max(0, setTierIndex(dg));
@@ -503,28 +506,48 @@
     };
   }
 
-  // 由 setKey(形如 set:<base>:<cls> 或 <base>:<cls>)推导套装特效,兜底老装备/掉落未写 setEffects 的情况
+  // 由 setKey 推导套装特效,兜底老装备/掉落未写 setEffects 的情况。支持三种 key:
+  //   set:<band>:<cls>(新版职业套装) / set:<副本>:<cls>(老存档职业套装) / <副本>:<cls>(史诗团本套装)
   function deriveSetEffects(it) {
     if (it.setEffects && it.setEffects.length) return it.setEffects;
     const sk = it.setKey || '';
     const parts = sk.replace(/^set:/, '').split(':');
-    const baseKey = parts[0];
+    const first = parts[0];
     const clsKey = parts[1] || (state && state.cls) || 'warrior';
+    const band = SET_STAGE_BANDS.find(b => b.key === first);
+    if (band) {   // band 型 key:按阶段档位缩放出特效
+      const scale = SET_STAGE_BANDS.indexOf(band) * 2;
+      const base = SET_EFFECTS[clsKey] || SET_EFFECTS.warrior;
+      return base.map(e => { const out = { pieces:e.pieces, mod:{} }; for (const [k, v] of Object.entries(e.mod || {})) out.mod[k] = v + (e.pieces === 4 ? scale : Math.floor(scale / 2)); return out; });
+    }
     const dg = (typeof getDungeonDef === 'function')
-      ? (getDungeonDef(baseKey) || getDungeonDef(typeof baseDungeonKey === 'function' ? baseDungeonKey(baseKey) : baseKey))
+      ? (getDungeonDef(first) || getDungeonDef(typeof baseDungeonKey === 'function' ? baseDungeonKey(first) : first))
       : null;
     return dg ? makeDungeonSetEffects(dg, clsKey) : [];
+  }
+  // 把任意 setKey 归一为"阶段+职业"(职业套装)或原样(团本套装),让老存档的"按副本"key 也能正确累计同名套装
+  function canonicalSetKey(it) {
+    const sk = it.setKey || '';
+    if (!sk.startsWith('set:')) return sk;   // 史诗团本套装:按 <副本>:<cls> 唯一,原样
+    const parts = sk.slice(4).split(':');
+    const first = parts[0];
+    const clsKey = parts[1] || (state && state.cls) || 'warrior';
+    if (SET_STAGE_BANDS.find(b => b.key === first)) return sk;   // 已是 band 型
+    const dg = (typeof getDungeonDef === 'function') ? (getDungeonDef(first) || getDungeonDef(typeof baseDungeonKey === 'function' ? baseDungeonKey(first) : first)) : null;
+    const band = dg ? setBandForDungeon(dg) : null;
+    return `set:${band ? band.key : first}:${clsKey}`;
   }
   function getEquippedSetCounts() {
     const counts = {};
     for (const slot of SLOT_ORDER) {
       const it = state?.equipped?.[slot];
       if (!it?.setKey) continue;
+      const key = canonicalSetKey(it);   // 归一后再累计:同名套装(同阶段+职业)合并计数
       const eff = deriveSetEffects(it);
-      if (!counts[it.setKey]) counts[it.setKey] = { count:0, name:it.setName || it.setKey, effects:eff, pieces:it.setPieces || (eff[eff.length-1]?.pieces) || 4, items:[] };
-      counts[it.setKey].count += 1;
-      counts[it.setKey].items.push(it.name);
-      if ((!counts[it.setKey].effects || !counts[it.setKey].effects.length) && eff.length) counts[it.setKey].effects = eff;
+      if (!counts[key]) counts[key] = { count:0, name:it.setName || key, effects:eff, pieces:it.setPieces || (eff[eff.length-1]?.pieces) || 4, items:[] };
+      counts[key].count += 1;
+      counts[key].items.push(it.name);
+      if ((!counts[key].effects || !counts[key].effects.length) && eff.length) counts[key].effects = eff;
     }
     return counts;
   }
