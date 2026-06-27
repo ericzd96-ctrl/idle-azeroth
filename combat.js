@@ -1798,7 +1798,7 @@ function applyAllySummonDamage(unit, amount, mon, opts){
 }
 function pickMonsterAttackTarget(now){
   const choices = [{ kind:'hero', weight:1.05 }];
-  if(companionTargetable()) choices.push({ kind:'companion', weight:Math.max(0.18, compAggroChance() * 1.35) });
+  if(companionTargetable()) choices.push({ kind:'companion', weight:Math.max(0.18, compAggroChance() * 1.7) });
   for(const unit of livingAllySummons(now)) choices.push({ kind:'summon', unit, weight:Math.max(0.12, unit.aggro || 0.35) });
   let total = 0;
   for(const choice of choices) total += choice.weight;
@@ -4232,20 +4232,20 @@ function companionSkillPriority(sk, st, mon, now){
   return score;
 }
 /* 按定位的吸引仇恨概率:坦克多、治疗少、输出居中 */
-function compAggroChance(){const comp=getActiveCompanion();if(!comp)return 0;const tpl=COMPANIONS.find(c=>c.key===comp.key);const role=tpl&&tpl.role;const base=role==='tank'?0.75:role==='heal'?0.15:0.20;return Math.max(0.05,Math.min(0.9,base+(tpl?.aggroBonus||0))); }
-/* 随从倒下:清血、进入15秒复活计时 */
+function compAggroChance(){const comp=getActiveCompanion();if(!comp)return 0;const tpl=COMPANIONS.find(c=>c.key===comp.key);const role=tpl&&tpl.role;const base=role==='tank'?0.88:role==='heal'?0.15:0.20;return Math.max(0.05,Math.min(0.95,base+(tpl?.aggroBonus||0))); }
+/* 随从倒下:清血、进入10秒复活计时(2026-06-27:15→10,缩短无奶职业的暴露窗口) */
 function downCompanion(now){
-  state._compHp=0;state._compDownUntil=now+15000;
+  state._compHp=0;state._compDownUntil=now+10000;
   const comp=getActiveCompanion();const tpl=comp&&COMPANIONS.find(c=>c.key===comp.key);
   showFloat($('comp-mini'),'💫倒下','#fde047');
   const e=$('comp-mini');if(e){e.classList.add('shake');setTimeout(()=>{const x=$('comp-mini');if(x)x.classList.remove('shake');},200);}
-  log((tpl?tpl.name:'随从')+' 倒下了! 15秒后归来','bad');
+  log((tpl?tpl.name:'随从')+' 倒下了! 10秒后归来','bad');
 }
 function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;const st=computeCompanionStats();if(!st)return;const tpl=COMPANIONS.find(c=>c.key===comp.key);
   // 复活计时:倒地满15秒 → 以 50% 血归来
-  if(!compDowned()&&(state._compDownUntil||0)>0){state._compDownUntil=0;state._compHp=Math.floor(st.hpMax*0.5);const tpl=COMPANIONS.find(c=>c.key===comp.key);showFloat($('comp-mini'),'✨归来','#6ee7b7');log((tpl?tpl.name:'随从')+' 重新投入战斗!','good');}
-  // 缓慢回血:存活且未满,每秒回复 2% 最大生命(受减益影响)
-  if(!compDowned()&&(state._compHp||0)>0&&state._compHp<st.hpMax&&now-lastCompRegen>1000){lastCompRegen=now;state._compHp=Math.min(st.hpMax,state._compHp+Math.max(1,Math.ceil(st.hpMax*0.02*companionDebuffRegenMult())));}
+  if(!compDowned()&&(state._compDownUntil||0)>0){state._compDownUntil=0;state._compHp=Math.floor(st.hpMax*0.6);const tpl=COMPANIONS.find(c=>c.key===comp.key);showFloat($('comp-mini'),'✨归来','#6ee7b7');log((tpl?tpl.name:'随从')+' 重新投入战斗!','good');}
+  // 缓慢回血:存活且未满,每秒回复 3% 最大生命(受减益影响;2026-06-27:2%→3% 支撑更高仇恨)
+  if(!compDowned()&&(state._compHp||0)>0&&state._compHp<st.hpMax&&now-lastCompRegen>1000){lastCompRegen=now;state._compHp=Math.min(st.hpMax,state._compHp+Math.max(1,Math.ceil(st.hpMax*0.03*companionDebuffRegenMult())));}
   // DOT: 每秒结算随从身上的持续伤害
   const cbd=state._compDebuffs&&state._compDebuffs.burn;
   if(!compDowned()&&cbd&&cbd.expire>now){
