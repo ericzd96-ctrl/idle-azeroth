@@ -381,6 +381,10 @@
     forge:{ key:'fos_frostwyrm', chance:0.008 },
     atonement:{ key:'aton_gravewing', chance:0.009 },
     plaguefall:{ key:'pf_deathbeetle', chance:0.009 },
+    mists:{ key:'mts_gormhog', chance:0.011 },
+    theater:{ key:'top_battlehorror', chance:0.009 },
+    waycrest:{ key:'wm_runehound', chance:0.009 },
+    kingsrest:{ key:'kr_goldenpterrordax', chance:0.008 },
   };
 
   const EXTRA_MOUNTS = [
@@ -438,6 +442,10 @@
     { key:'fos_frostwyrm',     name:'灵魂熔炉冰霜亡魂',icon:'🐲', tier:'legend',   mod:{ spdPct:18, atkPct:10 },         src:'灵魂熔炉 尾王极低概率掉落(英雄/史诗本掉率更高)' },
     { key:'aton_gravewing',    name:'雷文德斯石翼',   icon:'🦇', tier:'epic',     mod:{ spdPct:15, defPct:7 },          src:'赎罪大厅 尾王极低概率掉落(英雄/史诗本掉率更高)' },
     { key:'pf_deathbeetle',    name:'玛卓死亡甲虫',   icon:'🪲', tier:'epic',     mod:{ spdPct:15, hpPct:8 },           src:'凋魂之殇 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'mts_gormhog',       name:'彼界森野母猪',   icon:'🐗', tier:'epic',     mod:{ spdPct:13, hpPct:7, mastery:6 }, src:'彼界 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'top_battlehorror',  name:'苦痛剧场角斗士',  icon:'💀', tier:'epic',     mod:{ spdPct:14, atkPct:6 },          src:'苦痛剧场 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'wm_runehound',      name:'德鲁斯特符文犬',  icon:'🐕', tier:'epic',     mod:{ spdPct:14, defPct:6 },          src:'维克雷斯庄园 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'kr_goldenpterrordax', name:'达卡莱黄金翼龙', icon:'🦅', tier:'epic',   mod:{ spdPct:16, atkPct:6, critdPct:5 }, src:'国王之眠 尾王极低概率掉落(英雄/史诗本掉率更高)' },
   ];
 
   function ensureMidgameState() {
