@@ -3908,16 +3908,23 @@ function tickCast(now){
       hideBossCastBar();
       const bc=bossCasting;bossCasting=null;const mon=state.currentMonsters[0];if(!mon||mon.hp<=0)return;
       const critRate = monsterCritRate(mon, now);
-      if(bc.type==='heal'){const h=bossSkillHealAmount(mon, bc.heal||0.2);mon.hp=Math.min(mon.hpMax,mon.hp+h);showMonsterFloat(mon,'💚+'+h,'#6ee7b7');}
+      if(bc.type==='heal'){const h=bossSkillHealAmount(mon, bc.heal||0.2);mon.hp=Math.min(mon.hpMax,mon.hp+h);showMonsterFloat(mon,'💚+'+h,'#6ee7b7');log(`💀 ${mon.bossName || mon.name} 对【自身】释放了 ${bc.name}!`,'bad');}
       else if(bc.type==='buff'||bc.type==='support'||bc.type==='summon'){
-        log(`💀 ${mon.bossName || mon.name} 释放了 ${bc.name}!`,'bad');
+        const _sv = bc.summonCount ? '释放了' : '对【自身】释放了';
+        log(`💀 ${mon.bossName || mon.name} ${_sv} ${bc.name}!`,'bad');
         showMonsterFloat(mon, (bc.icon || '✨') + bc.name + '!', '#fda4af');
         applyMonsterSupportSkill(mon, bc, now, { announce:false });
       } else{
-        log(`💀 ${mon.bossName || mon.name} 释放了 ${bc.name}!`,'bad');
-        showMonsterFloat(mon, (bc.icon || '✨') + bc.name + '!', '#fda4af');
         const mul=bc.mul||2;
         const rawAtk=Math.floor(monsterAttackValue(mon, now)*mul);
+        // 先确定目标,再播报"对谁释放"(AOE=全体;单体=你/随从/召唤物)
+        let singleTarget=null, targetDesc='全体';
+        if(!bc.aoe){
+          singleTarget=pickMonsterAttackTarget(now);
+          targetDesc = singleTarget.kind==='companion' ? '随从' : (singleTarget.kind==='summon' ? ((singleTarget.unit&&(singleTarget.unit.baseName||singleTarget.unit.name))||'召唤物') : '你');
+        }
+        log(`💀 ${mon.bossName || mon.name} 对【${targetDesc}】释放了 ${bc.name}!`,'bad');
+        showMonsterFloat(mon, (bc.icon || '✨') + bc.name + '!', '#fda4af');
         if(bc.aoe){
           // AOE: 同时命中英雄和随从
           let taken=calcDmg(rawAtk,heroDefAgainst(mon),critRate,mon.critMult?mon.critMult*100:150,bc.alwaysCrit,state.hero.lvl,mon.lvl).dmg;
@@ -3939,7 +3946,7 @@ function tickCast(now){
           }
           if(state.hp<=0)onHeroDeath();
         }else{
-          const target = pickMonsterAttackTarget(now);
+          const target = singleTarget || pickMonsterAttackTarget(now);
           if(target.kind==='companion'){
             const cst=computeCompanionStats();
             const d2=calcDmg(rawAtk,cst?cst.def:mon.def,critRate,mon.critMult?mon.critMult*100:150,bc.alwaysCrit,state.hero.lvl,mon.lvl);
