@@ -2862,7 +2862,12 @@ function renderDungeon() {
   const btn5 = $('btn-dg-5man'), btnR = $('btn-dg-raid');
   if (btn5) { btn5.classList.toggle('active', dgFilter === 'all' || dgFilter === '5man'); }
   if (btnR) { btnR.classList.toggle('active', dgFilter === 'all' || dgFilter === 'raid'); }
+  const _now = Date.now();
   const sortedDungeons = [...DUNGEONS].sort((a, b) => {
+    // CD 中的副本统一排到列表最下方(可立即挑战的优先展示)
+    const aCd = (state.dungeonCd && state.dungeonCd[a.key] || 0) > _now;
+    const bCd = (state.dungeonCd && state.dungeonCd[b.key] || 0) > _now;
+    if (aCd !== bCd) return aCd ? 1 : -1;
     const hl = state.hero.lvl;
     const aBase = (typeof baseDungeonKey === 'function') ? baseDungeonKey(a.key) : a.key;
     const bBase = (typeof baseDungeonKey === 'function') ? baseDungeonKey(b.key) : b.key;
@@ -2901,11 +2906,12 @@ function renderDungeon() {
         })()
       : null;
     const statusText = !lvlOk ? '等级不足'
-      : onCd ? `冷却 ${fmtCd(cdLeft)}${canTicket ? ' · 🎫跳过' : ''}`
-      : '可挑战(免费)';
+      : onCd ? `<span style="color:#fb923c">⏳冷却 ${fmtCd(cdLeft)}</span>${canTicket ? ' · 🎫跳过' : ''}`
+      : '<span style="color:#6ee7b7">✅可挑战(免费)</span>';
     const btnText = canFree ? '免费进入' : (canTicket ? '🎫进入' : '进入');
     const div = document.createElement('div');
-    div.className = 'dungeon-item';
+    div.className = 'dungeon-item' + (onCd ? ' on-cd' : '');
+    if (onCd) div.style.opacity = '0.6';   // CD中副本变暗,凸显可立即挑战的副本
     div.dataset.dungeonKey = dg.key;
     const dungeonIconHtml = (typeof dungeonIcon === 'function') ? dungeonIcon(dg.key, dg.name, 18, dg.icon) : dg.icon;
     const dgAffixes = (typeof getDungeonAffixes === 'function') ? getDungeonAffixes(dg) : [];
@@ -2999,13 +3005,17 @@ function updateCdDisplays() {
     const canTicket = lvlOk && onCd && state.tickets >= 1 && state.mode === 'world';
     const canEnter = canFree || canTicket;
     const statusText = !lvlOk ? '等级不足'
-      : onCd ? `冷却 ${fmtCd(cdLeft)}${canTicket ? ' · 🎫跳过' : ''}`
-      : '可挑战(免费)';
+      : onCd ? `<span style="color:#fb923c">⏳冷却 ${fmtCd(cdLeft)}</span>${canTicket ? ' · 🎫跳过' : ''}`
+      : '<span style="color:#6ee7b7">✅可挑战(免费)</span>';
     const btnText = canFree ? '免费进入' : (canTicket ? '🎫进入' : '进入');
-    if (cdSpan && cdSpan.textContent !== statusText) cdSpan.textContent = statusText;
+    if (cdSpan && cdSpan.innerHTML !== statusText) cdSpan.innerHTML = statusText;
     if (btn.textContent !== btnText) btn.textContent = btnText;
     btn.disabled = !canEnter;
     btn.classList.toggle('epic', canEnter);
+    // CD状态变化时同步变暗/恢复(CD结束立即恢复高亮,无需整列重建)
+    const dim = onCd ? '0.6' : '';
+    if (el.style.opacity !== dim) el.style.opacity = dim;
+    el.classList.toggle('on-cd', onCd);
   });
 }
 
