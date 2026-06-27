@@ -3617,6 +3617,19 @@ function rollItemOfRarity(rarityKey,fromLvl){
   const item={id:itemIdSeq++,slot:slotKey,name:genName(slotKey,rarity),rarity:rarity.key,rarityName:rarity.name,cls:rarity.cls,bcls:rarity.bcls,stats:{},sell:0};
   const poolStats=getPoolStatBonus(slotKey,rarity.key);return finishItem(item,slotKey,rarity,power,poolStats);
 }
+/* 魔兽式"装备等级(物品等级 / item level / 装等)":代表装备强度的总览数值,与"佩戴需求等级 reqLvl"是两回事。
+   由掉落功率(_rollPower≈掉落时角色等级)+ 品质 + 装备来源梯队(普通/英雄/团本/史诗团/史诗5人)三者派生,
+   与 finishItem 实际属性缩放(power×rarity.mult×_tierMult)同序——品质越高、副本梯队越高,装等越高。 */
+function computeItemLevel(item){
+  if(!item) return 0;
+  let power=(typeof item._rollPower==='number'&&item._rollPower>0)?item._rollPower:0;
+  if(!power) power=item.reqLvl?Math.round(item.reqLvl/0.9):1;   // 老存档无 _rollPower 时由 reqLvl 反推
+  const rk=item.rarity||'common';
+  const tier=(typeof item.gearTier==='number')?item.gearTier:(item.epicRaid?3:0);
+  const rarityBonus={common:0,uncommon:6,rare:14,epic:24,legend:38}[rk]||0;
+  const tierBonus={0:0,1:18,2:40,3:55,4:28}[tier]||0;   // 与 finishItem 的 _tierMult 同序
+  return Math.max(1,Math.round(power*3+rarityBonus+tierBonus));
+}
 /* 装备"主属性集合"(类魔兽原版):由 职业主属性(力量/敏捷/智力)+ 槽位核心(武器→攻击 / 防具→防御)+ 耐力 组成。
    例:法师胸甲=防御/智力/耐力,法师法杖=攻击/智力/耐力;战士板甲=防御/力量/攻击/耐力。顺序=重要度降序(低品质截断时保留靠前的)。 */
 function itemMainStats(slotKey, clsKey){
@@ -3685,6 +3698,7 @@ function finishItem(item,slotKey,rarity,power,extraStats,opts){
   if(item.stats.dodge>4)item.stats.dodge=4;
   item.reqLvl=Math.max(1,Math.floor(power*0.9));item.sell=Math.floor(10*rarity.mult*(1+power*0.5));
   if(!_noRand && typeof enhanceItemOnCreate==='function') enhanceItemOnCreate(item,rarity,power);
+  item.ilvl=computeItemLevel(item);   // 魔兽装等(物品等级),由功率+品质+梯队派生
   return item;
 }
 /* 自动售卖反馈:按品质自动卖出是高频事件,逐件日志会刷屏 → 累计后节流(每6秒/或强制)汇总一条 */

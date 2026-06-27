@@ -412,6 +412,9 @@ function syncItemIdentity(item) {
     if (typeof resolveItemTemplateStats === 'function') item._baseExtraStats = resolveItemTemplateStats(item);
     else item._baseExtraStats = {};
   }
+  if (typeof item.ilvl !== 'number' || item.ilvl <= 0) {   // 老存档装备补算魔兽装等
+    if (typeof computeItemLevel === 'function') item.ilvl = computeItemLevel(item);
+  }
   return item;
 }
 
@@ -798,7 +801,7 @@ function renderItemDetail(itemId) {
   const titleHtml = `
     <div class="detail-head ${it.bcls}">
       <div class="name ${it.cls}" style="font-size:18px">${SLOT_INFO[it.slot].icon} ${itemDisplayNameHtml(it,{slotBadge:true})}</div>
-      <div class="muted" style="font-size:11px">${SLOT_INFO[it.slot].label} · [${it.rarityName}]${it.epicRaid?' · <span style="color:#22c55e">[史诗团本]</span>':''}${it.reqLvl?' · Lv.'+it.reqLvl:''}${found.source==='equip'?' · <span style="color:var(--accent)">已装备</span>':''}</div>
+      <div class="muted" style="font-size:11px">${SLOT_INFO[it.slot].label} · [${it.rarityName}]${it.epicRaid?' · <span style="color:#22c55e">[史诗团本]</span>':''}${(typeof computeItemLevel==='function')?(' · <span style="color:#fbbf24">装等'+(it.ilvl||computeItemLevel(it))+'</span>'):''}${it.reqLvl?' · Lv.'+it.reqLvl:''}${found.source==='equip'?' · <span style="color:var(--accent)">已装备</span>':''}</div>
     </div>`;
   const setHtml = renderItemSetEffectsHtml(it);
   // 基础属性:基础维度(攻击/防御/力量/敏捷/智力/精神/耐力/生命)= 主属性;暴击/暴伤/吸血/全能/精通/极速/闪避/回复 = 随机副属性

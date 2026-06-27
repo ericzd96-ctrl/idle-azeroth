@@ -1602,6 +1602,16 @@ function renderHero() {
   $('s-spd').textContent = h.spd.toFixed(2)+'/秒';
   $('s-reg').textContent = fmt(h.reg)+'/秒';
 
+  // 平均装备等级(魔兽装等):已穿戴部位装等的平均值
+  if ($('s-ilvl')) {
+    let sum = 0, n = 0;
+    for (const k of SLOT_ORDER) {
+      const it = state.equipped[k];
+      if (it) { const lv = itemLevelOf(it); if (lv > 0) { sum += lv; n++; } }
+    }
+    $('s-ilvl').textContent = n ? Math.round(sum / n) : 0;
+  }
+
   $('talent-points').textContent = state.talentPoints;
 
   // 副属性
@@ -1671,6 +1681,17 @@ function statSourceBreakdown(key, pct) {
   return rows.map(r => `${r.name} ${r.v > 0 ? '+' : ''}${(+r.v).toFixed(1)}${pct ? '%' : ''}`).join('\n');
 }
 
+/* 魔兽装等(物品等级)展示文案,如 "装等208";与佩戴需求"等级X"区分 */
+function itemLevelOf(it) {
+  if (!it) return 0;
+  if (typeof it.ilvl === 'number' && it.ilvl > 0) return it.ilvl;
+  return (typeof computeItemLevel === 'function') ? computeItemLevel(it) : 0;
+}
+function itemLevelText(it) {
+  const lv = itemLevelOf(it);
+  return lv > 0 ? `<span style="color:#fbbf24">装等${lv}</span>` : '';
+}
+
 function renderEquipment() {
   const eg = $('equip-grid');
   eg.innerHTML = '';
@@ -1687,7 +1708,7 @@ function renderEquipment() {
       const itemNameHtml = (typeof itemDisplayNameHtml === 'function') ? itemDisplayNameHtml(it,{slotBadge:true}) : it.name;
       div.innerHTML = `<div class="label">${slotIconHtml} ${SLOT_INFO[k].label}</div>
         <div class="name ${it.cls}">${itemNameHtml}${extras}</div>
-        <div class="stats">${stats}${it.reqLvl?' · 等级'+it.reqLvl:''}</div>`;
+        <div class="stats">${itemLevelText(it)}${it.reqLvl?' · 等级'+it.reqLvl:''} · ${stats}</div>`;
       div.title = '点击查看详情/卸下';
     } else {
       div.innerHTML = `<div class="label">${slotIconHtml} ${SLOT_INFO[k].label}</div>
@@ -1714,7 +1735,7 @@ function renderInventory() {
 
   // 按品质→等级排序: 传说>史诗>精良>优秀>普通, 同品质高等级优先
   const rarityOrder = ['legend','epic','rare','uncommon','common'];
-  state.inventory.sort((a,b) => rarityOrder.indexOf(a.rarity) - rarityOrder.indexOf(b.rarity) || (b.reqLvl||0) - (a.reqLvl||0));
+  state.inventory.sort((a,b) => rarityOrder.indexOf(a.rarity) - rarityOrder.indexOf(b.rarity) || itemLevelOf(b) - itemLevelOf(a) || (b.reqLvl||0) - (a.reqLvl||0));
 
   // 高亮自动售卖按钮
   const asVal = state.autoSellRarity || 'off';
@@ -1771,7 +1792,7 @@ function renderInventory() {
     row.innerHTML = `
       <div class="info">
         <div class="name ${it.cls}">${it.locked?'🔒 ':''}${slotIconHtml} ${itemNameHtml}${extras}</div>
-        <div class="stats">${SLOT_INFO[it.slot].label} · ${stats}${it.reqLvl?" · 等级"+it.reqLvl:""}</div>
+        <div class="stats">${SLOT_INFO[it.slot].label} · ${itemLevelText(it)}${it.reqLvl?" · 等级"+it.reqLvl:""} · ${stats}</div>
       </div>
       <div class="btns">
         <button data-action="lock" data-id="${it.id}" title="${it.locked?'已锁定(点击解锁)':'锁定(防止出售)'}">${it.locked?'🔒':'🔓'}</button>
@@ -1866,7 +1887,8 @@ function showLootTip(e, items, title) {
       const epicBadge = (typeof itemEpicRaidBadge === 'function') ? itemEpicRaidBadge(it, true) : '';
       if (typeof syncItemIdentity === 'function') syncItemIdentity(it);
       const itemNameHtml = (typeof itemDisplayNameHtml === 'function') ? itemDisplayNameHtml(it,{slotBadge:true}) : it.name;
-      html += `<div class="${r?.cls||''}" style="font-size:11px;margin:1px 0">${itemNameHtml}${epicBadge} <span style="opacity:.6">${it.slot&&SLOT_INFO[it.slot]?SLOT_INFO[it.slot].label+' · ':''}${(it.stats?Object.entries(it.stats).map(([k,v])=>fmtMod(k, v)).join(' '):'')}</span></div>`;
+      const ilvlTxt = itemLevelOf(it) > 0 ? itemLevelText(it) + ' · ' : '';
+      html += `<div class="${r?.cls||''}" style="font-size:11px;margin:1px 0">${itemNameHtml}${epicBadge} <span style="opacity:.6">${it.slot&&SLOT_INFO[it.slot]?SLOT_INFO[it.slot].label+' · ':''}${ilvlTxt}${(it.stats?Object.entries(it.stats).map(([k,v])=>fmtMod(k, v)).join(' '):'')}</span></div>`;
     }
   }
   tip.querySelector('.compare-head').innerHTML = html;
