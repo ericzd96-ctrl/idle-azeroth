@@ -5127,18 +5127,21 @@ createEpicRaidCatalog();
 
 /* 英雄级 5 人副本:仿史诗团本,给较高级 5 人本(reqLvl>=HEROIC_MIN_REQ)自动生成 80 级
    高难度版(<key>_heroic)。掉落复用基础本(baseDungeonKey 已剥离 _heroic)但按 80 级 power 缩放。 */
-const HEROIC_MIN_REQ = 67;
+const HEROIC_MIN_REQ = 60;
+/* 英雄本等级按基础本梯队:基础 60~70 → 70 级,71~80 → 80 级(不再统一 80) */
+function heroicTierLevel(baseReqLvl) { return (baseReqLvl || 0) >= 71 ? 80 : 70; }
 function createHeroicDungeonCatalog() {
   const bases = DUNGEONS.filter(d => d.type !== 'raid' && !d.epicRaid && !d.heroic && (d.reqLvl || 0) >= HEROIC_MIN_REQ);
   for (const base of bases) {
     const key = `${base.key}_heroic`;
     if (DUNGEONS.some(d => d.key === key)) continue;
+    const tierLvl = heroicTierLevel(base.reqLvl);
     const clone = JSON.parse(JSON.stringify(base));
     clone.key = key;
     clone.baseKey = base.key;
     clone.name = `${base.name}·英雄`;
-    clone.desc = `80级英雄5人本 · ${base.name} 的高难度版本`;
-    clone.reqLvl = 80;
+    clone.desc = `${tierLvl}级英雄5人本 · ${base.name} 的高难度版本`;
+    clone.reqLvl = tierLvl;
     clone.cd = Math.max(base.cd || 0, 1200);
     clone.heroic = true;
     clone.bosses = (clone.bosses || []).map((boss, idx, arr) => {
@@ -5164,18 +5167,19 @@ createHeroicDungeonCatalog();
 /* 史诗5人本(Mythic 难度):给 reqLvl>=EPIC5_MIN_REQ 的基础 5 人本自动生成 80 级史诗版
    (<key>_epic5)。难度/掉落梯队介于英雄(tier1)与团本(tier2)之间(gearTier=4,×1.16)。
    掉落复用基础本(baseDungeonKey 已剥离 _epic5),装备名带「·史诗」后缀(finishItem)。 */
-const EPIC5_MIN_REQ = 67;
+const EPIC5_MIN_REQ = 60;
 function createEpic5DungeonCatalog() {
   const bases = DUNGEONS.filter(d => d.type !== 'raid' && !d.epicRaid && !d.heroic && !d.epic5 && (d.reqLvl || 0) >= EPIC5_MIN_REQ);
   for (const base of bases) {
     const key = `${base.key}_epic5`;
     if (DUNGEONS.some(d => d.key === key)) continue;
+    const tierLvl = (typeof heroicTierLevel === 'function') ? heroicTierLevel(base.reqLvl) : ((base.reqLvl || 0) >= 71 ? 80 : 70);
     const clone = JSON.parse(JSON.stringify(base));
     clone.key = key;
     clone.baseKey = base.key;
     clone.name = `${base.name}·史诗`;
-    clone.desc = `80级史诗5人本 · ${base.name} 的极限难度版本(最强5人内容)`;
-    clone.reqLvl = 80;
+    clone.desc = `${tierLvl}级史诗5人本 · ${base.name} 的极限难度版本(最强5人内容)`;
+    clone.reqLvl = tierLvl;
     clone.cd = Math.max(base.cd || 0, 1500);
     clone.epic5 = true;
     clone.bosses = (clone.bosses || []).map((boss, idx, arr) => {
