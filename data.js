@@ -4406,6 +4406,85 @@ function extendDungeonCatalog(){
         { name:'瓦里奥那与塞拉图斯', emoji:'⚡', skills:[dmg('风暴撕裂','⚡',10,{ aoe:true, slow:true, silence:1800 })] },
         { name:'死亡之翼·灭世者', emoji:'🐉', skills:[dmg('大决战','🌌',11.5,{ aoe:true, decay2:true, fear:1800 }), dmg('灭世烈焰','🔥',12,{ sunder:true, soulLink:true, brittle:true })] }
       ]
+    },
+    {
+      key:'soo', name:'围攻奥格瑞玛', icon:'🪓', type:'raid', reqLvl:79, waves:13, desc:'讨伐暴君加尔鲁什·地狱咆哮的部落与联盟联军攻城战',
+      bosses:[
+        { name:'不洁之溢', emoji:'💧', skills:[dmg('腐化潮涌','🌊',9,{ aoe:true, decay:true })] },
+        { name:'傲慢之煞', emoji:'👁️', skills:[dmg('傲慢爆发','👁️',9.5,{ fear:1700, weaken:true })] },
+        { name:'钢铁巨像', emoji:'🤖', skills:[dmg('履带碾压','⚙️',9.5,{ stun:1500, sunder:true })] },
+        { name:'达克沙将军', emoji:'🏹', skills:[dmg('猎杀号令','🏹',10,{ aoe:true, bleed:true, cripple:true })] },
+        { name:'克拉希克综合体', emoji:'🪲', skills:[dmg('琥珀禁锢','🟡',10,{ silence:1900, plague:true, dot:true })] },
+        { name:'加尔鲁什·地狱咆哮', emoji:'💀', skills:[dmg('真正的强者','💢',11.5,{ aoe:true, weaken:true, brittle:true }), dmg('钛钢碎击','🔨',12,{ sunder:true, stun:1700, fear:1800 })] }
+      ]
+    },
+    {
+      key:'hfc', name:'地狱火堡垒', icon:'😈', type:'raid', reqLvl:79, waves:13, desc:'封堵塔纳安裂隙、阻止燃烧军团重返艾泽拉斯的最终防线',
+      bosses:[
+        { name:'钢铁掠袭者', emoji:'🤖', skills:[dmg('火炮齐射','💥',9,{ aoe:true, dot:true })] },
+        { name:'寇莫克', emoji:'👊', skills:[dmg('邪能重拳','🟢',9.5,{ stun:1500, brittle:true })] },
+        { name:'死眼基洛格', emoji:'👁️', skills:[dmg('血肉献祭','🩸',9.5,{ bleed:true, soulDrain:true })] },
+        { name:'邪能领主扎昆', emoji:'🔥', skills:[dmg('邪能爆轰','😈',10,{ aoe:true, dot:true, weaken:true })] },
+        { name:'玛诺洛斯', emoji:'👹', skills:[dmg('混乱践踏','👹',10.5,{ aoe:true, fear:1800, cripple:true })] },
+        { name:'阿克蒙德', emoji:'👺', skills:[dmg('末日降临','🌌',11.5,{ aoe:true, decay2:true, silence:2000 }), dmg('军团之灾','🔥',12,{ sunder:true, soulLink:true, brittle:true })] }
+      ]
+    },
+    {
+      key:'tomb', name:'萨格拉斯之墓', icon:'⚰️', type:'raid', reqLvl:79, waves:13, desc:'破岛之上、堕落泰坦的陵墓中阻止基尔加丹重开军团传送门',
+      bosses:[
+        { name:'戈罗斯', emoji:'🌋', skills:[dmg('炽炎喷发','🔥',9.5,{ aoe:true, dot:true, brittle:true })] },
+        { name:'恶魔审判官', emoji:'⚖️', skills:[dmg('折磨灵魂','💀',9.5,{ soulDrain:true, fear:1700 })] },
+        { name:'莎萨拉恩女勋爵', emoji:'🪼', skills:[dmg('深海毒针','🌊',10,{ plague:true, dot:true, slow:true })] },
+        { name:'守护之少女', emoji:'🛡️', skills:[dmg('圣光裁决','✨',10,{ aoe:true, silence:1900, weaken:true })] },
+        { name:'堕落的萨格拉斯化身', emoji:'⚔️', skills:[dmg('黑暗审判','🌑',10.5,{ aoe:true, manaDrain:55, brittle:true })] },
+        { name:'基尔加丹', emoji:'😈', skills:[dmg('军团烈焰','🔥',11.5,{ aoe:true, dot:true, weaken:true }), dmg('湮灭飞弹','🌠',12.5,{ silence:2000, fear:1800, soulLink:true })] }
+      ]
+    },
+    {
+      key:'antorus', name:'安托鲁斯,燃烧的王座', icon:'🌌', type:'raid', reqLvl:79, waves:14, desc:'追入阿古斯,在燃烧军团母星的王座上终结萨格拉斯的远征',
+      bosses:[
+        { name:'加洛希世界破坏者', emoji:'🤖', skills:[dmg('湮灭炮','💥',9.5,{ aoe:true, brittle:true, stun:1500 })] },
+        { name:'萨格拉斯的地狱犬', emoji:'🐶', skills:[dmg('双犬撕咬','🟢',10,{ bleed:true, frenzy:true, dot:true })] },
+        { name:'灵魂猎手伊莫纳', emoji:'🏹', skills:[dmg('裂魂箭雨','🌑',10,{ aoe:true, soulDrain:true, fear:1600 })] },
+        { name:'金加洛斯', emoji:'🔨', skills:[dmg('军团锻锤','🔨',10.5,{ sunder:true, stun:1600, brittle:true })] },
+        { name:'阿格拉玛', emoji:'⚔️', skills:[dmg('泰坦炽炎','☀️',11,{ aoe:true, dot:true, weaken:true })] },
+        { name:'寂灭者阿古斯', emoji:'🌠', skills:[dmg('星辰陨落','🌌',12,{ aoe:true, decay2:true, silence:2000 }), dmg('世界终结','💫',13,{ sunder:true, soulLink:true, fear:2000 })] }
+      ]
+    },
+    {
+      key:'valor', name:'英灵殿', icon:'⚡', reqLvl:70, waves:9, desc:'瓦尔基拉守护的天界殿堂,泰坦守护者奥丁的英灵之厅',
+      bosses:[
+        { name:'海姆达尔', emoji:'⚔️', skills:[dmg('符文斩','⚡',6,{ aoe:true, stun:1300 })] },
+        { name:'芬里尔', emoji:'🐺', skills:[dmg('暗影猛扑','🌑',6.5,{ bleed:true, frenzy:true })] },
+        { name:'神王斯科瓦尔德', emoji:'🛡️', skills:[dmg('烈焰打击','🔥',7,{ dot:true, weaken:true })] },
+        { name:'奥丁', emoji:'👑', skills:[dmg('风暴之矛','⚡',7.5,{ aoe:true, silence:1700 }), dmg('英灵审判','🌩️',8,{ stun:1500, brittle:true })] }
+      ]
+    },
+    {
+      key:'darkheart', name:'黑心林地', icon:'🌳', reqLvl:67, waves:9, desc:'被梦魇侵蚀的瓦尔莎拉密林,萨维斯的暗影在此盘踞',
+      bosses:[
+        { name:'大德鲁伊格莱达利斯', emoji:'🐗', skills:[dmg('野性突袭','🐗',5.5,{ bleed:true, cripple:true })] },
+        { name:'橡树之心', emoji:'🌳', skills:[dmg('缠绕根须','🌿',6,{ stun:1400, dot:true })] },
+        { name:'恐惧编织者诺索斯', emoji:'🦇', skills:[dmg('恐惧之噬','🌑',6.5,{ fear:1600, weaken:true })] },
+        { name:'萨维斯的暗影', emoji:'🌑', skills:[dmg('梦魇爆发','💜',7,{ aoe:true, dot:true, mirror:true }), dmg('暗影践踏','👤',7.5,{ silence:1700, brittle:true })] }
+      ]
+    },
+    {
+      key:'court', name:'群星庭院', icon:'🌟', reqLvl:73, waves:9, desc:'苏拉玛贵族区的隐秘庭院,潜行夺取上层精灵的禁忌情报',
+      bosses:[
+        { name:'巡逻队长格尔多', emoji:'🛡️', skills:[dmg('警戒突刺','⚔️',6.5,{ sunder:true, stun:1300 })] },
+        { name:'烈焰缠绕塔利克丝', emoji:'🔥', skills:[dmg('恶魔烈焰','😈',7,{ aoe:true, dot:true, manaDrain:40 })] },
+        { name:'顾问梅兰德鲁斯', emoji:'⚔️', skills:[dmg('影刃乱舞','🗡️',7.5,{ bleed:true, weaken:true }), dmg('镜像突袭','🪞',8,{ mirror:true, brittle:true })] }
+      ]
+    },
+    {
+      key:'necrotic', name:'通灵之刺', icon:'💀', reqLvl:76, waves:10, desc:'玛卓克萨斯的腐败造物工坊,缚霜者纳索尔守护的死灵兵工厂',
+      bosses:[
+        { name:'疫骨', emoji:'☠️', skills:[dmg('腐液喷吐','🟢',7,{ plague:true, dot:true, aoe:true })] },
+        { name:'外科医生缝肉', emoji:'🧟', skills:[dmg('缝合钩链','🪝',7.5,{ bleed:true, cripple:true })] },
+        { name:'收割者矩阵', emoji:'⚙️', skills:[dmg('收割光束','🔱',7.5,{ aoe:true, brittle:true, stun:1400 })] },
+        { name:'缚霜者纳索尔', emoji:'❄️', skills:[dmg('冰霜缚魂','🧊',8,{ freeze:1600, slow:true, weaken:true }), dmg('死灵寒潮','💀',8.5,{ aoe:true, decay2:true, soulDrain:true })] }
+      ]
     }
   ];
 
@@ -4523,7 +4602,62 @@ function extendDungeonCatalog(){
       '海军统领':[L('齐射火炮','weapon','rare',{atk:1,agi:1}),L('海军护肩','shoulder','rare',{atk:1,sta:1})],
       '巡夜指挥官':[L('巡夜者长枪','weapon','rare',{atk:1,str:1}),L('猎犬皮护腿','pants','rare',{hp:1,agi:1})],
       '维克雷斯女勋爵':[L('维克雷斯仪式匕首','weapon','epic',{atk:3,agi:2}),L('女巫会斗篷','armor','epic',{def:2,int:2}),L('暗夜献祭指环','ring','epic',{agi:2})]
-    }, trash:[L('要塞守卫腰带','belt','rare',{def:1,sta:1}),L('码头工人护手','gloves','rare',{str:1})] }
+    }, trash:[L('要塞守卫腰带','belt','rare',{def:1,sta:1}),L('码头工人护手','gloves','rare',{str:1})] },
+    soo: { bosses:{
+      '不洁之溢':[L('腐化潮汐护腕','gloves','epic',{def:2,spi:2}),L('净化之滴坠饰','trinket','rare',{sta:1,spi:1})],
+      '傲慢之煞':[L('傲慢之眼法杖','weapon','epic',{atk:2,int:2}),L('煞能束腰','belt','rare',{def:1,int:1})],
+      '钢铁巨像':[L('履带碾压护肩','shoulder','epic',{atk:2,str:2}),L('钢铁巨像护腿','pants','rare',{hp:1,sta:1})],
+      '达克沙将军':[L('达克沙的猎魂弓','weapon','epic',{atk:2,agi:2}),L('追猎者战靴','boots','rare',{agi:1})],
+      '克拉希克综合体':[L('琥珀禁锢指环','ring','epic',{int:2,spi:1}),L('螳螂妖护手','gloves','rare',{agi:1})],
+      '加尔鲁什·地狱咆哮':[L('歌罗纳的暴君之刃','weapon','legend',{atk:5,str:3}),L('钛钢统御胸铠','armor','legend',{def:5,sta:4}),L('地狱咆哮战盔','helmet','legend',{def:4,str:3}),L('暴君徽记','trinket','epic',{sta:2,str:2})]
+    }, trash:[L('奥格瑞玛守卫护肩','shoulder','rare',{atk:1,sta:1}),L('要塞攻城靴','boots','rare',{sta:1})] },
+    hfc: { bosses:{
+      '钢铁掠袭者':[L('掠袭者火炮','weapon','epic',{atk:2,agi:2}),L('钢铁部落护腿','pants','rare',{hp:1,agi:1})],
+      '寇莫克':[L('邪能重拳护手','gloves','epic',{atk:2,str:2}),L('魔能腰带','belt','rare',{def:1,str:1})],
+      '死眼基洛格':[L('死眼之矢','weapon','epic',{atk:2,agi:2}),L('血环护腕','gloves','rare',{agi:1})],
+      '邪能领主扎昆':[L('扎昆的邪能护符','trinket','epic',{sta:2,int:2}),L('邪能行者战靴','boots','rare',{int:1})],
+      '玛诺洛斯':[L('混乱践踏护肩','shoulder','epic',{atk:2,str:2}),L('深渊领主指环','ring','rare',{str:1})],
+      '阿克蒙德':[L('阿克蒙德的邪能权杖','weapon','legend',{atk:5,int:3}),L('地狱火堡垒胸铠','armor','legend',{def:5,sta:4}),L('军团审判头盔','helmet','legend',{def:4,int:3}),L('堕落之心徽记','trinket','epic',{sta:2,int:2})]
+    }, trash:[L('塔纳安护手','gloves','rare',{str:1}),L('裂隙踏行者','boots','rare',{sta:1})] },
+    tomb: { bosses:{
+      '戈罗斯':[L('炽炎核心坠饰','trinket','epic',{sta:2,str:2}),L('熔渣护腿','pants','rare',{hp:1,str:1})],
+      '恶魔审判官':[L('折魂之杖','weapon','epic',{atk:2,int:2}),L('审判者腰带','belt','rare',{def:1,int:1})],
+      '莎萨拉恩女勋爵':[L('深海毒针匕首','weapon','epic',{atk:2,agi:2}),L('鲛人护腕','gloves','rare',{agi:1})],
+      '守护之少女':[L('守护圣盾','trinket','epic',{def:2,sta:2}),L('圣光护肩','shoulder','rare',{def:1,spi:1})],
+      '堕落的萨格拉斯化身':[L('泰坦黑暗指环','ring','epic',{atk:2,int:1}),L('破碎之黑护腿','pants','rare',{hp:1,int:1})],
+      '基尔加丹':[L('欺诈者的湮灭法杖','weapon','legend',{atk:5,int:4}),L('萨格拉斯之墓圣袍','armor','legend',{def:5,int:4}),L('军团领主头冠','helmet','legend',{def:4,int:3}),L('破碎之星徽记','trinket','epic',{sta:2,int:2})]
+    }, trash:[L('破碎海岸护肩','shoulder','rare',{atk:1,int:1}),L('陵墓守卫战靴','boots','rare',{int:1})] },
+    antorus: { bosses:{
+      '加洛希世界破坏者':[L('湮灭炮护手','gloves','epic',{atk:2,str:2}),L('军团机甲护腿','pants','rare',{hp:1,sta:1})],
+      '萨格拉斯的地狱犬':[L('地狱犬之牙','weapon','epic',{atk:2,agi:2}),L('邪能犬链腰带','belt','rare',{def:1,agi:1})],
+      '灵魂猎手伊莫纳':[L('裂魂长弓','weapon','epic',{atk:2,agi:2}),L('猎魂者护肩','shoulder','rare',{atk:1,agi:1})],
+      '金加洛斯':[L('军团锻锤','weapon','epic',{atk:3,str:2}),L('熔铸者护腕','gloves','rare',{str:1})],
+      '阿格拉玛':[L('萨格拉斯之盾','trinket','epic',{def:2,sta:2}),L('泰坦守护指环','ring','rare',{str:1,spi:1})],
+      '寂灭者阿古斯':[L('湮灭者·世界终结','weapon','legend',{atk:6,str:4}),L('阿古斯星界胸甲','armor','legend',{def:5,sta:4}),L('寂灭头冠','helmet','legend',{def:5,int:4}),L('世界之魂徽记','trinket','legend',{sta:3,str:3})]
+    }, trash:[L('军团母星护肩','shoulder','rare',{atk:1,sta:1}),L('燃烧王座战靴','boots','rare',{sta:1})] },
+    valor: { bosses:{
+      '海姆达尔':[L('符文战斧','weapon','rare',{atk:1,str:1}),L('英灵护肩','shoulder','rare',{atk:1,sta:1})],
+      '芬里尔':[L('暗影狼牙匕首','weapon','rare',{atk:1,agi:1}),L('狼鬃护腕','gloves','rare',{agi:1})],
+      '神王斯科瓦尔德':[L('神王战盾坠饰','trinket','rare',{def:1,sta:1}),L('烈焰束腰','belt','rare',{def:1,str:1})],
+      '奥丁':[L('奥丁的风暴之矛','weapon','epic',{atk:3,agi:2}),L('英灵殿王冠','helmet','epic',{def:2,sta:2}),L('瓦尔基拉之戒','ring','epic',{atk:2,vers:1})]
+    }, trash:[L('天界守卫战靴','boots','rare',{sta:1}),L('符文护腿','pants','rare',{hp:1,agi:1})] },
+    darkheart: { bosses:{
+      '大德鲁伊格莱达利斯':[L('野性之爪','weapon','rare',{atk:1,agi:1}),L('德鲁伊护腿','pants','rare',{hp:1,agi:1})],
+      '橡树之心':[L('远古橡木杖','weapon','rare',{atk:1,int:1}),L('林地护腕','gloves','rare',{spi:1})],
+      '恐惧编织者诺索斯':[L('恐惧披风','trinket','rare',{sta:1,int:1}),L('梦魇腰带','belt','rare',{def:1,int:1})],
+      '萨维斯的暗影':[L('萨维斯的梦魇之刃','weapon','epic',{atk:3,agi:2}),L('暗影梦境兜帽','helmet','epic',{def:2,int:2}),L('扭曲梦魇指环','ring','epic',{int:2,spi:1})]
+    }, trash:[L('瓦尔莎拉护肩','shoulder','rare',{atk:1,spi:1}),L('梦境行者战靴','boots','rare',{agi:1})] },
+    court: { bosses:{
+      '巡逻队长格尔多':[L('警戒长枪','weapon','rare',{atk:1,str:1}),L('守卫腰带','belt','rare',{def:1,sta:1})],
+      '烈焰缠绕塔利克丝':[L('恶魔烈焰法杖','weapon','rare',{atk:1,int:1}),L('缠焰护腕','gloves','rare',{int:1})],
+      '顾问梅兰德鲁斯':[L('梅兰德鲁斯的镜影双刃','weapon','epic',{atk:3,agi:2}),L('苏拉玛贵族披风','armor','epic',{def:2,int:2}),L('上层精灵徽记','trinket','epic',{sta:2,agi:2})]
+    }, trash:[L('庭院卫兵护肩','shoulder','rare',{atk:1,sta:1}),L('夜之子长靴','boots','rare',{int:1})] },
+    necrotic: { bosses:{
+      '疫骨':[L('腐液喷吐臂铠','gloves','rare',{atk:1,int:1}),L('瘟疫护腿','pants','rare',{hp:1,sta:1})],
+      '外科医生缝肉':[L('缝合钩链','weapon','rare',{atk:1,str:1}),L('血肉束腰','belt','rare',{def:1,sta:1})],
+      '收割者矩阵':[L('收割能量核心','trinket','rare',{sta:1,int:1}),L('玛卓克萨斯护肩','shoulder','rare',{atk:1,sta:1})],
+      '缚霜者纳索尔':[L('纳索尔的冰霜权杖','weapon','epic',{atk:3,int:2}),L('缚霜者头冠','helmet','epic',{def:2,int:2}),L('寒霜死灵之戒','ring','epic',{int:2,sta:1})]
+    }, trash:[L('死灵工坊护手','gloves','rare',{int:1}),L('通灵者战靴','boots','rare',{sta:1})] }
   };
 
   for (const dg of extraDungeons) ensureDungeon(dg, extraLoot[dg.key]);
@@ -4571,6 +4705,10 @@ const EPIC_RAID_SET_THEME = {
   firelands:{ tier:'T12', name:'火焰之地', short:'烈焰' },
   throne:{ tier:'T15', name:'雷霆王座', short:'雷神' },
   dragonsoul:{ tier:'T13', name:'巨龙之魂', short:'灭世' },
+  soo:{ tier:'T16', name:'围攻奥格瑞玛', short:'决战' },
+  hfc:{ tier:'T18', name:'地狱火堡垒', short:'地狱火' },
+  tomb:{ tier:'T20', name:'萨格拉斯之墓', short:'圣墓' },
+  antorus:{ tier:'T21', name:'安托鲁斯', short:'阿古斯' },
 };
 const EPIC_RAID_SET_LABELS = {
   mc:{
@@ -4625,6 +4763,34 @@ const EPIC_RAID_SET_LABELS = {
     warrior:'伊米亚之王', mage:'鲜血法师', priest:'赤红侍僧', rogue:'影刃', hunter:'安卡哈血猎手',
     shaman:'霜巫', paladin:'光誓', warlock:'黑暗教团', druid:'树纹',
   },
+  firelands:{
+    warrior:'熔岩之王', mage:'烈焰领主', priest:'净焰', rogue:'暗影凤凰', hunter:'烈焰行者',
+    shaman:'火山', paladin:'焚化', warlock:'灾祸蛛', druid:'黑曜林冠',
+  },
+  throne:{
+    warrior:'末代魔古', mage:'燃烧卷轴', priest:'驱魔', rogue:'九尾', hunter:'不眠守望',
+    shaman:'巫医', paladin:'凯旋之翼', warlock:'无面裹尸', druid:'鬼魅森林',
+  },
+  dragonsoul:{
+    warrior:'巨像龙甲', mage:'时光领主', priest:'弥光', rogue:'黑牙', hunter:'追龙者',
+    shaman:'灵行者', paladin:'光辉荣耀', warlock:'触角梦魇', druid:'深邃大地',
+  },
+  soo:{
+    warrior:'史前掠夺者', mage:'时空法师', priest:'圣光仪典', rogue:'倒钩刺客', hunter:'吞噬之喉',
+    shaman:'天界谐律', paladin:'独眼恐魔', warlock:'千狱', druid:'永恒之花',
+  },
+  hfc:{
+    warrior:'钢铁巨像', mage:'恶魔预言', priest:'净化神谕', rogue:'暗影行者', hunter:'恶魔追猎者',
+    shaman:'熔火先知', paladin:'破碎圣印', warlock:'魔誓', druid:'血环德鲁伊',
+  },
+  tomb:{
+    warrior:'萨格雷战铠', mage:'守望之眼', priest:'救赎神官', rogue:'恶魔之刃', hunter:'群星追猎者',
+    shaman:'元素守望', paladin:'圣堂卫士', warlock:'噬魂者', druid:'丛林守护',
+  },
+  antorus:{
+    warrior:'阿古斯征服者', mage:'星界法师', priest:'圣裁化身', rogue:'虚空之刃', hunter:'泰坦追猎者',
+    shaman:'风暴先知', paladin:'破晓圣骑', warlock:'湮灭使者', druid:'世界之心',
+  },
 };
 const EPIC_RAID_SET_SLOT_ROTATION = ['pants','helmet','shoulder','gloves','armor','boots','belt','ring','trinket','weapon'];
 const EPIC_RAID_OFFPIECE_ROTATION = ['ring','boots','belt','trinket','shoulder','gloves','armor','pants','helmet','weapon'];
@@ -4664,7 +4830,11 @@ function epicRaidSupportAttr(clsKey) {
   return 'sta';
 }
 function epicRaidSetLabel(baseKey, clsKey) {
-  return EPIC_RAID_SET_LABELS[baseKey]?.[clsKey] || `${raidTheme(baseKey).tier}${clsKey || ''}`;
+  // 显式套装名优先;无配置时回退到「团本简称·职业名」,绝不暴露 T?/Txx 这类内部档位代号
+  if (EPIC_RAID_SET_LABELS[baseKey]?.[clsKey]) return EPIC_RAID_SET_LABELS[baseKey][clsKey];
+  const short = raidTheme(baseKey).short;
+  const clsName = (typeof CLASSES !== 'undefined' && CLASSES[clsKey]?.name) || '';
+  return `${short}${clsName ? '·' + clsName : ''}`;
 }
 function findRaidReferenceItem(baseKey, bossName, slotKey, rarityKey) {
   const bossPool = (getBaseDungeonBossLoot(baseKey, bossName) || []).map(cloneLootItem);
