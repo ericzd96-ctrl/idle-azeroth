@@ -3972,6 +3972,7 @@ function castSkill(skillKey,manual){
         const d=calcDmg(state.hero.atk*sk.mul*cb*talentDamageMult(target,skillKey)*rt.mult,heroTargetDef(target),state.hero.crit,state.hero.critd,forceCrit,target.lvl,state.hero.lvl);
         let dd=d.dmg;
         {const dr=monsterDamageReduction(target, now);if(dr)dd=Math.max(1,Math.floor(dd*(1-dr)));}
+        dd=absorbMonsterBarrier(target,dd,sk.icon||'✨').remaining;   // 技能也被敌方护盾吸收(不再穿盾)
         target.hp-=dd;dmgDone+=dd;trackDmg('hero',dd,d.crit,sk.name);showMonsterFloat(target,(sk.icon||'✨')+'-'+dd,d.crit?'#fbbf24':'#a335ee',{variant:d.crit?'crit':'hit',scale:d.crit?1.14:1,important:true});
         if(d.crit||forceCrit)processTalentOnCrit(target,dd,{skillKey});
         if(sk.lifeSteal){const heal=Math.floor(dd*sk.lifeSteal);healHeroAmount(heal,'🩸','#6ee7b7');}
@@ -3992,6 +3993,7 @@ function castSkill(skillKey,manual){
       const d=calcDmg(state.hero.atk*sk.mul*cb*talentDamageMult(mon,skillKey)*rt.mult,heroTargetDef(mon),state.hero.crit,state.hero.critd,forceCrit,mon.lvl,state.hero.lvl);
       let dd=d.dmg;
       {const dr=monsterDamageReduction(mon, now);if(dr)dd=Math.max(1,Math.floor(dd*(1-dr)));}
+      dd=absorbMonsterBarrier(mon,dd,sk.icon||'✨').remaining;   // 技能也被敌方护盾吸收(不再穿盾)
       mon.hp-=dd;dmgDone=dd;trackDmg('hero',dd,d.crit,sk.name);
       showMonsterFloat(mon,(sk.icon||'✨')+'-'+dd,(d.crit||forceCrit)?'#fbbf24':'#a335ee',{variant:(d.crit||forceCrit)?'crit':'hit',scale:(d.crit||forceCrit)?1.16:1,important:true});
       log(sk.name+'! '+dd+' 伤害'+(forceCrit?' (必暴)':''),'good');
@@ -4002,6 +4004,11 @@ function castSkill(skillKey,manual){
       const applyState=(!skillFxMeta(skillKey, sk).applyTargetState && ai.applyTargetState && !['dot','slow','sunder'].includes(ai.applyTargetState)) ? ai.applyTargetState : null;
       if(applyState) applyMonsterState(mon, applyState, ai.stateDurationMs || 10000);
       applySkillHitEffects(skillKey, sk, mon, dmgDone, { now, isAOE:false });
+    }
+    // 技能伤害也吸血(英雄吸血属性,每点=0.5%实际伤害);与技能自带 lifeSteal 叠加
+    if(state.hero.leech>0 && dmgDone>0){
+      const leechHeal=Math.floor(dmgDone*state.hero.leech*0.5/100);
+      if(leechHeal>0){state.hp=Math.min(state.hero.hpMax,state.hp+leechHeal);showFloat($('hero-emoji'),'🩸+'+leechHeal,'#6ee7b7',{variant:'heal',scale:1.04});if(typeof pulseCombatEl==='function')pulseCombatEl($('hero-emoji'),'heal',220);}
     }
     processTalentAfterSkill(skillKey, sk, mon, dmgDone, { cost });
   }else if(sk.type==='heal'){
