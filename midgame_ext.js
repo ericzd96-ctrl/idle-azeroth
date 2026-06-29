@@ -397,6 +397,10 @@
     grimrail:{ key:'gr_ironlocomotive', chance:0.009 },
     everbloom:{ key:'eb_bloomstag', chance:0.009 },
     neltharus:{ key:'nlt_obsidiandrake', chance:0.008 },
+    azurevault:{ key:'av_arcanelizard', chance:0.008 },
+    nokhud:{ key:'nok_stormrunner', chance:0.008 },
+    hallsinfusion:{ key:'hoi_tidalray', chance:0.008 },
+    brackenhide:{ key:'bh_rottooth', chance:0.008 },
   };
 
   const EXTRA_MOUNTS = [
@@ -470,6 +474,10 @@
     { key:'gr_ironlocomotive', name:'钢铁机车',       icon:'🚂', tier:'epic',     mod:{ spdPct:14, defPct:7 },          src:'铁路深谷 尾王极低概率掉落(英雄/史诗本掉率更高)' },
     { key:'eb_bloomstag',      name:'永茂繁花雄鹿',   icon:'🦌', tier:'epic',     mod:{ spdPct:14, hpPct:7, vers:4 },    src:'永茂林地 尾王极低概率掉落(英雄/史诗本掉率更高)' },
     { key:'nlt_obsidiandrake', name:'奈萨黑曜巨龙',   icon:'🐲', tier:'epic',     mod:{ spdPct:16, atkPct:6, critdPct:5 }, src:'奈萨利亚熔炉 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'av_arcanelizard',   name:'碧蓝魔馆奥术蜥', icon:'🦎', tier:'epic',     mod:{ spdPct:16, mastery:8, hpPct:6 },  src:'碧蓝魔馆 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'nok_stormrunner',   name:'诺库德风暴行者', icon:'🐎', tier:'epic',     mod:{ spdPct:17, atkPct:7, haste:5 },   src:'诺库德阻击战 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'hoi_tidalray',      name:'注能潮汐鳐',     icon:'🛸', tier:'epic',     mod:{ spdPct:16, hpPct:8, vers:5 },     src:'注能大厅 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'bh_rottooth',       name:'腐齿山谷斗兽',   icon:'🦴', tier:'epic',     mod:{ spdPct:15, atkPct:7, leech:3 },   src:'蕨皮山谷 尾王极低概率掉落(英雄/史诗本掉率更高)' },
   ];
 
   function ensureMidgameState() {

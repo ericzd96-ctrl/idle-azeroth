@@ -5052,6 +5052,42 @@ function extendDungeonCatalog(){
       ]
     },
     {
+      key:'azurevault', name:'碧蓝魔馆', icon:'💠', reqLvl:78, waves:10, desc:'蓝龙军团封存奥术遗产的浮空宝库,魔网回声在大厅中失控共鸣',
+      bosses:[
+        { name:'莱魔', emoji:'🧿', skills:[dmg('奥术撕裂','💠',8,{ silence:1800, manaDrain:50 })] },
+        { name:'青刃构装体', emoji:'🤖', skills:[dmg('法力切割','🔷',8.2,{ brittle:true, stun:1400 })] },
+        { name:'泰拉什·灰翼', emoji:'🐉', skills:[dmg('碧蓝龙息','🐉',8.6,{ aoe:true, freeze:1500, weaken:true })] },
+        { name:'安布雷斯库', emoji:'🌌', skills:[dmg('魔网坍缩','🌌',9,{ aoe:true, mirror:true, silence:1800 }), dmg('奥能终曲','💥',9.5,{ brittle:true, manaDrain:70, decay2:true })] }
+      ]
+    },
+    {
+      key:'nokhud', name:'诺库德阻击战', icon:'🏹', reqLvl:78, waves:10, desc:'欧恩哈拉平原上的疾风战场,诺库德氏族以弓骑与风暴压制远征军',
+      bosses:[
+        { name:'格拉尼斯', emoji:'🦅', skills:[dmg('鹰风俯冲','🦅',8,{ bleed:true, cripple:true })] },
+        { name:'风暴召唤者巴拉卡尔', emoji:'🌩️', skills:[dmg('雷矛投掷','⚡',8.4,{ stun:1500, sunder:true })] },
+        { name:'诺库德猎群', emoji:'🏹', skills:[dmg('箭雨合围','🏹',8.6,{ aoe:true, bleed:true, weaken:true })] },
+        { name:'可汗巴拉卡', emoji:'🐎', skills:[dmg('草原践踏','🐎',9,{ aoe:true, fear:1600, brittle:true }), dmg('风暴可汗令','👑',9.5,{ silence:1800, frenzy:true, manaDrain:55 })] }
+      ]
+    },
+    {
+      key:'hallsinfusion', name:'注能大厅', icon:'💧', reqLvl:79, waves:10, desc:'泰坦水渠与原始元素交汇的注能核心,每一次脉冲都在撕裂防线',
+      bosses:[
+        { name:'守望者艾瑞克', emoji:'🛡️', skills:[dmg('水盾猛击','🛡️',8.2,{ sunder:true, slow:true })] },
+        { name:'注能吞噬者', emoji:'🫧', skills:[dmg('吞噬喷潮','🫧',8.6,{ aoe:true, plague:true, dot:true })] },
+        { name:'泰坦水道枢纽', emoji:'⚙️', skills:[dmg('高压喷射','💧',8.8,{ aoe:true, silence:1700, manaDrain:60 })] },
+        { name:'原始海啸', emoji:'🌊', skills:[dmg('灭顶浪潮','🌊',9.4,{ aoe:true, freeze:1600, weaken:true }), dmg('潮汐回卷','🌀',9.8,{ mirror:true, soulLink:true, brittle:true })] }
+      ]
+    },
+    {
+      key:'brackenhide', name:'蕨皮山谷', icon:'🦴', reqLvl:79, waves:10, desc:'腐臭豺狼人占据的林谷营地,炼金毒雾与瘟疫篝火笼罩山道',
+      bosses:[
+        { name:'劈爪战团', emoji:'🪓', skills:[dmg('乱斧围猎','🪓',8.2,{ bleed:true, aoe:true })] },
+        { name:'腐喉', emoji:'🦴', skills:[dmg('腐臭啃咬','🦴',8.6,{ plague:true, cripple:true })] },
+        { name:'臭皮炼金师', emoji:'🧪', skills:[dmg('毒雾爆瓶','🧪',8.8,{ aoe:true, dot:true, silence:1700 })] },
+        { name:'蕨皮酋长', emoji:'👹', skills:[dmg('瘟疫战吼','👹',9.4,{ fear:1700, weaken:true, frenzy:true }), dmg('腐化屠戮','☠️',9.8,{ aoe:true, plague:true, brittle:true })] }
+      ]
+    },
+    {
       key:'eternalpalace', name:'阿萨拉的永恒王宫', icon:'🔱', type:'raid', reqLvl:79, waves:13, desc:'纳沙塔尔深海之下,女王阿兹莎拉以古神之力召唤暗影的海妖王庭',
       bosses:[
         { name:'暗鳞军团', emoji:'🐟', skills:[dmg('深海齐射','🌊',9,{ aoe:true, dot:true })] },
@@ -5395,6 +5431,30 @@ function extendDungeonCatalog(){
       '盗宝龙裔':[L('龙裔烈焰之刃','weapon','rare',{atk:1,agi:1}),L('龙鳞护腿','pants','rare',{hp:1,str:1})],
       '焰炉之主玛吉莫斯':[L('玛吉莫斯的熔炉之锤','weapon','epic',{atk:3,str:2}),L('黑龙熔铸胸铠','armor','epic',{def:2,sta:2}),L('焰炉徽记','trinket','epic',{sta:2,str:2})]
     }, trash:[L('黑龙护肩','shoulder','rare',{atk:1,sta:1}),L('熔渣战靴','boots','rare',{str:1})] },
+    azurevault: { bosses:{
+      '莱魔':[L('莱魔的魔网短杖','weapon','rare',{atk:1,int:1}),L('碧蓝禁锢护腕','gloves','rare',{int:1})],
+      '青刃构装体':[L('青刃矩阵核心','trinket','rare',{sta:1,int:1}),L('魔钢切割护手','gloves','rare',{atk:1,str:1})],
+      '泰拉什·灰翼':[L('灰翼龙息法杖','weapon','rare',{atk:1,int:1}),L('碧蓝翼膜披甲','armor','rare',{def:1,int:1})],
+      '安布雷斯库':[L('安布雷斯库的魔网之心','trinket','epic',{sta:2,int:2}),L('奥术终曲法袍','armor','epic',{def:2,int:2}),L('碧蓝宝库指环','ring','epic',{int:2,haste:1})]
+    }, trash:[L('魔馆守卫护肩','shoulder','rare',{atk:1,int:1}),L('碧蓝长靴','boots','rare',{int:1})] },
+    nokhud: { bosses:{
+      '格拉尼斯':[L('鹰风猎矛','weapon','rare',{atk:1,agi:1}),L('风羽护腿','pants','rare',{hp:1,agi:1})],
+      '风暴召唤者巴拉卡尔':[L('巴拉卡尔雷矛','weapon','rare',{atk:1,str:1}),L('雷鸣护手','gloves','rare',{str:1})],
+      '诺库德猎群':[L('诺库德弯弓','weapon','rare',{atk:1,agi:1}),L('草原追猎腰带','belt','rare',{def:1,agi:1})],
+      '可汗巴拉卡':[L('可汗的风暴战刃','weapon','epic',{atk:3,agi:2}),L('诺库德可汗头盔','helmet','epic',{def:2,sta:2}),L('欧恩哈拉战徽','trinket','epic',{sta:2,agi:2})]
+    }, trash:[L('草原骑手护肩','shoulder','rare',{atk:1,agi:1}),L('诺库德战靴','boots','rare',{agi:1})] },
+    hallsinfusion: { bosses:{
+      '守望者艾瑞克':[L('守望者水晶盾','trinket','rare',{def:1,sta:1}),L('水渠护手','gloves','rare',{sta:1})],
+      '注能吞噬者':[L('吞噬者粘液瓶','trinket','rare',{sta:1,spi:1}),L('注能护腿','pants','rare',{hp:1,sta:1})],
+      '泰坦水道枢纽':[L('水道枢纽权杖','weapon','rare',{atk:1,int:1}),L('泰坦阀门腰带','belt','rare',{def:1,int:1})],
+      '原始海啸':[L('原始海啸之杖','weapon','epic',{atk:3,int:2}),L('潮汐回卷长袍','armor','epic',{def:2,spi:2}),L('注能核心指环','ring','epic',{int:2,spi:1})]
+    }, trash:[L('注能护肩','shoulder','rare',{atk:1,spi:1}),L('水渠行者战靴','boots','rare',{sta:1})] },
+    brackenhide: { bosses:{
+      '劈爪战团':[L('劈爪战斧','weapon','rare',{atk:1,str:1}),L('染血护肩','shoulder','rare',{atk:1,sta:1})],
+      '腐喉':[L('腐喉骨牙','weapon','rare',{atk:1,agi:1}),L('腐皮护腿','pants','rare',{hp:1,agi:1})],
+      '臭皮炼金师':[L('毒雾爆瓶','trinket','rare',{sta:1,int:1}),L('炼金污渍手套','gloves','rare',{int:1})],
+      '蕨皮酋长':[L('蕨皮酋长的腐化巨斧','weapon','epic',{atk:3,str:2}),L('瘟疫篝火胸甲','armor','epic',{def:2,sta:2}),L('腐臭氏族徽记','trinket','epic',{sta:2,str:2})]
+    }, trash:[L('腐木护肩','shoulder','rare',{atk:1,sta:1}),L('蕨皮行军靴','boots','rare',{str:1})] },
     eternalpalace: { bosses:{
       '暗鳞军团':[L('深海齐射之弓','weapon','epic',{atk:2,agi:2}),L('鳞甲护腿','pants','rare',{hp:1,agi:1})],
       '飘雾艾尔':[L('迷雾毒针匕首','weapon','epic',{atk:2,agi:2}),L('水母护腕','gloves','rare',{agi:1})],
