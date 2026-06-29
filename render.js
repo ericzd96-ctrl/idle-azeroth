@@ -137,6 +137,10 @@ function updateNavBadges() {
   if (questsTab) {
     questsTab.classList.toggle('has-badge', (typeof questHasClaimable === 'function') && questHasClaimable());
   }
+  const mapTab = document.querySelector('.tab[data-tab="map"]');
+  if (mapTab) {
+    mapTab.classList.toggle('has-badge', (typeof zoneBountyHasClaimable === 'function') && zoneBountyHasClaimable());
+  }
   const vaultTab = document.querySelector('.tab[data-tab="vault"]');
   if (vaultTab) {
     // vaultHasReward 内部 ensureVaultState 会处理周结算锁入(即使没开宝库页也能按时结算)
@@ -151,6 +155,7 @@ function updateNavBadges() {
   if (mapPanel && mapPanel.classList.contains('active')) {
     if (typeof renderNextGoals === 'function') renderNextGoals();
     if (typeof renderDailyHub === 'function') renderDailyHub();
+    if (typeof renderZoneBountyHub === 'function') renderZoneBountyHub();
   }
 }
 
@@ -2269,6 +2274,7 @@ function updateSkillBarCd() {
 }
 
 function renderMap() {
+  if (typeof renderZoneBountyHub === 'function') renderZoneBountyHub();
   const mapCur = getMap();
   if (mapCur) {
     const subCur = mapCur.sub[state.currentSubzone];

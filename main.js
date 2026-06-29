@@ -331,6 +331,15 @@ function setupDelegation() {
   if (ngEl) ngEl.addEventListener('click', gotoJump);
   const dhEl = $('daily-hub');
   if (dhEl) dhEl.addEventListener('click', gotoJump);
+  const zbHub = $('zone-bounty-hub');
+  if (zbHub) zbHub.addEventListener('click', e => {
+    const btn = e.target.closest('button[data-action]');
+    if (btn && btn.dataset.action === 'claimallzonebounties' && typeof claimAllZoneBounties === 'function') {
+      claimAllZoneBounties();
+      return;
+    }
+    gotoJump(e);
+  });
 
   // 配装预设 事件代理
   const loBar = $('loadout-bar');

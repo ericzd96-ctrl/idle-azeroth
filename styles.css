@@ -1388,6 +1388,50 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   width: 100%;
   margin-top: 3px;
 }
+.zone-bounty-hub {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 8px;
+  background: rgba(255, 255, 255, .02);
+}
+.zone-bounty-hub.ready {
+  border-color: rgba(251, 191, 36, .72);
+  background: rgba(251, 191, 36, .08);
+}
+.zone-bounty-hub-main {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: flex-start;
+}
+.zone-bounty-hub-title {
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+.zone-bounty-hub-stats {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  font-size: 11px;
+  color: var(--muted);
+  min-width: 110px;
+}
+.zone-bounty-hub-stats span {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: rgba(10, 13, 24, .28);
+}
+.zone-bounty-hub-stats b {
+  color: var(--gold);
+}
+.zone-bounty-hub button {
+  width: 100%;
+  margin-top: 7px;
+}
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-thumb { background: #2a3050; border-radius: 3px; }
