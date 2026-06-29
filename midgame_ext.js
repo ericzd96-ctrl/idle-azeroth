@@ -320,11 +320,19 @@
 
   const RARE_ELITES = [
     { key:'riverpaw_howl', name:'河爪头目·咆爪', mapKey:'elwynn', emoji:'🐺', lvl:18, desc:'擅长呼朋引伴的河爪头目。', hpMul:4.5, atkMul:1.8, defMul:1.3, rewards:{ gold:1200, gem:1, honor:20, essence:1 }, mountKey:'horse_chestnut' },
+    { key:'redridge_flameclaw', name:'赤脊焰爪', mapKey:'redridge', emoji:'🐉', lvl:29, desc:'从黑石山低空掠来的幼龙，会在山脊间伏击冒险者。', hpMul:5.2, atkMul:2.0, defMul:1.35, rewards:{ gold:2400, gem:2, honor:45, essence:2 }, mountKey:'redridge_redwhelp' },
     { key:'duskfang_alpha', name:'夜牙之王', mapKey:'duskwood', emoji:'🐺', lvl:32, desc:'暮色森林边缘最危险的巨狼。', hpMul:5.8, atkMul:2.1, defMul:1.4, rewards:{ gold:2800, gem:2, honor:40, essence:2 }, mountKey:'wolf_black' },
+    { key:'wetlands_tidejaw', name:'潮牙潜伏者', mapKey:'wetlands', emoji:'🐊', lvl:34, desc:'米奈希尔港外海雾中的伏击者，擅长把战斗拖入泥水。', hpMul:5.7, atkMul:2.05, defMul:1.48, rewards:{ gold:3400, gem:2, honor:55, essence:2 }, mountKey:'wetlands_marshstrider' },
     { key:'ironbark_ancient', name:'铁根古树', mapKey:'ashenvale', emoji:'🌲', lvl:42, desc:'会用根须缠绕猎物的远古树人。', hpMul:6.2, atkMul:2.2, defMul:1.6, rewards:{ gold:4200, gem:3, honor:65, essence:2 }, mountKey:'stag_emerald' },
+    { key:'stranglethorn_bloodmane', name:'血鬃猎王', mapKey:'stranglethorn', emoji:'🐅', lvl:48, desc:'荆棘谷深处的丛林猎王，盯上猎物后几乎不会停下。', hpMul:6.7, atkMul:2.45, defMul:1.45, rewards:{ gold:5600, gem:4, honor:90, essence:3 }, mountKey:'st_bloodtiger' },
     { key:'sandstalker', name:'沙行者女王', mapKey:'tanaris', emoji:'🦂', lvl:52, desc:'徘徊在塔纳利斯风沙中的巨型毒蝎。', hpMul:7.0, atkMul:2.4, defMul:1.6, rewards:{ gold:6500, gem:4, honor:90, essence:3 }, mountKey:'strider_sand' },
-    { key:'blackrock_devastator', name:'黑石毁灭者', mapKey:'burningsteppes', emoji:'🦖', lvl:61, desc:'披着黑铁护甲的熔岩巨兽。', hpMul:8.4, atkMul:2.8, defMul:1.9, rewards:{ gold:9000, gem:5, honor:140, essence:4 }, mountKey:'drake_ember' },
-    { key:'frostmaw', name:'霜喉巨熊', mapKey:'stormpeaks', emoji:'🐻', lvl:74, desc:'盘踞在雪峰之上的冰霜巨熊。', hpMul:9.2, atkMul:3.0, defMul:2.0, rewards:{ gold:12000, gem:7, honor:200, essence:5 }, mountKey:'bear_frost' },
+    { key:'searing_cinderlord', name:'余烬领主卡拉什', mapKey:'searing', emoji:'🔥', lvl:54, desc:'在灼热峡谷游荡的熔火元素，会用余烬封锁退路。', hpMul:7.4, atkMul:2.55, defMul:1.72, rewards:{ gold:7200, gem:4, honor:110, essence:4 }, mountKey:'searing_cinderhound' },
+    { key:'blackrock_devastator', name:'黑石毁灭者', mapKey:'burning', emoji:'🦖', lvl:61, desc:'披着黑铁护甲的熔岩巨兽。', hpMul:8.4, atkMul:2.8, defMul:1.9, rewards:{ gold:9000, gem:5, honor:140, essence:4 }, mountKey:'drake_ember' },
+    { key:'hellfire_felreaver_scout', name:'邪能掠夺侦测者', mapKey:'hellfire', emoji:'🤖', lvl:66, desc:'地狱火半岛上脱离军团阵列的巡弋构装体，火力密集而短促。', hpMul:8.6, atkMul:2.9, defMul:1.85, rewards:{ gold:9800, gem:6, honor:160, essence:5 }, mountKey:'hellfire_felwalker' },
+    { key:'shadowmoon_voidseer', name:'影月虚空先知', mapKey:'shadowmoon', emoji:'🧿', lvl:72, desc:'在影月谷裂隙旁低语的先知，会把奥术与暗影混成危险仪式。', hpMul:9.0, atkMul:3.0, defMul:1.9, rewards:{ gold:11800, gem:7, honor:210, essence:6 }, mountKey:'shadowmoon_voidtalbuk' },
+    { key:'frostmaw', name:'霜喉巨熊', mapKey:'storm', emoji:'🐻', lvl:74, desc:'盘踞在雪峰之上的冰霜巨熊。', hpMul:9.2, atkMul:3.0, defMul:2.0, rewards:{ gold:12000, gem:7, honor:200, essence:5 }, mountKey:'bear_frost' },
+    { key:'netherstorm_manawraith', name:'法力怨灵欧洛斯', mapKey:'netherstorm', emoji:'🌀', lvl:75, desc:'虚空风暴中被撕裂的法力残响，越战越容易引爆奥能。', hpMul:9.3, atkMul:3.1, defMul:1.92, rewards:{ gold:13200, gem:8, honor:230, essence:6 }, mountKey:'netherstorm_manaray' },
+    { key:'sholazar_lifebloom_colossus', name:'生命绽放巨像', mapKey:'sholazar', emoji:'🌿', lvl:80, desc:'索拉查盆地泰坦实验留下的巨像，会在濒危时快速复苏。', hpMul:10.2, atkMul:3.18, defMul:2.1, rewards:{ gold:15800, gem:9, honor:280, essence:8 }, mountKey:'sholazar_lifewarden' },
   ];
 
   const BOUNTY_REWARDS = {
@@ -393,11 +401,19 @@
 
   const EXTRA_MOUNTS = [
     { key:'horse_chestnut', name:'栗色军马', icon:'🐴', tier:'uncommon', faction:'alliance', mod:{ spdPct:7, hpPct:3 }, src:'稀有精英: 河爪头目·咆爪（极低概率）' },
+    { key:'redridge_redwhelp', name:'赤脊幼龙', icon:'🐉', tier:'rare', mod:{ spdPct:10, atkPct:4, critdPct:4 }, src:'稀有精英: 赤脊焰爪（极低概率）' },
     { key:'wolf_black', name:'黑鬃战狼', icon:'🐺', tier:'uncommon', faction:'horde', mod:{ spdPct:8, atkPct:3 }, src:'稀有精英: 夜牙之王（极低概率）' },
+    { key:'wetlands_marshstrider', name:'湿地泥行兽', icon:'🐊', tier:'rare', mod:{ spdPct:9, hpPct:6, defPct:3 }, src:'稀有精英: 潮牙潜伏者（极低概率）' },
     { key:'stag_emerald', name:'翠角夜鹿', icon:'🦌', tier:'rare', mod:{ spdPct:10, vers:4 }, src:'稀有精英: 铁根古树（极低概率）' },
+    { key:'st_bloodtiger', name:'血鬃丛林虎', icon:'🐅', tier:'rare', mod:{ spdPct:11, atkPct:5, crit:3 }, src:'稀有精英: 血鬃猎王（极低概率）' },
     { key:'strider_sand', name:'流沙陆行鸟', icon:'🦤', tier:'rare', mod:{ spdPct:10, crit:3, haste:3 }, src:'稀有精英: 沙行者女王（极低概率）' },
+    { key:'searing_cinderhound', name:'余烬熔犬', icon:'🐺', tier:'epic', mod:{ spdPct:13, atkPct:6, leech:2 }, src:'稀有精英: 余烬领主卡拉什（极低概率）' },
     { key:'drake_ember', name:'余烬幼龙', icon:'🐉', tier:'epic', mod:{ spdPct:14, atkPct:6, critdPct:5 }, src:'稀有精英: 黑石毁灭者（极低概率）' },
+    { key:'hellfire_felwalker', name:'邪能巡行机', icon:'🤖', tier:'epic', mod:{ spdPct:14, defPct:6, mastery:6 }, src:'稀有精英: 邪能掠夺侦测者（极低概率）' },
+    { key:'shadowmoon_voidtalbuk', name:'影月虚空塔布羊', icon:'🦬', tier:'epic', mod:{ spdPct:15, vers:5, mastery:7 }, src:'稀有精英: 影月虚空先知（极低概率）' },
     { key:'bear_frost', name:'霜鬃战熊', icon:'🐻', tier:'epic', mod:{ spdPct:12, hpPct:10, defPct:5 }, src:'稀有精英: 霜喉巨熊（极低概率）' },
+    { key:'netherstorm_manaray', name:'星界法力鳐', icon:'🛸', tier:'legend', mod:{ spdPct:18, atkPct:9, mastery:10 }, src:'稀有精英: 法力怨灵欧洛斯（极低概率）' },
+    { key:'sholazar_lifewarden', name:'生命守望者', icon:'🌿', tier:'legend', mod:{ spdPct:18, hpPct:12, healBonus:8, vers:5 }, src:'稀有精英: 生命绽放巨像（极低概率）' },
     { key:'deathcharger', name:'死亡军马', icon:'🐴', tier:'epic', mod:{ spdPct:15, atkPct:5, leech:3 }, src:'斯坦索姆尾王低概率掉落' },
     { key:'midnight_steed', name:'午夜梦魇战马', icon:'🐎', tier:'epic', mod:{ spdPct:16, critdPct:6, vers:4 }, src:'卡拉赞低概率掉落' },
     { key:'azure_drake', name:'碧蓝幼龙', icon:'🐉', tier:'epic', mod:{ spdPct:16, mastery:8, atkPct:4 }, src:'魔环低概率掉落' },
@@ -815,11 +831,19 @@
     if (state.mode === 'world' && !mon?.isBoss) {
       const mapPools = {
         elwynn:'horse_chestnut',
+        redridge:'redridge_redwhelp',
         duskwood:'wolf_black',
+        wetlands:'wetlands_marshstrider',
         ashenvale:'stag_emerald',
+        stranglethorn:'st_bloodtiger',
         tanaris:'strider_sand',
-        burningsteppes:'drake_ember',
-        stormpeaks:'bear_frost',
+        searing:'searing_cinderhound',
+        burning:'drake_ember',
+        hellfire:'hellfire_felwalker',
+        shadowmoon:'shadowmoon_voidtalbuk',
+        storm:'bear_frost',
+        netherstorm:'netherstorm_manaray',
+        sholazar:'sholazar_lifewarden',
       };
       const mountKey = mapPools[state.currentMap];
       if (mountKey && Math.random() < 0.0006) mountGrant(mountKey);
