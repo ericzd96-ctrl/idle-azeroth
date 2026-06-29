@@ -29,6 +29,13 @@ const MOUNTS = [
   { key:'invincible',   name:'无敌座驾', icon:'🔥', tier:'legend', mod:{spdPct:20, atkPct:15, hpPct:15, leech:5}, src:'无尽塔 第 100 层' },
   { key:'mimiron',      name:'米米隆头颅',icon:'⚙️', tier:'legend', mod:{spdPct:20, hpPct:20, defPct:10, mastery:10}, src:'觉醒 25 阶' },
   { key:'ashes',        name:'灰烬使者', icon:'🦃', tier:'legend', mod:{spdPct:20, atkPct:15, critdPct:10, dropMult:10}, src:'无尽塔 第 200 层' },
+  { key:'twilight_drake_wb', name:'暮光灭世幼龙', icon:'🐲', tier:'legend', mod:{spdPct:20, atkPct:14, hpPct:12, mastery:8}, src:'世界Boss: 死亡之翼·灭世者(极低概率)' },
+  { key:'sulfuras_firehawk', name:'萨弗隆火鹰', icon:'🔥', tier:'legend', mod:{spdPct:20, atkPct:15, critdPct:10, mastery:6}, src:'世界Boss: 拉格纳罗斯·火焰之王(极低概率)' },
+  { key:'qiraji_mindscarab', name:'其拉心智甲虫', icon:'🪲', tier:'legend', mod:{spdPct:18, hpPct:14, vers:6, mastery:9}, src:'世界Boss: 克苏恩·疯狂之眼(极低概率)' },
+  { key:'yogg_dreambeast', name:'千喉梦魇兽', icon:'🧠', tier:'legend', mod:{spdPct:19, atkPct:10, hpPct:10, leech:5, mastery:9}, src:'世界Boss: 尤格萨隆·千喉之梦(极低概率)' },
+  { key:'alakir_stormdrake', name:'风暴王座幼龙', icon:'🌪️', tier:'legend', mod:{spdPct:22, atkPct:10, haste:7, mastery:8}, src:'世界Boss: 奥拉基尔·风暴王座(极低概率)' },
+  { key:'leishen_thundercloud', name:'雷霆帝王云端翔龙', icon:'⚡', tier:'legend', mod:{spdPct:21, atkPct:15, crit:4, mastery:10}, src:'世界Boss: 雷神·雷霆之王(极低概率)' },
+  { key:'argus_starbinder', name:'群星寂灭者', icon:'🌌', tier:'legend', mod:{spdPct:22, atkPct:16, hpPct:16, defPct:8, mastery:12}, src:'世界Boss: 阿古斯·寂灭者(极低概率)' },
   // 新增:接入 endgame 系统(大秘境/竞技场/巅峰)—— mod 只用 atk/hp/def/spd/mastery(crit/critd/leech/vers 会被 spd_tuning 从 MOUNTS 剥离)
   { key:'warbear',      name:'板甲战熊',   icon:'🐻', tier:'rare',   mod:{spdPct:12, hpPct:8, defPct:5},            src:'竞技场 大师段位' },
   { key:'felRaptor',    name:'魔誓迅猛龙', icon:'😈', tier:'epic',   mod:{spdPct:15, atkPct:10, mastery:6},          src:'大秘境 +8 通关' },
@@ -38,13 +45,30 @@ const MOUNTS = [
   { key:'eternalDragon',name:'永恒巨龙',   icon:'🐉', tier:'legend', mod:{spdPct:20, atkPct:15, hpPct:15, mastery:10},src:'巅峰等级 150' },
 ];
 
+const WORLD_BOSS_MOUNT_DROPS = {
+  deathwing:{ key:'twilight_drake_wb', chance:0.012 },
+  ragnaros:{ key:'sulfuras_firehawk', chance:0.012 },
+  cthun:{ key:'qiraji_mindscarab', chance:0.012 },
+  yogg_saron:{ key:'yogg_dreambeast', chance:0.011 },
+  alakir:{ key:'alakir_stormdrake', chance:0.011 },
+  lei_shen:{ key:'leishen_thundercloud', chance:0.010 },
+  argus_unmaker:{ key:'argus_starbinder', chance:0.008 },
+};
+if (typeof globalThis !== 'undefined') {
+  globalThis.MOUNTS = MOUNTS;
+  globalThis.WORLD_BOSS_MOUNT_DROPS = WORLD_BOSS_MOUNT_DROPS;
+}
+
 /* 坐骑收藏里程碑(拥有 N 只自动激活;mod 在 collectMountMod 直接加,不被 spd_tuning 剥离,
    故可用 critdPct 等;避免 spdPct(里程碑不在 walk 容器,不会被归一化)) */
 const MOUNT_MILESTONES = [
   { n:5,  mod:{ atkPct:3, hpPct:3 } },
   { n:10, mod:{ atkPct:5, hpPct:5, critdPct:8 } },
   { n:15, mod:{ atkPct:8, hpPct:8, critdPct:12, goldMult:10 } },
-  { n:18, mod:{ atkPct:12, hpPct:12, critdPct:15, dropMult:15 }, title:'坐骑大师' },   // 18 而非满20:单阵营账号只能得 1 个起始坐骑(另一阵营起始无其它来源),18 任何账号可达
+  { n:18, mod:{ atkPct:12, hpPct:12, critdPct:15, dropMult:15 }, title:'坐骑大师' },
+  { n:30, mod:{ atkPct:16, hpPct:16, critdPct:20, dropMult:20 }, title:'珍兽收藏家' },
+  { n:50, mod:{ atkPct:22, hpPct:22, defPct:8, mastery:12, dropMult:30 }, title:'百骑统御者' },
+  { n:75, mod:{ atkPct:30, hpPct:30, defPct:12, mastery:20, dropMult:45 }, title:'群星驭者' },
 ];
 
 const MOUNT_TIER = {
@@ -109,11 +133,13 @@ function mountOnTowerFloorClear(floor) {
   if (floor === 200) mountGrant('ashes');
 }
 
-function mountOnWorldBossKill() {
+function mountOnWorldBossKill(wbKey) {
   ensureMountState();
   const wbKills = (state.worldBoss && state.worldBoss.totalKilled) || 0;
   if (wbKills >= 50) mountGrant('shadowHawk');
   if (Math.random() < 0.03) mountGrant('kodo');
+  const bossDrop = WORLD_BOSS_MOUNT_DROPS[wbKey];
+  if (bossDrop && Math.random() < bossDrop.chance) mountGrant(bossDrop.key);
 }
 
 function mountOnDungeonBossKill() {

@@ -299,7 +299,7 @@ function onWorldBossKill(mon) {
   state.worldBoss.lastKill[key] = Date.now();
   state.worldBoss.totalKilled = (state.worldBoss.totalKilled||0) + 1;
   worldBossCheckKillMilestone();
-  if (typeof mountOnWorldBossKill==='function') mountOnWorldBossKill();
+  if (typeof mountOnWorldBossKill==='function') mountOnWorldBossKill(key);
   state.gem += wb.rewards?.gem || 0;
   if (typeof ensureMats==='function') ensureMats();
   state.essence += wb.rewards?.essence || 0;
@@ -653,6 +653,13 @@ function renderWorldBossSub() {
     if (wb.rewards?.honor) parts.push(`${wb.rewards.honor}🏅`);
     if (wb.rewards?.essence) parts.push(`${wb.rewards.essence}✨`);
     if (wb.rewards?.shards) parts.push(`${wb.rewards.shards}🧩碎片`);
+    const bossDrops = (typeof globalThis !== 'undefined' && globalThis.WORLD_BOSS_MOUNT_DROPS) || (typeof WORLD_BOSS_MOUNT_DROPS !== 'undefined' ? WORLD_BOSS_MOUNT_DROPS : null);
+    const mounts = (typeof globalThis !== 'undefined' && globalThis.MOUNTS) || (typeof MOUNTS !== 'undefined' ? MOUNTS : null);
+    if (bossDrops && mounts) {
+      const drop = bossDrops[wb.key];
+      const mount = drop ? mounts.find(m => m.key === drop.key) : null;
+      if (mount) parts.push(`${mount.icon}${mount.name}(${(drop.chance * 100).toFixed(1)}%)`);
+    }
     return parts.join(' ');
   };
 
