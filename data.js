@@ -1187,6 +1187,46 @@ const MAPS = [
       passive:{dodgeChance:0.25,critChance:0.25,dmgReduction:0.15,atkBonus:0.15,stunChance:0.1,
       tricks: [{name:"再生",icon:"💚",desc:"立即回复25%最大生命",healPct:0.25},{name:"疾风",icon:"💨",desc:"接下来5秒攻速提升60%",spdBuff:5},{name:"致命连击",icon:"💥",desc:"下一次攻击造成双倍且必定暴击",nextDouble:1,critBuff:5}] },
       skills:[{name:"灵魂撕裂",icon:"🦁",desc:"6倍伤害",type:"dmg",mul:6,castTime:2},{name:"幽灵步",icon:"👻",desc:"7倍伤害",type:"dmg",mul:7,castTime:2.5},{name:"兽王之怒",icon:"💢",desc:"8倍范围伤害",type:"dmg",mul:8,castTime:3},{name:"洛卡纳哈之灵",icon:"✨",desc:"8倍伤害+吸血25%",type:"dmg",mul:8,lifeSteal:0.25,castTime:3.5},{name:"灵魂风暴",icon:"🌪️",desc:"9倍范围伤害",type:"dmg",mul:9,castTime:4}] } },
+  { key:'waking', name:'觉醒海岸', icon:'🐲', faction:'龙岛', lvlRange:[80,82],
+    desc:'巨龙群岛的熔火海岸,黑龙遗迹与原始元素在此重新苏醒',
+    sub:[
+      { name:'黑曜壁垒', lvl:[80,81], mobs:'🐉黑曜幼龙|🔥熔火元素|🪨龙鳞守卫|🦎岩浆蜥蜴' },
+      { name:'狂风火山口', lvl:[81,82], mobs:'🌋熔岩喷涌者|🐲原始龙裔|🔥火誓术士|🦴焦骨猎手' },
+    ],
+    boss:{ name:'黑曜裂翼者', emoji:'🐲', lvl:84, desc:'盘踞在觉醒海岸火山口的黑龙叛徒',
+      passive:{atkBonus:0.28,critChance:0.22,dmgReduction:0.18,dodgeChance:0.12,stunChance:0.12,
+      tricks:[{name:"熔岩甲壳",icon:"🌋",desc:"回复20%生命且接下来5秒防御提升50%",healPct:0.2,defBuff:5},{name:"龙翼疾风",icon:"🪽",desc:"接下来5秒攻速提升60%",spdBuff:5},{name:"灼热处刑",icon:"🔥",desc:"下一次攻击造成双倍且必定暴击",nextDouble:1,critBuff:5}] },
+      skills:[{name:'黑曜龙息',icon:'🐲',desc:'8倍火焰伤害+灼烧',type:'dmg',mul:8,dot:true,castTime:2.6,weaken:true},{name:'熔火扫尾',icon:'🌋',desc:'9倍范围伤害+破甲',type:'dmg',mul:9,aoe:true,sunder:true,castTime:3.4},{name:'裂翼俯冲',icon:'🪽',desc:'9倍伤害+流血',type:'dmg',mul:9,bleed:true,brittle:true,castTime:3.2},{name:'黑龙怒焰',icon:'🔥',desc:'10倍范围暗影烈焰',type:'dmg',mul:10,aoe:true,dot:true,fear:true,castTime:4.2}] } },
+  { key:'ohnahran', name:'欧恩哈拉平原', icon:'🌾', faction:'龙岛', lvlRange:[80,84],
+    desc:'半人马氏族驰骋的风暴草原,欧恩哈拉的风回荡在猎场之上',
+    sub:[
+      { name:'马鲁凯营地', lvl:[80,82], mobs:'🏹半人马射手|🐎草原战马|🦅风羽鹰|🌪️风暴灵' },
+      { name:'风暴狩猎场', lvl:[82,84], mobs:'⚡雷角兽|🏹诺库德猎手|🌩️风暴召唤者|🦬草原巨兽' },
+    ],
+    boss:{ name:'风誓可汗阿拉塔', emoji:'🏹', lvl:86, desc:'被风暴誓约腐化的诺库德可汗',
+      passive:{atkBonus:0.3,critChance:0.25,dmgReduction:0.17,dodgeChance:0.16,stunChance:0.14,
+      tricks:[{name:"疾风",icon:"💨",desc:"接下来5秒攻速提升60%",spdBuff:5},{name:"致命专注",icon:"🎯",desc:"接下来5秒必定暴击",critBuff:5},{name:"战斗狂怒",icon:"🔥",desc:"接下来5秒攻击+40%且吸血15%",atkBuff:5,leechBuff:5}] },
+      skills:[{name:'雷矛齐射',icon:'⚡',desc:'8倍自然伤害+沉默',type:'dmg',mul:8,silence:1800,castTime:2.5},{name:'草原合围',icon:'🏹',desc:'9倍范围伤害+流血',type:'dmg',mul:9,aoe:true,bleed:true,castTime:3.3},{name:'风暴践踏',icon:'🌩️',desc:'9倍范围伤害+眩晕',type:'dmg',mul:9,aoe:true,stun:true,castTime:3.6},{name:'可汗终令',icon:'👑',desc:'10倍伤害+恐惧',type:'dmg',mul:10,fear:true,brittle:true,castTime:4.1}] } },
+  { key:'azure_span', name:'碧蓝林海', icon:'💠', faction:'龙岛', lvlRange:[80,86],
+    desc:'蓝龙军团与海象人共同守护的冰雪林海,魔网裂隙在深处闪烁',
+    sub:[
+      { name:'伊斯卡拉海湾', lvl:[80,83], mobs:'🐟海象人猎手|❄️冰壳元素|🦭海湾海豹|🧊冻鳞兽' },
+      { name:'碧蓝档案馆', lvl:[83,86], mobs:'💠奥术构装体|🐉蓝龙守卫|🌀魔网怨灵|❄️霜脉法师' },
+    ],
+    boss:{ name:'魔网吞噬者赛洛斯', emoji:'💠', lvl:88, desc:'在碧蓝档案馆吞食失控魔网的奥术巨兽',
+      passive:{atkBonus:0.32,critChance:0.24,dmgReduction:0.2,dodgeChance:0.14,leech:0.08,
+      tricks:[{name:"奥术护壁",icon:"🔮",desc:"回复20%生命且接下来5秒防御+50%",healPct:0.2,defBuff:5},{name:"法力过载",icon:"💠",desc:"接下来5秒攻击力提升50%",atkBuff:5},{name:"瞬发裂解",icon:"⚡",desc:"下一次攻击造成两次伤害",nextDouble:2}] },
+      skills:[{name:'魔网抽离',icon:'💠',desc:'8倍奥术伤害+吸取资源',type:'dmg',mul:8,manaDrain:70,weaken:true,castTime:2.6},{name:'冰蓝坍缩',icon:'🧊',desc:'9倍范围伤害+冻结',type:'dmg',mul:9,aoe:true,freeze:1600,castTime:3.6},{name:'奥能镜像',icon:'🌀',desc:'9倍伤害+镜像错位',type:'dmg',mul:9,mirror:true,silence:1800,castTime:3.5},{name:'档案馆终曲',icon:'🌌',desc:'10倍范围奥术伤害',type:'dmg',mul:10,aoe:true,brittle:true,manaDrain:85,castTime:4.4}] } },
+  { key:'thaldraszus', name:'索德拉苏斯', icon:'⏳', faction:'龙岛', lvlRange:[80,88],
+    desc:'青铜龙与泰坦设施环绕的时间之都,群星与时流在此交汇',
+    sub:[
+      { name:'瓦德拉肯高塔', lvl:[80,84], mobs:'🐉龙裔守卫|⏳青铜时卫|✨星界学徒|🔮奥术看守' },
+      { name:'时光汇流', lvl:[84,88], mobs:'⏳时空裂隙|🌌星界畸体|🐲永恒龙裔|⚙️泰坦机兵' },
+    ],
+    boss:{ name:'永恒时誓者克罗诺斯', emoji:'⏳', lvl:90, desc:'试图重写龙岛命运的永恒龙裔指挥官',
+      passive:{atkBonus:0.35,critChance:0.28,dmgReduction:0.22,dodgeChance:0.16,leech:0.1,stunChance:0.16,
+      tricks:[{name:"时间回卷",icon:"⏳",desc:"立即回复25%最大生命",healPct:0.25},{name:"静止力场",icon:"🛡️",desc:"接下来5秒防御提升50%",defBuff:5},{name:"命运重击",icon:"💥",desc:"下一次攻击造成双倍且必定暴击",nextDouble:1,critBuff:5}] },
+      skills:[{name:'时流断裂',icon:'⏳',desc:'9倍奥术伤害+沉默',type:'dmg',mul:9,silence:2000,manaDrain:75,castTime:2.8},{name:'永恒龙息',icon:'🐲',desc:'10倍范围伤害+灼烧',type:'dmg',mul:10,aoe:true,dot:true,weaken:true,castTime:3.8},{name:'命运枷锁',icon:'🔗',desc:'10倍伤害+灵魂链接',type:'dmg',mul:10,soulLink:true,fear:true,castTime:3.6},{name:'群星归零',icon:'🌌',desc:'11倍范围终局伤害',type:'dmg',mul:11,aoe:true,decay2:true,brittle:true,castTime:4.8}] } },
 ];
 
 const RARE_ELITE_SKILLSETS = {
@@ -1349,14 +1389,19 @@ const MAP_RARE_ELITE_SEEDS = {
   netherstorm:{ name:'星涌扭曲体', emoji:'🌀', theme:'arcane', desc:'由奥术风暴凝聚出的失衡实体。' },
   howling:{ name:'嚎风亡枪手', emoji:'❄️', theme:'frost', desc:'乘着风雪袭来的维库亡魂射手。' },
   grizzly:{ name:'裂掌熊王', emoji:'🐻', theme:'beast', desc:'灰熊丘陵最凶恶的远古巨熊。' },
-  sholazar:{ name:'晶刺暴喉兽', emoji:'🦖', theme:'nature', desc:'被泰坦实验残留能量强化的顶级巨兽。' }
+  sholazar:{ name:'晶刺暴喉兽', emoji:'🦖', theme:'nature', desc:'被泰坦实验残留能量强化的顶级巨兽。' },
+  waking:{ name:'熔火黑曜幼龙', emoji:'🐲', theme:'dragon', desc:'从觉醒海岸火山缝隙中苏醒的黑曜幼龙。' },
+  ohnahran:{ name:'风誓雷蹄', emoji:'⚡', theme:'storm', desc:'在欧恩哈拉风暴中奔袭的雷蹄巨兽。' },
+  azure_span:{ name:'魔网霜鳞', emoji:'💠', theme:'arcane', desc:'被碧蓝魔网改造的霜鳞猎手。' },
+  thaldraszus:{ name:'永恒裂时者', emoji:'⏳', theme:'arcane', desc:'在时光汇流中反复出现的永恒龙裔刺客。' }
 };
 
 function buildRareElites() {
   return MAPS.map(map => {
     const seed = MAP_RARE_ELITE_SEEDS[map.key] || { name:`${map.name}稀有精英`, emoji:'⭐', theme:'brute', desc:`徘徊于${map.name}的危险目标。` };
     const profile = JSON.parse(JSON.stringify(RARE_ELITE_SKILLSETS[seed.theme] || RARE_ELITE_SKILLSETS.brute));
-    const lvl = Math.max(map.lvlRange[0] + 1, Math.min(79, map.lvlRange[1] + 2));
+    const rareEliteCap = ((typeof MAX_LEVEL === 'number') ? MAX_LEVEL : 80) + 8;
+    const lvl = Math.max(map.lvlRange[0] + 1, Math.min(rareEliteCap, map.lvlRange[1] + 2));
     return {
       key:`rare_${map.key}`,
       mapKey:map.key,
