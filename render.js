@@ -2343,6 +2343,7 @@ function renderMap() {
           <div class="muted" style="font-size:11px;text-align:right">${rareSeen ? '已现身' : `野外约 ${Math.round((rare.spawnChance || 0.025) * 1000) / 10}% 遭遇`}</div>
         </div>`;
     }
+    if (typeof renderZoneBounty === 'function') html += renderZoneBounty(m);
     div.innerHTML = html;
     // BOSS名字hover显示技能/被动
     const nameEl = div.querySelector('.boss-name-tip');

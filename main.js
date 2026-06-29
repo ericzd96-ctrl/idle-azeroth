@@ -356,6 +356,7 @@ function setupDelegation() {
     if (!btn) return;
     if (btn.dataset.action === 'subzone') switchSubzone(btn.dataset.map, parseInt(btn.dataset.sub));
     else if (btn.dataset.action === 'boss') challengeBoss(btn.dataset.map);
+    else if (btn.dataset.action === 'claimzonebounty' && typeof claimZoneBounty === 'function') claimZoneBounty(btn.dataset.map);
   });
 
   // 副本

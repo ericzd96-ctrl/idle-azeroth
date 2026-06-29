@@ -1344,6 +1344,51 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
 .boss-info { font-size: 11px; }
 .boss-info .bname { color: var(--legend); font-weight: bold; }
 
+.zone-bounty {
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(10, 13, 24, .28);
+}
+.zone-bounty.ready {
+  border-color: rgba(251, 191, 36, .72);
+  box-shadow: inset 0 0 0 1px rgba(251, 191, 36, .10);
+}
+.zone-bounty.claimed {
+  opacity: .62;
+}
+.zone-bounty-title,
+.zone-bounty-step-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.zone-bounty-title {
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+.zone-bounty-title b {
+  color: var(--gold);
+}
+.zone-bounty-step {
+  margin-bottom: 5px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.zone-bounty-step.done {
+  color: #86efac;
+}
+.zone-bounty-step .bar {
+  height: 6px;
+  margin-top: 2px;
+}
+.zone-bounty button {
+  width: 100%;
+  margin-top: 3px;
+}
+
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-thumb { background: #2a3050; border-radius: 3px; }
 

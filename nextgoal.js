@@ -63,6 +63,10 @@ function collectNextGoals() {
   if (typeof questHasClaimable === 'function' && questHasClaimable())
     goals.push({ prio: 75, icon: '📋', text: '有任务已完成,去任务板领奖', tab: 'quests' });
 
+  // 区域悬赏可领取
+  if (typeof zoneBountyHasClaimable === 'function' && zoneBountyHasClaimable())
+    goals.push({ prio: 72, icon: '🗺️', text: '有区域悬赏已完成,去地图页领取补给', tab: 'map' });
+
   // 每周宝库可领(高优先,限时)
   if (typeof vaultHasReward === 'function' && vaultHasReward())
     goals.push({ prio: 88, icon: '🎁', text: '每周宝库已就绪,去挑选 1 件传说奖励', tab: 'vault' });
