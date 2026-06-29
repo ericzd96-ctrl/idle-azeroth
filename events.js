@@ -344,6 +344,7 @@ function onWorldBossKill(mon) {
   }
 
   leaveWorldBoss();
+  if (typeof progressionCheckAch === 'function') progressionCheckAch();
   markDirty('events','hero','inventory','map');
 }
 
@@ -371,6 +372,7 @@ function onRareEliteKill(mon) {
   seasonAddPoints(80 + rare.lvl * 2, '稀有精英');
   log(`⭐ 击败稀有精英 ${rare.name}! +${rare.rewards.gem || 0}💎 +${rare.rewards.essence || 0}✨`, 'epic');
   spawnMonster();
+  if (typeof progressionCheckAch === 'function') progressionCheckAch();
   markDirty('events', 'inventory', 'hero', 'map');
 }
 

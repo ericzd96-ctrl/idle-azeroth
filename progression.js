@@ -13,6 +13,57 @@ function accLvl() {
   return characters.reduce((m,c)=>Math.max(m, c.hero?.lvl||1), state?.hero?.lvl||1);
 }
 function accEns() { if (!account) account = defaultAccount(); return account; }
+function accountCharacterStates() {
+  const list = [];
+  const seen = new Set();
+  const add = c => {
+    if (!c || seen.has(c)) return;
+    seen.add(c);
+    list.push(c);
+  };
+  const activeIdx = typeof activeCharIndex === 'number' ? activeCharIndex : -1;
+  if (Array.isArray(characters)) characters.forEach((c, i) => { if (i !== activeIdx) add(c); });
+  add(state);
+  return list;
+}
+function accountWorldBossTotalKills() {
+  return accountCharacterStates().reduce((sum, c) => sum + ((c.worldBoss && c.worldBoss.totalKilled) || 0), 0);
+}
+function accountWorldBossKilledKeys() {
+  const keys = new Set();
+  for (const c of accountCharacterStates()) {
+    const wb = c.worldBoss || {};
+    for (const key of Object.keys(wb.lastKill || {})) if (wb.lastKill[key]) keys.add(key);
+    for (const key of Object.keys(wb.stageClears || {})) if (wb.stageClears[key]) keys.add(key);
+  }
+  return keys;
+}
+function accountRareEliteTotalKills() {
+  let total = 0;
+  for (const c of accountCharacterStates()) {
+    for (const n of Object.values(c.worldBoss?.rareKills || {})) total += n || 0;
+  }
+  return total;
+}
+function accountRareEliteUniqueKills() {
+  const keys = new Set();
+  for (const c of accountCharacterStates()) {
+    for (const [key, n] of Object.entries(c.worldBoss?.rareKills || {})) if ((n || 0) > 0) keys.add(key);
+  }
+  return keys.size;
+}
+function accountMountOwnedCount() {
+  const acc = accEns();
+  return Object.values(acc.mounts || {}).filter(m => m && m.obtained).length;
+}
+function accountWorldBossMountCount() {
+  const fallbackKeys = ['twilight_drake_wb','sulfuras_firehawk','qiraji_mindscarab','yogg_dreambeast','alakir_stormdrake','leishen_thundercloud','argus_starbinder'];
+  const drops = (typeof globalThis !== 'undefined' && globalThis.WORLD_BOSS_MOUNT_DROPS) || null;
+  const keys = drops ? Object.values(drops).map(d => d.key) : fallbackKeys;
+  const acc = accEns();
+  return keys.filter(key => acc.mounts?.[key]?.obtained).length;
+}
+const APEX_WORLD_BOSS_KEYS = ['deathwing','ragnaros','cthun','yogg_saron','alakir','lei_shen','argus_unmaker'];
 
 function ensureUnlockedTitles() {
   const acc = accEns();
@@ -187,6 +238,32 @@ const ACHIEVEMENTS = [
     cond:()=>({cur:accEns().dungeonClearsTotal||0,goal:15}), reward:{gold:15000,gem:50,stat:{leech:3,atkPct:2}} },
   { key:'dg30', name:'副本宗师',  cat:'副本', icon:'🏯',
     cond:()=>({cur:accEns().dungeonClearsTotal||0,goal:30}), reward:{gold:80000,gem:150,title:'秘境征服者',stat:{leech:5,atkPct:3,hpPct:3}} },
+
+  // 世界首领/稀有精英
+  { key:'wb10', name:'巨物猎手', cat:'世界首领', icon:'🐲',
+    cond:()=>({cur:accountWorldBossTotalKills(),goal:10}), reward:{gold:50000,gem:80,honor:800,stat:{hpPct:2}} },
+  { key:'wb50', name:'灭世者试炼', cat:'世界首领', icon:'🌋',
+    cond:()=>({cur:accountWorldBossTotalKills(),goal:50}), reward:{gold:180000,gem:180,honor:2400,stat:{atkPct:3,hpPct:3}} },
+  { key:'wb150', name:'终局讨伐军', cat:'世界首领', icon:'🌌',
+    cond:()=>({cur:accountWorldBossTotalKills(),goal:150}), reward:{gold:600000,gem:420,honor:7000,title:'终局讨伐军',stat:{atkPct:5,hpPct:5,mastery:8}} },
+  { key:'wb_apex7', name:'群星巡礼', cat:'世界首领', icon:'✨',
+    cond:()=>({cur:APEX_WORLD_BOSS_KEYS.filter(k => accountWorldBossKilledKeys().has(k)).length,goal:APEX_WORLD_BOSS_KEYS.length}), reward:{gold:900000,gem:520,honor:9000,title:'群星巡礼者',stat:{atkPct:6,hpPct:6,defPct:4,mastery:10}} },
+  { key:'rare20', name:'稀有追踪者', cat:'世界首领', icon:'🎯',
+    cond:()=>({cur:accountRareEliteTotalKills(),goal:20}), reward:{gold:90000,gem:120,honor:1200,stat:{dropMult:5}} },
+  { key:'rare10u', name:'精英猎名册', cat:'世界首领', icon:'📜',
+    cond:()=>({cur:accountRareEliteUniqueKills(),goal:10}), reward:{gold:220000,gem:220,honor:2800,title:'精英猎名册',stat:{atkPct:3,critdPct:8,dropMult:8}} },
+
+  // 坐骑收藏
+  { key:'mount10', name:'缰绳收藏', cat:'坐骑', icon:'🐎',
+    cond:()=>({cur:accountMountOwnedCount(),goal:10}), reward:{gold:40000,gem:80,stat:{goldMult:5}} },
+  { key:'mount30', name:'珍兽马厩', cat:'坐骑', icon:'🏇',
+    cond:()=>({cur:accountMountOwnedCount(),goal:30}), reward:{gold:180000,gem:200,title:'珍兽马厩主',stat:{atkPct:3,hpPct:3,dropMult:8}} },
+  { key:'mount50', name:'百骑陈列馆', cat:'坐骑', icon:'👑',
+    cond:()=>({cur:accountMountOwnedCount(),goal:50}), reward:{gold:520000,gem:420,title:'百骑陈列馆主',stat:{atkPct:5,hpPct:5,mastery:8,dropMult:12}} },
+  { key:'wbmount3', name:'灭世缰绳', cat:'坐骑', icon:'🌠',
+    cond:()=>({cur:accountWorldBossMountCount(),goal:3}), reward:{gold:260000,gem:260,honor:3200,stat:{dropMult:10,mastery:6}} },
+  { key:'wbmount7', name:'群星坐骑收藏家', cat:'坐骑', icon:'🌌',
+    cond:()=>({cur:accountWorldBossMountCount(),goal:7}), reward:{gold:1000000,gem:800,honor:12000,title:'群星驭者',stat:{atkPct:8,hpPct:8,mastery:15,dropMult:20}} },
 
   // 精炼/装备打造
   { key:'gem10',  name:'珠宝学徒',   cat:'精炼', icon:'💎',

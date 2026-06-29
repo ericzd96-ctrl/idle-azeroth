@@ -101,6 +101,7 @@ function mountGrant(key) {
   // 第一只时自动出战
   if (!state.activeMount) state.activeMount = key;
   if (typeof mountCheckMilestoneTitle === 'function') mountCheckMilestoneTitle();
+  if (typeof progressionCheckAch === 'function') progressionCheckAch();
   recomputeStats();
   markDirty('mount', 'hero');
   return true;
