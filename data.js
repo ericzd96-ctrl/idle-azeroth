@@ -3750,6 +3750,60 @@ const WORLD_BOSS_SKILLSETS = {
       {name:'吞世之眼', icon:'🌌', desc:'15倍暗影伤害', type:'dmg', mul:15, castTime:4.2, manaDrain:80, silence:1800, fear:1600},
       {name:'疯狂孵化', icon:'🪲', desc:'16倍范围伤害', type:'dmg', mul:16, castTime:4.8, aoe:true, plague:true, mirror:true, soulLink:true}
     ]
+  },
+  yogg_saron: {
+    passive:{ dmgReduction:0.5, critChance:0.28, dodgeChance:0.18, atkBonus:0.3, leech:0.1, stunChance:0.15 },
+    supportCount:5,
+    skills:[
+      {name:'疯狂低语', icon:'🧠', desc:'14倍暗影伤害', type:'dmg', mul:14, castTime:2.5, fear:2200, weaken:true, manaDrain:75},
+      {name:'梦魇凝视', icon:'👁️', desc:'14.5倍伤害', type:'dmg', mul:14.5, castTime:3.1, silence:2100, mirror:true, decay2:true},
+      {name:'千喉回响', icon:'🔊', desc:'15倍范围伤害', type:'dmg', mul:15, castTime:3.7, aoe:true, soulLink:true, plague:true},
+      {name:'理智崩塌', icon:'💫', desc:'16倍暗影伤害', type:'dmg', mul:16, castTime:4.2, fear:1800, soulDrain:true, brittle:true},
+      {name:'虚空孵化', icon:'🕳️', desc:'召唤2个虚空爪牙并获得护盾', type:'support', cd:18, castTime:3.2, summonCount:2, summonTheme:'void', shieldPct:0.16},
+      {name:'无眠梦境', icon:'🌌', desc:'17倍范围伤害', type:'dmg', mul:17, castTime:5, aoe:true, mirror:true, soulLink:true, silence:1800}
+    ]
+  },
+  alakir: {
+    passive:{ dmgReduction:0.42, critChance:0.34, dodgeChance:0.22, atkBonus:0.42, leech:0.08, stunChance:0.2 },
+    supportCount:4,
+    atkInterval:1040,
+    instantCastChance:0.18,
+    skills:[
+      {name:'风暴切割', icon:'🌪️', desc:'14倍自然伤害', type:'dmg', mul:14, castTime:2.1, silence:1800, cripple:true},
+      {name:'闪电连锁', icon:'⚡', desc:'15倍范围伤害', type:'dmg', mul:15, castTime:3, aoe:true, stun:1400, manaDrain:70},
+      {name:'气旋护壁', icon:'🛡️', desc:'获得护盾，提升攻速并短暂减伤', type:'support', cd:15, castTime:2.4, shieldPct:0.14, spdBuffSecs:8, spdBuffPct:30, drBuffSecs:6, drBuffPct:0.16},
+      {name:'雷云崩落', icon:'⛈️', desc:'15.5倍范围伤害', type:'dmg', mul:15.5, castTime:3.8, aoe:true, weaken:true, freeze:1200},
+      {name:'风暴囚笼', icon:'🔗', desc:'14.8倍伤害', type:'dmg', mul:14.8, castTime:3.2, cripple:true, silence:2000, brittle:true},
+      {name:'天穹处决', icon:'🌩️', desc:'17倍自然伤害', type:'dmg', mul:17, castTime:4.6, stun:1800, frenzy:true, weaken:true}
+    ]
+  },
+  lei_shen: {
+    passive:{ dmgReduction:0.49, critChance:0.32, dodgeChance:0.16, atkBonus:0.44, leech:0.1, stunChance:0.22 },
+    supportCount:5,
+    atkInterval:1120,
+    instantCastChance:0.14,
+    skills:[
+      {name:'静电震击', icon:'⚡', desc:'15倍自然伤害', type:'dmg', mul:15, castTime:2.2, stun:1600, brittle:true},
+      {name:'雷霆鞭笞', icon:'🌩️', desc:'15.5倍范围伤害', type:'dmg', mul:15.5, castTime:3.2, aoe:true, silence:1900, weaken:true},
+      {name:'超载导管', icon:'🔋', desc:'获得护盾并提升攻击', type:'support', cd:16, castTime:2.7, shieldPct:0.18, atkBuffSecs:8, atkBuffPct:32, drBuffSecs:8, drBuffPct:0.16},
+      {name:'处刑雷枪', icon:'🔱', desc:'16倍伤害', type:'dmg', mul:16, castTime:3.6, sunder:true, manaDrain:85, alwaysCrit:true},
+      {name:'暴君号令', icon:'👑', desc:'召唤2名魔古守卫', type:'support', cd:20, castTime:3, summonCount:2, summonTheme:'soldier', atkBuffSecs:6, atkBuffPct:24},
+      {name:'雷神终裁', icon:'⚡', desc:'18倍范围伤害', type:'dmg', mul:18, castTime:5.1, aoe:true, stun:1800, silence:1800, decay2:true}
+    ]
+  },
+  argus_unmaker: {
+    passive:{ dmgReduction:0.55, critChance:0.34, dodgeChance:0.18, atkBonus:0.48, leech:0.14, stunChance:0.2 },
+    supportCount:6,
+    atkInterval:1100,
+    instantCastChance:0.16,
+    skills:[
+      {name:'寂灭镰斩', icon:'🌌', desc:'16倍暗影伤害', type:'dmg', mul:16, castTime:2.7, soulDrain:true, cripple:true, brittle:true},
+      {name:'群星熄灭', icon:'✨', desc:'17倍范围伤害', type:'dmg', mul:17, castTime:4, aoe:true, silence:2200, decay2:true},
+      {name:'泰坦哀歌', icon:'🔮', desc:'获得护盾、减伤并恢复生命', type:'support', cd:18, castTime:3.2, healPct:0.10, shieldPct:0.22, drBuffSecs:8, drBuffPct:0.22},
+      {name:'灵魂终末', icon:'💀', desc:'16.5倍暗影伤害', type:'dmg', mul:16.5, castTime:3.5, fear:2200, soulLink:true, manaDrain:90},
+      {name:'湮灭裂隙', icon:'🕳️', desc:'召唤2个虚空爪牙并提升攻击', type:'support', cd:20, castTime:3.4, summonCount:2, summonTheme:'void', atkBuffSecs:7, atkBuffPct:26},
+      {name:'万物归零', icon:'💥', desc:'19倍范围伤害', type:'dmg', mul:19, castTime:5.4, aoe:true, soulDrain:true, silence:2200, fear:1800, brittle:true}
+    ]
   }
 };
 const RAID_EXTRA_BOSSES = {
@@ -4503,6 +4557,10 @@ function normalizeWorldBossSkillsets(){
     deathwing:{ name:'死亡之翼·灭世者', lvl:85, final:true },
     ragnaros:{ name:'拉格纳罗斯·火焰之王', lvl:85, final:true },
     cthun:{ name:'克苏恩·疯狂之眼', lvl:85, final:true },
+    yogg_saron:{ name:'尤格萨隆·千喉之梦', lvl:86, final:true },
+    alakir:{ name:'奥拉基尔·风暴王座', lvl:86, final:true },
+    lei_shen:{ name:'雷神·雷霆之王', lvl:88, final:true },
+    argus_unmaker:{ name:'阿古斯·寂灭者', lvl:90, final:true },
   };
   for(const [key, boss] of Object.entries(WORLD_BOSS_SKILLSETS)){
     const info = meta[key] || { name:key, lvl:60, final:false };

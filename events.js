@@ -1,7 +1,7 @@
 /* =========================================================
    events.js — 世界Boss / 日常任务 / 赛季 三合一
    ----------------------------------------------------------
-   - 世界Boss: 3只巨型怪物,8h CD,掉橙装碎片+精华
+   - 世界Boss: 阶段守关 + 终局巨型怪物,8h CD,掉橙装碎片+精华
    - 日常: 每日3条随机任务,完成给资源,7连解周宝箱
    - 赛季: 14天一赛季,从战斗中累计积分,段位结算给永久属性+称号
    ========================================================= */
@@ -38,6 +38,22 @@ const WORLD_BOSSES = [
     desc:'希利苏斯旧神低语的本体，拖得越久越容易被机制碾碎。',
     hpMul:46, atkMul:5.1, defMul:4.1, cdHours:8,
     rewards:{ gold:86000, gem:160, honor:4600, essence:40, shards:12 } },
+  { key:'yogg_saron', name:'尤格萨隆·千喉之梦', emoji:'🧠', lvl:86, minLvl:80, color:'#8b5cf6',
+    desc:'奥杜尔深处的梦魇低语，会用恐惧、镜像与灵魂链接拖垮队伍。',
+    hpMul:49, atkMul:5.35, defMul:4.25, cdHours:8,
+    rewards:{ gold:94000, gem:170, honor:5000, essence:48, shards:12 } },
+  { key:'alakir', name:'奥拉基尔·风暴王座', emoji:'🌪️', lvl:86, minLvl:80, color:'#06b6d4',
+    desc:'元素位面的风暴君王，攻速极快，擅长打断与连锁压制。',
+    hpMul:44, atkMul:5.75, defMul:3.85, cdHours:8,
+    rewards:{ gold:98000, gem:175, honor:5200, essence:50, shards:13 } },
+  { key:'lei_shen', name:'雷神·雷霆之王', emoji:'⚡', lvl:88, minLvl:80, color:'#eab308',
+    desc:'魔古帝国的暴君归来，闪电、沉默与处刑会连续考验爆发窗口。',
+    hpMul:52, atkMul:5.9, defMul:4.4, cdHours:8,
+    rewards:{ gold:112000, gem:195, honor:5900, essence:58, shards:15 } },
+  { key:'argus_unmaker', name:'阿古斯·寂灭者', emoji:'🌌', lvl:90, minLvl:80, color:'#6366f1',
+    desc:'群星尽头的终极试炼，拥有极高耐久与多段压制机制。',
+    hpMul:61, atkMul:6.25, defMul:4.95, cdHours:8,
+    rewards:{ gold:150000, gem:260, honor:8200, essence:82, shards:22 } },
 ];
 for (const wb of WORLD_BOSSES) {
   const profile = (typeof WORLD_BOSS_SKILLSETS === 'object' && WORLD_BOSS_SKILLSETS[wb.key]) || null;
@@ -53,6 +69,8 @@ const WBOSS_KILL_MILESTONES = [
   { n:30,  reward:{ gem:120, essence:80,  shards:10 }, title:'屠龙者' },
   { n:60,  reward:{ gem:300, essence:150, shards:20 }, title:'世界Boss征服者' },
   { n:100, reward:{ gem:600, essence:300, shards:30 } },
+  { n:150, reward:{ gem:900, essence:450, shards:45 }, title:'终局讨伐者' },
+  { n:250, reward:{ gem:1600, essence:800, shards:80 }, title:'群星征服者' },
 ];
 function worldBossCheckKillMilestone() {
   if (!state.worldBoss.killMs) state.worldBoss.killMs = {};
