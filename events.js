@@ -54,6 +54,10 @@ const WORLD_BOSSES = [
     desc:'群星尽头的终极试炼，拥有极高耐久与多段压制机制。',
     hpMul:61, atkMul:6.25, defMul:4.95, cdHours:8,
     rewards:{ gold:150000, gem:260, honor:8200, essence:82, shards:22 } },
+  { key:'raszageth_storm', name:'莱萨杰丝·风暴化身', emoji:'🌩️', lvl:92, minLvl:80, color:'#22d3ee',
+    desc:'从龙岛风暴中再度醒来的原始化身，用雷霆与飓风撕开守护者的阵线。',
+    hpMul:66, atkMul:6.55, defMul:5.1, cdHours:8,
+    rewards:{ gold:170000, gem:290, honor:9000, essence:92, shards:25 } },
 ];
 for (const wb of WORLD_BOSSES) {
   const profile = (typeof WORLD_BOSS_SKILLSETS === 'object' && WORLD_BOSS_SKILLSETS[wb.key]) || null;

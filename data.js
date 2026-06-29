@@ -3849,6 +3849,20 @@ const WORLD_BOSS_SKILLSETS = {
       {name:'湮灭裂隙', icon:'🕳️', desc:'召唤2个虚空爪牙并提升攻击', type:'support', cd:20, castTime:3.4, summonCount:2, summonTheme:'void', atkBuffSecs:7, atkBuffPct:26},
       {name:'万物归零', icon:'💥', desc:'19倍范围伤害', type:'dmg', mul:19, castTime:5.4, aoe:true, soulDrain:true, silence:2200, fear:1800, brittle:true}
     ]
+  },
+  raszageth_storm: {
+    passive:{ dmgReduction:0.56, critChance:0.36, dodgeChance:0.2, atkBonus:0.5, leech:0.1, stunChance:0.24 },
+    supportCount:6,
+    atkInterval:1040,
+    instantCastChance:0.18,
+    skills:[
+      {name:'裂空雷爪', icon:'⚡', desc:'16.5倍自然伤害，眩晕并撕裂防御', type:'dmg', mul:16.5, castTime:2.4, stun:1800, sunder:true, brittle:true},
+      {name:'原始飓风', icon:'🌪️', desc:'17倍范围伤害，减速并沉默', type:'dmg', mul:17, castTime:3.6, aoe:true, slow:true, silence:2200, weaken:true},
+      {name:'风暴汇聚', icon:'🌩️', desc:'获得护盾，提升攻速并短暂减伤', type:'support', cd:17, castTime:2.8, shieldPct:0.2, spdBuffSecs:8, spdBuffPct:36, drBuffSecs:8, drBuffPct:0.2},
+      {name:'雷霆牢笼', icon:'🔗', desc:'16.8倍伤害，吸取资源并灵魂链接', type:'dmg', mul:16.8, castTime:3.4, manaDrain:95, soulLink:true, cripple:true},
+      {name:'暴风唤醒', icon:'🪽', desc:'召唤2名风暴元素并提升攻击', type:'support', cd:20, castTime:3.2, summonCount:2, summonTheme:'elemental', atkBuffSecs:7, atkBuffPct:28},
+      {name:'化身崩雷', icon:'💥', desc:'19.5倍范围伤害，恐惧、沉默并引发衰亡', type:'dmg', mul:19.5, castTime:5.2, aoe:true, fear:1900, silence:2200, decay2:true, brittle:true}
+    ]
   }
 };
 const RAID_EXTRA_BOSSES = {

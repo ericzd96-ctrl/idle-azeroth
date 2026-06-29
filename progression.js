@@ -57,13 +57,13 @@ function accountMountOwnedCount() {
   return Object.values(acc.mounts || {}).filter(m => m && m.obtained).length;
 }
 function accountWorldBossMountCount() {
-  const fallbackKeys = ['twilight_drake_wb','sulfuras_firehawk','qiraji_mindscarab','yogg_dreambeast','alakir_stormdrake','leishen_thundercloud','argus_starbinder'];
+  const fallbackKeys = ['twilight_drake_wb','sulfuras_firehawk','qiraji_mindscarab','yogg_dreambeast','alakir_stormdrake','leishen_thundercloud','argus_starbinder','raszageth_stormwing'];
   const drops = (typeof globalThis !== 'undefined' && globalThis.WORLD_BOSS_MOUNT_DROPS) || null;
   const keys = drops ? Object.values(drops).map(d => d.key) : fallbackKeys;
   const acc = accEns();
   return keys.filter(key => acc.mounts?.[key]?.obtained).length;
 }
-const APEX_WORLD_BOSS_KEYS = ['deathwing','ragnaros','cthun','yogg_saron','alakir','lei_shen','argus_unmaker'];
+const APEX_WORLD_BOSS_KEYS = ['deathwing','ragnaros','cthun','yogg_saron','alakir','lei_shen','argus_unmaker','raszageth_storm'];
 
 function ensureUnlockedTitles() {
   const acc = accEns();
@@ -248,6 +248,8 @@ const ACHIEVEMENTS = [
     cond:()=>({cur:accountWorldBossTotalKills(),goal:150}), reward:{gold:600000,gem:420,honor:7000,title:'终局讨伐军',stat:{atkPct:5,hpPct:5,mastery:8}} },
   { key:'wb_apex7', name:'群星巡礼', cat:'世界首领', icon:'✨',
     cond:()=>({cur:APEX_WORLD_BOSS_KEYS.filter(k => accountWorldBossKilledKeys().has(k)).length,goal:APEX_WORLD_BOSS_KEYS.length}), reward:{gold:900000,gem:520,honor:9000,title:'群星巡礼者',stat:{atkPct:6,hpPct:6,defPct:4,mastery:10}} },
+  { key:'wb_raszageth', name:'风暴化身讨伐', cat:'世界首领', icon:'🌩️',
+    cond:()=>({cur:accountWorldBossKilledKeys().has('raszageth_storm')?1:0,goal:1}), reward:{gold:420000,gem:320,honor:5200,title:'风暴化身讨伐者',stat:{atkPct:4,hpPct:4,haste:4,mastery:8}} },
   { key:'rare20', name:'稀有追踪者', cat:'世界首领', icon:'🎯',
     cond:()=>({cur:accountRareEliteTotalKills(),goal:20}), reward:{gold:90000,gem:120,honor:1200,stat:{dropMult:5}} },
   { key:'rare10u', name:'精英猎名册', cat:'世界首领', icon:'📜',
@@ -264,6 +266,8 @@ const ACHIEVEMENTS = [
     cond:()=>({cur:accountWorldBossMountCount(),goal:3}), reward:{gold:260000,gem:260,honor:3200,stat:{dropMult:10,mastery:6}} },
   { key:'wbmount7', name:'群星坐骑收藏家', cat:'坐骑', icon:'🌌',
     cond:()=>({cur:accountWorldBossMountCount(),goal:7}), reward:{gold:1000000,gem:800,honor:12000,title:'群星驭者',stat:{atkPct:8,hpPct:8,mastery:15,dropMult:20}} },
+  { key:'wbmount8', name:'风暴缰绳收藏家', cat:'坐骑', icon:'🌩️',
+    cond:()=>({cur:accountWorldBossMountCount(),goal:8}), reward:{gold:1400000,gem:1000,honor:16000,title:'风暴群星驭者',stat:{atkPct:10,hpPct:10,mastery:18,dropMult:25}} },
 
   // 精炼/装备打造
   { key:'gem10',  name:'珠宝学徒',   cat:'精炼', icon:'💎',
