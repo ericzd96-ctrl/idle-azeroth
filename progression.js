@@ -280,6 +280,12 @@ const ACHIEVEMENTS = [
     cond:()=>({cur:accEns().rerollsDone||0,goal:20}), reward:{gold:2000,gem:10} },
   { key:'reroll100',name:'重铸大师', cat:'精炼', icon:'🔁',
     cond:()=>({cur:accEns().rerollsDone||0,goal:100}), reward:{gold:20000,gem:50,stat:{cdReduction:2}} },
+
+  // 龙岛声望
+  { key:'dragon_rep40k', name:'龙岛盟友', cat:'声望', icon:'🐲',
+    cond:()=>({cur:accEns().reputation?.['龙岛']||0,goal:40000}), reward:{gold:260000,gem:260,honor:2600,stat:{mastery:6,dropMult:6}} },
+  { key:'dragon_rep100k', name:'龙岛守护者', cat:'声望', icon:'🌌',
+    cond:()=>({cur:accEns().reputation?.['龙岛']||0,goal:100000}), reward:{gold:900000,gem:650,honor:9000,title:'龙岛守护者',stat:{atkPct:6,hpPct:6,defPct:4,mastery:12}} },
 ];
 
 /* ============ 图鉴 ============ */
@@ -302,13 +308,14 @@ function bestiaryBonusFor(mobName) {
 }
 
 /* ============ 声望 ============ */
-/* 5 大势力: 联盟/部落/中立/外域/诺森德, 与 MAPS[i].faction 对应 */
+/* 势力与 MAPS[i].faction 对应 */
 const REPUTATION_FACTIONS = {
   '联盟':   { icon:'🦁', color:'#3b82f6' },
   '部落':   { icon:'🐺', color:'#ef4444' },
   '中立':   { icon:'🌿', color:'#10b981' },
   '外域':   { icon:'😈', color:'#a855f7' },
   '诺森德': { icon:'❄️', color:'#06b6d4' },
+  '龙岛':   { icon:'🐲', color:'#22d3ee' },
 };
 const REPUTATION_TIERS = [
   { rep:0,      name:'冷漠',   xpPct:0,  goldPct:0, dropPct:0, dmgPct:0 },

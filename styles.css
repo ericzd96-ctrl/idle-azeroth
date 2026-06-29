@@ -1323,6 +1323,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
 .faction-中立 { background: #525252; color: #fff; }
 .faction-外域 { background: #6b21a8; color: #fff; }
 .faction-诺森德 { background: #075985; color: #fff; }
+.faction-龙岛 { background: #0e7490; color: #fff; }
 .sub-list { display: flex; flex-wrap: wrap; gap: 4px; }
 .sub-btn {
   flex: 1 1 calc(33.33% - 3px);

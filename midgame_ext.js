@@ -316,6 +316,12 @@
       { rep:15000, reward:{ tickets:1, compTickets:1 }, label:'寒锋授印' },
       { rep:40000, reward:{ mount:'protoDrake' }, label:'龙眠军衔' },
     ],
+    '龙岛': [
+      { rep:1000, reward:{ gold:3200, essence:6 }, label:'龙鳞补给' },
+      { rep:5000, reward:{ gem:14, honor:360 }, label:'守护者契约' },
+      { rep:15000, reward:{ tickets:1, compTickets:1, essence:16 }, label:'瓦德拉肯授印' },
+      { rep:40000, reward:{ mount:'dragon_isles_winddrake' }, label:'群岛驭龙资格' },
+    ],
   };
 
   const RARE_ELITES = [
@@ -478,6 +484,7 @@
     { key:'nok_stormrunner',   name:'诺库德风暴行者', icon:'🐎', tier:'epic',     mod:{ spdPct:17, atkPct:7, haste:5 },   src:'诺库德阻击战 尾王极低概率掉落(英雄/史诗本掉率更高)' },
     { key:'hoi_tidalray',      name:'注能潮汐鳐',     icon:'🛸', tier:'epic',     mod:{ spdPct:16, hpPct:8, vers:5 },     src:'注能大厅 尾王极低概率掉落(英雄/史诗本掉率更高)' },
     { key:'bh_rottooth',       name:'腐齿山谷斗兽',   icon:'🦴', tier:'epic',     mod:{ spdPct:15, atkPct:7, leech:3 },   src:'蕨皮山谷 尾王极低概率掉落(英雄/史诗本掉率更高)' },
+    { key:'dragon_isles_winddrake', name:'龙岛驭风幼龙', icon:'🐲', tier:'legend', mod:{ spdPct:20, atkPct:10, hpPct:10, mastery:10 }, src:'龙岛声望 崇敬奖励' },
   ];
 
   function ensureMidgameState() {
