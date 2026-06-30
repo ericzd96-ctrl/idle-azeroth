@@ -63,6 +63,10 @@ function accountWorldBossMountCount() {
   const acc = accEns();
   return keys.filter(key => acc.mounts?.[key]?.obtained).length;
 }
+function accountDragonTreasureClaimedCount() {
+  const acc = accEns();
+  return Object.keys(acc.dragonTreasures?.claimed || {}).length;
+}
 const APEX_WORLD_BOSS_KEYS = ['deathwing','ragnaros','cthun','yogg_saron','alakir','lei_shen','argus_unmaker','raszageth_storm'];
 
 function ensureUnlockedTitles() {
@@ -290,6 +294,18 @@ const ACHIEVEMENTS = [
     cond:()=>({cur:accEns().reputation?.['龙岛']||0,goal:40000}), reward:{gold:260000,gem:260,honor:2600,stat:{mastery:6,dropMult:6}} },
   { key:'dragon_rep100k', name:'龙岛守护者', cat:'声望', icon:'🌌',
     cond:()=>({cur:accEns().reputation?.['龙岛']||0,goal:100000}), reward:{gold:900000,gem:650,honor:9000,title:'龙岛守护者',stat:{atkPct:6,hpPct:6,defPct:4,mastery:12}} },
+
+  // 龙岛宝藏
+  { key:'dragon_treasure10', name:'龙岛寻宝人', cat:'探索', icon:'🧭',
+    cond:()=>({cur:accountDragonTreasureClaimedCount(),goal:10}), reward:{gold:120000,gem:120,honor:1200,stat:{dropMult:4}} },
+  { key:'dragon_treasure25', name:'群岛宝藏猎手', cat:'探索', icon:'🗺️',
+    cond:()=>({cur:accountDragonTreasureClaimedCount(),goal:25}), reward:{gold:260000,gem:220,honor:2600,stat:{goldMult:5,dropMult:6}} },
+  { key:'dragon_treasure50', name:'瓦德拉肯藏宝官', cat:'探索', icon:'🔑',
+    cond:()=>({cur:accountDragonTreasureClaimedCount(),goal:50}), reward:{gold:520000,gem:360,honor:5200,title:'瓦德拉肯藏宝官',stat:{atkPct:3,hpPct:3,mastery:8,dropMult:10}} },
+  { key:'dragon_treasure75', name:'群岛秘藏大师', cat:'探索', icon:'💎',
+    cond:()=>({cur:accountDragonTreasureClaimedCount(),goal:75}), reward:{gold:860000,gem:520,honor:8600,stat:{atkPct:5,hpPct:5,defPct:3,mastery:12,dropMult:14}} },
+  { key:'dragon_treasure100', name:'龙岛全境寻获', cat:'探索', icon:'🌩️',
+    cond:()=>({cur:accountDragonTreasureClaimedCount(),goal:100}), reward:{gold:1500000,gem:900,honor:15000,title:'龙岛全境寻获者',stat:{atkPct:8,hpPct:8,defPct:5,mastery:18,dropMult:22}} },
 ];
 
 /* ============ 图鉴 ============ */

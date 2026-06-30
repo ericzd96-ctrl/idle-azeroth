@@ -19,6 +19,33 @@
   --epic: #a335ee;
   --legend: #ff8000;
 }
+
+/* 龙岛宝藏 */
+.dragon-treasure-section { margin-top: 10px; }
+.dragon-treasure-section-title { font-weight: 800; font-size: 13px; margin: 8px 0 6px; color: var(--text); }
+.dragon-treasure-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 6px; }
+.dragon-treasure-card {
+  border: 1px solid var(--border);
+  background: rgba(15,23,42,.72);
+  border-radius: 6px;
+  padding: 7px;
+  min-height: 104px;
+}
+.dragon-treasure-card.ready { border-color: var(--legend); box-shadow: 0 0 0 1px rgba(255,128,0,.18) inset; }
+.dragon-treasure-card.claimed { opacity: .72; border-color: rgba(34,197,94,.35); }
+.dragon-treasure-head { display: flex; align-items: center; gap: 6px; font-size: 12px; min-height: 28px; }
+.dragon-treasure-icon {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  background: rgba(34,211,238,.12);
+  flex: 0 0 auto;
+}
+.dragon-treasure-foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 6px; }
+.dragon-treasure-foot button { flex: 0 0 auto; }
 * { box-sizing: border-box; }
 html, body {
   margin: 0; padding: 0;
