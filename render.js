@@ -1373,6 +1373,8 @@ function updateBattleVisuals() {
     const contractTag = contract ? ` <span style="color:#f6c453">${contract.icon}${contract.name}</span>` : '';
     const alert = (typeof dungeonAlertInfo === 'function') ? dungeonAlertInfo(state.dungeonState) : null;
     const alertTag = alert && alert.level > 0 ? ` · <span style="color:#fb7185">🚨警戒 ${alert.level}(${alert.label})</span>` : '';
+    const timerStatus = (typeof dungeonTimerStatus === 'function') ? dungeonTimerStatus(state.dungeonState) : null;
+    const timerTag = timerStatus ? ` · <span style="color:${timerStatus.expired ? '#fb7185' : '#67e8f9'}">⏳${timerStatus.text}</span>` : '';
     $('h-zone').innerHTML = `${dungeonIconHtml} ${dg.name}`;
     $('zone-name').innerHTML = `${dungeonIconHtml} ${dg.name} ${typeTag}${contractTag}`;
     let bossExtra = '';
@@ -1386,7 +1388,7 @@ function updateBattleVisuals() {
       if (tags.length) bossExtra += ' <span style=\"font-size:10px;color:#6ee7b7\">'+tags.join(' ')+'</span>';
     }
     const bossTag = curBoss ? ` ⚔️<b style=\"color:var(--legend)\">${curBoss.name}</b>${bossExtra}` : '';
-    $('progress-text').innerHTML = `波次 ${state.dungeonState.wave}/${dg.waves} · 首领 ${killedBosses}/${bossList.length}${bossTag}${contractTag}${alertTag}`;
+    $('progress-text').innerHTML = `波次 ${state.dungeonState.wave}/${dg.waves} · 首领 ${killedBosses}/${bossList.length}${bossTag}${contractTag}${alertTag}${timerTag}`;
   } else if (state.mode === 'mythic') {
     const ms = state.mythicState;
     const dg = DUNGEONS.find(d => d.key === ms.key);
@@ -2893,12 +2895,14 @@ function buildDungeonInfoHtml(dg) {
     const trialPreview = (typeof getDungeonContractTrials === 'function') ? getDungeonContractTrials(dg, selectedContract.level) : [];
     const environmentPreview = (typeof getDungeonEnvironments === 'function') ? getDungeonEnvironments(dg, selectedContract.level) : [];
     const edictPreview = (typeof getDungeonTacticalEdicts === 'function') ? getDungeonTacticalEdicts(dg, selectedContract.level) : [];
+    const timerPreview = (typeof createDungeonTimer === 'function') ? createDungeonTimer(dg, selectedContract.level) : null;
     html += `<div class="dungeon-contract-info">
       <b>${selectedContract.icon} 当前契约: ${selectedContract.name}</b>
       <div class="muted">${selectedContract.desc}</div>
       <div>怪物生命 ×${selectedContract.hp.toFixed(2)} · 攻击 ×${selectedContract.atk.toFixed(2)} · 防御 ×${selectedContract.def.toFixed(2)} · 通关奖励 ×${selectedContract.reward.toFixed(2)}</div>
       <div class="dungeon-alert-rule">🚨 警戒: 契约副本每清一波+1级,击败首领+2级;高警戒会强化后续敌人并派出戒备队长。</div>
       <div class="dungeon-edict-rule">📜 战术禁令库: 100条,当前契约抽取 ${edictPreview.length} 条;禁令会提高难度并小幅提高通关奖励。</div>
+      ${timerPreview ? `<div class="dungeon-timer-rule">⏳ 限时挑战: ${timerPreview.label} 内通关奖励 ×${timerPreview.rewardMult.toFixed(2)},超时后每15秒叠加压迫。</div>` : ''}
     </div>`;
     if (edictPreview.length) {
       html += `<div class="dungeon-edict-info">
@@ -3098,6 +3102,8 @@ function renderDungeon() {
     const environmentLine = environmentPreview.length ? `<div class="dungeon-environment-line">🧭 环境: ${environmentPreview.map(e => `${symbolIconHtml(e.icon, 12, e.name, 'spell_frost_arcticwinds')} ${e.name}`).join(' · ')}</div>` : '';
     const edictPreview = (selectedContractLevel > 0 && typeof getDungeonTacticalEdicts === 'function') ? getDungeonTacticalEdicts(dg, selectedContractLevel) : [];
     const edictLine = edictPreview.length ? `<div class="dungeon-edict-line">📜 禁令: ${edictPreview.map(e => `${symbolIconHtml(e.icon, 12, e.name, 'inv_scroll_03')} ${e.name}`).join(' · ')}</div>` : '';
+    const timerPreview = (selectedContractLevel > 0 && typeof createDungeonTimer === 'function') ? createDungeonTimer(dg, selectedContractLevel) : null;
+    const timerLine = timerPreview ? `<div class="dungeon-timer-line">⏳ 限时: ${timerPreview.label} · 达成奖励 ×${timerPreview.rewardMult.toFixed(2)} · 超时叠加压迫</div>` : '';
     const alertLine = selectedContractLevel > 0 ? '<div class="dungeon-alert-line">🚨 契约警戒: 波次推进会逐步强化敌人,高警戒可能出现戒备队长</div>' : '';
     const bossPhaseLine = selectedContractLevel > 0 ? '<div class="dungeon-boss-phase-line">⚔️ 首领阶段: Boss 血量下降时会触发额外阶段事件</div>' : '';
     const firstClearBadge = (!state.dungeonFirstClear || !state.dungeonFirstClear[dg.key]) ? '<span class="pill" style="background:rgba(246,196,83,.18);color:#f6c453">🎁首通</span>' : '';
@@ -3131,6 +3137,7 @@ function renderDungeon() {
       ${bountyLine}
       ${chaseLine}
       ${affixLine}
+      ${timerLine}
       ${edictLine}
       ${environmentLine}
       ${trialLine}

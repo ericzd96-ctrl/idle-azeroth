@@ -146,11 +146,13 @@ function enterDungeon(key) {
   const trials = (typeof getDungeonContractTrials === 'function') ? getDungeonContractTrials(dg, contractLevel) : [];
   const environments = (typeof getDungeonEnvironments === 'function') ? getDungeonEnvironments(dg, contractLevel) : [];
   const edicts = (typeof getDungeonTacticalEdicts === 'function') ? getDungeonTacticalEdicts(dg, contractLevel) : [];
-  state.dungeonState = { key, wave: 1, loot: [], affixes: baseAffixes.concat(trials), trials, environments, edicts, contractLevel, contract, alertLevel: 0, maxAlert: 0 };
+  const timer = (typeof createDungeonTimer === 'function') ? createDungeonTimer(dg, contractLevel) : null;
+  state.dungeonState = { key, wave: 1, loot: [], affixes: baseAffixes.concat(trials), trials, environments, edicts, timer, contractLevel, contract, alertLevel: 0, maxAlert: 0 };
   if (contractLevel > 0 && contract) log(`${contract.icon || '📜'} 已启用 ${contract.name}: ${contract.desc}`, 'legend');
   if (trials.length) log(`🔥 契约试炼: ${trials.map(t => `${t.icon || '🔥'}${t.name}`).join(' · ')}`, 'legend');
   if (environments.length) log(`🧭 副本环境: ${environments.map(e => `${e.icon || '🧭'}${e.name}`).join(' · ')}`, 'bad');
   if (edicts.length) log(`📜 战术禁令: ${edicts.map(e => `${e.icon || '📜'}${e.name}`).join(' · ')}`, 'bad');
+  if (timer) log(`⏳ 限时挑战: ${timer.label} 内通关奖励+${Math.round((timer.rewardMult - 1) * 100)}%,超时后每15秒叠加压迫`, 'legend');
   // 进入副本:全量刷新所有技能CD(英雄/天赋/神器/随从)+清理身上的 buff/debuff/护盾(含随从护盾与随从buff/debuff)
   if (typeof resetCombatState === 'function') resetCombatState();
   else if (typeof clearAllBuffs === 'function') clearAllBuffs();
@@ -288,6 +290,49 @@ function getDungeonTacticalEdicts(dg, contractLevel) {
   return picked.map(e => ({ ...e, mod:{ ...(e.mod || {}) } }));
 }
 
+function createDungeonTimer(dg, contractLevel) {
+  const level = Math.max(0, Math.min(3, Math.floor(contractLevel || 0)));
+  if (!dg || level <= 0) return null;
+  const waves = Math.max(1, dg.waves || ((dg.bosses || []).slice(-1)[0]?.wave || 6));
+  const perWave = level === 1 ? 38 : (level === 2 ? 34 : 30);
+  const raidMult = dg.type === 'raid' ? 1.35 : 1;
+  const epicMult = dg.epicRaid ? 1.18 : 1;
+  const seconds = Math.max(90, Math.floor((waves * perWave + (dg.reqLvl || 1) * 0.75) * raidMult * epicMult));
+  return {
+    startedAt: Date.now(),
+    limitMs: seconds * 1000,
+    rewardMult: 1 + level * 0.06,
+    overtimeStacks: 0,
+    overtimePulses: 0,
+    expired: false,
+    onTime: false,
+    label: fmtDungeonTimer(seconds),
+  };
+}
+
+function fmtDungeonTimer(seconds) {
+  const s = Math.max(0, Math.floor(seconds || 0));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${String(r).padStart(2, '0')}`;
+}
+
+function dungeonTimerRemaining(ds, now) {
+  if (!ds?.timer) return 0;
+  return Math.max(0, Math.ceil((ds.timer.startedAt + ds.timer.limitMs - (now || Date.now())) / 1000));
+}
+
+function dungeonTimerStatus(ds, now) {
+  if (!ds?.timer) return null;
+  const remaining = dungeonTimerRemaining(ds, now);
+  return {
+    remaining,
+    text: remaining > 0 ? fmtDungeonTimer(remaining) : `超时+${ds.timer.overtimeStacks || 0}`,
+    expired: remaining <= 0 || !!ds.timer.expired,
+    rewardMult: ds.timer.rewardMult || 1,
+  };
+}
+
 const DUNGEON_CONTRACT_TRIALS = [
   { key:'trialPatrol', name:'铁卫巡逻', desc:'非首领战有概率加入一名巡逻增援;小怪攻击+12%。', icon:'🚨', mod:{addPatrol:true, trashDmg:0.12} },
   { key:'trialBulwark', name:'重甲戒严', desc:'小怪防御+18%;首领防御+12%。', icon:'🛡️', mod:{trashDef:0.18, bossDef:0.12} },
@@ -364,7 +409,8 @@ function setDungeonContractLevel(level) {
 function dungeonContractRewardMult(ds) {
   const lvl = Math.max(0, Math.min(3, Math.floor(ds?.contractLevel || 0)));
   const edictBonus = Array.isArray(ds?.edicts) ? ds.edicts.length * 0.04 : 0;
-  return (dungeonContractInfo(lvl).reward || 1) * (1 + edictBonus);
+  const timerBonus = ds?.timer?.onTime ? (ds.timer.rewardMult || 1) : 1;
+  return (dungeonContractInfo(lvl).reward || 1) * (1 + edictBonus) * timerBonus;
 }
 
 function dungeonAlertInfo(ds) {
@@ -585,6 +631,10 @@ function grantDungeonBountyReward(dg, opts) {
 
 function onDungeonClear(dg) {
   const dungeonStateSnapshot = state.dungeonState || {};
+  if (dungeonStateSnapshot.timer) {
+    dungeonStateSnapshot.timer.clearedAt = Date.now();
+    dungeonStateSnapshot.timer.onTime = dungeonTimerRemaining(dungeonStateSnapshot, dungeonStateSnapshot.timer.clearedAt) > 0 && !dungeonStateSnapshot.timer.expired;
+  }
   const masteryHtml = (typeof progressionOnDungeonClear === 'function') ? (progressionOnDungeonClear(dg.key, { contractLevel:dungeonStateSnapshot.contractLevel || 0 }) || '') : '';
   if (typeof eventsOnDungeonClear === 'function') eventsOnDungeonClear();
   if (typeof relicOnDungeonClear === 'function') relicOnDungeonClear(dg);   // 神器遗物掉落
@@ -652,6 +702,10 @@ function onDungeonClear(dg) {
     ? `<div class="muted" style="font-size:12px">本次词缀: ${affixes.map(a => (a.icon||'') + a.name).join(' · ')}</div>`
     : '';
   const contractInfo = dungeonContractInfo(dungeonStateSnapshot?.contractLevel || 0);
+  const timerStatus = dungeonStateSnapshot?.timer ? dungeonTimerStatus(dungeonStateSnapshot, dungeonStateSnapshot.timer.clearedAt || Date.now()) : null;
+  const timerHtml = timerStatus
+    ? `<div class="muted" style="font-size:12px">⏳ 限时挑战: ${dungeonStateSnapshot.timer.onTime ? `达成 · 奖励 ×${(dungeonStateSnapshot.timer.rewardMult || 1).toFixed(2)}` : `超时 · 压迫 ${dungeonStateSnapshot.timer.overtimeStacks || 0}层 · 脉冲 ${dungeonStateSnapshot.timer.overtimePulses || 0}次`}</div>`
+    : '';
   const contractHtml = dungeonStateSnapshot?.contractLevel > 0
     ? `<div class="muted" style="font-size:12px">${contractInfo.icon} 契约: ${contractInfo.name} · 通关奖励 ×${contractMult.toFixed(2)} · 最高警戒 ${dungeonStateSnapshot.maxAlert || dungeonStateSnapshot.alertLevel || 0} · 首领阶段 ${dungeonStateSnapshot.bossPhasesTriggered || 0} · 环境触发 ${dungeonStateSnapshot.environmentHits || 0} · 禁令触发 ${dungeonStateSnapshot.edictHits || 0} · 禁令增援 ${dungeonStateSnapshot.edictAdds || 0}</div>`
     : '';
@@ -662,6 +716,7 @@ function onDungeonClear(dg) {
     <div class="muted">击败了 ${finalBossName} 等 ${(dg.bosses||[]).length} 名首领</div>
     ${affixHtml}
     ${contractHtml}
+    ${timerHtml}
     <div style="margin:10px 0;text-align:left;font-size:13px">
       <div>💰 金币 +${bonusGold}</div>
       <div>💎 钻石 +${bonusGem}</div>

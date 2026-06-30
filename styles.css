@@ -679,6 +679,11 @@ h1 {
   color: #fde68a;
   line-height: 1.45;
 }
+.dungeon-timer-line {
+  font-size: 11px;
+  color: #67e8f9;
+  line-height: 1.45;
+}
 .dungeon-environment-line {
   font-size: 11px;
   color: #a5f3fc;
@@ -686,7 +691,8 @@ h1 {
 }
 .dungeon-alert-rule,
 .dungeon-alert-line,
-.dungeon-edict-rule {
+.dungeon-edict-rule,
+.dungeon-timer-rule {
   margin-top: 4px;
   font-size: 11px;
   line-height: 1.45;

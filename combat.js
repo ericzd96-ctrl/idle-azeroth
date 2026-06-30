@@ -2263,6 +2263,14 @@ function spawnDungeonMonster(){
     mon.baseXp = Math.floor(mon.baseXp * (1 + ((alertInfo.reward || 1) - 1) * 0.5));
     mon._dungeonAlertLevel = alertInfo.level;
   }
+  if (state.mode === 'dungeon' && ds.timer?.expired && ds.timer.overtimeStacks > 0) {
+    const overtime = Math.min(12, ds.timer.overtimeStacks || 0);
+    const mult = 1 + overtime * 0.045;
+    mon.hpMax = Math.floor(mon.hpMax * (1 + overtime * 0.025)); mon.hp = mon.hpMax;
+    mon.atk = Math.floor(mon.atk * mult);
+    mon.def = Math.floor(mon.def * (1 + overtime * 0.018));
+    mon._dungeonOvertimeStacks = overtime;
+  }
   // 副本/大秘境 BOSS 被动:优先读数据中的passive,否则用默认
   if (isBoss) {
     mon.dodgeChance=0; mon.critChance=0; mon.critMult=2.0; mon.stunChance=0; mon.instantCast=true;
@@ -2924,6 +2932,35 @@ function applyDungeonEdictEffects(ds, mon, now){
   }
   if((ds.edictHits || 0) !== beforeHits && typeof markDirty === 'function') markDirty('hero', 'stage');
 }
+function applyDungeonTimerPressure(ds, mon, now){
+  const timer = ds?.timer;
+  if(state.mode !== 'dungeon' || !timer || !mon) return;
+  const remaining = dungeonTimerRemaining(ds, now);
+  if(remaining > 0) return;
+  if(!timer.expired){
+    timer.expired = true;
+    timer.overtimeStartedAt = now;
+    timer.lastOvertimePulse = now - 12000;
+    log('⏳ 限时挑战已超时!副本压迫开始叠加', 'bad');
+  }
+  if(now - (timer.lastOvertimePulse || 0) < 15000) return;
+  timer.lastOvertimePulse = now;
+  timer.overtimeStacks = Math.min(12, (timer.overtimeStacks || 0) + 1);
+  timer.overtimePulses = (timer.overtimePulses || 0) + 1;
+  const stack = timer.overtimeStacks;
+  const dmg = Math.max(1, Math.floor((state.hero.hpMax || 1) * (0.035 + stack * 0.004)));
+  applyHeroDamage(dmg, mon, { label:t=>'⏳-' + t, color:'#fb7185', now });
+  if(typeof applyHeroDebuff === 'function') applyHeroDebuff('vulnerable', 4500);
+  for(const target of (state.currentMonsters || [])){
+    if(!target || target.hp <= 0) continue;
+    target.atk = Math.floor(target.atk * 1.03);
+    const shield = Math.max(1, Math.floor(target.hpMax * (0.015 + stack * 0.002)));
+    target._arcaneShield = (target._arcaneShield || 0) + shield;
+    syncMonsterShieldAura(target);
+    showMonsterFloat(target, `⏳压迫${stack}`, '#fb7185');
+  }
+  if(typeof markDirty === 'function') markDirty('hero', 'stage');
+}
 /* 破甲(sunder)等护甲削减后的有效防御 */
 function monArmor(mon){
   if(!mon)return 0;
@@ -3465,6 +3502,9 @@ function tickBattle(now){
   }
   if (state.mode === 'dungeon' && state.dungeonState?.edicts?.length) {
     applyDungeonEdictEffects(state.dungeonState, mon, now);
+  }
+  if (state.mode === 'dungeon' && state.dungeonState?.timer) {
+    applyDungeonTimerPressure(state.dungeonState, mon, now);
   }
 
   // 玩家攻击(锁定焦点 = 仇恨最高者)
