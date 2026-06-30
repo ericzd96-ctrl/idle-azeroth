@@ -770,8 +770,11 @@ function onDungeonClear(dg) {
   const bossMechanicHtml = dungeonStateSnapshot?.bossMechanicsTriggered && !(dungeonStateSnapshot?.contractLevel > 0)
     ? `<div class="muted" style="font-size:12px">🎭 Boss专属机制触发 ${dungeonStateSnapshot.bossMechanicsTriggered || 0} 次</div>`
     : '';
+  const bossDirectorHtml = dungeonStateSnapshot?.bossDirectorEvents && !(dungeonStateSnapshot?.contractLevel > 0)
+    ? `<div class="muted" style="font-size:12px">🎬 Boss流程机制触发 ${dungeonStateSnapshot.bossDirectorEvents || 0} 次</div>`
+    : '';
   const contractHtml = dungeonStateSnapshot?.contractLevel > 0
-    ? `<div class="muted" style="font-size:12px">${contractInfo.icon} 契约: ${contractInfo.name} · 通关奖励 ×${contractMult.toFixed(2)} · 最高警戒 ${dungeonStateSnapshot.maxAlert || dungeonStateSnapshot.alertLevel || 0} · 首领阶段 ${dungeonStateSnapshot.bossPhasesTriggered || 0} · Boss机制 ${dungeonStateSnapshot.bossMechanicsTriggered || 0} · 环境触发 ${dungeonStateSnapshot.environmentHits || 0} · 禁令触发 ${dungeonStateSnapshot.edictHits || 0} · 禁令增援 ${dungeonStateSnapshot.edictAdds || 0}</div>`
+    ? `<div class="muted" style="font-size:12px">${contractInfo.icon} 契约: ${contractInfo.name} · 通关奖励 ×${contractMult.toFixed(2)} · 最高警戒 ${dungeonStateSnapshot.maxAlert || dungeonStateSnapshot.alertLevel || 0} · 首领阶段 ${dungeonStateSnapshot.bossPhasesTriggered || 0} · Boss机制 ${dungeonStateSnapshot.bossMechanicsTriggered || 0} · 流程机制 ${dungeonStateSnapshot.bossDirectorEvents || 0} · 环境触发 ${dungeonStateSnapshot.environmentHits || 0} · 禁令触发 ${dungeonStateSnapshot.edictHits || 0} · 禁令增援 ${dungeonStateSnapshot.edictAdds || 0}</div>`
     : '';
   const contractChestHtml = grantDungeonContractChest(dg, dungeonStateSnapshot);
   const bountyHtml = grantDungeonBountyReward(dg, { loot:uniqueLoot });
@@ -782,6 +785,7 @@ function onDungeonClear(dg) {
     ${contractHtml}
     ${timerHtml}
     ${bossMechanicHtml}
+    ${bossDirectorHtml}
     <div style="margin:10px 0;text-align:left;font-size:13px">
       <div>💰 金币 +${bonusGold}</div>
       <div>💎 钻石 +${bonusGem}</div>

@@ -3218,6 +3218,178 @@ function applyDungeonBossSpectacleMechanics(now){
     if(triggered >= 2) break;
   }
 }
+const DUNGEON_BOSS_DIRECTOR_SKILLS = [
+  { key:'annihilationRite', icon:'🕯️', name:'湮灭仪式', mul:3.8, aoe:true, castTime:3.2, cd:18, threat:'extreme', interruptPolicy:'hard', desc:'长读条灭团技,如果读完会重创全体并施加虚弱。', match:/古神|克苏恩|恩佐斯|尤格|虚空|低语|梦魇|腐化|暗影/ },
+  { key:'twilightJudgment', icon:'☄️', name:'暮光审判', mul:3.2, aoe:true, castTime:2.8, cd:16, dotSkill:true, dotSecs:7, threat:'high', interruptPolicy:'soft', desc:'陨星审判,造成持续灼烧;打断后仍会留下余波。', match:/龙|暮光|黑龙|红龙|蓝龙|龙息|奈法|奥妮克希亚/ },
+  { key:'arcaneLockdown', icon:'🔮', name:'奥术封锁', mul:2.2, castTime:2.4, cd:14, manaDrain:true, silence:1600, shieldPct:0.08, threat:'high', interruptPolicy:'soft', desc:'封锁技能与资源,并为首领补上一层奥术盾。', match:/奥术|魔网|法师|星界|群星|符文|魔法/ },
+  { key:'bloodHarvest', icon:'🩸', name:'鲜血收割', mul:2.6, castTime:2.2, cd:15, lifeSteal:0.55, bleed:true, vulnerable:true, threat:'high', interruptPolicy:'soft', desc:'吸取玩家生命治疗自身,并留下易伤出血窗口。', match:/鲜血|血|吸血|王子|女王|屠夫|献祭/ },
+  { key:'plagueBloom', icon:'🦠', name:'瘟疫绽放', mul:2.0, aoe:true, castTime:2.6, cd:17, plague:true, summonCount:1, summonTheme:'nature', threat:'high', interruptPolicy:'soft', desc:'让瘟疫爆开并召唤污染爪牙。', match:/毒|瘟疫|腐|虫|蛛|螳螂|软泥|孢子|感染/ },
+  { key:'stormJailer', icon:'⚡', name:'雷狱锁链', mul:2.5, castTime:2.0, cd:13, silence:1500, slow:true, threat:'medium', interruptPolicy:'soft', desc:'雷霆锁链会沉默并减速玩家。', match:/雷|风暴|闪电|诺库德|奥丁|电|云/ },
+  { key:'forgeReset', icon:'🛡️', name:'熔炉重铸', type:'support', castTime:2.5, cd:18, shieldPct:0.14, drBuffSecs:7, drBuffPct:0.28, defBuffSecs:7, defBuffPct:45, threat:'high', interruptPolicy:'soft', desc:'重铸装甲,获得护盾、减伤和防御强化。', match:/钢铁|机械|泰坦|构造|黑石|熔炉|护甲|守卫|巨像/ },
+  { key:'necroticSentence', icon:'🧊', name:'凋零判决', mul:2.7, castTime:2.3, cd:16, decay2:true, freeze:true, summonCount:1, summonTheme:'undead', threat:'high', interruptPolicy:'hard', desc:'冻结目标并压低治疗,同时唤起亡者。', match:/巫妖|冰|霜|亡|天灾|死亡|寒|墓|骨|克尔苏加德|阿尔萨斯/ },
+  { key:'felCataclysm', icon:'😈', name:'邪能灾变', mul:3.4, aoe:true, castTime:3.0, cd:18, dotSkill:true, dotSecs:6, summonCount:1, summonTheme:'demon', threat:'extreme', interruptPolicy:'hard', desc:'邪能裂隙爆发,重创全体并召来恶魔。', match:/恶魔|邪能|军团|伊利丹|基尔加丹|阿克蒙德|地狱|末日/ },
+  { key:'executionOrder', icon:'🎯', name:'处刑指令', mul:3.0, castTime:2.4, cd:19, brittle:true, threat:'high', interruptPolicy:'hard', desc:'点名处刑,未打断会让玩家进入易爆状态。', match:/./ }
+];
+const DUNGEON_BOSS_DIRECTOR_EVENTS = [
+  { key:'ritualTotem', icon:'🕯️', name:'仪式锚点', cd:26000, match:/古神|克苏恩|恩佐斯|尤格|虚空|低语|梦魇|腐化|邪能|恶魔|军团|奥术|法师|符文|魔法/, desc:'召唤限时仪式物;若未击破,首领会获得护盾并强制释放高危技能。' },
+  { key:'mirrorEchoes', icon:'🪞', name:'镜像分身', cd:32000, match:/影|暗|镜|幻象|潜行|幽魂|灵魂|议会|双子|夫妇|与/, desc:'血量阶段召出镜像分身,分身存活时首领更难被爆发击杀。' },
+  { key:'executeScript', icon:'💀', name:'斩杀脚本', cd:999999, match:/./, desc:'低血量时进入斩杀流程,强制读条处刑并提高攻击节奏。' },
+  { key:'shieldCounterplay', icon:'💥', name:'破盾反制', cd:0, match:/./, desc:'打破首领护盾会造成短暂破绽,返还资源并削弱首领。' },
+  { key:'addSacrifice', icon:'🔺', name:'献祭爪牙', cd:30000, match:/鲜血|血|吸血|瘟疫|虫|蛛|恶魔|邪能|亡|天灾|死亡/, desc:'首领会吞噬场上爪牙恢复并强化,逼迫玩家优先清理召唤物。' }
+];
+function getDungeonBossDirectorSkills(bossData){
+  const text = dungeonBossSpectacleText(bossData);
+  if(!text.trim()) return [];
+  const out = [];
+  for(const sk of DUNGEON_BOSS_DIRECTOR_SKILLS){
+    if(sk.match.test(text)) out.push(Object.assign({}, sk));
+  }
+  return out.slice(0, 4);
+}
+function getDungeonBossDirectorEvents(bossData){
+  const text = dungeonBossSpectacleText(bossData);
+  if(!text.trim()) return [];
+  const out = [];
+  for(const ev of DUNGEON_BOSS_DIRECTOR_EVENTS){
+    if(ev.match.test(text)) out.push(ev);
+  }
+  return out.slice(0, 5);
+}
+function dungeonBossDirectorCounter(key){
+  const ds = state.dungeonState || state.mythicState;
+  if(!ds) return;
+  ds.bossDirectorEvents = (ds.bossDirectorEvents || 0) + 1;
+  if(key){
+    if(!ds.bossDirectorBreakdown) ds.bossDirectorBreakdown = {};
+    ds.bossDirectorBreakdown[key] = (ds.bossDirectorBreakdown[key] || 0) + 1;
+  }
+}
+function queueDungeonBossSkill(mon, skill, reason){
+  if(!mon || !skill) return;
+  if(!mon._queuedBossSkills) mon._queuedBossSkills = [];
+  const copy = Object.assign({}, skill);
+  copy._director = true;
+  copy._directorReason = reason || '';
+  mon._queuedBossSkills.push(copy);
+  lastBossSkill = 0;
+}
+function spawnDungeonDirectorAdd(mon, cfg, now){
+  if(!mon || !cfg) return null;
+  const add = makeMonster((cfg.icon || '🔺') + (cfg.name || '机制物'), Math.max(1, mon.lvl - 1), false, 'rare');
+  add.hpMax = Math.max(20, Math.floor(mon.hpMax * (cfg.hpPct || 0.11)));
+  add.hp = add.hpMax;
+  add.atk = Math.max(1, Math.floor(mon.atk * (cfg.atkPct || 0.24)));
+  add.def = Math.max(0, Math.floor(mon.def * (cfg.defPct || 0.38)));
+  add.baseGold = 0; add.baseXp = 0; add.goldReward = 0; add.honorReward = 0; add.dropRate = 0; add.gemChance = 0;
+  add._summoned = true;
+  add._directorAdd = cfg.key || 'director';
+  add._summonerId = mon._uid;
+  add._summonerName = mon.bossName || mon.name || '首领';
+  add._summonerIsBoss = true;
+  add._expiresAt = now + (cfg.durationMs || 11000);
+  add._expireEffect = cfg.expireEffect || null;
+  add._monSupportSkills = [];
+  add._supportSkillCooldowns = {};
+  state.currentMonsters.push(add);
+  showMonsterFloat(add, (cfg.icon || '🔺') + (cfg.name || '机制物'), '#f0abfc', { variant:'boss', scale:1.05 });
+  markDirty('stage');
+  return add;
+}
+function resolveDungeonDirectorAddExpiry(add, now){
+  if(!add || add.hp <= 0 || !add._expireEffect || !add._summonerId) return false;
+  if(now < (add._expiresAt || 0)) return false;
+  const boss = (state.currentMonsters || []).find(x => x && x.hp > 0 && x._uid === add._summonerId);
+  if(boss){
+    if(add._expireEffect === 'ritual'){
+      boss._arcaneShield = (boss._arcaneShield || 0) + Math.max(1, Math.floor(boss.hpMax * 0.08));
+      boss._trickAtkBuff = now + 7000;
+      boss._trickAtkPct = Math.max(boss._trickAtkPct || 0, 35);
+      syncMonsterShieldAura(boss);
+      const skill = getDungeonBossDirectorSkills(getMonsterBossData(boss) || { name:boss.bossName || boss.name })[0] || DUNGEON_BOSS_DIRECTOR_SKILLS[DUNGEON_BOSS_DIRECTOR_SKILLS.length - 1];
+      queueDungeonBossSkill(boss, skill, '仪式完成');
+      log(`🕯️ ${boss.bossName || boss.name} 的仪式完成,下一次读条被强化!`, 'bad');
+      showMonsterFloat(boss, '🕯️仪式完成', '#f0abfc', { variant:'boss', scale:1.1 });
+    }else if(add._expireEffect === 'echo'){
+      boss._monsterDrBuffUntil = now + 6000;
+      boss._monsterDrBuffPct = Math.max(boss._monsterDrBuffPct || 0, 0.22);
+      log(`🪞 镜像维持了首领的防御矩阵`, 'bad');
+      showMonsterFloat(boss, '🪞镜像护主', '#c4b5fd');
+    }
+  }
+  add.hp = 0;
+  return true;
+}
+function applyDungeonBossDirectorMechanics(now){
+  if(!(state.mode === 'dungeon' || state.mode === 'mythic')) return;
+  const ds = state.dungeonState || state.mythicState;
+  if(!ds) return;
+  for(const add of (state.currentMonsters || [])){
+    if(add && add.hp > 0 && add._directorAdd && add._expiresAt) resolveDungeonDirectorAddExpiry(add, now);
+  }
+  let fired = 0;
+  for(const mon of (state.currentMonsters || [])){
+    if(!mon || mon.hp <= 0 || !mon.isBoss) continue;
+    const bossData = getMonsterBossData(mon) || { name:mon.bossName || mon.name, emoji:mon.emoji || '👹' };
+    const events = getDungeonBossDirectorEvents(bossData);
+    if(!mon._directorLast) mon._directorLast = {};
+    const hpFrac = mon.hpMax > 0 ? mon.hp / mon.hpMax : 1;
+    const shieldNow = mon._arcaneShield || 0;
+    if((mon._directorPrevShield || 0) > 0 && shieldNow <= 0){
+      mon.stunUntil = Math.max(mon.stunUntil || 0, now + 1400);
+      mon.sunderUntil = Math.max(mon.sunderUntil || 0, now + 7000);
+      state.resource = Math.min(state.resourceMax || 100, (state.resource || 0) + Math.max(8, Math.floor((state.resourceMax || 100) * 0.18)));
+      if(typeof grantNextSkillCrit === 'function') grantNextSkillCrit(1);
+      dungeonBossDirectorCounter('shieldBreak');
+      log(`💥 你击碎了 ${mon.bossName || mon.name} 的机制护盾,获得资源并制造破绽!`, 'epic');
+      showMonsterFloat(mon, '💥破盾破绽', '#fde047', { variant:'boss', scale:1.12 });
+      markDirty('hero', 'stage');
+    }
+    mon._directorPrevShield = shieldNow;
+    if(events.some(e => e.key === 'executeScript') && hpFrac <= 0.22 && !mon._directorExecuteUsed){
+      mon._directorExecuteUsed = true;
+      mon.atkInterval = Math.max(620, Math.floor((mon.atkInterval || 1200) * 0.82));
+      queueDungeonBossSkill(mon, DUNGEON_BOSS_DIRECTOR_SKILLS.find(s => s.key === 'executionOrder'), '低血斩杀');
+      dungeonBossDirectorCounter('executeScript');
+      log(`💀 ${mon.bossName || mon.name} 进入斩杀脚本,下一次读条将点名处刑!`, 'bad');
+      showMonsterFloat(mon, '💀斩杀脚本', '#fecaca', { variant:'boss', scale:1.1 });
+      fired++;
+    }
+    if(events.some(e => e.key === 'mirrorEchoes') && hpFrac <= 0.66 && !mon._directorEcho66){
+      mon._directorEcho66 = true;
+      spawnDungeonDirectorAdd(mon, { key:'echo', icon:'🪞', name:'镜像回声', hpPct:0.10, atkPct:0.28, defPct:0.28, durationMs:13000, expireEffect:'echo' }, now);
+      spawnDungeonDirectorAdd(mon, { key:'echo', icon:'🪞', name:'镜像回声', hpPct:0.10, atkPct:0.28, defPct:0.28, durationMs:13000, expireEffect:'echo' }, now);
+      mon._monsterDrBuffUntil = now + 9000;
+      mon._monsterDrBuffPct = Math.max(mon._monsterDrBuffPct || 0, 0.18);
+      dungeonBossDirectorCounter('mirrorEchoes');
+      log(`🪞 ${mon.bossName || mon.name} 分裂出镜像回声,先清镜像会轻松很多!`, 'bad');
+      fired++;
+    }
+    if(events.some(e => e.key === 'ritualTotem') && now - (mon._directorLast.ritualTotem || 0) > 26000){
+      mon._directorLast.ritualTotem = now;
+      spawnDungeonDirectorAdd(mon, { key:'ritual', icon:'🕯️', name:'仪式锚点', hpPct:0.13, atkPct:0.18, defPct:0.45, durationMs:11500, expireEffect:'ritual' }, now);
+      dungeonBossDirectorCounter('ritualTotem');
+      log(`🕯️ ${mon.bossName || mon.name} 召唤仪式锚点,限时击破可阻止强化读条!`, 'bad');
+      fired++;
+    }
+    if(events.some(e => e.key === 'addSacrifice') && now - (mon._directorLast.addSacrifice || 0) > 30000){
+      const adds = (state.currentMonsters || []).filter(x => x && x.hp > 0 && x._summoned && x._summonerId === mon._uid);
+      if(adds.length){
+        mon._directorLast.addSacrifice = now;
+        const victim = adds[0];
+        victim.hp = 0;
+        const heal = Math.max(1, Math.floor(mon.hpMax * 0.055));
+        mon.hp = Math.min(mon.hpMax, mon.hp + heal);
+        mon._trickAtkBuff = now + 6500;
+        mon._trickAtkPct = Math.max(mon._trickAtkPct || 0, 32);
+        dungeonBossDirectorCounter('addSacrifice');
+        log(`🔺 ${mon.bossName || mon.name} 献祭了爪牙,恢复生命并强化攻击!`, 'bad');
+        showMonsterFloat(mon, `🔺+${heal}`, '#fda4af', { variant:'heal', scale:1.06 });
+        fired++;
+      }
+    }
+    if(fired >= 2) break;
+  }
+}
 function handleCouncilMemberDeath(mon, hasLivingMembers){
   if(!mon?._councilGroupKey) return;
   const ds = state.dungeonState || state.mythicState;
@@ -3701,6 +3873,7 @@ function tickBattle(now){
   let mon=state.currentMonsters[0];
   applyCouncilBossMechanics(now);
   applyDungeonBossSpectacleMechanics(now);
+  applyDungeonBossDirectorMechanics(now);
   const spdMul=state.battleSpeed||1;                    // 战斗倍速(1x / 2x)
   const regenInterval=1000/spdMul;
 
@@ -3945,17 +4118,19 @@ function tickBattle(now){
   if(mon.isBoss&&!bossCasting){let bossData=getMonsterBossData(mon);
     if(!bossData){const map=MAPS.find(m=>m.key===state.currentMap);if(map?.boss)bossData=map.boss;}
     // 阶段技能:按 BOSS 当前血量% 过滤可用技能(sk.hpBelow=血量跌破该比例才解锁的阶段技;sk.hpAbove=仅高血量时使用的开场技);首次跨过新阶段线→立即施放该阶段技并播报
-    const _allBossSkills=(bossData?.skills||[]).filter(sk => !isPassiveMonsterSupportTrick(sk));
+    const _directorSkills=(typeof getDungeonBossDirectorSkills === 'function') ? getDungeonBossDirectorSkills(bossData) : [];
+    const _allBossSkills=(bossData?.skills||[]).filter(sk => !isPassiveMonsterSupportTrick(sk)).concat(_directorSkills);
     const _hpFrac=mon.hpMax>0?mon.hp/mon.hpMax:1;
     checkDungeonBossPhases(mon, now);
     let _forcedPhaseSk=null;
     for(const _s of _allBossSkills){ if(typeof _s.hpBelow==='number'&&_hpFrac<=_s.hpBelow){ mon._phasesSeen=mon._phasesSeen||{}; if(!mon._phasesSeen[_s.name]){ mon._phasesSeen[_s.name]=1; _forcedPhaseSk=_s; } } }
     if(_forcedPhaseSk){ log('⚔️ '+(mon.bossName||mon.name)+' 进入新阶段 —— '+(_forcedPhaseSk.icon||'')+_forcedPhaseSk.name+'!','bad'); if(typeof showMonsterFloat==='function')showMonsterFloat(mon,'⚔️ 阶段转换!','#f59e0b'); lastBossSkill=0; }
     const _phasePool=(()=>{ const e=_allBossSkills.filter(_s=>{ if(typeof _s.hpBelow==='number'&&_hpFrac>_s.hpBelow)return false; if(typeof _s.hpAbove==='number'&&_hpFrac<_s.hpAbove)return false; return true; }); return e.length?e:_allBossSkills; })();
-    const _pickSk=_forcedPhaseSk||_phasePool[bossSkillIdx%Math.max(1,_phasePool.length)];
+    const _queuedSk=(mon._queuedBossSkills&&mon._queuedBossSkills.length)?mon._queuedBossSkills.shift():null;
+    const _pickSk=_queuedSk||_forcedPhaseSk||_phasePool[bossSkillIdx%Math.max(1,_phasePool.length)];
     const rawCd=(_pickSk&&_pickSk.cd)||10;
     const skillCd=Math.max(2,Math.floor(rawCd*0.42));   // 读条技更频繁:CD压缩58%,但最低2秒间隔
-    if(_allBossSkills.length&&now-lastBossSkill>skillCd*1000){const sk=_pickSk;let castTime=sk.castTime!==undefined?sk.castTime:2;const instantChance=typeof mon.instantCastChance==='number'?mon.instantCastChance:(mon.instantCast?0.35:0);let instant=instantChance>0&&Math.random()<instantChance;if(instant&&isEmpoweredBossCast(sk))instant=false;/* 大伤害/灭团技(蓄力大招)绝不瞬发,必须读条可打断 */if(instant)castTime=0;bossCasting={bossName:mon.bossName,name:sk.name,icon:sk.icon,type:sk.type,heal:sk.heal,healPct:sk.healPct,mul:sk.mul,dotSkill:sk.dotSkill,dotSecs:sk.dotSecs,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,spdBuffSecs:sk.spdBuffSecs,spdBuffPct:sk.spdBuffPct,atkBuffSecs:sk.atkBuffSecs,atkBuffPct:sk.atkBuffPct,defBuffSecs:sk.defBuffSecs,defBuffPct:sk.defBuffPct,drBuffSecs:sk.drBuffSecs,drBuffPct:sk.drBuffPct,shieldPct:sk.shieldPct,critBuffSecs:sk.critBuffSecs,critBuffPct:sk.critBuffPct,leechBuffSecs:sk.leechBuffSecs,leechBuffPct:sk.leechBuffPct,summonCount:sk.summonCount,summonTheme:sk.summonTheme,aoe:sk.aoe,silence:sk.silence,disarm:sk.disarm,fear:sk.fear,freeze:sk.freeze,cripple:sk.cripple,decay:sk.decay,wither:sk.wither,manaDrain:sk.manaDrain,bomb:sk.bomb,plague:sk.plague,bleed:sk.bleed,brittle:sk.brittle,soulDrain:sk.soulDrain,soulLink:sk.soulLink,revenge:sk.revenge,frenzy:sk.frenzy,decay2:sk.decay2,mirror:sk.mirror,threat:sk.threat,interruptPolicy:sk.interruptPolicy,_empowered:isEmpoweredBossCast(sk),startTime:now,duration:castTime*1000};const _bt=bossCastTargetInfo(sk,now);bossCasting._targetDesc=_bt.desc;bossCasting._target=_bt.target;const _emp=!instant&&isEmpoweredBossCast(sk)&&sk.interruptPolicy!=='none';const _aoeLog=(sk.type!=='heal'&&sk.type!=='buff'&&!sk.summonCount&&typeof sk.mul==='number'&&sk.mul>0)?(sk.aoe?' [🌀群体]':' [🎯单体]'):'';log('💀 '+mon.bossName+(instant?' 瞬发 ':' 开始施放 ')+sk.name+_aoeLog+'!'+(instant?'(无法打断)':(_emp?' ⚡蓄力大招—打断可造成破绽!':'')),'bad');lastBossSkill=now;bossSkillIdx++;}
+    if(_allBossSkills.length&&now-lastBossSkill>skillCd*1000){const sk=_pickSk;let castTime=sk.castTime!==undefined?sk.castTime:2;const instantChance=typeof mon.instantCastChance==='number'?mon.instantCastChance:(mon.instantCast?0.35:0);let instant=instantChance>0&&Math.random()<instantChance;if(instant&&isEmpoweredBossCast(sk))instant=false;/* 大伤害/灭团技(蓄力大招)绝不瞬发,必须读条可打断 */if(instant)castTime=0;bossCasting={bossName:mon.bossName,name:sk.name,icon:sk.icon,type:sk.type,heal:sk.heal,healPct:sk.healPct,mul:sk.mul,dotSkill:sk.dotSkill,dotSecs:sk.dotSecs,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,spdBuffSecs:sk.spdBuffSecs,spdBuffPct:sk.spdBuffPct,atkBuffSecs:sk.atkBuffSecs,atkBuffPct:sk.atkBuffPct,defBuffSecs:sk.defBuffSecs,defBuffPct:sk.defBuffPct,drBuffSecs:sk.drBuffSecs,drBuffPct:sk.drBuffPct,shieldPct:sk.shieldPct,critBuffSecs:sk.critBuffSecs,critBuffPct:sk.critBuffPct,leechBuffSecs:sk.leechBuffSecs,leechBuffPct:sk.leechBuffPct,summonCount:sk.summonCount,summonTheme:sk.summonTheme,aoe:sk.aoe,silence:sk.silence,disarm:sk.disarm,fear:sk.fear,freeze:sk.freeze,cripple:sk.cripple,decay:sk.decay,wither:sk.wither,manaDrain:sk.manaDrain,bomb:sk.bomb,plague:sk.plague,bleed:sk.bleed,brittle:sk.brittle,soulDrain:sk.soulDrain,soulLink:sk.soulLink,revenge:sk.revenge,vulnerable:sk.vulnerable,frenzy:sk.frenzy,decay2:sk.decay2,mirror:sk.mirror,threat:sk.threat,interruptPolicy:sk.interruptPolicy,_empowered:isEmpoweredBossCast(sk),startTime:now,duration:castTime*1000};const _bt=bossCastTargetInfo(sk,now);bossCasting._targetDesc=_bt.desc;bossCasting._target=_bt.target;const _emp=!instant&&isEmpoweredBossCast(sk)&&sk.interruptPolicy!=='none';const _aoeLog=(sk.type!=='heal'&&sk.type!=='buff'&&!sk.summonCount&&typeof sk.mul==='number'&&sk.mul>0)?(sk.aoe?' [🌀群体]':' [🎯单体]'):'';log('💀 '+mon.bossName+(instant?' 瞬发 ':' 开始施放 ')+sk.name+_aoeLog+'!'+(instant?'(无法打断)':(_emp?' ⚡蓄力大招—打断可造成破绽!':'')),'bad');lastBossSkill=now;bossSkillIdx++;}
     // BOSS技巧(独立冷却,避免开场和支援技能一起连发)
     const tricks=bossTrickList(bossData).filter(trick => bossTrickAvailable(mon, trick, _hpFrac, now));
     const supportRecently = (mon._lastSupportSkill || 0) > 0 && now - mon._lastSupportSkill < 4500;
@@ -4777,7 +4952,18 @@ function skillEffects(wc,mon,taken,now,opts){
   if(wc.weaken){applyDebuff('weaken',5000);log('💔 '+enemyName+(wc.icon||'')+(target==='companion'?'削弱了随从!':'削弱了你!'),'bad');}
   if(wc.sunder){applyDebuff('vulnerable',5000);log('🩸 '+enemyName+(wc.icon||'')+(target==='companion'?'打出了随从的易伤!':'打出了易伤!'),'bad');}
   if(wc.spdBuff){mon.spdBuffUntil=now+8000;setMonsterTrickAura(mon,'spd',wc,mon.spdBuffUntil,{desc:wc.desc||'攻速提升'});log('⚡ '+enemyName+'攻速提升了!','bad');}
-  if(opts?.allowFallback!==false && !wc.dot&&!wc.slow&&!wc.stun&&!wc.weaken&&!wc.sunder&&!wc.silence&&!wc.disarm&&!wc.fear&&!wc.freeze&&!wc.cripple&&!wc.decay&&!wc.wither&&!wc.manaDrain&&!wc.bomb&&!wc.plague&&!wc.bleed&&!wc.brittle&&!wc.soulDrain&&!wc.soulLink&&!wc.revenge&&!wc.frenzy&&!wc.decay2&&!wc.mirror)applyDebuff('vulnerable',5000);
+  if(wc.vulnerable){applyDebuff('vulnerable',6000);log('🩸 '+enemyName+(wc.icon||'')+(target==='companion'?'压出了随从的破绽!':'让你变得易伤!'),'bad');}
+  if(wc.shieldPct && mon && target==='hero'){
+    const shield = Math.max(1, Math.floor(mon.hpMax * wc.shieldPct));
+    mon._arcaneShield = (mon._arcaneShield || 0) + shield;
+    syncMonsterShieldAura(mon);
+    showMonsterFloat(mon, '🛡️+' + shield, '#93c5fd', { variant:'shield', scale:1.04 });
+  }
+  if(wc.summonCount && mon && target==='hero'){
+    const summoned = summonMonsterAlly(mon, wc, now);
+    if(summoned > 0) log(`👥 ${enemyName} 的 ${wc.name || '技能'} 召来了 ${summoned} 个援军!`,'bad');
+  }
+  if(opts?.allowFallback!==false && !wc.dot&&!wc.slow&&!wc.stun&&!wc.weaken&&!wc.sunder&&!wc.silence&&!wc.disarm&&!wc.fear&&!wc.freeze&&!wc.cripple&&!wc.decay&&!wc.wither&&!wc.manaDrain&&!wc.bomb&&!wc.plague&&!wc.bleed&&!wc.brittle&&!wc.soulDrain&&!wc.soulLink&&!wc.revenge&&!wc.frenzy&&!wc.decay2&&!wc.mirror&&!wc.vulnerable&&!wc.shieldPct&&!wc.summonCount)applyDebuff('vulnerable',5000);
   if(target==='companion') markDirty('companion');
 }
 function tickCast(now){
@@ -4818,7 +5004,7 @@ function tickCast(now){
       const bc=bossCasting;bossCasting=null;const mon=state.currentMonsters[0];if(!mon||mon.hp<=0)return;
       const critRate = monsterCritRate(mon, now);
       if(bc.type==='heal'){const h=bossSkillHealAmount(mon, bc.heal||0.2);mon.hp=Math.min(mon.hpMax,mon.hp+h);showMonsterFloat(mon,'💚+'+h,'#6ee7b7');}
-      else if(bc.type==='buff'||bc.type==='support'||bc.type==='summon'){
+      else if(bc.type==='buff'||bc.type==='support'||bc.type==='summon'||(bc.summonCount && !bc.mul)){
         log(`💀 ${mon.bossName || mon.name} 释放了 ${bc.name}!`,'bad');
         showMonsterFloat(mon, (bc.icon || '✨') + bc.name + '!', '#fda4af');
         applyMonsterSupportSkill(mon, bc, now, { announce:false });

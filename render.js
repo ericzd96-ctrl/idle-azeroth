@@ -2953,6 +2953,8 @@ function buildDungeonInfoHtml(dg) {
       : [];
     const councilPreview = (typeof getDungeonBossCouncilMembers === 'function') ? getDungeonBossCouncilMembers(bossData) : [];
     const spectaclePreview = (typeof getDungeonBossSpectacleMechanics === 'function') ? getDungeonBossSpectacleMechanics(bossData) : [];
+    const directorSkillPreview = (typeof getDungeonBossDirectorSkills === 'function') ? getDungeonBossDirectorSkills(bossData) : [];
+    const directorEventPreview = (typeof getDungeonBossDirectorEvents === 'function') ? getDungeonBossDirectorEvents(bossData) : [];
     html += `
       <div style="margin:10px 0 0;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.03)">
         <div style="color:var(--legend);font-size:13px;font-weight:700;margin-bottom:6px">${bossIconHtml} ${bossName} ${dropLabel}</div>`;
@@ -2969,6 +2971,17 @@ function buildDungeonInfoHtml(dg) {
     if (spectaclePreview.length) {
       html += `<div class="dungeon-boss-spectacle-preview">
         ${spectaclePreview.map(m => `<span>${symbolIconHtml(m.icon, 12, m.name, 'spell_shadow_shadowfury')} ${m.name}</span>`).join('')}
+      </div>`;
+    }
+    if (directorEventPreview.length) {
+      html += `<div class="dungeon-boss-director-preview">
+        ${directorEventPreview.map(m => `<span>${symbolIconHtml(m.icon, 12, m.name, 'achievement_boss_illidan')} ${m.name}</span>`).join('')}
+      </div>`;
+    }
+    if (directorSkillPreview.length) {
+      html += `<div style="margin:0 0 8px 8px">
+        <div style="font-size:11px;color:#f0abfc;margin-bottom:3px">额外机制读条:</div>
+        ${directorSkillPreview.slice(0, 3).map(s => bossSkillLineHtml(s, { iconSize: 15, tagColor: '#f0abfc' })).join('')}
       </div>`;
     }
     if (bossData?.skills?.length) {
