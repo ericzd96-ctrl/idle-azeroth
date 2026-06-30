@@ -1313,6 +1313,13 @@ function recomputeStats() {
       if (mod.healReduction) healBonus = Math.floor(healBonus * (1 - mod.healReduction));
     }
   }
+  if (state.mode === 'dungeon' && ms2?.edicts?.length) {
+    for (const edict of ms2.edicts) {
+      const mod = edict.mod || {};
+      if (mod.heroSpd) spd = +(spd * (1 + mod.heroSpd)).toFixed(2);
+      if (mod.healReduction) healBonus = Math.floor(healBonus * (1 - mod.healReduction));
+    }
+  }
 
   // 精通被动:属性类效果(dotAmp/healAmp/critdAmp/leechAmp)在此并入对应属性;
   // dmgAmp/dr/bleedOnCrit 为战斗时钩子(masteryDmgMult/masteryTakenMult/暴击流血)。
@@ -2234,6 +2241,18 @@ function spawnDungeonMonster(){
     mon.baseXp = Math.floor(mon.baseXp * (1 + ((contract.reward || 1) - 1) * 0.5));
     mon._dungeonContractLevel = ds.contractLevel;
   }
+  if (state.mode === 'dungeon' && Array.isArray(ds.edicts) && ds.edicts.length) {
+    for (const edict of ds.edicts) {
+      const mod = edict.mod || {};
+      if (mod.trashHp && !isBoss) { mon.hpMax = Math.floor(mon.hpMax * (1 + mod.trashHp)); mon.hp = mon.hpMax; }
+      if (mod.bossHp && isBoss) { mon.hpMax = Math.floor(mon.hpMax * (1 + mod.bossHp)); mon.hp = mon.hpMax; }
+      if (mod.trashDmg && !isBoss) mon.atk = Math.floor(mon.atk * (1 + mod.trashDmg));
+      if (mod.bossDmg && isBoss) mon.atk = Math.floor(mon.atk * (1 + mod.bossDmg));
+      if (mod.trashDef && !isBoss) mon.def = Math.floor(mon.def * (1 + mod.trashDef));
+      if (mod.bossDef && isBoss) mon.def = Math.floor(mon.def * (1 + mod.bossDef));
+    }
+    mon._dungeonEdicts = ds.edicts;
+  }
   const alertInfo = (state.mode === 'dungeon' && typeof dungeonAlertInfo === 'function') ? dungeonAlertInfo(ds) : null;
   if (alertInfo && alertInfo.level > 0) {
     mon.hpMax = Math.floor(mon.hpMax * alertInfo.hp); mon.hp = mon.hpMax;
@@ -2322,6 +2341,36 @@ function spawnDungeonMonster(){
     });
     state.currentMonsters.push(captain);
     log(`🚨 警戒${alertInfo.level}: ${captain.name} 加入战斗`, 'bad');
+  }
+  const edictAddChance = state.mode === 'dungeon' && !isBoss && Array.isArray(ds.edicts)
+    ? ds.edicts.reduce((sum, edict) => sum + (edict?.mod?.edictAddChance || 0), 0)
+    : 0;
+  if (edictAddChance > 0 && Math.random() < Math.min(0.55, edictAddChance)) {
+    const enforcer = Object.assign({}, mon, {
+      name: `${temoji}禁令执法者`,
+      hpMax: Math.max(1, Math.floor(mon.hpMax * 0.72)),
+      hp: Math.max(1, Math.floor(mon.hpMax * 0.72)),
+      atk: Math.max(1, Math.floor(mon.atk * 0.74)),
+      def: Math.max(0, Math.floor(mon.def * 0.92)),
+      goldReward: Math.max(1, Math.floor(mon.goldReward * 0.55)),
+      honorReward: Math.max(1, Math.floor((mon.honorReward || 1) * 0.55)),
+      baseXp: Math.max(1, Math.floor(mon.baseXp * 0.55)),
+      dropRate: Math.min(0.22, (mon.dropRate || 0.1) + 0.025),
+      gemChance: Math.min(0.06, (mon.gemChance || 0) + 0.012),
+      _uid: monUidSeq++,
+      _dots: {},
+      _dotLegacyImported: true,
+      _lastDotTick: 0,
+      _dungeonAdd: true,
+      _spawnAt: Date.now(),
+      _supportSkillCooldowns: {},
+      _lastSkill: Date.now() - rng(800, 2200),
+      _lastAtk: Date.now() - rng(0, 800),
+      _lastSupportSkill: Date.now() - rng(1200, 3600),
+    });
+    state.currentMonsters.push(enforcer);
+    state.dungeonState.edictAdds = (state.dungeonState.edictAdds || 0) + 1;
+    log(`📜 战术禁令: ${enforcer.name} 加入战斗`, 'bad');
   }
 }
 
@@ -2821,6 +2870,60 @@ function applyDungeonEnvironmentEffects(ds, mon, now){
   }
   if((ds.environmentHits || 0) !== beforeHits && typeof markDirty === 'function') markDirty('hero', 'stage');
 }
+function applyDungeonEdictEffects(ds, mon, now){
+  if(state.mode !== 'dungeon' || !ds?.edicts?.length || !mon) return;
+  const beforeHits = ds.edictHits || 0;
+  for(const edict of ds.edicts){
+    const mod = edict.mod || {};
+    const prefix = `edict:${edict.key}`;
+    if(mod.drainTickMs && now - (ds[`${prefix}:drain`] || 0) > mod.drainTickMs){
+      ds[`${prefix}:drain`] = now;
+      const drain = Math.min(state.resource || 0, Math.floor((state.resourceMax || 0) * (mod.resourceDrainPct || 0.08)));
+      if(drain > 0){
+        state.resource = Math.max(0, state.resource - drain);
+        showFloat($('hero-emoji'), `${edict.icon || '📜'}-${drain}`, '#93c5fd', { variant:'status', scale:1.04 });
+        ds.edictHits = (ds.edictHits || 0) + 1;
+      }
+    }
+    if(mod.poisonTickMs && now - (ds[`${prefix}:poison`] || 0) > mod.poisonTickMs){
+      ds[`${prefix}:poison`] = now;
+      const dps = Math.max(1, Math.floor((state.hero.hpMax || 1) * (mod.poisonDpsPct || 0.01)));
+      applyHeroDebuff('burn', 4200, { dps });
+      showFloat($('hero-emoji'), `${edict.icon || '📜'}腐蚀`, '#a3e635', { variant:'status', scale:1.04 });
+      ds.edictHits = (ds.edictHits || 0) + 1;
+    }
+    if(mod.ceilingTickMs && now - (ds[`${prefix}:ceiling`] || 0) > mod.ceilingTickMs){
+      ds[`${prefix}:ceiling`] = now;
+      const dmg = Math.max(1, Math.floor((state.hero.hpMax || 1) * (mod.ceilingDamagePct || 0.04)));
+      applyHeroDamage(dmg, mon, { label:t=>(edict.icon || '📜') + '-' + t, color:'#f59e0b', now });
+      ds.edictHits = (ds.edictHits || 0) + 1;
+    }
+    if(mod.shieldTickMs && now - (ds[`${prefix}:shield`] || 0) > mod.shieldTickMs){
+      ds[`${prefix}:shield`] = now;
+      for(const target of (state.currentMonsters || [])){
+        if(!target || target.hp <= 0) continue;
+        const shield = Math.max(1, Math.floor(target.hpMax * (mod.monsterShieldPct || 0.03)));
+        target._arcaneShield = (target._arcaneShield || 0) + shield;
+        syncMonsterShieldAura(target);
+        showMonsterFloat(target, `${edict.icon || '📜'}盾`, '#93c5fd');
+      }
+      ds.edictHits = (ds.edictHits || 0) + 1;
+    }
+    if(mod.weakenTickMs && now - (ds[`${prefix}:weaken`] || 0) > mod.weakenTickMs){
+      ds[`${prefix}:weaken`] = now;
+      applyHeroDebuff('weaken', mod.weakenMs || 4500);
+      showFloat($('hero-emoji'), `${edict.icon || '📜'}虚弱`, '#fca5a5', { variant:'status', scale:1.04 });
+      ds.edictHits = (ds.edictHits || 0) + 1;
+    }
+    if(mod.executePulsePct && mon.isBoss && mon.hpMax > 0 && mon.hp / mon.hpMax <= (mod.executeBelow || 0.35) && now - (ds[`${prefix}:execute`] || 0) > 9000){
+      ds[`${prefix}:execute`] = now;
+      const dmg = Math.max(1, Math.floor((state.hero.hpMax || 1) * mod.executePulsePct));
+      applyHeroDamage(dmg, mon, { label:t=>(edict.icon || '⏱️') + '-' + t, color:'#fb7185', now });
+      ds.edictHits = (ds.edictHits || 0) + 1;
+    }
+  }
+  if((ds.edictHits || 0) !== beforeHits && typeof markDirty === 'function') markDirty('hero', 'stage');
+}
 /* 破甲(sunder)等护甲削减后的有效防御 */
 function monArmor(mon){
   if(!mon)return 0;
@@ -2921,6 +3024,9 @@ function heroDebuffTakenMult(){
   const now=Date.now();let m=1;
   if(state.heroDebuffs){for(const k in state.heroDebuffs){const d=state.heroDebuffs[k];if(d.expire>now){const fx=DEBUFF_FX[k];if(fx&&fx.takenMul)m*=fx.takenMul;}}}
   if(state.mode === 'dungeon' && state.dungeonState?.environments?.some(env => env?.mod?.vulnerableTaken)) m *= 1.10;
+  if(state.mode === 'dungeon' && state.dungeonState?.edicts?.length) {
+    for(const edict of state.dungeonState.edicts) m *= 1 + (edict?.mod?.takenMult || 0);
+  }
   return m;
 }
 function heroDebuffHealMult(){
@@ -3356,6 +3462,9 @@ function tickBattle(now){
   }
   if (state.mode === 'dungeon' && state.dungeonState?.environments?.length) {
     applyDungeonEnvironmentEffects(state.dungeonState, mon, now);
+  }
+  if (state.mode === 'dungeon' && state.dungeonState?.edicts?.length) {
+    applyDungeonEdictEffects(state.dungeonState, mon, now);
   }
 
   // 玩家攻击(锁定焦点 = 仇恨最高者)

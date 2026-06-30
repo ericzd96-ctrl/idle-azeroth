@@ -145,10 +145,12 @@ function enterDungeon(key) {
   const baseAffixes = getDungeonAffixes(dg);
   const trials = (typeof getDungeonContractTrials === 'function') ? getDungeonContractTrials(dg, contractLevel) : [];
   const environments = (typeof getDungeonEnvironments === 'function') ? getDungeonEnvironments(dg, contractLevel) : [];
-  state.dungeonState = { key, wave: 1, loot: [], affixes: baseAffixes.concat(trials), trials, environments, contractLevel, contract, alertLevel: 0, maxAlert: 0 };
+  const edicts = (typeof getDungeonTacticalEdicts === 'function') ? getDungeonTacticalEdicts(dg, contractLevel) : [];
+  state.dungeonState = { key, wave: 1, loot: [], affixes: baseAffixes.concat(trials), trials, environments, edicts, contractLevel, contract, alertLevel: 0, maxAlert: 0 };
   if (contractLevel > 0 && contract) log(`${contract.icon || '📜'} 已启用 ${contract.name}: ${contract.desc}`, 'legend');
   if (trials.length) log(`🔥 契约试炼: ${trials.map(t => `${t.icon || '🔥'}${t.name}`).join(' · ')}`, 'legend');
   if (environments.length) log(`🧭 副本环境: ${environments.map(e => `${e.icon || '🧭'}${e.name}`).join(' · ')}`, 'bad');
+  if (edicts.length) log(`📜 战术禁令: ${edicts.map(e => `${e.icon || '📜'}${e.name}`).join(' · ')}`, 'bad');
   // 进入副本:全量刷新所有技能CD(英雄/天赋/神器/随从)+清理身上的 buff/debuff/护盾(含随从护盾与随从buff/debuff)
   if (typeof resetCombatState === 'function') resetCombatState();
   else if (typeof clearAllBuffs === 'function') clearAllBuffs();
@@ -208,6 +210,82 @@ function getDungeonEnvironments(dg, contractLevel) {
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
   return pool.slice(0, Math.min(count, pool.length)).map(e => ({ ...e, dungeonEnvironment:true }));
+}
+
+const DUNGEON_TACTICAL_EDICTS = (() => {
+  const groups = [
+    { key:'assault', name:'进攻铁律', icon:'⚔️', mods:i=>({ trashDmg:0.05+i*0.004, bossDmg:0.035+i*0.004 }), variants:['锋刃齐鸣','血线推进','破阵冲锋','无休追击','侧翼合围','狂攻号角','压迫火力','猛击节奏','残酷轮换','终末突袭'] },
+    { key:'bulwark', name:'壁垒铁律', icon:'🛡️', mods:i=>({ trashDef:0.08+i*0.004, bossDef:0.06+i*0.004 }), variants:['重甲封门','盾墙常驻','铁壁驻防','坚守阵线','护卫轮班','钉刺甲胄','城墙姿态','硬化甲片','堡垒协议','不屈防线'] },
+    { key:'vitality', name:'生命铁律', icon:'🫀', mods:i=>({ trashHp:0.09+i*0.005, bossHp:0.055+i*0.005 }), variants:['厚血军令','血肉增幅','生命税契','强壮守备','不死执念','坚韧骨架','鲜血储备','再生纪律','巨兽化生','耐久演算'] },
+    { key:'resource', name:'资源禁令', icon:'💧', mods:i=>({ resourceDrainPct:0.06+i*0.004, drainTickMs:12000-Math.min(3500,i*280) }), variants:['法力漏斗','怒气征税','能量封存','灵泉枯竭','蓝焰回收','施法抽税','奥能逆流','专注瓦解','余烬克扣','源质蒸发'] },
+    { key:'healing', name:'治疗禁令', icon:'💀', mods:i=>({ healReduction:0.09+i*0.006, poisonDpsPct:0.009+i*0.001, poisonTickMs:12500-Math.min(3000,i*250) }), variants:['腐毒注入','止血封印','黑血污染','创口诅咒','疫雾漫灌','圣泉枯萎','愈合反噬','生命压价','伤口撕裂','败血律令'] },
+    { key:'mobility', name:'机动禁令', icon:'🪨', mods:i=>({ heroSpd:-(0.035+i*0.003), ceilingDamagePct:0.035+i*0.002, ceilingTickMs:15000-Math.min(3200,i*260) }), variants:['沉重地面','锁足碎石','塌方预案','泥沼封路','迟滞力场','狭路压迫','碎阶坠落','重力偏转','铁靴诅咒','断桥行军'] },
+    { key:'shield', name:'护盾禁令', icon:'🔷', mods:i=>({ monsterShieldPct:0.025+i*0.003, shieldTickMs:16500-Math.min(3500,i*300) }), variants:['护符轮值','晶壁轮转','蓝盾巡礼','奥术屏障','法阵加固','护盾税契','结界回响','屏障重启','棱镜守卫','壁障灌注'] },
+    { key:'reinforce', name:'增援禁令', icon:'🚩', mods:i=>({ edictAddChance:0.10+i*0.01, trashDmg:0.03+i*0.002 }), variants:['哨兵补位','副官巡场','后备队列','战旗召集','伏兵暗号','守门换防','精锐点名','号角响应','执法队列','铁卫加派'] },
+    { key:'pressure', name:'压迫禁令', icon:'🌫️', mods:i=>({ takenMult:0.04+i*0.004, weakenTickMs:14500-Math.min(3000,i*250), weakenMs:3500+i*180 }), variants:['恐惧税契','低语审判','心智重压','胆怯扩散','暗雾判令','意志压迫','噩兆回声','绝望队列','黑幕临场','精神勒令'] },
+    { key:'execution', name:'处刑禁令', icon:'⏱️', mods:i=>({ bossDmg:0.04+i*0.004, executePulsePct:0.035+i*0.002, executeBelow:0.38 }), variants:['斩杀窗口','终局倒计','残血清算','处刑铃声','灭口协议','断魂号令','收割时刻','终幕压力','濒死追猎','最后审判'] },
+  ];
+  return groups.flatMap((group, gi) => group.variants.map((variant, vi) => ({
+    key:`edict_${group.key}_${vi + 1}`,
+    name:`${group.name}·${variant}`,
+    icon:group.icon,
+    desc:tacticalEdictDesc(group.key, group.name, variant, vi),
+    mod:group.mods(vi),
+    score:gi * 10 + vi + 1,
+    tacticalEdict:true,
+  })));
+})();
+
+function tacticalEdictDesc(groupKey, groupName, variant, i) {
+  const n = i + 1;
+  const map = {
+    assault:`敌方攻势提高,小怪与首领造成更高伤害。强度 ${n}/10。`,
+    bulwark:`敌方防御提高,更难被快速击穿。强度 ${n}/10。`,
+    vitality:`敌方生命提高,拉长战斗并放大后续机制压力。强度 ${n}/10。`,
+    resource:`周期性燃烧资源,压缩自动施法和爆发窗口。强度 ${n}/10。`,
+    healing:`治疗效果降低,并周期性施加毒性持续伤害。强度 ${n}/10。`,
+    mobility:`攻击速度降低,并周期性遭遇塌方落石。强度 ${n}/10。`,
+    shield:`敌方周期性获得小型护盾,拖慢击杀节奏。强度 ${n}/10。`,
+    reinforce:`小怪波次可能出现禁令执法者增援。强度 ${n}/10。`,
+    pressure:`受到伤害提高,并周期性陷入虚弱。强度 ${n}/10。`,
+    execution:`首领伤害提高,低血量阶段周期性施加处刑压力。强度 ${n}/10。`,
+  };
+  return map[groupKey] || `${groupName}·${variant}:额外副本规则。`;
+}
+
+function getDungeonTacticalEdictCount(contractLevel) {
+  const level = Math.max(0, Math.min(3, Math.floor(contractLevel || 0)));
+  return level <= 0 ? 0 : (level === 1 ? 2 : (level === 2 ? 3 : 5));
+}
+
+function getDungeonTacticalEdicts(dg, contractLevel) {
+  const count = getDungeonTacticalEdictCount(contractLevel);
+  if (!dg || count <= 0) return [];
+  const day = Math.floor(Date.now() / 86400000);
+  let seed = ((dg.reqLvl || 1) * 419 + count * 1297 + (day % 100000) * 911) % 2147483647;
+  const key = dg.key || '';
+  for (let i = 0; i < key.length; i++) seed = (seed * 47 + key.charCodeAt(i)) % 2147483647;
+  seed = seed || 1;
+  const grouped = {};
+  for (const edict of DUNGEON_TACTICAL_EDICTS) {
+    const group = edict.key.split('_')[1] || edict.key;
+    if (!grouped[group]) grouped[group] = [];
+    grouped[group].push(edict);
+  }
+  const groupKeys = Object.keys(grouped);
+  for (let i = groupKeys.length - 1; i > 0; i--) {
+    seed = (seed * 16807) % 2147483647;
+    const j = seed % (i + 1);
+    [groupKeys[i], groupKeys[j]] = [groupKeys[j], groupKeys[i]];
+  }
+  const picked = [];
+  for (const groupKey of groupKeys) {
+    seed = (seed * 16807) % 2147483647;
+    const pool = grouped[groupKey];
+    picked.push(pool[seed % pool.length]);
+    if (picked.length >= count) break;
+  }
+  return picked.map(e => ({ ...e, mod:{ ...(e.mod || {}) } }));
 }
 
 const DUNGEON_CONTRACT_TRIALS = [
@@ -285,7 +363,8 @@ function setDungeonContractLevel(level) {
 
 function dungeonContractRewardMult(ds) {
   const lvl = Math.max(0, Math.min(3, Math.floor(ds?.contractLevel || 0)));
-  return dungeonContractInfo(lvl).reward || 1;
+  const edictBonus = Array.isArray(ds?.edicts) ? ds.edicts.length * 0.04 : 0;
+  return (dungeonContractInfo(lvl).reward || 1) * (1 + edictBonus);
 }
 
 function dungeonAlertInfo(ds) {
@@ -574,7 +653,7 @@ function onDungeonClear(dg) {
     : '';
   const contractInfo = dungeonContractInfo(dungeonStateSnapshot?.contractLevel || 0);
   const contractHtml = dungeonStateSnapshot?.contractLevel > 0
-    ? `<div class="muted" style="font-size:12px">${contractInfo.icon} 契约: ${contractInfo.name} · 通关奖励 ×${contractInfo.reward.toFixed(2)} · 最高警戒 ${dungeonStateSnapshot.maxAlert || dungeonStateSnapshot.alertLevel || 0} · 首领阶段 ${dungeonStateSnapshot.bossPhasesTriggered || 0} · 环境触发 ${dungeonStateSnapshot.environmentHits || 0}</div>`
+    ? `<div class="muted" style="font-size:12px">${contractInfo.icon} 契约: ${contractInfo.name} · 通关奖励 ×${contractMult.toFixed(2)} · 最高警戒 ${dungeonStateSnapshot.maxAlert || dungeonStateSnapshot.alertLevel || 0} · 首领阶段 ${dungeonStateSnapshot.bossPhasesTriggered || 0} · 环境触发 ${dungeonStateSnapshot.environmentHits || 0} · 禁令触发 ${dungeonStateSnapshot.edictHits || 0} · 禁令增援 ${dungeonStateSnapshot.edictAdds || 0}</div>`
     : '';
   const contractChestHtml = grantDungeonContractChest(dg, dungeonStateSnapshot);
   const bountyHtml = grantDungeonBountyReward(dg, { loot:uniqueLoot });

@@ -659,9 +659,24 @@ h1 {
   font-size: 12px;
   line-height: 1.5;
 }
+.dungeon-edict-info {
+  margin-top: 7px;
+  padding: 7px 8px;
+  border: 1px solid rgba(250,204,21,.26);
+  border-radius: 7px;
+  background: rgba(161,98,7,.10);
+  color: #fef3c7;
+  font-size: 12px;
+  line-height: 1.5;
+}
 .dungeon-trial-line {
   font-size: 11px;
   color: #fecaca;
+  line-height: 1.45;
+}
+.dungeon-edict-line {
+  font-size: 11px;
+  color: #fde68a;
   line-height: 1.45;
 }
 .dungeon-environment-line {
@@ -670,7 +685,8 @@ h1 {
   line-height: 1.45;
 }
 .dungeon-alert-rule,
-.dungeon-alert-line {
+.dungeon-alert-line,
+.dungeon-edict-rule {
   margin-top: 4px;
   font-size: 11px;
   line-height: 1.45;
