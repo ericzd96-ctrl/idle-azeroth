@@ -472,6 +472,135 @@ function collectProgressionBonus() {
   return (accEns()||{}).permanentStats || {};
 }
 
+/* ============ 副本专精档案(账号共享) ============ */
+const DUNGEON_MASTERY_TRACKS = [
+  { key:'five', name:'5人本远征', icon:'🧭', desc:'普通5人本通关积累。' },
+  { key:'heroic', name:'英雄试炼', icon:'⭐', desc:'英雄5人本通关积累。' },
+  { key:'epic5', name:'史诗秘境', icon:'💠', desc:'史诗5人本与大秘境通关积累。' },
+  { key:'raid', name:'团本征服', icon:'🏰', desc:'普通团本通关积累。' },
+  { key:'epicRaid', name:'史诗团本', icon:'🌋', desc:'史诗团本通关积累。' },
+];
+
+function ensureDungeonMastery() {
+  const acc = accEns();
+  if (!acc.dungeonMastery) acc.dungeonMastery = { tracks:{}, totalXp:0 };
+  if (!acc.dungeonMastery.tracks) acc.dungeonMastery.tracks = {};
+  for (const t of DUNGEON_MASTERY_TRACKS) {
+    if (!acc.dungeonMastery.tracks[t.key]) acc.dungeonMastery.tracks[t.key] = { xp:0, clears:0, bestContract:0, bestMythic:0 };
+  }
+  return acc.dungeonMastery;
+}
+
+function dungeonMasteryTrackFor(dg) {
+  if (!dg) return DUNGEON_MASTERY_TRACKS[0];
+  if (dg.epicRaid) return DUNGEON_MASTERY_TRACKS.find(t => t.key === 'epicRaid');
+  if (dg.epic5) return DUNGEON_MASTERY_TRACKS.find(t => t.key === 'epic5');
+  if (dg.heroic) return DUNGEON_MASTERY_TRACKS.find(t => t.key === 'heroic');
+  if (dg.type === 'raid') return DUNGEON_MASTERY_TRACKS.find(t => t.key === 'raid');
+  return DUNGEON_MASTERY_TRACKS.find(t => t.key === 'five');
+}
+
+function dungeonMasteryXpRequirement(level) {
+  const lvl = Math.max(1, level || 1);
+  return 100 * lvl * lvl + 40 * lvl;
+}
+
+function dungeonMasteryLevelFromXp(xp) {
+  let lvl = 0;
+  const val = Math.max(0, xp || 0);
+  while (lvl < 25 && val >= dungeonMasteryXpRequirement(lvl + 1)) lvl++;
+  return lvl;
+}
+
+function dungeonMasteryXpGain(dg, opts) {
+  const tier = (typeof dungeonBountyTier === 'function') ? dungeonBountyTier(dg) : (dg?.type === 'raid' ? 4 : 1);
+  const req = Math.max(1, dg?.reqLvl || 1);
+  const contractLevel = Math.max(0, opts?.contractLevel || 0);
+  const mythicLevel = Math.max(0, opts?.mythicLevel || 0);
+  let gain = 30 + Math.floor(req * 0.55) + tier * 28;
+  gain = Math.floor(gain * (1 + contractLevel * 0.25));
+  if (mythicLevel) gain = Math.floor(gain * (1 + Math.min(25, mythicLevel) * 0.06));
+  return Math.max(20, gain);
+}
+
+function progressionOnDungeonMasteryClear(dgKey, opts) {
+  const dg = (typeof DUNGEONS !== 'undefined') ? DUNGEONS.find(d => d.key === dgKey) : null;
+  if (!dg) return '';
+  const mastery = ensureDungeonMastery();
+  const trackInfo = dungeonMasteryTrackFor(dg);
+  const track = mastery.tracks[trackInfo.key];
+  const beforeLevel = dungeonMasteryLevelFromXp(track.xp || 0);
+  const gain = dungeonMasteryXpGain(dg, opts || {});
+  track.xp = (track.xp || 0) + gain;
+  track.clears = (track.clears || 0) + 1;
+  track.bestContract = Math.max(track.bestContract || 0, opts?.contractLevel || 0);
+  track.bestMythic = Math.max(track.bestMythic || 0, opts?.mythicLevel || 0);
+  mastery.totalXp = (mastery.totalXp || 0) + gain;
+  const afterLevel = dungeonMasteryLevelFromXp(track.xp || 0);
+  let rewardHtml = '';
+  if (afterLevel > beforeLevel) {
+    const levels = afterLevel - beforeLevel;
+    const gem = afterLevel * 4 + levels * 3;
+    const essence = Math.max(2, Math.ceil(afterLevel / 2) + levels);
+    state.gem += gem;
+    if (typeof ensureMats === 'function') ensureMats();
+    state.essence = (state.essence || 0) + essence;
+    log(`${trackInfo.icon} 副本专精升级: ${trackInfo.name} Lv.${afterLevel}! 💎+${gem} ✨+${essence}`, 'legend');
+    rewardHtml = `<div class="dungeon-mastery-clear">${trackInfo.icon} ${trackInfo.name} 升至 Lv.${afterLevel} · 💎+${gem} ✨+${essence}</div>`;
+  } else {
+    log(`${trackInfo.icon} ${trackInfo.name} 专精 +${gain} XP`, 'info');
+  }
+  markDirty('dungeon','progression','hero');
+  return rewardHtml;
+}
+
+function collectDungeonMasteryMod() {
+  const mastery = ensureDungeonMastery();
+  let totalLevel = 0;
+  for (const t of DUNGEON_MASTERY_TRACKS) {
+    const tr = mastery.tracks[t.key] || {};
+    totalLevel += dungeonMasteryLevelFromXp(tr.xp || 0);
+  }
+  return {
+    xpMult: Math.min(25, totalLevel * 0.45),
+    goldMult: Math.min(30, totalLevel * 0.55),
+    dropMult: Math.min(16, totalLevel * 0.25),
+    dmgPct: Math.min(24, totalLevel * 0.35),
+    totalLevel,
+  };
+}
+
+function renderDungeonMasteryPanel() {
+  const root = $('dungeon-mastery-panel');
+  if (!root) return;
+  const mastery = ensureDungeonMastery();
+  const mod = collectDungeonMasteryMod();
+  const rows = DUNGEON_MASTERY_TRACKS.map(t => {
+    const tr = mastery.tracks[t.key] || {};
+    const xp = tr.xp || 0;
+    const lvl = dungeonMasteryLevelFromXp(xp);
+    const curReq = lvl > 0 ? dungeonMasteryXpRequirement(lvl) : 0;
+    const nextReq = lvl >= 25 ? curReq : dungeonMasteryXpRequirement(lvl + 1);
+    const pct = lvl >= 25 ? 100 : Math.max(0, Math.min(100, ((xp - curReq) / Math.max(1, nextReq - curReq)) * 100));
+    return `<div class="dungeon-mastery-row">
+      <div class="dungeon-mastery-head">
+        <b>${t.icon} ${t.name}</b>
+        <span>Lv.${lvl}${lvl >= 25 ? ' MAX' : ''}</span>
+      </div>
+      <div class="muted">${t.desc} · 通关 ${tr.clears || 0} 次${tr.bestContract ? ` · 最高契约 ${tr.bestContract}` : ''}${tr.bestMythic ? ` · 最高大秘 +${tr.bestMythic}` : ''}</div>
+      <div class="bar xp dungeon-mastery-bar"><i style="width:${pct}%"></i></div>
+      <div class="muted">${lvl >= 25 ? '已满级' : `${fmt(Math.max(0, xp - curReq))}/${fmt(nextReq - curReq)} XP`}</div>
+    </div>`;
+  }).join('');
+  root.innerHTML = `<div class="dungeon-mastery-panel">
+    <div class="dungeon-mastery-title">
+      <span>📚 副本专精档案</span>
+      <span class="muted">总等级 ${mod.totalLevel} · 副本内 XP +${mod.xpMult.toFixed(1)}% · 金币 +${mod.goldMult.toFixed(1)}% · 掉率 +${mod.dropMult.toFixed(1)}% · 伤害 +${mod.dmgPct.toFixed(1)}%</span>
+    </div>
+    <div class="dungeon-mastery-grid">${rows}</div>
+  </div>`;
+}
+
 /* ============ 钩子 ============ */
 /* ensureProgState 兼容旧调用方,内部确保 account 已就绪 */
 function ensureProgState() { accEns(); }
@@ -513,14 +642,16 @@ function progressionOnGoldGain(amount) {
   if (Math.floor(acc.lifetimeGold/1000) !== Math.floor(before/1000)) progressionCheckAch();
 }
 
-function progressionOnDungeonClear(dgKey) {
+function progressionOnDungeonClear(dgKey, opts) {
   const acc = accEns();
   acc.dungeonClearsTotal = (acc.dungeonClearsTotal||0) + 1;
   if (typeof questAdvance === 'function') questAdvance('dungeon', 1);
   const dg = (typeof DUNGEONS!=='undefined') ? DUNGEONS.find(d=>d.key===dgKey) : null;
   const fac = dg ? (dg.faction || '中立') : '中立';
   acc.reputation[fac] = (acc.reputation[fac]||0) + 200;
+  const masteryHtml = progressionOnDungeonMasteryClear(dgKey, opts || {});
   progressionCheckAch();
+  return masteryHtml;
 }
 
 function progressionOnGem() {
@@ -763,10 +894,12 @@ function renderRepSubtab() {
 function progressionCombatBonus(mobName) {
   const z = progressionZoneMultiplier();
   const b = bestiaryBonusFor(mobName||'');
+  const dungeonActive = state && (state.mode === 'dungeon' || state.mode === 'mythic');
+  const dm = dungeonActive && typeof collectDungeonMasteryMod === 'function' ? collectDungeonMasteryMod() : {xpMult:0,goldMult:0,dropMult:0,dmgPct:0};
   return {
-    xpMult:  1 + (z.xpPct + b.xpPct) / 100,
-    goldMult:1 + (z.goldPct) / 100,
-    dropMult:1 + (z.dropPct) / 100,
-    dmgMult: 1 + (z.dmgPct + b.dmgPct) / 100,
+    xpMult:  1 + (z.xpPct + b.xpPct + dm.xpMult) / 100,
+    goldMult:1 + (z.goldPct + dm.goldMult) / 100,
+    dropMult:1 + (z.dropPct + dm.dropMult) / 100,
+    dmgMult: 1 + (z.dmgPct + b.dmgPct + dm.dmgPct) / 100,
   };
 }

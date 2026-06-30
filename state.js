@@ -159,6 +159,7 @@ function defaultAccount() {
     // 声望(账号合并)
     reputation: {},         // {factionName: amount}
     repCaches: {},          // {factionName: 已领崇拜后宝箱数}
+    dungeonMastery: { tracks:{}, totalXp:0 },
     zoneBounties: { claimed:{} }, // 区域悬赏一次性补给 {claimed:{mapKey:true}}
     dragonTreasures: { claimed:{} }, // 龙岛宝藏收藏 {claimed:{treasureKey:timestamp}}
     classOrders: { claimed:{} }, // 职业大厅委托 {claimed:{classMissionKey:timestamp}}
@@ -203,6 +204,9 @@ function mergeAccount(saved) {
     bestiary: saved.bestiary || {},
     reputation: saved.reputation || {},
     repCaches: saved.repCaches || {},
+    dungeonMastery: saved.dungeonMastery ? Object.assign({}, d.dungeonMastery, saved.dungeonMastery, {
+      tracks: saved.dungeonMastery.tracks || {},
+    }) : d.dungeonMastery,
     zoneBounties: saved.zoneBounties ? Object.assign({}, d.zoneBounties, saved.zoneBounties, {
       claimed: saved.zoneBounties.claimed || {},
     }) : d.zoneBounties,

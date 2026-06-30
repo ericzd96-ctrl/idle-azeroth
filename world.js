@@ -375,7 +375,8 @@ function grantDungeonBountyReward(dg, opts) {
 }
 
 function onDungeonClear(dg) {
-  if (typeof progressionOnDungeonClear === 'function') progressionOnDungeonClear(dg.key);
+  const dungeonStateSnapshot = state.dungeonState || {};
+  const masteryHtml = (typeof progressionOnDungeonClear === 'function') ? (progressionOnDungeonClear(dg.key, { contractLevel:dungeonStateSnapshot.contractLevel || 0 }) || '') : '';
   if (typeof eventsOnDungeonClear === 'function') eventsOnDungeonClear();
   if (typeof relicOnDungeonClear === 'function') relicOnDungeonClear(dg);   // 神器遗物掉落
   if (typeof vaultAdvance === 'function') vaultAdvance('dungeon', 1);       // 每周宝库·探险
@@ -384,8 +385,8 @@ function onDungeonClear(dg) {
   const finalBossName = lastBoss ? lastBoss.name : '最终首领';
 
   // 词缀加成:越多词缀通关奖励越高(呼应"越难越值")
-  const affixes = (state.dungeonState && state.dungeonState.affixes) || [];
-  const contractMult = dungeonContractRewardMult(state.dungeonState);
+  const affixes = (dungeonStateSnapshot && dungeonStateSnapshot.affixes) || [];
+  const contractMult = dungeonContractRewardMult(dungeonStateSnapshot);
   const affixMult = (1 + affixes.length * 0.15) * contractMult;
 
   // 额外通关奖励(小幅上调 + 词缀加成)
@@ -429,7 +430,7 @@ function onDungeonClear(dg) {
   }
 
   // 全程掉落:每个BOSS击杀时已各掉 1 件其专属池装备(combat.js 里 dungeon BOSS 必掉),这里不再额外补掉落
-  const allLoot = (state.dungeonState?.loot || []).slice();
+  const allLoot = (dungeonStateSnapshot?.loot || []).slice();
   // 去重(id重复的去掉)
   const seen = new Set();
   const uniqueLoot = allLoot.filter(it => { const k = it.id; if (seen.has(k)) return false; seen.add(k); return true; });
@@ -441,11 +442,11 @@ function onDungeonClear(dg) {
   const affixHtml = affixes.length
     ? `<div class="muted" style="font-size:12px">本次词缀: ${affixes.map(a => (a.icon||'') + a.name).join(' · ')}</div>`
     : '';
-  const contractInfo = dungeonContractInfo(state.dungeonState?.contractLevel || 0);
-  const contractHtml = state.dungeonState?.contractLevel > 0
+  const contractInfo = dungeonContractInfo(dungeonStateSnapshot?.contractLevel || 0);
+  const contractHtml = dungeonStateSnapshot?.contractLevel > 0
     ? `<div class="muted" style="font-size:12px">${contractInfo.icon} 契约: ${contractInfo.name} · 通关奖励 ×${contractInfo.reward.toFixed(2)}</div>`
     : '';
-  const contractChestHtml = grantDungeonContractChest(dg, state.dungeonState);
+  const contractChestHtml = grantDungeonContractChest(dg, dungeonStateSnapshot);
   const bountyHtml = grantDungeonBountyReward(dg, { loot:uniqueLoot });
   $('dungeon-clear-text').innerHTML = `
     <div style="font-size:18px;margin:8px 0">🏆 ${dg.name} 通关!</div>
@@ -460,6 +461,7 @@ function onDungeonClear(dg) {
       ${lootHtml}
     </div>
     ${firstClearHtml}
+    ${masteryHtml}
     ${contractChestHtml}
     ${bountyHtml}
   `;
@@ -895,6 +897,9 @@ function onMythicClear() {
   if (typeof vaultAdvance === 'function') vaultAdvance('mythic', 1);   // 每周宝库·险境
   if (typeof relicOnMythicClear === 'function') relicOnMythicClear(clearedLevel);
   if (typeof mountOnMythicClear === 'function') mountOnMythicClear(clearedLevel);   // 大秘境坐骑
+  const masteryHtml = (typeof progressionOnDungeonMasteryClear === 'function')
+    ? (progressionOnDungeonMasteryClear(dg.key, { mythicLevel:clearedLevel }) || '')
+    : '';
   state.pendingMythicAscend = (state.pendingMythicAscend || 0) + 1;
   let pending = state.pendingMythicAscend;
 
@@ -942,6 +947,7 @@ function onMythicClear() {
       ${tierHtml}
       <div style="margin-top:6px">🎁 掉落 (${uniqueLoot.length}件):</div>
       ${lootHtml}
+      ${masteryHtml}
       ${bountyHtml}
     </div>
   `;

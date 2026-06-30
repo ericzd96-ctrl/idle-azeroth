@@ -2987,6 +2987,7 @@ function renderDungeon() {
   if (epic5Dl) epic5Dl.innerHTML = '';
   renderDungeonBountyPanel();
   renderDungeonContractPanel();
+  if (typeof renderDungeonMasteryPanel === 'function') renderDungeonMasteryPanel();
   // 更新按钮状态
   const btn5 = $('btn-dg-5man'), btnR = $('btn-dg-raid');
   if (btn5) { btn5.classList.toggle('active', dgFilter === 'all' || dgFilter === '5man'); }

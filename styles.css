@@ -639,8 +639,64 @@ h1 {
   font-size: 12px;
   line-height: 1.5;
 }
+.dungeon-mastery-panel {
+  margin: 0 0 8px 0;
+  padding: 8px;
+  border: 1px solid rgba(34,197,94,.24);
+  border-radius: 8px;
+  background: rgba(22,163,74,.07);
+}
+.dungeon-mastery-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 7px;
+}
+.dungeon-mastery-title .muted {
+  font-weight: 400;
+  text-align: right;
+}
+.dungeon-mastery-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.dungeon-mastery-row {
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 7px;
+  padding: 7px 8px;
+  background: rgba(0,0,0,.12);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.dungeon-mastery-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+.dungeon-mastery-bar {
+  height: 6px;
+  margin: 5px 0 4px;
+}
+.dungeon-mastery-clear {
+  margin-top: 7px;
+  padding: 7px 8px;
+  border: 1px solid rgba(34,197,94,.26);
+  border-radius: 7px;
+  background: rgba(22,163,74,.10);
+  color: #bbf7d0;
+  font-size: 12px;
+  line-height: 1.5;
+}
 @media (max-width: 720px) {
   .dungeon-bounty-grid {
+    grid-template-columns: 1fr;
+  }
+  .dungeon-mastery-grid {
     grid-template-columns: 1fr;
   }
   .dungeon-contract-buttons {
@@ -650,8 +706,13 @@ h1 {
     align-items: flex-start;
     flex-direction: column;
   }
-  .dungeon-contract-title .muted {
+  .dungeon-contract-title .muted,
+  .dungeon-mastery-title .muted {
     text-align: left;
+  }
+  .dungeon-mastery-title {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 .mon-row .bar { height: 12px; margin-top: 3px; }
