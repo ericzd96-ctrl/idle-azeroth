@@ -252,7 +252,7 @@ function enhanceItemOnCreate(item, rarity, power) {
 }
 
 /* ---------- 收集装备的所有 mod ---------- */
-/* 把基础 stats / 词缀 / 宝石 / 附魔 全部归一到 {mod-key: value} 累加 */
+/* 把基础 stats / 词缀 / 宝石 / 附魔 / 副本印记 全部归一到 {mod-key: value} 累加 */
 function collectItemBonuses(item) {
   const out = {
     // 直接属性
@@ -300,6 +300,8 @@ function collectItemBonuses(item) {
       }
     }
   }
+  // 5) 副本印记
+  if (item.dungeonTrait && item.dungeonTrait.mod) addModEntriesToBonus(out, item.dungeonTrait.mod);
   return out;
 }
 
@@ -315,6 +317,14 @@ function _emptyBonusOut() {
     cdReduction:0, costReduction:0, extraAtk:0,
     healBonus:0, dotBonus:0, executeBonus:0, reflectDmg:0,
   };
+}
+
+function addModEntriesToBonus(out, mod) {
+  if (!out || !mod) return out;
+  for (const [k, v] of Object.entries(mod)) {
+    if (k in out) out[k] += v;
+  }
+  return out;
 }
 
 /* 仅装备基础属性(不含词缀/宝石/附魔) */
@@ -365,6 +375,13 @@ function collectEnchantBonuses(item) {
     }
   }
   return out;
+}
+
+/* 仅副本印记加成 */
+function collectDungeonTraitBonuses(item) {
+  const out = _emptyBonusOut();
+  if (!item || !item.dungeonTrait || !item.dungeonTrait.mod) return out;
+  return addModEntriesToBonus(out, item.dungeonTrait.mod);
 }
 
 /* ---------- 玩家操作 ---------- */
@@ -454,6 +471,23 @@ function renderItemSetEffectsHtml(item) {
     </div>`;
 }
 
+function renderDungeonTraitHtml(item) {
+  if (!item?.dungeonTrait?.mod) return '';
+  const t = item.dungeonTrait;
+  const modText = Object.entries(t.mod || {}).map(([k, v]) => fmtMod(k, v)).join(' · ');
+  const type = t.type || '副本印记';
+  return `
+    <div class="detail-section dungeon-trait-section">
+      <div class="detail-label">副本印记</div>
+      <div class="dungeon-trait-head">
+        <span class="dungeon-trait-icon">${t.icon || '✦'}</span>
+        <span><b>${t.name || '未知印记'}</b> <span class="muted" style="font-size:11px">[${type}]</span></span>
+      </div>
+      <div class="dungeon-trait-mod">${modText || '无额外效果'}</div>
+      ${t.desc ? `<div class="muted" style="font-size:11px;margin-top:4px">${t.desc}</div>` : ''}
+    </div>`;
+}
+
 function getItemFullRerollCost(item) {
   const rarityFactor = { common:0.8, uncommon:1.1, rare:1.5, epic:2.4, legend:4 }[item?.rarity] || 1.2;
   const rerollCount = item?.fullRerolls || 0;
@@ -526,10 +560,23 @@ function rerollItemFully(itemId) {
     bcls: it.bcls,
     sell: it.sell,
     epicRaid: !!it.epicRaid,
+    gearTier: it.gearTier,
+    sourceDungeonKey: it.sourceDungeonKey,
+    sourceBossName: it.sourceBossName,
+    dungeonTrait: it.dungeonTrait ? JSON.parse(JSON.stringify(it.dungeonTrait)) : undefined,
     setKey: it.setKey,
     setName: it.setName,
     setEffects: Array.isArray(it.setEffects) ? JSON.parse(JSON.stringify(it.setEffects)) : it.setEffects,
     setPieces: it.setPieces,
+    raidExpansion: it.raidExpansion,
+    raidOrder: it.raidOrder,
+    raidTier: it.raidTier,
+    raidBaseKey: it.raidBaseKey,
+    raidBossIndex: it.raidBossIndex,
+    raidBossCount: it.raidBossCount,
+    raidEpicMode: it.raidEpicMode,
+    raidIlvl: it.raidIlvl,
+    reqLvlOverride: it.reqLvlOverride,
     reqLvl: it.reqLvl,
     _baseName: it._baseName || it.name,
     _baseExtraStats: JSON.parse(JSON.stringify(extraStats || {})),
@@ -804,6 +851,7 @@ function renderItemDetail(itemId) {
       <div class="muted" style="font-size:11px">${SLOT_INFO[it.slot].label} · [${it.rarityName}]${it.epicRaid?' · <span style="color:#22c55e">[史诗团本]</span>':''}${(typeof computeItemLevel==='function')?(' · <span style="color:#fbbf24">装等'+(it.ilvl||computeItemLevel(it))+'</span>'):''}${it.reqLvl?' · Lv.'+it.reqLvl:''}${found.source==='equip'?' · <span style="color:var(--accent)">已装备</span>':''}</div>
     </div>`;
   const setHtml = renderItemSetEffectsHtml(it);
+  const dungeonTraitHtml = renderDungeonTraitHtml(it);
   // 基础属性:基础维度(攻击/防御/力量/敏捷/智力/精神/耐力/生命)= 主属性;暴击/暴伤/吸血/全能/精通/极速/闪避/回复 = 随机副属性
   const SECONDARY_STAT_KEYS = ['crit','critd','critdPct','leech','vers','haste','mastery','dodge','reg'];
   const baseStats = Object.entries(it.stats||{}).map(([k,v]) => {
@@ -920,6 +968,7 @@ function renderItemDetail(itemId) {
       <div class="stat-list">${baseStats||'<div class="muted">无</div>'}</div>
     </div>
     ${setHtml}
+    ${dungeonTraitHtml}
     <div class="detail-section">
       <div class="detail-label">🔮 词缀</div>
       ${affixHtml}
@@ -951,6 +1000,7 @@ function itemBonusSummary(item) {
   syncItemIdentity(item);
   const parts = [];
   if (item.setName) parts.push('🧩');
+  if (item.dungeonTrait) parts.push('印');
   if (item.affixes && item.affixes.length) parts.push('🔮'+item.affixes.length);
   if (item.sockets && item.sockets.length) {
     const filled = item.sockets.filter(s=>s.gem).length;

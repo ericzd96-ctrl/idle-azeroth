@@ -1995,7 +1995,7 @@ function renderShop() {
 function renderSourceTable() {
   const srcs = state._statSources;
   if (!srcs) return '<div class="muted" style="margin-top:12px">暂无来源数据</div>';
-  const sourceOrder = ['天赋','成就','觉醒','生活','神器','坐骑','竞技场','被动','随从','装备','词缀','宝石','附魔','套装'];
+  const sourceOrder = ['天赋','成就','觉醒','生活','神器','坐骑','竞技场','被动','随从','装备','词缀','宝石','附魔','副本印记','套装'];
   const statCols = [
     {key:'atkPct', label:'攻击%', fmt:v => '+' + v.toFixed(1) + '%'},
     {key:'hpPct',  label:'生命%', fmt:v => '+' + v.toFixed(1) + '%'},
@@ -2813,7 +2813,7 @@ function buildDungeonInfoHtml(dg) {
     <div class="muted" style="margin-bottom:10px;line-height:1.6">
       ${isEpicRaid?'<span style="color:#fb7185">[史诗团本]</span> ':(isRaid?'<span style="color:#fbbf24">[团本]</span> ':'<span style="color:#6ee7b7">[5人本]</span> ')}
       ${dg.desc}<br>
-      推荐波次: ${dg.waves || '?'} · 首领数量: ${(dg.bosses || []).length}
+      推荐波次: ${dg.waves || '?'} · 首领数量: ${(dg.bosses || []).length} · 精良以上装备有概率携带副本印记
       ${dg.type==='raid'?(isEpicRaid?' · 掉落: 史诗级紫装 / 全部首领超低概率橙装':' · 掉落: 常规团本装备 / 关底低概率橙武'):''}
     </div>`;
   if (dgAffixes.length) {

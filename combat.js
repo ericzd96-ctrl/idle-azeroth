@@ -822,7 +822,7 @@ function recomputeStats() {
   let _srcSnap = {};
   const _snapSrc = () => { _srcSnap = {atkPct, hpPct, defPct, spdPct, critdPct, crit:critFlat, leech, vers, mastery, haste, regFlat, extraAtk}; };
   const _saveSrc = (name) => {
-    const cur = {atkPct, hpPct, defPct, spdPct, critdPct, crit:critFlat, leech, vers, mastery, haste, regFlat};
+    const cur = {atkPct, hpPct, defPct, spdPct, critdPct, crit:critFlat, leech, vers, mastery, haste, regFlat, extraAtk};
     const d = {}; let has = false;
     for (const k of Object.keys(_srcSnap)) {
       const v = +(cur[k] - (_srcSnap[k]||0)).toFixed(1);
@@ -1245,6 +1245,13 @@ function recomputeStats() {
     _snapSrc();
     _applyBonusSet(it => collectEnchantBonuses(it));
     _saveSrc('附魔');
+  }
+
+  // 5) 副本印记
+  if (_hasEnhanced && typeof collectDungeonTraitBonuses === 'function') {
+    _snapSrc();
+    _applyBonusSet(it => collectDungeonTraitBonuses(it));
+    _saveSrc('副本印记');
   }
   atk = Math.floor(atk * (1 + atkPct/100)) + equipAtk; hpMax = Math.floor(hpMax * (1 + hpPct/100));
   def = Math.floor(def * (1 + defPct/100));
@@ -3676,6 +3683,103 @@ function gearTierForDungeon(dungeonKey){
   if(dg.heroic) return 1;
   return 0;
 }
+
+const DUNGEON_GEAR_TRAITS = [
+  {key:'emberbrand', name:'熔火印记', icon:'🔥', slots:['weapon','ring','trinket'], mod:{atkPct:2.0,crit:0.6}, desc:'首领余烬仍在装备里跳动。'},
+  {key:'riftneedle', name:'裂隙针脚', icon:'🪡', slots:['weapon','gloves','ring'], mod:{crit:0.8,critdPct:4}, desc:'命中弱点时会放大爆发窗口。'},
+  {key:'stormpulse', name:'风暴脉冲', icon:'🌩️', slots:['weapon','boots','trinket'], mod:{spdPct:1.8,haste:0.8}, desc:'装备里封存着副本风暴的回响。'},
+  {key:'bulwarkmark', name:'壁垒刻印', icon:'🛡️', slots:['helmet','shoulder','armor','belt','pants','boots'], mod:{hpPct:2.4,defPct:1.6}, desc:'来自守关者护甲的硬化纹路。'},
+  {key:'ironroot', name:'铁根铭文', icon:'🌿', slots:['armor','belt','pants','boots'], mod:{defPct:2.2,dodge:0.5}, desc:'站稳后更难被连续压低血线。'},
+  {key:'bloodseal', name:'鲜血封印', icon:'🩸', slots:['weapon','ring','trinket'], mod:{leech:0.9,vers:0.7}, desc:'把危险的副本魔力转成续航。'},
+  {key:'arcanefocus', name:'奥术聚焦', icon:'🔷', slots:['helmet','ring','trinket'], mod:{mastery:1.0,cdReduction:0.8}, desc:'让技能循环变得更紧。'},
+  {key:'ritualflame', name:'仪式火痕', icon:'🕯️', minTier:1, slots:['weapon','gloves','trinket'], mod:{dotBonus:2.6,mastery:0.8}, desc:'适合持续伤害与精通构筑。'},
+  {key:'executionmark', name:'处决标记', icon:'⚔️', minTier:1, slots:['weapon','ring','trinket'], mod:{executeBonus:2.4,extraAtk:0.8}, desc:'低血量目标会暴露更多破绽。'},
+  {key:'lifeward', name:'生命护符', icon:'💚', slots:['helmet','armor','trinket'], mod:{healBonus:2.2,hpPct:1.2}, desc:'治疗与自保效果更稳定。'},
+  {key:'spellweave', name:'法纹织线', icon:'✨', slots:['shoulder','gloves','ring'], mod:{costReduction:0.8,haste:0.7}, desc:'技能消耗更轻,衔接更快。'},
+  {key:'echoedge', name:'回声锋棱', icon:'〽️', minTier:1, slots:['weapon','gloves'], mod:{extraAtk:1.6,critdPct:3}, desc:'爆发期会把装备力量推得更尖。'},
+  {key:'wardmirror', name:'镜盾碎片', icon:'🪞', slots:['helmet','armor','trinket'], mod:{reflectDmg:1.8,defPct:1.2}, desc:'挨打时反震一部分压力。'},
+  {key:'giantbone', name:'巨骨铆钉', icon:'🦴', slots:['shoulder','armor','belt','pants'], mod:{staPct:1.8,hpPct:1.4}, desc:'耐力型装备会更厚实。'},
+  {key:'quickstep', name:'疾步扣环', icon:'👟', slots:['boots','belt','ring'], mod:{spdPct:1.4,dodge:0.7}, desc:'移动感更轻,闪避窗口更宽。'},
+  {key:'nightglass', name:'夜玻璃棱镜', icon:'🔮', slots:['helmet','ring','trinket'], mod:{crit:0.5,mastery:1.1}, desc:'把副本里的暗光折成精准判断。'},
+  {key:'kingward', name:'王庭护令', icon:'👑', minTier:2, slots:['helmet','shoulder','armor','trinket'], mod:{vers:1.4,defPct:1.8}, desc:'团本守卫留下的高阶护令。'},
+  {key:'dragonspark', name:'龙息火星', icon:'🔥', minTier:2, slots:['weapon','ring','trinket'], mod:{atkPct:2.8,critdPct:5}, desc:'团本装备才更容易承载的危险火星。'},
+  {key:'voidstamp', name:'虚空烙印', icon:'🌌', minTier:2, slots:['weapon','helmet','trinket'], mod:{mastery:1.5,dotBonus:3.2}, desc:'偏向精通与持续压制的深层烙印。'},
+  {key:'titanclasp', name:'泰坦扣件', icon:'🔩', minTier:2, slots:['belt','pants','boots','armor'], mod:{strPct:1.2,staPct:1.4}, desc:'力量与耐力都被抬高。'},
+  {key:'moonchannel', name:'月井导流', icon:'🌙', minTier:1, slots:['helmet','ring','trinket'], mod:{intPct:1.3,spiPct:1.3}, desc:'适合法系和治疗向成长。'},
+  {key:'wildhunt', name:'荒猎纹章', icon:'🏹', minTier:1, slots:['weapon','boots','ring'], mod:{agiPct:1.3,crit:0.6}, desc:'敏捷职业会更喜欢的副本纹章。'},
+  {key:'guardianoath', name:'守护誓印', icon:'🔰', minTier:3, slots:['armor','trinket'], mod:{hpPct:3.0,vers:1.6}, desc:'史诗团本装备上的重誓印。'},
+  {key:'soulfurnace', name:'魂炉余温', icon:'♨️', minTier:3, slots:['weapon','trinket'], mod:{atkPct:3.2,leech:1.2}, desc:'高阶首领掉落才可能封住的炉温。'},
+  {key:'chronolatch', name:'时序锁扣', icon:'⏱️', minTier:3, slots:['ring','trinket','gloves'], mod:{cdReduction:1.4,haste:1.1}, desc:'压缩技能空窗,适合频繁施法。'},
+  {key:'mythicbrand', name:'秘境强袭印', icon:'💠', minTier:4, slots:['weapon','ring','trinket'], mod:{extraAtk:2.0,spdPct:1.6}, desc:'史诗五人本常见的快节奏强袭痕迹。'},
+  {key:'mythicguard', name:'秘境坚守印', icon:'💠', minTier:4, slots:['helmet','armor','boots'], mod:{hpPct:2.6,dodge:0.8}, desc:'为高压五人本准备的生存印记。'},
+];
+
+function dungeonGearRarityRank(rarityKey){
+  if(typeof lootRarityRank==='function') return lootRarityRank(rarityKey);
+  return {common:0,uncommon:1,rare:2,epic:3,legend:4}[rarityKey]||0;
+}
+
+function dungeonTraitTierName(gearTier){
+  if(gearTier===3) return '史诗团本印记';
+  if(gearTier===2) return '团本印记';
+  if(gearTier===4) return '史诗秘境印记';
+  if(gearTier===1) return '英雄副本印记';
+  return '副本印记';
+}
+
+function dungeonGearTraitTierRank(gearTier){
+  return {0:0,1:1,4:2,2:3,3:4}[gearTier]||0;
+}
+
+function scaleDungeonTraitMod(baseMod, rarityKey, gearTier){
+  const rarityScale={rare:1.0,epic:1.35,legend:1.85}[rarityKey]||1.0;
+  const tierScale={0:1.0,1:1.12,2:1.28,3:1.45,4:1.20}[gearTier]||1.0;
+  const decimalKeys=new Set(['crit','critd','leech','vers','mastery','haste','dodge','atkPct','hpPct','defPct','spdPct','critdPct','cdReduction','costReduction','extraAtk','healBonus','dotBonus','executeBonus','reflectDmg','strPct','agiPct','intPct','spiPct','staPct']);
+  const out={};
+  for(const [k,v] of Object.entries(baseMod||{})){
+    const raw=(Number(v)||0)*rarityScale*tierScale;
+    out[k]=decimalKeys.has(k)?+raw.toFixed(1):Math.max(1,Math.round(raw));
+  }
+  return out;
+}
+
+function applyDungeonGearTrait(item,dungeonKey,rarity,opts){
+  if(!item||opts?.noRandom) return item;
+  const gearTier=(typeof item.gearTier==='number')?item.gearTier:(item.epicRaid?3:0);
+  const sourceKey=dungeonKey||item.sourceDungeonKey||item.dungeonKey||null;
+  if(item.dungeonTrait&&item.dungeonTrait.mod) return item;
+  if(!sourceKey&&gearTier<=0) return item;
+  const rarityKey=rarity?.key||item.rarity||'common';
+  const rRank=dungeonGearRarityRank(rarityKey);
+  if(rRank<2) return item;
+  const chanceBase={rare:0.28,epic:0.58,legend:0.92}[rarityKey]||0.25;
+  const chanceTier={0:0,1:0.10,2:0.18,3:0.28,4:0.15}[gearTier]||0;
+  const chance=Math.min(0.98,chanceBase+chanceTier+(item.setKey?0.06:0));
+  if(Math.random()>chance) return item;
+  const tierRank=dungeonGearTraitTierRank(gearTier);
+  const pool=DUNGEON_GEAR_TRAITS.filter(t=>{
+    if(t.minTier!==undefined){
+      if(t.minTier===4){ if(gearTier!==4) return false; }
+      else if(tierRank<dungeonGearTraitTierRank(t.minTier)) return false;
+    }
+    if(t.maxTier!==undefined&&gearTier>t.maxTier) return false;
+    if(t.slots&&t.slots.length&&!t.slots.includes(item.slot)) return false;
+    if(t.minRarity&&rRank<dungeonGearRarityRank(t.minRarity)) return false;
+    return true;
+  });
+  const picked=pool.length?choice(pool):choice(DUNGEON_GEAR_TRAITS);
+  item.sourceDungeonKey=sourceKey;
+  item.dungeonTrait={
+    key:picked.key,
+    name:picked.name,
+    icon:picked.icon,
+    type:dungeonTraitTierName(gearTier),
+    desc:picked.desc,
+    mod:scaleDungeonTraitMod(picked.mod,rarityKey,gearTier),
+  };
+  return item;
+}
+
 function rollItem(maxRarity,fromLvl,dungeonKey,bossName,opts){
   const slotKey=choice(SLOT_ORDER);const slot=SLOT_INFO[slotKey];
   const _minRank=(opts&&opts.minRarity&&typeof lootRarityRank==='function')?lootRarityRank(opts.minRarity):-1;   // 最低品质门槛(英雄本+ = 史诗)
@@ -3710,11 +3814,11 @@ function rollItem(maxRarity,fromLvl,dungeonKey,bossName,opts){
       poolRaidIlvl=raidDropIlvl(pick.raidBaseKey||((typeof baseDungeonKey==='function')?baseDungeonKey(dungeonKey):dungeonKey),pickRarity.key,!!pick.raidEpicMode,pick.raidBossIndex||0,pick.raidBossCount||1);
     }
     const itemPower=(typeof poolRaidIlvl==='number'&&typeof raidDropPowerFromIlvl==='function')?raidDropPowerFromIlvl(poolRaidIlvl):((typeof pick.rollPower==='number'&&pick.rollPower>0)?pick.rollPower:power);
-    const poolItem={id:itemIdSeq++,slot:pick.slot||slotKey,name:pick.name,rarity:pickRarity.key,rarityName:pickRarity.name,cls:pickRarity.cls,bcls:pickRarity.bcls,stats:{},sell:0,epicRaid:!!pick.epicRaid,setKey:pick.setKey,setName:pick.setName,setEffects:pick.setEffects?JSON.parse(JSON.stringify(pick.setEffects)):undefined,setPieces:pick.setPieces,gearTier:gearTierForDungeon(dungeonKey),raidExpansion:pick.raidExpansion,raidOrder:pick.raidOrder,raidTier:pick.raidTier,raidBaseKey:pick.raidBaseKey,raidBossIndex:pick.raidBossIndex,raidBossCount:pick.raidBossCount,raidEpicMode:pick.raidEpicMode,raidIlvl:poolRaidIlvl,reqLvlOverride:pick.reqLvlOverride};
-    return finishItem(poolItem,pick.slot||slotKey,pickRarity,itemPower,pick.stats||{});
+    const poolItem={id:itemIdSeq++,slot:pick.slot||slotKey,name:pick.name,rarity:pickRarity.key,rarityName:pickRarity.name,cls:pickRarity.cls,bcls:pickRarity.bcls,stats:{},sell:0,epicRaid:!!pick.epicRaid,setKey:pick.setKey,setName:pick.setName,setEffects:pick.setEffects?JSON.parse(JSON.stringify(pick.setEffects)):undefined,setPieces:pick.setPieces,gearTier:gearTierForDungeon(dungeonKey),sourceDungeonKey:dungeonKey,sourceBossName:bossName,raidExpansion:pick.raidExpansion,raidOrder:pick.raidOrder,raidTier:pick.raidTier,raidBaseKey:pick.raidBaseKey,raidBossIndex:pick.raidBossIndex,raidBossCount:pick.raidBossCount,raidEpicMode:pick.raidEpicMode,raidIlvl:poolRaidIlvl,reqLvlOverride:pick.reqLvlOverride};
+    return finishItem(poolItem,pick.slot||slotKey,pickRarity,itemPower,pick.stats||{},opts);
   }}
-  const item={id:itemIdSeq++,slot:slotKey,name:genName(slotKey,rarity),rarity:rarity.key,rarityName:rarity.name,cls:rarity.cls,bcls:rarity.bcls,stats:{},sell:0,gearTier:dungeonKey?gearTierForDungeon(dungeonKey):0};
-  const poolStats=getPoolStatBonus(slotKey,rarity.key);return finishItem(item,slotKey,rarity,power,poolStats);
+  const item={id:itemIdSeq++,slot:slotKey,name:genName(slotKey,rarity),rarity:rarity.key,rarityName:rarity.name,cls:rarity.cls,bcls:rarity.bcls,stats:{},sell:0,gearTier:dungeonKey?gearTierForDungeon(dungeonKey):0,sourceDungeonKey:dungeonKey||undefined};
+  const poolStats=getPoolStatBonus(slotKey,rarity.key);return finishItem(item,slotKey,rarity,power,poolStats,opts);
 }
 /* 生成一件“指定品质”的随机槽位装备(绕过 pickRarity 的权重),用于必爆掉落 */
 function rollItemOfRarity(rarityKey,fromLvl){
@@ -3807,6 +3911,7 @@ function finishItem(item,slotKey,rarity,power,extraStats,opts){
   if(typeof item.reqLvlOverride==='number'&&item.reqLvlOverride>0) item.reqLvl=Math.max(1,Math.floor(item.reqLvlOverride));
   item.sell=Math.floor(10*rarity.mult*(1+power*0.5));
   if(!_noRand && typeof enhanceItemOnCreate==='function') enhanceItemOnCreate(item,rarity,power);
+  if(typeof applyDungeonGearTrait==='function') applyDungeonGearTrait(item,item.sourceDungeonKey||item.dungeonKey,rarity,opts);
   item.ilvl=computeItemLevel(item);   // 魔兽装等(物品等级),由功率+品质+梯队派生
   return item;
 }
