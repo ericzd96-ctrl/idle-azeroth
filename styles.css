@@ -105,6 +105,33 @@
 }
 .chronicle-foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 8px; }
 .chronicle-foot button { flex: 0 0 auto; }
+
+/* 贸易航线 */
+.trade-route-box { margin-top: 12px; border-top: 1px solid rgba(148,163,184,.18); padding-top: 10px; }
+.trade-route-title { font-weight: 900; font-size: 15px; }
+.trade-route-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+.trade-route-card {
+  border: 1px solid var(--border);
+  background: rgba(15,23,42,.76);
+  border-radius: 6px;
+  padding: 8px;
+  min-height: 136px;
+}
+.trade-route-card.ready { border-color: var(--legend); box-shadow: 0 0 0 1px rgba(255,128,0,.15) inset; }
+.trade-route-card.invested { opacity: .72; border-color: rgba(34,197,94,.35); }
+.trade-route-head { display: flex; align-items: flex-start; gap: 7px; min-height: 42px; font-size: 12px; }
+.trade-route-icon {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: rgba(250,204,21,.12);
+  flex: 0 0 auto;
+}
+.trade-route-foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 8px; }
+.trade-route-foot button { flex: 0 0 auto; }
 * { box-sizing: border-box; }
 html, body {
   margin: 0; padding: 0;

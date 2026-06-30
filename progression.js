@@ -77,6 +77,11 @@ function accountChronicleClaimedCount() {
     ? chronicleClaimedCount()
     : Object.keys(accEns().chronicles?.claimed || {}).length;
 }
+function accountTradeRouteInvestedCount() {
+  return typeof tradeRouteInvestedCount === 'function'
+    ? tradeRouteInvestedCount()
+    : Object.keys(accEns().market?.routes?.invested || {}).length;
+}
 const APEX_WORLD_BOSS_KEYS = ['deathwing','ragnaros','cthun','yogg_saron','alakir','lei_shen','argus_unmaker','raszageth_storm'];
 
 function ensureUnlockedTitles() {
@@ -332,6 +337,14 @@ const ACHIEVEMENTS = [
     cond:()=>({cur:accountChronicleClaimedCount(),goal:24}), reward:{gold:820000,gem:520,honor:8200,title:'艾泽拉斯史官',stat:{atkPct:4,hpPct:4,mastery:10,dropMult:10}} },
   { key:'chronicle36', name:'群星编年官', cat:'编年史', icon:'👑',
     cond:()=>({cur:accountChronicleClaimedCount(),goal:36}), reward:{gold:1800000,gem:1000,honor:18000,title:'群星编年官',stat:{atkPct:8,hpPct:8,defPct:5,mastery:20,dropMult:18}} },
+
+  // 贸易航线
+  { key:'trade_route4', name:'贸易承包人', cat:'贸易', icon:'🧾',
+    cond:()=>({cur:accountTradeRouteInvestedCount(),goal:4}), reward:{gold:260000,gem:180,honor:2600,stat:{goldMult:4}} },
+  { key:'trade_route8', name:'大陆贸易官', cat:'贸易', icon:'🛒',
+    cond:()=>({cur:accountTradeRouteInvestedCount(),goal:8}), reward:{gold:760000,gem:420,honor:7600,title:'大陆贸易官',stat:{goldMult:8,dropMult:6,mastery:8}} },
+  { key:'trade_route12', name:'群星贸易亲王', cat:'贸易', icon:'🌌',
+    cond:()=>({cur:accountTradeRouteInvestedCount(),goal:12}), reward:{gold:1800000,gem:1000,honor:18000,title:'群星贸易亲王',stat:{goldMult:16,dropMult:12,mastery:16}} },
 ];
 
 /* ============ 图鉴 ============ */

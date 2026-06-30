@@ -842,6 +842,7 @@ function setupMainButtons() {
       const btn = e.target.closest('button[data-action]');
       if (!btn) return;
       if (btn.dataset.action === 'marketBuy' && typeof buyMarketDeal === 'function') buyMarketDeal(btn.dataset.key);
+      else if (btn.dataset.action === 'tradeInvest' && typeof investTradeRoute === 'function') investTradeRoute(btn.dataset.key);
     });
   }
 

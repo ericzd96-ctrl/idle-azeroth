@@ -173,7 +173,7 @@ function defaultAccount() {
     // 公会/社团(账号共享):每日捐献→贡献点→公会科技永久加成
     guild: { level: 1, xp: 0, contrib: 0, tech: {}, donatedDay: 0, donatedKeys: [] },
     // 轮换黑市(账号共享):每日刷新商品,每件每天限购一次
-    market: { day: -1, bought: [] },
+    market: { day: -1, bought: [], routes: { invested:{} } },
     // 每日/每周任务板(账号共享):自动刷新目标 → 完成领奖
     quests: { day: -1, week: -1, daily: [], weekly: [], dailyBonusClaimed: false, weeklyBonusClaimed: false },
     // 每周宝库(账号共享):积累 endgame 活跃度 → 周结算锁入 → 挑 1 件领取
@@ -220,6 +220,9 @@ function mergeAccount(saved) {
     }) : d.guild,
     market: saved.market ? Object.assign({}, d.market, saved.market, {
       bought: Array.isArray(saved.market.bought) ? saved.market.bought : [],
+      routes: saved.market.routes ? Object.assign({}, d.market.routes, saved.market.routes, {
+        invested: saved.market.routes.invested || {},
+      }) : d.market.routes,
     }) : d.market,
     quests: saved.quests ? Object.assign({}, d.quests, saved.quests, {
       daily: Array.isArray(saved.quests.daily) ? saved.quests.daily : [],
