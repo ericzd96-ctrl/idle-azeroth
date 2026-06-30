@@ -160,6 +160,7 @@ function defaultAccount() {
     dragonTreasures: { claimed:{} }, // 龙岛宝藏收藏 {claimed:{treasureKey:timestamp}}
     classOrders: { claimed:{} }, // 职业大厅委托 {claimed:{classMissionKey:timestamp}}
     chronicles: { claimed:{} }, // 艾泽拉斯编年史 {claimed:{chapterKey:timestamp}}
+    worldInvasions: { progress:{}, claimed:{}, totalClaims:0 }, // 世界入侵轮换
     // 光辉值(账号共享)
     ascendLvl: 0,
     ascendCount: 0,
@@ -209,6 +210,10 @@ function mergeAccount(saved) {
     chronicles: saved.chronicles ? Object.assign({}, d.chronicles, saved.chronicles, {
       claimed: saved.chronicles.claimed || {},
     }) : d.chronicles,
+    worldInvasions: saved.worldInvasions ? Object.assign({}, d.worldInvasions, saved.worldInvasions, {
+      progress: saved.worldInvasions.progress || {},
+      claimed: saved.worldInvasions.claimed || {},
+    }) : d.worldInvasions,
     ascendMilestones: saved.ascendMilestones || {},
     season: mo(d.season, saved.season),
     expedition: saved.expedition ? Object.assign({}, d.expedition, saved.expedition, {

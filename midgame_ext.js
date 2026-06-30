@@ -1060,6 +1060,7 @@
       <div class="sub-tabs">
         <span class="sub-tab ${eventsSubTab==='wb'?'active':''}" data-sub="wb">🐲 世界Boss</span>
         <span class="sub-tab ${eventsSubTab==='bounty'?'active':''}" data-sub="bounty">🎯 悬赏</span>
+        <span class="sub-tab ${eventsSubTab==='invasion'?'active':''}" data-sub="invasion">🛡️ 入侵</span>
         <span class="sub-tab ${eventsSubTab==='dragonTreasure'?'active':''}" data-sub="dragonTreasure">🧭 龙岛宝藏</span>
         <span class="sub-tab ${eventsSubTab==='daily'?'active':''}" data-sub="daily">📅 日常</span>
         <span class="sub-tab ${eventsSubTab==='season'?'active':''}" data-sub="season">🏁 赛季</span>
@@ -1067,6 +1068,7 @@
     let body = '';
     if (eventsSubTab === 'wb') body = renderWorldBossSub();
     else if (eventsSubTab === 'bounty') body = renderBountySub();
+    else if (eventsSubTab === 'invasion') body = (typeof renderWorldInvasionSub === 'function') ? renderWorldInvasionSub() : '<div class="prog-summary muted">世界入侵载入中...</div>';
     else if (eventsSubTab === 'dragonTreasure') body = (typeof renderDragonTreasureSub === 'function') ? renderDragonTreasureSub() : '<div class="prog-summary muted">龙岛宝藏载入中...</div>';
     else if (eventsSubTab === 'daily') body = renderDailySub();
     else body = renderSeasonSub();

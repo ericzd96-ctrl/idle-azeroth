@@ -132,6 +132,32 @@
 }
 .trade-route-foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 8px; }
 .trade-route-foot button { flex: 0 0 auto; }
+
+/* 世界入侵 */
+.invasion-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(235px, 1fr)); gap: 8px; }
+.invasion-card {
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  background: rgba(15,23,42,.78);
+  border-radius: 6px;
+  padding: 8px;
+  min-height: 136px;
+}
+.invasion-card.ready { border-color: var(--legend); box-shadow: 0 0 0 1px rgba(255,128,0,.16) inset; }
+.invasion-card.claimed { opacity: .72; border-color: rgba(34,197,94,.35); }
+.invasion-head { display: flex; align-items: flex-start; gap: 7px; min-height: 44px; font-size: 12px; }
+.invasion-icon {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: rgba(96,165,250,.13);
+  flex: 0 0 auto;
+}
+.invasion-foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 8px; }
+.invasion-foot button { flex: 0 0 auto; }
 * { box-sizing: border-box; }
 html, body {
   margin: 0; padding: 0;

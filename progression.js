@@ -82,6 +82,11 @@ function accountTradeRouteInvestedCount() {
     ? tradeRouteInvestedCount()
     : Object.keys(accEns().market?.routes?.invested || {}).length;
 }
+function accountWorldInvasionClaimedCount() {
+  return typeof invasionCompletedCount === 'function'
+    ? invasionCompletedCount()
+    : (accEns().worldInvasions?.totalClaims || 0);
+}
 const APEX_WORLD_BOSS_KEYS = ['deathwing','ragnaros','cthun','yogg_saron','alakir','lei_shen','argus_unmaker','raszageth_storm'];
 
 function ensureUnlockedTitles() {
@@ -345,6 +350,14 @@ const ACHIEVEMENTS = [
     cond:()=>({cur:accountTradeRouteInvestedCount(),goal:8}), reward:{gold:760000,gem:420,honor:7600,title:'大陆贸易官',stat:{goldMult:8,dropMult:6,mastery:8}} },
   { key:'trade_route12', name:'群星贸易亲王', cat:'贸易', icon:'🌌',
     cond:()=>({cur:accountTradeRouteInvestedCount(),goal:12}), reward:{gold:1800000,gem:1000,honor:18000,title:'群星贸易亲王',stat:{goldMult:16,dropMult:12,mastery:16}} },
+
+  // 世界入侵
+  { key:'invasion5', name:'前线压制者', cat:'世界入侵', icon:'🛡️',
+    cond:()=>({cur:accountWorldInvasionClaimedCount(),goal:5}), reward:{gold:300000,gem:180,honor:3600,stat:{hpPct:2,defPct:2}} },
+  { key:'invasion15', name:'入侵破阵军', cat:'世界入侵', icon:'⚔️',
+    cond:()=>({cur:accountWorldInvasionClaimedCount(),goal:15}), reward:{gold:900000,gem:520,honor:9000,title:'入侵破阵者',stat:{atkPct:4,hpPct:4,mastery:10}} },
+  { key:'invasion30', name:'艾泽拉斯守望军', cat:'世界入侵', icon:'🌍',
+    cond:()=>({cur:accountWorldInvasionClaimedCount(),goal:30}), reward:{gold:2000000,gem:1200,honor:22000,title:'艾泽拉斯守望者',stat:{atkPct:8,hpPct:8,defPct:5,mastery:20,dropMult:12}} },
 ];
 
 /* ============ 图鉴 ============ */

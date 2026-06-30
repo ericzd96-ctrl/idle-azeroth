@@ -969,6 +969,7 @@ function setupMainButtons() {
       else if (act === 'challengerare' && typeof challengeRareElite === 'function') challengeRareElite(btn.dataset.key);
       else if (act === 'claimdaily') claimDaily(parseInt(btn.dataset.idx));
       else if (act === 'claimweekly') claimWeeklyChest();
+      else if (act === 'claiminvasion' && typeof claimWorldInvasion === 'function') claimWorldInvasion(btn.dataset.key);
       else if (act === 'claimdragontreasure' && typeof claimDragonTreasure === 'function') claimDragonTreasure(btn.dataset.key);
       else if (act === 'claimalldragontreasures' && typeof claimAllDragonTreasures === 'function') claimAllDragonTreasures();
       else if (act === 'exchangeshards') exchangeShards();
