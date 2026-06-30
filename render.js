@@ -2785,6 +2785,34 @@ function renderCompanion() {
 }
 
 let dgFilter = 'all'; // 'all' | '5man' | 'raid'
+function renderDungeonBountyPanel() {
+  const el = $('dungeon-bounty-panel');
+  if (!el) return;
+  const bounty = (typeof ensureDungeonBounties === 'function') ? ensureDungeonBounties(false) : null;
+  if (!bounty || !Array.isArray(bounty.targets) || !bounty.targets.length) {
+    el.innerHTML = '';
+    return;
+  }
+  const leftMs = Math.max(0, (bounty.resetAt || 0) - Date.now());
+  const items = bounty.targets.map(t => {
+    const done = !!bounty.claimed?.[t.id];
+    const dg = DUNGEONS.find(x => x.key === t.key);
+    const type = dg?.epicRaid ? '史诗团本' : dg?.epic5 ? '史诗5人' : dg?.heroic ? '英雄' : dg?.type === 'raid' ? '团本' : '5人本';
+    const reward = (typeof dungeonBountyRewardText === 'function') ? dungeonBountyRewardText(t) : '';
+    return `<div class="dungeon-bounty-mini ${done ? 'done' : ''}">
+      <div><b>${t.icon || '🎯'} ${t.name}</b> <span class="muted">[${type}]</span>${done ? ' <span class="pos">已完成</span>' : ''}</div>
+      <div class="muted">${t.themeName || '悬赏'} · ${reward}</div>
+    </div>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="dungeon-bounty-panel">
+      <div class="dungeon-bounty-title">
+        <span>🎯 今日副本悬赏</span>
+        <span class="muted">刷新 ${fmtCd(Math.ceil(leftMs / 1000))}</span>
+      </div>
+      <div class="dungeon-bounty-grid">${items}</div>
+    </div>`;
+}
 function buildDungeonInfoHtml(dg) {
   if (!dg) return '<div class="muted">未找到副本信息</div>';
   const power = ((typeof dg.powerLvl === 'number' && dg.powerLvl > 0) ? dg.powerLvl : dg.reqLvl) + 5;
@@ -2830,6 +2858,14 @@ function buildDungeonInfoHtml(dg) {
   }
   if (setTierInfo) {
     html += `<div class="dungeon-set-track"><b>当前职业套装目标:</b> ${setTierInfo.setName} · ${setTierInfo.bandName}阶段（2件/4件激活特效）</div>`;
+  }
+  const bountyTarget = (typeof dungeonBountyTargetFor === 'function') ? dungeonBountyTargetFor(dg.key) : null;
+  if (bountyTarget) {
+    html += `<div class="dungeon-bounty-info ${bountyTarget.claimed ? 'done' : ''}">
+      <b>${bountyTarget.icon || '🎯'} 今日悬赏: ${bountyTarget.themeName || '悬赏'}</b>
+      <div class="muted">${bountyTarget.desc || ''}</div>
+      <div>${typeof dungeonBountyRewardText === 'function' ? dungeonBountyRewardText(bountyTarget) : ''}${bountyTarget.claimed ? ' · 已完成' : ''}</div>
+    </div>`;
   }
   for (const bossData of (dg.bosses || [])) {
     const bossName = bossData.name;
@@ -2914,6 +2950,7 @@ function renderDungeon() {
   if (epicDl) epicDl.innerHTML = '';
   if (heroicDl) heroicDl.innerHTML = '';
   if (epic5Dl) epic5Dl.innerHTML = '';
+  renderDungeonBountyPanel();
   // 更新按钮状态
   const btn5 = $('btn-dg-5man'), btnR = $('btn-dg-raid');
   if (btn5) { btn5.classList.toggle('active', dgFilter === 'all' || dgFilter === '5man'); }
@@ -2967,8 +3004,12 @@ function renderDungeon() {
       : onCd ? `<span style="color:#fb923c">⏳冷却 ${fmtCd(cdLeft)}</span>${canTicket ? ' · 🎫跳过' : ''}`
       : '<span style="color:#6ee7b7">✅可挑战(免费)</span>';
     const btnText = canFree ? '免费进入' : (canTicket ? '🎫进入' : '进入');
+    const bountyTarget = (typeof dungeonBountyTargetFor === 'function') ? dungeonBountyTargetFor(dg.key) : null;
+    const bountyActive = bountyTarget && !bountyTarget.claimed;
+    const bountyBadge = bountyActive ? `<span class="pill dungeon-bounty-pill">${bountyTarget.icon || '🎯'}悬赏</span>` : '';
+    const bountyLine = bountyTarget ? `<div class="dungeon-bounty-line ${bountyTarget.claimed ? 'done' : ''}">${bountyTarget.icon || '🎯'} ${bountyTarget.themeName || '悬赏'} · ${typeof dungeonBountyRewardText === 'function' ? dungeonBountyRewardText(bountyTarget) : ''}${bountyTarget.claimed ? ' · 已完成' : ''}</div>` : '';
     const div = document.createElement('div');
-    div.className = 'dungeon-item' + (onCd ? ' on-cd' : '');
+    div.className = 'dungeon-item' + (onCd ? ' on-cd' : '') + (bountyActive ? ' bounty-target' : '');
     if (onCd) div.style.opacity = '0.6';   // CD中副本变暗,凸显可立即挑战的副本
     div.dataset.dungeonKey = dg.key;
     const dungeonIconHtml = (typeof dungeonIcon === 'function') ? dungeonIcon(dg.key, dg.name, 18, dg.icon) : dg.icon;
@@ -2999,9 +3040,10 @@ function renderDungeon() {
     div.innerHTML = `
       <div class="row">
         <span><span class="icon">${dungeonIconHtml}</span> <b>${dg.name}</b></span>
-        <span>${firstClearBadge}<span class="pill">等级${dg.reqLvl}</span></span>
+        <span>${bountyBadge}${firstClearBadge}<span class="pill">等级${dg.reqLvl}</span></span>
       </div>
       <div class="muted">${typeLabel}${dg.desc}${raidProgressLine} · ${(dg.bosses||[]).length}名首领 · 最终: ${((dg.bosses||[])[dg.bosses.length-1]||{}).name||'??'}${dg.type==='raid'?(isEpicRaid?' · 掉落:史诗级紫装/全部首领超低概率橙装':' · 掉落:常规团本装备/关底低概率橙武'):''}</div>
+      ${bountyLine}
       ${chaseLine}
       ${affixLine}
       ${setTierInfo ? `<div class="dungeon-set-track compact">当前职业套装: ${setTierInfo.setName} · ${setTierInfo.bandName}</div>` : ''}

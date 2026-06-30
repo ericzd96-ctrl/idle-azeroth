@@ -533,6 +533,71 @@ h1 {
   padding: 5px 8px;
   font-size: 10px;
 }
+.dungeon-bounty-panel {
+  margin: 0 0 8px 0;
+  padding: 8px;
+  border: 1px solid rgba(251,191,36,.28);
+  border-radius: 8px;
+  background: rgba(251,191,36,.07);
+}
+.dungeon-bounty-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.dungeon-bounty-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.dungeon-bounty-mini {
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 6px;
+  padding: 6px 7px;
+  background: rgba(0,0,0,.12);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.dungeon-bounty-mini.done,
+.dungeon-bounty-info.done,
+.dungeon-bounty-line.done {
+  opacity: .58;
+}
+.dungeon-item.bounty-target {
+  border-color: rgba(251,191,36,.45);
+  box-shadow: inset 0 0 0 1px rgba(251,191,36,.16);
+}
+.dungeon-bounty-pill {
+  margin-right: 4px;
+  background: rgba(251,191,36,.18);
+  color: #f6c453;
+  border-color: rgba(251,191,36,.35);
+}
+.dungeon-bounty-line,
+.dungeon-bounty-info,
+.dungeon-bounty-clear {
+  margin-top: 7px;
+  padding: 7px 8px;
+  border: 1px solid rgba(251,191,36,.24);
+  border-radius: 7px;
+  background: rgba(251,191,36,.08);
+  color: #f8d477;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.dungeon-bounty-info,
+.dungeon-bounty-clear {
+  font-size: 12px;
+}
+@media (max-width: 720px) {
+  .dungeon-bounty-grid {
+    grid-template-columns: 1fr;
+  }
+}
 .mon-row .bar { height: 12px; margin-top: 3px; }
 .mon-row .bar > span { font-size: 10px; line-height: 12px; }
 /* 增益图标条 */

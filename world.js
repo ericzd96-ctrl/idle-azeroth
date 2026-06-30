@@ -160,6 +160,151 @@ function leaveDungeon() {
   markDirty('dungeon', 'stage');
 }
 
+const DUNGEON_BOUNTY_THEMES = [
+  {key:'wanted', name:'悬赏首领', icon:'🎯', desc:'击败最终首领后领取额外战利品。'},
+  {key:'purge', name:'清剿令', icon:'⚔️', desc:'本日目标副本,通关会追加军需奖励。'},
+  {key:'archive', name:'秘藏线索', icon:'📜', desc:'副本深处发现秘藏线索,尾王会掉额外装备。'},
+  {key:'expedition', name:'远征委托', icon:'🧭', desc:'远征队正在征集这座副本的通关记录。'},
+  {key:'requisition', name:'军需征调', icon:'🏅', desc:'通关后获得金币、荣誉与强化材料。'},
+  {key:'riftmark', name:'裂隙追踪', icon:'🌀', desc:'今天这座副本的魔力异常活跃。'},
+];
+
+function dungeonBountyResetAt(now) {
+  const d = new Date(now || Date.now());
+  d.setHours(24, 0, 0, 0);
+  return d.getTime();
+}
+
+function dungeonBountyTier(dg) {
+  if (!dg) return 1;
+  if (dg.epicRaid) return 5;
+  if (dg.type === 'raid') return 4;
+  if (dg.epic5) return 3;
+  if (dg.heroic) return 2;
+  return 1;
+}
+
+function dungeonBountyRewardFor(dg) {
+  const tier = dungeonBountyTier(dg);
+  const lvl = Math.max(1, dg?.reqLvl || 1);
+  return {
+    gold: Math.floor(lvl * (70 + tier * 35)),
+    gem: Math.max(3, Math.floor(lvl / 8) + tier * 4),
+    honor: Math.floor(lvl * (6 + tier * 4)),
+    essence: Math.max(2, Math.floor(lvl / 18) + tier * 2),
+    minRarity: tier >= 2 ? 'epic' : 'rare',
+    maxRarity: tier >= 4 ? 'legend' : 'epic',
+  };
+}
+
+function ensureDungeonBounties(force) {
+  if (!state.dungeonBounty) state.dungeonBounty = { resetAt:0, targets:[], claimed:{} };
+  const now = Date.now();
+  const valid = !force && state.dungeonBounty.resetAt > now && Array.isArray(state.dungeonBounty.targets);
+  if (valid && state.dungeonBounty.targets.length) return state.dungeonBounty;
+
+  const resetAt = dungeonBountyResetAt(now);
+  const lvl = state.hero?.lvl || 1;
+  const all = (typeof DUNGEONS !== 'undefined' ? DUNGEONS : [])
+    .filter(dg => dg && lvl >= (dg.reqLvl || 1))
+    .sort((a, b) => (b.reqLvl || 0) - (a.reqLvl || 0));
+  if (!all.length) {
+    state.dungeonBounty = { resetAt, targets:[], claimed:{} };
+    return state.dungeonBounty;
+  }
+  const used = new Set();
+  const picks = [];
+  const addPick = list => {
+    const pool = list.filter(dg => !used.has(dg.key));
+    if (!pool.length) return;
+    const near = pool.slice(0, Math.min(8, pool.length));
+    const dg = near[rng(0, near.length - 1)];
+    used.add(dg.key);
+    picks.push(dg);
+  };
+
+  addPick(all.filter(dg => dg.type !== 'raid' && !dg.heroic && !dg.epic5 && !dg.epicRaid));
+  addPick(all.filter(dg => dg.heroic || dg.epic5));
+  addPick(all.filter(dg => dg.type === 'raid' && !dg.epicRaid));
+  addPick(all.filter(dg => dg.epicRaid));
+  while (picks.length < 4 && picks.length < all.length) addPick(all);
+
+  const targets = picks.slice(0, 4).map((dg, idx) => {
+    const theme = DUNGEON_BOUNTY_THEMES[(idx + rng(0, DUNGEON_BOUNTY_THEMES.length - 1)) % DUNGEON_BOUNTY_THEMES.length];
+    return {
+      id: `${resetAt}:${dg.key}`,
+      key: dg.key,
+      name: dg.name,
+      themeKey: theme.key,
+      themeName: theme.name,
+      icon: theme.icon,
+      desc: theme.desc,
+      tier: dungeonBountyTier(dg),
+      reward: dungeonBountyRewardFor(dg),
+    };
+  });
+
+  state.dungeonBounty = { resetAt, targets, claimed:{} };
+  return state.dungeonBounty;
+}
+
+function dungeonBountyTargetFor(dungeonKey) {
+  const bounty = ensureDungeonBounties(false);
+  if (!bounty || !Array.isArray(bounty.targets)) return null;
+  const t = bounty.targets.find(x => x.key === dungeonKey);
+  if (!t) return null;
+  return Object.assign({ claimed: !!bounty.claimed?.[t.id] }, t);
+}
+
+function dungeonBountyRewardText(target) {
+  if (!target?.reward) return '';
+  const r = target.reward;
+  return `💰${r.gold} · 💎${r.gem} · 🏅${r.honor} · ✨${r.essence} · 额外${r.minRarity === 'epic' ? '紫装' : '蓝装'}+`;
+}
+
+function grantDungeonBountyReward(dg, opts) {
+  const target = dungeonBountyTargetFor(dg?.key);
+  if (!target || target.claimed) return '';
+  if (!state.dungeonBounty.claimed) state.dungeonBounty.claimed = {};
+  state.dungeonBounty.claimed[target.id] = true;
+
+  const mythicLevel = Math.max(0, opts?.mythicLevel || 0);
+  const mult = mythicLevel ? (1 + Math.min(25, mythicLevel) * 0.04) : 1;
+  const r = target.reward || dungeonBountyRewardFor(dg);
+  const gold = Math.floor(r.gold * mult);
+  const gem = Math.floor(r.gem * (mythicLevel ? 1.15 : 1));
+  const honor = Math.floor(r.honor * mult);
+  const essence = Math.floor(r.essence * (mythicLevel ? 1.25 : 1));
+  state.gold += gold;
+  state.gem += gem;
+  state.honor += honor;
+  if (typeof ensureMats === 'function') ensureMats();
+  state.essence = (state.essence || 0) + essence;
+
+  let itemHtml = '';
+  const lastBoss = (dg.bosses || [])[Math.max(0, (dg.bosses || []).length - 1)];
+  if (typeof rollItem === 'function') {
+    const power = ((typeof dg.powerLvl === 'number' && dg.powerLvl > 0) ? dg.powerLvl : dg.reqLvl) + (mythicLevel ? 4 : 2);
+    const it = rollItem(r.maxRarity || 'epic', power, dg.key, lastBoss ? lastBoss.name : null, { minRarity:r.minRarity || 'rare' });
+    if (it) {
+      addToInventory(it);
+      if (opts?.loot) opts.loot.push(it);
+      if (typeof eventsOnItemGet === 'function') eventsOnItemGet(it);
+      if (it.rarity === 'legend' && typeof progressionOnLegendary === 'function') progressionOnLegendary();
+      itemHtml = `<div>🎁 额外装备 <span class="${it.cls}">${it.name}${typeof itemEpicRaidBadge==='function'?itemEpicRaidBadge(it,true):''}</span></div>`;
+    }
+  }
+
+  log(`${target.icon || '🎯'} 完成副本悬赏 [${target.name}]! 💰+${gold} 💎+${gem} ✨+${essence}`, 'legend');
+  markDirty('dungeon', 'inventory', 'hero');
+  return `
+    <div class="dungeon-bounty-clear">
+      <div style="font-weight:700">${target.icon || '🎯'} 副本悬赏完成: ${target.themeName || '悬赏'}</div>
+      <div>💰 金币 +${gold} · 💎 钻石 +${gem} · 🏅 荣誉 +${honor} · ✨ 精华 +${essence}</div>
+      ${itemHtml}
+    </div>`;
+}
+
 function onDungeonClear(dg) {
   if (typeof progressionOnDungeonClear === 'function') progressionOnDungeonClear(dg.key);
   if (typeof eventsOnDungeonClear === 'function') eventsOnDungeonClear();
@@ -226,6 +371,7 @@ function onDungeonClear(dg) {
   const affixHtml = affixes.length
     ? `<div class="muted" style="font-size:12px">本次词缀: ${affixes.map(a => (a.icon||'') + a.name).join(' · ')}</div>`
     : '';
+  const bountyHtml = grantDungeonBountyReward(dg, { loot:uniqueLoot });
   $('dungeon-clear-text').innerHTML = `
     <div style="font-size:18px;margin:8px 0">🏆 ${dg.name} 通关!</div>
     <div class="muted">击败了 ${finalBossName} 等 ${(dg.bosses||[]).length} 名首领</div>
@@ -238,6 +384,7 @@ function onDungeonClear(dg) {
       ${lootHtml}
     </div>
     ${firstClearHtml}
+    ${bountyHtml}
   `;
   $('modal-dungeon-clear').classList.add('show');
   log(`🏆 通关 ${dg.name}! 获得 ${uniqueLoot.length} 件装备`, 'legend');
@@ -707,6 +854,7 @@ function onMythicClear() {
     : '<div class="muted">　无</div>';
 
   const gemReward = rng(10, 25);
+  const bountyHtml = grantDungeonBountyReward(dg, { mythicLevel:clearedLevel, loot:uniqueLoot });
   $('dungeon-clear-text').innerHTML = `
     <div style="font-size:18px;margin:8px 0">🌟 大秘境 +${clearedLevel} 通关!</div>
     <div class="muted">随机副本: ${dg.name} · 怪物属性 ×${ms.scale.toFixed(1)}</div>
@@ -717,6 +865,7 @@ function onMythicClear() {
       ${tierHtml}
       <div style="margin-top:6px">🎁 掉落 (${uniqueLoot.length}件):</div>
       ${lootHtml}
+      ${bountyHtml}
     </div>
   `;
   state.gold += dg.reqLvl * 80;

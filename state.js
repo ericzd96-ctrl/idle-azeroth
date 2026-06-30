@@ -51,6 +51,7 @@ const defaultState = () => ({
   dungeonState: null,
   dungeonCd: {},
   dungeonFirstClear: {},   // 每角色:已首通的副本 key(首通一次性奖励用)
+  dungeonBounty: { resetAt:0, targets:[], claimed:{} },
   bossCd: {},
   startTime: Date.now(),
   lastTick: Date.now(),
