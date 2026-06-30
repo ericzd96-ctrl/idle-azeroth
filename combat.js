@@ -2390,6 +2390,7 @@ function spawnDungeonMonster(){
     for(const bossUnit of (state.currentMonsters || [])){
       if(bossUnit && bossUnit.hp > 0 && bossUnit.isBoss && (bossUnit.bossName === boss.name || bossUnit._councilGroupName === boss.name)){
         applyDungeonBossTacticsOnSpawn(bossUnit, boss, dg, ds);
+        if(typeof applyDungeonBossChallengesOnSpawn === 'function') applyDungeonBossChallengesOnSpawn(bossUnit, boss, dg, ds);
       }
     }
   }
@@ -3350,6 +3351,7 @@ function applyDungeonBossDirectorMechanics(now){
       state.resource = Math.min(state.resourceMax || 100, (state.resource || 0) + Math.max(8, Math.floor((state.resourceMax || 100) * 0.18)));
       if(typeof grantNextSkillCrit === 'function') grantNextSkillCrit(1);
       dungeonBossDirectorCounter('shieldBreak');
+      noteDungeonBossChallenge(mon, 'shieldBreak');
       log(`💥 你击碎了 ${mon.bossName || mon.name} 的机制护盾,获得资源并制造破绽!`, 'epic');
       showMonsterFloat(mon, '💥破盾破绽', '#fde047', { variant:'boss', scale:1.12 });
       markDirty('hero', 'stage');
@@ -3755,6 +3757,10 @@ function applyDungeonBossWeakpointReward(mon){
     ds.bossWeakpointsBroken = (ds.bossWeakpointsBroken || 0) + 1;
     ds.bossTacticObjectivesBroken = (ds.bossTacticObjectivesBroken || 0) + 1;
   }
+  if(boss){
+    noteDungeonBossChallenge(boss, 'weakpoint');
+    noteDungeonBossChallenge(boss, 'objective');
+  }
   dungeonBossWeakpointCounter('broken:' + key);
   log(`${mon._bossWeakpointName || 'Boss弱点'} 被击破: 资源 +${gain},下个技能必暴,首领露出破绽`, 'epic');
   markDirty('hero', 'stage');
@@ -3782,6 +3788,105 @@ function applyDungeonBossWeakpointMechanics(now){
       }
     }
   }
+}
+const DUNGEON_BOSS_CHALLENGE_SEALS = [
+  { key:'cleanInterrupts', icon:'🦶', name:'精准打断', event:'interrupt', target:1, match:/奥术|法师|魔法|古神|低语|邪能|恶魔|巫妖|符文|议会/, desc:'成功打断首领读条。' },
+  { key:'weakpointHunter', icon:'💠', name:'弱点猎手', event:'weakpoint', target:1, match:/龙|古神|鲜血|机械|巫妖|恶魔|风暴|奥术|王|影/, desc:'击破首领暴露的弱点。' },
+  { key:'addControl', icon:'👥', name:'控场清理', event:'addKill', target:2, match:/召唤|亡|恶魔|虫|瘟疫|议会|军团|血/, desc:'击杀首领召唤的援军。' },
+  { key:'shieldBreaker', icon:'💥', name:'破盾专家', event:'shieldBreak', target:1, match:/护盾|奥术|机械|钢铁|泰坦|魔法|符文/, desc:'打破首领机制护盾并制造破绽。' },
+  { key:'ritualDenied', icon:'🕯️', name:'仪式否决', event:'objective', target:1, match:/仪式|古神|邪能|奥术|符文|低语|恶魔/, desc:'摧毁首领机制目标或符文核心。' },
+  { key:'swiftKill', icon:'⏱️', name:'速战速决', event:'killFast', target:1, seconds:55, match:/./, desc:'在55秒内击败首领。' },
+  { key:'healthyFinish', icon:'❤️', name:'稳健收尾', event:'killHealthy', target:1, hpPct:0.35, match:/./, desc:'击败首领时自身生命不低于35%。' },
+];
+function getDungeonBossChallengeSeals(bossData){
+  const text = dungeonBossSpectacleText(bossData);
+  if(!text.trim()) return [];
+  const out = [];
+  for(const ch of DUNGEON_BOSS_CHALLENGE_SEALS){
+    if(ch.match.test(text)) out.push(Object.assign({}, ch));
+  }
+  const byKey = {};
+  const unique = [];
+  for(const ch of out){
+    if(byKey[ch.key]) continue;
+    byKey[ch.key] = true;
+    unique.push(ch);
+  }
+  for(const key of ['swiftKill', 'healthyFinish']){
+    if(unique.some(ch => ch.key === key)) continue;
+    const generic = DUNGEON_BOSS_CHALLENGE_SEALS.find(ch => ch.key === key);
+    if(generic) unique.push(Object.assign({}, generic));
+  }
+  return unique.slice(0, 4);
+}
+function applyDungeonBossChallengesOnSpawn(mon, bossData, dg, ds){
+  if(!mon || !mon.isBoss || !bossData) return;
+  const challenges = getDungeonBossChallengeSeals(bossData);
+  if(!challenges.length) return;
+  mon._bossChallenges = challenges.map(ch => Object.assign({}, ch, { progress:0, completed:false, failed:false, startedAt:Date.now() }));
+  if(ds){
+    ds.bossChallengesStarted = (ds.bossChallengesStarted || 0) + mon._bossChallenges.length;
+  }
+  showMonsterFloat(mon, `🏅挑战×${mon._bossChallenges.length}`, '#facc15', { variant:'boss', scale:1.04 });
+}
+function dungeonBossChallengeOwner(unit){
+  if(!unit) return null;
+  if(unit.isBoss) return unit;
+  if(unit._summonerId){
+    return (state.currentMonsters || []).find(x => x && x.hp > 0 && x.isBoss && x._uid === unit._summonerId) || null;
+  }
+  return null;
+}
+function completeDungeonBossChallenge(mon, ch, reason){
+  if(!mon || !ch || ch.completed || ch.failed) return false;
+  ch.completed = true;
+  ch.completedAt = Date.now();
+  ch.reason = reason || ch.name;
+  const ds = state.dungeonState || state.mythicState;
+  if(ds) ds.bossChallengesCompleted = (ds.bossChallengesCompleted || 0) + 1;
+  showMonsterFloat(mon, `🏅${ch.name}`, '#facc15', { variant:'boss', scale:1.08 });
+  log(`🏅 Boss挑战完成: ${mon.bossName || mon.name} - ${ch.name}`, 'epic');
+  return true;
+}
+function noteDungeonBossChallenge(unit, event, count){
+  const mon = dungeonBossChallengeOwner(unit);
+  if(!mon || !mon._bossChallenges?.length) return;
+  const amount = Math.max(1, count || 1);
+  for(const ch of mon._bossChallenges){
+    if(ch.completed || ch.failed || ch.event !== event) continue;
+    ch.progress = Math.min(ch.target || 1, (ch.progress || 0) + amount);
+    if(ch.progress >= (ch.target || 1)) completeDungeonBossChallenge(mon, ch, event);
+  }
+}
+function finalizeDungeonBossChallenges(mon, councilStillFighting){
+  if(!mon || !mon.isBoss || councilStillFighting || !mon._bossChallenges?.length) return;
+  const now = Date.now();
+  for(const ch of mon._bossChallenges){
+    if(ch.completed || ch.failed) continue;
+    if(ch.event === 'killFast'){
+      const elapsed = now - (mon._bossTacticStartedAt || mon._spawnAt || now);
+      if(elapsed <= (ch.seconds || 55) * 1000) completeDungeonBossChallenge(mon, ch, 'killFast');
+      else ch.failed = true;
+    }else if(ch.event === 'killHealthy'){
+      if((state.hp || 0) >= (state.hero.hpMax || 1) * (ch.hpPct || 0.35)) completeDungeonBossChallenge(mon, ch, 'killHealthy');
+      else ch.failed = true;
+    }
+  }
+  const completed = mon._bossChallenges.filter(ch => ch.completed).length;
+  if(completed <= 0) return;
+  const ds = state.dungeonState || state.mythicState;
+  const gold = Math.max(1, Math.floor((mon.goldReward || 1) * completed * 0.08));
+  const honor = completed * (mon._isRaid ? 4 : 2);
+  const gems = completed >= 3 ? 1 : (Math.random() < completed * 0.18 ? 1 : 0);
+  state.gold += gold;
+  state.honor += honor;
+  if(gems > 0) state.gem += gems;
+  if(ds){
+    ds.bossChallengeBonusGold = (ds.bossChallengeBonusGold || 0) + gold;
+    ds.bossChallengeBonusHonor = (ds.bossChallengeBonusHonor || 0) + honor;
+    ds.bossChallengeBonusGems = (ds.bossChallengeBonusGems || 0) + gems;
+  }
+  log(`🏅 Boss挑战奖励: +${gold}💰 +${honor}荣誉${gems ? ' +' + gems + '💎' : ''}`, 'legend');
 }
 function dungeonRoomCounter(ds, key){
   if(!ds) return;
@@ -4859,6 +4964,7 @@ function onMonsterDeath(mon){
   if(xp>0&&typeof artifactGainAp==='function') artifactGainAp(xp);
   const councilStillFighting = !!(mon._councilGroupKey && state.currentMonsters.some(x => x && x !== mon && x.hp > 0 && x._councilGroupKey === mon._councilGroupKey));
   if(mon._councilGroupKey) handleCouncilMemberDeath(mon, councilStillFighting);
+  if(mon.isBoss && (state.mode === 'dungeon' || state.mode === 'mythic')) finalizeDungeonBossChallenges(mon, councilStillFighting);
   if(Math.random()<(councilStillFighting ? 0 : mon.gemChance)){const gems=mon.isBoss?rng(3,8):1;state.gem+=gems;log('💎 +'+gems+' 钻石','loot');}
   // boss 掉宝石/精华
   if(mon.isBoss&&!councilStillFighting&&typeof bossGemDrop==='function'&&state.mode!=='mythic') bossGemDrop(mon.fromDungeon);
@@ -4954,9 +5060,13 @@ function onMonsterDeath(mon){
       }
       if(typeof grantNextSkillCrit === 'function') grantNextSkillCrit(1);
       if(ds) ds.bossTacticObjectivesBroken = (ds.bossTacticObjectivesBroken || 0) + 1;
+      if(boss) noteDungeonBossChallenge(boss, 'objective');
       log(`🔮 奥术符文核心被击破: 资源 +${gain},首领遭到反噬`, 'epic');
       markDirty('hero', 'stage');
     }
+  }
+  if(mon._summoned && mon._summonerIsBoss){
+    noteDungeonBossChallenge(mon, 'addKill');
   }
   if(mon._summoned){
     const di = state.currentMonsters.indexOf(mon);
@@ -5882,6 +5992,7 @@ function doInterrupt(){
     log('💥 完美打断!'+bossName+' 露出破绽:硬直 + 破甲,抓紧爆发!','epic');
     if(typeof showMonsterFloat==='function') showMonsterFloat(mon,'💥破绽!','#fde047',{variant:'boss',scale:1.14});
   }
+  if(mon && mon.hp > 0 && mon.isBoss) noteDungeonBossChallenge(mon, 'interrupt');
   return true;
 }
 
