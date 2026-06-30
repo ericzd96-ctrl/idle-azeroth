@@ -1375,6 +1375,9 @@ function updateBattleVisuals() {
     const alertTag = alert && alert.level > 0 ? ` · <span style="color:#fb7185">🚨警戒 ${alert.level}(${alert.label})</span>` : '';
     const timerStatus = (typeof dungeonTimerStatus === 'function') ? dungeonTimerStatus(state.dungeonState) : null;
     const timerTag = timerStatus ? ` · <span style="color:${timerStatus.expired ? '#fb7185' : '#67e8f9'}">⏳${timerStatus.text}</span>` : '';
+    const councilMembers = curBoss && typeof getDungeonBossCouncilMembers === 'function' ? getDungeonBossCouncilMembers(curBoss) : [];
+    const liveCouncil = councilMembers.length > 1 ? (state.currentMonsters || []).filter(m => m && m.hp > 0 && m._councilGroupName === curBoss.name).length : 0;
+    const councilTag = liveCouncil ? ` · <span style="color:#fcd34d">👥${liveCouncil}/${councilMembers.length}</span>` : '';
     $('h-zone').innerHTML = `${dungeonIconHtml} ${dg.name}`;
     $('zone-name').innerHTML = `${dungeonIconHtml} ${dg.name} ${typeTag}${contractTag}`;
     let bossExtra = '';
@@ -1388,7 +1391,7 @@ function updateBattleVisuals() {
       if (tags.length) bossExtra += ' <span style=\"font-size:10px;color:#6ee7b7\">'+tags.join(' ')+'</span>';
     }
     const bossTag = curBoss ? ` ⚔️<b style=\"color:var(--legend)\">${curBoss.name}</b>${bossExtra}` : '';
-    $('progress-text').innerHTML = `波次 ${state.dungeonState.wave}/${dg.waves} · 首领 ${killedBosses}/${bossList.length}${bossTag}${contractTag}${alertTag}${timerTag}`;
+    $('progress-text').innerHTML = `波次 ${state.dungeonState.wave}/${dg.waves} · 首领 ${killedBosses}/${bossList.length}${bossTag}${councilTag}${contractTag}${alertTag}${timerTag}`;
   } else if (state.mode === 'mythic') {
     const ms = state.mythicState;
     const dg = DUNGEONS.find(d => d.key === ms.key);
@@ -2948,9 +2951,15 @@ function buildDungeonInfoHtml(dg) {
     const phasePreview = (selectedContract && selectedContract.level > 0 && typeof getDungeonBossPhases === 'function')
       ? getDungeonBossPhases(dg, bossName, selectedContract.level)
       : [];
+    const councilPreview = (typeof getDungeonBossCouncilMembers === 'function') ? getDungeonBossCouncilMembers(bossData) : [];
     html += `
       <div style="margin:10px 0 0;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.03)">
         <div style="color:var(--legend);font-size:13px;font-weight:700;margin-bottom:6px">${bossIconHtml} ${bossName} ${dropLabel}</div>`;
+    if (councilPreview.length > 1) {
+      html += `<div class="dungeon-council-preview">
+        ${councilPreview.map(m => `<span>${symbolIconHtml(m.icon || bossData.emoji || '👹', 12, m.name, 'achievement_boss_illidan')} ${m.name}${m.role ? ` · ${m.role}` : ''}</span>`).join('')}
+      </div>`;
+    }
     if (phasePreview.length) {
       html += `<div class="dungeon-boss-phase-preview">
         ${phasePreview.map(p => `<span>${Math.round(p.threshold * 100)}% ${symbolIconHtml(p.icon, 12, p.name, 'ability_warrior_battleshout')}${p.name}</span>`).join('')}

@@ -333,6 +333,67 @@ function dungeonTimerStatus(ds, now) {
   };
 }
 
+const DUNGEON_MULTI_BOSS_MEMBERS = {
+  '双子皇帝': [
+    { name:'维克尼拉斯大帝', icon:'⚔️', role:'近战皇帝', hp:0.72, atk:0.88, def:1.10 },
+    { name:'维克洛尔大帝', icon:'🔮', role:'法术皇帝', hp:0.68, atk:0.82, def:0.92 },
+  ],
+  '钢铁议会': [
+    { name:'断钢者', icon:'⚡', role:'主攻', hp:0.58, atk:0.92, def:1.08 },
+    { name:'符文大师莫尔基姆', icon:'🔨', role:'符文防御', hp:0.50, atk:0.72, def:1.16 },
+    { name:'唤雷者布隆迪尔', icon:'🌩️', role:'风暴施法', hp:0.46, atk:0.80, def:0.92 },
+  ],
+  '伊利达雷议会': [
+    { name:'击碎者加西奥斯', icon:'🛡️', role:'防护骑士', hp:0.42, atk:0.72, def:1.18 },
+    { name:'玛兰德女士', icon:'✨', role:'治疗祭司', hp:0.38, atk:0.58, def:0.96 },
+    { name:'高阶灵术师塞勒沃尔', icon:'🔥', role:'法术输出', hp:0.36, atk:0.82, def:0.88 },
+    { name:'维尔莱斯·深影', icon:'🗡️', role:'潜行刺客', hp:0.34, atk:0.86, def:0.86 },
+  ],
+  '鲜血议会': [
+    { name:'凯雷塞斯王子', icon:'🧛', role:'暗影王子', hp:0.48, atk:0.76, def:0.98 },
+    { name:'塔达拉姆王子', icon:'🔥', role:'火焰王子', hp:0.48, atk:0.82, def:0.94 },
+    { name:'瓦拉纳王子', icon:'🍷', role:'鲜血王子', hp:0.52, atk:0.78, def:1.04 },
+  ],
+  '瓦里奥那与塞拉图斯': [
+    { name:'瓦里奥那', icon:'🐲', role:'暮光飞龙', hp:0.76, atk:0.84, def:1.00 },
+    { name:'塞拉图斯', icon:'⚡', role:'风暴飞龙', hp:0.72, atk:0.88, def:0.96 },
+  ],
+  '克拉希克综合体': [
+    { name:'虫群卫士希赛克', icon:'🪲', role:'虫群号令', hp:0.40, atk:0.74, def:0.98 },
+    { name:'毒心者里卡尔', icon:'☣️', role:'毒性注射', hp:0.38, atk:0.80, def:0.90 },
+    { name:'琥珀塑形者科尔凡', icon:'🟡', role:'琥珀护甲', hp:0.44, atk:0.66, def:1.14 },
+  ],
+  '维克雷斯领主夫妇': [
+    { name:'维克雷斯勋爵', icon:'🗡️', role:'德鲁斯特领主', hp:0.74, atk:0.86, def:1.02 },
+    { name:'维克雷斯夫人', icon:'🕯️', role:'女巫夫人', hp:0.70, atk:0.82, def:0.94 },
+  ],
+  '诺库德猎群': [
+    { name:'提拉', icon:'🏹', role:'弓骑猎手', hp:0.54, atk:0.86, def:0.92 },
+    { name:'马鲁克', icon:'🐎', role:'战矛骑手', hp:0.58, atk:0.82, def:1.08 },
+  ],
+};
+
+function getDungeonBossCouncilMembers(bossData) {
+  if (!bossData || !bossData.name) return [];
+  if (DUNGEON_MULTI_BOSS_MEMBERS[bossData.name]) return DUNGEON_MULTI_BOSS_MEMBERS[bossData.name];
+  const name = bossData.name || '';
+  if (/议会|综合体|猎群/.test(name)) {
+    return [
+      { name:`${name}·前锋`, icon:bossData.emoji || '⚔️', role:'前锋', hp:0.54, atk:0.84, def:1.02 },
+      { name:`${name}·秘术师`, icon:'🔮', role:'秘术', hp:0.46, atk:0.78, def:0.92 },
+      { name:`${name}·守卫`, icon:'🛡️', role:'守卫', hp:0.50, atk:0.70, def:1.14 },
+    ];
+  }
+  if (/夫妇|双子|与/.test(name)) {
+    const parts = name.includes('与') ? name.split('与').filter(Boolean) : [];
+    return [
+      { name:parts[0] || `${name}·一`, icon:bossData.emoji || '⚔️', role:'双首领', hp:0.74, atk:0.84, def:1.02 },
+      { name:parts[1] || `${name}·二`, icon:'🔮', role:'双首领', hp:0.70, atk:0.84, def:0.98 },
+    ];
+  }
+  return [];
+}
+
 const DUNGEON_CONTRACT_TRIALS = [
   { key:'trialPatrol', name:'铁卫巡逻', desc:'非首领战有概率加入一名巡逻增援;小怪攻击+12%。', icon:'🚨', mod:{addPatrol:true, trashDmg:0.12} },
   { key:'trialBulwark', name:'重甲戒严', desc:'小怪防御+18%;首领防御+12%。', icon:'🛡️', mod:{trashDef:0.18, bossDef:0.12} },

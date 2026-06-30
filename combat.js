@@ -2380,6 +2380,54 @@ function spawnDungeonMonster(){
     state.dungeonState.edictAdds = (state.dungeonState.edictAdds || 0) + 1;
     log(`📜 战术禁令: ${enforcer.name} 加入战斗`, 'bad');
   }
+  if (isBoss && typeof getDungeonBossCouncilMembers === 'function') {
+    spawnDungeonCouncilMembers(mon, boss, dg, ds);
+  }
+}
+
+function spawnDungeonCouncilMembers(primary, bossData, dg, ds){
+  const members = getDungeonBossCouncilMembers(bossData);
+  if(!primary || !bossData || !members || members.length <= 1) return;
+  const groupKey = `${dg.key}:${ds.wave}:${bossData.name}`;
+  const base = Object.assign({}, primary);
+  const count = members.length;
+  for(let i = 0; i < count; i++){
+    const cfg = members[i];
+    const target = i === 0 ? primary : Object.assign({}, base, {
+      _uid: monUidSeq++,
+      _dots: {},
+      _dotLegacyImported: true,
+      _lastDotTick: 0,
+      _supportSkillCooldowns: {},
+      _monSkills: (base._monSkills || []).slice(),
+      _monSupportSkills: (base._monSupportSkills || []).slice(),
+      _spawnAt: Date.now(),
+      _lastAtk: Date.now() - rng(0, 1200),
+      _lastSkill: Date.now() - rng(1000, 4000),
+      _lastSupportSkill: Date.now() - rng(3000, 9000),
+      _nextTrickAt: Date.now() + 7000 + rng(0, 3000),
+    });
+    target.name = `${cfg.icon || bossData.emoji || '👹'}${cfg.name}`;
+    target.bossName = bossData.name;
+    target._council = true;
+    target._councilGroupKey = groupKey;
+    target._councilGroupName = bossData.name;
+    target._councilMemberName = cfg.name;
+    target._councilRole = cfg.role || '首领成员';
+    target._councilMemberIndex = i;
+    target._councilMemberCount = count;
+    target.hpMax = Math.max(1, Math.floor(base.hpMax * (cfg.hp || 0.7)));
+    target.hp = target.hpMax;
+    target.atk = Math.max(1, Math.floor(base.atk * (cfg.atk || 0.82)));
+    target.def = Math.max(0, Math.floor(base.def * (cfg.def || 1)));
+    target.goldReward = Math.max(1, Math.floor((base.goldReward || 1) / count));
+    target.honorReward = Math.max(1, Math.floor((base.honorReward || 1) / count));
+    target.baseXp = Math.max(1, Math.floor((base.baseXp || 1) / count));
+    target._councilLootOnlyOnFinal = true;
+    if(i > 0) state.currentMonsters.push(target);
+  }
+  ds.multiBossWaves = (ds.multiBossWaves || 0) + 1;
+  log(`👥 多首领遭遇: ${bossData.name} 分成 ${members.map(m => m.name).join('、')} 同时参战`, 'bad');
 }
 
 /* ---------- 伤害 ---------- */
@@ -2812,10 +2860,18 @@ function checkDungeonBossPhases(mon, now){
   const phases = getDungeonBossPhases(dg, mon.bossName, ds.contractLevel);
   if(!phases.length) return;
   const hpFrac = mon.hpMax > 0 ? mon.hp / mon.hpMax : 1;
-  mon._dungeonBossPhaseSeen = mon._dungeonBossPhaseSeen || {};
+  let seen = mon._dungeonBossPhaseSeen;
+  if(mon._councilGroupKey){
+    ds._councilBossPhaseSeen = ds._councilBossPhaseSeen || {};
+    seen = ds._councilBossPhaseSeen[mon._councilGroupKey] || {};
+    ds._councilBossPhaseSeen[mon._councilGroupKey] = seen;
+  }else{
+    mon._dungeonBossPhaseSeen = mon._dungeonBossPhaseSeen || {};
+    seen = mon._dungeonBossPhaseSeen;
+  }
   for(const phase of phases){
-    if(hpFrac <= phase.threshold && !mon._dungeonBossPhaseSeen[phase.phaseKey]){
-      mon._dungeonBossPhaseSeen[phase.phaseKey] = 1;
+    if(hpFrac <= phase.threshold && !seen[phase.phaseKey]){
+      seen[phase.phaseKey] = 1;
       applyDungeonBossPhase(mon, phase, now);
     }
   }
@@ -2960,6 +3016,55 @@ function applyDungeonTimerPressure(ds, mon, now){
     showMonsterFloat(target, `⏳压迫${stack}`, '#fb7185');
   }
   if(typeof markDirty === 'function') markDirty('hero', 'stage');
+}
+function applyCouncilBossMechanics(now){
+  if(!(state.mode === 'dungeon' || state.mode === 'mythic')) return;
+  const groups = {};
+  for(const m of (state.currentMonsters || [])){
+    if(m && m.hp > 0 && m._councilGroupKey){
+      if(!groups[m._councilGroupKey]) groups[m._councilGroupKey] = [];
+      groups[m._councilGroupKey].push(m);
+    }
+  }
+  for(const key in groups){
+    const members = groups[key];
+    if(members.length <= 1) continue;
+    const lead = members[0];
+    if(lead._councilGroupName === '双子皇帝' && now - ((state._councilTwinHeal || {})[key] || 0) > 12000){
+      state._councilTwinHeal = state._councilTwinHeal || {};
+      state._councilTwinHeal[key] = now;
+      let low = members[0];
+      for(const m of members) if((m.hp / Math.max(1, m.hpMax)) < (low.hp / Math.max(1, low.hpMax))) low = m;
+      const heal = Math.max(1, Math.floor(low.hpMax * 0.045));
+      low.hp = Math.min(low.hpMax, low.hp + heal);
+      showMonsterFloat(low, `👑双生+${heal}`, '#facc15', { variant:'heal', scale:1.04 });
+      log('👑 双子皇帝仍互相支援,恢复了伤势', 'bad');
+    } else if(/议会|综合体|猎群/.test(lead._councilGroupName || '') && now - ((state._councilCoordination || {})[key] || 0) > 14000){
+      state._councilCoordination = state._councilCoordination || {};
+      state._councilCoordination[key] = now;
+      for(const m of members){
+        const shield = Math.max(1, Math.floor(m.hpMax * 0.025));
+        m._arcaneShield = (m._arcaneShield || 0) + shield;
+        syncMonsterShieldAura(m);
+        showMonsterFloat(m, '⚖️协同', '#facc15');
+      }
+    }
+  }
+}
+function handleCouncilMemberDeath(mon, hasLivingMembers){
+  if(!mon?._councilGroupKey) return;
+  const ds = state.dungeonState || state.mythicState;
+  if(ds) ds.councilMembersDefeated = (ds.councilMembersDefeated || 0) + 1;
+  const survivors = (state.currentMonsters || []).filter(x => x && x !== mon && x.hp > 0 && x._councilGroupKey === mon._councilGroupKey);
+  if(!survivors.length) return;
+  for(const s of survivors){
+    s.atk = Math.floor(s.atk * 1.08);
+    s.def = Math.floor(s.def * 1.04);
+    s._councilVengeance = (s._councilVengeance || 0) + 1;
+    showMonsterFloat(s, `⚖️复仇${s._councilVengeance}`, '#fb7185', { variant:'boss', scale:1.05 });
+  }
+  log(`⚖️ ${mon._councilGroupName} 成员倒下,其余首领进入复仇状态`, 'bad');
+  if(hasLivingMembers && typeof markDirty === 'function') markDirty('stage');
 }
 /* 破甲(sunder)等护甲削减后的有效防御 */
 function monArmor(mon){
@@ -3427,6 +3532,7 @@ function tickBattle(now){
   if(getAliveMonsters().length===0){spawnMonster();lastHeroAtk=now;lastMonAtk=now;return;}
   focusHighestThreat();                                 // 锁定仇恨最高的敌人为焦点([0])
   let mon=state.currentMonsters[0];
+  applyCouncilBossMechanics(now);
   const spdMul=state.battleSpeed||1;                    // 战斗倍速(1x / 2x)
   const regenInterval=1000/spdMul;
 
@@ -3797,18 +3903,20 @@ function onMonsterDeath(mon){
   processTalentOnKill(mon);
   if(typeof passiveOnKill==='function')passiveOnKill(mon);
   if(xp>0&&typeof artifactGainAp==='function') artifactGainAp(xp);
-  if(Math.random()<mon.gemChance){const gems=mon.isBoss?rng(3,8):1;state.gem+=gems;log('💎 +'+gems+' 钻石','loot');}
+  const councilStillFighting = !!(mon._councilGroupKey && state.currentMonsters.some(x => x && x !== mon && x.hp > 0 && x._councilGroupKey === mon._councilGroupKey));
+  if(mon._councilGroupKey) handleCouncilMemberDeath(mon, councilStillFighting);
+  if(Math.random()<(councilStillFighting ? 0 : mon.gemChance)){const gems=mon.isBoss?rng(3,8):1;state.gem+=gems;log('💎 +'+gems+' 钻石','loot');}
   // boss 掉宝石/精华
-  if(mon.isBoss&&typeof bossGemDrop==='function'&&state.mode!=='mythic') bossGemDrop(mon.fromDungeon);
+  if(mon.isBoss&&!councilStillFighting&&typeof bossGemDrop==='function'&&state.mode!=='mythic') bossGemDrop(mon.fromDungeon);
   // 普通怪有低概率掉精华
   else if(typeof bossGemDrop==='function'&&Math.random()<0.03){if(typeof ensureMats==='function')ensureMats();state.essence+=1;}
   // 钩子: 图鉴/声望/成就
   if(typeof progressionOnKill==='function') progressionOnKill(mon);
   // 坐骑掉落钩子(副本/大秘境 BOSS)
-  if(mon.isBoss&&(state.mode==='dungeon'||state.mode==='mythic')&&typeof mountOnDungeonBossKill==='function') mountOnDungeonBossKill();
+  if(mon.isBoss&&!councilStillFighting&&(state.mode==='dungeon'||state.mode==='mythic')&&typeof mountOnDungeonBossKill==='function') mountOnDungeonBossKill();
   if(typeof midgameMountRollOnKill==='function') midgameMountRollOnKill(mon);
   // 掉率受声望加成 (一次性提升), 副本/大秘境BOSS必掉1件
-  const adjDrop=(mon.isBoss&&(state.mode==='dungeon'||state.mode==='mythic'))?1:Math.min(1,mon.dropRate*bonus.dropMult*olp);
+  const adjDrop=(mon.isBoss&&(state.mode==='dungeon'||state.mode==='mythic'))?(councilStillFighting ? 0 : 1):Math.min(1,mon.dropRate*bonus.dropMult*olp);
   if(Math.random()<adjDrop){
     const dKey=mon.fromDungeon?((state.dungeonState||state.mythicState)?.key):null;
     const _dgTier=(dKey&&typeof gearTierForDungeon==='function')?gearTierForDungeon(dKey):0;
@@ -3818,7 +3926,7 @@ function onMonsterDeath(mon){
       : rollItem(_dgTier>=1?'legend':mon.maxRarity,mon.lvl,dKey,mon.isBoss?mon.bossName:null,{ minRarity:_minR });
     if((state.mode==='dungeon'||state.mode==='mythic')&&(state.dungeonState||state.mythicState))(state.dungeonState||state.mythicState).loot.push(it);addToInventory(it);if(typeof eventsOnItemGet==='function') eventsOnItemGet(it);if(it.rarity==='legend'&&typeof progressionOnLegendary==='function') progressionOnLegendary();const c=it.rarity==='legend'?'legend':(it.rarity==='epic'?'epic':'loot');log('🎁 掉落 '+it.name+(it.epicRaid?' [史诗团本]':''),c);
   }
-  if(mon._isRaid && mon.fromDungeon){
+  if(mon._isRaid && mon.fromDungeon && !councilStillFighting){
     const dKey2=(state.dungeonState||state.mythicState)?.key;
     if(mon._isEpicRaid){
       if(mon._isRaidFinal){
