@@ -1369,8 +1369,10 @@ function updateBattleVisuals() {
     const isRaid = dg.type === 'raid';
     const typeTag = isRaid ? '<span style=\"color:#fbbf24\">[团本]</span>' : '<span style=\"color:#6ee7b7\">[5人本]</span>';
     const dungeonIconHtml = (typeof dungeonIcon === 'function') ? dungeonIcon(dg.key, dg.name, 16, dg.icon) : dg.icon;
+    const contract = (state.dungeonState.contractLevel > 0 && typeof dungeonContractInfo === 'function') ? dungeonContractInfo(state.dungeonState.contractLevel) : null;
+    const contractTag = contract ? ` <span style="color:#f6c453">${contract.icon}${contract.name}</span>` : '';
     $('h-zone').innerHTML = `${dungeonIconHtml} ${dg.name}`;
-    $('zone-name').innerHTML = `${dungeonIconHtml} ${dg.name} ${typeTag}`;
+    $('zone-name').innerHTML = `${dungeonIconHtml} ${dg.name} ${typeTag}${contractTag}`;
     let bossExtra = '';
     if (curBoss?.passive) {
       const p = curBoss.passive;
@@ -1382,7 +1384,7 @@ function updateBattleVisuals() {
       if (tags.length) bossExtra += ' <span style=\"font-size:10px;color:#6ee7b7\">'+tags.join(' ')+'</span>';
     }
     const bossTag = curBoss ? ` ⚔️<b style=\"color:var(--legend)\">${curBoss.name}</b>${bossExtra}` : '';
-    $('progress-text').innerHTML = `波次 ${state.dungeonState.wave}/${dg.waves} · 首领 ${killedBosses}/${bossList.length}${bossTag}`;
+    $('progress-text').innerHTML = `波次 ${state.dungeonState.wave}/${dg.waves} · 首领 ${killedBosses}/${bossList.length}${bossTag}${contractTag}`;
   } else if (state.mode === 'mythic') {
     const ms = state.mythicState;
     const dg = DUNGEONS.find(d => d.key === ms.key);
@@ -2813,6 +2815,31 @@ function renderDungeonBountyPanel() {
       <div class="dungeon-bounty-grid">${items}</div>
     </div>`;
 }
+
+function renderDungeonContractPanel() {
+  const el = $('dungeon-contract-panel');
+  if (!el) return;
+  if (typeof DUNGEON_CONTRACTS === 'undefined' || typeof dungeonContractLevel !== 'function') {
+    el.innerHTML = '';
+    return;
+  }
+  const cur = dungeonContractLevel();
+  const disabled = state.mode !== 'world';
+  const buttons = DUNGEON_CONTRACTS.map(c => `
+    <button data-action="setdungeoncontract" data-level="${c.level}" class="${cur === c.level ? 'active' : ''}" ${disabled ? 'disabled' : ''} title="${c.desc}">
+      ${c.icon} ${c.name}
+    </button>`).join('');
+  const info = typeof dungeonContractInfo === 'function' ? dungeonContractInfo(cur) : DUNGEON_CONTRACTS[0];
+  el.innerHTML = `
+    <div class="dungeon-contract-panel">
+      <div class="dungeon-contract-title">
+        <span>📜 副本契约</span>
+        <span class="muted">${info.desc}</span>
+      </div>
+      <div class="dungeon-contract-buttons">${buttons}</div>
+    </div>`;
+}
+
 function buildDungeonInfoHtml(dg) {
   if (!dg) return '<div class="muted">未找到副本信息</div>';
   const power = ((typeof dg.powerLvl === 'number' && dg.powerLvl > 0) ? dg.powerLvl : dg.reqLvl) + 5;
@@ -2858,6 +2885,14 @@ function buildDungeonInfoHtml(dg) {
   }
   if (setTierInfo) {
     html += `<div class="dungeon-set-track"><b>当前职业套装目标:</b> ${setTierInfo.setName} · ${setTierInfo.bandName}阶段（2件/4件激活特效）</div>`;
+  }
+  const selectedContract = (typeof dungeonContractLevel === 'function' && typeof dungeonContractInfo === 'function') ? dungeonContractInfo(dungeonContractLevel()) : null;
+  if (selectedContract && selectedContract.level > 0) {
+    html += `<div class="dungeon-contract-info">
+      <b>${selectedContract.icon} 当前契约: ${selectedContract.name}</b>
+      <div class="muted">${selectedContract.desc}</div>
+      <div>怪物生命 ×${selectedContract.hp.toFixed(2)} · 攻击 ×${selectedContract.atk.toFixed(2)} · 防御 ×${selectedContract.def.toFixed(2)} · 通关奖励 ×${selectedContract.reward.toFixed(2)}</div>
+    </div>`;
   }
   const bountyTarget = (typeof dungeonBountyTargetFor === 'function') ? dungeonBountyTargetFor(dg.key) : null;
   if (bountyTarget) {
@@ -2951,6 +2986,7 @@ function renderDungeon() {
   if (heroicDl) heroicDl.innerHTML = '';
   if (epic5Dl) epic5Dl.innerHTML = '';
   renderDungeonBountyPanel();
+  renderDungeonContractPanel();
   // 更新按钮状态
   const btn5 = $('btn-dg-5man'), btnR = $('btn-dg-raid');
   if (btn5) { btn5.classList.toggle('active', dgFilter === 'all' || dgFilter === '5man'); }

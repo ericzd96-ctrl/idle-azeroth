@@ -52,6 +52,7 @@ const defaultState = () => ({
   dungeonCd: {},
   dungeonFirstClear: {},   // 每角色:已首通的副本 key(首通一次性奖励用)
   dungeonBounty: { resetAt:0, targets:[], claimed:{} },
+  dungeonContractLevel: 0,
   bossCd: {},
   startTime: Date.now(),
   lastTick: Date.now(),
@@ -408,6 +409,8 @@ function mergeState(saved) {
     heroDebuffs: saved.heroDebuffs || {},
     dungeonCd: saved.dungeonCd || {},
     dungeonFirstClear: saved.dungeonFirstClear || {},
+    dungeonBounty: mo(d.dungeonBounty, saved.dungeonBounty),
+    dungeonContractLevel: Math.max(0, Math.min(3, Math.floor(saved.dungeonContractLevel || 0))),
     bossCd: saved.bossCd || {},
     bossCd: saved.bossCd || {},
     subzoneKills: saved.subzoneKills || {},

@@ -140,7 +140,10 @@ function enterDungeon(key) {
     log(`🚪 进入 [${dg.name}] (免费)`, 'epic');
   }
   state.mode = 'dungeon';
-  state.dungeonState = { key, wave: 1, loot: [], affixes: getDungeonAffixes(dg) };
+  const contractLevel = (typeof dungeonContractLevel === 'function') ? dungeonContractLevel() : 0;
+  const contract = (typeof dungeonContractInfo === 'function') ? dungeonContractInfo(contractLevel) : null;
+  state.dungeonState = { key, wave: 1, loot: [], affixes: getDungeonAffixes(dg), contractLevel, contract };
+  if (contractLevel > 0 && contract) log(`${contract.icon || '📜'} 已启用 ${contract.name}: ${contract.desc}`, 'legend');
   // 进入副本:全量刷新所有技能CD(英雄/天赋/神器/随从)+清理身上的 buff/debuff/护盾(含随从护盾与随从buff/debuff)
   if (typeof resetCombatState === 'function') resetCombatState();
   else if (typeof clearAllBuffs === 'function') clearAllBuffs();
@@ -158,6 +161,72 @@ function leaveDungeon() {
   state.dungeonState = null;
   spawnMonster();
   markDirty('dungeon', 'stage');
+}
+
+const DUNGEON_CONTRACTS = [
+  { level:0, name:'稳扎稳打', icon:'📘', desc:'标准副本难度与奖励。', hp:1, atk:1, def:1, reward:1, chest:0 },
+  { level:1, name:'危险契约', icon:'📕', desc:'怪物生命+18%,攻击+10%,防御+6%;通关奖励+18%。', hp:1.18, atk:1.10, def:1.06, reward:1.18, chest:1 },
+  { level:2, name:'残酷契约', icon:'📙', desc:'怪物生命+42%,攻击+24%,防御+14%;通关奖励+42%。', hp:1.42, atk:1.24, def:1.14, reward:1.42, chest:2 },
+  { level:3, name:'噩梦契约', icon:'📓', desc:'怪物生命+78%,攻击+42%,防御+24%;通关奖励+80%。', hp:1.78, atk:1.42, def:1.24, reward:1.80, chest:3 },
+];
+
+function dungeonContractLevel() {
+  return Math.max(0, Math.min(3, Math.floor(state.dungeonContractLevel || 0)));
+}
+
+function dungeonContractInfo(level) {
+  return DUNGEON_CONTRACTS[Math.max(0, Math.min(3, Math.floor(level || 0)))] || DUNGEON_CONTRACTS[0];
+}
+
+function setDungeonContractLevel(level) {
+  if (state.mode !== 'world') { log('请先结束当前战斗再调整副本契约', 'bad'); return; }
+  state.dungeonContractLevel = Math.max(0, Math.min(3, Math.floor(Number(level) || 0)));
+  const info = dungeonContractInfo(state.dungeonContractLevel);
+  log(`${info.icon} 副本契约调整为 [${info.name}]`, state.dungeonContractLevel ? 'legend' : 'info');
+  markDirty('dungeon');
+}
+
+function dungeonContractRewardMult(ds) {
+  const lvl = Math.max(0, Math.min(3, Math.floor(ds?.contractLevel || 0)));
+  return dungeonContractInfo(lvl).reward || 1;
+}
+
+function grantDungeonContractChest(dg, ds) {
+  const lvl = Math.max(0, Math.min(3, Math.floor(ds?.contractLevel || 0)));
+  if (lvl <= 0) return '';
+  const info = dungeonContractInfo(lvl);
+  const tier = typeof dungeonBountyTier === 'function' ? dungeonBountyTier(dg) : 1;
+  const gold = Math.floor((dg.reqLvl || 1) * (35 + lvl * 22) * (1 + tier * 0.12));
+  const gem = Math.max(2, lvl * 3 + Math.floor((dg.reqLvl || 1) / 12));
+  const essence = Math.max(2, lvl * 2 + Math.floor((dg.reqLvl || 1) / 22));
+  state.gold += gold;
+  state.gem += gem;
+  if (typeof ensureMats === 'function') ensureMats();
+  state.essence = (state.essence || 0) + essence;
+
+  const itemLines = [];
+  const lastBoss = (dg.bosses || [])[Math.max(0, (dg.bosses || []).length - 1)];
+  const itemCount = lvl >= 3 ? 2 : 1;
+  for (let i = 0; i < itemCount; i++) {
+    const maxRarity = lvl >= 3 && tier >= 4 ? 'legend' : 'epic';
+    const minRarity = lvl >= 2 ? 'epic' : 'rare';
+    const power = ((typeof dg.powerLvl === 'number' && dg.powerLvl > 0) ? dg.powerLvl : dg.reqLvl) + lvl * 2;
+    const it = typeof rollItem === 'function' ? rollItem(maxRarity, power, dg.key, lastBoss ? lastBoss.name : null, { minRarity }) : null;
+    if (!it) continue;
+    if (lvl >= 2) it.contractForged = true;
+    addToInventory(it);
+    if (ds?.loot) ds.loot.push(it);
+    if (typeof eventsOnItemGet === 'function') eventsOnItemGet(it);
+    if (it.rarity === 'legend' && typeof progressionOnLegendary === 'function') progressionOnLegendary();
+    itemLines.push(`<div>🎁 契约装备 <span class="${it.cls}">${it.name}${typeof itemEpicRaidBadge==='function'?itemEpicRaidBadge(it,true):''}</span></div>`);
+  }
+
+  return `
+    <div class="dungeon-contract-clear">
+      <div style="font-weight:700">${info.icon} 契约宝箱: ${info.name}</div>
+      <div>💰 金币 +${gold} · 💎 钻石 +${gem} · ✨ 精华 +${essence}</div>
+      ${itemLines.join('')}
+    </div>`;
 }
 
 const DUNGEON_BOUNTY_THEMES = [
@@ -316,7 +385,8 @@ function onDungeonClear(dg) {
 
   // 词缀加成:越多词缀通关奖励越高(呼应"越难越值")
   const affixes = (state.dungeonState && state.dungeonState.affixes) || [];
-  const affixMult = 1 + affixes.length * 0.15;
+  const contractMult = dungeonContractRewardMult(state.dungeonState);
+  const affixMult = (1 + affixes.length * 0.15) * contractMult;
 
   // 额外通关奖励(小幅上调 + 词缀加成)
   const bonusGold = Math.floor(dg.reqLvl * 60 * affixMult);
@@ -371,11 +441,17 @@ function onDungeonClear(dg) {
   const affixHtml = affixes.length
     ? `<div class="muted" style="font-size:12px">本次词缀: ${affixes.map(a => (a.icon||'') + a.name).join(' · ')}</div>`
     : '';
+  const contractInfo = dungeonContractInfo(state.dungeonState?.contractLevel || 0);
+  const contractHtml = state.dungeonState?.contractLevel > 0
+    ? `<div class="muted" style="font-size:12px">${contractInfo.icon} 契约: ${contractInfo.name} · 通关奖励 ×${contractInfo.reward.toFixed(2)}</div>`
+    : '';
+  const contractChestHtml = grantDungeonContractChest(dg, state.dungeonState);
   const bountyHtml = grantDungeonBountyReward(dg, { loot:uniqueLoot });
   $('dungeon-clear-text').innerHTML = `
     <div style="font-size:18px;margin:8px 0">🏆 ${dg.name} 通关!</div>
     <div class="muted">击败了 ${finalBossName} 等 ${(dg.bosses||[]).length} 名首领</div>
     ${affixHtml}
+    ${contractHtml}
     <div style="margin:10px 0;text-align:left;font-size:13px">
       <div>💰 金币 +${bonusGold}</div>
       <div>💎 钻石 +${bonusGem}</div>
@@ -384,6 +460,7 @@ function onDungeonClear(dg) {
       ${lootHtml}
     </div>
     ${firstClearHtml}
+    ${contractChestHtml}
     ${bountyHtml}
   `;
   $('modal-dungeon-clear').classList.add('show');

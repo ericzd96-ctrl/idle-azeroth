@@ -2217,6 +2217,15 @@ function spawnDungeonMonster(){
       mon.baseXp = Math.floor(mon.baseXp * (isBoss ? 1.45 : 1.2));
     }
   }
+  if (state.mode === 'dungeon' && ds.contractLevel > 0 && typeof dungeonContractInfo === 'function') {
+    const contract = dungeonContractInfo(ds.contractLevel);
+    mon.hpMax = Math.floor(mon.hpMax * (contract.hp || 1)); mon.hp = mon.hpMax;
+    mon.atk = Math.floor(mon.atk * (contract.atk || 1));
+    mon.def = Math.floor(mon.def * (contract.def || 1));
+    mon.goldReward = Math.floor(mon.goldReward * (contract.reward || 1));
+    mon.baseXp = Math.floor(mon.baseXp * (1 + ((contract.reward || 1) - 1) * 0.5));
+    mon._dungeonContractLevel = ds.contractLevel;
+  }
   // 副本/大秘境 BOSS 被动:优先读数据中的passive,否则用默认
   if (isBoss) {
     mon.dodgeChance=0; mon.critChance=0; mon.critMult=2.0; mon.stunChance=0; mon.instantCast=true;

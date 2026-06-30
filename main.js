@@ -416,6 +416,12 @@ function setupDelegation() {
       $('dungeon-mode-epic').style.display = key === 'epic' ? '' : 'none';
       return;
     }
+    const contractBtn = e.target.closest('button[data-action="setdungeoncontract"]');
+    if (contractBtn && typeof setDungeonContractLevel === 'function') {
+      setDungeonContractLevel(parseInt(contractBtn.dataset.level || '0', 10));
+      renderDungeon();
+      return;
+    }
     // 副本筛选按钮
     if (e.target.id === 'btn-dg-5man') { dgFilter = dgFilter === '5man' ? 'all' : '5man'; renderDungeon(); }
     if (e.target.id === 'btn-dg-raid') { dgFilter = dgFilter === 'raid' ? 'all' : 'raid'; renderDungeon(); }
