@@ -698,6 +698,15 @@ h1 {
   line-height: 1.45;
   color: #fca5a5;
 }
+.dungeon-room-info {
+  margin: 0 0 8px 0;
+  padding: 8px;
+  border: 1px solid rgba(244,114,182,.24);
+  border-radius: 8px;
+  background: rgba(157,23,77,.10);
+  font-size: 12px;
+  line-height: 1.5;
+}
 .dungeon-boss-phase-line {
   margin-top: 4px;
   font-size: 11px;

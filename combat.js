@@ -2386,6 +2386,9 @@ function spawnDungeonMonster(){
   if (isBoss && typeof getDungeonBossCouncilMembers === 'function') {
     spawnDungeonCouncilMembers(mon, boss, dg, ds);
   }
+  if (state.mode === 'dungeon' && typeof applyDungeonCombatRoomSpawn === 'function') {
+    applyDungeonCombatRoomSpawn(ds, dg, mon, isBoss, Date.now());
+  }
 }
 
 function spawnDungeonCouncilMembers(primary, bossData, dg, ds){
@@ -3390,6 +3393,219 @@ function applyDungeonBossDirectorMechanics(now){
     if(fired >= 2) break;
   }
 }
+function dungeonRoomCounter(ds, key){
+  if(!ds) return;
+  ds.roomEvents = (ds.roomEvents || 0) + 1;
+  if(key){
+    if(!ds.roomEventBreakdown) ds.roomEventBreakdown = {};
+    ds.roomEventBreakdown[key] = (ds.roomEventBreakdown[key] || 0) + 1;
+  }
+}
+function getDungeonRoomMod(ds, key){
+  const room = (ds?.combatRooms || []).find(r => r && r.key === key);
+  return room ? (room.mod || {}) : null;
+}
+function spawnDungeonRoomUnit(base, cfg, now){
+  if(!base || !cfg) return null;
+  const add = makeMonster((cfg.icon || '🎲') + (cfg.name || '房间目标'), Math.max(1, (base.lvl || 1) - (cfg.lvlOffset || 1)), false, cfg.rarity || 'rare');
+  add.hpMax = Math.max(20, Math.floor((base.hpMax || 100) * (cfg.hpPct || 0.22)));
+  add.hp = add.hpMax;
+  add.atk = Math.max(1, Math.floor((base.atk || 1) * (cfg.atkPct || 0.42)));
+  add.def = Math.max(0, Math.floor((base.def || 0) * (cfg.defPct || 0.45)));
+  add.baseGold = cfg.goldReward || 0;
+  add.baseXp = cfg.xpReward || 0;
+  add.goldReward = cfg.goldReward || 0;
+  add.honorReward = cfg.honorReward || 0;
+  add.dropRate = cfg.dropRate || 0;
+  add.gemChance = cfg.gemChance || 0;
+  add.maxRarity = cfg.maxRarity || 'common';
+  add._uid = monUidSeq++;
+  add._dots = {};
+  add._dotLegacyImported = true;
+  add._lastDotTick = 0;
+  add._summoned = true;
+  add._dungeonAdd = true;
+  add._roomAdd = cfg.roomKey || cfg.key || true;
+  add._roomObjective = cfg.objective || null;
+  add._roomExpireEffect = cfg.expireEffect || null;
+  add._roomReward = cfg.reward || null;
+  add._summonerId = base._uid;
+  add._summonerName = base.bossName || base.name || '敌人';
+  add._summonerIsBoss = !!base.isBoss;
+  add._spawnAt = now;
+  add._expiresAt = cfg.durationMs ? now + cfg.durationMs : 0;
+  add._monSkills = cfg.skills || [];
+  add._monSkill = add._monSkills[0] || null;
+  add._monSupportSkills = cfg.supportSkills || [];
+  add._supportSkillCooldowns = {};
+  add._lastSkill = now - rng(800, 2400);
+  add._lastSupportSkill = now - rng(1200, 3600);
+  add._lastAtk = now - rng(0, 900);
+  state.currentMonsters.push(add);
+  if(cfg.announce !== false) showMonsterFloat(add, (cfg.icon || '🎲') + (cfg.name || '房间目标'), cfg.color || '#f9a8d4', { variant:'boss', scale:1.05 });
+  return add;
+}
+function applyDungeonCombatRoomSpawn(ds, dg, primary, isBoss, now){
+  if(state.mode !== 'dungeon' || !ds?.combatRooms?.length || !primary) return;
+  const waveKey = `roomSpawn:${ds.wave}`;
+  if(ds[waveKey]) return;
+  ds[waveKey] = 1;
+  ds._roomWaveStartedAt = now;
+  for(const room of ds.combatRooms){
+    const mod = room.mod || {};
+    if(mod.openerHasteMs){
+      for(const m of (state.currentMonsters || [])){
+        if(!m || m.hp <= 0) continue;
+        m._trickSpdBuff = Math.max(m._trickSpdBuff || 0, now + mod.openerHasteMs);
+        m._trickSpdPct = Math.max(m._trickSpdPct || 0, Math.round((mod.openerHastePct || 0.2) * 100));
+        setMonsterTrickAura(m, 'roomOpener', { name:room.name, icon:room.icon, desc:'房间开场攻速提高' }, m._trickSpdBuff);
+      }
+    }
+    if(!isBoss && mod.ambushChance && Math.random() < mod.ambushChance){
+      spawnDungeonRoomUnit(primary, { roomKey:room.key, icon:'🗡️', name:'伏击刺客', hpPct:0.46, atkPct:0.72, defPct:0.42, skills:pickMonSkills('暗影刺客', null, primary.lvl || 1, 1), color:'#f0abfc' }, now);
+      dungeonRoomCounter(ds, 'ambush');
+      log(`🗡️ ${room.name}: 伏击刺客从侧翼加入战斗`, 'bad');
+    }
+    if(!isBoss && mod.shooterChance && Math.random() < mod.shooterChance){
+      spawnDungeonRoomUnit(primary, { roomKey:room.key, icon:'🏹', name:'攻城射手', hpPct:0.38, atkPct:0.62, defPct:0.34, skills:pickMonSkills('攻城射手', null, primary.lvl || 1, 1), color:'#fdba74' }, now);
+      dungeonRoomCounter(ds, 'shooter');
+      log(`🏹 ${room.name}: 攻城射手占据高台`, 'bad');
+    }
+    if(mod.treasureEvery && ds.wave % mod.treasureEvery === 0){
+      const guard = spawnDungeonRoomUnit(primary, { roomKey:room.key, icon:'🎁', name:'宝箱守卫', hpPct:isBoss?0.18:0.62, atkPct:0.58, defPct:0.80, reward:{type:'treasure', goldPct:mod.bonusGoldPct || 0.15}, goldReward:Math.max(1, Math.floor((primary.goldReward || 1) * 0.25)), color:'#fcd34d' }, now);
+      if(guard){
+        for(const m of (state.currentMonsters || [])){
+          if(!m || m === guard || m.hp <= 0) continue;
+          m._arcaneShield = (m._arcaneShield || 0) + Math.max(1, Math.floor(m.hpMax * (mod.guardShieldPct || 0.035)));
+          syncMonsterShieldAura(m);
+        }
+        dungeonRoomCounter(ds, 'treasureGuard');
+        log(`🎁 ${room.name}: 宝箱守卫保护了战利品`, 'bad');
+      }
+    }
+    if(isBoss && mod.altarBoss){
+      spawnDungeonRoomUnit(primary, { roomKey:room.key, objective:'altar', icon:'🩸', name:'鲜血祭坛', hpPct:0.12, atkPct:0.12, defPct:0.55, durationMs:mod.altarDurationMs || 18000, reward:{type:'altar'}, color:'#fda4af' }, now);
+      dungeonRoomCounter(ds, 'bloodAltar');
+      log(`🩸 ${room.name}: 鲜血祭坛开始为首领蓄能`, 'bad');
+    }
+  }
+  if(typeof markDirty === 'function') markDirty('stage');
+}
+function resolveDungeonRoomObjectiveExpiry(obj, ds, now){
+  if(!obj || obj.hp <= 0 || !obj._roomObjective || !obj._expiresAt || now < obj._expiresAt) return false;
+  const living = (state.currentMonsters || []).filter(x => x && x.hp > 0 && x !== obj);
+  if(obj._roomExpireEffect === 'relic'){
+    for(const m of living){
+      m._arcaneShield = (m._arcaneShield || 0) + Math.max(1, Math.floor(m.hpMax * 0.045));
+      m._trickAtkBuff = Math.max(m._trickAtkBuff || 0, now + 6000);
+      m._trickAtkPct = Math.max(m._trickAtkPct || 0, 25);
+      syncMonsterShieldAura(m);
+      showMonsterFloat(m, '🔮失控', '#c4b5fd');
+    }
+    log('🔮 失控圣物爆发,敌人获得护盾和攻击强化', 'bad');
+  }else if(obj._roomExpireEffect === 'portal'){
+    const base = living.find(x => x.isBoss) || living[0];
+    if(base){
+      spawnDungeonRoomUnit(base, { roomKey:'unstablePortal', icon:'🌀', name:'传送援军', hpPct:0.34, atkPct:0.52, defPct:0.36, skills:pickMonSkills('传送援军', null, base.lvl || 1, 1), color:'#93c5fd' }, now);
+      log('🌀 传送门稳定成形,额外援军抵达', 'bad');
+    }
+  }else if(obj._roomExpireEffect === 'illusion'){
+    for(const m of living.filter(x => x.isBoss)){
+      m._monsterDrBuffUntil = Math.max(m._monsterDrBuffUntil || 0, now + 4200);
+      m._monsterDrBuffPct = Math.max(m._monsterDrBuffPct || 0, 0.18);
+    }
+  }
+  obj._roomExpired = true;
+  obj.hp = 0;
+  dungeonRoomCounter(ds, `${obj._roomObjective}:expired`);
+  return true;
+}
+function applyDungeonCombatRoomEffects(ds, mon, now){
+  if(state.mode !== 'dungeon' || !ds?.combatRooms?.length || !mon) return;
+  const beforeEvents = ds.roomEvents || 0;
+  for(const obj of (state.currentMonsters || [])){
+    if(obj && obj.hp > 0 && obj._roomObjective) resolveDungeonRoomObjectiveExpiry(obj, ds, now);
+  }
+  for(const room of ds.combatRooms){
+    const mod = room.mod || {};
+    const prefix = `room:${room.key}`;
+    if(mod.flameTickMs && now - (ds[`${prefix}:flame`] || 0) > mod.flameTickMs){
+      ds[`${prefix}:flame`] = now;
+      const dmg = Math.max(1, Math.floor((state.hero.hpMax || 1) * (mod.flameDamagePct || 0.04)));
+      applyHeroDamage(dmg, mon, { label:t=>'🔥-' + t, color:'#fb923c', now });
+      applyHeroDebuff('burn', mod.burnMs || 3500, { dps:Math.max(1, Math.floor((state.hero.hpMax || 1) * (mod.burnDpsPct || 0.01))) });
+      dungeonRoomCounter(ds, 'flameJets');
+    }
+    if(mod.relicTickMs && now - (ds[`${prefix}:relic`] || 0) > mod.relicTickMs){
+      const aliveRelic = (state.currentMonsters || []).some(x => x && x.hp > 0 && x._roomObjective === 'relic');
+      if(!aliveRelic){
+        ds[`${prefix}:relic`] = now;
+        spawnDungeonRoomUnit(mon, { roomKey:room.key, objective:'relic', expireEffect:'relic', icon:'🔮', name:'失控圣物', hpPct:0.10, atkPct:0.10, defPct:0.42, durationMs:mod.relicDurationMs || 9500, reward:{type:'relic'}, color:'#c4b5fd' }, now);
+        dungeonRoomCounter(ds, 'relicSpawn');
+        log('🔮 失控圣物出现: 击破可获得资源和必暴,超时会强化敌人', 'bad');
+      }
+    }
+    if(mod.altarTickMs && now - (ds[`${prefix}:altar`] || 0) > mod.altarTickMs){
+      const altarAlive = (state.currentMonsters || []).some(x => x && x.hp > 0 && x._roomObjective === 'altar');
+      if(altarAlive){
+        ds[`${prefix}:altar`] = now;
+        for(const m of (state.currentMonsters || [])){
+          if(!m || m.hp <= 0 || m._roomObjective) continue;
+          const heal = Math.max(1, Math.floor(m.hpMax * (mod.altarHealPct || 0.04)));
+          m.hp = Math.min(m.hpMax, m.hp + heal);
+          showMonsterFloat(m, '🩸+' + heal, '#fda4af', { variant:'heal' });
+        }
+        dungeonRoomCounter(ds, 'altarHeal');
+      }
+    }
+    if(mod.stormTickMs && now - (ds[`${prefix}:storm`] || 0) > mod.stormTickMs){
+      ds[`${prefix}:storm`] = now;
+      applyHeroDamage(Math.max(1, Math.floor((state.hero.hpMax || 1) * (mod.stormDamagePct || 0.04))), mon, { label:t=>'⚡-' + t, color:'#67e8f9', now });
+      if((state.resource || 0) > (state.resourceMax || 100) * 0.45){
+        const drain = Math.min(state.resource || 0, Math.floor((state.resourceMax || 100) * (mod.drainPct || 0.12)));
+        state.resource = Math.max(0, (state.resource || 0) - drain);
+        applyHeroDebuff('silence', mod.silenceMs || 1000);
+        showFloat($('hero-emoji'), '⚡-' + drain, '#67e8f9', { variant:'status' });
+      }
+      dungeonRoomCounter(ds, 'stormConduit');
+    }
+    if(mod.frostTickMs && now - (ds[`${prefix}:frost`] || 0) > mod.frostTickMs){
+      ds[`${prefix}:frost`] = now;
+      applyHeroDebuff('chill', mod.chillMs || 5000);
+      showFloat($('hero-emoji'), '🧊锁链', '#93c5fd', { variant:'status' });
+      for(const m of (state.currentMonsters || [])){
+        if(!m || m.hp <= 0) continue;
+        m._arcaneShield = (m._arcaneShield || 0) + Math.max(1, Math.floor(m.hpMax * (mod.shieldPct || 0.025)));
+        syncMonsterShieldAura(m);
+      }
+      dungeonRoomCounter(ds, 'frostLocks');
+    }
+    if(mod.mazeTickMs && now - (ds[`${prefix}:maze`] || 0) > mod.mazeTickMs){
+      ds[`${prefix}:maze`] = now;
+      spawnDungeonRoomUnit(mon, { roomKey:room.key, objective:'illusion', expireEffect:'illusion', icon:'🪞', name:'迷宫幻影', hpPct:0.13, atkPct:0.36, defPct:0.30, durationMs:mod.illusionDurationMs || 12000, color:'#f0abfc' }, now);
+      if(Math.random() < 0.42) applyHeroDebuff('fear', mod.fearMs || 900);
+      else applyHeroDebuff('vulnerable', mod.vulnerableMs || 4200);
+      dungeonRoomCounter(ds, 'shadowMaze');
+      log('🪞 暗影迷宫扭曲了战场,幻影加入战斗', 'bad');
+    }
+    if(mod.arrowTickMs && now - (ds[`${prefix}:arrow`] || 0) > mod.arrowTickMs){
+      ds[`${prefix}:arrow`] = now;
+      applyHeroDamage(Math.max(1, Math.floor((state.hero.hpMax || 1) * (mod.arrowDamagePct || 0.035))), mon, { label:t=>'🏹-' + t, color:'#fdba74', now });
+      dungeonRoomCounter(ds, 'siegeArrows');
+    }
+    if(mod.portalTickMs && now - (ds[`${prefix}:portal`] || 0) > mod.portalTickMs){
+      const alivePortal = (state.currentMonsters || []).some(x => x && x.hp > 0 && x._roomObjective === 'portal');
+      if(!alivePortal){
+        ds[`${prefix}:portal`] = now;
+        spawnDungeonRoomUnit(mon, { roomKey:room.key, objective:'portal', expireEffect:'portal', icon:'🌀', name:'不稳定传送门', hpPct:0.11, atkPct:0.08, defPct:0.35, durationMs:mod.portalDurationMs || 10000, reward:{type:'portal'}, color:'#93c5fd' }, now);
+        if(mod.bossCastJitter && mon.isBoss && bossCasting) bossCasting.duration = Math.max(800, bossCasting.duration - 350);
+        dungeonRoomCounter(ds, 'portalSpawn');
+        log('🌀 不稳定传送门打开,限时击破可阻止援军', 'bad');
+      }
+    }
+  }
+  if((ds.roomEvents || 0) !== beforeEvents && typeof markDirty === 'function') markDirty('hero', 'stage');
+}
 function handleCouncilMemberDeath(mon, hasLivingMembers){
   if(!mon?._councilGroupKey) return;
   const ds = state.dungeonState || state.mythicState;
@@ -3950,6 +4166,9 @@ function tickBattle(now){
   if (state.mode === 'dungeon' && state.dungeonState?.edicts?.length) {
     applyDungeonEdictEffects(state.dungeonState, mon, now);
   }
+  if (state.mode === 'dungeon' && state.dungeonState?.combatRooms?.length) {
+    applyDungeonCombatRoomEffects(state.dungeonState, mon, now);
+  }
   if (state.mode === 'dungeon' && state.dungeonState?.timer) {
     applyDungeonTimerPressure(state.dungeonState, mon, now);
   }
@@ -4301,6 +4520,32 @@ function onMonsterDeath(mon){
   // 世界Boss 击杀
   if(mon.isWorldBoss){if(typeof onWorldBossKill==='function') onWorldBossKill(mon);return;}
   if(mon.isRareElite){if(typeof onRareEliteKill==='function') onRareEliteKill(mon);return;}
+  if(mon._roomReward && !mon._roomExpired){
+    const ds = state.dungeonState || state.mythicState;
+    if(mon._roomReward.type === 'relic'){
+      const gain = Math.max(8, Math.floor((state.resourceMax || 100) * 0.22));
+      state.resource = Math.min(state.resourceMax || 100, (state.resource || 0) + gain);
+      if(typeof grantNextSkillCrit === 'function') grantNextSkillCrit(1);
+      log(`🔮 击破失控圣物: 资源 +${gain},下个技能必暴`, 'epic');
+      showFloat($('hero-emoji'), `🔮+${gain}`, '#c4b5fd', { variant:'status', scale:1.05 });
+      if(ds) ds.roomObjectivesBroken = (ds.roomObjectivesBroken || 0) + 1;
+    }else if(mon._roomReward.type === 'portal'){
+      log('🌀 你关闭了不稳定传送门,阻止了额外援军', 'good');
+      if(ds) ds.roomObjectivesBroken = (ds.roomObjectivesBroken || 0) + 1;
+    }else if(mon._roomReward.type === 'altar'){
+      log('🩸 鲜血祭坛被摧毁,首领失去周期治疗', 'good');
+      if(ds) ds.roomObjectivesBroken = (ds.roomObjectivesBroken || 0) + 1;
+    }else if(mon._roomReward.type === 'treasure'){
+      const bonusGold = Math.max(1, Math.floor((mon.goldReward || 1) * ((mon._roomReward.goldPct || 0.15) + 1)));
+      state.gold += bonusGold;
+      log(`🎁 宝箱守卫倒下,额外金币 +${bonusGold}`, 'loot');
+      if(ds){
+        ds.roomBonusGold = (ds.roomBonusGold || 0) + bonusGold;
+        ds.roomObjectivesBroken = (ds.roomObjectivesBroken || 0) + 1;
+      }
+    }
+    markDirty('hero');
+  }
   if(mon._summoned){
     const di = state.currentMonsters.indexOf(mon);
     if(di >= 0) state.currentMonsters.splice(di, 1);

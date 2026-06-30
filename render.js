@@ -1375,6 +1375,7 @@ function updateBattleVisuals() {
     const alertTag = alert && alert.level > 0 ? ` · <span style="color:#fb7185">🚨警戒 ${alert.level}(${alert.label})</span>` : '';
     const timerStatus = (typeof dungeonTimerStatus === 'function') ? dungeonTimerStatus(state.dungeonState) : null;
     const timerTag = timerStatus ? ` · <span style="color:${timerStatus.expired ? '#fb7185' : '#67e8f9'}">⏳${timerStatus.text}</span>` : '';
+    const roomTag = state.dungeonState.combatRooms?.length ? ` · <span style="color:#f9a8d4">🎲${state.dungeonState.combatRooms.map(r => r.icon || '🎲').join('')}</span>` : '';
     const councilMembers = curBoss && typeof getDungeonBossCouncilMembers === 'function' ? getDungeonBossCouncilMembers(curBoss) : [];
     const liveCouncil = councilMembers.length > 1 ? (state.currentMonsters || []).filter(m => m && m.hp > 0 && m._councilGroupName === curBoss.name).length : 0;
     const councilTag = liveCouncil ? ` · <span style="color:#fcd34d">👥${liveCouncil}/${councilMembers.length}</span>` : '';
@@ -1391,7 +1392,7 @@ function updateBattleVisuals() {
       if (tags.length) bossExtra += ' <span style=\"font-size:10px;color:#6ee7b7\">'+tags.join(' ')+'</span>';
     }
     const bossTag = curBoss ? ` ⚔️<b style=\"color:var(--legend)\">${curBoss.name}</b>${bossExtra}` : '';
-    $('progress-text').innerHTML = `波次 ${state.dungeonState.wave}/${dg.waves} · 首领 ${killedBosses}/${bossList.length}${bossTag}${councilTag}${contractTag}${alertTag}${timerTag}`;
+    $('progress-text').innerHTML = `波次 ${state.dungeonState.wave}/${dg.waves} · 首领 ${killedBosses}/${bossList.length}${bossTag}${councilTag}${contractTag}${alertTag}${timerTag}${roomTag}`;
   } else if (state.mode === 'mythic') {
     const ms = state.mythicState;
     const dg = DUNGEONS.find(d => d.key === ms.key);
@@ -2894,6 +2895,15 @@ function buildDungeonInfoHtml(dg) {
     html += `<div class="dungeon-set-track"><b>当前职业套装目标:</b> ${setTierInfo.setName} · ${setTierInfo.bandName}阶段（2件/4件激活特效）</div>`;
   }
   const selectedContract = (typeof dungeonContractLevel === 'function' && typeof dungeonContractInfo === 'function') ? dungeonContractInfo(dungeonContractLevel()) : null;
+  const roomPreview = (typeof getDungeonCombatRooms === 'function') ? getDungeonCombatRooms(dg, selectedContract?.level || 0) : [];
+  if (roomPreview.length) {
+    html += `<div class="dungeon-room-info">
+      <b>🎲 战斗房间</b>
+      <div style="display:flex;flex-direction:column;gap:5px;margin-top:5px">
+        ${roomPreview.map(r => `<div><span style="color:#f9a8d4">${symbolIconHtml(r.icon, 14, r.name, 'inv_misc_dice_02')} ${r.name}</span><div class="muted">${r.desc || '额外遭遇规则'}</div></div>`).join('')}
+      </div>
+    </div>`;
+  }
   if (selectedContract && selectedContract.level > 0) {
     const trialPreview = (typeof getDungeonContractTrials === 'function') ? getDungeonContractTrials(dg, selectedContract.level) : [];
     const environmentPreview = (typeof getDungeonEnvironments === 'function') ? getDungeonEnvironments(dg, selectedContract.level) : [];

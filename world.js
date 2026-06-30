@@ -146,12 +146,14 @@ function enterDungeon(key) {
   const trials = (typeof getDungeonContractTrials === 'function') ? getDungeonContractTrials(dg, contractLevel) : [];
   const environments = (typeof getDungeonEnvironments === 'function') ? getDungeonEnvironments(dg, contractLevel) : [];
   const edicts = (typeof getDungeonTacticalEdicts === 'function') ? getDungeonTacticalEdicts(dg, contractLevel) : [];
+  const combatRooms = (typeof getDungeonCombatRooms === 'function') ? getDungeonCombatRooms(dg, contractLevel) : [];
   const timer = (typeof createDungeonTimer === 'function') ? createDungeonTimer(dg, contractLevel) : null;
-  state.dungeonState = { key, wave: 1, loot: [], affixes: baseAffixes.concat(trials), trials, environments, edicts, timer, contractLevel, contract, alertLevel: 0, maxAlert: 0 };
+  state.dungeonState = { key, wave: 1, loot: [], affixes: baseAffixes.concat(trials), trials, environments, edicts, combatRooms, timer, contractLevel, contract, alertLevel: 0, maxAlert: 0 };
   if (contractLevel > 0 && contract) log(`${contract.icon || '📜'} 已启用 ${contract.name}: ${contract.desc}`, 'legend');
   if (trials.length) log(`🔥 契约试炼: ${trials.map(t => `${t.icon || '🔥'}${t.name}`).join(' · ')}`, 'legend');
   if (environments.length) log(`🧭 副本环境: ${environments.map(e => `${e.icon || '🧭'}${e.name}`).join(' · ')}`, 'bad');
   if (edicts.length) log(`📜 战术禁令: ${edicts.map(e => `${e.icon || '📜'}${e.name}`).join(' · ')}`, 'bad');
+  if (combatRooms.length) log(`🎲 战斗房间: ${combatRooms.map(r => `${r.icon || '🎲'}${r.name}`).join(' · ')}`, 'bad');
   if (timer) log(`⏳ 限时挑战: ${timer.label} 内通关奖励+${Math.round((timer.rewardMult - 1) * 100)}%,超时后每15秒叠加压迫`, 'legend');
   // 进入副本:全量刷新所有技能CD(英雄/天赋/神器/随从)+清理身上的 buff/debuff/护盾(含随从护盾与随从buff/debuff)
   if (typeof resetCombatState === 'function') resetCombatState();
@@ -212,6 +214,37 @@ function getDungeonEnvironments(dg, contractLevel) {
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
   return pool.slice(0, Math.min(count, pool.length)).map(e => ({ ...e, dungeonEnvironment:true }));
+}
+
+const DUNGEON_COMBAT_ROOMS = [
+  { key:'ambushPoint', name:'伏击岔路', icon:'🗡️', desc:'小怪波次有概率额外出现伏击者,开场数秒敌人攻速提高。', mod:{ambushChance:0.45, openerHasteMs:6500, openerHastePct:0.22} },
+  { key:'relicCache', name:'失控圣物库', icon:'🔮', desc:'战斗中会出现限时圣物;击破可获得资源和必暴,放任则强化敌人。', mod:{relicTickMs:22000, relicDurationMs:9500} },
+  { key:'flameJets', name:'烈焰喷口', icon:'🔥', desc:'地面周期喷火造成伤害,若已被灼烧则额外延长灼烧。', mod:{flameTickMs:10500, flameDamagePct:0.045, burnDpsPct:0.011, burnMs:3800} },
+  { key:'bloodAltar', name:'鲜血祭坛', icon:'🩸', desc:'首领战会出现祭坛;祭坛存活时会周期治疗敌人。', mod:{altarBoss:true, altarTickMs:16000, altarDurationMs:18000, altarHealPct:0.045} },
+  { key:'stormConduit', name:'风暴导管', icon:'⚡', desc:'导管会周期链击玩家;资源较高时额外沉默并燃烧资源。', mod:{stormTickMs:13500, stormDamagePct:0.04, drainPct:0.14, silenceMs:1200} },
+  { key:'cursedTreasure', name:'诅咒宝箱', icon:'🎁', desc:'部分波次出现宝箱守卫;击败可获得额外金币,但守卫会保护其他敌人。', mod:{treasureEvery:3, guardShieldPct:0.04, bonusGoldPct:0.18} },
+  { key:'frostLocks', name:'寒霜锁链', icon:'🧊', desc:'周期施加冰缚;玩家被冰缚时敌人获得小护盾。', mod:{frostTickMs:16500, chillMs:5200, shieldPct:0.028} },
+  { key:'shadowMaze', name:'暗影迷宫', icon:'🪞', desc:'迷宫周期召出幻影,并让玩家短暂易伤或恐惧。', mod:{mazeTickMs:21000, illusionDurationMs:12000, vulnerableMs:4200, fearMs:900} },
+  { key:'siegeGallery', name:'攻城长廊', icon:'🏹', desc:'箭雨周期落下,并在小怪波次派出攻城射手。', mod:{arrowTickMs:12000, arrowDamagePct:0.038, shooterChance:0.35} },
+  { key:'unstablePortal', name:'不稳定传送门', icon:'🌀', desc:'传送门会把额外敌人拉进战场,也会随机扰动首领施法节奏。', mod:{portalTickMs:24000, portalDurationMs:10000, bossCastJitter:true} },
+];
+
+function getDungeonCombatRooms(dg, contractLevel) {
+  if (!dg) return [];
+  const level = Math.max(0, Math.min(3, Math.floor(contractLevel || 0)));
+  const count = level >= 3 ? 3 : (level >= 1 ? 2 : 1);
+  const day = Math.floor(Date.now() / 86400000);
+  let seed = ((dg.reqLvl || 1) * 811 + (dg.waves || 1) * 193 + level * 997 + (day % 100000) * 389) % 2147483647;
+  const key = dg.key || '';
+  for (let i = 0; i < key.length; i++) seed = (seed * 47 + key.charCodeAt(i)) % 2147483647;
+  seed = seed || 1;
+  const pool = DUNGEON_COMBAT_ROOMS.slice();
+  for (let i = pool.length - 1; i > 0; i--) {
+    seed = (seed * 16807) % 2147483647;
+    const j = seed % (i + 1);
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, Math.min(count, pool.length)).map(r => ({ ...r, dungeonCombatRoom:true }));
 }
 
 const DUNGEON_TACTICAL_EDICTS = (() => {
@@ -773,8 +806,11 @@ function onDungeonClear(dg) {
   const bossDirectorHtml = dungeonStateSnapshot?.bossDirectorEvents && !(dungeonStateSnapshot?.contractLevel > 0)
     ? `<div class="muted" style="font-size:12px">🎬 Boss流程机制触发 ${dungeonStateSnapshot.bossDirectorEvents || 0} 次</div>`
     : '';
+  const roomHtml = dungeonStateSnapshot?.combatRooms?.length
+    ? `<div class="muted" style="font-size:12px">🎲 战斗房间: ${dungeonStateSnapshot.combatRooms.map(r => (r.icon || '🎲') + r.name).join(' · ')} · 触发 ${dungeonStateSnapshot.roomEvents || 0} 次 · 击破目标 ${dungeonStateSnapshot.roomObjectivesBroken || 0}${dungeonStateSnapshot.roomBonusGold ? ` · 额外金币 +${dungeonStateSnapshot.roomBonusGold}` : ''}</div>`
+    : '';
   const contractHtml = dungeonStateSnapshot?.contractLevel > 0
-    ? `<div class="muted" style="font-size:12px">${contractInfo.icon} 契约: ${contractInfo.name} · 通关奖励 ×${contractMult.toFixed(2)} · 最高警戒 ${dungeonStateSnapshot.maxAlert || dungeonStateSnapshot.alertLevel || 0} · 首领阶段 ${dungeonStateSnapshot.bossPhasesTriggered || 0} · Boss机制 ${dungeonStateSnapshot.bossMechanicsTriggered || 0} · 流程机制 ${dungeonStateSnapshot.bossDirectorEvents || 0} · 环境触发 ${dungeonStateSnapshot.environmentHits || 0} · 禁令触发 ${dungeonStateSnapshot.edictHits || 0} · 禁令增援 ${dungeonStateSnapshot.edictAdds || 0}</div>`
+    ? `<div class="muted" style="font-size:12px">${contractInfo.icon} 契约: ${contractInfo.name} · 通关奖励 ×${contractMult.toFixed(2)} · 最高警戒 ${dungeonStateSnapshot.maxAlert || dungeonStateSnapshot.alertLevel || 0} · 首领阶段 ${dungeonStateSnapshot.bossPhasesTriggered || 0} · Boss机制 ${dungeonStateSnapshot.bossMechanicsTriggered || 0} · 流程机制 ${dungeonStateSnapshot.bossDirectorEvents || 0} · 房间事件 ${dungeonStateSnapshot.roomEvents || 0} · 环境触发 ${dungeonStateSnapshot.environmentHits || 0} · 禁令触发 ${dungeonStateSnapshot.edictHits || 0} · 禁令增援 ${dungeonStateSnapshot.edictAdds || 0}</div>`
     : '';
   const contractChestHtml = grantDungeonContractChest(dg, dungeonStateSnapshot);
   const bountyHtml = grantDungeonBountyReward(dg, { loot:uniqueLoot });
@@ -786,6 +822,7 @@ function onDungeonClear(dg) {
     ${timerHtml}
     ${bossMechanicHtml}
     ${bossDirectorHtml}
+    ${roomHtml}
     <div style="margin:10px 0;text-align:left;font-size:13px">
       <div>💰 金币 +${bonusGold}</div>
       <div>💎 钻石 +${bonusGem}</div>
