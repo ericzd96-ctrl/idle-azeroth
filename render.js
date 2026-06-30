@@ -2888,11 +2888,20 @@ function buildDungeonInfoHtml(dg) {
   }
   const selectedContract = (typeof dungeonContractLevel === 'function' && typeof dungeonContractInfo === 'function') ? dungeonContractInfo(dungeonContractLevel()) : null;
   if (selectedContract && selectedContract.level > 0) {
+    const trialPreview = (typeof getDungeonContractTrials === 'function') ? getDungeonContractTrials(dg, selectedContract.level) : [];
     html += `<div class="dungeon-contract-info">
       <b>${selectedContract.icon} 当前契约: ${selectedContract.name}</b>
       <div class="muted">${selectedContract.desc}</div>
       <div>怪物生命 ×${selectedContract.hp.toFixed(2)} · 攻击 ×${selectedContract.atk.toFixed(2)} · 防御 ×${selectedContract.def.toFixed(2)} · 通关奖励 ×${selectedContract.reward.toFixed(2)}</div>
     </div>`;
+    if (trialPreview.length) {
+      html += `<div class="dungeon-trial-info">
+        <b>🔥 契约试炼</b>
+        <div style="display:flex;flex-direction:column;gap:5px;margin-top:5px">
+          ${trialPreview.map(t => `<div><span style="color:#fb7185">${symbolIconHtml(t.icon, 14, t.name, 'ability_warrior_battleshout')} ${t.name}</span><div class="muted">${t.desc || '额外副本机制'}</div></div>`).join('')}
+        </div>
+      </div>`;
+    }
   }
   const bountyTarget = (typeof dungeonBountyTargetFor === 'function') ? dungeonBountyTargetFor(dg.key) : null;
   if (bountyTarget) {
@@ -3052,6 +3061,9 @@ function renderDungeon() {
     const dungeonIconHtml = (typeof dungeonIcon === 'function') ? dungeonIcon(dg.key, dg.name, 18, dg.icon) : dg.icon;
     const dgAffixes = (typeof getDungeonAffixes === 'function') ? getDungeonAffixes(dg) : [];
     const affixLine = dgAffixes.length ? `<div class="muted" style="font-size:11px">⚙️ 词缀: ${dgAffixes.map(a => `${symbolIconHtml(a.icon, 12, a.name, 'spell_holy_powerinfusion')} ${a.name}`).join(' · ')}</div>` : '';
+    const selectedContractLevel = (typeof dungeonContractLevel === 'function') ? dungeonContractLevel() : 0;
+    const trialPreview = (selectedContractLevel > 0 && typeof getDungeonContractTrials === 'function') ? getDungeonContractTrials(dg, selectedContractLevel) : [];
+    const trialLine = trialPreview.length ? `<div class="dungeon-trial-line">🔥 试炼: ${trialPreview.map(t => `${symbolIconHtml(t.icon, 12, t.name, 'ability_warrior_battleshout')} ${t.name}`).join(' · ')}</div>` : '';
     const firstClearBadge = (!state.dungeonFirstClear || !state.dungeonFirstClear[dg.key]) ? '<span class="pill" style="background:rgba(246,196,83,.18);color:#f6c453">🎁首通</span>' : '';
     // 必刷专属坐骑提示(读 DUNGEON_MOUNT_DROPS,按基础本key)
     let chaseLine = '';
@@ -3083,6 +3095,7 @@ function renderDungeon() {
       ${bountyLine}
       ${chaseLine}
       ${affixLine}
+      ${trialLine}
       ${setTierInfo ? `<div class="dungeon-set-track compact">当前职业套装: ${setTierInfo.setName} · ${setTierInfo.bandName}</div>` : ''}
       <div class="row">
         <span class="cd-display">${statusText}</span>

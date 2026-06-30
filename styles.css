@@ -639,6 +639,21 @@ h1 {
   font-size: 12px;
   line-height: 1.5;
 }
+.dungeon-trial-info {
+  margin-top: 7px;
+  padding: 7px 8px;
+  border: 1px solid rgba(248,113,113,.26);
+  border-radius: 7px;
+  background: rgba(185,28,28,.10);
+  color: #fecaca;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.dungeon-trial-line {
+  font-size: 11px;
+  color: #fecaca;
+  line-height: 1.45;
+}
 .dungeon-mastery-panel {
   margin: 0 0 8px 0;
   padding: 8px;

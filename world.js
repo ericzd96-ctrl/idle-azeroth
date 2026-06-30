@@ -142,8 +142,11 @@ function enterDungeon(key) {
   state.mode = 'dungeon';
   const contractLevel = (typeof dungeonContractLevel === 'function') ? dungeonContractLevel() : 0;
   const contract = (typeof dungeonContractInfo === 'function') ? dungeonContractInfo(contractLevel) : null;
-  state.dungeonState = { key, wave: 1, loot: [], affixes: getDungeonAffixes(dg), contractLevel, contract };
+  const baseAffixes = getDungeonAffixes(dg);
+  const trials = (typeof getDungeonContractTrials === 'function') ? getDungeonContractTrials(dg, contractLevel) : [];
+  state.dungeonState = { key, wave: 1, loot: [], affixes: baseAffixes.concat(trials), trials, contractLevel, contract };
   if (contractLevel > 0 && contract) log(`${contract.icon || '📜'} 已启用 ${contract.name}: ${contract.desc}`, 'legend');
+  if (trials.length) log(`🔥 契约试炼: ${trials.map(t => `${t.icon || '🔥'}${t.name}`).join(' · ')}`, 'legend');
   // 进入副本:全量刷新所有技能CD(英雄/天赋/神器/随从)+清理身上的 buff/debuff/护盾(含随从护盾与随从buff/debuff)
   if (typeof resetCombatState === 'function') resetCombatState();
   else if (typeof clearAllBuffs === 'function') clearAllBuffs();
@@ -176,6 +179,35 @@ function dungeonContractLevel() {
 
 function dungeonContractInfo(level) {
   return DUNGEON_CONTRACTS[Math.max(0, Math.min(3, Math.floor(level || 0)))] || DUNGEON_CONTRACTS[0];
+}
+
+const DUNGEON_CONTRACT_TRIALS = [
+  { key:'trialPatrol', name:'铁卫巡逻', desc:'非首领战有概率加入一名巡逻增援;小怪攻击+12%。', icon:'🚨', mod:{addPatrol:true, trashDmg:0.12} },
+  { key:'trialBulwark', name:'重甲戒严', desc:'小怪防御+18%;首领防御+12%。', icon:'🛡️', mod:{trashDef:0.18, bossDef:0.12} },
+  { key:'trialExecution', name:'处决号令', desc:'首领攻击+18%;战斗40秒后首领进入狂暴,额外攻击+35%。', icon:'⏱️', mod:{bossDmg:0.18, bossEnrage:true} },
+  { key:'trialSpellbind', name:'咒缚首领', desc:'首领生命+18%,并周期性获得奥术吸收盾。', icon:'🔮', mod:{bossHp:0.18, arcane:true} },
+  { key:'trialAshfall', name:'爆裂余烬', desc:'战斗中周期性受到火山伤害;击败怪物后触发崩裂。', icon:'🌋', mod:{volcanic:true, bursting:true} },
+  { key:'trialWither', name:'衰败领域', desc:'你的治疗效果降低25%,并周期性承受暗影折磨。', icon:'💀', mod:{healReduction:0.25, afflicted:true} },
+  { key:'trialBloodTax', name:'血税追猎', desc:'非首领怪物生命+22%,低生命时更容易暴怒。', icon:'🩸', mod:{trashHp:0.22, raging:true} },
+  { key:'trialGale', name:'乱流禁区', desc:'你的攻击速度-10%,首领攻击+10%。', icon:'💨', mod:{heroSpd:-0.10, bossDmg:0.10} },
+];
+
+function getDungeonContractTrials(dg, contractLevel) {
+  const level = Math.max(0, Math.min(3, Math.floor(contractLevel || 0)));
+  if (!dg || level <= 0) return [];
+  const count = Math.min(level, DUNGEON_CONTRACT_TRIALS.length);
+  const day = Math.floor(Date.now() / 86400000);
+  let seed = ((dg.reqLvl || 1) * 193 + level * 1543 + (day % 100000) * 787) % 2147483647;
+  const key = dg.key || '';
+  for (let i = 0; i < key.length; i++) seed = (seed * 37 + key.charCodeAt(i)) % 2147483647;
+  seed = seed || 1;
+  const pool = DUNGEON_CONTRACT_TRIALS.slice();
+  for (let i = pool.length - 1; i > 0; i--) {
+    seed = (seed * 16807) % 2147483647;
+    const j = seed % (i + 1);
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, count).map(t => ({ ...t, contractTrial:true }));
 }
 
 function setDungeonContractLevel(level) {

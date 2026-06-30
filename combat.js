@@ -2196,6 +2196,7 @@ function spawnDungeonMonster(){
     dropRate:isBoss?1.0:0.35,gemChance:isBoss?0.8:0.05,maxRarity:bossMaxRarity,fromDungeon:true,_uid:monUidSeq++,
     _dots:{},_dotLegacyImported:true,_lastDotTick:0,
     _isRaidFinal:isRaid&&isFinalBoss,_isRaid:isRaid,_isEpicRaid:isEpicRaid,
+    _spawnAt:Date.now(),
     _monSkills:isBoss?[]:monSkills,_monSkill:isBoss?null:(monSkills[0]||null),_monSupportSkills:buildMonsterSupportPool(isBoss?boss.name:name,null,power,isBoss,isBoss?bossSupportSkillCount:trashSupportSkillCount),_supportSkillCooldowns:{},_lastSupportSkill:Date.now()-rng(3000,9000),_lastSkill:Date.now()-rng(1000,4000),_lastTrick:0,_nextTrickAt:isBoss?(Date.now()+8000+rng(0,2500)):0,
     atkInterval:Math.max(isBoss?900:1080, Math.floor(((isBoss?1400:1700)/atkTempo)+rng(-160,160))),_lastAtk:Date.now()-rng(0,1200)});
   // 来源难度梯队:怪物强度 普通(0) < 英雄(1) < 团本(2) < 史诗团本(3=原史诗团本值,不变)
@@ -2248,6 +2249,34 @@ function spawnDungeonMonster(){
       if (mod.trashHp && !isBoss) { mon.hpMax = Math.floor(mon.hpMax * (1+mod.trashHp)); mon.hp = mon.hpMax; }
       if (mod.bossHp && isBoss) { mon.hpMax = Math.floor(mon.hpMax * (1+mod.bossHp)); mon.hp = mon.hpMax; }
       if (mod.bossDmg && isBoss) mon.atk = Math.floor(mon.atk * (1+mod.bossDmg));
+      if (mod.trashDmg && !isBoss) mon.atk = Math.floor(mon.atk * (1+mod.trashDmg));
+      if (mod.trashDef && !isBoss) mon.def = Math.floor(mon.def * (1+mod.trashDef));
+      if (mod.bossDef && isBoss) mon.def = Math.floor(mon.def * (1+mod.bossDef));
+    }
+    if (state.mode === 'dungeon' && !isBoss && ds.affixes.some(a => a?.mod?.addPatrol) && Math.random() < 0.45) {
+      const patrol = Object.assign({}, mon, {
+        name: `${temoji}巡逻铁卫`,
+        hpMax: Math.max(1, Math.floor(mon.hpMax * 0.55)),
+        hp: Math.max(1, Math.floor(mon.hpMax * 0.55)),
+        atk: Math.max(1, Math.floor(mon.atk * 0.60)),
+        def: Math.max(0, Math.floor(mon.def * 0.80)),
+        goldReward: Math.max(1, Math.floor(mon.goldReward * 0.45)),
+        honorReward: Math.max(1, Math.floor((mon.honorReward || 1) * 0.45)),
+        baseXp: Math.max(1, Math.floor(mon.baseXp * 0.45)),
+        dropRate: Math.min(mon.dropRate || 0.1, 0.18),
+        gemChance: Math.min(mon.gemChance || 0, 0.03),
+        _uid: monUidSeq++,
+        _dots: {},
+        _dotLegacyImported: true,
+        _lastDotTick: 0,
+        _spawnAt: Date.now(),
+        _monSkills: [],
+        _monSkill: null,
+        _monSupportSkills: [],
+        _supportSkillCooldowns: {},
+        _lastAtk: Date.now() - rng(0, 800),
+      });
+      state.currentMonsters.push(patrol);
     }
   }
 }
@@ -3153,6 +3182,12 @@ function tickBattle(now){
         ms.lastArcane = now;
         mon._arcaneShield = (mon._arcaneShield||0) + Math.floor(mon.hpMax * 0.15);
         showMonsterFloat(mon, '🔮盾', '#a78bfa');
+      }
+      // 契约试炼:首领长时间战斗后狂暴
+      if (mod.bossEnrage && mon.isBoss && !mon._trialEnraged && now - (mon._spawnAt || now) > 40000) {
+        mon._trialEnraged = true;
+        mon.atk = Math.floor(mon.atk * 1.35);
+        showMonsterFloat(mon, '⏱️狂暴', '#fb7185');
       }
     }
   }
