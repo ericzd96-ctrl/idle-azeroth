@@ -2968,6 +2968,7 @@ function buildDungeonInfoHtml(dg) {
     const tacticPreview = (typeof getDungeonBossTactics === 'function') ? getDungeonBossTactics(bossData) : [];
     const weakpointPreview = (typeof getDungeonBossWeakpoints === 'function') ? getDungeonBossWeakpoints(bossData) : [];
     const challengePreview = (typeof getDungeonBossChallengeSeals === 'function') ? getDungeonBossChallengeSeals(bossData) : [];
+    const grandPreview = (typeof getDungeonBossGrandMechanics === 'function') ? getDungeonBossGrandMechanics(bossData, 6) : [];
     html += `
       <div style="margin:10px 0 0;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.03)">
         <div style="color:var(--legend);font-size:13px;font-weight:700;margin-bottom:6px">${bossIconHtml} ${bossName} ${dropLabel}</div>`;
@@ -3004,6 +3005,11 @@ function buildDungeonInfoHtml(dg) {
     if (challengePreview.length) {
       html += `<div class="dungeon-boss-challenge-preview">
         ${challengePreview.map(m => `<span>${symbolIconHtml(m.icon, 12, m.name, 'achievement_bg_killxenemies_generalsroom')} ${m.name}</span>`).join('')}
+      </div>`;
+    }
+    if (grandPreview.length) {
+      html += `<div class="dungeon-boss-grand-preview">
+        ${grandPreview.map(m => `<span>${symbolIconHtml(m.icon, 12, m.name, 'spell_arcane_arcanetorrent')} ${m.name}</span>`).join('')}
       </div>`;
     }
     if (directorSkillPreview.length) {

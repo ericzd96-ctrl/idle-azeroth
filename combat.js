@@ -2391,6 +2391,7 @@ function spawnDungeonMonster(){
       if(bossUnit && bossUnit.hp > 0 && bossUnit.isBoss && (bossUnit.bossName === boss.name || bossUnit._councilGroupName === boss.name)){
         applyDungeonBossTacticsOnSpawn(bossUnit, boss, dg, ds);
         if(typeof applyDungeonBossChallengesOnSpawn === 'function') applyDungeonBossChallengesOnSpawn(bossUnit, boss, dg, ds);
+        if(typeof applyDungeonBossGrandMechanicsOnSpawn === 'function') applyDungeonBossGrandMechanicsOnSpawn(bossUnit, boss, dg, ds);
       }
     }
   }
@@ -3888,6 +3889,168 @@ function finalizeDungeonBossChallenges(mon, councilStillFighting){
   }
   log(`🏅 Boss挑战奖励: +${gold}💰 +${honor}荣誉${gems ? ' +' + gems + '💎' : ''}`, 'legend');
 }
+const DUNGEON_BOSS_GRAND_THEMES = [
+  { key:'dragon', icon:'🐉', name:'龙裔', color:'#fb923c', match:/龙|暮光|奈法|奥妮克希亚|瓦里奥那|塞拉图斯|龙息|飞龙/, desc:'龙裔威压改变战场节奏。' },
+  { key:'oldgod', icon:'👁️', name:'古神', color:'#c084fc', match:/古神|克苏恩|恩佐斯|尤格|眼|低语|疯狂|梦魇|虚空|腐化/, desc:'古神低语侵蚀心智。' },
+  { key:'blood', icon:'🩸', name:'鲜血', color:'#fda4af', match:/鲜血|血|吸血|女王|王子|屠夫|献祭|心脏/, desc:'鲜血仪式会转化伤害与治疗。' },
+  { key:'forge', icon:'⚙️', name:'熔炉', color:'#93c5fd', match:/钢铁|机械|泰坦|构造|熔炉|护甲|守卫|巨像|机器人|黑石/, desc:'熔炉协议滚动强化首领。' },
+  { key:'death', icon:'☠️', name:'亡寒', color:'#d8b4fe', match:/巫妖|亡|天灾|死亡|骸骨|墓|霜|冰|克尔苏加德|阿尔萨斯/, desc:'亡寒魔法压制恢复。' },
+  { key:'fel', icon:'😈', name:'邪能', color:'#fb923c', match:/恶魔|邪能|军团|伊利丹|基尔加丹|阿克蒙德|地狱|末日/, desc:'邪能契约召来援军。' },
+  { key:'storm', icon:'⚡', name:'风暴', color:'#67e8f9', match:/风暴|雷|闪电|诺库德|奥丁|莱杉|电|云|天神/, desc:'风暴能量会连锁爆发。' },
+  { key:'arcane', icon:'🔮', name:'奥术', color:'#a78bfa', match:/奥术|魔网|法师|符文|星界|群星|魔法|艾利桑德|麦迪文/, desc:'奥术矩阵干扰资源。' },
+  { key:'shadow', icon:'🪞', name:'暗影', color:'#f0abfc', match:/影|暗|镜|幻象|潜行|刺客|幽魂|灵魂|暮光/, desc:'暗影幻象制造错误窗口。' },
+  { key:'royal', icon:'👑', name:'统御', color:'#fde68a', match:/王|皇帝|领主|女王|议会|酋长|指挥|统御/, desc:'统御号令会强化全场。' },
+  { key:'plague', icon:'🦠', name:'瘟疫', color:'#a3e635', match:/毒|瘟疫|腐|虫|蛛|螳螂|软泥|孢子|感染/, desc:'瘟疫会持续扩散。' },
+  { key:'flame', icon:'🌋', name:'熔火', color:'#f97316', match:/火|炎|熔|岩浆|拉格纳罗斯|凤凰|燃烧|烈焰|灰烬/, desc:'熔火脉冲压迫生命线。' },
+  { key:'tidal', icon:'🌊', name:'深潮', color:'#38bdf8', match:/水|海|潮|娜迦|鱼|深渊|潮汐|水元素/, desc:'深潮会拖慢行动。' },
+  { key:'earth', icon:'⛰️', name:'裂地', color:'#d6d3d1', match:/石|土|山|地|岩|元素|巨人|裂地|地震/, desc:'裂地冲击破坏节奏。' },
+  { key:'beast', icon:'🐾', name:'猎群', color:'#fbbf24', match:/兽|狼|熊|虎|豹|猎犬|猎群|野性|荒野/, desc:'猎群会压迫目标。' },
+  { key:'holy', icon:'✨', name:'圣光', color:'#fde68a', match:/圣|光|天使|守护|审判|神圣|净化/, desc:'圣光会保护首领。' },
+  { key:'void', icon:'🕳️', name:'虚空', color:'#c4b5fd', match:/虚空|裂隙|以太|深渊|空间|扭曲/, desc:'虚空会撕开战场。' },
+  { key:'venom', icon:'🐍', name:'剧毒', color:'#86efac', match:/毒|蛇|蛛|蝎|酸|腐液|毒牙/, desc:'剧毒会叠加持续伤害。' },
+  { key:'time', icon:'⏳', name:'时序', color:'#67e8f9', match:/时|时间|永恒|青铜|沙漏|回响/, desc:'时序会扰动冷却和读条。' },
+  { key:'generic', icon:'🎭', name:'霸主', color:'#f9a8d4', match:/./, desc:'霸主威压提供通用首领机制。' },
+];
+const DUNGEON_BOSS_GRAND_FORMS = [
+  { key:'pulse', name:'脉冲', cd:12000, effect:'pulse', desc:'周期造成主题伤害。' },
+  { key:'bulwark', name:'壁垒', cd:16000, effect:'shield', desc:'为首领或全场敌人附加护盾。' },
+  { key:'edict', name:'禁令', cd:18000, effect:'debuff', desc:'施加控制或易伤类减益。' },
+  { key:'summon', name:'召唤', cd:21000, effect:'summon', desc:'召唤主题援军加入战斗。' },
+  { key:'siphon', name:'虹吸', cd:17000, effect:'drain', desc:'燃烧资源并治疗首领。' },
+  { key:'brand', name:'点名', cd:19000, effect:'brand', desc:'给玩家打上危险标记。' },
+  { key:'overload', name:'过载', cd:22000, effect:'enrage', desc:'短时间提高首领输出。' },
+  { key:'fracture', name:'裂隙', cd:24000, effect:'objective', desc:'生成可击破机制目标。' },
+  { key:'counter', name:'反制', cd:20000, effect:'counter', desc:'干扰玩家施法和资源节奏。' },
+  { key:'cataclysm', name:'灾变', cd:28000, effect:'cataclysm', desc:'长间隔高压爆发。' },
+];
+const DUNGEON_BOSS_GRAND_MECHANIC_CATALOG = DUNGEON_BOSS_GRAND_THEMES.flatMap((theme, ti) =>
+  DUNGEON_BOSS_GRAND_FORMS.map((form, fi) => ({
+    key:`grand:${theme.key}:${form.key}`,
+    icon:theme.icon,
+    name:`${theme.name}${form.name}`,
+    theme:theme.key,
+    form:form.key,
+    effect:form.effect,
+    color:theme.color,
+    match:theme.match,
+    cd:form.cd + ((ti + fi) % 4) * 900,
+    desc:`${theme.desc}${form.desc}`
+  }))
+);
+function getDungeonBossGrandMechanics(bossData, limit){
+  const text = dungeonBossSpectacleText(bossData);
+  if(!text.trim()) return [];
+  let pool = DUNGEON_BOSS_GRAND_MECHANIC_CATALOG.filter(m => m.match.test(text));
+  if(!pool.length) pool = DUNGEON_BOSS_GRAND_MECHANIC_CATALOG.filter(m => m.theme === 'generic');
+  const seedText = bossData?.name || text;
+  const seed = Math.abs(String(seedText).split('').reduce((sum, ch) => sum + ch.charCodeAt(0), 0));
+  pool = pool.slice().sort((a, b) => {
+    const av = (a.key.length * 31 + seed + a.name.charCodeAt(0)) % 997;
+    const bv = (b.key.length * 31 + seed + b.name.charCodeAt(0)) % 997;
+    return av - bv;
+  });
+  return pool.slice(0, limit || 6).map(m => Object.assign({}, m));
+}
+function dungeonBossGrandCounter(key){
+  const ds = state.dungeonState || state.mythicState;
+  if(!ds) return;
+  ds.bossGrandMechanicsTriggered = (ds.bossGrandMechanicsTriggered || 0) + 1;
+  if(key){
+    if(!ds.bossGrandMechanicBreakdown) ds.bossGrandMechanicBreakdown = {};
+    ds.bossGrandMechanicBreakdown[key] = (ds.bossGrandMechanicBreakdown[key] || 0) + 1;
+  }
+}
+function applyDungeonBossGrandMechanicsOnSpawn(mon, bossData, dg, ds){
+  if(!mon || !mon.isBoss || !bossData) return;
+  const mechanics = getDungeonBossGrandMechanics(bossData, 6);
+  if(!mechanics.length) return;
+  mon._bossGrandMechanics = mechanics;
+  mon._bossGrandLast = {};
+  for(const mech of mechanics.slice(0, 4)){
+    setMonsterTrickAura(mon, 'bossGrand:' + mech.key, { name:mech.name, icon:mech.icon, desc:mech.desc }, 0, { desc:mech.desc });
+  }
+  if(ds) ds.bossGrandMechanicsAssigned = (ds.bossGrandMechanicsAssigned || 0) + mechanics.length;
+}
+function grandSummonTheme(mech){
+  if(['dragon','flame'].includes(mech.theme)) return 'fire';
+  if(['death'].includes(mech.theme)) return 'undead';
+  if(['fel'].includes(mech.theme)) return 'demon';
+  if(['storm','earth','tidal','arcane'].includes(mech.theme)) return 'elemental';
+  if(['plague','venom','beast'].includes(mech.theme)) return 'beast';
+  if(['oldgod','void','shadow'].includes(mech.theme)) return 'void';
+  return 'soldier';
+}
+function triggerDungeonBossGrandMechanic(mon, mech, now){
+  if(!mon || mon.hp <= 0 || !mech) return false;
+  const color = mech.color || '#f9a8d4';
+  dungeonBossGrandCounter(mech.key);
+  if(mech.effect === 'pulse'){
+    applyHeroDamage(dungeonBossSpectacleDmg(0.030, mon, 1.0), mon, { label:t=>mech.icon + '-' + t, color, now });
+  }else if(mech.effect === 'shield'){
+    const targets = Math.random() < 0.45 ? (state.currentMonsters || []).filter(x => x && x.hp > 0) : [mon];
+    for(const t of targets){
+      t._arcaneShield = (t._arcaneShield || 0) + Math.max(1, Math.floor(t.hpMax * 0.035));
+      syncMonsterShieldAura(t);
+      showMonsterFloat(t, mech.icon + '壁垒', color);
+    }
+  }else if(mech.effect === 'debuff'){
+    const debuffs = ['vulnerable','weaken','chill','cripple','decay'];
+    applyHeroDebuff(debuffs[(mech.key.length + now) % debuffs.length], 4200);
+  }else if(mech.effect === 'summon'){
+    summonMonsterAlly(mon, { summonCount:1, summonTheme:grandSummonTheme(mech), summonHpPct:0.16, summonAtkPct:0.34, summonDefPct:0.36 }, now);
+  }else if(mech.effect === 'drain'){
+    const drain = Math.min(state.resource || 0, Math.floor((state.resourceMax || 100) * 0.10));
+    state.resource = Math.max(0, (state.resource || 0) - drain);
+    const heal = Math.max(1, Math.floor(mon.hpMax * 0.018 + drain * 2));
+    mon.hp = Math.min(mon.hpMax, mon.hp + heal);
+    showMonsterFloat(mon, mech.icon + '+' + heal, color, { variant:'heal' });
+  }else if(mech.effect === 'brand'){
+    applyHeroDebuff('brittle', 4600);
+    applyHeroDamage(dungeonBossSpectacleDmg(0.022, mon, 0.8), mon, { label:t=>mech.icon + '-' + t, color, now });
+  }else if(mech.effect === 'enrage'){
+    mon._trickAtkBuff = Math.max(mon._trickAtkBuff || 0, now + 6000);
+    mon._trickAtkPct = Math.max(mon._trickAtkPct || 0, 22);
+    mon._trickSpdBuff = Math.max(mon._trickSpdBuff || 0, now + 6000);
+    mon._trickSpdPct = Math.max(mon._trickSpdPct || 0, 18);
+    showMonsterFloat(mon, mech.icon + '过载', color, { variant:'boss' });
+  }else if(mech.effect === 'objective'){
+    const add = spawnDungeonDirectorAdd(mon, { key:'grand:' + mech.key, icon:mech.icon, name:mech.name + '核心', hpPct:0.085, atkPct:0.08, defPct:0.36, durationMs:9000 }, now);
+    if(add){
+      add._bossTacticReward = { type:'arcaneRune' };
+      add._grandMechanicObjective = mech.key;
+    }
+  }else if(mech.effect === 'counter'){
+    if(bossCasting && bossCasting.bossName === mon.bossName) bossCasting.duration = Math.max(850, bossCasting.duration - 300);
+    applyHeroDebuff('silence', 900);
+    const drain = Math.min(state.resource || 0, Math.floor((state.resourceMax || 100) * 0.07));
+    state.resource = Math.max(0, (state.resource || 0) - drain);
+  }else if(mech.effect === 'cataclysm'){
+    applyHeroDamage(dungeonBossSpectacleDmg(0.052, mon, 1.8), mon, { label:t=>mech.icon + '-' + t, color, now, variant:'boss' });
+    applyHeroDebuff(mech.theme === 'death' ? 'decay2' : 'burn', 5200, { dps:dungeonBossSpectacleDmg(0.010, mon, 0.3) });
+  }
+  showMonsterFloat(mon, `${mech.icon}${mech.name}`, color, { variant:'boss', scale:1.04 });
+  log(`${mech.icon} ${mon.bossName || mon.name} 触发扩展Boss机制: ${mech.name}`, 'bad');
+  if(typeof markDirty === 'function') markDirty('hero', 'stage');
+  return true;
+}
+function applyDungeonBossGrandMechanics(now){
+  if(!(state.mode === 'dungeon' || state.mode === 'mythic')) return;
+  let fired = 0;
+  for(const mon of (state.currentMonsters || [])){
+    if(!mon || mon.hp <= 0 || !mon.isBoss || !mon._bossGrandMechanics?.length) continue;
+    if(!mon._bossGrandLast) mon._bossGrandLast = {};
+    for(const mech of mon._bossGrandMechanics){
+      const cd = Math.max(9000, mech.cd || 16000);
+      if(!mon._bossGrandLast[mech.key]) mon._bossGrandLast[mech.key] = (mon._spawnAt || now) + 5000 - cd;
+      if(now - mon._bossGrandLast[mech.key] < cd) continue;
+      mon._bossGrandLast[mech.key] = now;
+      triggerDungeonBossGrandMechanic(mon, mech, now);
+      fired++;
+      break;
+    }
+    if(fired >= 2) break;
+  }
+}
 function dungeonRoomCounter(ds, key){
   if(!ds) return;
   ds.roomEvents = (ds.roomEvents || 0) + 1;
@@ -4587,6 +4750,7 @@ function tickBattle(now){
   applyDungeonBossDirectorMechanics(now);
   applyDungeonBossTacticMechanics(now);
   applyDungeonBossWeakpointMechanics(now);
+  applyDungeonBossGrandMechanics(now);
   const spdMul=state.battleSpeed||1;                    // 战斗倍速(1x / 2x)
   const regenInterval=1000/spdMul;
 

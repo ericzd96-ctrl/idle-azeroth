@@ -815,11 +815,14 @@ function onDungeonClear(dg) {
   const bossChallengeHtml = dungeonStateSnapshot?.bossChallengesStarted && !(dungeonStateSnapshot?.contractLevel > 0)
     ? `<div class="muted" style="font-size:12px">🏅 Boss挑战完成 ${dungeonStateSnapshot.bossChallengesCompleted || 0}/${dungeonStateSnapshot.bossChallengesStarted || 0}${dungeonStateSnapshot.bossChallengeBonusGold ? ` · 奖励 +${dungeonStateSnapshot.bossChallengeBonusGold}金币` : ''}${dungeonStateSnapshot.bossChallengeBonusGems ? ` · +${dungeonStateSnapshot.bossChallengeBonusGems}钻石` : ''}</div>`
     : '';
+  const bossGrandHtml = dungeonStateSnapshot?.bossGrandMechanicsAssigned && !(dungeonStateSnapshot?.contractLevel > 0)
+    ? `<div class="muted" style="font-size:12px">🌌 扩展Boss机制库: 200项 · 本次分配 ${dungeonStateSnapshot.bossGrandMechanicsAssigned || 0} · 触发 ${dungeonStateSnapshot.bossGrandMechanicsTriggered || 0} 次</div>`
+    : '';
   const roomHtml = dungeonStateSnapshot?.combatRooms?.length
     ? `<div class="muted" style="font-size:12px">🎲 战斗房间: ${dungeonStateSnapshot.combatRooms.map(r => (r.icon || '🎲') + r.name).join(' · ')} · 触发 ${dungeonStateSnapshot.roomEvents || 0} 次 · 击破目标 ${dungeonStateSnapshot.roomObjectivesBroken || 0}${dungeonStateSnapshot.roomBonusGold ? ` · 额外金币 +${dungeonStateSnapshot.roomBonusGold}` : ''}</div>`
     : '';
   const contractHtml = dungeonStateSnapshot?.contractLevel > 0
-    ? `<div class="muted" style="font-size:12px">${contractInfo.icon} 契约: ${contractInfo.name} · 通关奖励 ×${contractMult.toFixed(2)} · 最高警戒 ${dungeonStateSnapshot.maxAlert || dungeonStateSnapshot.alertLevel || 0} · 首领阶段 ${dungeonStateSnapshot.bossPhasesTriggered || 0} · Boss机制 ${dungeonStateSnapshot.bossMechanicsTriggered || 0} · 流程机制 ${dungeonStateSnapshot.bossDirectorEvents || 0} · Boss战术 ${dungeonStateSnapshot.bossTacticEvents || 0} · 弱点击破 ${dungeonStateSnapshot.bossWeakpointsBroken || 0}/${dungeonStateSnapshot.bossWeakpointsSpawned || 0} · 挑战 ${dungeonStateSnapshot.bossChallengesCompleted || 0}/${dungeonStateSnapshot.bossChallengesStarted || 0} · 房间事件 ${dungeonStateSnapshot.roomEvents || 0} · 环境触发 ${dungeonStateSnapshot.environmentHits || 0} · 禁令触发 ${dungeonStateSnapshot.edictHits || 0} · 禁令增援 ${dungeonStateSnapshot.edictAdds || 0}</div>`
+    ? `<div class="muted" style="font-size:12px">${contractInfo.icon} 契约: ${contractInfo.name} · 通关奖励 ×${contractMult.toFixed(2)} · 最高警戒 ${dungeonStateSnapshot.maxAlert || dungeonStateSnapshot.alertLevel || 0} · 首领阶段 ${dungeonStateSnapshot.bossPhasesTriggered || 0} · Boss机制 ${dungeonStateSnapshot.bossMechanicsTriggered || 0} · 流程机制 ${dungeonStateSnapshot.bossDirectorEvents || 0} · Boss战术 ${dungeonStateSnapshot.bossTacticEvents || 0} · 扩展机制 ${dungeonStateSnapshot.bossGrandMechanicsTriggered || 0} · 弱点击破 ${dungeonStateSnapshot.bossWeakpointsBroken || 0}/${dungeonStateSnapshot.bossWeakpointsSpawned || 0} · 挑战 ${dungeonStateSnapshot.bossChallengesCompleted || 0}/${dungeonStateSnapshot.bossChallengesStarted || 0} · 房间事件 ${dungeonStateSnapshot.roomEvents || 0} · 环境触发 ${dungeonStateSnapshot.environmentHits || 0} · 禁令触发 ${dungeonStateSnapshot.edictHits || 0} · 禁令增援 ${dungeonStateSnapshot.edictAdds || 0}</div>`
     : '';
   const contractChestHtml = grantDungeonContractChest(dg, dungeonStateSnapshot);
   const bountyHtml = grantDungeonBountyReward(dg, { loot:uniqueLoot });
@@ -834,6 +837,7 @@ function onDungeonClear(dg) {
     ${bossTacticHtml}
     ${bossWeakpointHtml}
     ${bossChallengeHtml}
+    ${bossGrandHtml}
     ${roomHtml}
     <div style="margin:10px 0;text-align:left;font-size:13px">
       <div>💰 金币 +${bonusGold}</div>
