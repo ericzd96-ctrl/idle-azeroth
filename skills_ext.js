@@ -13,15 +13,15 @@ const BUFF_FX = {
   s_burst:    { atkMul:1.33,  critdAdd:20 },              // 爆发:攻击+33%、暴伤+20
   s_empower:  { critAdd:17,  critdAdd:34 },              // 法术爆发:暴击+17、暴伤+34
   s_frenzy:   { atkMul:1.20,  spdMul:1.20 },               // 狂热:攻击+20%、攻速+20%
-  s_mitigate: { dr:0.34 },                                // 减伤 50%
-  s_barrier:  { dr:0.30, defMul:1.27 },                   // 护盾:减伤45% + 防御+40%
+  s_mitigate: { dr:0.34 },                                // 减伤34%
+  s_barrier:  { dr:0.40 },                                // 护盾:减伤40%
   s_haste:    { spdMul:1.33 },                            // 急速:攻速+33%
   s_lifesurge:{ leechAdd:20, atkMul:1.13 },              // 生命洪流:吸血+20、攻击+13%
-  s_avatar:   { atkMul:1.27,  defMul:1.20, dr:0.13 },       // 化身(终极):攻+27%、防+20%、减伤13%
+  s_avatar:   { atkMul:1.27, dr:0.25 },                    // 化身(终极):攻+27%、减伤25%
 
   /* ===== 职业风味爆发/减伤(去同化:每职业独立数值与倾向) ===== */
   w_reckless: { atkMul:1.30, critAdd:12, critdAdd:24 },    // 战士·鲁莽:近战暴击爆发
-  w_ironwall: { dr:0.30, defMul:1.40 },                    // 战士·钢铁壁垒:重甲减伤墙
+  w_ironwall: { dr:0.45 },                                 // 战士·钢铁壁垒:重甲减伤墙
   m_combust:  { critAdd:20, critdAdd:40 },                 // 法师·燃烧:火法暴击/暴伤爆发
   m_iceblock: { dr:0.40 },                                 // 法师·寒冰屏障:纯减伤
   p_voidform: { atkMul:1.22, critAdd:10, critdAdd:20 },    // 牧师·暗影形态
@@ -76,9 +76,9 @@ const MONSTER_STATE_META = {
 const NEW_SKILLS = {
   warrior: {
     w_recklessness:{name:'鲁莽',     icon:'💢', desc:'爆发:6秒内攻击+30%、暴击+12、暴伤+24', mp:25, type:'buff', buff:'w_reckless', duration:6000, unlockLvl:26},
-    w_ironwall:    {name:'钢铁壁垒', icon:'🧱', desc:'减伤:5秒内受伤-30%、防御+40%', mp:20, type:'buff', buff:'w_ironwall', duration:5000, unlockLvl:34},
+    w_ironwall:    {name:'钢铁壁垒', icon:'🧱', desc:'减伤:5秒内受到伤害降低45%', mp:20, type:'buff', buff:'w_ironwall', duration:5000, unlockLvl:34},
     w_enrageRegen: {name:'狂怒回复', icon:'❤️‍🔥',desc:'功能:立即恢复35%最大生命',      mp:15, type:'heal', heal:0.35,                       unlockLvl:44},
-    w_avatar:      {name:'天神下凡', icon:'⚡', desc:'特色:8秒攻+27%、防+20%、减伤13%',mp:40, type:'buff', buff:'s_avatar',   duration:7500, unlockLvl:54},
+    w_avatar:      {name:'天神下凡', icon:'⚡', desc:'特色:8秒攻击+27%、受到伤害降低25%',mp:40, type:'buff', buff:'s_avatar',   duration:7500, unlockLvl:54},
     w_colossus:    {name:'巨人之击', icon:'🪨', desc:'招牌:5倍攻击的破甲重击', mp:45, type:'dmg', mul:5, unlockLvl:60,
                     fx:{ applyTargetState:'sunder', stateDurationMs:15000, bonusStates:{ sunder:0.4 }, bonusPerAuraStack:{ key:'w_sunder', pct:0.2 }, consumeAura:{ key:'w_sunder', all:true } }},
     w_rampage:     {name:'怒火乱舞', icon:'😤', desc:'招牌:4倍攻击的狂怒连舞', mp:40, type:'dmg', mul:4, unlockLvl:70,
@@ -96,7 +96,7 @@ const NEW_SKILLS = {
   },
   priest: {
     p_shadowform:{name:'暗影形态', icon:'🌑', desc:'爆发:6秒内攻击+22%、暴击+10、暴伤+20', mp:40, type:'buff', buff:'p_voidform', duration:6000, unlockLvl:26},
-    p_pwShield:  {name:'真言术·盾',icon:'🟡', desc:'减伤:5秒内受伤-30%、防御+27%', mp:30, type:'buff', buff:'s_barrier',  duration:5000, unlockLvl:34},
+    p_pwShield:  {name:'真言术·盾',icon:'🟡', desc:'减伤:5秒内受到伤害降低40%', mp:30, type:'buff', buff:'s_barrier',  duration:5000, unlockLvl:34},
     p_holyNova:  {name:'神圣新星', icon:'✨', desc:'功能:立即恢复40%最大生命',      mp:35, type:'heal', heal:0.40,                       unlockLvl:44},
     p_mindBlast: {name:'心灵震爆', icon:'💥', desc:'特色:3倍精神伤害,必定暴击',    mp:50, type:'dmg',  mul:9, alwaysCrit:true,             unlockLvl:54},
     p_voidEruption:{name:'虚空爆发',icon:'🌌',desc:'招牌:5倍暗影伤害',           mp:50, type:'dmg', mul:5, unlockLvl:60, castTime:0,
@@ -126,7 +126,7 @@ const NEW_SKILLS = {
   },
   shaman: {
     s_bloodlust: {name:'嗜血',     icon:'🩸', desc:'爆发:6秒内攻击+18%、攻速+25%', mp:35, type:'buff', buff:'sh_frenzy',  duration:6000, unlockLvl:26},
-    s_earthShield:{name:'大地之盾',icon:'🪨', desc:'减伤:5秒内受伤-30%、防御+27%', mp:30, type:'buff', buff:'s_barrier',  duration:5000, unlockLvl:34},
+    s_earthShield:{name:'大地之盾',icon:'🪨', desc:'减伤:5秒内受到伤害降低40%', mp:30, type:'buff', buff:'s_barrier',  duration:5000, unlockLvl:34},
     s_healingTide:{name:'治疗之泉',icon:'💧', desc:'功能:立即恢复35%最大生命',      mp:35, type:'heal', heal:0.35,                       unlockLvl:44},
     s_stormstrike:{name:'风暴打击',icon:'⚡', desc:'特色:4倍闪电伤害',              mp:45, type:'dmg',  mul:9,                              unlockLvl:54},
     sh_earthShock:{name:'大地震击',icon:'🌎',desc:'招牌:4倍自然伤害',             mp:35, type:'dmg', mul:4, unlockLvl:60, castTime:0,
@@ -146,7 +146,7 @@ const NEW_SKILLS = {
   },
   warlock: {
     wl_darkSoul: {name:'黑暗灵魂', icon:'😈', desc:'爆发:6秒内暴击+20、暴伤+38%',  mp:40, type:'buff', buff:'wl_dark',    duration:6000, unlockLvl:26},
-    wl_demonSkin:{name:'恶魔皮肤', icon:'🟪', desc:'减伤:5秒内受伤-30%、防御+27%', mp:30, type:'buff', buff:'s_barrier',  duration:5000, unlockLvl:34},
+    wl_demonSkin:{name:'恶魔皮肤', icon:'🟪', desc:'减伤:5秒内受到伤害降低40%', mp:30, type:'buff', buff:'s_barrier',  duration:5000, unlockLvl:34},
     wl_lifeTap:  {name:'生命通道', icon:'🩸', desc:'功能:6秒内吸血+20、攻击+13%',  mp:30, type:'buff', buff:'s_lifesurge',duration:6000, unlockLvl:44},
     wl_chaosBolt:{name:'混乱之箭', icon:'🟣', desc:'特色:5倍暗影火,必暴并灼烧',    mp:55, type:'dmg',  mul:10, dot:true, alwaysCrit:true,   unlockLvl:54},
     wl_maleficRapture:{name:'邪能狂涌',icon:'💜',desc:'招牌:4倍暗影伤害,痛苦越多越狠',mp:42, type:'dmg', mul:4, unlockLvl:60, castTime:0,
@@ -200,7 +200,7 @@ const SKILL_REWORKS = {
     arcaneExplosion:{ desc:'3倍范围伤害,消耗奥术充能,每层额外增伤35%', aoe:true, cd:10, fx:{ bonusPerAuraStack:{ key:'arcaneCharge', pct:0.35 }, consumeAura:{ key:'arcaneCharge', all:true } } },
     fireball:{ desc:'3倍伤害并施加点燃与8秒衰老,为炎爆与流星铺垫', cd:6, fx:{ applyTargetState:'decay', stateDurationMs:8000, applyDotKey:'skill:fireball', dotName:'点燃', dotIcon:'🔥', dotPct:0.18, dotMs:6000 } },
     frostbolt:{ desc:'3倍伤害并冰缓目标,叠加指尖寒冰,让冰枪更致命', cd:6, fx:{ applyTargetState:'frozen', stateDurationMs:7000, bonusStates:{ slow:0.2 }, grantAura:{ key:'m_frost', add:1, max:5, duration:12000 } } },
-    iceBarrier:{ desc:'15秒防御+60%,护体存在时寒冰法术更稳' },
+    iceBarrier:{ desc:'15秒受到伤害降低40%,护体存在时寒冰法术更稳' },
     pyroblast:{ desc:'7倍必暴,消耗全部炽热每层+20%,对点燃目标额外60%并引爆灼烧', cd:14, fx:{ bonusStates:{ dot:0.6 }, bonusPerDot:0.18, bonusPerAuraStack:{ key:'m_heat', pct:0.2 }, consumeAura:{ key:'m_heat', all:true }, consumeDots:true, applyDotKey:'skill:pyroblast', dotName:'炎爆灼烧', dotIcon:'☄️', dotPct:0.12, dotMs:5000 } },
     blizzard:{ desc:'5倍范围伤害,对减速/冻结目标额外提高伤害', aoe:true, cd:16, fx:{ bonusStates:{ slow:0.35, frozen:0.5 } } },
     m_combustion:{ desc:'5秒内暴击+20、暴伤+40%,适合火法爆发' },
@@ -209,12 +209,12 @@ const SKILL_REWORKS = {
   priest: {
     smite:{ desc:'2倍神圣伤害;若你有真言术盾,将把部分伤害转为治疗', cd:4, fx:{ healFromDamagePct:0.2, healFromDamagePctIfBuff:{ key:'shield', pct:0.4 } } },
     shadowWord:{ desc:'3倍伤害并施加暗言术·痛与8秒凋零,叠加疯狂,为暗影技能提供联动', cd:6, fx:{ applyTargetState:'decay2', stateDurationMs:8000, applyDotKey:'skill:shadowWord', dotName:'暗言术·痛', dotIcon:'🌑', dotPct:0.16, dotMs:7000, grantAura:{ key:'p_insanity', add:1, max:6, duration:12000 } } },
-    shield:{ desc:'15秒防御+50%,并让惩击转化为额外治疗' },
+    shield:{ desc:'15秒受到伤害降低33%,并让惩击转化为额外治疗' },
     heal:{ desc:'恢复40%生命,过量治疗将转化为护盾', cd:12, fx:{ shieldFromOverhealPct:0.65 } },
     holyNova:{ desc:'3倍范围神圣伤害并自愈,敌人越多恢复越多', aoe:true, cd:10, fx:{ healFromDamagePct:0.32 } },
     powerInfusion:{ desc:'15秒攻速+50%,让惩击与心灵震爆更快成型' },
     mindBlast:{ desc:'4倍伤害,对带暗言术·痛的目标额外造成伤害,叠加2层疯狂并获得护盾', cd:9, fx:{ bonusPerDot:0.25, shieldFromDamagePct:0.16, grantAura:{ key:'p_insanity', add:2, max:6, duration:12000 } } },
-    p_pwShield:{ desc:'5秒减伤并提高防御,适合戒律窗口' },
+    p_pwShield:{ desc:'5秒受到伤害降低40%,适合戒律窗口' },
     p_holyNova:{ desc:'立即恢复40%生命,并留下短暂护盾', fx:{ shieldFromHealPct:0.25 } },
     p_mindBlast:{ desc:'9倍必暴暗影冲击,对持续伤害目标收益更高', fx:{ bonusPerDot:0.3, shieldFromDamagePct:0.18 } },
   },
@@ -222,7 +222,7 @@ const SKILL_REWORKS = {
     sinister:{ desc:'2倍伤害,叠加连击点,命中减速/中毒目标时更易追击', cd:4, fx:{ bonusStates:{ slow:0.2 }, resourceGain:4, grantAura:{ key:'r_combo', add:1, max:5, duration:12000 } } },
     backstab:{ desc:'3倍伤害,叠加2点连击,对减速/破绽目标额外造成伤害', cd:5, fx:{ bonusStates:{ slow:0.6, exposed:0.5 }, grantAura:{ key:'r_combo', add:2, max:5, duration:12000 } } },
     poison:{ desc:'3倍伤害并施加致命毒药与8秒衰老,叠加毒锋,为终结技提供收益', cd:6, fx:{ applyTargetState:'decay', stateDurationMs:8000, applyDotKey:'skill:poison', dotName:'致命毒药', dotIcon:'🐍', dotPct:0.17, dotMs:7000, grantAura:{ key:'r_venom', add:1, max:5, duration:12000 } } },
-    evasion:{ desc:'15秒防御+40%,帮助你撑过危险窗口' },
+    evasion:{ desc:'15秒受到伤害降低34%,帮助你撑过危险窗口' },
     kidneyShot:{ desc:'4倍伤害并让目标进入破绽状态,便于背刺', cd:10, fx:{ applyTargetState:'exposed', stateDurationMs:7000 } },
     killingSpree:{ desc:'7倍必暴,对中毒目标追加连击', cd:16, fx:{ bonusPerDot:0.22, extraHitPct:0.45 } },
     shadow:{ desc:'15秒攻击+50%,且下一个终结技必定暴击' },
@@ -244,7 +244,7 @@ const SKILL_REWORKS = {
   shaman: {
     lightning:{ desc:'2倍闪电伤害,命中会为风暴打击积蓄雷霆', cd:4, fx:{ grantAura:{ key:'stormCharge', duration:12000, add:1, max:3 } } },
     flameShock:{ desc:'3倍伤害并施加烈焰震击与8秒衰老,叠加漩涡之力,点燃后续爆发', cd:6, fx:{ applyTargetState:'decay', stateDurationMs:8000, applyDotKey:'skill:flameShock', dotName:'烈焰震击', dotIcon:'🔥', dotPct:0.16, dotMs:7000, grantAura:{ key:'sh_maelstrom', add:1, max:5, duration:12000 } } },
-    earthShield:{ desc:'15秒防御+40%,并强化你的治疗波' },
+    earthShield:{ desc:'15秒受到伤害降低33%,并强化你的治疗波' },
     chainLightning:{ desc:'4倍范围闪电伤害,雷霆充能会强化它', aoe:true, cd:10, fx:{ bonusPerAuraStack:{ key:'stormCharge', pct:0.18 }, consumeAura:{ key:'stormCharge', add:-1 } } },
     healingWave:{ desc:'恢复35%生命,过量治疗会转成大地护盾', cd:12, fx:{ shieldFromOverhealPct:0.55, shieldBonusIfBuff:{ key:'earthShield', pct:0.2 } } },
     bloodlust:{ desc:'15秒攻速+80%,让萨满进入狂风窗口' },

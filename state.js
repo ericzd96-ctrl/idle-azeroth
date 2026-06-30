@@ -17,6 +17,7 @@ const defaultState = () => ({
   specialization: null,   // 选择的专精树key
   loadouts: [],           // 配装预设 [{name,spec,talents,skills,equipped:{slot:id}}]
   autoSkill: true,
+  autoSkillConfig: { damage:true, burst:true, buff:true, interrupt:false },
   skillCooldowns: {},
   passivesSeen: {},        // 被动技能已弹过解锁提示的 key(避免重复刷日志)
   dungeonAnnounceLvl: 0,   // 已对"新副本开放"提示到的等级(0=未初始化,首检静默对齐当前等级防回填刷屏)
@@ -389,6 +390,7 @@ function mergeState(saved) {
     invCap: Math.max(60, saved.invCap || 0),   // 老存档无此字段→提升到60(基础格子加大)
     loadouts: Array.isArray(saved.loadouts) ? saved.loadouts : [],
     unlockedSkills: saved.unlockedSkills || {},
+    autoSkillConfig: Object.assign({}, d.autoSkillConfig, saved.autoSkillConfig || {}),
     passivesSeen: saved.passivesSeen || {},
     dungeonAnnounceLvl: typeof saved.dungeonAnnounceLvl === 'number' ? saved.dungeonAnnounceLvl : 0,
     paragon: saved.paragon ? Object.assign({ xp:0, lvl:0, points:0, board:{}, ms:{} }, saved.paragon, {

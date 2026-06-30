@@ -2281,6 +2281,33 @@ button.legend:hover:not(:disabled) {
 .tab-panel.active { min-width: 0; }
 #shop-list { min-width: 0; overflow: hidden; }
 
+.skill-auto-panel {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(148,163,184,.22);
+  background: rgba(15,23,42,.42);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.skill-auto-panel label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #cbd5e1;
+  white-space: nowrap;
+}
+.skill-auto-panel input {
+  margin: 0;
+}
+.skill-auto-main {
+  color: #f8fafc !important;
+  font-weight: 800;
+}
+
 /* ========== 要塞建设 ========== */
 .stronghold-head {
   display: flex;

@@ -2051,7 +2051,7 @@ function renderSourceTable() {
 function renderSkills() {
   const c = getCls(); if (!c) return;
   const skl = $('skill-list');
-  skl.innerHTML = `<div class="muted" style="margin-bottom:6px;font-size:11px">手动技能栏 <b style="color:var(--accent)">${state.selectedSkills.length}</b>/8 · 自动施法会使用全部已解锁技能,这里仅影响手动快捷栏</div>`;
+  skl.innerHTML = `<div class="muted" style="margin-bottom:6px;font-size:11px">手动技能栏 <b style="color:var(--accent)">${state.selectedSkills.length}</b>/8 · 自动施法按上方分类勾选使用已解锁技能,这里仅影响手动快捷栏</div>`;
   for (const [skKey, sk] of classSkillEntriesSorted(c)) {
     const unlocked = !!state.unlockedSkills[skKey];
     const isSel = state.selectedSkills.includes(skKey);

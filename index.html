@@ -219,11 +219,14 @@
     </div>
 
     <div class="tab-panel" id="tab-skill">
-      <div class="muted" style="margin-bottom:6px">职业技能(随等级解锁)
-        <label style="float:right">自动施法
-          <input type="checkbox" id="auto-sk" checked>
-        </label>
+      <div class="skill-auto-panel">
+        <label class="skill-auto-main">自动施法 <input type="checkbox" id="auto-sk" checked></label>
+        <label><input type="checkbox" class="auto-skill-kind" data-kind="damage" checked> 伤害</label>
+        <label><input type="checkbox" class="auto-skill-kind" data-kind="burst" checked> 爆发</label>
+        <label><input type="checkbox" class="auto-skill-kind" data-kind="buff" checked> Buff/治疗/减伤</label>
+        <label><input type="checkbox" class="auto-skill-kind" data-kind="interrupt"> 打断</label>
       </div>
+      <div class="muted" style="margin-bottom:6px">职业技能(随等级解锁)</div>
       <div id="skill-list"></div>
       <div id="passive-list"></div>
     </div>

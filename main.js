@@ -656,7 +656,22 @@ function setupDelegation() {
     });
   })();
   // 自动施法
-  $('auto-sk').addEventListener('change', e => { state.autoSkill = e.target.checked; });
+  const autoSk = $('auto-sk');
+  if (autoSk) {
+    autoSk.checked = state.autoSkill !== false;
+    autoSk.addEventListener('change', e => { state.autoSkill = e.target.checked; markDirty('skills'); if (typeof saveState === 'function') saveState(); });
+  }
+  if (!state.autoSkillConfig) state.autoSkillConfig = { damage:true, burst:true, buff:true, interrupt:false };
+  document.querySelectorAll('.auto-skill-kind').forEach(chk => {
+    const kind = chk.dataset.kind;
+    chk.checked = state.autoSkillConfig[kind] !== false;
+    chk.addEventListener('change', e => {
+      if (!state.autoSkillConfig) state.autoSkillConfig = {};
+      state.autoSkillConfig[kind] = e.target.checked;
+      markDirty('skills');
+      if (typeof saveState === 'function') saveState();
+    });
+  });
 
   // 洗点按钮
   $('btn-reset-talents').addEventListener('click', resetTalents);

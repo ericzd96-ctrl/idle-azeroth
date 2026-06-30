@@ -11,13 +11,13 @@ const BUFF_NAMES = {
   s_empower:     { icon:'🔥', name:'法术爆发', desc:'暴击+17·暴伤+34' },
   s_frenzy:      { icon:'😡', name:'狂热',     desc:'攻击+20%·攻速+20%' },
   s_mitigate:    { icon:'🧱', name:'减伤',     desc:'受到伤害-34%' },
-  s_barrier:     { icon:'🪨', name:'护盾',     desc:'受伤-30%·防御+27%' },
+  s_barrier:     { icon:'🪨', name:'护盾',     desc:'受到伤害-40%' },
   s_haste:       { icon:'💨', name:'急速',     desc:'攻速+33%' },
   s_lifesurge:   { icon:'🩸', name:'生命洪流', desc:'吸血+20·攻击+13%' },
-  s_avatar:      { icon:'⚡', name:'天神下凡', desc:'攻+27%·防+20%·减伤13%' },
+  s_avatar:      { icon:'⚡', name:'天神下凡', desc:'攻+27%·减伤25%' },
   // 职业技能 buff (来自 skills_ext.js BUFF_FX / SKILL_AURA_LIBRARY)
   w_reckless:    { icon:'😡', name:'鲁莽',     desc:'攻击+27%·暴伤+20' },
-  w_ironwall:    { icon:'🛡️', name:'钢铁壁垒', desc:'减伤30%·防御+27%' },
+  w_ironwall:    { icon:'🛡️', name:'钢铁壁垒', desc:'受到伤害-45%' },
   m_combust:     { icon:'🔥', name:'燃烧',     desc:'暴击+17·暴伤+34' },
   m_iceblock:    { icon:'❄️', name:'寒冰护体', desc:'受到伤害-40%' },
   p_voidform:    { icon:'🌑', name:'暗影形态', desc:'攻击+22%·暴击+10·暴伤+20' },
@@ -28,12 +28,12 @@ const BUFF_NAMES = {
   wl_dark:       { icon:'👁️', name:'黑暗灵魂', desc:'暴击+20·暴伤+38' },
   d_zerk:        { icon:'🐻', name:'狂暴',     desc:'攻击+20%·攻速+20%·暴击+8' },
   // 硬编码 buff (效果已减1/3)
-  shield:        { icon:'🛡️', name:'盾墙',     desc:'防御×1.33' },
-  divine:        { icon:'✨', name:'神圣守护', desc:'防御×1.53' },
-  bark:          { icon:'🌳', name:'树皮术',   desc:'防御×1.40' },
-  iceBarrier:    { icon:'🧊', name:'寒冰屏障', desc:'防御×1.40' },
-  earthShield:   { icon:'🪨', name:'大地之盾', desc:'防御×1.33' },
-  evasion:       { icon:'💨', name:'闪避',     desc:'防御×1.27' },
+  shield:        { icon:'🛡️', name:'盾墙',     desc:'受到伤害-33%' },
+  divine:        { icon:'✨', name:'神圣守护', desc:'受到伤害-45%' },
+  bark:          { icon:'🌳', name:'树皮术',   desc:'受到伤害-40%' },
+  iceBarrier:    { icon:'🧊', name:'寒冰屏障', desc:'受到伤害-40%' },
+  earthShield:   { icon:'🪨', name:'大地之盾', desc:'受到伤害-33%' },
+  evasion:       { icon:'💨', name:'闪避',     desc:'受到伤害-34%' },
   bestial:       { icon:'🐻', name:'野兽狂怒', desc:'攻击×1.27' },
   shadowstep:    { icon:'🌑', name:'暗影步',   desc:'攻击×1.33' },
   battleShout:   { icon:'📯', name:'战斗怒吼', desc:'攻击×1.20' },
@@ -655,6 +655,50 @@ function autoCastSkillEntries(cls){
       return 0;
     });
 }
+function autoSkillConfig(){
+  if(!state.autoSkillConfig) state.autoSkillConfig = { damage:true, burst:true, buff:true, interrupt:false };
+  return state.autoSkillConfig;
+}
+function autoSkillKindEnabled(kind){
+  const cfg = autoSkillConfig();
+  return cfg[kind] !== false;
+}
+function autoSkillKind(skillKey, sk){
+  if(!sk) return 'damage';
+  if(sk.type === 'interrupt') return 'interrupt';
+  const ai = skillAiMeta(skillKey, sk);
+  const tag = ai.priorityTag || '';
+  if(sk.type === 'heal' || isDefensiveSkill(skillKey, sk)) return 'buff';
+  if(sk.type === 'buff'){
+    const text = `${sk.name || ''} ${sk.desc || ''}`;
+    if(tag === 'buff' && /爆发|鲁莽|燃烧|嗜血|狂暴|复仇|黑暗灵魂|杀戮命令|天神下凡|暗影形态/.test(text)) return 'burst';
+    return 'buff';
+  }
+  if(sk.type === 'summon' || sk.summonCount) return 'burst';
+  if(sk.type === 'dmg'){
+    if(tag === 'execute' || tag === 'spender' || tag === 'aoe') return 'burst';
+    if((sk.mul || 0) >= 5 || sk.alwaysCrit || (sk.cd || 0) >= 12) return 'burst';
+    return 'damage';
+  }
+  return 'damage';
+}
+function autoSkillAllowed(skillKey, sk){
+  return autoSkillKindEnabled(autoSkillKind(skillKey, sk));
+}
+function tryAutoInterrupt(autoSkills, now){
+  if(!bossCasting || !autoSkillKindEnabled('interrupt')) return false;
+  if(bossCasting.interruptPolicy === 'none') return false;
+  for(const [skKey, sk] of autoSkills){
+    if(!sk || sk.type !== 'interrupt') continue;
+    if(state.skillCooldowns[skKey] && state.skillCooldowns[skKey] > now) continue;
+    let cost = sk.mp || 0;
+    if(state.hero.costReduction > 0) cost = Math.max(1, Math.floor(cost * (1 - state.hero.costReduction / 100)));
+    if(state.resource < cost) continue;
+    castSkill(skKey, false);
+    return true;
+  }
+  return false;
+}
 function runTalentAction(fx, mon, value, ctx, now){
   const artifactTarget = (fx.healPct || fx.shieldPct || fx.type === 'afterHeal' || fx.type === 'lowHp') ? 'hero' : 'monster';
   artifactProcVisual(fx, mon, { now, target:artifactTarget, tag:'trigger' });
@@ -1210,12 +1254,6 @@ function recomputeStats() {
   mpMax = Math.floor(mpMax * (1 + mpPct/100));
 
   const now = Date.now();
-  if (state.buffs.shield>now) def=Math.floor(def*1.33);
-  if (state.buffs.divine>now) def=Math.floor(def*1.53);
-  if (state.buffs.bark>now) def=Math.floor(def*1.40);
-  if (state.buffs.iceBarrier>now) def=Math.floor(def*1.40);
-  if (state.buffs.earthShield>now) def=Math.floor(def*1.33);
-  if (state.buffs.evasion>now) def=Math.floor(def*1.27);
   if (state.buffs.bestial>now) atk=Math.floor(atk*1.27);
   if (state.buffs.shadowstep>now) atk=Math.floor(atk*1.33);
   if (state.buffs.battleShout>now) atk=Math.floor(atk*1.20);
@@ -2971,11 +3009,15 @@ function reapDeadMonsters(){
   }
 }
 
-/* 受击减伤增益(BUFF_FX 里带 dr 的 buff,如减伤技能)→ 返回受伤倍率(<1) */
+/* 受击减伤增益(旧硬编码减伤 + BUFF_FX.dr)→ 返回受伤倍率(<1) */
 function buffDamageReductionMult(){
-  if(typeof BUFF_FX!=='object'||!state.buffs)return 1;
+  if(!state.buffs)return 1;
   const now=Date.now();let m=1;
-  for(const k in BUFF_FX){const fx=BUFF_FX[k];if(fx.dr&&state.buffs[k]>now)m*=(1-fx.dr);}
+  const legacy = { shield:0.33, divine:0.45, bark:0.40, iceBarrier:0.40, earthShield:0.33, evasion:0.34 };
+  for(const k in legacy){if(state.buffs[k]>now)m*=(1-legacy[k]);}
+  if(typeof BUFF_FX==='object'){
+    for(const k in BUFF_FX){const fx=BUFF_FX[k];if(fx.dr&&state.buffs[k]>now)m*=(1-fx.dr);}
+  }
   return m;
 }
 function resolveMonsterDamageTaken(mon, rawDamage, opts){
@@ -3138,10 +3180,12 @@ function tickBattle(now){
       const hpFrac=state.hp/Math.max(1,state.hero.hpMax);
       const targetHpFrac=mon&&mon.hp>0?mon.hp/Math.max(1,mon.hpMax):1;
       const autoSkills=autoCastSkillEntries(getCls());
+      tryAutoInterrupt(autoSkills, now2);
       if(casting){
         // 读条期间:瞬发 buff 保持原逻辑;所有防御/减伤 buff 也可穿插,不打断当前读条。
         for(const [skKey, sk] of autoSkills){
           if(!sk||sk.type!=='buff')continue;
+          if(!autoSkillAllowed(skKey, sk))continue;
           if(getCastTime(sk)>0 && !isDefensiveSkill(skKey, sk))continue;
           if(state.skillCooldowns[skKey]&&state.skillCooldowns[skKey]>now2)continue;
           let cost=sk.mp;if(state.hero.costReduction>0)cost=Math.max(1,Math.floor(sk.mp*(1-state.hero.costReduction/100)));
@@ -3156,6 +3200,7 @@ function tickBattle(now){
         const [skKey, sk] = autoSkills[order];
         if(state.skillCooldowns[skKey]&&state.skillCooldowns[skKey]>now2)continue;
         if(!sk||sk.type==='interrupt')continue;
+        if(!autoSkillAllowed(skKey, sk))continue;
         let cost=sk.mp;if(state.hero.costReduction>0)cost=Math.max(1,Math.floor(sk.mp*(1-state.hero.costReduction/100)));
         if(state.resource<cost)continue;
         const score=autoSkillScore(skKey,sk,mon,{now:now2,aliveN,hpFrac,targetHpFrac});
@@ -4098,8 +4143,18 @@ function castSkill(skillKey,manual){
   const ai=skillAiMeta(skillKey, sk);
   const summonSkill = sk.type==='summon' || sk.summonCount;
   if(!state.unlockedSkills[skillKey]){if(manual)log('技能未解锁','bad');return;}
-  if(sk.type==='interrupt'){if(manual)doInterrupt();const cdSec=sk.cd||5;state.skillCooldowns[skillKey]=Date.now()+cdSec*1000/castSpeedMul();return;}
   const now=Date.now();
+  if(sk.type==='interrupt'){
+    if(state.skillCooldowns[skillKey]&&state.skillCooldowns[skillKey]>now){if(manual){const left=Math.ceil((state.skillCooldowns[skillKey]-now)/1000);log(sk.name+' 冷却中('+left+'秒)','bad');}return;}
+    let cost=sk.mp||0;if(state.hero.costReduction>0)cost=Math.max(1,Math.floor(cost*(1-state.hero.costReduction/100)));
+    if(state.resource<cost){if(manual)log(c.resource+'不足','bad');return;}
+    const ok=doInterrupt();
+    if(!ok)return;
+    if(cost>0)state.resource-=cost;
+    const cdSec=sk.cd||5;state.skillCooldowns[skillKey]=now+cdSec*1000/castSpeedMul();
+    markDirty('skills','hero');
+    return;
+  }
   if(state.skillCooldowns[skillKey]&&state.skillCooldowns[skillKey]>now){if(manual){const left=Math.ceil((state.skillCooldowns[skillKey]-now)/1000);log(sk.name+' 冷却中('+left+'秒)','bad');}return;}
   if(summonSkill && !canSummonAllies(sk, 'hero', now)){if(manual)log('召唤物已在场上限','bad');return;}
   let cost=sk.mp;if(state.hero.costReduction>0)cost=Math.max(1,Math.floor(sk.mp*(1-state.hero.costReduction/100)));
@@ -4205,13 +4260,13 @@ function isEmpoweredBossCast(sk){
   return false;
 }
 function doInterrupt(){
-  if(!bossCasting){log('没有正在施放的法术','info');return;}
+  if(!bossCasting){log('没有正在施放的法术','info');return false;}
   const bossName=bossCasting.bossName||'BOSS';
   const mon=state.currentMonsters[0];
   if(bossCasting.interruptPolicy === 'none'){
     log('🧱 '+bossName+' 的 '+bossCasting.name+' 无法被打断!','bad');
     if(mon) showMonsterFloat(mon,'🧱不可断','#fca5a5',{variant:'boss',scale:1.04});
-    return;
+    return false;
   }
   log('🦶 打断了 '+bossName+' 的 '+bossCasting.icon+' '+bossCasting.name+'!','good');
   if(bossCasting.interruptPolicy === 'soft' && mon && mon.hp > 0){
@@ -4233,6 +4288,7 @@ function doInterrupt(){
     log('💥 完美打断!'+bossName+' 露出破绽:硬直 + 破甲,抓紧爆发!','epic');
     if(typeof showMonsterFloat==='function') showMonsterFloat(mon,'💥破绽!','#fde047',{variant:'boss',scale:1.14});
   }
+  return true;
 }
 
 /* ---------- 随从 ---------- */
