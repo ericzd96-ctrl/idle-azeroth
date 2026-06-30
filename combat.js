@@ -874,6 +874,25 @@ function recomputeStats() {
     }
   }
   _saveSrc('成就');
+  // 占星命盘 — 星座节点加成, xp/gold/dropMult 由 killMonster 消费
+  _snapSrc();
+  if (typeof collectAstrologyMod === 'function') {
+    const p = collectAstrologyMod();
+    for (const [k, v] of Object.entries(p)) {
+      if (!v) continue;
+      if (k==='atkPct') atkPct+=v; else if (k==='critdPct') critdPct+=v;
+      else if (k==='hpPct') hpPct+=v; else if (k==='defPct') defPct+=v;
+      else if (k==='spdPct') spdPct+=v; else if (k==='mpPct') mpPct+=v;
+      else if (k==='crit') critFlat+=v; else if (k==='regFlat') regFlat+=v;
+      else if (k==='leech') leech+=v; else if (k==='vers') vers+=v;
+      else if (k==='mastery') mastery+=v; else if (k==='haste') haste+=v;
+      else if (k==='cdReduction') cdReduction+=v; else if (k==='buffDuration') buffDuration+=v;
+      else if (k==='dotBonus') dotBonus+=v; else if (k==='costReduction') costReduction+=v;
+      else if (k==='executeBonus') executeBonus+=v; else if (k==='reflectDmg') reflectDmg+=v;
+      else if (k==='armorPen') armorPen+=v; else if (k==='dodge') dodge+=v;
+    }
+  }
+  _saveSrc('占星');
   // 觉醒(光辉值)加成 — 同 schema 但额外有 xpMult/goldMult/dropMult 由 combat 单独读取
   _snapSrc();
   if (typeof collectAscendMod === 'function') {
@@ -3349,6 +3368,10 @@ function onMonsterDeath(mon){
   bonus.xpMult  *= 1 + (pgm.xpMult||0)/100;
   bonus.goldMult*= 1 + (pgm.goldMult||0)/100;
   bonus.dropMult*= 1 + (pgm.dropMult||0)/100;
+  const astm=(typeof collectAstrologyMod==='function')?collectAstrologyMod():{xpMult:0,goldMult:0,dropMult:0};
+  bonus.xpMult  *= 1 + (astm.xpMult||0)/100;
+  bonus.goldMult*= 1 + (astm.goldMult||0)/100;
+  bonus.dropMult*= 1 + (astm.dropMult||0)/100;
   const olp=overLevelPenalty(mon);   // 越级惩罚(对级=1)
   let xp=calcXP(mon);xp=Math.floor(xp*bonus.xpMult);
   let goldEarned=Math.floor(mon.goldReward*bonus.goldMult*olp);

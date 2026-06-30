@@ -92,6 +92,10 @@ function accountStrongholdUpgradeCount() {
   const buildings = accEns().stronghold?.buildings || {};
   return Object.values(buildings).reduce((sum, lvl) => sum + (lvl || 0), 0);
 }
+function accountAstrologyNodeCount() {
+  if (typeof astrologyUnlockedCount === 'function') return astrologyUnlockedCount();
+  return Object.keys(accEns().astrology?.unlocked || {}).length;
+}
 const APEX_WORLD_BOSS_KEYS = ['deathwing','ragnaros','cthun','yogg_saron','alakir','lei_shen','argus_unmaker','raszageth_storm'];
 
 function ensureUnlockedTitles() {
@@ -371,6 +375,14 @@ const ACHIEVEMENTS = [
     cond:()=>({cur:accountStrongholdUpgradeCount(),goal:30}), reward:{gold:1200000,gem:720,honor:12000,title:'大陆建筑师',stat:{atkPct:5,hpPct:5,mastery:12,goldMult:8}} },
   { key:'stronghold50', name:'王城缔造者', cat:'要塞', icon:'👑',
     cond:()=>({cur:accountStrongholdUpgradeCount(),goal:50}), reward:{gold:2600000,gem:1500,honor:26000,title:'王城缔造者',stat:{atkPct:10,hpPct:10,defPct:6,mastery:24,dropMult:18,goldMult:18}} },
+
+  // 占星命盘
+  { key:'astro12', name:'初识星图', cat:'占星', icon:'✨',
+    cond:()=>({cur:accountAstrologyNodeCount(),goal:12}), reward:{gold:420000,gem:260,honor:4200,stat:{mastery:6,xpMult:4}} },
+  { key:'astro30', name:'群星测绘师', cat:'占星', icon:'🔭',
+    cond:()=>({cur:accountAstrologyNodeCount(),goal:30}), reward:{gold:1400000,gem:820,honor:14000,title:'群星测绘师',stat:{atkPct:5,hpPct:5,mastery:14,dropMult:10}} },
+  { key:'astro48', name:'天命观测者', cat:'占星', icon:'🌌',
+    cond:()=>({cur:accountAstrologyNodeCount(),goal:48}), reward:{gold:3200000,gem:1800,honor:32000,title:'天命观测者',stat:{atkPct:10,hpPct:10,defPct:6,mastery:28,xpMult:16,goldMult:16,dropMult:16}} },
 ];
 
 /* ============ 图鉴 ============ */

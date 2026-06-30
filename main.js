@@ -802,6 +802,7 @@ function setupMainButtons() {
       if(t.dataset.tab==='expedition'&&typeof renderExpedition==='function') renderExpedition();
       if(t.dataset.tab==='guild'&&typeof renderGuild==='function') renderGuild();
       if(t.dataset.tab==='stronghold'&&typeof renderStronghold==='function') renderStronghold();
+      if(t.dataset.tab==='astrology'&&typeof renderAstrology==='function') renderAstrology();
       if(t.dataset.tab==='market'&&typeof renderMarket==='function') renderMarket();
       if(t.dataset.tab==='quests'&&typeof renderQuests==='function') renderQuests();
       if(t.dataset.tab==='vault'&&typeof renderVault==='function') renderVault();
@@ -844,6 +845,20 @@ function setupMainButtons() {
       if (!btn) return;
       if (btn.dataset.action === 'strongholdUpgrade' && typeof upgradeStrongholdBuilding === 'function') {
         upgradeStrongholdBuilding(btn.dataset.key);
+      }
+    });
+  }
+
+  // 占星命盘 事件代理
+  const astrologyRoot = $('tab-astrology');
+  if (astrologyRoot) {
+    astrologyRoot.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      if (btn.dataset.action === 'astroObserve' && typeof claimAstrologyStardust === 'function') {
+        claimAstrologyStardust();
+      } else if (btn.dataset.action === 'astroUnlock' && typeof unlockAstrologyNode === 'function') {
+        unlockAstrologyNode(btn.dataset.constellation, btn.dataset.idx);
       }
     });
   }

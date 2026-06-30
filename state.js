@@ -162,6 +162,7 @@ function defaultAccount() {
     chronicles: { claimed:{} }, // 艾泽拉斯编年史 {claimed:{chapterKey:timestamp}}
     worldInvasions: { progress:{}, claimed:{}, totalClaims:0 }, // 世界入侵轮换
     stronghold: { buildings:{}, totalUpgrades:0 }, // 要塞建设(账号共享):建筑等级与长期经营目标
+    astrology: { stardust:0, unlocked:{}, lastObserve:0, totalObserved:0 }, // 占星命盘:星尘与点亮节点
     // 光辉值(账号共享)
     ascendLvl: 0,
     ascendCount: 0,
@@ -218,6 +219,9 @@ function mergeAccount(saved) {
     stronghold: saved.stronghold ? Object.assign({}, d.stronghold, saved.stronghold, {
       buildings: saved.stronghold.buildings || {},
     }) : d.stronghold,
+    astrology: saved.astrology ? Object.assign({}, d.astrology, saved.astrology, {
+      unlocked: saved.astrology.unlocked || {},
+    }) : d.astrology,
     ascendMilestones: saved.ascendMilestones || {},
     season: mo(d.season, saved.season),
     expedition: saved.expedition ? Object.assign({}, d.expedition, saved.expedition, {
