@@ -2966,6 +2966,7 @@ function buildDungeonInfoHtml(dg) {
     const directorSkillPreview = (typeof getDungeonBossDirectorSkills === 'function') ? getDungeonBossDirectorSkills(bossData) : [];
     const directorEventPreview = (typeof getDungeonBossDirectorEvents === 'function') ? getDungeonBossDirectorEvents(bossData) : [];
     const tacticPreview = (typeof getDungeonBossTactics === 'function') ? getDungeonBossTactics(bossData) : [];
+    const weakpointPreview = (typeof getDungeonBossWeakpoints === 'function') ? getDungeonBossWeakpoints(bossData) : [];
     html += `
       <div style="margin:10px 0 0;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.03)">
         <div style="color:var(--legend);font-size:13px;font-weight:700;margin-bottom:6px">${bossIconHtml} ${bossName} ${dropLabel}</div>`;
@@ -2992,6 +2993,11 @@ function buildDungeonInfoHtml(dg) {
     if (tacticPreview.length) {
       html += `<div class="dungeon-boss-tactic-preview">
         ${tacticPreview.map(m => `<span>${symbolIconHtml(m.icon, 12, m.name, 'ability_warrior_battleshout')} ${m.name}</span>`).join('')}
+      </div>`;
+    }
+    if (weakpointPreview.length) {
+      html += `<div class="dungeon-boss-weakpoint-preview">
+        ${weakpointPreview.map(m => `<span>${symbolIconHtml(m.icon, 12, m.name, 'inv_misc_gem_diamond_02')} ${m.name}</span>`).join('')}
       </div>`;
     }
     if (directorSkillPreview.length) {

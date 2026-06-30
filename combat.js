@@ -3592,6 +3592,197 @@ function applyDungeonBossTacticMechanics(now){
   }
   if(fired && typeof markDirty === 'function') markDirty('hero', 'stage');
 }
+const DUNGEON_BOSS_WEAKPOINTS = [
+  { key:'dragonWing', icon:'🪽', name:'龙翼裂口', match:/龙|暮光|奈法|奥妮克希亚|瓦里奥那|塞拉图斯|龙息|飞龙/, threshold:0.72, hpPct:0.095, durationMs:11500, desc:'击破后使首领短暂硬直并降低攻速;超时会触发灼热俯冲。' },
+  { key:'oldGodEye', icon:'👁️', name:'凝视之眼', match:/古神|克苏恩|恩佐斯|尤格|眼|低语|疯狂|梦魇|虚空|腐化/, threshold:0.78, hpPct:0.085, durationMs:10500, desc:'击破后返还资源并打断低语;超时会造成恐惧和易伤。' },
+  { key:'bloodHeart', icon:'🫀', name:'鲜血心脏', match:/鲜血|血|吸血|女王|王子|屠夫|献祭|心脏/, threshold:0.66, hpPct:0.10, durationMs:12000, desc:'击破后压制首领吸血;超时会为首领大量回血。' },
+  { key:'forgePlate', icon:'🛡️', name:'装甲接缝', match:/钢铁|机械|泰坦|构造|熔炉|护甲|守卫|巨像|机器人|黑石/, threshold:0.74, hpPct:0.11, durationMs:12500, desc:'击破后破甲并移除护盾;超时会重新装甲化。' },
+  { key:'necroticPhylactery', icon:'⚱️', name:'命匣裂纹', match:/巫妖|亡|天灾|死亡|骸骨|墓|霜|冰|克尔苏加德|阿尔萨斯/, threshold:0.62, hpPct:0.09, durationMs:12000, desc:'击破后压制亡者召唤;超时会召唤亡魂并施加凋零。' },
+  { key:'felAnchor', icon:'🟢', name:'邪能锚点', match:/恶魔|邪能|军团|伊利丹|基尔加丹|阿克蒙德|地狱|末日/, threshold:0.70, hpPct:0.10, durationMs:11000, desc:'击破后让邪能反噬首领;超时会召来恶魔援军。' },
+  { key:'stormRod', icon:'⚡', name:'风暴导体', match:/风暴|雷|闪电|诺库德|奥丁|莱杉|电|云|天神/, threshold:0.68, hpPct:0.085, durationMs:10000, desc:'击破后清空风暴充能;超时会释放链雷。' },
+  { key:'arcaneFocus', icon:'🔮', name:'奥术焦点', match:/奥术|魔网|法师|符文|星界|群星|魔法|艾利桑德|麦迪文/, threshold:0.76, hpPct:0.09, durationMs:10500, desc:'击破后反制读条并返还资源;超时会加速首领下一次施法。' },
+  { key:'royalBanner', icon:'🚩', name:'统御战旗', match:/王|皇帝|领主|女王|议会|酋长|指挥|统御/, threshold:0.82, hpPct:0.10, durationMs:13000, desc:'击破后削弱全场敌人;超时会触发王者号令。' },
+  { key:'shadowMask', icon:'🎭', name:'暗影面具', match:/影|暗|镜|幻象|潜行|刺客|幽魂|灵魂|暮光/, threshold:0.58, hpPct:0.085, durationMs:10000, desc:'击破后驱散暗影决斗;超时会让玩家易爆。' },
+  { key:'exposedCore', icon:'💠', name:'暴露核心', match:/./, threshold:0.40, hpPct:0.075, durationMs:9500, desc:'通用弱点,击破后获得爆发窗口;超时会让首领小幅狂暴。' },
+];
+function getDungeonBossWeakpoints(bossData){
+  const text = dungeonBossSpectacleText(bossData);
+  if(!text.trim()) return [];
+  const out = [];
+  for(const wp of DUNGEON_BOSS_WEAKPOINTS){
+    if(wp.match.test(text)) out.push(wp);
+  }
+  const generic = DUNGEON_BOSS_WEAKPOINTS.find(w => w.key === 'exposedCore');
+  if(generic && !out.some(w => w.key === generic.key)) out.push(generic);
+  return out.slice(0, 4);
+}
+function dungeonBossWeakpointCounter(key){
+  const ds = state.dungeonState || state.mythicState;
+  if(!ds) return;
+  ds.bossWeakpointEvents = (ds.bossWeakpointEvents || 0) + 1;
+  if(key){
+    if(!ds.bossWeakpointBreakdown) ds.bossWeakpointBreakdown = {};
+    ds.bossWeakpointBreakdown[key] = (ds.bossWeakpointBreakdown[key] || 0) + 1;
+  }
+}
+function spawnDungeonBossWeakpoint(mon, wp, now){
+  if(!mon || !wp) return null;
+  const add = spawnDungeonDirectorAdd(mon, {
+    key:'weakpoint:' + wp.key,
+    icon:wp.icon,
+    name:wp.name,
+    hpPct:wp.hpPct || 0.08,
+    atkPct:0.08,
+    defPct:0.35,
+    durationMs:wp.durationMs || 10000
+  }, now);
+  if(!add) return null;
+  add._bossWeakpoint = wp.key;
+  add._bossWeakpointName = wp.name;
+  add._bossWeakpointReward = { type:wp.key, bossUid:mon._uid };
+  add._bossWeakpointExpireAt = add._expiresAt;
+  add._expireEffect = null;
+  const ds = state.dungeonState || state.mythicState;
+  if(ds) ds.bossWeakpointsSpawned = (ds.bossWeakpointsSpawned || 0) + 1;
+  dungeonBossWeakpointCounter('spawn:' + wp.key);
+  log(`${wp.icon} ${mon.bossName || mon.name} 暴露弱点: ${wp.name}!`, 'bad');
+  return add;
+}
+function resolveDungeonBossWeakpointExpiry(obj, now){
+  if(!obj || obj.hp <= 0 || !obj._bossWeakpoint || !obj._bossWeakpointExpireAt || now < obj._bossWeakpointExpireAt) return false;
+  const boss = (state.currentMonsters || []).find(x => x && x.hp > 0 && x._uid === obj._summonerId);
+  const key = obj._bossWeakpoint;
+  if(boss){
+    if(key === 'dragonWing'){
+      applyHeroDamage(dungeonBossSpectacleDmg(0.045, boss, 1.4), boss, { label:t=>'🪽-' + t, color:'#fb923c', now });
+      applyHeroDebuff('burn', 4200, { dps:dungeonBossSpectacleDmg(0.010, boss, 0.25) });
+    }else if(key === 'oldGodEye'){
+      applyHeroDebuff('fear', 1000);
+      applyHeroDebuff('vulnerable', 4200);
+    }else if(key === 'bloodHeart'){
+      const heal = Math.max(1, Math.floor(boss.hpMax * 0.075));
+      boss.hp = Math.min(boss.hpMax, boss.hp + heal);
+      showMonsterFloat(boss, '🫀+' + heal, '#fda4af', { variant:'heal' });
+    }else if(key === 'forgePlate'){
+      boss._arcaneShield = (boss._arcaneShield || 0) + Math.max(1, Math.floor(boss.hpMax * 0.08));
+      boss._monsterDrBuffUntil = Math.max(boss._monsterDrBuffUntil || 0, now + 6500);
+      boss._monsterDrBuffPct = Math.max(boss._monsterDrBuffPct || 0, 0.28);
+      syncMonsterShieldAura(boss);
+    }else if(key === 'necroticPhylactery'){
+      applyHeroDebuff('decay2', 5600);
+      summonMonsterAlly(boss, { summonCount:1, summonTheme:'undead', summonHpPct:0.18, summonAtkPct:0.34, summonDefPct:0.42 }, now);
+    }else if(key === 'felAnchor'){
+      summonMonsterAlly(boss, { summonCount:1, summonTheme:'demon', summonHpPct:0.18, summonAtkPct:0.38, summonDefPct:0.34 }, now);
+      applyHeroDebuff('burn', 5200, { dps:dungeonBossSpectacleDmg(0.011, boss, 0.3) });
+    }else if(key === 'stormRod'){
+      applyHeroDamage(dungeonBossSpectacleDmg(0.055, boss, 1.8), boss, { label:t=>'⚡-' + t, color:'#67e8f9', now });
+      applyHeroDebuff('silence', 1200);
+    }else if(key === 'arcaneFocus'){
+      boss._trickSpdBuff = Math.max(boss._trickSpdBuff || 0, now + 6000);
+      boss._trickSpdPct = Math.max(boss._trickSpdPct || 0, 28);
+      if(bossCasting && bossCasting.bossName === boss.bossName) bossCasting.duration = Math.max(700, bossCasting.duration - 450);
+    }else if(key === 'royalBanner'){
+      for(const m of (state.currentMonsters || [])){
+        if(!m || m.hp <= 0) continue;
+        m._arcaneShield = (m._arcaneShield || 0) + Math.max(1, Math.floor(m.hpMax * 0.035));
+        syncMonsterShieldAura(m);
+      }
+    }else if(key === 'shadowMask'){
+      applyHeroDebuff('brittle', 5500);
+    }else{
+      boss.atk = Math.floor(boss.atk * 1.04);
+      showMonsterFloat(boss, '💠核心稳定', '#fca5a5');
+    }
+    showMonsterFloat(boss, `${obj._bossWeakpointName || '弱点'}超时`, '#fb7185', { variant:'boss' });
+  }
+  obj._roomExpired = true;
+  obj.hp = 0;
+  dungeonBossWeakpointCounter('expired:' + key);
+  return true;
+}
+function applyDungeonBossWeakpointReward(mon){
+  if(!mon?._bossWeakpointReward) return false;
+  const ds = state.dungeonState || state.mythicState;
+  const key = mon._bossWeakpointReward.type;
+  const boss = (state.currentMonsters || []).find(x => x && x.hp > 0 && x._uid === mon._bossWeakpointReward.bossUid);
+  const now = Date.now();
+  const gain = Math.max(8, Math.floor((state.resourceMax || 100) * 0.14));
+  state.resource = Math.min(state.resourceMax || 100, (state.resource || 0) + gain);
+  if(typeof grantNextSkillCrit === 'function') grantNextSkillCrit(1);
+  if(boss){
+    if(!boss._bossTacticStacks) boss._bossTacticStacks = {};
+    boss.stunUntil = Math.max(boss.stunUntil || 0, now + 900);
+    boss.sunderUntil = Math.max(boss.sunderUntil || 0, now + 6000);
+    if(key === 'dragonWing'){
+      boss._trickSpdBuff = 0;
+      boss.atkInterval = Math.min(2200, Math.floor((boss.atkInterval || 1200) * 1.12));
+    }else if(key === 'oldGodEye'){
+      boss._bossTacticStacks.oldGodWhisper = 0;
+    }else if(key === 'bloodHeart'){
+      boss.lifeSteal = Math.max(0, (boss.lifeSteal || 0) * 0.55);
+      boss._trickLeech = 0;
+    }else if(key === 'forgePlate'){
+      boss._arcaneShield = 0;
+      boss._monsterDrBuffUntil = 0;
+      syncMonsterShieldAura(boss);
+    }else if(key === 'necroticPhylactery'){
+      boss._monsterDrBuffUntil = Math.min(boss._monsterDrBuffUntil || 0, now + 1000);
+    }else if(key === 'felAnchor'){
+      applyMonsterDot(boss, 'weakpoint:fel', Math.max(1, Math.floor(boss.hpMax * 0.006)), 5000, { icon:'😈', name:'邪能反噬', source:'weakpoint' });
+    }else if(key === 'stormRod'){
+      boss._bossTacticStacks.stormCharge = 0;
+    }else if(key === 'arcaneFocus'){
+      if(bossCasting && bossCasting.bossName === boss.bossName){
+        hideBossCastBar();
+        bossCasting = null;
+        log('🔮 奥术焦点反制了首领当前读条!', 'good');
+      }
+    }else if(key === 'royalBanner'){
+      for(const m of (state.currentMonsters || [])){
+        if(m && m.hp > 0){
+          m._trickAtkBuff = 0;
+          showMonsterFloat(m, '🚩溃散', '#bfdbfe');
+        }
+      }
+    }else if(key === 'shadowMask'){
+      boss._monsterDrBuffUntil = 0;
+    }else{
+      boss._monsterDrBuffUntil = 0;
+    }
+    showMonsterFloat(boss, `${mon._bossWeakpointName || '弱点'}破坏`, '#fde047', { variant:'boss', scale:1.1 });
+  }
+  if(ds){
+    ds.bossWeakpointsBroken = (ds.bossWeakpointsBroken || 0) + 1;
+    ds.bossTacticObjectivesBroken = (ds.bossTacticObjectivesBroken || 0) + 1;
+  }
+  dungeonBossWeakpointCounter('broken:' + key);
+  log(`${mon._bossWeakpointName || 'Boss弱点'} 被击破: 资源 +${gain},下个技能必暴,首领露出破绽`, 'epic');
+  markDirty('hero', 'stage');
+  return true;
+}
+function applyDungeonBossWeakpointMechanics(now){
+  if(!(state.mode === 'dungeon' || state.mode === 'mythic')) return;
+  for(const obj of (state.currentMonsters || [])){
+    if(obj && obj.hp > 0 && obj._bossWeakpoint) resolveDungeonBossWeakpointExpiry(obj, now);
+  }
+  for(const mon of (state.currentMonsters || [])){
+    if(!mon || mon.hp <= 0 || !mon.isBoss) continue;
+    const bossData = getMonsterBossData(mon) || { name:mon.bossName || mon.name, emoji:mon.emoji || '👹' };
+    const weakpoints = getDungeonBossWeakpoints(bossData);
+    if(!weakpoints.length) continue;
+    if(!mon._bossWeakpointSeen) mon._bossWeakpointSeen = {};
+    const hpFrac = mon.hpMax > 0 ? mon.hp / mon.hpMax : 1;
+    for(let i = 0; i < weakpoints.length; i++){
+      const wp = weakpoints[i];
+      const threshold = Math.max(0.18, (wp.threshold || 0.50) - i * 0.10);
+      if(hpFrac <= threshold && !mon._bossWeakpointSeen[wp.key]){
+        mon._bossWeakpointSeen[wp.key] = 1;
+        spawnDungeonBossWeakpoint(mon, wp, now);
+        break;
+      }
+    }
+  }
+}
 function dungeonRoomCounter(ds, key){
   if(!ds) return;
   ds.roomEvents = (ds.roomEvents || 0) + 1;
@@ -4290,6 +4481,7 @@ function tickBattle(now){
   applyDungeonBossSpectacleMechanics(now);
   applyDungeonBossDirectorMechanics(now);
   applyDungeonBossTacticMechanics(now);
+  applyDungeonBossWeakpointMechanics(now);
   const spdMul=state.battleSpeed||1;                    // 战斗倍速(1x / 2x)
   const regenInterval=1000/spdMul;
 
@@ -4745,6 +4937,9 @@ function onMonsterDeath(mon){
       }
     }
     markDirty('hero');
+  }
+  if(mon._bossWeakpointReward && !mon._roomExpired){
+    applyDungeonBossWeakpointReward(mon);
   }
   if(mon._bossTacticReward){
     const ds = state.dungeonState || state.mythicState;
