@@ -2280,6 +2280,146 @@ button.legend:hover:not(:disabled) {
 /* ========== 属性来源明细表(成长指南) ========== */
 .tab-panel.active { min-width: 0; }
 #shop-list { min-width: 0; overflow: hidden; }
+
+/* ========== 要塞建设 ========== */
+.stronghold-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid rgba(148,163,184,.24);
+  background: rgba(15,23,42,.46);
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+.stronghold-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #f8fafc;
+  margin-bottom: 3px;
+}
+.stronghold-res {
+  flex: 0 0 auto;
+  color: #fde68a;
+  font-size: 12px;
+  line-height: 1.7;
+  text-align: right;
+  white-space: nowrap;
+}
+.stronghold-bonus {
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  color: #bfdbfe;
+  background: rgba(30,64,175,.18);
+  border: 1px solid rgba(96,165,250,.28);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.stronghold-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 10px;
+}
+.stronghold-card {
+  border: 1px solid rgba(148,163,184,.22);
+  background: rgba(15,23,42,.42);
+  border-radius: 8px;
+  padding: 10px;
+  min-width: 0;
+}
+.stronghold-card.is-max {
+  border-color: rgba(250,204,21,.45);
+  background: rgba(113,63,18,.18);
+}
+.stronghold-card-top {
+  display: grid;
+  grid-template-columns: 36px minmax(0,1fr) auto;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.stronghold-icon {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2,6,23,.45);
+  border: 1px solid rgba(148,163,184,.22);
+  border-radius: 8px;
+  font-size: 20px;
+}
+.stronghold-name {
+  font-weight: 800;
+  color: #f8fafc;
+}
+.stronghold-level {
+  padding: 3px 7px;
+  color: #e0f2fe;
+  background: rgba(14,165,233,.16);
+  border: 1px solid rgba(56,189,248,.25);
+  border-radius: 999px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.stronghold-bar {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(15,23,42,.9);
+  border: 1px solid rgba(148,163,184,.16);
+  margin-bottom: 8px;
+}
+.stronghold-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #22c55e, #38bdf8);
+}
+.stronghold-effect,
+.stronghold-req {
+  font-size: 12px;
+  line-height: 1.45;
+}
+.stronghold-effect {
+  color: #cbd5e1;
+  margin-bottom: 8px;
+}
+.stronghold-req {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-height: 24px;
+  margin-bottom: 9px;
+}
+.stronghold-req span {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(15,23,42,.58);
+  border: 1px solid rgba(148,163,184,.18);
+}
+.stronghold-card button {
+  width: 100%;
+  min-height: 32px;
+  white-space: normal;
+  line-height: 1.25;
+}
+@media (max-width: 640px) {
+  .stronghold-head {
+    display: block;
+  }
+  .stronghold-res {
+    text-align: left;
+    margin-top: 6px;
+    white-space: normal;
+  }
+  .stronghold-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .src-panel {
   margin-top: 12px;
   border-top: 1px solid var(--border);

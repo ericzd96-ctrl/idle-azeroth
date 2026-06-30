@@ -801,6 +801,7 @@ function setupMainButtons() {
       if(t.dataset.tab==='arena'&&typeof renderArena==='function') renderArena();
       if(t.dataset.tab==='expedition'&&typeof renderExpedition==='function') renderExpedition();
       if(t.dataset.tab==='guild'&&typeof renderGuild==='function') renderGuild();
+      if(t.dataset.tab==='stronghold'&&typeof renderStronghold==='function') renderStronghold();
       if(t.dataset.tab==='market'&&typeof renderMarket==='function') renderMarket();
       if(t.dataset.tab==='quests'&&typeof renderQuests==='function') renderQuests();
       if(t.dataset.tab==='vault'&&typeof renderVault==='function') renderVault();
@@ -832,6 +833,18 @@ function setupMainButtons() {
       const act = btn.dataset.action;
       if (act === 'guildDonate' && typeof donateGuild === 'function') donateGuild(btn.dataset.key);
       else if (act === 'guildResearch' && typeof researchGuildTech === 'function') researchGuildTech(btn.dataset.key);
+    });
+  }
+
+  // 要塞建设 事件代理
+  const strongholdRoot = $('tab-stronghold');
+  if (strongholdRoot) {
+    strongholdRoot.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      if (btn.dataset.action === 'strongholdUpgrade' && typeof upgradeStrongholdBuilding === 'function') {
+        upgradeStrongholdBuilding(btn.dataset.key);
+      }
     });
   }
 

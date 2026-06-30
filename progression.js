@@ -87,6 +87,11 @@ function accountWorldInvasionClaimedCount() {
     ? invasionCompletedCount()
     : (accEns().worldInvasions?.totalClaims || 0);
 }
+function accountStrongholdUpgradeCount() {
+  if (typeof strongholdTotalUpgrades === 'function') return strongholdTotalUpgrades();
+  const buildings = accEns().stronghold?.buildings || {};
+  return Object.values(buildings).reduce((sum, lvl) => sum + (lvl || 0), 0);
+}
 const APEX_WORLD_BOSS_KEYS = ['deathwing','ragnaros','cthun','yogg_saron','alakir','lei_shen','argus_unmaker','raszageth_storm'];
 
 function ensureUnlockedTitles() {
@@ -358,6 +363,14 @@ const ACHIEVEMENTS = [
     cond:()=>({cur:accountWorldInvasionClaimedCount(),goal:15}), reward:{gold:900000,gem:520,honor:9000,title:'入侵破阵者',stat:{atkPct:4,hpPct:4,mastery:10}} },
   { key:'invasion30', name:'艾泽拉斯守望军', cat:'世界入侵', icon:'🌍',
     cond:()=>({cur:accountWorldInvasionClaimedCount(),goal:30}), reward:{gold:2000000,gem:1200,honor:22000,title:'艾泽拉斯守望者',stat:{atkPct:8,hpPct:8,defPct:5,mastery:20,dropMult:12}} },
+
+  // 要塞建设
+  { key:'stronghold10', name:'要塞奠基者', cat:'要塞', icon:'🏗️',
+    cond:()=>({cur:accountStrongholdUpgradeCount(),goal:10}), reward:{gold:360000,gem:220,honor:3600,stat:{hpPct:3,defPct:2}} },
+  { key:'stronghold30', name:'大陆建筑师', cat:'要塞', icon:'🏰',
+    cond:()=>({cur:accountStrongholdUpgradeCount(),goal:30}), reward:{gold:1200000,gem:720,honor:12000,title:'大陆建筑师',stat:{atkPct:5,hpPct:5,mastery:12,goldMult:8}} },
+  { key:'stronghold50', name:'王城缔造者', cat:'要塞', icon:'👑',
+    cond:()=>({cur:accountStrongholdUpgradeCount(),goal:50}), reward:{gold:2600000,gem:1500,honor:26000,title:'王城缔造者',stat:{atkPct:10,hpPct:10,defPct:6,mastery:24,dropMult:18,goldMult:18}} },
 ];
 
 /* ============ 图鉴 ============ */

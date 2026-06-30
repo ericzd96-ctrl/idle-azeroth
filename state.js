@@ -161,6 +161,7 @@ function defaultAccount() {
     classOrders: { claimed:{} }, // 职业大厅委托 {claimed:{classMissionKey:timestamp}}
     chronicles: { claimed:{} }, // 艾泽拉斯编年史 {claimed:{chapterKey:timestamp}}
     worldInvasions: { progress:{}, claimed:{}, totalClaims:0 }, // 世界入侵轮换
+    stronghold: { buildings:{}, totalUpgrades:0 }, // 要塞建设(账号共享):建筑等级与长期经营目标
     // 光辉值(账号共享)
     ascendLvl: 0,
     ascendCount: 0,
@@ -214,6 +215,9 @@ function mergeAccount(saved) {
       progress: saved.worldInvasions.progress || {},
       claimed: saved.worldInvasions.claimed || {},
     }) : d.worldInvasions,
+    stronghold: saved.stronghold ? Object.assign({}, d.stronghold, saved.stronghold, {
+      buildings: saved.stronghold.buildings || {},
+    }) : d.stronghold,
     ascendMilestones: saved.ascendMilestones || {},
     season: mo(d.season, saved.season),
     expedition: saved.expedition ? Object.assign({}, d.expedition, saved.expedition, {
