@@ -906,6 +906,8 @@ function setupMainButtons() {
         renderProgression();
       } else if (btn.dataset.action === 'claimclassorder') {
         if (typeof claimClassOrderMission === 'function' && claimClassOrderMission(btn.dataset.key)) renderProgression();
+      } else if (btn.dataset.action === 'claimchronicle') {
+        if (typeof claimChronicleChapter === 'function' && claimChronicleChapter(btn.dataset.key)) renderProgression();
       } else if (btn.dataset.action === 'claimrepline') {
         if (typeof claimReputationLine === 'function' && claimReputationLine(btn.dataset.fac, parseInt(btn.dataset.rep, 10))) {
           renderProgression();

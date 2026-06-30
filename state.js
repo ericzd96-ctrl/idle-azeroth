@@ -159,6 +159,7 @@ function defaultAccount() {
     zoneBounties: { claimed:{} }, // 区域悬赏一次性补给 {claimed:{mapKey:true}}
     dragonTreasures: { claimed:{} }, // 龙岛宝藏收藏 {claimed:{treasureKey:timestamp}}
     classOrders: { claimed:{} }, // 职业大厅委托 {claimed:{classMissionKey:timestamp}}
+    chronicles: { claimed:{} }, // 艾泽拉斯编年史 {claimed:{chapterKey:timestamp}}
     // 光辉值(账号共享)
     ascendLvl: 0,
     ascendCount: 0,
@@ -205,6 +206,9 @@ function mergeAccount(saved) {
     classOrders: saved.classOrders ? Object.assign({}, d.classOrders, saved.classOrders, {
       claimed: saved.classOrders.claimed || {},
     }) : d.classOrders,
+    chronicles: saved.chronicles ? Object.assign({}, d.chronicles, saved.chronicles, {
+      claimed: saved.chronicles.claimed || {},
+    }) : d.chronicles,
     ascendMilestones: saved.ascendMilestones || {},
     season: mo(d.season, saved.season),
     expedition: saved.expedition ? Object.assign({}, d.expedition, saved.expedition, {

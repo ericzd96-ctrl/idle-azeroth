@@ -72,6 +72,11 @@ function accountClassOrderClaimedCount() {
     ? classOrderClaimedCount()
     : Object.keys(accEns().classOrders?.claimed || {}).length;
 }
+function accountChronicleClaimedCount() {
+  return typeof chronicleClaimedCount === 'function'
+    ? chronicleClaimedCount()
+    : Object.keys(accEns().chronicles?.claimed || {}).length;
+}
 const APEX_WORLD_BOSS_KEYS = ['deathwing','ragnaros','cthun','yogg_saron','alakir','lei_shen','argus_unmaker','raszageth_storm'];
 
 function ensureUnlockedTitles() {
@@ -319,6 +324,14 @@ const ACHIEVEMENTS = [
     cond:()=>({cur:accountClassOrderClaimedCount(),goal:20}), reward:{gold:520000,gem:360,honor:5200,title:'职业大厅指挥官',stat:{atkPct:4,hpPct:4,defPct:2,mastery:8}} },
   { key:'class_order45', name:'九职统御者', cat:'职业大厅', icon:'👑',
     cond:()=>({cur:accountClassOrderClaimedCount(),goal:45}), reward:{gold:1500000,gem:900,honor:15000,title:'九职统御者',stat:{atkPct:8,hpPct:8,defPct:5,mastery:18,dropMult:15}} },
+
+  // 编年史
+  { key:'chronicle12', name:'编年史抄录员', cat:'编年史', icon:'📖',
+    cond:()=>({cur:accountChronicleClaimedCount(),goal:12}), reward:{gold:320000,gem:220,honor:3200,stat:{goldMult:5,dropMult:5}} },
+  { key:'chronicle24', name:'艾泽拉斯史官', cat:'编年史', icon:'🕯️',
+    cond:()=>({cur:accountChronicleClaimedCount(),goal:24}), reward:{gold:820000,gem:520,honor:8200,title:'艾泽拉斯史官',stat:{atkPct:4,hpPct:4,mastery:10,dropMult:10}} },
+  { key:'chronicle36', name:'群星编年官', cat:'编年史', icon:'👑',
+    cond:()=>({cur:accountChronicleClaimedCount(),goal:36}), reward:{gold:1800000,gem:1000,honor:18000,title:'群星编年官',stat:{atkPct:8,hpPct:8,defPct:5,mastery:20,dropMult:18}} },
 ];
 
 /* ============ 图鉴 ============ */
@@ -546,6 +559,7 @@ function renderProgression() {
   const besTabIcon = (typeof symbolIcon === 'function') ? symbolIcon('📖', 16, '图鉴', '📖') : '📖';
   const repTabIcon = (typeof symbolIcon === 'function') ? symbolIcon('⚖️', 16, '声望', '⚖️') : '⚖️';
   const orderTabIcon = (typeof symbolIcon === 'function') ? symbolIcon('🏛️', 16, '职业大厅', '🏛️') : '🏛️';
+  const chronTabIcon = (typeof symbolIcon === 'function') ? symbolIcon('📖', 16, '编年史', '📖') : '📖';
   // 子页签头
   const head = `
     <div class="sub-tabs">
@@ -553,12 +567,14 @@ function renderProgression() {
       <span class="sub-tab ${progSubTab==='bes'?'active':''}" data-sub="bes">${besTabIcon} 图鉴</span>
       <span class="sub-tab ${progSubTab==='rep'?'active':''}" data-sub="rep">${repTabIcon} 声望</span>
       <span class="sub-tab ${progSubTab==='order'?'active':''}" data-sub="order">${orderTabIcon} 职业大厅</span>
+      <span class="sub-tab ${progSubTab==='chronicle'?'active':''}" data-sub="chronicle">${chronTabIcon} 编年史</span>
     </div>`;
   let body = '';
   if (progSubTab === 'ach') body = renderAchSubtab();
   else if (progSubTab === 'bes') body = renderBesSubtab();
   else if (progSubTab === 'rep') body = renderRepSubtab();
   else if (progSubTab === 'order') body = (typeof renderClassOrderSubtab === 'function') ? renderClassOrderSubtab() : '<div class="prog-summary muted">职业大厅载入中...</div>';
+  else if (progSubTab === 'chronicle') body = (typeof renderChronicleSubtab === 'function') ? renderChronicleSubtab() : '<div class="prog-summary muted">编年史载入中...</div>';
   root.innerHTML = head + body;
 }
 
