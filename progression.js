@@ -67,6 +67,11 @@ function accountDragonTreasureClaimedCount() {
   const acc = accEns();
   return Object.keys(acc.dragonTreasures?.claimed || {}).length;
 }
+function accountClassOrderClaimedCount() {
+  return typeof classOrderClaimedCount === 'function'
+    ? classOrderClaimedCount()
+    : Object.keys(accEns().classOrders?.claimed || {}).length;
+}
 const APEX_WORLD_BOSS_KEYS = ['deathwing','ragnaros','cthun','yogg_saron','alakir','lei_shen','argus_unmaker','raszageth_storm'];
 
 function ensureUnlockedTitles() {
@@ -306,6 +311,14 @@ const ACHIEVEMENTS = [
     cond:()=>({cur:accountDragonTreasureClaimedCount(),goal:75}), reward:{gold:860000,gem:520,honor:8600,stat:{atkPct:5,hpPct:5,defPct:3,mastery:12,dropMult:14}} },
   { key:'dragon_treasure100', name:'龙岛全境寻获', cat:'探索', icon:'🌩️',
     cond:()=>({cur:accountDragonTreasureClaimedCount(),goal:100}), reward:{gold:1500000,gem:900,honor:15000,title:'龙岛全境寻获者',stat:{atkPct:8,hpPct:8,defPct:5,mastery:18,dropMult:22}} },
+
+  // 职业大厅
+  { key:'class_order5', name:'职业大厅新星', cat:'职业大厅', icon:'🏛️',
+    cond:()=>({cur:accountClassOrderClaimedCount(),goal:5}), reward:{gold:180000,gem:120,honor:1800,stat:{atkPct:2,hpPct:2}} },
+  { key:'class_order20', name:'多职能指挥官', cat:'职业大厅', icon:'📯',
+    cond:()=>({cur:accountClassOrderClaimedCount(),goal:20}), reward:{gold:520000,gem:360,honor:5200,title:'职业大厅指挥官',stat:{atkPct:4,hpPct:4,defPct:2,mastery:8}} },
+  { key:'class_order45', name:'九职统御者', cat:'职业大厅', icon:'👑',
+    cond:()=>({cur:accountClassOrderClaimedCount(),goal:45}), reward:{gold:1500000,gem:900,honor:15000,title:'九职统御者',stat:{atkPct:8,hpPct:8,defPct:5,mastery:18,dropMult:15}} },
 ];
 
 /* ============ 图鉴 ============ */
@@ -532,17 +545,20 @@ function renderProgression() {
   const achTabIcon = (typeof symbolIcon === 'function') ? symbolIcon('🏆', 16, '成就', '🏆') : '🏆';
   const besTabIcon = (typeof symbolIcon === 'function') ? symbolIcon('📖', 16, '图鉴', '📖') : '📖';
   const repTabIcon = (typeof symbolIcon === 'function') ? symbolIcon('⚖️', 16, '声望', '⚖️') : '⚖️';
+  const orderTabIcon = (typeof symbolIcon === 'function') ? symbolIcon('🏛️', 16, '职业大厅', '🏛️') : '🏛️';
   // 子页签头
   const head = `
     <div class="sub-tabs">
       <span class="sub-tab ${progSubTab==='ach'?'active':''}" data-sub="ach">${achTabIcon} 成就</span>
       <span class="sub-tab ${progSubTab==='bes'?'active':''}" data-sub="bes">${besTabIcon} 图鉴</span>
       <span class="sub-tab ${progSubTab==='rep'?'active':''}" data-sub="rep">${repTabIcon} 声望</span>
+      <span class="sub-tab ${progSubTab==='order'?'active':''}" data-sub="order">${orderTabIcon} 职业大厅</span>
     </div>`;
   let body = '';
   if (progSubTab === 'ach') body = renderAchSubtab();
   else if (progSubTab === 'bes') body = renderBesSubtab();
   else if (progSubTab === 'rep') body = renderRepSubtab();
+  else if (progSubTab === 'order') body = (typeof renderClassOrderSubtab === 'function') ? renderClassOrderSubtab() : '<div class="prog-summary muted">职业大厅载入中...</div>';
   root.innerHTML = head + body;
 }
 

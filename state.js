@@ -158,6 +158,7 @@ function defaultAccount() {
     repCaches: {},          // {factionName: 已领崇拜后宝箱数}
     zoneBounties: { claimed:{} }, // 区域悬赏一次性补给 {claimed:{mapKey:true}}
     dragonTreasures: { claimed:{} }, // 龙岛宝藏收藏 {claimed:{treasureKey:timestamp}}
+    classOrders: { claimed:{} }, // 职业大厅委托 {claimed:{classMissionKey:timestamp}}
     // 光辉值(账号共享)
     ascendLvl: 0,
     ascendCount: 0,
@@ -201,6 +202,9 @@ function mergeAccount(saved) {
     dragonTreasures: saved.dragonTreasures ? Object.assign({}, d.dragonTreasures, saved.dragonTreasures, {
       claimed: saved.dragonTreasures.claimed || {},
     }) : d.dragonTreasures,
+    classOrders: saved.classOrders ? Object.assign({}, d.classOrders, saved.classOrders, {
+      claimed: saved.classOrders.claimed || {},
+    }) : d.classOrders,
     ascendMilestones: saved.ascendMilestones || {},
     season: mo(d.season, saved.season),
     expedition: saved.expedition ? Object.assign({}, d.expedition, saved.expedition, {

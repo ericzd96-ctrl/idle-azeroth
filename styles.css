@@ -46,6 +46,35 @@
 }
 .dragon-treasure-foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 6px; }
 .dragon-treasure-foot button { flex: 0 0 auto; }
+
+/* 职业大厅 */
+.class-order-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; margin-top: 8px; }
+.class-order-card {
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  background: rgba(15,23,42,.74);
+  border-radius: 6px;
+  padding: 8px;
+  min-height: 150px;
+}
+.class-order-card.ready { border-color: var(--legend); box-shadow: 0 0 0 1px rgba(255,128,0,.16) inset; }
+.class-order-card.claimed { opacity: .72; border-color: rgba(34,197,94,.35); }
+.class-order-head { display: flex; align-items: center; gap: 7px; min-height: 34px; font-size: 12px; }
+.class-order-icon {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: rgba(246,196,83,.12);
+  flex: 0 0 auto;
+}
+.class-order-req { margin-top: 6px; }
+.class-order-req > div:first-child { display: flex; justify-content: space-between; gap: 6px; font-size: 10px; color: var(--muted); }
+.class-order-req.done > div:first-child { color: #86efac; }
+.class-order-foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 8px; }
+.class-order-foot button { flex: 0 0 auto; }
 * { box-sizing: border-box; }
 html, body {
   margin: 0; padding: 0;
