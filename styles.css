@@ -661,6 +661,27 @@ h1 {
   line-height: 1.45;
   color: #fca5a5;
 }
+.dungeon-boss-phase-line {
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #fdba74;
+}
+.dungeon-boss-phase-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 0 0 8px 8px;
+}
+.dungeon-boss-phase-preview span {
+  padding: 2px 6px;
+  border: 1px solid rgba(251,146,60,.24);
+  border-radius: 6px;
+  background: rgba(251,146,60,.08);
+  color: #fdba74;
+  font-size: 10px;
+  line-height: 1.4;
+}
 .dungeon-mastery-panel {
   margin: 0 0 8px 0;
   padding: 8px;

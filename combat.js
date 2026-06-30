@@ -2696,6 +2696,66 @@ function applyMonsterSupportSkill(mon, skill, now, opts){
   }
   return used;
 }
+function applyDungeonBossPhase(mon, phase, now){
+  if(!mon || !phase) return false;
+  const mod = phase.mod || {};
+  if(state.dungeonState) state.dungeonState.bossPhasesTriggered = (state.dungeonState.bossPhasesTriggered || 0) + 1;
+  const skill = {
+    name: phase.name,
+    icon: phase.icon || '⚔️',
+    shieldPct: mod.shieldPct,
+    atkBuffSecs: mod.atkBuffSecs,
+    atkBuffPct: mod.atkBuffPct,
+    spdBuffSecs: mod.spdBuffSecs,
+    spdBuffPct: mod.spdBuffPct,
+    defBuffSecs: mod.defBuffSecs,
+    defBuffPct: mod.defBuffPct,
+    critBuffSecs: mod.critBuffSecs,
+    critBuffPct: mod.critBuffPct,
+    leechBuffSecs: mod.leechBuffSecs,
+    leechBuffPct: mod.leechBuffPct,
+    summonCount: mod.summonCount,
+    summonTheme: mod.summonTheme,
+    cd: 60000,
+  };
+  applyMonsterSupportSkill(mon, skill, now, { announce:false });
+  if(mod.phaseDamagePct){
+    const dmg = Math.max(1, Math.floor((state.hero.hpMax || 1) * mod.phaseDamagePct));
+    applyHeroDamage(dmg, mon, { label:t=>(phase.icon || '⚔️') + '-' + t, color:'#fb7185', now });
+    if(typeof processTalentLowHp === 'function') processTalentLowHp(mon, now);
+  }
+  if(mod.heroDebuff && typeof applyHeroDebuff === 'function'){
+    applyHeroDebuff(mod.heroDebuff, mod.heroDebuffMs || 6000);
+  }
+  if(mod.manaDrainPct && state.resourceMax){
+    const drain = Math.min(state.resource || 0, Math.floor(state.resourceMax * mod.manaDrainPct));
+    if(drain > 0){
+      state.resource = Math.max(0, state.resource - drain);
+      showFloat($('hero-emoji'), '💧-' + drain, '#93c5fd', { variant:'status', scale:1.04 });
+    }
+  }
+  showMonsterFloat(mon, `${phase.icon || '⚔️'}${phase.name}`, '#fb7185', { variant:'boss', scale:1.12, important:true });
+  pulseMonsterEl(mon, 'bosscast', 320);
+  log(`⚔️ 契约阶段: ${mon.bossName || mon.name} 触发 ${phase.icon || ''}${phase.name}! ${phase.desc || ''}`, 'bad');
+  return true;
+}
+function checkDungeonBossPhases(mon, now){
+  if(state.mode !== 'dungeon' || !mon?.isBoss || !state.dungeonState || !mon.bossName) return;
+  const ds = state.dungeonState;
+  if(!(ds.contractLevel > 0) || typeof getDungeonBossPhases !== 'function') return;
+  const dg = DUNGEONS.find(d => d.key === ds.key);
+  if(!dg) return;
+  const phases = getDungeonBossPhases(dg, mon.bossName, ds.contractLevel);
+  if(!phases.length) return;
+  const hpFrac = mon.hpMax > 0 ? mon.hp / mon.hpMax : 1;
+  mon._dungeonBossPhaseSeen = mon._dungeonBossPhaseSeen || {};
+  for(const phase of phases){
+    if(hpFrac <= phase.threshold && !mon._dungeonBossPhaseSeen[phase.phaseKey]){
+      mon._dungeonBossPhaseSeen[phase.phaseKey] = 1;
+      applyDungeonBossPhase(mon, phase, now);
+    }
+  }
+}
 /* 破甲(sunder)等护甲削减后的有效防御 */
 function monArmor(mon){
   if(!mon)return 0;
@@ -3395,6 +3455,7 @@ function tickBattle(now){
     // 阶段技能:按 BOSS 当前血量% 过滤可用技能(sk.hpBelow=血量跌破该比例才解锁的阶段技;sk.hpAbove=仅高血量时使用的开场技);首次跨过新阶段线→立即施放该阶段技并播报
     const _allBossSkills=(bossData?.skills||[]).filter(sk => !isPassiveMonsterSupportTrick(sk));
     const _hpFrac=mon.hpMax>0?mon.hp/mon.hpMax:1;
+    checkDungeonBossPhases(mon, now);
     let _forcedPhaseSk=null;
     for(const _s of _allBossSkills){ if(typeof _s.hpBelow==='number'&&_hpFrac<=_s.hpBelow){ mon._phasesSeen=mon._phasesSeen||{}; if(!mon._phasesSeen[_s.name]){ mon._phasesSeen[_s.name]=1; _forcedPhaseSk=_s; } } }
     if(_forcedPhaseSk){ log('⚔️ '+(mon.bossName||mon.name)+' 进入新阶段 —— '+(_forcedPhaseSk.icon||'')+_forcedPhaseSk.name+'!','bad'); if(typeof showMonsterFloat==='function')showMonsterFloat(mon,'⚔️ 阶段转换!','#f59e0b'); lastBossSkill=0; }

@@ -210,6 +210,42 @@ function getDungeonContractTrials(dg, contractLevel) {
   return pool.slice(0, count).map(t => ({ ...t, contractTrial:true }));
 }
 
+const DUNGEON_BOSS_PHASE_EVENTS = [
+  { key:'phaseShield', name:'壁垒重构', icon:'🛡️', desc:'获得最大生命12%的护盾,并提高防御10秒。', mod:{shieldPct:0.12, defBuffSecs:10, defBuffPct:28} },
+  { key:'phaseFrenzy', name:'血怒爆发', icon:'💢', desc:'提高攻击与攻速12秒。', mod:{atkBuffSecs:12, atkBuffPct:34, spdBuffSecs:12, spdBuffPct:24} },
+  { key:'phaseGuard', name:'亲卫入场', icon:'🚩', desc:'召唤1名援军,并获得少量护盾。', mod:{summonCount:1, summonTheme:'soldier', shieldPct:0.06} },
+  { key:'phaseDecay', name:'腐蚀领域', icon:'🌑', desc:'对你造成一次压迫伤害,并施加凋零。', mod:{phaseDamagePct:0.055, heroDebuff:'decay2', heroDebuffMs:6500} },
+  { key:'phaseExecution', name:'处刑宣告', icon:'⚔️', desc:'使你短暂易伤,首领获得暴击强化。', mod:{heroDebuff:'vulnerable', heroDebuffMs:7000, critBuffSecs:10, critBuffPct:45} },
+  { key:'phaseLeech', name:'暗血虹吸', icon:'🩸', desc:'首领短时间获得吸血,并燃烧你的资源。', mod:{leechBuffSecs:10, leechBuffPct:24, manaDrainPct:0.18} },
+];
+
+function getDungeonBossPhases(dg, bossName, contractLevel) {
+  const level = Math.max(0, Math.min(3, Math.floor(contractLevel || 0)));
+  if (!dg || !bossName || level <= 0) return [];
+  const thresholdsByLevel = {
+    1: [0.45],
+    2: [0.65, 0.30],
+    3: [0.75, 0.45, 0.18],
+  };
+  const thresholds = thresholdsByLevel[level] || [];
+  if (!thresholds.length) return [];
+  const day = Math.floor(Date.now() / 86400000);
+  let seed = ((dg.reqLvl || 1) * 251 + level * 991 + (day % 100000) * 433) % 2147483647;
+  const source = `${dg.key || ''}:${bossName}`;
+  for (let i = 0; i < source.length; i++) seed = (seed * 41 + source.charCodeAt(i)) % 2147483647;
+  seed = seed || 1;
+  const pool = DUNGEON_BOSS_PHASE_EVENTS.slice();
+  for (let i = pool.length - 1; i > 0; i--) {
+    seed = (seed * 16807) % 2147483647;
+    const j = seed % (i + 1);
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return thresholds.map((threshold, i) => {
+    const event = pool[i % pool.length];
+    return { ...event, threshold, phaseKey:`${event.key}:${Math.round(threshold * 100)}` };
+  });
+}
+
 function setDungeonContractLevel(level) {
   if (state.mode !== 'world') { log('请先结束当前战斗再调整副本契约', 'bad'); return; }
   state.dungeonContractLevel = Math.max(0, Math.min(3, Math.floor(Number(level) || 0)));
@@ -509,7 +545,7 @@ function onDungeonClear(dg) {
     : '';
   const contractInfo = dungeonContractInfo(dungeonStateSnapshot?.contractLevel || 0);
   const contractHtml = dungeonStateSnapshot?.contractLevel > 0
-    ? `<div class="muted" style="font-size:12px">${contractInfo.icon} 契约: ${contractInfo.name} · 通关奖励 ×${contractInfo.reward.toFixed(2)} · 最高警戒 ${dungeonStateSnapshot.maxAlert || dungeonStateSnapshot.alertLevel || 0}</div>`
+    ? `<div class="muted" style="font-size:12px">${contractInfo.icon} 契约: ${contractInfo.name} · 通关奖励 ×${contractInfo.reward.toFixed(2)} · 最高警戒 ${dungeonStateSnapshot.maxAlert || dungeonStateSnapshot.alertLevel || 0} · 首领阶段 ${dungeonStateSnapshot.bossPhasesTriggered || 0}</div>`
     : '';
   const contractChestHtml = grantDungeonContractChest(dg, dungeonStateSnapshot);
   const bountyHtml = grantDungeonBountyReward(dg, { loot:uniqueLoot });

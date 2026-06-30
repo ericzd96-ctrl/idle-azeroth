@@ -2922,9 +2922,17 @@ function buildDungeonInfoHtml(dg) {
     const dropLabel = isEpicRaid
       ? `(必掉史诗紫装${isFinal ? '×2' : ''}${items.some(it => it.rarity === 'legend') ? ' · 含超低概率橙装' : ''})`
       : (isRaid ? (isFinal ? '(常规团本装备 · 低概率橙武)' : '(常规团本装备)') : '(必掉1件)');
+    const phasePreview = (selectedContract && selectedContract.level > 0 && typeof getDungeonBossPhases === 'function')
+      ? getDungeonBossPhases(dg, bossName, selectedContract.level)
+      : [];
     html += `
       <div style="margin:10px 0 0;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.03)">
         <div style="color:var(--legend);font-size:13px;font-weight:700;margin-bottom:6px">${bossIconHtml} ${bossName} ${dropLabel}</div>`;
+    if (phasePreview.length) {
+      html += `<div class="dungeon-boss-phase-preview">
+        ${phasePreview.map(p => `<span>${Math.round(p.threshold * 100)}% ${symbolIconHtml(p.icon, 12, p.name, 'ability_warrior_battleshout')}${p.name}</span>`).join('')}
+      </div>`;
+    }
     if (bossData?.skills?.length) {
       html += `<div style="margin:0 0 8px 8px">`;
       bossData.skills.forEach(s => {
@@ -3068,6 +3076,7 @@ function renderDungeon() {
     const trialPreview = (selectedContractLevel > 0 && typeof getDungeonContractTrials === 'function') ? getDungeonContractTrials(dg, selectedContractLevel) : [];
     const trialLine = trialPreview.length ? `<div class="dungeon-trial-line">🔥 试炼: ${trialPreview.map(t => `${symbolIconHtml(t.icon, 12, t.name, 'ability_warrior_battleshout')} ${t.name}`).join(' · ')}</div>` : '';
     const alertLine = selectedContractLevel > 0 ? '<div class="dungeon-alert-line">🚨 契约警戒: 波次推进会逐步强化敌人,高警戒可能出现戒备队长</div>' : '';
+    const bossPhaseLine = selectedContractLevel > 0 ? '<div class="dungeon-boss-phase-line">⚔️ 首领阶段: Boss 血量下降时会触发额外阶段事件</div>' : '';
     const firstClearBadge = (!state.dungeonFirstClear || !state.dungeonFirstClear[dg.key]) ? '<span class="pill" style="background:rgba(246,196,83,.18);color:#f6c453">🎁首通</span>' : '';
     // 必刷专属坐骑提示(读 DUNGEON_MOUNT_DROPS,按基础本key)
     let chaseLine = '';
@@ -3101,6 +3110,7 @@ function renderDungeon() {
       ${affixLine}
       ${trialLine}
       ${alertLine}
+      ${bossPhaseLine}
       ${setTierInfo ? `<div class="dungeon-set-track compact">当前职业套装: ${setTierInfo.setName} · ${setTierInfo.bandName}</div>` : ''}
       <div class="row">
         <span class="cd-display">${statusText}</span>
