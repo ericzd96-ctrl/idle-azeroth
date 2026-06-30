@@ -1371,6 +1371,8 @@ function updateBattleVisuals() {
     const dungeonIconHtml = (typeof dungeonIcon === 'function') ? dungeonIcon(dg.key, dg.name, 16, dg.icon) : dg.icon;
     const contract = (state.dungeonState.contractLevel > 0 && typeof dungeonContractInfo === 'function') ? dungeonContractInfo(state.dungeonState.contractLevel) : null;
     const contractTag = contract ? ` <span style="color:#f6c453">${contract.icon}${contract.name}</span>` : '';
+    const alert = (typeof dungeonAlertInfo === 'function') ? dungeonAlertInfo(state.dungeonState) : null;
+    const alertTag = alert && alert.level > 0 ? ` · <span style="color:#fb7185">🚨警戒 ${alert.level}(${alert.label})</span>` : '';
     $('h-zone').innerHTML = `${dungeonIconHtml} ${dg.name}`;
     $('zone-name').innerHTML = `${dungeonIconHtml} ${dg.name} ${typeTag}${contractTag}`;
     let bossExtra = '';
@@ -1384,7 +1386,7 @@ function updateBattleVisuals() {
       if (tags.length) bossExtra += ' <span style=\"font-size:10px;color:#6ee7b7\">'+tags.join(' ')+'</span>';
     }
     const bossTag = curBoss ? ` ⚔️<b style=\"color:var(--legend)\">${curBoss.name}</b>${bossExtra}` : '';
-    $('progress-text').innerHTML = `波次 ${state.dungeonState.wave}/${dg.waves} · 首领 ${killedBosses}/${bossList.length}${bossTag}${contractTag}`;
+    $('progress-text').innerHTML = `波次 ${state.dungeonState.wave}/${dg.waves} · 首领 ${killedBosses}/${bossList.length}${bossTag}${contractTag}${alertTag}`;
   } else if (state.mode === 'mythic') {
     const ms = state.mythicState;
     const dg = DUNGEONS.find(d => d.key === ms.key);
@@ -2893,6 +2895,7 @@ function buildDungeonInfoHtml(dg) {
       <b>${selectedContract.icon} 当前契约: ${selectedContract.name}</b>
       <div class="muted">${selectedContract.desc}</div>
       <div>怪物生命 ×${selectedContract.hp.toFixed(2)} · 攻击 ×${selectedContract.atk.toFixed(2)} · 防御 ×${selectedContract.def.toFixed(2)} · 通关奖励 ×${selectedContract.reward.toFixed(2)}</div>
+      <div class="dungeon-alert-rule">🚨 警戒: 契约副本每清一波+1级,击败首领+2级;高警戒会强化后续敌人并派出戒备队长。</div>
     </div>`;
     if (trialPreview.length) {
       html += `<div class="dungeon-trial-info">
@@ -3064,6 +3067,7 @@ function renderDungeon() {
     const selectedContractLevel = (typeof dungeonContractLevel === 'function') ? dungeonContractLevel() : 0;
     const trialPreview = (selectedContractLevel > 0 && typeof getDungeonContractTrials === 'function') ? getDungeonContractTrials(dg, selectedContractLevel) : [];
     const trialLine = trialPreview.length ? `<div class="dungeon-trial-line">🔥 试炼: ${trialPreview.map(t => `${symbolIconHtml(t.icon, 12, t.name, 'ability_warrior_battleshout')} ${t.name}`).join(' · ')}</div>` : '';
+    const alertLine = selectedContractLevel > 0 ? '<div class="dungeon-alert-line">🚨 契约警戒: 波次推进会逐步强化敌人,高警戒可能出现戒备队长</div>' : '';
     const firstClearBadge = (!state.dungeonFirstClear || !state.dungeonFirstClear[dg.key]) ? '<span class="pill" style="background:rgba(246,196,83,.18);color:#f6c453">🎁首通</span>' : '';
     // 必刷专属坐骑提示(读 DUNGEON_MOUNT_DROPS,按基础本key)
     let chaseLine = '';
@@ -3096,6 +3100,7 @@ function renderDungeon() {
       ${chaseLine}
       ${affixLine}
       ${trialLine}
+      ${alertLine}
       ${setTierInfo ? `<div class="dungeon-set-track compact">当前职业套装: ${setTierInfo.setName} · ${setTierInfo.bandName}</div>` : ''}
       <div class="row">
         <span class="cd-display">${statusText}</span>

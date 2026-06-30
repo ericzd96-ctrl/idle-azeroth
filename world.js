@@ -144,7 +144,7 @@ function enterDungeon(key) {
   const contract = (typeof dungeonContractInfo === 'function') ? dungeonContractInfo(contractLevel) : null;
   const baseAffixes = getDungeonAffixes(dg);
   const trials = (typeof getDungeonContractTrials === 'function') ? getDungeonContractTrials(dg, contractLevel) : [];
-  state.dungeonState = { key, wave: 1, loot: [], affixes: baseAffixes.concat(trials), trials, contractLevel, contract };
+  state.dungeonState = { key, wave: 1, loot: [], affixes: baseAffixes.concat(trials), trials, contractLevel, contract, alertLevel: 0, maxAlert: 0 };
   if (contractLevel > 0 && contract) log(`${contract.icon || '📜'} 已启用 ${contract.name}: ${contract.desc}`, 'legend');
   if (trials.length) log(`🔥 契约试炼: ${trials.map(t => `${t.icon || '🔥'}${t.name}`).join(' · ')}`, 'legend');
   // 进入副本:全量刷新所有技能CD(英雄/天赋/神器/随从)+清理身上的 buff/debuff/护盾(含随从护盾与随从buff/debuff)
@@ -221,6 +221,39 @@ function setDungeonContractLevel(level) {
 function dungeonContractRewardMult(ds) {
   const lvl = Math.max(0, Math.min(3, Math.floor(ds?.contractLevel || 0)));
   return dungeonContractInfo(lvl).reward || 1;
+}
+
+function dungeonAlertInfo(ds) {
+  const contractLevel = Math.max(0, Math.min(3, Math.floor(ds?.contractLevel || 0)));
+  const level = Math.max(0, Math.floor(ds?.alertLevel || 0));
+  if (!contractLevel || !level) {
+    return { level, hp:1, atk:1, def:1, haste:1, eliteChance:0, reward:1, label:'平静' };
+  }
+  const pressure = level * contractLevel;
+  return {
+    level,
+    hp: 1 + Math.min(0.42, pressure * 0.018),
+    atk: 1 + Math.min(0.55, pressure * 0.025),
+    def: 1 + Math.min(0.30, pressure * 0.014),
+    haste: 1 + Math.min(0.22, pressure * 0.010),
+    eliteChance: Math.min(0.42, 0.05 + level * 0.025 + contractLevel * 0.045),
+    reward: 1 + Math.min(0.30, pressure * 0.010),
+    label: level >= 9 ? '封锁' : level >= 6 ? '戒严' : level >= 3 ? '警戒' : '搜寻',
+  };
+}
+
+function advanceDungeonAlert(ds, defeatedBoss) {
+  if (!ds || state.mode !== 'dungeon') return null;
+  const contractLevel = Math.max(0, Math.min(3, Math.floor(ds.contractLevel || 0)));
+  if (!contractLevel) return null;
+  const gain = defeatedBoss ? 2 : 1;
+  ds.alertLevel = Math.min(12, Math.max(0, Math.floor(ds.alertLevel || 0)) + gain);
+  ds.maxAlert = Math.max(ds.maxAlert || 0, ds.alertLevel);
+  const info = dungeonAlertInfo(ds);
+  if (ds.alertLevel === gain || ds.alertLevel % 3 === 0 || defeatedBoss) {
+    log(`🚨 副本警戒提升至 ${info.level} (${info.label}): 敌人生命/攻击/防御/速度提高,并可能派出精英守卫`, 'bad');
+  }
+  return info;
 }
 
 function grantDungeonContractChest(dg, ds) {
@@ -476,7 +509,7 @@ function onDungeonClear(dg) {
     : '';
   const contractInfo = dungeonContractInfo(dungeonStateSnapshot?.contractLevel || 0);
   const contractHtml = dungeonStateSnapshot?.contractLevel > 0
-    ? `<div class="muted" style="font-size:12px">${contractInfo.icon} 契约: ${contractInfo.name} · 通关奖励 ×${contractInfo.reward.toFixed(2)}</div>`
+    ? `<div class="muted" style="font-size:12px">${contractInfo.icon} 契约: ${contractInfo.name} · 通关奖励 ×${contractInfo.reward.toFixed(2)} · 最高警戒 ${dungeonStateSnapshot.maxAlert || dungeonStateSnapshot.alertLevel || 0}</div>`
     : '';
   const contractChestHtml = grantDungeonContractChest(dg, dungeonStateSnapshot);
   const bountyHtml = grantDungeonBountyReward(dg, { loot:uniqueLoot });

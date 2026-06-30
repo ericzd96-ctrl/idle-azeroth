@@ -654,6 +654,13 @@ h1 {
   color: #fecaca;
   line-height: 1.45;
 }
+.dungeon-alert-rule,
+.dungeon-alert-line {
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #fca5a5;
+}
 .dungeon-mastery-panel {
   margin: 0 0 8px 0;
   padding: 8px;

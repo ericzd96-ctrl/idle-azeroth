@@ -2227,6 +2227,16 @@ function spawnDungeonMonster(){
     mon.baseXp = Math.floor(mon.baseXp * (1 + ((contract.reward || 1) - 1) * 0.5));
     mon._dungeonContractLevel = ds.contractLevel;
   }
+  const alertInfo = (state.mode === 'dungeon' && typeof dungeonAlertInfo === 'function') ? dungeonAlertInfo(ds) : null;
+  if (alertInfo && alertInfo.level > 0) {
+    mon.hpMax = Math.floor(mon.hpMax * alertInfo.hp); mon.hp = mon.hpMax;
+    mon.atk = Math.floor(mon.atk * alertInfo.atk);
+    mon.def = Math.floor(mon.def * alertInfo.def);
+    mon.atkInterval = Math.max(isBoss ? 720 : 840, Math.floor(mon.atkInterval / alertInfo.haste));
+    mon.goldReward = Math.floor(mon.goldReward * alertInfo.reward);
+    mon.baseXp = Math.floor(mon.baseXp * (1 + ((alertInfo.reward || 1) - 1) * 0.5));
+    mon._dungeonAlertLevel = alertInfo.level;
+  }
   // 副本/大秘境 BOSS 被动:优先读数据中的passive,否则用默认
   if (isBoss) {
     mon.dodgeChance=0; mon.critChance=0; mon.critMult=2.0; mon.stunChance=0; mon.instantCast=true;
@@ -2265,6 +2275,7 @@ function spawnDungeonMonster(){
         baseXp: Math.max(1, Math.floor(mon.baseXp * 0.45)),
         dropRate: Math.min(mon.dropRate || 0.1, 0.18),
         gemChance: Math.min(mon.gemChance || 0, 0.03),
+        _dungeonAdd: true,
         _uid: monUidSeq++,
         _dots: {},
         _dotLegacyImported: true,
@@ -2278,6 +2289,32 @@ function spawnDungeonMonster(){
       });
       state.currentMonsters.push(patrol);
     }
+  }
+  if (alertInfo && alertInfo.level >= 3 && !isBoss && Math.random() < alertInfo.eliteChance) {
+    const captain = Object.assign({}, mon, {
+      name: `${temoji}戒备队长`,
+      hpMax: Math.max(1, Math.floor(mon.hpMax * 0.85)),
+      hp: Math.max(1, Math.floor(mon.hpMax * 0.85)),
+      atk: Math.max(1, Math.floor(mon.atk * 0.82)),
+      def: Math.max(0, Math.floor(mon.def * 1.10)),
+      goldReward: Math.max(1, Math.floor(mon.goldReward * 0.70)),
+      honorReward: Math.max(1, Math.floor((mon.honorReward || 1) * 0.70)),
+      baseXp: Math.max(1, Math.floor(mon.baseXp * 0.70)),
+      dropRate: Math.min(0.24, (mon.dropRate || 0.1) + 0.04),
+      gemChance: Math.min(0.08, (mon.gemChance || 0) + 0.02),
+      _uid: monUidSeq++,
+      _dots: {},
+      _dotLegacyImported: true,
+      _lastDotTick: 0,
+      _dungeonAdd: true,
+      _spawnAt: Date.now(),
+      _supportSkillCooldowns: {},
+      _lastSkill: Date.now() - rng(800, 2200),
+      _lastAtk: Date.now() - rng(0, 800),
+      _lastSupportSkill: Date.now() - rng(1200, 3600),
+    });
+    state.currentMonsters.push(captain);
+    log(`🚨 警戒${alertInfo.level}: ${captain.name} 加入战斗`, 'bad');
   }
 }
 
@@ -3541,7 +3578,17 @@ function onMonsterDeath(mon){
     markDirty('stage');
     return;
   }
-  if(state.mode==='dungeon'){const ds=state.dungeonState;const dg=DUNGEONS.find(d=>d.key===ds.key);const lastBoss=(dg.bosses||[])[dg.bosses.length-1];ds.wave+=1;if(lastBoss&&ds.wave>lastBoss.wave){onDungeonClear(dg);return;}spawnDungeonMonster();}
+  if(state.mode==='dungeon' && state.currentMonsters.length > 1){
+    const di = state.currentMonsters.indexOf(mon);
+    if(di >= 0) state.currentMonsters.splice(di, 1);
+    if(state.currentMonsters.some(x => x && x.hp > 0 && !x._summoned)){
+      if(mon.isBoss && state.dungeonState) state.dungeonState._pendingBossWaveClear = true;
+      focusHighestThreat();
+      markDirty('stage');
+      return;
+    }
+  }
+  if(state.mode==='dungeon'){const ds=state.dungeonState;const dg=DUNGEONS.find(d=>d.key===ds.key);const lastBoss=(dg.bosses||[])[dg.bosses.length-1];const defeatedBoss=!!mon.isBoss||!!ds._pendingBossWaveClear;ds._pendingBossWaveClear=false;if(typeof advanceDungeonAlert==='function')advanceDungeonAlert(ds,defeatedBoss);ds.wave+=1;if(lastBoss&&ds.wave>lastBoss.wave){onDungeonClear(dg);return;}spawnDungeonMonster();}
   else if(state.mode==='mythic'){const ms=state.mythicState;const dg=DUNGEONS.find(d=>d.key===ms.key);const lastBoss=(dg.bosses||[])[dg.bosses.length-1];if(mon.isBoss)onMythicBossKill();ms.wave+=1;if(lastBoss&&ms.wave>lastBoss.wave){onMythicClear();return;}spawnDungeonMonster();}
   else if(state.mode==='tower'){if(typeof onTowerMonsterKill==='function') onTowerMonsterKill(mon);}
   else if(state.mode==='roguelike'){if(typeof onRoguelikeMonsterKill==='function') onRoguelikeMonsterKill(mon);}
