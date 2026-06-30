@@ -144,9 +144,11 @@ function enterDungeon(key) {
   const contract = (typeof dungeonContractInfo === 'function') ? dungeonContractInfo(contractLevel) : null;
   const baseAffixes = getDungeonAffixes(dg);
   const trials = (typeof getDungeonContractTrials === 'function') ? getDungeonContractTrials(dg, contractLevel) : [];
-  state.dungeonState = { key, wave: 1, loot: [], affixes: baseAffixes.concat(trials), trials, contractLevel, contract, alertLevel: 0, maxAlert: 0 };
+  const environments = (typeof getDungeonEnvironments === 'function') ? getDungeonEnvironments(dg, contractLevel) : [];
+  state.dungeonState = { key, wave: 1, loot: [], affixes: baseAffixes.concat(trials), trials, environments, contractLevel, contract, alertLevel: 0, maxAlert: 0 };
   if (contractLevel > 0 && contract) log(`${contract.icon || '📜'} 已启用 ${contract.name}: ${contract.desc}`, 'legend');
   if (trials.length) log(`🔥 契约试炼: ${trials.map(t => `${t.icon || '🔥'}${t.name}`).join(' · ')}`, 'legend');
+  if (environments.length) log(`🧭 副本环境: ${environments.map(e => `${e.icon || '🧭'}${e.name}`).join(' · ')}`, 'bad');
   // 进入副本:全量刷新所有技能CD(英雄/天赋/神器/随从)+清理身上的 buff/debuff/护盾(含随从护盾与随从buff/debuff)
   if (typeof resetCombatState === 'function') resetCombatState();
   else if (typeof clearAllBuffs === 'function') clearAllBuffs();
@@ -179,6 +181,33 @@ function dungeonContractLevel() {
 
 function dungeonContractInfo(level) {
   return DUNGEON_CONTRACTS[Math.max(0, Math.min(3, Math.floor(level || 0)))] || DUNGEON_CONTRACTS[0];
+}
+
+const DUNGEON_ENVIRONMENTS = [
+  { key:'trapHall', name:'机关回廊', icon:'🪤', desc:'战斗中每11秒触发陷阱,造成最大生命6%伤害。', mod:{trapTickMs:11000, trapDamagePct:0.06} },
+  { key:'poisonMiasma', name:'腐毒雾气', icon:'☣️', desc:'治疗效果降低18%,并周期性施加毒性持续伤害。', mod:{healReduction:0.18, poisonTickMs:9000, poisonDpsPct:0.018, poisonMs:4200} },
+  { key:'manaFlux', name:'魔力紊乱', icon:'💧', desc:'攻击速度降低6%,并周期性燃烧12%最大资源。', mod:{heroSpd:-0.06, drainTickMs:10000, resourceDrainPct:0.12} },
+  { key:'collapsingVault', name:'塌陷穹顶', icon:'🪨', desc:'战斗中每14秒落石,造成伤害并短暂打断行动。', mod:{ceilingTickMs:14000, ceilingDamagePct:0.07, stunMs:700} },
+  { key:'wardedSanctum', name:'守护圣所', icon:'🔷', desc:'敌人每16秒获得小型吸收盾。', mod:{shieldTickMs:16000, monsterShieldPct:0.055} },
+  { key:'dreadFog', name:'恐惧黑雾', icon:'🌫️', desc:'受到伤害提高10%,并周期性陷入虚弱。', mod:{vulnerableTaken:true, weakenTickMs:13000, weakenMs:5000} },
+];
+
+function getDungeonEnvironments(dg, contractLevel) {
+  const level = Math.max(0, Math.min(3, Math.floor(contractLevel || 0)));
+  if (!dg || level <= 0) return [];
+  const count = level >= 3 ? 2 : 1;
+  const day = Math.floor(Date.now() / 86400000);
+  let seed = ((dg.reqLvl || 1) * 313 + level * 1291 + (day % 100000) * 577) % 2147483647;
+  const key = dg.key || '';
+  for (let i = 0; i < key.length; i++) seed = (seed * 43 + key.charCodeAt(i)) % 2147483647;
+  seed = seed || 1;
+  const pool = DUNGEON_ENVIRONMENTS.slice();
+  for (let i = pool.length - 1; i > 0; i--) {
+    seed = (seed * 16807) % 2147483647;
+    const j = seed % (i + 1);
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, Math.min(count, pool.length)).map(e => ({ ...e, dungeonEnvironment:true }));
 }
 
 const DUNGEON_CONTRACT_TRIALS = [
@@ -545,7 +574,7 @@ function onDungeonClear(dg) {
     : '';
   const contractInfo = dungeonContractInfo(dungeonStateSnapshot?.contractLevel || 0);
   const contractHtml = dungeonStateSnapshot?.contractLevel > 0
-    ? `<div class="muted" style="font-size:12px">${contractInfo.icon} 契约: ${contractInfo.name} · 通关奖励 ×${contractInfo.reward.toFixed(2)} · 最高警戒 ${dungeonStateSnapshot.maxAlert || dungeonStateSnapshot.alertLevel || 0} · 首领阶段 ${dungeonStateSnapshot.bossPhasesTriggered || 0}</div>`
+    ? `<div class="muted" style="font-size:12px">${contractInfo.icon} 契约: ${contractInfo.name} · 通关奖励 ×${contractInfo.reward.toFixed(2)} · 最高警戒 ${dungeonStateSnapshot.maxAlert || dungeonStateSnapshot.alertLevel || 0} · 首领阶段 ${dungeonStateSnapshot.bossPhasesTriggered || 0} · 环境触发 ${dungeonStateSnapshot.environmentHits || 0}</div>`
     : '';
   const contractChestHtml = grantDungeonContractChest(dg, dungeonStateSnapshot);
   const bountyHtml = grantDungeonBountyReward(dg, { loot:uniqueLoot });

@@ -649,9 +649,24 @@ h1 {
   font-size: 12px;
   line-height: 1.5;
 }
+.dungeon-environment-info {
+  margin-top: 7px;
+  padding: 7px 8px;
+  border: 1px solid rgba(34,211,238,.24);
+  border-radius: 7px;
+  background: rgba(8,145,178,.09);
+  color: #cffafe;
+  font-size: 12px;
+  line-height: 1.5;
+}
 .dungeon-trial-line {
   font-size: 11px;
   color: #fecaca;
+  line-height: 1.45;
+}
+.dungeon-environment-line {
+  font-size: 11px;
+  color: #a5f3fc;
   line-height: 1.45;
 }
 .dungeon-alert-rule,

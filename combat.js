@@ -1306,6 +1306,13 @@ function recomputeStats() {
       if (af.mod.healReduction) healBonus = Math.floor(healBonus * (1 - af.mod.healReduction));
     }
   }
+  if (state.mode === 'dungeon' && ms2?.environments?.length) {
+    for (const env of ms2.environments) {
+      const mod = env.mod || {};
+      if (mod.heroSpd) spd = +(spd * (1 + mod.heroSpd)).toFixed(2);
+      if (mod.healReduction) healBonus = Math.floor(healBonus * (1 - mod.healReduction));
+    }
+  }
 
   // 精通被动:属性类效果(dotAmp/healAmp/critdAmp/leechAmp)在此并入对应属性;
   // dmgAmp/dr/bleedOnCrit 为战斗时钩子(masteryDmgMult/masteryTakenMult/暴击流血)。
@@ -2756,6 +2763,64 @@ function checkDungeonBossPhases(mon, now){
     }
   }
 }
+function applyDungeonEnvironmentEffects(ds, mon, now){
+  if(state.mode !== 'dungeon' || !ds?.environments?.length || !mon) return;
+  const beforeHits = ds.environmentHits || 0;
+  for(const env of ds.environments){
+    const mod = env.mod || {};
+    const prefix = `env:${env.key}`;
+    if(mod.trapTickMs && now - (ds[`${prefix}:trap`] || 0) > mod.trapTickMs){
+      ds[`${prefix}:trap`] = now;
+      const dmg = Math.max(1, Math.floor((state.hero.hpMax || 1) * (mod.trapDamagePct || 0.05)));
+      applyHeroDamage(dmg, mon, { label:t=>(env.icon || '🪤') + '-' + t, color:'#fb7185', now });
+      ds.environmentHits = (ds.environmentHits || 0) + 1;
+    }
+    if(mod.poisonTickMs && now - (ds[`${prefix}:poison`] || 0) > mod.poisonTickMs){
+      ds[`${prefix}:poison`] = now;
+      const dps = Math.max(1, Math.floor((state.hero.hpMax || 1) * (mod.poisonDpsPct || 0.015)));
+      applyHeroDebuff('burn', mod.poisonMs || 4000, { dps });
+      showFloat($('hero-emoji'), `${env.icon || '☣️'}毒雾`, '#a3e635', { variant:'status', scale:1.04 });
+      ds.environmentHits = (ds.environmentHits || 0) + 1;
+    }
+    if(mod.drainTickMs && now - (ds[`${prefix}:drain`] || 0) > mod.drainTickMs){
+      ds[`${prefix}:drain`] = now;
+      const drain = Math.min(state.resource || 0, Math.floor((state.resourceMax || 0) * (mod.resourceDrainPct || 0.1)));
+      if(drain > 0){
+        state.resource = Math.max(0, state.resource - drain);
+        showFloat($('hero-emoji'), `${env.icon || '💧'}-${drain}`, '#93c5fd', { variant:'status', scale:1.04 });
+        ds.environmentHits = (ds.environmentHits || 0) + 1;
+      }
+    }
+    if(mod.ceilingTickMs && now - (ds[`${prefix}:ceiling`] || 0) > mod.ceilingTickMs){
+      ds[`${prefix}:ceiling`] = now;
+      const dmg = Math.max(1, Math.floor((state.hero.hpMax || 1) * (mod.ceilingDamagePct || 0.06)));
+      applyHeroDamage(dmg, mon, { label:t=>(env.icon || '🪨') + '-' + t, color:'#f59e0b', now });
+      if(mod.stunMs){
+        state.heroStunUntil = Math.max(state.heroStunUntil || 0, now + mod.stunMs);
+        showFloat($('hero-emoji'), '💫震荡', '#fde047', { variant:'status', scale:1.04 });
+      }
+      ds.environmentHits = (ds.environmentHits || 0) + 1;
+    }
+    if(mod.shieldTickMs && now - (ds[`${prefix}:shield`] || 0) > mod.shieldTickMs){
+      ds[`${prefix}:shield`] = now;
+      for(const target of (state.currentMonsters || [])){
+        if(!target || target.hp <= 0) continue;
+        const shield = Math.max(1, Math.floor(target.hpMax * (mod.monsterShieldPct || 0.04)));
+        target._arcaneShield = (target._arcaneShield || 0) + shield;
+        syncMonsterShieldAura(target);
+        showMonsterFloat(target, `${env.icon || '🔷'}盾`, '#93c5fd');
+      }
+      ds.environmentHits = (ds.environmentHits || 0) + 1;
+    }
+    if(mod.weakenTickMs && now - (ds[`${prefix}:weaken`] || 0) > mod.weakenTickMs){
+      ds[`${prefix}:weaken`] = now;
+      applyHeroDebuff('weaken', mod.weakenMs || 5000);
+      showFloat($('hero-emoji'), `${env.icon || '🌫️'}虚弱`, '#fca5a5', { variant:'status', scale:1.04 });
+      ds.environmentHits = (ds.environmentHits || 0) + 1;
+    }
+  }
+  if((ds.environmentHits || 0) !== beforeHits && typeof markDirty === 'function') markDirty('hero', 'stage');
+}
 /* 破甲(sunder)等护甲削减后的有效防御 */
 function monArmor(mon){
   if(!mon)return 0;
@@ -2853,8 +2918,9 @@ function applyHeroDebuff(key, durMs, opts){
   markDirty('hero');
 }
 function heroDebuffTakenMult(){
-  if(!state.heroDebuffs)return 1;const now=Date.now();let m=1;
-  for(const k in state.heroDebuffs){const d=state.heroDebuffs[k];if(d.expire>now){const fx=DEBUFF_FX[k];if(fx&&fx.takenMul)m*=fx.takenMul;}}
+  const now=Date.now();let m=1;
+  if(state.heroDebuffs){for(const k in state.heroDebuffs){const d=state.heroDebuffs[k];if(d.expire>now){const fx=DEBUFF_FX[k];if(fx&&fx.takenMul)m*=fx.takenMul;}}}
+  if(state.mode === 'dungeon' && state.dungeonState?.environments?.some(env => env?.mod?.vulnerableTaken)) m *= 1.10;
   return m;
 }
 function heroDebuffHealMult(){
@@ -3287,6 +3353,9 @@ function tickBattle(now){
         showMonsterFloat(mon, '⏱️狂暴', '#fb7185');
       }
     }
+  }
+  if (state.mode === 'dungeon' && state.dungeonState?.environments?.length) {
+    applyDungeonEnvironmentEffects(state.dungeonState, mon, now);
   }
 
   // 玩家攻击(锁定焦点 = 仇恨最高者)
