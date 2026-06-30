@@ -806,11 +806,14 @@ function onDungeonClear(dg) {
   const bossDirectorHtml = dungeonStateSnapshot?.bossDirectorEvents && !(dungeonStateSnapshot?.contractLevel > 0)
     ? `<div class="muted" style="font-size:12px">🎬 Boss流程机制触发 ${dungeonStateSnapshot.bossDirectorEvents || 0} 次</div>`
     : '';
+  const bossTacticHtml = dungeonStateSnapshot?.bossTacticEvents && !(dungeonStateSnapshot?.contractLevel > 0)
+    ? `<div class="muted" style="font-size:12px">🎭 Boss战术触发 ${dungeonStateSnapshot.bossTacticEvents || 0} 次${dungeonStateSnapshot.bossTacticObjectivesBroken ? ` · 战术目标击破 ${dungeonStateSnapshot.bossTacticObjectivesBroken}` : ''}</div>`
+    : '';
   const roomHtml = dungeonStateSnapshot?.combatRooms?.length
     ? `<div class="muted" style="font-size:12px">🎲 战斗房间: ${dungeonStateSnapshot.combatRooms.map(r => (r.icon || '🎲') + r.name).join(' · ')} · 触发 ${dungeonStateSnapshot.roomEvents || 0} 次 · 击破目标 ${dungeonStateSnapshot.roomObjectivesBroken || 0}${dungeonStateSnapshot.roomBonusGold ? ` · 额外金币 +${dungeonStateSnapshot.roomBonusGold}` : ''}</div>`
     : '';
   const contractHtml = dungeonStateSnapshot?.contractLevel > 0
-    ? `<div class="muted" style="font-size:12px">${contractInfo.icon} 契约: ${contractInfo.name} · 通关奖励 ×${contractMult.toFixed(2)} · 最高警戒 ${dungeonStateSnapshot.maxAlert || dungeonStateSnapshot.alertLevel || 0} · 首领阶段 ${dungeonStateSnapshot.bossPhasesTriggered || 0} · Boss机制 ${dungeonStateSnapshot.bossMechanicsTriggered || 0} · 流程机制 ${dungeonStateSnapshot.bossDirectorEvents || 0} · 房间事件 ${dungeonStateSnapshot.roomEvents || 0} · 环境触发 ${dungeonStateSnapshot.environmentHits || 0} · 禁令触发 ${dungeonStateSnapshot.edictHits || 0} · 禁令增援 ${dungeonStateSnapshot.edictAdds || 0}</div>`
+    ? `<div class="muted" style="font-size:12px">${contractInfo.icon} 契约: ${contractInfo.name} · 通关奖励 ×${contractMult.toFixed(2)} · 最高警戒 ${dungeonStateSnapshot.maxAlert || dungeonStateSnapshot.alertLevel || 0} · 首领阶段 ${dungeonStateSnapshot.bossPhasesTriggered || 0} · Boss机制 ${dungeonStateSnapshot.bossMechanicsTriggered || 0} · 流程机制 ${dungeonStateSnapshot.bossDirectorEvents || 0} · Boss战术 ${dungeonStateSnapshot.bossTacticEvents || 0} · 房间事件 ${dungeonStateSnapshot.roomEvents || 0} · 环境触发 ${dungeonStateSnapshot.environmentHits || 0} · 禁令触发 ${dungeonStateSnapshot.edictHits || 0} · 禁令增援 ${dungeonStateSnapshot.edictAdds || 0}</div>`
     : '';
   const contractChestHtml = grantDungeonContractChest(dg, dungeonStateSnapshot);
   const bountyHtml = grantDungeonBountyReward(dg, { loot:uniqueLoot });
@@ -822,6 +825,7 @@ function onDungeonClear(dg) {
     ${timerHtml}
     ${bossMechanicHtml}
     ${bossDirectorHtml}
+    ${bossTacticHtml}
     ${roomHtml}
     <div style="margin:10px 0;text-align:left;font-size:13px">
       <div>💰 金币 +${bonusGold}</div>

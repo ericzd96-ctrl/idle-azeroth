@@ -2386,6 +2386,13 @@ function spawnDungeonMonster(){
   if (isBoss && typeof getDungeonBossCouncilMembers === 'function') {
     spawnDungeonCouncilMembers(mon, boss, dg, ds);
   }
+  if (isBoss && typeof applyDungeonBossTacticsOnSpawn === 'function') {
+    for(const bossUnit of (state.currentMonsters || [])){
+      if(bossUnit && bossUnit.hp > 0 && bossUnit.isBoss && (bossUnit.bossName === boss.name || bossUnit._councilGroupName === boss.name)){
+        applyDungeonBossTacticsOnSpawn(bossUnit, boss, dg, ds);
+      }
+    }
+  }
   if (state.mode === 'dungeon' && typeof applyDungeonCombatRoomSpawn === 'function') {
     applyDungeonCombatRoomSpawn(ds, dg, mon, isBoss, Date.now());
   }
@@ -3393,6 +3400,198 @@ function applyDungeonBossDirectorMechanics(now){
     if(fired >= 2) break;
   }
 }
+const DUNGEON_BOSS_TACTICS = [
+  { key:'royalCommand', icon:'👑', name:'王者号令', match:/王|皇帝|领主|女王|议会|酋长|指挥|统御/, desc:'首领会周期性号令全场,给所有敌人加护盾并提高攻击。' },
+  { key:'dragonFury', icon:'🐉', name:'龙怒升温', match:/龙|暮光|奈法|奥妮克希亚|瓦里奥那|塞拉图斯|龙息|飞龙/, desc:'首领血量越低龙怒越高,火焰机制更频繁且伤害更高。' },
+  { key:'oldGodWhisper', icon:'👁️', name:'古神低语', match:/古神|克苏恩|恩佐斯|尤格|低语|疯狂|腐化|梦魇|虚空|眼/, desc:'低语会周期叠加精神压力,抽取资源并制造恐惧/易伤。' },
+  { key:'bloodHunger', icon:'🩸', name:'鲜血饥渴', match:/鲜血|血|吸血|女王|王子|屠夫|献祭|心脏/, desc:'玩家生命越低,首领越容易吸血并进入嗜血。' },
+  { key:'titanProtocol', icon:'⚙️', name:'泰坦协议', match:/泰坦|机械|钢铁|构造|熔炉|守卫|巨像|机器人|黑石/, desc:'首领轮换防御、攻击、净化协议,像机器一样滚动强化。' },
+  { key:'necroticHarvest', icon:'☠️', name:'亡者收割', match:/巫妖|亡|天灾|死亡|骸骨|墓|霜|冰|克尔苏加德|阿尔萨斯/, desc:'首领会收割亡魂,召唤亡者并压制治疗。' },
+  { key:'felPact', icon:'😈', name:'邪能契约', match:/恶魔|邪能|军团|伊利丹|基尔加丹|阿克蒙德|地狱|末日/, desc:'邪能契约会用护盾换爆发,并不断拉来恶魔爪牙。' },
+  { key:'stormCharge', icon:'⚡', name:'风暴充能', match:/风暴|雷|闪电|诺库德|奥丁|莱杉|电|云|天神/, desc:'首领会积累充能,满层后释放强力链击。' },
+  { key:'arcaneRunes', icon:'🔮', name:'奥术符文阵', match:/奥术|魔网|法师|符文|星界|群星|魔法|艾利桑德|麦迪文/, desc:'战场会出现符文核心,击破能打断能量循环。' },
+  { key:'shadowDuel', icon:'🪞', name:'暗影决斗', match:/影|暗|镜|幻象|潜行|刺客|幽魂|灵魂|暮光/, desc:'首领会制造决斗标记,让玩家短时间承受更高单体压力。' },
+  { key:'berserkClock', icon:'⏱️', name:'狂暴计时', match:/./, desc:'所有副本首领都会随战斗时间逐步升温,拖太久会越来越危险。' },
+];
+function getDungeonBossTactics(bossData){
+  const text = dungeonBossSpectacleText(bossData);
+  if(!text.trim()) return [];
+  const out = [];
+  for(const tactic of DUNGEON_BOSS_TACTICS){
+    if(tactic.match.test(text)) out.push(tactic);
+  }
+  const generic = DUNGEON_BOSS_TACTICS.find(t => t.key === 'berserkClock');
+  if(generic && !out.some(t => t.key === generic.key)) out.push(generic);
+  return out.slice(0, 4);
+}
+function dungeonBossTacticCounter(key){
+  const ds = state.dungeonState || state.mythicState;
+  if(!ds) return;
+  ds.bossTacticEvents = (ds.bossTacticEvents || 0) + 1;
+  if(key){
+    if(!ds.bossTacticBreakdown) ds.bossTacticBreakdown = {};
+    ds.bossTacticBreakdown[key] = (ds.bossTacticBreakdown[key] || 0) + 1;
+  }
+}
+function applyDungeonBossTacticsOnSpawn(mon, bossData, dg, ds){
+  if(!mon || !mon.isBoss || !bossData) return;
+  const tactics = getDungeonBossTactics(bossData);
+  if(!tactics.length) return;
+  mon._bossTactics = tactics.map(t => t.key);
+  mon._bossTacticLast = {};
+  mon._bossTacticStacks = {};
+  mon._bossTacticStartedAt = Date.now();
+  for(const t of tactics){
+    setMonsterTrickAura(mon, 'bossTactic:' + t.key, { name:t.name, icon:t.icon, desc:t.desc }, 0, { desc:t.desc });
+  }
+  if(ds) ds.bossTacticsSeen = (ds.bossTacticsSeen || 0) + tactics.length;
+  showMonsterFloat(mon, `🎭战术×${tactics.length}`, '#f9a8d4', { variant:'boss', scale:1.06 });
+}
+function bossHasTactic(mon, key){ return !!(mon && Array.isArray(mon._bossTactics) && mon._bossTactics.includes(key)); }
+function triggerBossTactic(mon, key, now, cd){
+  if(!mon || mon.hp <= 0 || !bossHasTactic(mon, key)) return false;
+  if(!mon._bossTacticLast) mon._bossTacticLast = {};
+  if(now - (mon._bossTacticLast[key] || 0) < cd) return false;
+  mon._bossTacticLast[key] = now;
+  dungeonBossTacticCounter(key);
+  return true;
+}
+function applyDungeonBossTacticMechanics(now){
+  if(!(state.mode === 'dungeon' || state.mode === 'mythic')) return;
+  const ds = state.dungeonState || state.mythicState;
+  if(!ds) return;
+  let fired = 0;
+  for(const mon of (state.currentMonsters || [])){
+    if(!mon || mon.hp <= 0 || !mon.isBoss || !mon._bossTactics?.length) continue;
+    const hpFrac = mon.hpMax > 0 ? mon.hp / mon.hpMax : 1;
+    if(bossHasTactic(mon, 'dragonFury')){
+      const desired = hpFrac <= 0.25 ? 3 : (hpFrac <= 0.50 ? 2 : (hpFrac <= 0.75 ? 1 : 0));
+      const current = mon._bossTacticStacks.dragonFury || 0;
+      if(desired > current){
+        mon._bossTacticStacks.dragonFury = desired;
+        mon.atk = Math.floor(mon.atk * (1 + 0.05 * (desired - current)));
+        mon._trickSpdBuff = Math.max(mon._trickSpdBuff || 0, now + 9000);
+        mon._trickSpdPct = Math.max(mon._trickSpdPct || 0, 18 + desired * 6);
+        setMonsterTrickAura(mon, 'bossTactic:dragonFuryStacks', { name:'龙怒升温', icon:'🐉', desc:`龙怒 ${desired} 层:攻击和攻速提高` }, 0, { stacks:desired, desc:`龙怒 ${desired} 层:攻击和攻速提高` });
+        showMonsterFloat(mon, `🐉龙怒${desired}`, '#fb923c', { variant:'boss', scale:1.08 });
+        dungeonBossTacticCounter('dragonFuryStack');
+        fired++;
+      }
+    }
+    if(triggerBossTactic(mon, 'royalCommand', now, 19000)){
+      const allies = (state.currentMonsters || []).filter(x => x && x.hp > 0);
+      for(const a of allies){
+        a._arcaneShield = (a._arcaneShield || 0) + Math.max(1, Math.floor(a.hpMax * 0.035));
+        a._trickAtkBuff = Math.max(a._trickAtkBuff || 0, now + 6200);
+        a._trickAtkPct = Math.max(a._trickAtkPct || 0, 24);
+        syncMonsterShieldAura(a);
+        showMonsterFloat(a, '👑号令', '#fde68a');
+      }
+      log(`👑 ${mon.bossName || mon.name} 发出王者号令,全场敌人获得护盾和攻击强化`, 'bad');
+      fired++;
+    }
+    if(triggerBossTactic(mon, 'oldGodWhisper', now, 17000)){
+      const stacks = (mon._bossTacticStacks.oldGodWhisper || 0) + 1;
+      mon._bossTacticStacks.oldGodWhisper = Math.min(8, stacks);
+      const dmg = dungeonBossSpectacleDmg(0.022 + stacks * 0.003, mon, 0.7);
+      applyHeroDamage(dmg, mon, { label:t=>'👁️-' + t, color:'#c084fc', now });
+      const drain = Math.min(state.resource || 0, Math.floor((state.resourceMax || 100) * (0.06 + stacks * 0.01)));
+      if(drain > 0) state.resource = Math.max(0, (state.resource || 0) - drain);
+      if(stacks % 3 === 0) applyHeroDebuff('fear', 900);
+      else applyHeroDebuff('vulnerable', 3600);
+      showMonsterFloat(mon, `👁️低语${stacks}`, '#c084fc', { variant:'boss' });
+      fired++;
+    }
+    if(triggerBossTactic(mon, 'bloodHunger', now, (state.hp || 0) < (state.hero.hpMax || 1) * 0.45 ? 10500 : 16500)){
+      const dmg = applyHeroDamage(dungeonBossSpectacleDmg((state.hp || 0) < (state.hero.hpMax || 1) * 0.45 ? 0.048 : 0.026, mon, 1.0), mon, { label:t=>'🩸-' + t, color:'#ef4444', now });
+      const heal = Math.max(1, Math.floor((dmg || 1) * 0.8));
+      mon.hp = Math.min(mon.hpMax, mon.hp + heal);
+      mon._trickLeech = Math.max(mon._trickLeech || 0, now + 7000);
+      mon._trickLeechPct = Math.max(mon._trickLeechPct || 0, 24);
+      showMonsterFloat(mon, `🩸+${heal}`, '#fda4af', { variant:'heal' });
+      fired++;
+    }
+    if(triggerBossTactic(mon, 'titanProtocol', now, 15000)){
+      const step = ((mon._bossTacticStacks.titanProtocol || 0) % 3) + 1;
+      mon._bossTacticStacks.titanProtocol = step;
+      if(step === 1){
+        mon._arcaneShield = (mon._arcaneShield || 0) + Math.max(1, Math.floor(mon.hpMax * 0.07));
+        syncMonsterShieldAura(mon);
+        showMonsterFloat(mon, '⚙️防御协议', '#93c5fd');
+      }else if(step === 2){
+        mon._trickAtkBuff = Math.max(mon._trickAtkBuff || 0, now + 7000);
+        mon._trickAtkPct = Math.max(mon._trickAtkPct || 0, 34);
+        showMonsterFloat(mon, '⚙️攻击协议', '#fca5a5');
+      }else{
+        mon._monsterDrBuffUntil = Math.max(mon._monsterDrBuffUntil || 0, now + 6200);
+        mon._monsterDrBuffPct = Math.max(mon._monsterDrBuffPct || 0, 0.24);
+        applyHeroDebuff('weaken', 4200);
+        showMonsterFloat(mon, '⚙️净化协议', '#f0abfc');
+      }
+      fired++;
+    }
+    if(triggerBossTactic(mon, 'necroticHarvest', now, 21000)){
+      applyHeroDebuff('decay2', 5200);
+      summonMonsterAlly(mon, { summonCount:1, summonTheme:'undead', summonHpPct:0.17, summonAtkPct:0.32, summonDefPct:0.42 }, now);
+      mon._arcaneShield = (mon._arcaneShield || 0) + Math.max(1, Math.floor(mon.hpMax * 0.025));
+      syncMonsterShieldAura(mon);
+      showMonsterFloat(mon, '☠️收割', '#d8b4fe');
+      fired++;
+    }
+    if(triggerBossTactic(mon, 'felPact', now, 18500)){
+      mon._arcaneShield = (mon._arcaneShield || 0) + Math.max(1, Math.floor(mon.hpMax * 0.045));
+      mon._trickAtkBuff = Math.max(mon._trickAtkBuff || 0, now + 5800);
+      mon._trickAtkPct = Math.max(mon._trickAtkPct || 0, 30);
+      syncMonsterShieldAura(mon);
+      summonMonsterAlly(mon, { summonCount:1, summonTheme:'demon', summonHpPct:0.16, summonAtkPct:0.36, summonDefPct:0.34 }, now);
+      applyHeroDebuff('burn', 4800, { dps:dungeonBossSpectacleDmg(0.010, mon, 0.3) });
+      showMonsterFloat(mon, '😈契约', '#fb923c');
+      fired++;
+    }
+    if(triggerBossTactic(mon, 'stormCharge', now, 9000)){
+      const charge = (mon._bossTacticStacks.stormCharge || 0) + 1;
+      mon._bossTacticStacks.stormCharge = charge;
+      showMonsterFloat(mon, `⚡充能${charge}`, '#67e8f9');
+      if(charge >= 3){
+        mon._bossTacticStacks.stormCharge = 0;
+        applyHeroDamage(dungeonBossSpectacleDmg(0.065, mon, 2.0), mon, { label:t=>'⚡-' + t, color:'#67e8f9', now, variant:'boss' });
+        applyHeroDebuff('silence', 1400);
+        log(`⚡ ${mon.bossName || mon.name} 释放满层风暴充能!`, 'bad');
+      }
+      fired++;
+    }
+    if(triggerBossTactic(mon, 'arcaneRunes', now, 23000)){
+      const rune = spawnDungeonDirectorAdd(mon, { key:'rune', icon:'🔮', name:'奥术符文核心', hpPct:0.10, atkPct:0.10, defPct:0.50, durationMs:10000, expireEffect:'ritual' }, now);
+      if(rune){
+        rune._bossTacticReward = { type:'arcaneRune' };
+        log(`🔮 ${mon.bossName || mon.name} 展开奥术符文核心,击破可反制能量循环`, 'bad');
+      }
+      fired++;
+    }
+    if(triggerBossTactic(mon, 'shadowDuel', now, 20000)){
+      applyHeroDebuff('brittle', 5200);
+      mon._monsterDrBuffUntil = Math.max(mon._monsterDrBuffUntil || 0, now + 5200);
+      mon._monsterDrBuffPct = Math.max(mon._monsterDrBuffPct || 0, 0.18);
+      showMonsterFloat(mon, '🪞决斗标记', '#f0abfc');
+      log(`🪞 ${mon.bossName || mon.name} 标记你进入暗影决斗`, 'bad');
+      fired++;
+    }
+    if(triggerBossTactic(mon, 'berserkClock', now, 26000)){
+      const stack = Math.min(10, (mon._bossTacticStacks.berserkClock || 0) + 1);
+      mon._bossTacticStacks.berserkClock = stack;
+      mon.atk = Math.floor(mon.atk * 1.035);
+      if(stack % 2 === 0){
+        mon._trickSpdBuff = Math.max(mon._trickSpdBuff || 0, now + 6000);
+        mon._trickSpdPct = Math.max(mon._trickSpdPct || 0, 15 + stack);
+      }
+      setMonsterTrickAura(mon, 'bossTactic:berserkClockStacks', { name:'狂暴计时', icon:'⏱️', desc:`战斗拖延使首领攻击提高(${stack}层)` }, 0, { stacks:stack, desc:`战斗拖延使首领攻击提高(${stack}层)` });
+      showMonsterFloat(mon, `⏱️狂暴${stack}`, '#fb7185', { variant:'boss' });
+      fired++;
+    }
+    if(fired >= 3) break;
+  }
+  if(fired && typeof markDirty === 'function') markDirty('hero', 'stage');
+}
 function dungeonRoomCounter(ds, key){
   if(!ds) return;
   ds.roomEvents = (ds.roomEvents || 0) + 1;
@@ -4090,6 +4289,7 @@ function tickBattle(now){
   applyCouncilBossMechanics(now);
   applyDungeonBossSpectacleMechanics(now);
   applyDungeonBossDirectorMechanics(now);
+  applyDungeonBossTacticMechanics(now);
   const spdMul=state.battleSpeed||1;                    // 战斗倍速(1x / 2x)
   const regenInterval=1000/spdMul;
 
@@ -4545,6 +4745,23 @@ function onMonsterDeath(mon){
       }
     }
     markDirty('hero');
+  }
+  if(mon._bossTacticReward){
+    const ds = state.dungeonState || state.mythicState;
+    if(mon._bossTacticReward.type === 'arcaneRune'){
+      const boss = (state.currentMonsters || []).find(x => x && x.hp > 0 && x._uid === mon._summonerId);
+      const gain = Math.max(10, Math.floor((state.resourceMax || 100) * 0.18));
+      state.resource = Math.min(state.resourceMax || 100, (state.resource || 0) + gain);
+      if(boss){
+        boss.stunUntil = Math.max(boss.stunUntil || 0, Date.now() + 1200);
+        boss.sunderUntil = Math.max(boss.sunderUntil || 0, Date.now() + 6500);
+        showMonsterFloat(boss, '🔮符文反噬', '#c4b5fd', { variant:'boss', scale:1.08 });
+      }
+      if(typeof grantNextSkillCrit === 'function') grantNextSkillCrit(1);
+      if(ds) ds.bossTacticObjectivesBroken = (ds.bossTacticObjectivesBroken || 0) + 1;
+      log(`🔮 奥术符文核心被击破: 资源 +${gain},首领遭到反噬`, 'epic');
+      markDirty('hero', 'stage');
+    }
   }
   if(mon._summoned){
     const di = state.currentMonsters.indexOf(mon);
