@@ -2952,6 +2952,7 @@ function buildDungeonInfoHtml(dg) {
       ? getDungeonBossPhases(dg, bossName, selectedContract.level)
       : [];
     const councilPreview = (typeof getDungeonBossCouncilMembers === 'function') ? getDungeonBossCouncilMembers(bossData) : [];
+    const spectaclePreview = (typeof getDungeonBossSpectacleMechanics === 'function') ? getDungeonBossSpectacleMechanics(bossData) : [];
     html += `
       <div style="margin:10px 0 0;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.03)">
         <div style="color:var(--legend);font-size:13px;font-weight:700;margin-bottom:6px">${bossIconHtml} ${bossName} ${dropLabel}</div>`;
@@ -2963,6 +2964,11 @@ function buildDungeonInfoHtml(dg) {
     if (phasePreview.length) {
       html += `<div class="dungeon-boss-phase-preview">
         ${phasePreview.map(p => `<span>${Math.round(p.threshold * 100)}% ${symbolIconHtml(p.icon, 12, p.name, 'ability_warrior_battleshout')}${p.name}</span>`).join('')}
+      </div>`;
+    }
+    if (spectaclePreview.length) {
+      html += `<div class="dungeon-boss-spectacle-preview">
+        ${spectaclePreview.map(m => `<span>${symbolIconHtml(m.icon, 12, m.name, 'spell_shadow_shadowfury')} ${m.name}</span>`).join('')}
       </div>`;
     }
     if (bossData?.skills?.length) {

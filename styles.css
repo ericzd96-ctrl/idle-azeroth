@@ -716,12 +716,27 @@ h1 {
   gap: 5px;
   margin: 0 0 8px 8px;
 }
+.dungeon-boss-spectacle-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 0 0 8px 8px;
+}
 .dungeon-council-preview span {
   padding: 2px 6px;
   border: 1px solid rgba(252,211,77,.25);
   border-radius: 6px;
   background: rgba(180,83,9,.10);
   color: #fde68a;
+  font-size: 10px;
+  line-height: 1.4;
+}
+.dungeon-boss-spectacle-preview span {
+  padding: 2px 6px;
+  border: 1px solid rgba(217,70,239,.28);
+  border-radius: 6px;
+  background: rgba(126,34,206,.12);
+  color: #f0abfc;
   font-size: 10px;
   line-height: 1.4;
 }

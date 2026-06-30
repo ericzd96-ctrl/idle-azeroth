@@ -1540,6 +1540,9 @@ const MON_SUPPORT_SUMMONS = {
   undead: { icon:'💀', names:['骸骨仆从','幽魂爪牙','亡者残躯'] },
   elemental: { icon:'🌪️', names:['元素碎片','风暴幼体','失控元素'] },
   void: { icon:'🛸', names:['虚空仆从','裂隙幽影','以太爪牙'] },
+  demon: { icon:'😈', names:['邪能卫士','深渊爪牙','燃烧恶魔'] },
+  fire: { icon:'🔥', names:['余烬仆从','熔火幼体','烈焰爪牙'] },
+  nature: { icon:'🌿', names:['孢子仆从','藤蔓守卫','林地爪牙'] },
   soldier: { icon:'👤', names:['受召守卫','战场援军','狂热卫士'] },
   generic: { icon:'👹', names:['爪牙','仆从','召唤物'] }
 };
@@ -3051,6 +3054,170 @@ function applyCouncilBossMechanics(now){
     }
   }
 }
+const DUNGEON_BOSS_SPECTACLE_LIBRARY = [
+  { key:'councilConvergence', icon:'⚖️', name:'议会共振', cd:18000, match:/议会|综合体|猎群|双子|夫妇|与|皇帝/, desc:'多人首领会周期性联手点名,并为存活成员叠加护盾。' },
+  { key:'oldGodGaze', icon:'👁️', name:'古神凝视', cd:16000, match:/克苏恩|古神|恩佐斯|尤格|眼|虚空|低语|疯狂|梦魇|腐化/, desc:'凝视玩家造成精神冲击,附加恐惧或易伤。' },
+  { key:'twilightMeteor', icon:'☄️', name:'暮光陨星', cd:15000, match:/龙|瓦里奥那|塞拉图斯|暮光|黑龙|红龙|蓝龙|绿龙|青铜|龙息|飞龙|奈法|奥妮克希亚/, desc:'召唤陨星砸落,造成高额伤害并留下灼烧。' },
+  { key:'arcanePrison', icon:'🔮', name:'奥术牢笼', cd:17000, match:/奥术|魔网|法师|档案|星界|群星|蓝龙|艾利桑德|麦迪文|符文|魔法/, desc:'抽取资源并生成奥术护盾,拖慢玩家爆发窗口。' },
+  { key:'bloodRite', icon:'🩸', name:'鲜血仪式', cd:16500, match:/鲜血|血|吸血|王子|贵族|女王|心脏|献祭|屠夫/, desc:'以玩家生命为祭恢复首领,并施加易伤。' },
+  { key:'plagueSwarm', icon:'🦠', name:'瘟疫虫群', cd:19000, match:/毒|瘟疫|腐|虫|蛛|螳螂|克拉希克|范克瑞斯|孢子|感染|软泥/, desc:'释放毒性虫群,持续掉血并可能召唤污染爪牙。' },
+  { key:'stormOverload', icon:'⚡', name:'风暴过载', cd:14000, match:/雷|风暴|闪电|风|诺库德|奥丁|莱杉|电|云|天神/, desc:'风暴链击打断节奏,造成伤害并短暂沉默。' },
+  { key:'forgePlating', icon:'🛡️', name:'熔炉装甲', cd:20000, match:/钢铁|机械|泰坦|构造|黑石|熔炉|护甲|机器人|攻城|巨像|守卫/, desc:'首领展开装甲板,获得护盾和短时减伤。' },
+  { key:'necroticWinter', icon:'🧊', name:'凋零寒冬', cd:17500, match:/巫妖|冰|霜|亡|天灾|死亡|寒|墓|骨|克尔苏加德|阿尔萨斯/, desc:'寒冬侵蚀治疗和行动,并可能唤起亡者。' },
+  { key:'felRift', icon:'😈', name:'邪能裂隙', cd:18500, match:/恶魔|邪能|军团|伊利丹|基尔加丹|阿克蒙德|地狱|萨格拉斯|末日/, desc:'撕开邪能裂隙,造成灼烧并召唤恶魔爪牙。' },
+  { key:'shadowMirror', icon:'🪞', name:'暗影镜像', cd:21000, match:/影|暗|镜|幻象|潜行|刺客|暮光|虚空|幽魂|灵魂/, desc:'制造镜像迷阵,让玩家进入易爆并给首领套上减伤。' },
+  { key:'flameDetonation', icon:'🌋', name:'熔火爆发', cd:15500, match:/火|炎|熔|岩浆|拉格纳罗斯|凤凰|燃烧|烈焰|灰烬/, desc:'引爆熔火脉冲,造成爆发伤害和持续灼烧。' },
+  { key:'tidalCrush', icon:'🌊', name:'深潮碾压', cd:17500, match:/水|海|潮|娜迦|鱼|深渊|海潮|潮汐|水元素/, desc:'深潮压迫玩家,造成伤害并降低攻速。' },
+  { key:'earthShatter', icon:'⛰️', name:'大地崩裂', cd:18000, match:/石|土|山|地|岩|元素|巨人|裂地|地震/, desc:'震碎地面缴械玩家,并召唤元素残片。' },
+  { key:'executionBrand', icon:'🎯', name:'处刑点名', cd:22000, match:/./, desc:'所有副本首领都会周期性点名玩家,制造必须硬吃的压力。' }
+];
+function dungeonBossSpectacleText(bossData){
+  if(!bossData) return '';
+  const parts = [bossData.name || '', bossData.emoji || ''];
+  for(const sk of (bossData.skills || [])) parts.push(sk?.name || '', sk?.desc || '', sk?.type || '');
+  for(const sk of (bossData.tricks || bossData.passive?.tricks || [])) parts.push(sk?.name || '', sk?.desc || '');
+  return parts.join(' ');
+}
+function getDungeonBossSpectacleMechanics(bossData){
+  const text = dungeonBossSpectacleText(bossData);
+  if(!text.trim()) return [];
+  const out = [];
+  for(const mech of DUNGEON_BOSS_SPECTACLE_LIBRARY){
+    if(mech.match.test(text)) out.push(mech);
+  }
+  const generic = DUNGEON_BOSS_SPECTACLE_LIBRARY.find(m => m.key === 'executionBrand');
+  if(generic && !out.some(m => m.key === generic.key)) out.push(generic);
+  return out.slice(0, 5);
+}
+function dungeonBossSpectacleDmg(pct, mon, flat){
+  const hp = Math.max(1, state.hero.hpMax || 1);
+  const lvl = Math.max(1, mon?.lvl || 1);
+  return Math.max(1, Math.floor(hp * pct + lvl * (flat || 1.5)));
+}
+function dungeonBossSpectacleMark(mon, mech, now, extraDesc){
+  setMonsterTrickAura(mon, 'spectacle:' + mech.key, { name:mech.name, icon:mech.icon, desc:extraDesc || mech.desc }, now + 6500, { desc:extraDesc || mech.desc });
+  showMonsterFloat(mon, `${mech.icon}${mech.name}`, '#f0abfc', { variant:'boss', scale:1.06 });
+}
+function dungeonBossSpectacleCounter(){
+  const ds = state.dungeonState || state.mythicState;
+  if(ds) ds.bossMechanicsTriggered = (ds.bossMechanicsTriggered || 0) + 1;
+}
+function triggerDungeonBossSpectacle(mon, mech, now){
+  if(!mon || mon.hp <= 0 || !mech) return false;
+  dungeonBossSpectacleCounter();
+  const aliveBosses = (state.currentMonsters || []).filter(x => x && x.hp > 0 && x.isBoss);
+  if(mech.key === 'councilConvergence'){
+    const group = mon._councilGroupKey ? aliveBosses.filter(x => x._councilGroupKey === mon._councilGroupKey) : aliveBosses;
+    for(const m of group){
+      const shield = Math.max(1, Math.floor(m.hpMax * 0.035));
+      m._arcaneShield = (m._arcaneShield || 0) + shield;
+      syncMonsterShieldAura(m);
+      showMonsterFloat(m, '⚖️共振盾', '#fde68a');
+    }
+    applyHeroDamage(dungeonBossSpectacleDmg(0.035, mon, 1.2), mon, { label:t=>'⚖️-' + t, color:'#fde68a', now });
+    if(typeof applyHeroDebuff === 'function') applyHeroDebuff('vulnerable', 3500);
+  }else if(mech.key === 'oldGodGaze'){
+    applyHeroDamage(dungeonBossSpectacleDmg(0.048, mon, 1.8), mon, { label:t=>'👁️-' + t, color:'#c084fc', now });
+    if(typeof applyHeroDebuff === 'function'){
+      const feared = Math.random() < 0.45;
+      applyHeroDebuff(feared ? 'fear' : 'vulnerable', feared ? 1200 : 4500);
+    }
+  }else if(mech.key === 'twilightMeteor'){
+    applyHeroDamage(dungeonBossSpectacleDmg(0.060, mon, 2.1), mon, { label:t=>'☄️-' + t, color:'#fb7185', now, variant:'boss' });
+    if(typeof applyHeroDebuff === 'function') applyHeroDebuff('burn', 5200, { dps:dungeonBossSpectacleDmg(0.010, mon, 0.35) });
+  }else if(mech.key === 'arcanePrison'){
+    const drain = Math.max(6, Math.floor((state.resourceMax || 100) * 0.16));
+    state.resource = Math.max(0, (state.resource || 0) - drain);
+    mon._arcaneShield = (mon._arcaneShield || 0) + Math.max(1, Math.floor(mon.hpMax * 0.055));
+    syncMonsterShieldAura(mon);
+    applyHeroDamage(dungeonBossSpectacleDmg(0.030, mon, 1.1), mon, { label:t=>'🔮-' + t, color:'#a78bfa', now });
+    showFloat($('hero-emoji'), '🔮-' + drain, '#a78bfa', { variant:'hit', scale:1.03 });
+  }else if(mech.key === 'bloodRite'){
+    const dmg = applyHeroDamage(dungeonBossSpectacleDmg(0.046, mon, 1.4), mon, { label:t=>'🩸-' + t, color:'#ef4444', now });
+    const heal = Math.max(1, Math.floor((dmg || 1) * 0.65 + mon.hpMax * 0.018));
+    mon.hp = Math.min(mon.hpMax, mon.hp + heal);
+    showMonsterFloat(mon, '🩸+' + heal, '#fda4af', { variant:'heal', scale:1.04 });
+    if(typeof applyHeroDebuff === 'function') applyHeroDebuff('vulnerable', 5000);
+  }else if(mech.key === 'plagueSwarm'){
+    applyHeroDamage(dungeonBossSpectacleDmg(0.026, mon, 0.9), mon, { label:t=>'🦠-' + t, color:'#a3e635', now });
+    if(typeof applyHeroDebuff === 'function') applyHeroDebuff('burn', 7000, { dps:dungeonBossSpectacleDmg(0.012, mon, 0.4) });
+    summonMonsterAlly(mon, { summonCount:1, summonTheme:'nature', summonHpPct:0.16, summonAtkPct:0.32, summonDefPct:0.35 }, now);
+  }else if(mech.key === 'stormOverload'){
+    applyHeroDamage(dungeonBossSpectacleDmg(0.043, mon, 1.6), mon, { label:t=>'⚡-' + t, color:'#67e8f9', now });
+    if(typeof applyHeroDebuff === 'function') applyHeroDebuff('silence', 1400);
+    mon.spdBuffUntil = Math.max(mon.spdBuffUntil || 0, now + 5000);
+  }else if(mech.key === 'forgePlating'){
+    mon._arcaneShield = (mon._arcaneShield || 0) + Math.max(1, Math.floor(mon.hpMax * 0.075));
+    mon._monsterDrBuffUntil = now + 6500;
+    mon._monsterDrBuffPct = Math.max(mon._monsterDrBuffPct || 0, 0.26);
+    mon._trickDefBuff = now + 6500;
+    mon._trickDefPct = Math.max(mon._trickDefPct || 0, 40);
+    syncMonsterShieldAura(mon);
+    if(typeof applyHeroDebuff === 'function') applyHeroDebuff('cripple', 4200);
+  }else if(mech.key === 'necroticWinter'){
+    applyHeroDamage(dungeonBossSpectacleDmg(0.035, mon, 1.3), mon, { label:t=>'🧊-' + t, color:'#93c5fd', now });
+    if(typeof applyHeroDebuff === 'function'){
+      const frozen = Math.random() < 0.5;
+      applyHeroDebuff(frozen ? 'freeze' : 'decay2', frozen ? 1100 : 5200);
+    }
+    summonMonsterAlly(mon, { summonCount:1, summonTheme:'undead', summonHpPct:0.18, summonAtkPct:0.34, summonDefPct:0.42 }, now);
+  }else if(mech.key === 'felRift'){
+    applyHeroDamage(dungeonBossSpectacleDmg(0.050, mon, 1.8), mon, { label:t=>'😈-' + t, color:'#fb923c', now });
+    if(typeof applyHeroDebuff === 'function') applyHeroDebuff('burn', 6200, { dps:dungeonBossSpectacleDmg(0.011, mon, 0.35) });
+    summonMonsterAlly(mon, { summonCount:1, summonTheme:'demon', summonHpPct:0.19, summonAtkPct:0.39, summonDefPct:0.38 }, now);
+  }else if(mech.key === 'shadowMirror'){
+    mon._monsterDrBuffUntil = now + 6000;
+    mon._monsterDrBuffPct = Math.max(mon._monsterDrBuffPct || 0, 0.22);
+    mon._arcaneShield = (mon._arcaneShield || 0) + Math.max(1, Math.floor(mon.hpMax * 0.035));
+    syncMonsterShieldAura(mon);
+    if(typeof applyHeroDebuff === 'function') applyHeroDebuff('brittle', 7000);
+  }else if(mech.key === 'flameDetonation'){
+    applyHeroDamage(dungeonBossSpectacleDmg(0.055, mon, 1.9), mon, { label:t=>'🌋-' + t, color:'#f97316', now, variant:'boss' });
+    if(typeof applyHeroDebuff === 'function') applyHeroDebuff('burn', 5800, { dps:dungeonBossSpectacleDmg(0.013, mon, 0.45) });
+    summonMonsterAlly(mon, { summonCount:1, summonTheme:'fire', summonHpPct:0.15, summonAtkPct:0.36, summonDefPct:0.30 }, now);
+  }else if(mech.key === 'tidalCrush'){
+    applyHeroDamage(dungeonBossSpectacleDmg(0.042, mon, 1.4), mon, { label:t=>'🌊-' + t, color:'#38bdf8', now });
+    if(typeof applyHeroDebuff === 'function') applyHeroDebuff('chill', 5600);
+  }else if(mech.key === 'earthShatter'){
+    applyHeroDamage(dungeonBossSpectacleDmg(0.044, mon, 1.5), mon, { label:t=>'⛰️-' + t, color:'#d6d3d1', now });
+    if(typeof applyHeroDebuff === 'function') applyHeroDebuff('disarm', 1300);
+    summonMonsterAlly(mon, { summonCount:1, summonTheme:'elemental', summonHpPct:0.17, summonAtkPct:0.32, summonDefPct:0.50 }, now);
+  }else{
+    applyHeroDamage(dungeonBossSpectacleDmg(0.040, mon, 1.4), mon, { label:t=>'🎯-' + t, color:'#facc15', now });
+    if(typeof applyHeroDebuff === 'function') applyHeroDebuff('brittle', 4500);
+  }
+  dungeonBossSpectacleMark(mon, mech, now);
+  log(`${mech.icon} ${mon.bossName || mon.name} 触发首领机制: ${mech.name}!`, 'bad');
+  if(typeof markDirty === 'function') markDirty('hero', 'stage');
+  return true;
+}
+function applyDungeonBossSpectacleMechanics(now){
+  if(!(state.mode === 'dungeon' || state.mode === 'mythic')) return;
+  const ds = state.dungeonState || state.mythicState;
+  if(!ds) return;
+  let triggered = 0;
+  for(const mon of (state.currentMonsters || [])){
+    if(!mon || mon.hp <= 0 || !mon.isBoss) continue;
+    const bossData = getMonsterBossData(mon) || { name:mon.bossName || mon.name, emoji:mon.emoji || '👹' };
+    const mechanics = getDungeonBossSpectacleMechanics(bossData);
+    if(!mechanics.length) continue;
+    if(!mon._spectacleLast) mon._spectacleLast = {};
+    const seed = Math.abs((mon._uid || mon.name || '').split('').reduce((sum, ch) => sum + ch.charCodeAt(0), 0));
+    for(let i = 0; i < mechanics.length; i++){
+      const mech = mechanics[i];
+      const cd = Math.max(9000, mech.cd || 18000);
+      if(!mon._spectacleLast[mech.key]){
+        mon._spectacleLast[mech.key] = (mon._spawnAt || now) + 4500 + ((seed + i * 1739) % 6500) - cd;
+      }
+      if(now - mon._spectacleLast[mech.key] < cd) continue;
+      mon._spectacleLast[mech.key] = now;
+      triggerDungeonBossSpectacle(mon, mech, now);
+      triggered++;
+      break;
+    }
+    if(triggered >= 2) break;
+  }
+}
 function handleCouncilMemberDeath(mon, hasLivingMembers){
   if(!mon?._councilGroupKey) return;
   const ds = state.dungeonState || state.mythicState;
@@ -3533,6 +3700,7 @@ function tickBattle(now){
   focusHighestThreat();                                 // 锁定仇恨最高的敌人为焦点([0])
   let mon=state.currentMonsters[0];
   applyCouncilBossMechanics(now);
+  applyDungeonBossSpectacleMechanics(now);
   const spdMul=state.battleSpeed||1;                    // 战斗倍速(1x / 2x)
   const regenInterval=1000/spdMul;
 
