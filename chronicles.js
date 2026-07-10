@@ -1,7 +1,7 @@
 /* =========================================================
    chronicles.js — 艾泽拉斯编年史
    ----------------------------------------------------------
-   现为 7 卷、每卷 6 章的叙事收藏。通过全局进度解锁章节,领取资源与少量永久属性。
+   现为 8 卷、每卷 6 章的叙事收藏。通过全局进度解锁章节,领取资源与少量永久属性。
    ========================================================= */
 
 const CHRONICLE_VOLUMES = [
@@ -82,6 +82,17 @@ const CHRONICLE_VOLUMES = [
       ['sanctum_last_entry','终域末页','完成卡雷什终局的最后一段抄录。',{type:'combined',goal:1,parts:[{type:'worldBossKey',key:'shandorah_astromancer',goal:1},{type:'dungeonKey',key:'voidrazor_sanctum',goal:1},{type:'rep',faction:'卡雷什信托',goal:40000},{type:'waystone',goal:30},{type:'invasion',goal:6}]},{gold:1800000,gem:760,honor:16000,title:'裂界编年官',stat:{atkPct:5,hpPct:5,defPct:3,mastery:14,dropMult:12}}],
     ],
   },
+  {
+    key:'timeways', title:'卷八: 时序远征录', icon:'🕰️', color:'#fbbf24',
+    chapters:[
+      ['broker_marks','掮客账页','在时光漫游中累计获得 20 枚时光徽记。',{type:'timewalkingBadge',goal:20},{gold:480000,gem:180,essence:90}],
+      ['bronze_theory','青铜理论','完成 4 层时序研究,证明你不只是来刷旧本。',{type:'timewalkingResearch',goal:4},{gold:620000,honor:4200,essence:130,stat:{mastery:4}}],
+      ['first_cycle','第一轮回','完成 1 次时光漫游周终总奖励。',{type:'timewalkingMeta',goal:1},{gold:760000,gem:240,honor:5200,stat:{atkPct:2}}],
+      ['multi_era_routes','多时代航线','精通 3 个不同的时光漫游时代。',{type:'timewalkingEra',goal:3},{gold:920000,gem:320,essence:180,stat:{dropMult:6}}],
+      ['gallery_shelves','陈列馆书架','收集 3 件时光漫游收藏。',{type:'timewalkingCollection',goal:3},{gold:1100000,gem:360,honor:7600,stat:{hpPct:2,defPct:2}}],
+      ['master_atlas','时序总图','累计获得 120 枚时光徽记、精通 5 个时代并完成 8 层研究。',{type:'combined',goal:1,parts:[{type:'timewalkingBadge',goal:120},{type:'timewalkingEra',goal:5},{type:'timewalkingResearch',goal:8}]},{gold:1900000,gem:820,honor:17000,title:'时序档案官',stat:{atkPct:5,hpPct:5,defPct:3,mastery:16,dropMult:12}}],
+    ],
+  },
 ];
 
 const CHRONICLE_CHAPTERS = CHRONICLE_VOLUMES.flatMap(volume => volume.chapters.map((row, idx) => ({
@@ -143,6 +154,11 @@ function chronicleMetric(cond) {
   if (cond.type === 'ascend') return acc?.ascendLvl || 0;
   if (cond.type === 'waystone') return typeof ensureWaystoneState === 'function' ? (ensureWaystoneState().totalEarned || 0) : (acc?.waystones?.totalEarned || 0);
   if (cond.type === 'invasion') return typeof invasionCompletedCount === 'function' ? invasionCompletedCount() : (acc?.worldInvasions?.totalClaims || 0);
+  if (cond.type === 'timewalkingBadge') return acc?.timewalking?.totalBadges || 0;
+  if (cond.type === 'timewalkingResearch') return Object.values(acc?.timewalking?.research || {}).reduce((sum, n) => sum + (n || 0), 0);
+  if (cond.type === 'timewalkingCollection') return Object.keys(acc?.timewalking?.bought || {}).length;
+  if (cond.type === 'timewalkingMeta') return acc?.timewalking?.metaClaims || 0;
+  if (cond.type === 'timewalkingEra') return Object.keys(acc?.timewalking?.erasMastered || {}).filter(key => ((acc?.timewalking?.erasMastered || {})[key] || 0) > 0).length;
   if (cond.type === 'combined') return cond.parts.every(p => chronicleMetric(p) >= p.goal) ? 1 : 0;
   return 0;
 }
@@ -152,7 +168,8 @@ function chronicleCondText(cond) {
     level:'账号等级', kills:'累计击杀', mapBoss:'地图首领', dungeon:'副本通关',
     worldBoss:'世界Boss', worldBossKey:'指定世界Boss', dungeonKey:'指定副本', rare:'稀有精英', mount:'坐骑收藏',
     anyRep:'最高声望', dragonTreasure:'龙岛宝藏', classOrder:'职业委托',
-    achievement:'成就领取', ascend:'觉醒等级', waystone:'界碑碎片', invasion:'入侵压制', combined:'复合目标',
+    achievement:'成就领取', ascend:'觉醒等级', waystone:'界碑碎片', invasion:'入侵压制',
+    timewalkingBadge:'时光徽记', timewalkingResearch:'时序研究', timewalkingCollection:'时光收藏', timewalkingMeta:'周终总奖励', timewalkingEra:'时代精通', combined:'复合目标',
   };
   if (cond?.type === 'rep') return `${cond.faction}声望 ${fmt(cond.goal)}`;
   if (cond?.type === 'worldBossKey') return `击败 ${chronicleWorldBossName(cond.key)}`;

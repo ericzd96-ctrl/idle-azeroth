@@ -100,6 +100,22 @@ function accountAstrologyNodeCount() {
   if (typeof astrologyUnlockedCount === 'function') return astrologyUnlockedCount();
   return Object.keys(accEns().astrology?.unlocked || {}).length;
 }
+function accountTimewalkingBadgeTotal() {
+  return accEns().timewalking?.totalBadges || 0;
+}
+function accountTimewalkingResearchTotal() {
+  return Object.values(accEns().timewalking?.research || {}).reduce((sum, n) => sum + (n || 0), 0);
+}
+function accountTimewalkingCollectionCount() {
+  return Object.keys(accEns().timewalking?.bought || {}).length;
+}
+function accountTimewalkingMetaClaimCount() {
+  return accEns().timewalking?.metaClaims || 0;
+}
+function accountTimewalkingEraMasteryCount() {
+  const eras = accEns().timewalking?.erasMastered || {};
+  return Object.keys(eras).filter(key => (eras[key] || 0) > 0).length;
+}
 const APEX_WORLD_BOSS_KEYS = ['deathwing','ragnaros','cthun','yogg_saron','alakir','lei_shen','argus_unmaker','raszageth_storm','shadowpoint_vexis','shandorah_astromancer'];
 
 function ensureUnlockedTitles() {
@@ -387,6 +403,18 @@ const ACHIEVEMENTS = [
     cond:()=>({cur:accountAstrologyNodeCount(),goal:30}), reward:{gold:1400000,gem:820,honor:14000,title:'群星测绘师',stat:{atkPct:5,hpPct:5,mastery:14,dropMult:10}} },
   { key:'astro48', name:'天命观测者', cat:'占星', icon:'🌌',
     cond:()=>({cur:accountAstrologyNodeCount(),goal:48}), reward:{gold:3200000,gem:1800,honor:32000,title:'天命观测者',stat:{atkPct:10,hpPct:10,defPct:6,mastery:28,xpMult:16,goldMult:16,dropMult:16}} },
+
+  // 时光漫游
+  { key:'timewalking_badges40', name:'时光商栈常客', cat:'时光漫游', icon:'🪙',
+    cond:()=>({cur:accountTimewalkingBadgeTotal(),goal:40}), reward:{gold:420000,gem:220,honor:4200,stat:{goldMult:4,dropMult:4}} },
+  { key:'timewalking_research8', name:'青铜学派抄写员', cat:'时光漫游', icon:'🧪',
+    cond:()=>({cur:accountTimewalkingResearchTotal(),goal:8}), reward:{gold:760000,gem:360,honor:7600,stat:{atkPct:3,hpPct:3,mastery:8}} },
+  { key:'timewalking_eras3', name:'多时代远征军', cat:'时光漫游', icon:'🗺️',
+    cond:()=>({cur:accountTimewalkingEraMasteryCount(),goal:3}), reward:{gold:1200000,gem:620,honor:12000,title:'多时代远征军',stat:{atkPct:4,hpPct:4,defPct:2,mastery:10,dropMult:6}} },
+  { key:'timewalking_collector5', name:'永恒陈列馆馆长', cat:'时光漫游', icon:'🛒',
+    cond:()=>({cur:accountTimewalkingCollectionCount(),goal:5}), reward:{gold:1800000,gem:900,honor:18000,title:'永恒陈列馆馆长',stat:{atkPct:6,hpPct:6,defPct:4,mastery:16,goldMult:8,dropMult:10}} },
+  { key:'timewalking_meta5', name:'时序总指挥', cat:'时光漫游', icon:'⏳',
+    cond:()=>({cur:accountTimewalkingMetaClaimCount(),goal:5}), reward:{gold:2600000,gem:1400,honor:26000,title:'时序总指挥',stat:{atkPct:8,hpPct:8,defPct:5,mastery:20,goldMult:10,dropMult:12}} },
 ];
 
 /* ============ 图鉴 ============ */

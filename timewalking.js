@@ -1,7 +1,20 @@
 /* timewalking.js - Weekly Timewalking campaigns for classic expansions */
 const TIMEWALKING_BANNER = 'assets/wow/art/timewalking-banner.png';
+const TIMEWALKING_ATLAS_BANNER = 'assets/wow/art/timewalking-atlas-banner.jpg';
 const TIMEWALKING_CACHE_COST = 18;
 const TIMEWALKING_MISSION_COUNT = 5;
+const TIMEWALKING_RESEARCH = [
+  { key:'bronze_attunement', icon:'⏳', name:'青铜调谐', baseCost:8, max:5, gain:{ atkPct:1, hpPct:1 }, desc:'稳定旧时代战斗节奏,每级永久提高攻击与生命。' },
+  { key:'paradox_weave', icon:'🧵', name:'悖论织线', baseCost:10, max:5, gain:{ defPct:1, mastery:1 }, desc:'修补破碎时间线的纤维,每级永久提高防御与精通。' },
+  { key:'chronicle_gilding', icon:'📚', name:'编年史镀金', baseCost:12, max:4, gain:{ goldMult:2, dropMult:2 }, desc:'把旧时代战利品重新登记入册,每级永久提高金币与掉率。' },
+];
+const TIMEWALKING_COLLECTIONS = [
+  { key:'bronze_time_drake', type:'mount', cost:20, icon:'🐉', name:'青铜时序幼龙', rewardKey:'bronze_time_drake', desc:'诺兹多姆麾下用于接送时光行者的青铜飞龙。' },
+  { key:'raven_lord_redux', type:'mount', cost:34, icon:'🦅', name:'时序乌鸦之王', rewardKey:'raven_lord_redux', desc:'从不同时间线拼接回来的奥金顿黑翼坐骑。' },
+  { key:'infinite_timereaver', type:'mount', cost:48, icon:'🕰️', name:'无尽时空掠夺者', rewardKey:'infinite_timereaver', desc:'永恒龙军团丢失在裂隙中的时空坐骑。' },
+  { key:'timewalker_title', type:'title', cost:18, icon:'📜', name:'称号: 时序旅者', rewardKey:'时序旅者', desc:'证明你能在多个时代之间来回作战。' },
+  { key:'chronicle_keeper_title', type:'title', cost:36, icon:'👑', name:'称号: 时光修补师', rewardKey:'时光修补师', desc:'只有真正修补过旧年代裂口的旅者才配拥有。' },
+];
 
 const TIMEWALKING_ERAS = [
   {
@@ -39,6 +52,42 @@ const TIMEWALKING_ERAS = [
     raids:['naxx', 'ulduar', 'ruby', 'icc'],
     worldBoss:'sindragosa_shadow',
     lootFallback:'icc',
+  },
+  {
+    key:'cataclysm',
+    name:'大地的裂变时光漫游',
+    short:'大灾变',
+    icon:'🌋',
+    color:'#fb7185',
+    desc:'暮光之锤与元素失控重返现世,旋云之巅到巨龙之魂再次被青铜龙军团点亮。',
+    dungeons:['vortex'],
+    raids:['firelands', 'dragonsoul'],
+    worldBoss:'deathwing',
+    lootFallback:'dragonsoul',
+  },
+  {
+    key:'legion',
+    name:'军团再临时光漫游',
+    short:'军团再临',
+    icon:'🟢',
+    color:'#84cc16',
+    desc:'破碎群岛的旧伤被重新翻开,英灵殿、苏拉玛与安托鲁斯的战线同步苏醒。',
+    dungeons:['darkheart', 'valor', 'court'],
+    raids:['nighthold', 'tomb', 'antorus'],
+    worldBoss:'argus_unmaker',
+    lootFallback:'antorus',
+  },
+  {
+    key:'dragonflight',
+    name:'巨龙时代时光漫游',
+    short:'巨龙时代',
+    icon:'🐉',
+    color:'#22d3ee',
+    desc:'龙岛的原始风暴也被纳入时序航线,地下城、团本与风暴化身会一并获得旧日标定。',
+    dungeons:['neltharus', 'azurevault', 'nokhud', 'hallsinfusion', 'brackenhide'],
+    raids:['aberrus', 'amirdrassil'],
+    worldBoss:'raszageth_storm',
+    lootFallback:'amirdrassil',
   },
 ];
 
@@ -160,7 +209,7 @@ function ensureTimewalkingState() {
   if (typeof account === 'undefined' || !account) {
     const week = timewalkingWeekId();
     const setup = createTimewalkingMissions(week);
-    return { weekId:week, eraKey:setup.eraKey, missions:setup.missions, claimed:{}, badges:0, totalBadges:0, totalClaims:0, cacheClaims:0, metaClaimed:false, history:[] };
+    return { weekId:week, eraKey:setup.eraKey, missions:setup.missions, claimed:{}, badges:0, totalBadges:0, totalClaims:0, cacheClaims:0, metaClaimed:false, metaClaims:0, history:[], research:{}, bought:{}, erasMastered:{}, maxThreat:0 };
   }
   if (!account.timewalking) account.timewalking = {};
   const tw = account.timewalking;
@@ -173,7 +222,12 @@ function ensureTimewalkingState() {
   if (typeof tw.totalClaims !== 'number') tw.totalClaims = 0;
   if (typeof tw.cacheClaims !== 'number') tw.cacheClaims = 0;
   if (typeof tw.metaClaimed !== 'boolean') tw.metaClaimed = false;
+  if (typeof tw.metaClaims !== 'number') tw.metaClaims = 0;
   if (!Array.isArray(tw.history)) tw.history = [];
+  if (!tw.research || typeof tw.research !== 'object') tw.research = {};
+  if (!tw.bought || typeof tw.bought !== 'object') tw.bought = {};
+  if (!tw.erasMastered || typeof tw.erasMastered !== 'object') tw.erasMastered = {};
+  if (typeof tw.maxThreat !== 'number') tw.maxThreat = 0;
   const week = timewalkingWeekId();
   if (tw.weekId !== week || !tw.missions.length) {
     tw.history.unshift({
@@ -182,6 +236,7 @@ function ensureTimewalkingState() {
       completed:Object.keys(tw.claimed || {}).length,
       badges:tw.badges || 0,
       caches:tw.cacheClaims || 0,
+      mastered:!!tw.metaClaimed,
     });
     tw.history = tw.history.slice(0, 6);
     const setup = createTimewalkingMissions(week);
@@ -213,7 +268,11 @@ function isTimewalkingDungeon(dgOrKey) {
 function timewalkingThreatLevel() {
   const tw = ensureTimewalkingState();
   const completed = Object.keys(tw.claimed || {}).length + (tw.metaClaimed ? 2 : 0);
-  return Math.max(0, Math.min(12, completed * 2 + Math.floor((tw.cacheClaims || 0) * 1.5)));
+  const research = timewalkingResearchTotal();
+  const bought = timewalkingCollectionCount();
+  const meta = timewalkingMetaClaimCount();
+  const eras = timewalkingEraMasteryCount();
+  return Math.max(0, Math.min(20, completed * 2 + Math.floor((tw.cacheClaims || 0) * 1.5) + research + bought + meta + eras));
 }
 
 function timewalkingFeaturedKeys() {
@@ -232,6 +291,78 @@ function timewalkingRewardText(r) {
   if (r.badges) parts.push(`${r.badges}🪙`);
   if (r.title) parts.push(`称号「${r.title}」`);
   return parts.join(' ');
+}
+
+function timewalkingResearchCost(def, lvl) {
+  return def.baseCost * (lvl + 1);
+}
+
+function timewalkingResearchLevel(key) {
+  return ensureTimewalkingState().research?.[key] || 0;
+}
+
+function timewalkingResearchTotal() {
+  return Object.values(ensureTimewalkingState().research || {}).reduce((sum, n) => sum + (n || 0), 0);
+}
+
+function timewalkingCollectionCount() {
+  return Object.keys(ensureTimewalkingState().bought || {}).length;
+}
+
+function timewalkingMetaClaimCount() {
+  return ensureTimewalkingState().metaClaims || 0;
+}
+
+function timewalkingEraMasteryCount() {
+  const eras = ensureTimewalkingState().erasMastered || {};
+  return Object.keys(eras).filter(key => (eras[key] || 0) > 0).length;
+}
+
+function timewalkingRecordThreat() {
+  const tw = ensureTimewalkingState();
+  tw.maxThreat = Math.max(tw.maxThreat || 0, timewalkingThreatLevel());
+}
+
+function timewalkingBuyResearch(key) {
+  const tw = ensureTimewalkingState();
+  const def = TIMEWALKING_RESEARCH.find(x => x.key === key);
+  if (!def) return false;
+  const cur = timewalkingResearchLevel(key);
+  if (cur >= def.max) { log('该时序研究已满级', 'info'); return false; }
+  const cost = timewalkingResearchCost(def, cur);
+  if ((tw.badges || 0) < cost) { log(`时光徽记不足,需要 ${cost}`, 'bad'); return false; }
+  tw.badges -= cost;
+  tw.research[key] = cur + 1;
+  const acc = (typeof accEns === 'function') ? accEns() : account;
+  acc.permanentStats = acc.permanentStats || {};
+  for (const [stat, gain] of Object.entries(def.gain || {})) acc.permanentStats[stat] = (acc.permanentStats[stat] || 0) + gain;
+  if (typeof recomputeStats === 'function') recomputeStats();
+  timewalkingRecordThreat();
+  if (typeof progressionCheckAch === 'function') progressionCheckAch();
+  if (typeof markDirty === 'function') markDirty('events', 'hero', 'progression');
+  log(`🧪 完成时序研究「${def.name}」Lv.${cur + 1} · -${cost}时光徽记`, 'legend');
+  return true;
+}
+
+function timewalkingCollectionOwned(key) {
+  return !!ensureTimewalkingState().bought?.[key];
+}
+
+function timewalkingBuyCollection(key) {
+  const tw = ensureTimewalkingState();
+  const def = TIMEWALKING_COLLECTIONS.find(x => x.key === key);
+  if (!def) return false;
+  if (timewalkingCollectionOwned(key)) { log('该时光收藏已获得', 'info'); return false; }
+  if ((tw.badges || 0) < def.cost) { log(`时光徽记不足,需要 ${def.cost}`, 'bad'); return false; }
+  tw.badges -= def.cost;
+  tw.bought[key] = Date.now();
+  if (def.type === 'mount' && typeof mountGrant === 'function') mountGrant(def.rewardKey);
+  if (def.type === 'title' && typeof unlockTitle === 'function') unlockTitle(def.rewardKey, false);
+  timewalkingRecordThreat();
+  if (typeof progressionCheckAch === 'function') progressionCheckAch();
+  if (typeof markDirty === 'function') markDirty('events', 'hero', 'progression', 'mount');
+  log(`🛒 购入时光收藏「${def.name}」 · -${def.cost}时光徽记`, 'legend');
+  return true;
 }
 
 function timewalkingEnemyAffixFor(dg) {
@@ -352,6 +483,9 @@ function claimTimewalkingMission(id) {
   tw.totalClaims = (tw.totalClaims || 0) + 1;
   const bossName = mission.type === 'worldBoss' ? timewalkingWorldBossName(mission.key) : timewalkingDungeonFinalBoss(mission.key);
   const item = grantTimewalkingReward(mission.reward, mission.key, bossName);
+  timewalkingRecordThreat();
+  if (typeof progressionCheckAch === 'function') progressionCheckAch();
+  if (typeof markDirty === 'function') markDirty('events', 'hero', 'inventory', 'progression');
   log(`🕰️ 领取时光漫游路线「${mission.name}」· ${timewalkingRewardText(mission.reward)}${item ? ` · ${item.name}` : ''}`, 'legend');
   return true;
 }
@@ -363,9 +497,14 @@ function claimTimewalkingMeta() {
   if (!allDone) { log('仍有时光漫游路线未完成', 'bad'); return false; }
   tw.metaClaimed = true;
   const era = timewalkingEra();
+  tw.metaClaims = (tw.metaClaims || 0) + 1;
+  tw.erasMastered[era.key] = (tw.erasMastered[era.key] || 0) + 1;
   const raidMission = tw.missions.find(m => m.type === 'raidKey');
   const reward = { gold:520000, gem:90, honor:4200, essence:88, badges:10, title:'时序战团老兵' };
   const item = grantTimewalkingReward(reward, raidMission?.key || era.lootFallback, timewalkingDungeonFinalBoss(raidMission?.key || era.lootFallback), { legendary:true });
+  timewalkingRecordThreat();
+  if (typeof progressionCheckAch === 'function') progressionCheckAch();
+  if (typeof markDirty === 'function') markDirty('events', 'hero', 'inventory', 'progression');
   log(`🌠 领取时光漫游总奖励 · ${timewalkingRewardText(reward)}${item ? ` · ${item.name}` : ''}`, 'legend');
   return true;
 }
@@ -382,6 +521,9 @@ function exchangeTimewalkingCache() {
   const targetKey = tw.missions.find(m => m.type === 'raidKey')?.key || era.lootFallback;
   const reward = { gold:240000, gem:36, honor:1800, essence:46, badges:0 };
   const item = grantTimewalkingReward(reward, targetKey, timewalkingDungeonFinalBoss(targetKey), { legendary:Math.random() < (timewalkingBrokerActive() ? 0.28 : 0.16) });
+  timewalkingRecordThreat();
+  if (typeof progressionCheckAch === 'function') progressionCheckAch();
+  if (typeof markDirty === 'function') markDirty('events', 'hero', 'inventory', 'progression');
   log(`📦 打开时光漫游宝箱 · ${timewalkingRewardText(reward)}${item ? ` · ${item.name}` : ''}`, 'legend');
   return true;
 }
@@ -395,6 +537,60 @@ function renderTimewalkingSub() {
   const ready = tw.missions.filter(m => !tw.claimed[m.id] && (m.progress || 0) >= (m.goal || 1)).length;
   const allDone = tw.missions.every(m => (m.progress || 0) >= (m.goal || 1));
   const broker = timewalkingBrokerActive();
+  const researchTotal = timewalkingResearchTotal();
+  const collectionTotal = timewalkingCollectionCount();
+  const metaTotal = timewalkingMetaClaimCount();
+  const eraMastered = timewalkingEraMasteryCount();
+  const researchCards = TIMEWALKING_RESEARCH.map(def => {
+    const cur = timewalkingResearchLevel(def.key);
+    const maxed = cur >= def.max;
+    const cost = timewalkingResearchCost(def, cur);
+    const can = !maxed && (tw.badges || 0) >= cost;
+    const gainText = Object.entries(def.gain || {}).map(([stat, val]) => typeof fmtMod === 'function' ? fmtMod(stat, val) : `${stat}+${val}`).join(' · ');
+    return `<div class="timewalking-store-card ${maxed ? 'claimed' : (can ? 'ready' : '')}">
+      <div class="timewalking-head">
+        <span class="timewalking-icon">${def.icon}</span>
+        <div><b>${def.name}</b><div class="muted" style="font-size:10px">${def.desc}</div></div>
+      </div>
+      <div class="muted" style="font-size:10px;margin-top:6px">当前 ${cur}/${def.max} · 每级 ${gainText}</div>
+      <div class="timewalking-foot">
+        <span class="muted" style="font-size:10px">${maxed ? '已满级' : `${cost}🪙`}</span>
+        <button class="${can ? 'gold' : ''}" data-action="buytimewalkingresearch" data-key="${def.key}" ${can ? '' : 'disabled'}>${maxed ? '已满' : '研究'}</button>
+      </div>
+    </div>`;
+  }).join('');
+  const collectionCards = TIMEWALKING_COLLECTIONS.map(def => {
+    const owned = timewalkingCollectionOwned(def.key);
+    const can = !owned && (tw.badges || 0) >= def.cost;
+    return `<div class="timewalking-store-card ${owned ? 'claimed' : (can ? 'ready' : '')}">
+      <div class="timewalking-head">
+        <span class="timewalking-icon">${def.icon}</span>
+        <div><b>${def.name}</b><div class="muted" style="font-size:10px">${def.desc}</div></div>
+      </div>
+      <div class="timewalking-foot">
+        <span class="muted" style="font-size:10px">${owned ? '已收集' : `${def.cost}🪙`}</span>
+        <button class="${can ? 'gold' : ''}" data-action="buytimewalkingcollection" data-key="${def.key}" ${can ? '' : 'disabled'}>${owned ? '已获得' : '兑换'}</button>
+      </div>
+    </div>`;
+  }).join('');
+  const atlasCards = TIMEWALKING_ERAS.map(def => {
+    const active = def.key === era.key;
+    const mastered = tw.erasMastered?.[def.key] || 0;
+    const cls = active ? 'ready' : (mastered ? 'claimed' : '');
+    const tag = active ? '本周轮值' : (mastered ? `已精通 ${mastered} 次` : '未精通');
+    return `<div class="timewalking-store-card ${cls}">
+      <div class="timewalking-head">
+        <span class="timewalking-icon">${def.icon}</span>
+        <div><b>${def.name}</b><div class="muted" style="font-size:10px">${def.desc}</div></div>
+      </div>
+      <div class="muted" style="font-size:10px;margin-top:6px">${def.dungeons.map(timewalkingDungeonName).join(' · ')}</div>
+      <div class="muted" style="font-size:10px;margin-top:3px">团本 ${def.raids.map(timewalkingDungeonName).join(' · ')} · 世界Boss ${timewalkingWorldBossName(def.worldBoss)}</div>
+      <div class="timewalking-foot">
+        <span class="muted" style="font-size:10px">${tag}</span>
+        <span class="muted" style="font-size:10px;color:${def.color}">${def.short}</span>
+      </div>
+    </div>`;
+  }).join('');
   const cards = tw.missions.map(m => {
     const done = (m.progress || 0) >= (m.goal || 1);
     const claimedMission = !!tw.claimed[m.id];
@@ -425,6 +621,8 @@ function renderTimewalkingSub() {
       <span>累计路线 <b>${tw.totalClaims || 0}</b></span>
       <span>累计徽记 <b>${tw.totalBadges || 0}</b></span>
       <span>宝箱 <b>${tw.cacheClaims || 0}</b></span>
+      <span>周终总奖励 <b>${metaTotal}</b></span>
+      <span>精通时代 <b>${eraMastered}</b></span>
     </div>
     <div class="timewalking-note">${era.desc} 本周地下城: ${era.dungeons.map(timewalkingDungeonName).join(' · ')} · 团本池: ${era.raids.map(timewalkingDungeonName).join(' · ')}。被轮值点名的旧时代内容会同步变强,避免高等级角色直接平推。</div>
     <div class="timewalking-grid">${cards}</div>
@@ -432,6 +630,16 @@ function renderTimewalkingSub() {
       <button class="${allDone && !tw.metaClaimed ? 'gold' : ''}" data-action="claimtimewalkingmeta" ${allDone && !tw.metaClaimed ? '' : 'disabled'}>${tw.metaClaimed ? '总奖励已领' : '领取周终总奖励'}</button>
       <button class="${(tw.badges || 0) >= TIMEWALKING_CACHE_COST ? 'gold' : ''}" data-action="exchangetimewalking" ${(tw.badges || 0) >= TIMEWALKING_CACHE_COST ? '' : 'disabled'}>时光宝箱 ${TIMEWALKING_CACHE_COST} 徽记</button>
     </div>
+    <div class="timewalking-hero" style="margin-top:14px;background-image:linear-gradient(90deg, rgba(8,12,24,.92), rgba(8,12,24,.48)), url('${TIMEWALKING_ATLAS_BANNER}')">
+      <div class="timewalking-title">🗺️ 时序图谱</div>
+      <div class="timewalking-text">已解锁研究 <b>${researchTotal}</b> 层 · 已收集 <b>${collectionTotal}</b> 件时光收藏 · 最高时序压力 <b>${tw.maxThreat || threat}</b>。你每把一条旧时代航线推到精通,对应地下城、团本与世界Boss都会继续变强。</div>
+    </div>
+    <div class="timewalking-store-title">🗺️ 时序图谱</div>
+    <div class="timewalking-grid">${atlasCards}</div>
+    <div class="timewalking-store-title">🧪 时序研究</div>
+    <div class="timewalking-grid">${researchCards}</div>
+    <div class="timewalking-store-title">🛒 时光商人</div>
+    <div class="timewalking-grid">${collectionCards}</div>
     ${hist ? `<div class="timewalking-history">${hist}</div>` : ''}
   </div>`;
 }
@@ -534,13 +742,15 @@ function renderTimewalkingSub() {
   }
 
   document.addEventListener('click', e => {
-    const btn = e.target.closest && e.target.closest('button[data-action^="claimtimewalking"],button[data-action="exchangetimewalking"]');
+    const btn = e.target.closest && e.target.closest('button[data-action^="claimtimewalking"],button[data-action="exchangetimewalking"],button[data-action="buytimewalkingresearch"],button[data-action="buytimewalkingcollection"]');
     if (!btn) return;
     e.preventDefault();
     e.stopPropagation();
     if (btn.dataset.action === 'claimtimewalking') claimTimewalkingMission(btn.dataset.id);
     else if (btn.dataset.action === 'claimtimewalkingmeta') claimTimewalkingMeta();
     else if (btn.dataset.action === 'exchangetimewalking') exchangeTimewalkingCache();
+    else if (btn.dataset.action === 'buytimewalkingresearch') timewalkingBuyResearch(btn.dataset.key);
+    else if (btn.dataset.action === 'buytimewalkingcollection') timewalkingBuyCollection(btn.dataset.key);
     if (typeof renderEvents === 'function') renderEvents();
   }, true);
 })();

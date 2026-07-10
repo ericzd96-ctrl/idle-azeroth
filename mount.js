@@ -39,6 +39,9 @@ const MOUNTS = [
   { key:'raszageth_stormwing', name:'莱萨杰丝风暴之翼', icon:'🌩️', tier:'legend', mod:{spdPct:23, atkPct:17, hpPct:12, haste:8, mastery:12}, src:'世界Boss: 莱萨杰丝·风暴化身(极低概率)' },
   { key:'shadowpoint_skyrazor', name:'影点裂轨天刃', icon:'🌑', tier:'legend', mod:{spdPct:23, atkPct:18, hpPct:12, vers:8, mastery:12}, src:'世界Boss: 影点总督维克席斯(极低概率)' },
   { key:'shandorah_starweave', name:'沙恩多拉星纱翔兽', icon:'🌠', tier:'legend', mod:{spdPct:24, atkPct:18, hpPct:14, haste:8, mastery:14}, src:'世界Boss: 群星占相者诺维萨(极低概率)' },
+  { key:'bronze_time_drake', name:'青铜时序幼龙', icon:'🐉', tier:'epic', mod:{spdPct:18, atkPct:8, hpPct:8, mastery:6}, src:'时光漫游商人 / 20时光徽记' },
+  { key:'raven_lord_redux', name:'时序乌鸦之王', icon:'🦅', tier:'legend', mod:{spdPct:21, atkPct:12, hpPct:10, mastery:10, dropMult:8}, src:'时光漫游商人 / 34时光徽记' },
+  { key:'infinite_timereaver', name:'无尽时空掠夺者', icon:'🕰️', tier:'legend', mod:{spdPct:22, atkPct:14, hpPct:12, defPct:6, mastery:12}, src:'时光漫游商人 / 48时光徽记' },
   // 新增:接入 endgame 系统(大秘境/竞技场/巅峰)—— mod 只用 atk/hp/def/spd/mastery(crit/critd/leech/vers 会被 spd_tuning 从 MOUNTS 剥离)
   { key:'warbear',      name:'板甲战熊',   icon:'🐻', tier:'rare',   mod:{spdPct:12, hpPct:8, defPct:5},            src:'竞技场 大师段位' },
   { key:'felRaptor',    name:'魔誓迅猛龙', icon:'😈', tier:'epic',   mod:{spdPct:15, atkPct:10, mastery:6},          src:'大秘境 +8 通关' },
