@@ -1227,6 +1227,36 @@ const MAPS = [
       passive:{atkBonus:0.35,critChance:0.28,dmgReduction:0.22,dodgeChance:0.16,leech:0.1,stunChance:0.16,
       tricks:[{name:"时间回卷",icon:"⏳",desc:"立即回复25%最大生命",healPct:0.25},{name:"静止力场",icon:"🛡️",desc:"接下来5秒防御提升50%",defBuff:5},{name:"命运重击",icon:"💥",desc:"下一次攻击造成双倍且必定暴击",nextDouble:1,critBuff:5}] },
       skills:[{name:'时流断裂',icon:'⏳',desc:'9倍奥术伤害+沉默',type:'dmg',mul:9,silence:2000,manaDrain:75,castTime:2.8},{name:'永恒龙息',icon:'🐲',desc:'10倍范围伤害+灼烧',type:'dmg',mul:10,aoe:true,dot:true,weaken:true,castTime:3.8},{name:'命运枷锁',icon:'🔗',desc:'10倍伤害+灵魂链接',type:'dmg',mul:10,soulLink:true,fear:true,castTime:3.6},{name:'群星归零',icon:'🌌',desc:'11倍范围终局伤害',type:'dmg',mul:11,aoe:true,decay2:true,brittle:true,castTime:4.8}] } },
+  { key:'dornogal', name:'多恩岛', icon:'🏛️', faction:'卡兹阿加', lvlRange:[88,90],
+    desc:'土灵主城与地心裂隙交错的远征前线,地下堡入口在群山下闪烁',
+    sub:[
+      { name:'多恩诺嘉尔城门', lvl:[88,89], mobs:'🗿土灵守卫|⚒️铸炉学徒|🪨震地构装体|🔮档案看守' },
+      { name:'裂隙矿道', lvl:[89,90], mobs:'🕷️蛛魔斥候|🪲暗壳掘地者|🧿虚空低语者|⚙️失控钻机' },
+    ],
+    boss:{ name:'裂隙执政官哈洛姆', emoji:'🗿', lvl:92, desc:'在多恩岛地下裂隙中苏醒的土灵执政官',
+      passive:{atkBonus:0.38,critChance:0.28,dmgReduction:0.24,dodgeChance:0.14,stunChance:0.18,
+      tricks:[{name:"岩心回响",icon:"🪨",desc:"回复20%生命并提高防御",healPct:0.2,defBuff:5},{name:"矩阵超载",icon:"⚙️",desc:"接下来5秒攻击力提升50%",atkBuff:5},{name:"裂地处决",icon:"💥",desc:"下一次攻击造成双倍且必定暴击",nextDouble:1,critBuff:5}] },
+      skills:[{name:'地心裂击',icon:'🪨',desc:'10倍伤害+破甲',type:'dmg',mul:10,sunder:true,brittle:true,castTime:3.2},{name:'泰坦封锁',icon:'🔒',desc:'10倍范围伤害+沉默',type:'dmg',mul:10,aoe:true,silence:2100,manaDrain:80,castTime:3.8},{name:'裂隙坍塌',icon:'🌀',desc:'11倍范围伤害+眩晕',type:'dmg',mul:11,aoe:true,stun:1800,decay2:true,castTime:4.4}] } },
+  { key:'hallowfall', name:'陨圣峪', icon:'✨', faction:'卡兹阿加', lvlRange:[90,92],
+    desc:'永燃水晶照亮的地下苍穹,圣焰军团在黑暗浪潮前筑起防线',
+    sub:[
+      { name:'圣焰修院', lvl:[90,91], mobs:'✝️圣焰侍僧|🛡️阿拉希骑士|🔥信标守卫|🕯️烛光祭司' },
+      { name:'暗潮海岸', lvl:[91,92], mobs:'🦑虚空爪牙|🌑暗潮信徒|🦀深渊甲壳兽|👁️低语浮眼' },
+    ],
+    boss:{ name:'圣焰审判官梅瑞安', emoji:'✝️', lvl:94, desc:'被虚空回声逼至狂热边缘的阿拉希审判官',
+      passive:{atkBonus:0.42,critChance:0.3,dmgReduction:0.25,dodgeChance:0.15,leech:0.08,stunChance:0.18,
+      tricks:[{name:"圣焰护壁",icon:"🛡️",desc:"回复20%生命且接下来5秒防御+50%",healPct:0.2,defBuff:5},{name:"狂热祷言",icon:"🙏",desc:"接下来5秒攻击+40%且吸血15%",atkBuff:5,leechBuff:5},{name:"审判专注",icon:"🎯",desc:"接下来5秒必定暴击",critBuff:5}] },
+      skills:[{name:'圣焰裁决',icon:'🔥',desc:'10倍神圣火焰伤害+灼烧',type:'dmg',mul:10,dot:true,brittle:true,castTime:3.1},{name:'光晕震爆',icon:'✨',desc:'11倍范围伤害+沉默',type:'dmg',mul:11,aoe:true,silence:2200,weaken:true,castTime:4},{name:'信标终判',icon:'☄️',desc:'12倍范围终局伤害',type:'dmg',mul:12,aoe:true,alwaysCrit:true,fear:1800,castTime:4.8}] } },
+  { key:'azj_kahet', name:"艾基-卡赫特", icon:'🕸️', faction:'卡兹阿加', lvlRange:[92,95],
+    desc:'蛛魔帝国的黑暗王廷,虚空丝线从宫殿深处牵动每一场战斗',
+    sub:[
+      { name:'纺丝城区', lvl:[92,93], mobs:'🕷️蛛魔纺丝者|🧵织网祭司|🪲暗壳卫士|🌑虚空幼体' },
+      { name:'尼鲁巴尔王廷', lvl:[94,95], mobs:'👑王廷禁卫|👁️低语议员|🕸️蛛网巨像|🦑虚空织命者' },
+    ],
+    boss:{ name:'王廷织命者夏伊洛', emoji:'🕸️', lvl:97, desc:'安苏雷克女王麾下最危险的命运编织者',
+      passive:{atkBonus:0.48,critChance:0.32,dmgReduction:0.28,dodgeChance:0.18,leech:0.12,stunChance:0.2,
+      tricks:[{name:"命运织网",icon:"🕸️",desc:"接下来5秒防御提升50%且吸血20%",defBuff:5,leechBuff:5},{name:"王廷号令",icon:"👑",desc:"接下来5秒攻击力提升50%",atkBuff:5},{name:"断丝处刑",icon:"🗡️",desc:"下一次攻击造成双倍伤害",nextDouble:1}] },
+      skills:[{name:'蛛网绞杀',icon:'🕸️',desc:'11倍伤害+沉默',type:'dmg',mul:11,silence:2300,cripple:true,castTime:3.2},{name:'虚空毒潮',icon:'🌑',desc:'12倍范围伤害+瘟疫',type:'dmg',mul:12,aoe:true,plague:true,dot:true,castTime:4.1},{name:'王廷断命',icon:'👑',desc:'13倍终局伤害+恐惧',type:'dmg',mul:13,alwaysCrit:true,fear:2200,soulLink:true,castTime:5}] } },
 ];
 
 const RARE_ELITE_SKILLSETS = {
@@ -1393,7 +1423,10 @@ const MAP_RARE_ELITE_SEEDS = {
   waking:{ name:'熔火黑曜幼龙', emoji:'🐲', theme:'dragon', desc:'从觉醒海岸火山缝隙中苏醒的黑曜幼龙。' },
   ohnahran:{ name:'风誓雷蹄', emoji:'⚡', theme:'storm', desc:'在欧恩哈拉风暴中奔袭的雷蹄巨兽。' },
   azure_span:{ name:'魔网霜鳞', emoji:'💠', theme:'arcane', desc:'被碧蓝魔网改造的霜鳞猎手。' },
-  thaldraszus:{ name:'永恒裂时者', emoji:'⏳', theme:'arcane', desc:'在时光汇流中反复出现的永恒龙裔刺客。' }
+  thaldraszus:{ name:'永恒裂时者', emoji:'⏳', theme:'arcane', desc:'在时光汇流中反复出现的永恒龙裔刺客。' },
+  dornogal:{ name:'裂隙钻探者格隆', emoji:'⚙️', theme:'brute', desc:'吞吃泰坦矿脉后失控的巨型钻探构装体。' },
+  hallowfall:{ name:'暗潮烛噬者', emoji:'🕯️', theme:'shadow', desc:'专门猎杀圣焰守夜人的虚空潜伏者。' },
+  azj_kahet:{ name:'王庭断丝者', emoji:'🕸️', theme:'poison', desc:'安苏雷克王廷派出的蛛魔处刑者。' }
 };
 
 function buildRareElites() {
@@ -3863,6 +3896,21 @@ const WORLD_BOSS_SKILLSETS = {
       {name:'暴风唤醒', icon:'🪽', desc:'召唤2名风暴元素并提升攻击', type:'support', cd:20, castTime:3.2, summonCount:2, summonTheme:'elemental', atkBuffSecs:7, atkBuffPct:28},
       {name:'化身崩雷', icon:'💥', desc:'19.5倍范围伤害，恐惧、沉默并引发衰亡', type:'dmg', mul:19.5, castTime:5.2, aoe:true, fear:1900, silence:2200, decay2:true, brittle:true}
     ]
+  },
+  xal_atath: {
+    passive:{ dmgReduction:0.62, critChance:0.38, dodgeChance:0.22, atkBonus:0.56, leech:0.16, stunChance:0.24 },
+    supportCount:7,
+    atkInterval:1020,
+    instantCastChance:0.16,
+    skills:[
+      {name:'黑血穿刺', icon:'🩸', desc:'18倍暗影伤害，撕裂防御', type:'dmg', mul:18, castTime:2.5, sunder:true, plague:true, brittle:true},
+      {name:'虚空丝线', icon:'🕸️', desc:'18.5倍范围伤害，沉默并束缚', type:'dmg', mul:18.5, castTime:3.5, aoe:true, silence:2400, cripple:true, soulLink:true},
+      {name:'低语升格', icon:'👁️', desc:'获得护盾，提升攻击/暴击/减伤', type:'support', cd:16, castTime:2.8, shieldPct:0.24, atkBuffSecs:9, atkBuffPct:34, critBuffSecs:9, critBuffPct:38, drBuffSecs:9, drBuffPct:0.22},
+      {name:'王宫献祭', icon:'👑', desc:'19倍伤害，吸取资源并恐惧', type:'dmg', mul:19, castTime:3.8, manaDrain:110, fear:2300, soulDrain:true},
+      {name:'蛛魔唤令', icon:'🕷️', desc:'召唤3名蛛魔禁卫并提升攻速', type:'support', cd:20, castTime:3.4, summonCount:3, summonTheme:'spider', spdBuffSecs:8, spdBuffPct:32},
+      {name:'现实裂口', icon:'🌀', desc:'20倍范围伤害，镜像错位并衰亡', type:'dmg', mul:20, castTime:4.6, aoe:true, mirror:true, decay2:true, silence:2200},
+      {name:'虚空终幕', icon:'🌌', desc:'22倍范围终局伤害', type:'dmg', mul:22, castTime:5.8, aoe:true, plague:true, fear:2400, silence:2400, soulLink:true, alwaysCrit:true, brittle:true}
+    ]
   }
 };
 const RAID_EXTRA_BOSSES = {
@@ -4620,6 +4668,7 @@ function normalizeWorldBossSkillsets(){
     alakir:{ name:'奥拉基尔·风暴王座', lvl:86, final:true },
     lei_shen:{ name:'雷神·雷霆之王', lvl:88, final:true },
     argus_unmaker:{ name:'阿古斯·寂灭者', lvl:90, final:true },
+    xal_atath:{ name:'虚空先驱萨拉塔斯', lvl:96, final:true },
   };
   for(const [key, boss] of Object.entries(WORLD_BOSS_SKILLSETS)){
     const info = meta[key] || { name:key, lvl:60, final:false };
@@ -5196,6 +5245,93 @@ function extendDungeonCatalog(){
           dmgP('末日烈焰','☄️',7,0.3,{ aoe:true, dot:true, fear:2100, silence:2100, brittle:true, alwaysCrit:true, cd:16 })
         ] }
       ]
+    },
+    {
+      key:'stonevault', name:'矶石宝库', icon:'🏛️', reqLvl:88, waves:10, desc:'多恩岛地底的泰坦宝库,土灵守卫与失控机械共同保护沉睡矩阵',
+      bosses:[
+        { name:'掌炉者艾里克', emoji:'⚒️', skills:[dmg('熔炉重击','🔨',9.5,{ sunder:true, stun:1600 }), dmgP('熔炉过载','🔥',5.5,0.5,{ aoe:true, dot:true, brittle:true, cd:12 })] },
+        { name:'晶化守卫', emoji:'💠', skills:[dmg('晶体切割','🔷',10,{ brittle:true, manaDrain:65 }), buffP('晶壁重组','🛡️',0.55,'晶体壁垒重组:减伤和防御提升',{ defBuffSecs:12, defBuffPct:45, drBuffSecs:12, drBuffPct:0.2 })] },
+        { name:'机械议长布洛克', emoji:'⚙️', skills:[dmg('钻机齐射','⚙️',10.5,{ aoe:true, silence:1900 }), dmg('齿轮断裂','💥',11,{ stun:1700, cripple:true, brittle:true })] },
+        { name:'虚空矩阵守护者', emoji:'🌀', skills:[
+          dmg('矩阵坍缩','🌀',11.5,{ aoe:true, mirror:true, manaDrain:85 }),
+          dmg('泰坦重置','⏳',12,{ silence:2200, decay2:true, weaken:true }),
+          buffP('守护协议','🛡️',0.6,'启动守护协议:攻击/减伤/暴击提升',{ atkBuffSecs:14, atkBuffPct:42, critBuffSecs:14, critBuffPct:45, drBuffSecs:14, drBuffPct:0.22 }),
+          summonP('矩阵卫士','🤖',0.35,'召唤 2 个矩阵卫士并获得护盾',{ summonCount:2, summonTheme:'construct', shieldPct:0.2 }),
+          dmgP('虚空归档','🌌',6.8,0.3,{ aoe:true, silence:2300, fear:1900, brittle:true, alwaysCrit:true, cd:16 })
+        ] }
+      ]
+    },
+    {
+      key:'prioryflame', name:'圣焰隐修院', icon:'✝️', reqLvl:90, waves:10, desc:'陨圣峪的阿拉希圣焰堡垒,光明与狂热在地下苍穹下爆燃',
+      bosses:[
+        { name:'信标守卫加伦', emoji:'🛡️', skills:[dmg('信标盾击','🛡️',10,{ sunder:true, stun:1600 }), dmg('圣焰回旋','🔥',10.2,{ aoe:true, dot:true })] },
+        { name:'烛光修士艾丹', emoji:'🕯️', skills:[dmg('烛焰诅咒','🕯️',10.5,{ dot:true, weaken:true, silence:1800 }), summonP('唤烛仪式','✨',0.55,'召唤圣焰信徒并提高攻速',{ summonCount:1, summonTheme:'soldier', spdBuffSecs:12, spdBuffPct:24 })] },
+        { name:'圣焰骑士团', emoji:'⚔️', skills:[dmg('列阵冲锋','⚔️',11,{ aoe:true, bleed:true, cripple:true }), dmgP('殉道爆燃','☄️',5.8,0.45,{ aoe:true, dot:true, fear:1700, cd:12 })] },
+        { name:'隐修院长穆普雷', emoji:'✝️', skills:[
+          dmg('神圣烈焰','🔥',12,{ dot:true, brittle:true, silence:2000 }),
+          dmg('圣光审判','✨',12.5,{ aoe:true, weaken:true, manaDrain:85 }),
+          buffP('狂热圣约','🙏',0.6,'圣约狂热:攻击/暴击/吸血提升',{ atkBuffSecs:14, atkBuffPct:44, critBuffSecs:14, critBuffPct:48, leechBuffSecs:14, leechBuffPct:24 }),
+          summonP('圣焰援军','📣',0.35,'召唤 2 名圣焰援军',{ summonCount:2, summonTheme:'soldier', shieldPct:0.18 }),
+          dmgP('阿拉希终判','☄️',7,0.3,{ aoe:true, dot:true, silence:2300, fear:1900, alwaysCrit:true, cd:16 })
+        ] }
+      ]
+    },
+    {
+      key:'nightfall_sanctum', name:'夜落圣所地下堡', icon:'🔒', reqLvl:91, waves:6, delve:true, desc:'短波次地下堡挑战:潜入陨圣峪暗潮据点,用更少波次换取更密集的首领压迫',
+      bosses:[
+        { name:'暗潮钥卫', emoji:'🔒', skills:[dmg('暗潮钥击','🗝️',10.5,{ silence:1900, sunder:true }), dmg('黑水喷涌','🌑',11,{ aoe:true, plague:true, dot:true })] },
+        { name:'低语宝箱', emoji:'📦', skills:[dmg('贪婪低语','👁️',11.5,{ fear:1800, soulDrain:true, manaDrain:75 }), buffP('宝箱反噬','💜',0.5,'宝箱反噬:攻击与减伤提升',{ atkBuffSecs:12, atkBuffPct:40, drBuffSecs:12, drBuffPct:0.2 })] },
+        { name:'夜落看守者', emoji:'🌑', skills:[
+          dmg('夜落镰击','🌑',12,{ bleed:true, brittle:true }),
+          dmg('虚空封门','🔒',12.5,{ aoe:true, silence:2200, mirror:true }),
+          summonP('暗潮伏兵','👥',0.45,'召唤 2 名伏兵并提高暴击',{ summonCount:2, summonTheme:'void', critBuffSecs:12, critBuffPct:45 }),
+          dmgP('地下堡崩塌','🌀',7,0.3,{ aoe:true, decay2:true, fear:1900, alwaysCrit:true, cd:15 })
+        ] }
+      ]
+    },
+    {
+      key:'earthcrawl_mines', name:'地匍矿洞地下堡', icon:'⚒️', reqLvl:89, waves:6, delve:true, desc:'多恩岛地下的蛛网矿坑,矿车轨道与蛛魔巢穴交错,适合短线高压挑战',
+      bosses:[
+        { name:'蛛网矿工队', emoji:'🕷️', skills:[dmg('蛛网矿镐','⚒️',10.2,{ bleed:true, sunder:true }), dmg('毒丝喷溅','🕸️',10.8,{ aoe:true, plague:true, cripple:true })] },
+        { name:'工头皮夫克', emoji:'⚙️', skills:[dmg('钻机冲撞','⚙️',11.2,{ stun:1700, brittle:true }), buffP('超载矿灯','💡',0.5,'矿灯超载:攻击与暴击提升',{ atkBuffSecs:12, atkBuffPct:38, critBuffSecs:12, critBuffPct:42 })] },
+        { name:'地匍蛛母', emoji:'🕷️', skills:[
+          dmg('地匍毒咬','☣️',11.8,{ plague:true, dot:true, brittle:true }),
+          dmg('矿洞塌方','🪨',12.2,{ aoe:true, stun:1800, decay2:true }),
+          summonP('蛛卵孵化','🥚',0.48,'召唤 2 只蛛魔幼体并获得护盾',{ summonCount:2, summonTheme:'spider', shieldPct:0.18 }),
+          dmgP('蛛网封矿','🕸️',6.8,0.32,{ aoe:true, silence:2100, cripple:true, alwaysCrit:true, cd:15 })
+        ] }
+      ]
+    },
+    {
+      key:'fungal_folly', name:'真菌之愚地下堡', icon:'🍄', reqLvl:90, waves:6, delve:true, desc:'充满发光孢子的荒诞地下堡,孢子云会让短波次战斗变得更凶险',
+      bosses:[
+        { name:'孢子看守', emoji:'🍄', skills:[dmg('孢子鞭笞','🌿',10.4,{ dot:true, weaken:true }), dmg('菌雾爆裂','☣️',11,{ aoe:true, plague:true })] },
+        { name:'蘑菇术士维洛', emoji:'🧙', skills:[dmg('菌丝诅咒','💜',11.3,{ silence:1900, manaDrain:70, soulDrain:true }), summonP('唤醒蘑菇人','🍄',0.52,'召唤蘑菇仆从并提高攻速',{ summonCount:2, summonTheme:'plant', spdBuffSecs:12, spdBuffPct:24 })] },
+        { name:'菌潮巨怪', emoji:'🧌', skills:[
+          dmg('腐殖重拳','👊',12,{ sunder:true, stun:1700 }),
+          dmg('孢子潮汐','☣️',12.4,{ aoe:true, plague:true, dot:true }),
+          buffP('真菌再生','🌿',0.55,'真菌再生:回复并提高减伤',{ healPct:0.18, drBuffSecs:12, drBuffPct:0.2, defBuffSecs:12, defBuffPct:38 }),
+          dmgP('愚者盛放','🍄',6.9,0.32,{ aoe:true, fear:1900, silence:2100, brittle:true, cd:15 })
+        ] }
+      ]
+    },
+    {
+      key:'nerubar', name:"尼鲁巴尔王宫", icon:'🕸️', type:'raid', reqLvl:92, waves:14, desc:'艾基-卡赫特的蛛魔帝国王宫,安苏雷克女王用黑血与虚空丝线编织终局试炼',
+      bosses:[
+        { name:'乌格拉克斯', emoji:'🪲', skills:[dmg('贪食冲锋','🪲',11,{ bleed:true, cripple:true }), dmgP('暴食震荡','💥',5.8,0.5,{ aoe:true, stun:1700, brittle:true, cd:12 })] },
+        { name:'血缚恐魔', emoji:'🩸', skills:[dmg('黑血喷洒','🩸',11.2,{ plague:true, dot:true, weaken:true })] },
+        { name:'席克兰', emoji:'🗡️', skills:[dmg('王廷斩线','🗡️',11.5,{ sunder:true, silence:1900 }), dmg('相位处刑','🌀',12,{ mirror:true, brittle:true })] },
+        { name:'拉夏南', emoji:'🦅', skills:[dmg('飞翼毒针','🦅',12,{ aoe:true, plague:true, bleed:true }), dmgP('虫群俯冲','🕸️',6,0.45,{ aoe:true, cripple:true, fear:1800, cd:12 })] },
+        { name:'节点女亲王', emoji:'👑', skills:[dmg('节点调谐','💠',12.5,{ manaDrain:90, silence:2100 }), dmg('王廷共振','🌌',13,{ aoe:true, mirror:true, decay2:true })] },
+        { name:'流丝之庭', emoji:'🕸️', skills:[dmg('流丝缠缚','🕸️',13,{ aoe:true, cripple:true, soulLink:true }), summonP('王庭织工','🕷️',0.5,'召唤王庭织工并获得护盾',{ summonCount:2, summonTheme:'spider', shieldPct:0.22 })] },
+        { name:'安苏雷克女王', emoji:'👑', skills:[
+          dmg('女王毒令','👑',14,{ plague:true, dot:true, brittle:true }),
+          dmg('黑血敕令','🩸',14.5,{ aoe:true, silence:2300, manaDrain:95 }),
+          buffP('升格王权','🌌',0.65,'虚空王权升格:攻击/暴击/攻速/减伤提升',{ atkBuffSecs:16, atkBuffPct:52, critBuffSecs:16, critBuffPct:58, spdBuffSecs:16, spdBuffPct:34, drBuffSecs:16, drBuffPct:0.24 }),
+          summonP('王宫禁卫','🕷️',0.42,'召唤 3 名蛛魔禁卫并获得护盾',{ summonCount:3, summonTheme:'spider', shieldPct:0.24 }),
+          dmgP('尼鲁巴尔终幕','🕸️',8,0.3,{ aoe:true, plague:true, fear:2300, silence:2400, soulLink:true, alwaysCrit:true, cd:16 })
+        ] }
+      ]
     }
   ];
 
@@ -5537,7 +5673,43 @@ function extendDungeonCatalog(){
       '织焰巫女':[L('梦火法典','weapon','epic',{atk:2,int:2}),L('炽焰腰带','belt','rare',{def:1,int:1})],
       '暮光化身':[L('暗影裂解指环','ring','epic',{atk:2,vers:1}),L('暮光护腕','gloves','rare',{int:1})],
       '炎魔之王弗拉戈斯':[L('弗拉戈斯的炎魔之锤','weapon','legend',{atk:6,str:4}),L('希望之梦圣甲','armor','legend',{def:5,spi:4}),L('世界树守护头冠','helmet','legend',{def:4,int:3}),L('梦境之心徽记','trinket','legend',{sta:3,spi:3})]
-    }, trash:[L('梦境守护者护肩','shoulder','rare',{atk:1,spi:1}),L('烈焰之地战靴','boots','rare',{agi:1})] }
+    }, trash:[L('梦境守护者护肩','shoulder','rare',{atk:1,spi:1}),L('烈焰之地战靴','boots','rare',{agi:1})] },
+    stonevault: { bosses:{
+      '掌炉者艾里克':[L('掌炉者的炽岩锤','weapon','epic',{atk:3,str:2}),L('炉心护手','gloves','rare',{str:1,sta:1})],
+      '晶化守卫':[L('晶化壁垒徽记','trinket','epic',{def:2,sta:2}),L('晶脉护腿','pants','rare',{hp:1,sta:1})],
+      '机械议长布洛克':[L('布洛克的齿轮权杖','weapon','epic',{atk:3,int:2}),L('议长矩阵指环','ring','rare',{int:1,haste:1})],
+      '虚空矩阵守护者':[L('虚空矩阵长杖','weapon','legend',{atk:5,int:4}),L('泰坦归档胸甲','armor','epic',{def:3,sta:2}),L('裂隙稳定器','trinket','legend',{sta:3,int:3})]
+    }, trash:[L('土灵巡逻护肩','shoulder','rare',{atk:1,sta:1}),L('宝库行者战靴','boots','rare',{str:1})] },
+    prioryflame: { bosses:{
+      '信标守卫加伦':[L('信标守卫战锤','weapon','epic',{atk:3,str:2}),L('圣焰壁垒护肩','shoulder','rare',{def:1,sta:1})],
+      '烛光修士艾丹':[L('烛光圣典','weapon','epic',{atk:3,int:2}),L('修士祷言指环','ring','rare',{spi:1,int:1})],
+      '圣焰骑士团':[L('阿拉希骑枪','weapon','epic',{atk:3,str:2}),L('殉道者护腿','pants','rare',{hp:1,str:1})],
+      '隐修院长穆普雷':[L('穆普雷的圣焰权杖','weapon','legend',{atk:5,int:4}),L('隐修院圣袍','armor','epic',{def:3,spi:2}),L('永燃信标','trinket','legend',{sta:3,spi:3})]
+    }, trash:[L('圣焰侍从护手','gloves','rare',{int:1}),L('阿拉希行军靴','boots','rare',{sta:1})] },
+    nightfall_sanctum: { bosses:{
+      '暗潮钥卫':[L('暗潮钥刃','weapon','epic',{atk:3,agi:2}),L('钥卫锁链腰带','belt','rare',{def:1,agi:1})],
+      '低语宝箱':[L('低语宝箱徽记','trinket','epic',{sta:2,int:2}),L('贪婪之戒','ring','rare',{atk:1,vers:1})],
+      '夜落看守者':[L('夜落镰刀','weapon','legend',{atk:5,agi:4}),L('地下堡暗影胸甲','armor','epic',{def:3,agi:2}),L('看守者的黑钥','trinket','legend',{sta:3,agi:3})]
+    }, trash:[L('夜落护肩','shoulder','rare',{atk:1,agi:1}),L('暗潮潜行靴','boots','rare',{agi:1})] },
+    earthcrawl_mines: { bosses:{
+      '蛛网矿工队':[L('蛛网矿镐','weapon','epic',{atk:3,str:2}),L('矿工缠网护手','gloves','rare',{atk:1,agi:1})],
+      '工头皮夫克':[L('皮夫克的超载灯锤','weapon','epic',{atk:3,str:2}),L('工头齿轮指环','ring','rare',{haste:1,sta:1})],
+      '地匍蛛母':[L('蛛母毒牙战刃','weapon','legend',{atk:5,agi:4}),L('地匍甲壳胸甲','armor','epic',{def:3,sta:2}),L('矿洞蛛丝徽记','trinket','legend',{sta:3,agi:3})]
+    }, trash:[L('矿洞巡行护肩','shoulder','rare',{atk:1,sta:1}),L('蛛网踏行靴','boots','rare',{agi:1})] },
+    fungal_folly: { bosses:{
+      '孢子看守':[L('孢子看守长杖','weapon','epic',{atk:3,int:2}),L('菌雾护腿','pants','rare',{hp:1,spi:1})],
+      '蘑菇术士维洛':[L('维洛的菌丝法典','weapon','epic',{atk:3,int:2}),L('蘑菇术士指环','ring','rare',{int:1,vers:1})],
+      '菌潮巨怪':[L('菌潮巨槌','weapon','legend',{atk:5,str:4}),L('真菌孢子胸甲','armor','epic',{def:3,sta:2}),L('愚者盛放徽记','trinket','legend',{sta:3,int:3})]
+    }, trash:[L('孢子行者腰带','belt','rare',{def:1,spi:1}),L('菌丝软靴','boots','rare',{int:1})] },
+    nerubar: { bosses:{
+      '乌格拉克斯':[L('暴食虫颚战斧','weapon','epic',{atk:3,str:2}),L('王宫甲壳护腿','pants','epic',{hp:2,sta:2})],
+      '血缚恐魔':[L('黑血法典','weapon','epic',{atk:3,int:2}),L('血缚指环','ring','epic',{int:2,vers:1})],
+      '席克兰':[L('斩丝者双刃','weapon','epic',{atk:3,agi:2}),L('相位行者长靴','boots','epic',{atk:2,haste:1})],
+      '拉夏南':[L('拉夏南毒翼弓','weapon','epic',{atk:3,agi:2}),L('虫翼护肩','shoulder','epic',{atk:2,agi:2})],
+      '节点女亲王':[L('节点女亲王权杖','weapon','epic',{atk:3,int:2}),L('节点调谐徽记','trinket','epic',{sta:2,int:2})],
+      '流丝之庭':[L('流丝庭院护手','gloves','epic',{atk:2,agi:2}),L('织命胸甲','armor','epic',{def:3,sta:2})],
+      '安苏雷克女王':[L('安苏雷克的黑血王刃','weapon','legend',{atk:7,agi:5}),L('尼鲁巴尔女王冠冕','helmet','legend',{def:5,int:4}),L('蛛魔帝国胸甲','armor','legend',{def:6,sta:4}),L('黑血王权徽记','trinket','legend',{sta:4,int:4})]
+    }, trash:[L('蛛魔禁卫护肩','shoulder','rare',{atk:1,sta:1}),L('王宫织丝长靴','boots','rare',{agi:1})] }
   };
 
   for (const dg of extraDungeons) ensureDungeon(dg, extraLoot[dg.key]);
@@ -5597,6 +5769,7 @@ const EPIC_RAID_SET_THEME = {
   eternalpalace:{ tier:'T24', name:'永恒王宫', short:'阿萨拉' },
   aberrus:{ tier:'T29', name:'厄苏戈尔', short:'熔铸' },
   amirdrassil:{ tier:'T31', name:'阿米德拉希尔', short:'梦境' },
+  nerubar:{ tier:'T32', name:'尼鲁巴尔王宫', short:'蛛魔' },
 };
 const RAID_PROGRESSION = {
   mc:{ order:1, expansion:'经典旧世', epicIlvl:140 },
@@ -5627,6 +5800,7 @@ const RAID_PROGRESSION = {
   nathria:{ order:26, expansion:'暗影国度', epicIlvl:372 },
   aberrus:{ order:27, expansion:'巨龙时代', epicIlvl:396 },
   amirdrassil:{ order:28, expansion:'巨龙时代', epicIlvl:408 },
+  nerubar:{ order:29, expansion:'地心之战', epicIlvl:424 },
 };
 const EPIC_RAID_SET_LABELS = {
   mc:{

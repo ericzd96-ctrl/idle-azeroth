@@ -3214,7 +3214,8 @@ function applyDungeonBossSpectacleMechanics(now){
     const mechanics = getDungeonBossSpectacleMechanics(bossData);
     if(!mechanics.length) continue;
     if(!mon._spectacleLast) mon._spectacleLast = {};
-    const seed = Math.abs((mon._uid || mon.name || '').split('').reduce((sum, ch) => sum + ch.charCodeAt(0), 0));
+    const seedText = mon._uid != null ? mon._uid : (mon.name || '');
+    const seed = Math.abs(String(seedText).split('').reduce((sum, ch) => sum + ch.charCodeAt(0), 0));
     for(let i = 0; i < mechanics.length; i++){
       const mech = mechanics[i];
       const cd = Math.max(9000, mech.cd || 18000);
@@ -5010,7 +5011,7 @@ function tickBattle(now){
     const _pickSk=_queuedSk||_forcedPhaseSk||_phasePool[bossSkillIdx%Math.max(1,_phasePool.length)];
     const rawCd=(_pickSk&&_pickSk.cd)||10;
     const skillCd=Math.max(2,Math.floor(rawCd*0.42));   // 读条技更频繁:CD压缩58%,但最低2秒间隔
-    if(_allBossSkills.length&&now-lastBossSkill>skillCd*1000){const sk=_pickSk;let castTime=sk.castTime!==undefined?sk.castTime:2;const instantChance=typeof mon.instantCastChance==='number'?mon.instantCastChance:(mon.instantCast?0.35:0);let instant=instantChance>0&&Math.random()<instantChance;if(instant&&isEmpoweredBossCast(sk))instant=false;/* 大伤害/灭团技(蓄力大招)绝不瞬发,必须读条可打断 */if(instant)castTime=0;bossCasting={bossName:mon.bossName,name:sk.name,icon:sk.icon,type:sk.type,heal:sk.heal,healPct:sk.healPct,mul:sk.mul,dotSkill:sk.dotSkill,dotSecs:sk.dotSecs,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,spdBuffSecs:sk.spdBuffSecs,spdBuffPct:sk.spdBuffPct,atkBuffSecs:sk.atkBuffSecs,atkBuffPct:sk.atkBuffPct,defBuffSecs:sk.defBuffSecs,defBuffPct:sk.defBuffPct,drBuffSecs:sk.drBuffSecs,drBuffPct:sk.drBuffPct,shieldPct:sk.shieldPct,critBuffSecs:sk.critBuffSecs,critBuffPct:sk.critBuffPct,leechBuffSecs:sk.leechBuffSecs,leechBuffPct:sk.leechBuffPct,summonCount:sk.summonCount,summonTheme:sk.summonTheme,aoe:sk.aoe,silence:sk.silence,disarm:sk.disarm,fear:sk.fear,freeze:sk.freeze,cripple:sk.cripple,decay:sk.decay,wither:sk.wither,manaDrain:sk.manaDrain,bomb:sk.bomb,plague:sk.plague,bleed:sk.bleed,brittle:sk.brittle,soulDrain:sk.soulDrain,soulLink:sk.soulLink,revenge:sk.revenge,vulnerable:sk.vulnerable,frenzy:sk.frenzy,decay2:sk.decay2,mirror:sk.mirror,threat:sk.threat,interruptPolicy:sk.interruptPolicy,_empowered:isEmpoweredBossCast(sk),startTime:now,duration:castTime*1000};const _bt=bossCastTargetInfo(sk,now);bossCasting._targetDesc=_bt.desc;bossCasting._target=_bt.target;const _emp=!instant&&isEmpoweredBossCast(sk)&&sk.interruptPolicy!=='none';const _aoeLog=(sk.type!=='heal'&&sk.type!=='buff'&&!sk.summonCount&&typeof sk.mul==='number'&&sk.mul>0)?(sk.aoe?' [🌀群体]':' [🎯单体]'):'';log('💀 '+mon.bossName+(instant?' 瞬发 ':' 开始施放 ')+sk.name+_aoeLog+'!'+(instant?'(无法打断)':(_emp?' ⚡蓄力大招—打断可造成破绽!':'')),'bad');lastBossSkill=now;bossSkillIdx++;}
+    if(_allBossSkills.length&&now-lastBossSkill>skillCd*1000){const sk=_pickSk;let castTime=sk.castTime!==undefined?sk.castTime:2;const instantChance=typeof mon.instantCastChance==='number'?mon.instantCastChance:(mon.instantCast?0.35:0);let instant=instantChance>0&&Math.random()<instantChance;if(instant&&isEmpoweredBossCast(sk))instant=false;/* 大伤害/灭团技(蓄力大招)绝不瞬发,必须读条可打断 */if(instant)castTime=0;bossCasting={casterUid:mon._uid,bossName:mon.bossName||mon.name,name:sk.name,icon:sk.icon,type:sk.type,heal:sk.heal,healPct:sk.healPct,mul:sk.mul,dotSkill:sk.dotSkill,dotSecs:sk.dotSecs,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,spdBuffSecs:sk.spdBuffSecs,spdBuffPct:sk.spdBuffPct,atkBuffSecs:sk.atkBuffSecs,atkBuffPct:sk.atkBuffPct,defBuffSecs:sk.defBuffSecs,defBuffPct:sk.defBuffPct,drBuffSecs:sk.drBuffSecs,drBuffPct:sk.drBuffPct,shieldPct:sk.shieldPct,critBuffSecs:sk.critBuffSecs,critBuffPct:sk.critBuffPct,leechBuffSecs:sk.leechBuffSecs,leechBuffPct:sk.leechBuffPct,summonCount:sk.summonCount,summonTheme:sk.summonTheme,aoe:sk.aoe,silence:sk.silence,disarm:sk.disarm,fear:sk.fear,freeze:sk.freeze,cripple:sk.cripple,decay:sk.decay,wither:sk.wither,manaDrain:sk.manaDrain,bomb:sk.bomb,plague:sk.plague,bleed:sk.bleed,brittle:sk.brittle,soulDrain:sk.soulDrain,soulLink:sk.soulLink,revenge:sk.revenge,vulnerable:sk.vulnerable,frenzy:sk.frenzy,decay2:sk.decay2,mirror:sk.mirror,threat:sk.threat,interruptPolicy:sk.interruptPolicy,_empowered:isEmpoweredBossCast(sk),startTime:now,duration:castTime*1000};const _bt=bossCastTargetInfo(sk,now);bossCasting._targetDesc=_bt.desc;bossCasting._target=_bt.target;const _emp=!instant&&isEmpoweredBossCast(sk)&&sk.interruptPolicy!=='none';const _aoeLog=(sk.type!=='heal'&&sk.type!=='buff'&&!sk.summonCount&&typeof sk.mul==='number'&&sk.mul>0)?(sk.aoe?' [🌀群体]':' [🎯单体]'):'';log('💀 '+(mon.bossName||mon.name)+(instant?' 瞬发 ':' 开始施放 ')+sk.name+_aoeLog+'!'+(instant?'(无法打断)':(_emp?' ⚡蓄力大招—打断可造成破绽!':'')),'bad');lastBossSkill=now;bossSkillIdx++;}
     // BOSS技巧(独立冷却,避免开场和支援技能一起连发)
     const tricks=bossTrickList(bossData).filter(trick => bossTrickAvailable(mon, trick, _hpFrac, now));
     const supportRecently = (mon._lastSupportSkill || 0) > 0 && now - mon._lastSupportSkill < 4500;
@@ -5063,6 +5064,10 @@ function tickBattle(now){
 function onMonsterDeath(mon){
   if(!mon||mon.hp>0)return; // 已经处理过了
   if(state.currentMonsters[0]!==mon)return; // 不是当前怪物,已刷新
+  if(bossCasting && (bossCasting.casterUid === mon._uid || bossCasting.bossName === mon.bossName || bossCasting.bossName === mon.name)){
+    hideBossCastBar();
+    bossCasting = null;
+  }
   // 大秘境词缀:崩裂/血池
   if (mon._affixes) {
     for (const af of mon._affixes) {
@@ -5760,6 +5765,15 @@ function hideBossCastBar(){
   const cb=document.getElementById('boss-cast-bar-wrap');
   if(cb)cb.style.visibility='hidden';
 }
+function bossCastingMonster(cast){
+  if(!cast) return null;
+  const list = state?.currentMonsters || [];
+  if(cast.casterUid != null){
+    const exact = list.find(m => m && m.hp > 0 && m._uid === cast.casterUid);
+    if(exact) return exact;
+  }
+  return list.find(m => m && m.hp > 0 && m.isBoss && (!cast.bossName || m.bossName === cast.bossName || m.name === cast.bossName)) || null;
+}
 /* 切换角色或重置时调用,清理 combat 模块变量,避免下个角色继承上一个的状态 */
 function resetCombatState(){
   casting=null;
@@ -5932,7 +5946,7 @@ function tickCast(now){
     $('boss-b-cast').style.width=pct+'%';
     if(elapsed>=bossCasting.duration){
       hideBossCastBar();
-      const bc=bossCasting;bossCasting=null;const mon=state.currentMonsters[0];if(!mon||mon.hp<=0)return;
+      const bc=bossCasting;bossCasting=null;const mon=bossCastingMonster(bc);if(!mon||mon.hp<=0)return;
       const critRate = monsterCritRate(mon, now);
       if(bc.type==='heal'){const h=bossSkillHealAmount(mon, bc.heal||0.2);mon.hp=Math.min(mon.hpMax,mon.hp+h);showMonsterFloat(mon,'💚+'+h,'#6ee7b7');}
       else if(bc.type==='buff'||bc.type==='support'||bc.type==='summon'||(bc.summonCount && !bc.mul)){
@@ -6130,7 +6144,7 @@ function isEmpoweredBossCast(sk){
 function doInterrupt(){
   if(!bossCasting){log('没有正在施放的法术','info');return false;}
   const bossName=bossCasting.bossName||'BOSS';
-  const mon=state.currentMonsters[0];
+  const mon=bossCastingMonster(bossCasting);
   if(bossCasting.interruptPolicy === 'none'){
     log('🧱 '+bossName+' 的 '+bossCasting.name+' 无法被打断!','bad');
     if(mon) showMonsterFloat(mon,'🧱不可断','#fca5a5',{variant:'boss',scale:1.04});

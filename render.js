@@ -3092,6 +3092,7 @@ function renderDungeon() {
   if (epic5Dl) epic5Dl.innerHTML = '';
   renderDungeonBountyPanel();
   renderDungeonContractPanel();
+  if (typeof renderDelvePanel === 'function') renderDelvePanel();
   if (typeof renderDungeonMasteryPanel === 'function') renderDungeonMasteryPanel();
   // 更新按钮状态
   const btn5 = $('btn-dg-5man'), btnR = $('btn-dg-raid');
@@ -3150,6 +3151,7 @@ function renderDungeon() {
     const bountyActive = bountyTarget && !bountyTarget.claimed;
     const bountyBadge = bountyActive ? `<span class="pill dungeon-bounty-pill">${bountyTarget.icon || '🎯'}悬赏</span>` : '';
     const bountyLine = bountyTarget ? `<div class="dungeon-bounty-line ${bountyTarget.claimed ? 'done' : ''}">${bountyTarget.icon || '🎯'} ${bountyTarget.themeName || '悬赏'} · ${typeof dungeonBountyRewardText === 'function' ? dungeonBountyRewardText(bountyTarget) : ''}${bountyTarget.claimed ? ' · 已完成' : ''}</div>` : '';
+    const delveLine = (typeof renderDelveCardLine === 'function') ? renderDelveCardLine(dg) : '';
     const div = document.createElement('div');
     div.className = 'dungeon-item' + (onCd ? ' on-cd' : '') + (bountyActive ? ' bounty-target' : '');
     if (onCd) div.style.opacity = '0.6';   // CD中副本变暗,凸显可立即挑战的副本
@@ -3185,6 +3187,7 @@ function renderDungeon() {
     const typeLabel = isEpicRaid ? '<span style="color:#fb7185">[史诗团本]</span> '
       : dg.epic5 ? '<span style="color:#c084fc">[史诗5人本]</span> '
       : dg.heroic ? '<span style="color:#f6c453">[英雄5人本]</span> '
+      : dg.delve ? '<span style="color:#67e8f9">[地下堡]</span> '
       : dg.type === 'raid' ? '<span style="color:#fbbf24">[团本]</span> '
       : '<span style="color:#6ee7b7">[5人本]</span> ';
     const raidProgressLine = dg.type === 'raid' && (dg.raidExpansion || dg.raidIlvl)
@@ -3197,6 +3200,7 @@ function renderDungeon() {
       </div>
       <div class="muted">${typeLabel}${dg.desc}${raidProgressLine} · ${(dg.bosses||[]).length}名首领 · 最终: ${((dg.bosses||[])[dg.bosses.length-1]||{}).name||'??'}${dg.type==='raid'?(isEpicRaid?' · 掉落:史诗级紫装/全部首领超低概率橙装':' · 掉落:常规团本装备/关底低概率橙武'):''}</div>
       ${bountyLine}
+      ${delveLine}
       ${chaseLine}
       ${affixLine}
       ${timerLine}

@@ -68,7 +68,10 @@
     hyjal:'spell_shadow_summonfelhunter', bt:'achievement_boss_illidan',
     diremaul:'inv_misc_head_orc_01', lbrs:'inv_misc_head_dragon_black', shattered:'inv_sword_48',
     arcatraz:'spell_arcane_portaldarnassus', culling:'inv_misc_head_undead_01', pit:'inv_ore_saronite_01',
-    oculus:'spell_arcane_portalshattrath', hor:'achievement_boss_lichking'
+    oculus:'spell_arcane_portalshattrath', hor:'achievement_boss_lichking',
+    stonevault:'achievement_dungeon_ulduar_raildriver', prioryflame:'spell_holy_divineillumination',
+    nightfall_sanctum:'inv_misc_key_14', earthcrawl_mines:'ability_creature_poison_05',
+    fungal_folly:'ability_creature_disease_02', nerubar:'ability_creature_poison_05'
   };
 
   const SYMBOL_ICON = {
@@ -81,6 +84,7 @@
     '🏆':'achievement_general_stayclassy',
     '🏟️':'achievement_arena_3v3_9',
     '🎫':'inv_misc_ticket_tarot_portal_01',
+    '🗝️':'inv_10_blacksmithing_consumable_key_color1',
     '👑':'achievement_boss_lichking',
     '🗡️':'ability_rogue_eviscerate',
     '⚔️':'ability_warrior_savageblow',

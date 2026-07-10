@@ -119,6 +119,7 @@ function challengeBoss(mapKey) {
   state.hp = state.hero.hpMax;
   state.resource = state.resourceMax;
   if (typeof resetDmgStats === 'function') resetDmgStats();
+  if (typeof resetCombatState === 'function') resetCombatState();
   if (typeof clearAllBuffs === 'function') clearAllBuffs();
   spawnZoneBoss();
   markDirty('map', 'stage');

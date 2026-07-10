@@ -593,6 +593,71 @@ h1 {
 .dungeon-bounty-clear {
   font-size: 12px;
 }
+.delve-panel {
+  margin: 0 0 8px 0;
+  padding: 8px;
+  border: 1px solid rgba(34,211,238,.26);
+  border-radius: 8px;
+  background: rgba(15,118,110,.10);
+}
+.delve-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.delve-title .muted {
+  font-weight: 400;
+  text-align: right;
+}
+.delve-wallet {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 11px;
+}
+.delve-wallet span {
+  padding: 5px 6px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 6px;
+  background: rgba(0,0,0,.14);
+  color: #ccfbf1;
+}
+.delve-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.delve-mini {
+  border: 1px solid rgba(45,212,191,.18);
+  border-radius: 6px;
+  padding: 6px 7px;
+  background: rgba(13,148,136,.10);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.delve-mini.done,
+.delve-card-line.done {
+  opacity: .58;
+}
+.delve-card-line,
+.delve-clear {
+  margin-top: 7px;
+  padding: 7px 8px;
+  border: 1px solid rgba(34,211,238,.24);
+  border-radius: 7px;
+  background: rgba(14,116,144,.10);
+  color: #a5f3fc;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.delve-clear {
+  font-size: 12px;
+}
 .dungeon-contract-panel {
   margin: 0 0 8px 0;
   padding: 8px;
@@ -890,6 +955,10 @@ h1 {
   .dungeon-bounty-grid {
     grid-template-columns: 1fr;
   }
+  .delve-grid,
+  .delve-wallet {
+    grid-template-columns: 1fr;
+  }
   .dungeon-mastery-grid {
     grid-template-columns: 1fr;
   }
@@ -901,8 +970,13 @@ h1 {
     flex-direction: column;
   }
   .dungeon-contract-title .muted,
+  .delve-title .muted,
   .dungeon-mastery-title .muted {
     text-align: left;
+  }
+  .delve-title {
+    align-items: flex-start;
+    flex-direction: column;
   }
   .dungeon-mastery-title {
     align-items: flex-start;

@@ -58,6 +58,10 @@ const WORLD_BOSSES = [
     desc:'从龙岛风暴中再度醒来的原始化身，用雷霆与飓风撕开守护者的阵线。',
     hpMul:66, atkMul:6.55, defMul:5.1, cdHours:8,
     rewards:{ gold:170000, gem:290, honor:9000, essence:92, shards:25 } },
+  { key:'xal_atath', name:'虚空先驱萨拉塔斯', emoji:'🕸️', lvl:96, minLvl:80, color:'#7c3aed',
+    desc:'黑血与虚空丝线背后的低语者,会把蛛魔王宫的终局压迫带到世界战场。',
+    hpMul:78, atkMul:7.15, defMul:5.85, cdHours:8,
+    rewards:{ gold:230000, gem:360, honor:11200, essence:125, shards:32 } },
 ];
 for (const wb of WORLD_BOSSES) {
   const profile = (typeof WORLD_BOSS_SKILLSETS === 'object' && WORLD_BOSS_SKILLSETS[wb.key]) || null;
