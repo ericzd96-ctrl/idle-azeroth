@@ -169,6 +169,7 @@ function renderWorldsoulSub() {
           <span class="sub-tab ${eventsSubTab==='wb'?'active':''}" data-sub="wb">🐲 世界Boss</span>
           <span class="sub-tab ${eventsSubTab==='bounty'?'active':''}" data-sub="bounty">🎯 悬赏</span>
           <span class="sub-tab ${eventsSubTab==='invasion'?'active':''}" data-sub="invasion">🛡️ 入侵</span>
+          ${typeof renderTimewalkingSub === 'function' ? `<span class="sub-tab ${eventsSubTab==='timewalking'?'active':''}" data-sub="timewalking">🕰️ 时光漫游</span>` : ''}
           <span class="sub-tab ${eventsSubTab==='dragonTreasure'?'active':''}" data-sub="dragonTreasure">🧭 龙岛宝藏</span>
           <span class="sub-tab ${eventsSubTab==='worldsoul'?'active':''}" data-sub="worldsoul">🌌 世界之魂</span>
           ${typeof renderKareshExpeditionSub === 'function' ? `<span class="sub-tab ${eventsSubTab==='kareshExpedition'?'active':''}" data-sub="kareshExpedition">🚩 终局远征</span>` : ''}
@@ -181,6 +182,7 @@ function renderWorldsoulSub() {
       if (eventsSubTab === 'wb') body = renderWorldBossSub();
       else if (eventsSubTab === 'bounty') body = typeof renderBountySub === 'function' ? renderBountySub() : '<div class="prog-summary muted">悬赏载入中...</div>';
       else if (eventsSubTab === 'invasion') body = typeof renderWorldInvasionSub === 'function' ? renderWorldInvasionSub() : '<div class="prog-summary muted">世界入侵载入中...</div>';
+      else if (eventsSubTab === 'timewalking' && typeof renderTimewalkingSub === 'function') body = renderTimewalkingSub();
       else if (eventsSubTab === 'dragonTreasure') body = typeof renderDragonTreasureSub === 'function' ? renderDragonTreasureSub() : '<div class="prog-summary muted">龙岛宝藏载入中...</div>';
       else if (eventsSubTab === 'worldsoul') body = renderWorldsoulSub();
       else if (eventsSubTab === 'kareshExpedition' && typeof renderKareshExpeditionSub === 'function') body = renderKareshExpeditionSub();
