@@ -619,6 +619,143 @@ function monsterUnitTipHtml(mon, bossData) {
     <div>暴击 ${fmtPctValue(crit, 0)} · 减伤 ${fmtPctValue(dr * 100, 0)} · 吸血 ${fmtPctValue(leech * 100, 0)}</div>
     ${passiveHtml}`;
 }
+function tipAttrText(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function monsterMechanicSectionHtml(title, color, list, fallbackIcon, mapper) {
+  if (!Array.isArray(list) || !list.length) return '';
+  const lines = list.map(item => {
+    const view = typeof mapper === 'function' ? mapper(item) : item;
+    if (!view) return '';
+    const safeName = tipAttrText(view.name);
+    const safeMeta = tipAttrText(view.meta);
+    const safeDesc = tipAttrText(view.desc);
+    const iconHtml = symbolIconHtml(view.icon, 14, safeName, fallbackIcon);
+    const extra = safeMeta ? ` <span style="font-size:10px;color:#cbd5e1">${safeMeta}</span>` : '';
+    const desc = safeDesc ? `<div style="font-size:10px;color:var(--muted);line-height:1.45;word-break:break-word">${safeDesc}</div>` : '';
+    return `<div style="margin:3px 0 6px">${iconHtml} ${safeName}${extra}${desc}</div>`;
+  }).filter(Boolean).join('');
+  if (!lines) return '';
+  return `<div style="margin-top:4px;color:${color}">${tipAttrText(title)}:</div>${lines}`;
+}
+function monsterEncounterDetailHtml(mon, bossData) {
+  if (!mon) return '';
+  let html = '';
+  const seenAffix = new Set();
+  const affixes = (mon._affixes || []).filter(af => af && af.key && !seenAffix.has(af.key) && seenAffix.add(af.key));
+  if (affixes.length) {
+    html += monsterMechanicSectionHtml('当前词缀', '#67e8f9', affixes, 'spell_holy_powerinfusion', af => ({
+      icon:af.icon || '⚙️',
+      name:af.name || '词缀',
+      desc:af.desc || '额外战斗修正'
+    }));
+  }
+  if (mon._bossWeakpoint) {
+    html += monsterMechanicSectionHtml('当前机制目标', '#fde68a', [{
+      icon:'💠',
+      name:mon._bossWeakpointName || 'Boss弱点',
+      desc:'击破后会让首领露出破绽、奖励资源，并让你的下一次关键输出更容易打穿。'
+    }], 'inv_misc_gem_diamond_02');
+  }
+  if (mon._directorAdd) {
+    html += monsterMechanicSectionHtml('导演机制', '#f9a8d4', [{
+      icon:'🎬',
+      name:mon._directorReason || '战斗导演增援',
+      desc:'这是首领额外导演机制召来的单位，不尽快处理会持续抬高战斗压力。'
+    }], 'achievement_boss_illidan');
+  }
+  if (!bossData || (state.mode !== 'dungeon' && state.mode !== 'mythic')) return html;
+  const challengeList = mon._bossChallenges?.length
+    ? mon._bossChallenges
+    : ((typeof getDungeonBossChallengeSeals === 'function') ? getDungeonBossChallengeSeals(bossData) : []);
+  if (challengeList.length) {
+    html += monsterMechanicSectionHtml('Boss挑战', '#fde68a', challengeList, 'achievement_bg_killxenemies_generalsroom', ch => ({
+      icon:ch.icon,
+      name:ch.name,
+      meta:(typeof ch.target === 'number' && ch.target > 1) ? `${Math.min(ch.progress || 0, ch.target)}/${ch.target}` : ((ch.completed || ch.failed) ? (ch.completed ? '已完成' : '失败') : ''),
+      desc:ch.desc || '额外挑战目标'
+    }));
+  }
+  const tacticList = (typeof getDungeonBossTactics === 'function') ? getDungeonBossTactics(bossData) : [];
+  if (tacticList.length) html += monsterMechanicSectionHtml('战术机制', '#fca5a5', tacticList, 'ability_warrior_battleshout');
+  const weakpointList = (typeof getDungeonBossWeakpoints === 'function') ? getDungeonBossWeakpoints(bossData) : [];
+  if (weakpointList.length) html += monsterMechanicSectionHtml('弱点窗口', '#fde68a', weakpointList, 'inv_misc_gem_diamond_02', wp => ({
+    icon:wp.icon,
+    name:wp.name,
+    meta:typeof wp.threshold === 'number' ? `${Math.round(wp.threshold * 100)}%触发` : '',
+    desc:wp.desc || '血线机制弱点'
+  }));
+  const spectacleList = (typeof getDungeonBossSpectacleMechanics === 'function') ? getDungeonBossSpectacleMechanics(bossData) : [];
+  if (spectacleList.length) html += monsterMechanicSectionHtml('额外戏剧机制', '#f0abfc', spectacleList, 'spell_shadow_shadowfury');
+  const directorList = (typeof getDungeonBossDirectorEvents === 'function') ? getDungeonBossDirectorEvents(bossData) : [];
+  if (directorList.length) html += monsterMechanicSectionHtml('导演事件', '#93c5fd', directorList, 'achievement_boss_illidan');
+  const grandList = (typeof getDungeonBossGrandMechanics === 'function') ? getDungeonBossGrandMechanics(bossData, 6) : [];
+  if (grandList.length) html += monsterMechanicSectionHtml('终局词条', '#67e8f9', grandList, 'spell_arcane_arcanetorrent');
+  const councilList = (typeof getDungeonBossCouncilMembers === 'function') ? getDungeonBossCouncilMembers(bossData) : [];
+  if (councilList.length > 1) {
+    html += monsterMechanicSectionHtml('议会成员', '#fcd34d', councilList, 'achievement_boss_illidan', member => ({
+      icon:member.icon || '👥',
+      name:member.name,
+      meta:member.role || '',
+      desc:member.role ? `该成员负责 ${member.role}。` : '多目标首领成员'
+    }));
+  }
+  return html;
+}
+function attachMonsterHover(el, mon) {
+  if (!el || !mon) return;
+  const bossData = lookupMonsterBossData(mon);
+  const hasMobSkills = !!(mon._monSkills?.length || mon._monSkill || mon._monSupportSkills?.length);
+  const extraHtml = monsterEncounterDetailHtml(mon, bossData);
+  if (!bossData && !hasMobSkills && !extraHtml) return;
+  const showTip = function(e) {
+    let html = monsterUnitTipHtml(mon, bossData);
+    if (bossData?.skills) {
+      html += '<div style=\"margin-top:3px;color:#fbbf24\">技能:</div>';
+      bossData.skills.forEach(s => {
+        html += bossSkillLineHtml(s, { iconSize:16, tagColor:'#fbbf24' });
+      });
+    } else if (mon._monSkills?.length || mon._monSkill) {
+      const skills = mon._monSkills?.length ? mon._monSkills : [mon._monSkill];
+      html += '<div style=\"margin-top:3px;color:#fbbf24\">敌方技能:</div>';
+      skills.forEach(s => {
+        html += bossSkillLineHtml(s, { iconSize:16, tagColor:'#fbbf24' });
+      });
+    }
+    if (mon._monSupportSkills && mon._monSupportSkills.length) {
+      html += '<div style=\"margin-top:3px;color:#93c5fd\">支援技能包:</div>';
+      mon._monSupportSkills.forEach(s => {
+        html += bossSkillLineHtml(s, { iconSize:16, tagColor:'#93c5fd', showCast:false });
+      });
+    }
+    if (bossData?.passive) {
+      html += '<div style="margin-top:3px;color:#6ee7b7">被动:</div>';
+      const p = bossData.passive;
+      if (p.dodgeChance) html += '<div>💨 闪避 +'+(p.dodgeChance*100)+'%</div>';
+      if (p.critChance) html += '<div>💥 暴击 +'+(p.critChance*100)+'%</div>';
+      if (p.dmgReduction) html += '<div>🛡️ 减伤 +'+(p.dmgReduction*100)+'%</div>';
+      if (p.atkBonus) html += '<div>⚔️ 攻击 +'+(p.atkBonus*100)+'%</div>';
+      if (p.leech) html += '<div>🩸 吸血 +'+(p.leech*100)+'%</div>';
+      if (p.tricks?.length) {
+        html += '<div style="margin-top:3px;color:#93c5fd">被动触发:</div>';
+        p.tricks.forEach(s => {
+          html += bossSkillLineHtml(s, { iconSize:16, tagColor:'#93c5fd', showCast:false });
+        });
+      }
+    }
+    html += extraHtml;
+    const tip = $('compare-tip');
+    tip.querySelector('.compare-head').innerHTML = html;
+    tip.querySelector('.compare-body').innerHTML = '';
+    tip.style.display = 'block';
+    positionTip(tip, e);
+  };
+  el.style.cursor = 'help';
+  el.onmouseenter = e => { if (!tooltipHoverEnabled()) return; showTip(e); };
+  el.onmouseleave = () => { if (!tooltipHoverEnabled()) return; if (!_tipPinned) hideLootTip(); };
+  el.onmousemove = e => { if (!tooltipHoverEnabled()) return; positionTip($('compare-tip'), e); };
+  addTouchPin(el, showTip);
+}
 function allySummonThemeName(theme) {
   const map = {
     beast:'野兽召唤',
@@ -832,60 +969,7 @@ function bindUnitTip(el, htmlBuilder) {
 function attachFocusBossHover(focus) {
   const emojiEl = $('mon-emoji'); if (!emojiEl) return;
   if (!focus) return;
-
-  // 获取BOSS数据(地图/副本/大秘境)
-  let bossData = lookupMonsterBossData(focus);
-
-  const hasMobSkills = !!(focus._monSkills?.length || focus._monSkill || focus._monSupportSkills?.length);
-  if (!bossData && !hasMobSkills) return;
-  const showFocusTip = function(e) {
-    let html = monsterUnitTipHtml(focus, bossData);
-    if (bossData?.skills) {
-      html += '<div style=\"margin-top:3px;color:#fbbf24\">技能:</div>';
-      bossData.skills.forEach(s => {
-        html += bossSkillLineHtml(s, { iconSize:16, tagColor:'#fbbf24' });
-      });
-    } else if (focus._monSkills?.length || focus._monSkill) {
-      const skills = focus._monSkills?.length ? focus._monSkills : [focus._monSkill];
-      html += '<div style=\"margin-top:3px;color:#fbbf24\">敌方技能:</div>';
-      skills.forEach(s => {
-        html += bossSkillLineHtml(s, { iconSize:16, tagColor:'#fbbf24' });
-      });
-    }
-    if (focus._monSupportSkills && focus._monSupportSkills.length) {
-      html += '<div style=\"margin-top:3px;color:#93c5fd\">支援技能包:</div>';
-      focus._monSupportSkills.forEach(s => {
-        html += bossSkillLineHtml(s, { iconSize:16, tagColor:'#93c5fd', showCast:false });
-      });
-    }
-    if (bossData?.passive) {
-      html += '<div style="margin-top:3px;color:#6ee7b7">被动:</div>';
-      const p = bossData.passive;
-      if (p.dodgeChance) html += '<div>💨 闪避 +'+(p.dodgeChance*100)+'%</div>';
-      if (p.critChance) html += '<div>💥 暴击 +'+(p.critChance*100)+'%</div>';
-      if (p.dmgReduction) html += '<div>🛡️ 减伤 +'+(p.dmgReduction*100)+'%</div>';
-      if (p.atkBonus) html += '<div>⚔️ 攻击 +'+(p.atkBonus*100)+'%</div>';
-      if (p.leech) html += '<div>🩸 吸血 +'+(p.leech*100)+'%</div>';
-      if (p.tricks?.length) {
-        html += '<div style="margin-top:3px;color:#93c5fd">被动触发:</div>';
-        p.tricks.forEach(s => {
-          html += bossSkillLineHtml(s, { iconSize:16, tagColor:'#93c5fd', showCast:false });
-        });
-      }
-    }
-    const tip = $('compare-tip');
-    tip.querySelector('.compare-head').innerHTML = html;
-    tip.querySelector('.compare-body').innerHTML = '';
-    tip.style.display = 'block';
-    positionTip(tip, e);
-  };
-  [emojiEl].filter(Boolean).forEach(el => {
-    el.style.cursor = 'help';
-    el.onmouseenter = e => { if (!tooltipHoverEnabled()) return; showFocusTip(e); };
-    el.onmouseleave = () => { if (!tooltipHoverEnabled()) return; if (!_tipPinned) hideLootTip(); };
-    el.onmousemove = (e) => { if (!tooltipHoverEnabled()) return; positionTip($('compare-tip'), e); };
-    addTouchPin(el, showFocusTip);
-  });
+  attachMonsterHover(emojiEl, focus);
 }
 function renderMonList() {
   const wrap = $('mon-list'); if (!wrap) return;
@@ -950,6 +1034,12 @@ function renderMonList() {
       }
     });
     if (focus) attachFocusBossHover(focus);
+    wrap.querySelectorAll('.mon-row[data-uid]').forEach(row => {
+      const mon = all.find(m => m && String(m._uid) === String(row.dataset.uid));
+      if (!mon) return;
+      attachMonsterHover(row.querySelector('.m-emoji'), mon);
+      attachMonsterHover(row.querySelector('.m-name'), mon);
+    });
   }
 
   // 每帧更新血条 + 存活状态 + 减益(仅真实怪物槽位)

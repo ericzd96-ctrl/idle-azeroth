@@ -4979,7 +4979,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'throne', name:'雷霆王座', icon:'⚡', type:'raid', reqLvl:78, waves:12, desc:'赞达拉巨魔帝国与雷神残响盘踞的天空堡垒',
+      key:'throne', name:'雷霆王座', icon:'⚡', type:'raid', reqLvl:78, waves:12, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'赞达拉巨魔帝国与雷神残响盘踞的天空堡垒',
       bosses:[
         { name:'赞达拉守卫贾林', emoji:'🦖', skills:[dmg('远古践踏','🦖',9,{ stun:1400, bleed:true })] },
         { name:'风暴祭司莱杉', emoji:'🌩️', skills:[dmg('雷霆链','⚡',9.5,{ aoe:true, silence:1800 })] },
@@ -4999,7 +4999,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'soo', name:'围攻奥格瑞玛', icon:'🪓', type:'raid', reqLvl:79, waves:13, desc:'讨伐暴君加尔鲁什·地狱咆哮的部落与联盟联军攻城战',
+      key:'soo', name:'围攻奥格瑞玛', icon:'🪓', type:'raid', reqLvl:79, waves:13, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'讨伐暴君加尔鲁什·地狱咆哮的部落与联盟联军攻城战',
       bosses:[
         { name:'不洁之溢', emoji:'💧', skills:[dmg('腐化潮涌','🌊',9,{ aoe:true, decay:true })] },
         { name:'傲慢之煞', emoji:'👁️', skills:[dmg('傲慢爆发','👁️',9.5,{ fear:1700, weaken:true })] },
@@ -5010,7 +5010,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'hfc', name:'地狱火堡垒', icon:'😈', type:'raid', reqLvl:79, waves:13, desc:'封堵塔纳安裂隙、阻止燃烧军团重返艾泽拉斯的最终防线',
+      key:'hfc', name:'地狱火堡垒', icon:'😈', type:'raid', reqLvl:79, waves:13, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'封堵塔纳安裂隙、阻止燃烧军团重返艾泽拉斯的最终防线',
       bosses:[
         { name:'钢铁掠袭者', emoji:'🤖', skills:[dmg('火炮齐射','💥',9,{ aoe:true, dot:true })] },
         { name:'寇莫克', emoji:'👊', skills:[dmg('邪能重拳','🟢',9.5,{ stun:1500, brittle:true })] },
@@ -5078,7 +5078,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'nexus', name:'魔枢', icon:'💠', reqLvl:68, waves:9, desc:'蓝龙军团守护的奥术螺旋,玛里苟斯的力量核心',
+      key:'nexus', name:'魔枢', icon:'💠', reqLvl:68, waves:9, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'蓝龙军团守护的奥术螺旋,玛里苟斯的力量核心',
       bosses:[
         { name:'冰霜之王托塞德林', emoji:'❄️', skills:[dmg('寒冰尖刺','🧊',6,{ freeze:1500, slow:true })] },
         { name:'阿诺玛鲁斯', emoji:'🌀', skills:[dmg('虚空裂解','🌀',6.5,{ aoe:true, manaDrain:40 })] },
@@ -5086,7 +5086,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'gundrak', name:'古达克', icon:'🐊', reqLvl:71, waves:9, desc:'卓格巴尔巨魔向血神献祭的古老神庙',
+      key:'gundrak', name:'古达克', icon:'🐊', reqLvl:71, waves:9, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'卓格巴尔巨魔向血神献祭的古老神庙',
       bosses:[
         { name:'斯拉德兰', emoji:'🐍', skills:[dmg('毒蛇缠绕','🐍',6.5,{ plague:true, cripple:true })] },
         { name:'莫拉格', emoji:'🦏', skills:[dmg('犀牛冲撞','🦏',7,{ stun:1500, bleed:true })] },
@@ -5094,7 +5094,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'sethekk', name:'塞泰克大厅', icon:'🦅', reqLvl:69, waves:9, desc:'鸦人膜拜乌鸦之神的黑暗大厅',
+      key:'sethekk', name:'塞泰克大厅', icon:'🦅', reqLvl:69, waves:9, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'鸦人膜拜乌鸦之神的黑暗大厅',
       bosses:[
         { name:'达克丝塔', emoji:'🪶', skills:[dmg('暗影箭雨','🌑',6,{ aoe:true, weaken:true })] },
         { name:'塞泰克先知', emoji:'🔮', skills:[dmg('预言震爆','🔮',6.5,{ silence:1700, manaDrain:40 })] },
@@ -5102,7 +5102,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'irondocks', name:'钢铁码头', icon:'⚓', reqLvl:74, waves:9, desc:'钢铁部落在德拉诺的军械船坞',
+      key:'irondocks', name:'钢铁码头', icon:'⚓', reqLvl:74, waves:9, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'钢铁部落在德拉诺的军械船坞',
       bosses:[
         { name:'尼奥库勒·蒸汽碾', emoji:'⚙️', skills:[dmg('蒸汽碾压','⚙️',7,{ stun:1400, sunder:true })] },
         { name:'格鲁布', emoji:'🐗', skills:[dmg('野兽狂袭','🐗',7.5,{ bleed:true, frenzy:true })] },
@@ -5259,7 +5259,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'everbloom', name:'永茂林地', icon:'🌺', reqLvl:75, waves:10, desc:'失控的德拉诺自然之力涌入塔拉多,藤蔓与元素疯长的温室裂口',
+      key:'everbloom', name:'永茂林地', icon:'🌺', reqLvl:75, waves:10, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'失控的德拉诺自然之力涌入塔拉多,藤蔓与元素疯长的温室裂口',
       bosses:[
         { name:'古杉魔藤', emoji:'🌿', skills:[dmg('缠绕荆棘','🌿',7,{ cripple:true, dot:true })] },
         { name:'喷涌元素', emoji:'🌊', skills:[dmg('洪流冲击','🌊',7.5,{ aoe:true, slow:true })] },

@@ -320,10 +320,14 @@
 
   const ENTITY_EXACT = {
     '死亡之翼':'ability_deathwing_bloodcorruption_death',
+    '死亡之翼·灭世者':'ability_deathwing_bloodcorruption_death',
     '拉格纳罗斯':'spell_fire_fire',
+    '拉格纳罗斯·火焰之王':'spell_fire_fire',
     '克苏恩':'achievement_boss_cthun',
+    '克苏恩·疯狂之眼':'achievement_boss_cthun',
     '巫妖王':'achievement_boss_lichking',
     '尤格-萨隆':'achievement_boss_yoggsaron_01',
+    '尤格萨隆·千喉之梦':'achievement_boss_yoggsaron_01',
     '伊利丹·怒风':'achievement_boss_illidan',
     '阿克蒙德':'spell_shadow_summonfelhunter',
     '凯尔萨斯·逐日者':'spell_arcane_portalshattrath',
@@ -345,7 +349,29 @@
     '提里奥·弗丁':'spell_holy_holybolt',
     '瓦里安·乌瑞恩':'ability_warrior_savageblow',
     '萨尔':'spell_nature_lightning',
-    '伊利丹':'achievement_boss_illidan'
+    '伊利丹':'achievement_boss_illidan',
+    '奥丁':'spell_holy_divineillumination',
+    '芬里尔':'ability_hunter_pet_wolf',
+    '神王斯科瓦尔德':'ability_warrior_shieldwall',
+    '顾问梅兰德鲁斯':'ability_rogue_slicedice',
+    '萨维斯的暗影':'spell_shadow_charm',
+    '寂灭者阿古斯':'spell_shadow_summonfelhunter',
+    '阿古斯·寂灭者':'spell_shadow_summonfelhunter',
+    '莱萨杰丝·风暴化身':'spell_nature_lightningoverload',
+    '化身奈萨里奥':'inv_misc_head_dragon_black',
+    '炎魔之王弗拉戈斯':'spell_fire_volcano',
+    '雷神·雷霆之王':'spell_nature_lightningoverload',
+    '奥拉基尔·风暴王座':'spell_shaman_thunderstorm',
+    '辛达苟萨之影':'spell_frost_freezingbreath',
+    '虚空先驱萨拉塔斯':'spell_shadow_possession',
+    '雷沙诺尔·无缚者':'inv_11_0_etherealraid_communicator_color1',
+    '影点总督维克席斯':'spell_shadow_shadowform',
+    '群星占相者诺维萨':'spell_arcane_starfire',
+    '沼泽暴君·格拉姆':'ability_hunter_pet_crocolisk',
+    '霍格大王':'ability_hunter_pet_boar',
+    '黑石霸主·达格兰':'ability_warrior_savageblow',
+    '末日领主卡扎克':'spell_shadow_summonfelhunter',
+    '深渊之王玛瑟里顿':'spell_shadow_summonfelhunter'
   };
 
   const SKILL_EXACT = {
@@ -820,6 +846,10 @@
     [/恶魔|军团|基尔加丹|阿克蒙德|伊利丹/i, 'spell_shadow_summonfelhunter'],
     [/森林|古树|德鲁伊|塞纳留斯/i, 'spell_nature_starfall'],
     [/法师|奥术|守护者|监狱/i, 'spell_arcane_blast'],
+    [/英灵|奥丁|瓦尔基拉|神王/i, 'spell_holy_divineillumination'],
+    [/萨维斯|梦魇/i, 'spell_shadow_charm'],
+    [/群星|占星|占相|观星|诺维萨/i, 'spell_arcane_starfire'],
+    [/虚灵|以太|相位|卡雷什|吞界|影点|沙恩多拉/i, 'inv_11_0_etherealraid_communicator_color1'],
     [/野猪|狼|熊|兽|霍格/i, 'ability_hunter_pet_boar'],
     [/骑士|圣光|提里奥|安度因|伯瓦尔/i, 'spell_holy_holybolt'],
     [/战士|步兵|督军|加尔鲁什|瓦里安|格罗玛什/i, 'ability_warrior_savageblow']
