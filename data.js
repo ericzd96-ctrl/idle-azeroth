@@ -5392,6 +5392,57 @@ function extendDungeonCatalog(){
       ]
     },
     {
+      key:'rookery', name:'驭雷栖巢', icon:'🦅', reqLvl:71, waves:9, art:'assets/wow/art/warwithin-rookery.png', desc:'多恩岛高空中的风暴鸦巢穴重新苏醒,雷翼与虚石回响让这座悬崖堡垒成为地心之战前线的第一道空战考验',
+      bosses:[
+        { name:'基里奥斯', emoji:'🦅', skills:[dmg('雷翼俯冲','⚡',7,{ aoe:true, slow:true, weaken:true }), dmg('风暴啄裂','🪶',7.4,{ bleed:true, cripple:true })] },
+        { name:'风暴卫士戈伦', emoji:'⚡', skills:[dmg('虚痕雷矛','⚡',7.6,{ silence:1700, manaDrain:55 }), dmg('栖巢防线','🛡️',8,{ sunder:true, stun:1500 })] },
+        { name:'虚石畸体', emoji:'🪨', skills:[dmg('虚石坠压','🪨',8.2,{ aoe:true, brittle:true, stun:1600 }), dmgP('崩巢回响','🌌',4.8,0.45,{ aoe:true, mirror:true, fear:1700, cd:12 })] }
+      ]
+    },
+    {
+      key:'cinderbrew', name:'燧酿酒庄', icon:'🍺', reqLvl:75, waves:10, art:'assets/wow/art/warwithin-cinderbrew.png', desc:'喧闹的燧酿酒庄被蜂群、烈酒与爆燃蜜浆彻底接管,每一条酒窖通道都在逼你同时处理控场与爆发',
+      bosses:[
+        { name:'酿造大师奥德里尔', emoji:'🍺', skills:[dmg('滚烫麦浆','🍺',7.4,{ dot:true, weaken:true }), dmg('酒桶冲击','🛢️',7.8,{ aoe:true, stun:1400 })] },
+        { name:'伊帕', emoji:'🔥', skills:[dmg('烈酿喷焰','🔥',8,{ dot:true, brittle:true, silence:1700 }), dmgP('炽泡翻腾','☄️',4.8,0.48,{ aoe:true, fear:1600, cd:12 })] },
+        { name:'本克·嗡鸣', emoji:'🐝', skills:[dmg('蜂潮突刺','🐝',8.2,{ bleed:true, plague:true, cripple:true }), summonP('蜜蜡工蜂','🍯',0.5,'召唤 2 只工蜂并提高攻速',{ summonCount:2, summonTheme:'beast', spdBuffSecs:12, spdBuffPct:24 })] },
+        { name:'戈尔迪·底金男爵', emoji:'💰', skills:[dmg('蜜金清算','💰',8.8,{ aoe:true, manaDrain:70, silence:1800 }), dmg('酒庄爆仓','💥',9.2,{ dot:true, fear:1700, brittle:true })] }
+      ]
+    },
+    {
+      key:'darkflame', name:'暗焰裂口', icon:'🕯️', reqLvl:76, waves:10, art:'assets/wow/art/warwithin-darkflame.png', desc:'蜡焰与阴影在裂口深处彼此吞噬,越深入越像是在一座会呼吸的地底祭坛里作战',
+      bosses:[
+        { name:'老蜡须', emoji:'🕯️', skills:[dmg('熔蜡砸击','🕯️',7.8,{ dot:true, sunder:true }), dmg('烛火扑面','🔥',8.1,{ silence:1700, weaken:true })] },
+        { name:'布雷兹康', emoji:'🔥', skills:[dmg('暗焰吐息','🔥',8.4,{ aoe:true, dot:true, brittle:true }), dmgP('焚芯坠落','☄️',4.9,0.45,{ aoe:true, fear:1700, cd:12 })] },
+        { name:'蜡烛之王', emoji:'👑', skills:[dmg('烛王敕令','👑',8.7,{ silence:1800, manaDrain:65 }), summonP('烛影侍臣','🕯️',0.5,'召唤 2 名烛影侍臣并获得护盾',{ summonCount:2, summonTheme:'construct', shieldPct:0.16 })] },
+        { name:'黑暗化身', emoji:'🌑', skills:[dmg('暗焰吞界','🌑',9.3,{ aoe:true, decay2:true, mirror:true }), dmg('裂口终烬','💥',9.8,{ fear:1800, brittle:true, alwaysCrit:true })] }
+      ]
+    },
+    {
+      key:'dawnbreaker', name:'破晓号', icon:'🛩️', reqLvl:77, waves:10, art:'assets/wow/art/warwithin-dawnbreaker.png', desc:'这艘阿拉希战舰在陨圣峪上空不断转移战线,甲板、吊桥与蛛魔空降兵把整场战斗压成一场高速突袭',
+      bosses:[
+        { name:'影冠发言者', emoji:'🌑', skills:[dmg('影丝布道','🌑',8.2,{ silence:1800, weaken:true, manaDrain:65 }), summonP('影冠随从','📣',0.5,'召唤影冠随从并提高暴击',{ summonCount:2, summonTheme:'spider', critBuffSecs:12, critBuffPct:42 })] },
+        { name:'阿努布伊卡基', emoji:'🕷️', skills:[dmg('王廷毒刺','🕷️',8.6,{ plague:true, bleed:true, cripple:true }), dmgP('高空扑网','🕸️',5,0.45,{ aoe:true, fear:1700, cd:12 })] },
+        { name:'拉夏南', emoji:'🦅', skills:[dmg('空袭毒矢','🦅',9.1,{ aoe:true, plague:true, slow:true }), dmg('破晓折翼','⚡',9.6,{ silence:1900, brittle:true, alwaysCrit:true })] }
+      ]
+    },
+    {
+      key:'arakara', name:'阿拉-卡拉,回响之城', icon:'🕸️', reqLvl:78, waves:10, art:'assets/wow/art/warwithin-arakara.png', desc:'回响之城的蛛网巷道遍布旧帝国残响,每一处路口都可能同时涌出孵群、刺客与精神压制',
+      bosses:[
+        { name:'阿瓦诺克斯', emoji:'🕷️', skills:[dmg('丝巢撕咬','🕷️',8.5,{ bleed:true, lifeSteal:0.2, cripple:true }), summonP('孵群回响','🥚',0.5,'召唤 2 只孵群幼体并获得护盾',{ summonCount:2, summonTheme:'spider', shieldPct:0.16 })] },
+        { name:'阿努布泽克特', emoji:'🦂', skills:[dmg('泽克特毒雨','🦂',8.9,{ aoe:true, plague:true, dot:true }), dmg('回响穿刺','🕸️',9.2,{ silence:1900, brittle:true })] },
+        { name:'收割者基卡塔尔', emoji:'🕸️', skills:[dmg('收割绞丝','🕸️',9.6,{ aoe:true, soulLink:true, manaDrain:75 }), dmgP('王廷收成','🌌',5.2,0.42,{ aoe:true, mirror:true, fear:1800, cd:12 })] }
+      ]
+    },
+    {
+      key:'citythreads', name:'千丝之城', icon:'🧵', reqLvl:80, waves:10, art:'assets/wow/art/warwithin-citythreads.png', desc:'艾基-卡赫特最核心的蛛魔都市把宫廷政治、织丝仪轨和战时封锁压在同一张网里,是一条真正贴着王宫门槛的高压路线',
+      bosses:[
+        { name:'第五纱网演说家克里克斯维兹克', emoji:'🧿', skills:[dmg('纱网宣令','🧿',9,{ silence:1900, weaken:true, manaDrain:75 }), dmg('会场绞杀','🧵',9.3,{ aoe:true, cripple:true, fear:1700 })] },
+        { name:'女王之牙', emoji:'🗡️', skills:[dmg('利刃献礼','🗡️',9.4,{ bleed:true, brittle:true, alwaysCrit:true }), dmgP('暗巢疾袭','🌑',5.1,0.45,{ aoe:true, silence:1900, cd:12 })] },
+        { name:'凝结聚合体', emoji:'🧫', skills:[dmg('黑血聚爆','🧫',9.6,{ aoe:true, plague:true, decay2:true }), summonP('凝结血块','🩸',0.5,'召唤 2 个凝结血块并提高减伤',{ summonCount:2, summonTheme:'void', drBuffSecs:12, drBuffPct:0.18 })] },
+        { name:'大切接师伊佐', emoji:'⚔️', skills:[dmg('切接终线','⚔️',10,{ silence:2000, sunder:true, brittle:true }), dmg('王宫缝杀','🌌',10.4,{ aoe:true, mirror:true, fear:1800, alwaysCrit:true })] }
+      ]
+    },
+    {
       key:'eternalpalace', name:'阿萨拉的永恒王宫', icon:'🔱', type:'raid', reqLvl:79, waves:13, art:'assets/wow/art/timewalking-bfa-banner.jpg', desc:'纳沙塔尔深海之下,女王阿兹莎拉以古神之力召唤暗影的海妖王庭',
       bosses:[
         { name:'暗鳞军团', emoji:'🐟', skills:[dmg('深海齐射','🌊',9,{ aoe:true, dot:true })] },
@@ -6022,6 +6073,39 @@ function extendDungeonCatalog(){
       '臭皮炼金师':[L('毒雾爆瓶','trinket','rare',{sta:1,int:1}),L('炼金污渍手套','gloves','rare',{int:1})],
       '蕨皮酋长':[L('蕨皮酋长的腐化巨斧','weapon','epic',{atk:3,str:2}),L('瘟疫篝火胸甲','armor','epic',{def:2,sta:2}),L('腐臭氏族徽记','trinket','epic',{sta:2,str:2})]
     }, trash:[L('腐木护肩','shoulder','rare',{atk:1,sta:1}),L('蕨皮行军靴','boots','rare',{str:1})] },
+    rookery: { bosses:{
+      '基里奥斯':[L('风暴鸦翼长矛','weapon','rare',{atk:1,agi:1}),L('雷羽护腕','gloves','rare',{agi:1})],
+      '风暴卫士戈伦':[L('戈伦的雷矛','weapon','rare',{atk:1,str:1}),L('栖巢守卫腰带','belt','rare',{def:1,sta:1})],
+      '虚石畸体':[L('虚石坠片法杖','weapon','epic',{atk:3,int:2}),L('悬崖栖巢胸甲','armor','epic',{def:2,sta:2}),L('崩巢回响徽记','trinket','epic',{sta:2,int:2})]
+    }, trash:[L('栖巢巡行护肩','shoulder','rare',{atk:1,agi:1}),L('风切步履','boots','rare',{agi:1})] },
+    cinderbrew: { bosses:{
+      '酿造大师奥德里尔':[L('奥德里尔的酿火酒杯','trinket','rare',{sta:1,int:1}),L('滚烫酒保手套','gloves','rare',{int:1})],
+      '伊帕':[L('烈酿喷焰杖','weapon','rare',{atk:1,int:1}),L('泡腾腰带','belt','rare',{def:1,int:1})],
+      '本克·嗡鸣':[L('嗡鸣蜂刺','weapon','rare',{atk:1,agi:1}),L('工蜂护腿','pants','rare',{hp:1,agi:1})],
+      '戈尔迪·底金男爵':[L('底金男爵的蜜币权杖','weapon','epic',{atk:3,int:2}),L('燧酿酒庄礼服','armor','epic',{def:2,int:2}),L('爆燃分红印记','trinket','epic',{sta:2,int:2})]
+    }, trash:[L('蜜浆护肩','shoulder','rare',{atk:1,int:1}),L('酒窖奔跑靴','boots','rare',{agi:1})] },
+    darkflame: { bosses:{
+      '老蜡须':[L('熔蜡短斧','weapon','rare',{atk:1,str:1}),L('蜡须护手','gloves','rare',{sta:1})],
+      '布雷兹康':[L('暗焰火苗法杖','weapon','rare',{atk:1,int:1}),L('余烬护腿','pants','rare',{hp:1,int:1})],
+      '蜡烛之王':[L('烛王之冠','helmet','rare',{def:1,int:1}),L('王庭烛泪指环','ring','rare',{int:1,spi:1})],
+      '黑暗化身':[L('裂口暗焰之刃','weapon','epic',{atk:3,agi:2}),L('暗焰裂口胸甲','armor','epic',{def:2,sta:2}),L('终烬徽记','trinket','epic',{sta:2,agi:2})]
+    }, trash:[L('烛影护肩','shoulder','rare',{atk:1,int:1}),L('裂口烬行靴','boots','rare',{sta:1})] },
+    dawnbreaker: { bosses:{
+      '影冠发言者':[L('影冠低语法典','weapon','rare',{atk:1,int:1}),L('发言者锁环','ring','rare',{int:1,vers:1})],
+      '阿努布伊卡基':[L('伊卡基毒牙','weapon','rare',{atk:1,agi:1}),L('空降蛛丝腰带','belt','rare',{def:1,agi:1})],
+      '拉夏南':[L('拉夏南的战翼长弓','weapon','epic',{atk:3,agi:2}),L('破晓号甲板胸甲','armor','epic',{def:2,sta:2}),L('陨圣峪风暴徽记','trinket','epic',{sta:2,agi:2})]
+    }, trash:[L('影冠突击肩甲','shoulder','rare',{atk:1,agi:1}),L('甲板疾行靴','boots','rare',{agi:1})] },
+    arakara: { bosses:{
+      '阿瓦诺克斯':[L('阿瓦诺克斯丝牙','weapon','rare',{atk:1,agi:1}),L('孵群甲壳护腕','gloves','rare',{agi:1})],
+      '阿努布泽克特':[L('泽克特的毒囊法器','weapon','rare',{atk:1,int:1}),L('回响之城护腿','pants','rare',{hp:1,spi:1})],
+      '收割者基卡塔尔':[L('基卡塔尔的收割镰刃','weapon','epic',{atk:3,agi:2}),L('回响之城胸甲','armor','epic',{def:2,sta:2}),L('蛛巢收成徽记','trinket','epic',{sta:2,agi:2})]
+    }, trash:[L('回响蛛网护肩','shoulder','rare',{atk:1,agi:1}),L('丝巷潜行靴','boots','rare',{agi:1})] },
+    citythreads: { bosses:{
+      '第五纱网演说家克里克斯维兹克':[L('纱网演说权杖','weapon','rare',{atk:1,int:1}),L('演说席位指环','ring','rare',{int:1,spi:1})],
+      '女王之牙':[L('女王之牙短匕','weapon','rare',{atk:1,agi:1}),L('王廷潜袭护手','gloves','rare',{agi:1})],
+      '凝结聚合体':[L('黑血聚核','trinket','rare',{sta:1,int:1}),L('聚合体束腰','belt','rare',{def:1,sta:1})],
+      '大切接师伊佐':[L('伊佐的王廷切接刃','weapon','epic',{atk:3,agi:2}),L('千丝之城胸甲','armor','epic',{def:2,sta:2}),L('宫廷缝线徽记','trinket','epic',{sta:2,agi:2})]
+    }, trash:[L('纱网护肩','shoulder','rare',{atk:1,int:1}),L('织都步履','boots','rare',{haste:1})] },
     eternalpalace: { bosses:{
       '暗鳞军团':[L('深海齐射之弓','weapon','epic',{atk:2,agi:2}),L('鳞甲护腿','pants','rare',{hp:1,agi:1})],
       '飘雾艾尔':[L('迷雾毒针匕首','weapon','epic',{atk:2,agi:2}),L('水母护腕','gloves','rare',{agi:1})],

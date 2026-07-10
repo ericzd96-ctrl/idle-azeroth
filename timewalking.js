@@ -7,6 +7,7 @@ const TIMEWALKING_PANDARIA_BANNER = 'assets/wow/art/timewalking-pandaria-banner.
 const TIMEWALKING_DRAENOR_BANNER = 'assets/wow/art/timewalking-draenor-banner.jpg';
 const TIMEWALKING_BFA_BANNER = 'assets/wow/art/timewalking-bfa-banner.jpg';
 const TIMEWALKING_SHADOWLANDS_BANNER = 'assets/wow/art/timewalking-shadowlands-banner.png';
+const TIMEWALKING_WARWITHIN_BANNER = 'assets/wow/art/warwithin-dungeon-banner.png';
 const TIMEWALKING_CACHE_COST = 18;
 const TIMEWALKING_MISSION_COUNT = 5;
 const TIMEWALKING_DISTORTION_OFFER_COUNT = 4;
@@ -159,6 +160,19 @@ const TIMEWALKING_ERAS = [
     worldBoss:'raszageth_storm',
     lootFallback:'amirdrassil',
   },
+  {
+    key:'warwithin',
+    name:'地心之战前线回响',
+    short:'地心之战',
+    icon:'🕸️',
+    color:'#c084fc',
+    banner:TIMEWALKING_WARWITHIN_BANNER,
+    desc:'卡兹阿加的开战地下城与尼鲁巴尔王宫被纳入战时编年,让世界之魂战线也能以周轮换形式持续回压终局构筑。',
+    dungeons:['rookery', 'stonevault', 'prioryflame', 'cinderbrew', 'darkflame', 'dawnbreaker', 'arakara', 'citythreads'],
+    raids:['nerubar'],
+    worldBoss:'xal_atath',
+    lootFallback:'nerubar',
+  },
 ];
 
 function timewalkingWeekId(now) {
@@ -212,6 +226,10 @@ function timewalkingLootContextKey(targetKey, era) {
     queen_azshara:'eternalpalace',
     sire_denathrius:'nathria',
     raszageth_storm:'amirdrassil',
+    xal_atath:'nerubar',
+    reshanor:'manaforge_omega',
+    shadowpoint_vexis:'shadowpoint_breach',
+    shandorah_astromancer:'shandorah_conclave',
   };
   return map[targetKey] || targetKey || era?.lootFallback || 'aq40';
 }

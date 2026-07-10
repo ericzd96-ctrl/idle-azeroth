@@ -3181,13 +3181,16 @@ function buildDungeonInfoHtml(dg) {
     const environmentPreview = (typeof getDungeonEnvironments === 'function') ? getDungeonEnvironments(dg, selectedContract.level) : [];
     const edictPreview = (typeof getDungeonTacticalEdicts === 'function') ? getDungeonTacticalEdicts(dg, selectedContract.level) : [];
     const timerPreview = (typeof createDungeonTimer === 'function') ? createDungeonTimer(dg, selectedContract.level) : null;
+    const alertLabelTip = inlineTipSpanHtml({ name:'警戒', icon:'🚨', desc:'契约副本每清一波 +1 级，击败首领 +2 级；警戒越高，后续敌人越强，也更容易出现戒备队长。' }, { fallbackIcon:'achievement_bg_returnxflags_def_wsg', color:'#fb7185' });
+    const edictLabelTip = inlineTipSpanHtml({ name:'战术禁令库', icon:'📜', desc:'每次契约会从禁令库随机抽取额外限制；禁令会提高战斗压力，并小幅提高通关奖励。', meta:`当前抽取 ${edictPreview.length} 条` }, { fallbackIcon:'inv_scroll_03', color:'#fcd34d' });
+    const timerLabelTip = timerPreview ? inlineTipSpanHtml({ name:'限时挑战', icon:'⏳', desc:'在限定时间内通关可获得额外奖励；超时后每 15 秒叠加一次压迫。', meta:timerPreview.label }, { fallbackIcon:'inv_misc_pocketwatch_01', color:'#fde68a' }) : '';
     html += `<div class="dungeon-contract-info">
       <b>${selectedContract.icon} 当前契约: ${selectedContract.name}</b>
       <div class="muted">${selectedContract.desc}</div>
       <div>怪物生命 ×${selectedContract.hp.toFixed(2)} · 攻击 ×${selectedContract.atk.toFixed(2)} · 防御 ×${selectedContract.def.toFixed(2)} · 通关奖励 ×${selectedContract.reward.toFixed(2)}</div>
-      <div class="dungeon-alert-rule">🚨 警戒: 契约副本每清一波+1级,击败首领+2级;高警戒会强化后续敌人并派出戒备队长。</div>
-      <div class="dungeon-edict-rule">📜 战术禁令库: 100条,当前契约抽取 ${edictPreview.length} 条;禁令会提高难度并小幅提高通关奖励。</div>
-      ${timerPreview ? `<div class="dungeon-timer-rule">⏳ 限时挑战: ${timerPreview.label} 内通关奖励 ×${timerPreview.rewardMult.toFixed(2)},超时后每15秒叠加压迫。</div>` : ''}
+      <div class="dungeon-alert-rule">${alertLabelTip}: 契约副本每清一波+1级,击败首领+2级;高警戒会强化后续敌人并派出戒备队长。</div>
+      <div class="dungeon-edict-rule">${edictLabelTip}: 100条,当前契约抽取 ${edictPreview.length} 条;禁令会提高难度并小幅提高通关奖励。</div>
+      ${timerPreview ? `<div class="dungeon-timer-rule">${timerLabelTip}: ${timerPreview.label} 内通关奖励 ×${timerPreview.rewardMult.toFixed(2)},超时后每15秒叠加压迫。</div>` : ''}
     </div>`;
     if (edictPreview.length) {
       html += `<div class="dungeon-edict-info">
@@ -3447,9 +3450,12 @@ function renderDungeon() {
     const edictPreview = (selectedContractLevel > 0 && typeof getDungeonTacticalEdicts === 'function') ? getDungeonTacticalEdicts(dg, selectedContractLevel) : [];
     const edictLine = edictPreview.length ? `<div class="dungeon-edict-line">📜 禁令: ${edictPreview.map(e => inlineTipSpanHtml(e, { fallbackIcon:'inv_scroll_03', color:'#fcd34d' })).join(' · ')}</div>` : '';
     const timerPreview = (selectedContractLevel > 0 && typeof createDungeonTimer === 'function') ? createDungeonTimer(dg, selectedContractLevel) : null;
-    const timerLine = timerPreview ? `<div class="dungeon-timer-line">⏳ 限时: ${timerPreview.label} · 达成奖励 ×${timerPreview.rewardMult.toFixed(2)} · 超时叠加压迫</div>` : '';
-    const alertLine = selectedContractLevel > 0 ? '<div class="dungeon-alert-line">🚨 契约警戒: 波次推进会逐步强化敌人,高警戒可能出现戒备队长</div>' : '';
-    const bossPhaseLine = selectedContractLevel > 0 ? '<div class="dungeon-boss-phase-line">⚔️ 首领阶段: Boss 血量下降时会触发额外阶段事件</div>' : '';
+    const timerLabelTip = timerPreview ? inlineTipSpanHtml({ name:'限时挑战', icon:'⏳', desc:'在限定时间内通关可获得额外奖励；超时后每 15 秒叠加一次压迫。', meta:timerPreview.label }, { fallbackIcon:'inv_misc_pocketwatch_01', color:'#fde68a' }) : '';
+    const alertLabelTip = inlineTipSpanHtml({ name:'契约警戒', icon:'🚨', desc:'警戒值会随着波次和首领击杀上升，后续敌人会同步强化，并可能出现戒备队长。' }, { fallbackIcon:'achievement_bg_returnxflags_def_wsg', color:'#fb7185' });
+    const bossPhaseLabelTip = inlineTipSpanHtml({ name:'首领阶段', icon:'⚔️', desc:'Boss 血量跌破指定阈值后，会触发阶段事件、强化读条或额外召唤。' }, { fallbackIcon:'ability_warrior_savageblow', color:'#fca5a5' });
+    const timerLine = timerPreview ? `<div class="dungeon-timer-line">${timerLabelTip} · 达成奖励 ×${timerPreview.rewardMult.toFixed(2)} · 超时叠加压迫</div>` : '';
+    const alertLine = selectedContractLevel > 0 ? `<div class="dungeon-alert-line">${alertLabelTip}: 波次推进会逐步强化敌人,高警戒可能出现戒备队长</div>` : '';
+    const bossPhaseLine = selectedContractLevel > 0 ? `<div class="dungeon-boss-phase-line">${bossPhaseLabelTip}: Boss 血量下降时会触发额外阶段事件</div>` : '';
     const firstClearBadge = (!state.dungeonFirstClear || !state.dungeonFirstClear[dg.key]) ? '<span class="pill" style="background:rgba(246,196,83,.18);color:#f6c453">🎁首通</span>' : '';
     const artBanner = dg.art ? `<div class="dungeon-art-banner" style="background-image:linear-gradient(180deg, rgba(11,15,25,.16), rgba(11,15,25,.78)), url('${dg.art}')"></div>` : '';
     // 必刷专属坐骑提示(读 DUNGEON_MOUNT_DROPS,按基础本key)

@@ -119,7 +119,7 @@ function accountTimewalkingEraMasteryCount() {
 function accountTimewalkingDistortionClearCount() {
   return accEns().timewalking?.distortionClears || 0;
 }
-const APEX_WORLD_BOSS_KEYS = ['deathwing','ragnaros','cthun','yogg_saron','alakir','lei_shen','rukhmar','argus_unmaker','queen_azshara','raszageth_storm','sire_denathrius','shadowpoint_vexis','shandorah_astromancer'];
+const APEX_WORLD_BOSS_KEYS = ['deathwing','ragnaros','cthun','yogg_saron','alakir','lei_shen','rukhmar','argus_unmaker','queen_azshara','raszageth_storm','sire_denathrius','xal_atath','reshanor','shadowpoint_vexis','shandorah_astromancer'];
 
 function ensureUnlockedTitles() {
   const acc = accEns();
