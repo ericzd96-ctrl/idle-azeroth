@@ -1257,6 +1257,16 @@ const MAPS = [
       passive:{atkBonus:0.48,critChance:0.32,dmgReduction:0.28,dodgeChance:0.18,leech:0.12,stunChance:0.2,
       tricks:[{name:"命运织网",icon:"🕸️",desc:"接下来5秒防御提升50%且吸血20%",defBuff:5,leechBuff:5},{name:"王廷号令",icon:"👑",desc:"接下来5秒攻击力提升50%",atkBuff:5},{name:"断丝处刑",icon:"🗡️",desc:"下一次攻击造成双倍伤害",nextDouble:1}] },
       skills:[{name:'蛛网绞杀',icon:'🕸️',desc:'11倍伤害+沉默',type:'dmg',mul:11,silence:2300,cripple:true,castTime:3.2},{name:'虚空毒潮',icon:'🌑',desc:'12倍范围伤害+瘟疫',type:'dmg',mul:12,aoe:true,plague:true,dot:true,castTime:4.1},{name:'王廷断命',icon:'👑',desc:'13倍终局伤害+恐惧',type:'dmg',mul:13,alwaysCrit:true,fear:2200,soulLink:true,castTime:5}] } },
+  { key:'karesh', name:"卡雷什", icon:'🌌', faction:'卡雷什信托', lvlRange:[95,100],
+    desc:'被虚空撕裂的虚灵故乡,塔扎维什与生态圆顶在残破星球上撑起最后防线',
+    sub:[
+      { name:'塔扎维什帷纱集市', lvl:[95,97], mobs:'🧿虚灵仲裁者|💠相位潜行者|📜契约掮客|🌌虚空裂隙' },
+      { name:'阿尔达尼生态圆顶', lvl:[97,100], mobs:'🍃圆顶守护者|🦎吞噬幼体|☣️荒原掠夺者|💎奥术温室' },
+    ],
+    boss:{ name:'相位猎手瓦兹鲁', emoji:'🧿', lvl:101, desc:'在相位潜航中追猎冒险者的卡雷什通缉犯',
+      passive:{atkBonus:0.54,critChance:0.34,dmgReduction:0.3,dodgeChance:0.2,leech:0.14,stunChance:0.22,
+      tricks:[{name:"相位潜航",icon:"🌀",desc:"接下来5秒闪避和减伤提高",defBuff:5},{name:"虚灵契约",icon:"📜",desc:"回复22%生命并提升攻击",healPct:0.22,atkBuff:5},{name:"裂隙狩猎",icon:"🎯",desc:"下一次攻击造成双倍且必定暴击",nextDouble:1,critBuff:5}] },
+      skills:[{name:'相位切割',icon:'🌀',desc:'12倍伤害+镜像错位',type:'dmg',mul:12,mirror:true,brittle:true,castTime:3.1},{name:'虚空通缉令',icon:'📜',desc:'12.5倍范围伤害+沉默',type:'dmg',mul:12.5,aoe:true,silence:2300,threat:true,castTime:4},{name:'群星吞噬',icon:'🌌',desc:'13.5倍范围终局伤害+恐惧',type:'dmg',mul:13.5,aoe:true,plague:true,fear:2200,alwaysCrit:true,castTime:5}] } },
 ];
 
 const RARE_ELITE_SKILLSETS = {
@@ -1426,7 +1436,8 @@ const MAP_RARE_ELITE_SEEDS = {
   thaldraszus:{ name:'永恒裂时者', emoji:'⏳', theme:'arcane', desc:'在时光汇流中反复出现的永恒龙裔刺客。' },
   dornogal:{ name:'裂隙钻探者格隆', emoji:'⚙️', theme:'brute', desc:'吞吃泰坦矿脉后失控的巨型钻探构装体。' },
   hallowfall:{ name:'暗潮烛噬者', emoji:'🕯️', theme:'shadow', desc:'专门猎杀圣焰守夜人的虚空潜伏者。' },
-  azj_kahet:{ name:'王庭断丝者', emoji:'🕸️', theme:'poison', desc:'安苏雷克王廷派出的蛛魔处刑者。' }
+  azj_kahet:{ name:'王庭断丝者', emoji:'🕸️', theme:'poison', desc:'安苏雷克王廷派出的蛛魔处刑者。' },
+  karesh:{ name:'相位通缉犯欧姆拉', emoji:'🧿', theme:'shadow', desc:'被塔扎维什通缉的相位潜航者,只在裂隙折光中现身。' }
 };
 
 function buildRareElites() {
@@ -3911,6 +3922,21 @@ const WORLD_BOSS_SKILLSETS = {
       {name:'现实裂口', icon:'🌀', desc:'20倍范围伤害，镜像错位并衰亡', type:'dmg', mul:20, castTime:4.6, aoe:true, mirror:true, decay2:true, silence:2200},
       {name:'虚空终幕', icon:'🌌', desc:'22倍范围终局伤害', type:'dmg', mul:22, castTime:5.8, aoe:true, plague:true, fear:2400, silence:2400, soulLink:true, alwaysCrit:true, brittle:true}
     ]
+  },
+  reshanor: {
+    passive:{ dmgReduction:0.66, critChance:0.4, dodgeChance:0.24, atkBonus:0.6, leech:0.18, stunChance:0.25 },
+    supportCount:8,
+    atkInterval:980,
+    instantCastChance:0.15,
+    skills:[
+      {name:'解缚冲击', icon:'🌀', desc:'19倍暗影奥术伤害,镜像错位', type:'dmg', mul:19, castTime:2.7, mirror:true, sunder:true, brittle:true},
+      {name:'卡雷什裂隙', icon:'🌌', desc:'19.5倍范围伤害,恐惧并沉默', type:'dmg', mul:19.5, castTime:3.8, aoe:true, fear:2300, silence:2400, decay2:true},
+      {name:'虚灵猎令', icon:'📜', desc:'获得护盾,提升攻击与减伤', type:'support', cd:16, castTime:2.6, shieldPct:0.26, atkBuffSecs:9, atkBuffPct:36, drBuffSecs:9, drBuffPct:0.24},
+      {name:'相位吞没', icon:'💠', desc:'20倍伤害,吸取资源并瘟疫', type:'dmg', mul:20, castTime:3.5, manaDrain:120, plague:true, soulDrain:true},
+      {name:'不羁回响', icon:'🧿', desc:'召唤3名相位残影并提高攻速', type:'support', cd:19, castTime:3.2, summonCount:3, summonTheme:'void', spdBuffSecs:8, spdBuffPct:34},
+      {name:'星界撕裂', icon:'✨', desc:'21倍范围伤害,虚弱并灵魂链接', type:'dmg', mul:21, castTime:4.8, aoe:true, weaken:true, soulLink:true, silence:2200},
+      {name:'无缚终局', icon:'🌌', desc:'23倍范围终局伤害', type:'dmg', mul:23, castTime:6, aoe:true, plague:true, fear:2500, silence:2500, mirror:true, alwaysCrit:true, brittle:true}
+    ]
   }
 };
 const RAID_EXTRA_BOSSES = {
@@ -4669,6 +4695,7 @@ function normalizeWorldBossSkillsets(){
     lei_shen:{ name:'雷神·雷霆之王', lvl:88, final:true },
     argus_unmaker:{ name:'阿古斯·寂灭者', lvl:90, final:true },
     xal_atath:{ name:'虚空先驱萨拉塔斯', lvl:96, final:true },
+    reshanor:{ name:'雷沙诺尔·无缚者', lvl:100, final:true },
   };
   for(const [key, boss] of Object.entries(WORLD_BOSS_SKILLSETS)){
     const info = meta[key] || { name:key, lvl:60, final:false };
@@ -5316,6 +5343,32 @@ function extendDungeonCatalog(){
       ]
     },
     {
+      key:'archival_assault', name:'档案突袭地下堡', icon:'📜', reqLvl:96, waves:6, delve:true, desc:'虚灵海盗洗劫蓝龙档案库,相位斗篷会开启额外挑战门与首领房间',
+      bosses:[
+        { name:'档案劫掠者', emoji:'📜', skills:[dmg('卷宗切割','📜',12.2,{ sunder:true, silence:1900 }), dmg('奥术爆页','💠',12.6,{ aoe:true, manaDrain:85, brittle:true })] },
+        { name:'相位门卫欧索', emoji:'🌀', skills:[dmg('相位门击','🌀',13,{ mirror:true, stun:1700 }), buffP('折光护幕','💠',0.55,'折光护幕:闪避/减伤/暴击提升',{ critBuffSecs:12, critBuffPct:46, drBuffSecs:12, drBuffPct:0.22 })] },
+        { name:'节点公主凯维扎', emoji:'🧿', skills:[
+          dmg('节点处刑','🧿',13.4,{ silence:2200, brittle:true, soulDrain:true }),
+          dmg('蓝龙档案过载','💠',13.8,{ aoe:true, manaDrain:100, decay2:true }),
+          summonP('虚灵海盗','🏴',0.48,'召唤 2 名虚灵海盗并获得护盾',{ summonCount:2, summonTheme:'void', shieldPct:0.2 }),
+          dmgP('相位审判','🌌',7.5,0.3,{ aoe:true, mirror:true, fear:2100, alwaysCrit:true, cd:15 })
+        ] }
+      ]
+    },
+    {
+      key:'ecodome_aldani', name:"生态圆顶阿尔达尼", icon:'🍃', reqLvl:97, waves:10, desc:'卡雷什珍贵生态圆顶被荒原掠夺者占据,吞噬者正在啃食残存生命',
+      bosses:[
+        { name:'阿尔达尼吞噬者', emoji:'🦎', skills:[dmg('生命啃噬','🩸',13,{ lifeSteal:0.22, plague:true }), dmg('圆顶撕裂','🍃',13.2,{ aoe:true, sunder:true })] },
+        { name:'荒原双子', emoji:'⚔️', skills:[dmg('荒原合击','⚔️',13.5,{ bleed:true, cripple:true }), summonP('掠夺帮众','📣',0.5,'召唤荒原帮众并提高攻击',{ summonCount:2, summonTheme:'soldier', atkBuffSecs:12, atkBuffPct:36 })] },
+        { name:'生态看护者阿尔达尼', emoji:'🍃', skills:[
+          dmg('温室脉冲','🍃',14,{ aoe:true, weaken:true }),
+          dmg('奥术授粉','💠',14.3,{ dot:true, manaDrain:95, silence:2100 }),
+          buffP('生态复苏','🌿',0.58,'生态复苏:回复并提高防御/减伤',{ healPct:0.2, defBuffSecs:13, defBuffPct:42, drBuffSecs:13, drBuffPct:0.22 }),
+          dmgP('圆顶过载','✨',7.8,0.3,{ aoe:true, alwaysCrit:true, brittle:true, fear:2100, cd:16 })
+        ] }
+      ]
+    },
+    {
       key:'nerubar', name:"尼鲁巴尔王宫", icon:'🕸️', type:'raid', reqLvl:92, waves:14, desc:'艾基-卡赫特的蛛魔帝国王宫,安苏雷克女王用黑血与虚空丝线编织终局试炼',
       bosses:[
         { name:'乌格拉克斯', emoji:'🪲', skills:[dmg('贪食冲锋','🪲',11,{ bleed:true, cripple:true }), dmgP('暴食震荡','💥',5.8,0.5,{ aoe:true, stun:1700, brittle:true, cd:12 })] },
@@ -5330,6 +5383,25 @@ function extendDungeonCatalog(){
           buffP('升格王权','🌌',0.65,'虚空王权升格:攻击/暴击/攻速/减伤提升',{ atkBuffSecs:16, atkBuffPct:52, critBuffSecs:16, critBuffPct:58, spdBuffSecs:16, spdBuffPct:34, drBuffSecs:16, drBuffPct:0.24 }),
           summonP('王宫禁卫','🕷️',0.42,'召唤 3 名蛛魔禁卫并获得护盾',{ summonCount:3, summonTheme:'spider', shieldPct:0.24 }),
           dmgP('尼鲁巴尔终幕','🕸️',8,0.3,{ aoe:true, plague:true, fear:2300, silence:2400, soulLink:true, alwaysCrit:true, cd:16 })
+        ] }
+      ]
+    },
+    {
+      key:'manaforge_omega', name:'法力熔炉欧米伽', icon:'🌌', type:'raid', reqLvl:100, waves:16, desc:'卡雷什的巨型宇宙能量设施,影卫虚灵试图在熔炉核心复活诸界吞噬者',
+      bosses:[
+        { name:'枢纽哨兵', emoji:'💠', skills:[dmg('枢纽切割','💠',13.5,{ sunder:true, brittle:true }), dmgP('哨兵矩阵','⚙️',6.8,0.45,{ aoe:true, silence:2000, cd:12 })] },
+        { name:"卢米萨尔", emoji:'🧵', skills:[dmg('星丝缠缚','🧵',13.8,{ cripple:true, soulLink:true }), summonP('织星虫群','🕸️',0.5,'召唤织星虫群并获得护盾',{ summonCount:2, summonTheme:'spider', shieldPct:0.2 })] },
+        { name:'缚魂者娜欣德莉', emoji:'👻', skills:[dmg('缚魂尖啸','👻',14,{ fear:2200, soulDrain:true }), dmg('灵魂税契','📜',14.2,{ manaDrain:105, silence:2200 })] },
+        { name:'织炉者阿拉兹', emoji:'⚒️', skills:[dmg('熔炉织线','⚒️',14.5,{ dot:true, sunder:true }), buffP('欧米伽炉心','🔥',0.58,'炉心超载:攻击/暴击/减伤提升',{ atkBuffSecs:14, atkBuffPct:48, critBuffSecs:14, critBuffPct:52, drBuffSecs:14, drBuffPct:0.22 })] },
+        { name:'噬魂猎手', emoji:'🏹', skills:[dmg('猎魂箭雨','🏹',14.8,{ aoe:true, bleed:true, cripple:true }), dmgP('猎手处决','🎯',7.2,0.38,{ alwaysCrit:true, brittle:true, cd:12 })] },
+        { name:'碎裂者弗拉克提勒斯', emoji:'💎', skills:[dmg('晶化粉碎','💎',15,{ stun:1900, brittle:true }), dmg('棱镜坍缩','✨',15.2,{ aoe:true, mirror:true, decay2:true })] },
+        { name:'枢纽之王萨哈达尔', emoji:'👑', skills:[dmg('虚灵王令','👑',15.5,{ silence:2300, soulLink:true }), summonP('影卫誓约','🧿',0.52,'召唤影卫誓约者并提高攻速',{ summonCount:3, summonTheme:'void', spdBuffSecs:14, spdBuffPct:34 })] },
+        { name:'诸界吞噬者迪门修斯', emoji:'🌌', skills:[
+          dmg('吞界引力','🌌',16,{ aoe:true, cripple:true, decay2:true }),
+          dmg('虚空星环','🌀',16.5,{ aoe:true, silence:2400, mirror:true }),
+          buffP('诸界饥渴','🩸',0.66,'诸界饥渴:攻击/暴击/吸血/减伤提升',{ atkBuffSecs:16, atkBuffPct:56, critBuffSecs:16, critBuffPct:60, leechBuffSecs:16, leechBuffPct:28, drBuffSecs:16, drBuffPct:0.26 }),
+          summonP('吞噬裂隙','🌌',0.45,'召唤 3 个吞噬裂隙并获得护盾',{ summonCount:3, summonTheme:'void', shieldPct:0.26 }),
+          dmgP('欧米伽终幕','🌌',8.8,0.3,{ aoe:true, plague:true, fear:2500, silence:2500, soulLink:true, mirror:true, alwaysCrit:true, cd:16 })
         ] }
       ]
     }
@@ -5701,6 +5773,16 @@ function extendDungeonCatalog(){
       '蘑菇术士维洛':[L('维洛的菌丝法典','weapon','epic',{atk:3,int:2}),L('蘑菇术士指环','ring','rare',{int:1,vers:1})],
       '菌潮巨怪':[L('菌潮巨槌','weapon','legend',{atk:5,str:4}),L('真菌孢子胸甲','armor','epic',{def:3,sta:2}),L('愚者盛放徽记','trinket','legend',{sta:3,int:3})]
     }, trash:[L('孢子行者腰带','belt','rare',{def:1,spi:1}),L('菌丝软靴','boots','rare',{int:1})] },
+    archival_assault: { bosses:{
+      '档案劫掠者':[L('劫掠者的卷宗刀','weapon','epic',{atk:3,agi:2}),L('被盗档案护腕','gloves','rare',{int:1,haste:1})],
+      '相位门卫欧索':[L('欧索的折光权杖','weapon','epic',{atk:3,int:2}),L('相位门卫指环','ring','rare',{sta:1,vers:1})],
+      '节点公主凯维扎':[L('凯维扎的节点刃','weapon','legend',{atk:5,agi:4}),L('档案突袭胸甲','armor','epic',{def:3,sta:2}),L('蓝龙档案核心','trinket','legend',{sta:3,int:3})]
+    }, trash:[L('虚灵海盗护肩','shoulder','rare',{atk:1,agi:1}),L('折光档案靴','boots','rare',{int:1})] },
+    ecodome_aldani: { bosses:{
+      '阿尔达尼吞噬者':[L('吞噬者骨镰','weapon','epic',{atk:3,agi:2}),L('圆顶啃噬护手','gloves','epic',{atk:2,sta:2})],
+      '荒原双子':[L('荒原双刃','weapon','epic',{atk:3,str:2}),L('掠夺者契约戒','ring','epic',{str:2,vers:1})],
+      '生态看护者阿尔达尼':[L('阿尔达尼生命法杖','weapon','legend',{atk:5,int:4}),L('生态看护胸甲','armor','epic',{def:3,spi:2}),L('圆顶复苏徽记','trinket','legend',{sta:3,spi:3})]
+    }, trash:[L('生态圆顶护肩','shoulder','rare',{sta:1,spi:1}),L('荒原行者战靴','boots','rare',{agi:1})] },
     nerubar: { bosses:{
       '乌格拉克斯':[L('暴食虫颚战斧','weapon','epic',{atk:3,str:2}),L('王宫甲壳护腿','pants','epic',{hp:2,sta:2})],
       '血缚恐魔':[L('黑血法典','weapon','epic',{atk:3,int:2}),L('血缚指环','ring','epic',{int:2,vers:1})],
@@ -5709,7 +5791,17 @@ function extendDungeonCatalog(){
       '节点女亲王':[L('节点女亲王权杖','weapon','epic',{atk:3,int:2}),L('节点调谐徽记','trinket','epic',{sta:2,int:2})],
       '流丝之庭':[L('流丝庭院护手','gloves','epic',{atk:2,agi:2}),L('织命胸甲','armor','epic',{def:3,sta:2})],
       '安苏雷克女王':[L('安苏雷克的黑血王刃','weapon','legend',{atk:7,agi:5}),L('尼鲁巴尔女王冠冕','helmet','legend',{def:5,int:4}),L('蛛魔帝国胸甲','armor','legend',{def:6,sta:4}),L('黑血王权徽记','trinket','legend',{sta:4,int:4})]
-    }, trash:[L('蛛魔禁卫护肩','shoulder','rare',{atk:1,sta:1}),L('王宫织丝长靴','boots','rare',{agi:1})] }
+    }, trash:[L('蛛魔禁卫护肩','shoulder','rare',{atk:1,sta:1}),L('王宫织丝长靴','boots','rare',{agi:1})] },
+    manaforge_omega: { bosses:{
+      '枢纽哨兵':[L('枢纽哨兵战刃','weapon','epic',{atk:3,str:2}),L('哨兵矩阵护腿','pants','epic',{hp:2,sta:2})],
+      "卢米萨尔":[L('卢米萨尔星丝杖','weapon','epic',{atk:3,int:2}),L('织星护肩','shoulder','epic',{atk:2,int:2})],
+      '缚魂者娜欣德莉':[L('娜欣德莉缚魂法典','weapon','epic',{atk:3,int:2}),L('缚魂指环','ring','epic',{int:2,vers:1})],
+      '织炉者阿拉兹':[L('阿拉兹熔炉锤','weapon','epic',{atk:3,str:2}),L('织炉者护手','gloves','epic',{atk:2,haste:1})],
+      '噬魂猎手':[L('噬魂猎弓','weapon','epic',{atk:3,agi:2}),L('猎魂战靴','boots','epic',{atk:2,agi:2})],
+      '碎裂者弗拉克提勒斯':[L('弗拉克提勒斯晶刃','weapon','epic',{atk:3,agi:2}),L('棱镜胸甲','armor','epic',{def:3,sta:2})],
+      '枢纽之王萨哈达尔':[L('萨哈达尔王权权杖','weapon','epic',{atk:4,int:2}),L('枢纽王冠','helmet','epic',{def:3,int:2})],
+      '诸界吞噬者迪门修斯':[L('迪门修斯的吞界星刃','weapon','legend',{atk:8,int:5}),L('欧米伽熔炉冠冕','helmet','legend',{def:5,int:5}),L('诸界吞噬胸甲','armor','legend',{def:7,sta:5}),L('无界虚空徽记','trinket','legend',{sta:5,int:5})]
+    }, trash:[L('影卫虚灵护肩','shoulder','rare',{atk:1,int:1}),L('欧米伽管道战靴','boots','rare',{haste:1})] }
   };
 
   for (const dg of extraDungeons) ensureDungeon(dg, extraLoot[dg.key]);
@@ -5770,6 +5862,7 @@ const EPIC_RAID_SET_THEME = {
   aberrus:{ tier:'T29', name:'厄苏戈尔', short:'熔铸' },
   amirdrassil:{ tier:'T31', name:'阿米德拉希尔', short:'梦境' },
   nerubar:{ tier:'T32', name:'尼鲁巴尔王宫', short:'蛛魔' },
+  manaforge_omega:{ tier:'T33', name:'法力熔炉欧米伽', short:'欧米伽' },
 };
 const RAID_PROGRESSION = {
   mc:{ order:1, expansion:'经典旧世', epicIlvl:140 },
@@ -5801,6 +5894,7 @@ const RAID_PROGRESSION = {
   aberrus:{ order:27, expansion:'巨龙时代', epicIlvl:396 },
   amirdrassil:{ order:28, expansion:'巨龙时代', epicIlvl:408 },
   nerubar:{ order:29, expansion:'地心之战', epicIlvl:424 },
+  manaforge_omega:{ order:30, expansion:'地心之战', epicIlvl:438 },
 };
 const EPIC_RAID_SET_LABELS = {
   mc:{

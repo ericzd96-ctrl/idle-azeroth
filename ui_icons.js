@@ -71,7 +71,9 @@
     oculus:'spell_arcane_portalshattrath', hor:'achievement_boss_lichking',
     stonevault:'achievement_dungeon_ulduar_raildriver', prioryflame:'spell_holy_divineillumination',
     nightfall_sanctum:'inv_misc_key_14', earthcrawl_mines:'ability_creature_poison_05',
-    fungal_folly:'ability_creature_disease_02', nerubar:'ability_creature_poison_05'
+    fungal_folly:'ability_creature_disease_02', archival_assault:'inv_misc_map_01',
+    ecodome_aldani:'spell_nature_stranglevines', nerubar:'ability_creature_poison_05',
+    manaforge_omega:'spell_arcane_portalshattrath'
   };
 
   const SYMBOL_ICON = {
@@ -85,6 +87,7 @@
     '🏟️':'achievement_arena_3v3_9',
     '🎫':'inv_misc_ticket_tarot_portal_01',
     '🗝️':'inv_10_blacksmithing_consumable_key_color1',
+    '📜':'inv_misc_map_01',
     '👑':'achievement_boss_lichking',
     '🗡️':'ability_rogue_eviscerate',
     '⚔️':'ability_warrior_savageblow',

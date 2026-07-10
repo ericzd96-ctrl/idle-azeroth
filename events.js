@@ -62,6 +62,10 @@ const WORLD_BOSSES = [
     desc:'黑血与虚空丝线背后的低语者,会把蛛魔王宫的终局压迫带到世界战场。',
     hpMul:78, atkMul:7.15, defMul:5.85, cdHours:8,
     rewards:{ gold:230000, gem:360, honor:11200, essence:125, shards:32 } },
+  { key:'reshanor', name:'雷沙诺尔·无缚者', emoji:'🧿', lvl:100, minLvl:82, color:'#38bdf8',
+    desc:'卡雷什相位风暴中的新世界Boss,不羁能量会把终局角色的续航与打断窗口一起压到极限。',
+    hpMul:88, atkMul:7.85, defMul:6.25, cdHours:8,
+    rewards:{ gold:280000, gem:420, honor:12800, essence:150, shards:40 } },
 ];
 for (const wb of WORLD_BOSSES) {
   const profile = (typeof WORLD_BOSS_SKILLSETS === 'object' && WORLD_BOSS_SKILLSETS[wb.key]) || null;

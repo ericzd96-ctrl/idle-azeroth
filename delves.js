@@ -153,6 +153,7 @@ function grantDelveClearReward(dg, ds) {
       consumedKey = true;
       cofferState = '丰裕宝匣已开启';
       item = grantDelveRewardItem(dg, tier, true);
+      if (typeof worldsoulOnBountifulCoffer === 'function') worldsoulOnBountifulCoffer(dg, tier);
     } else {
       cofferState = '丰裕宝匣已发现,但缺少修复钥匙';
       gold = Math.floor(gold * 0.55);
