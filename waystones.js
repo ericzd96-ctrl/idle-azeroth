@@ -1,7 +1,8 @@
 /* waystones.js - K'aresh Waystone Network meta progression */
 const WAYSTONE_KARESH_KEYS = new Set([
   'archival_assault', 'ecodome_aldani', 'oasis_succession', 'tazavesh_streets', 'tazavesh_gambit',
-  'overlook_zoshul', 'ecodome_rhovan', 'shadowpoint_breach', 'manaforge_omega', 'shandorah_conclave'
+  'overlook_zoshul', 'ecodome_rhovan', 'shadowpoint_breach', 'primeus_repository',
+  'manaforge_omega', 'shandorah_conclave', 'voidrazor_sanctum'
 ]);
 
 const WAYSTONE_NODES = [

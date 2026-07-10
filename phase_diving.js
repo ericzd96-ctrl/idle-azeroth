@@ -61,7 +61,7 @@ function phaseInstabilityLevel() {
 function phaseDivingEnemyAffixFor(dg) {
   if (!dg) return null;
   const key = (typeof baseDungeonKey === 'function') ? baseDungeonKey(dg.key) : dg.key;
-  const affected = ['archival_assault', 'ecodome_aldani', 'tazavesh_streets', 'tazavesh_gambit', 'overlook_zoshul', 'shadowpoint_breach', 'manaforge_omega', 'shandorah_conclave'].includes(key);
+  const affected = ['archival_assault', 'ecodome_aldani', 'tazavesh_streets', 'tazavesh_gambit', 'overlook_zoshul', 'ecodome_rhovan', 'shadowpoint_breach', 'primeus_repository', 'manaforge_omega', 'shandorah_conclave', 'voidrazor_sanctum'].includes(key);
   if (!affected) return null;
   const lvl = phaseInstabilityLevel();
   if (lvl <= 0) return null;

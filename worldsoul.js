@@ -57,7 +57,7 @@ function worldsoulPressureLevel() {
 function worldsoulEnemyAffixFor(dg) {
   if (!dg) return null;
   const key = (typeof baseDungeonKey === 'function') ? baseDungeonKey(dg.key) : dg.key;
-  const affected = ['archival_assault', 'ecodome_aldani', 'overlook_zoshul', 'shadowpoint_breach', 'manaforge_omega', 'shandorah_conclave'].includes(key);
+  const affected = ['archival_assault', 'ecodome_aldani', 'overlook_zoshul', 'ecodome_rhovan', 'shadowpoint_breach', 'primeus_repository', 'manaforge_omega', 'shandorah_conclave', 'voidrazor_sanctum'].includes(key);
   if (!affected) return null;
   const lvl = worldsoulPressureLevel();
   if (lvl <= 0) return null;
@@ -134,7 +134,7 @@ function renderWorldsoulSub() {
       <span>本周记忆 <b>${ws.runs || 0}</b></span>
       <span>裂隙压迫 <b>${pressure}</b></span>
     </div>
-    <div class="worldsoul-note">丰裕地下堡开启宝匣可获得 Radiant Echo。压迫会强化档案突袭、生态圆顶与法力熔炉中的敌人,用来抵消记忆奖励带来的成长。</div>
+    <div class="worldsoul-note">丰裕地下堡开启宝匣可获得 Radiant Echo。压迫会强化档案突袭、生态圆顶、普莱姆斯与虚无剃刀线敌人,用来抵消记忆奖励带来的成长。</div>
     <div class="worldsoul-grid">${tierCards}</div>
     ${hist ? `<div class="worldsoul-history">${hist}</div>` : ''}
   </div>`;
@@ -171,6 +171,7 @@ function renderWorldsoulSub() {
           <span class="sub-tab ${eventsSubTab==='invasion'?'active':''}" data-sub="invasion">🛡️ 入侵</span>
           <span class="sub-tab ${eventsSubTab==='dragonTreasure'?'active':''}" data-sub="dragonTreasure">🧭 龙岛宝藏</span>
           <span class="sub-tab ${eventsSubTab==='worldsoul'?'active':''}" data-sub="worldsoul">🌌 世界之魂</span>
+          ${typeof renderKareshExpeditionSub === 'function' ? `<span class="sub-tab ${eventsSubTab==='kareshExpedition'?'active':''}" data-sub="kareshExpedition">🚩 终局远征</span>` : ''}
           ${typeof renderPhaseDivingSub === 'function' ? `<span class="sub-tab ${eventsSubTab==='phaseDiving'?'active':''}" data-sub="phaseDiving">🧿 相位潜航</span>` : ''}
           ${typeof renderKareshEcologySub === 'function' ? `<span class="sub-tab ${eventsSubTab==='kareshEcology'?'active':''}" data-sub="kareshEcology">🌱 生态演替</span>` : ''}
           <span class="sub-tab ${eventsSubTab==='daily'?'active':''}" data-sub="daily">📅 日常</span>
@@ -182,6 +183,7 @@ function renderWorldsoulSub() {
       else if (eventsSubTab === 'invasion') body = typeof renderWorldInvasionSub === 'function' ? renderWorldInvasionSub() : '<div class="prog-summary muted">世界入侵载入中...</div>';
       else if (eventsSubTab === 'dragonTreasure') body = typeof renderDragonTreasureSub === 'function' ? renderDragonTreasureSub() : '<div class="prog-summary muted">龙岛宝藏载入中...</div>';
       else if (eventsSubTab === 'worldsoul') body = renderWorldsoulSub();
+      else if (eventsSubTab === 'kareshExpedition' && typeof renderKareshExpeditionSub === 'function') body = renderKareshExpeditionSub();
       else if (eventsSubTab === 'phaseDiving' && typeof renderPhaseDivingSub === 'function') body = renderPhaseDivingSub();
       else if (eventsSubTab === 'kareshEcology' && typeof renderKareshEcologySub === 'function') body = renderKareshEcologySub();
       else if (eventsSubTab === 'daily') body = renderDailySub();
