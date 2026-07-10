@@ -3970,6 +3970,20 @@ const WORLD_BOSS_SKILLSETS = {
       {name:'万物归零', icon:'💥', desc:'19倍范围伤害', type:'dmg', mul:19, castTime:5.4, aoe:true, soulDrain:true, silence:2200, fear:1800, brittle:true}
     ]
   },
+  queen_azshara: {
+    passive:{ dmgReduction:0.57, critChance:0.37, dodgeChance:0.22, atkBonus:0.52, leech:0.12, stunChance:0.2 },
+    supportCount:6,
+    atkInterval:1020,
+    instantCastChance:0.17,
+    skills:[
+      {name:'女王法潮', icon:'🌊', desc:'16.8倍范围奥术潮汐伤害,沉默并吸取资源', type:'dmg', mul:16.8, castTime:2.8, aoe:true, silence:2200, manaDrain:90},
+      {name:'深海敕令', icon:'🔱', desc:'17.2倍伤害,虚弱、恐惧并镜像错位', type:'dmg', mul:17.2, castTime:3.3, weaken:true, fear:1900, mirror:true},
+      {name:'娜迦禁卫', icon:'🧜', desc:'召唤2名娜迦禁卫并获得护盾', type:'support', cd:18, castTime:2.9, summonCount:2, summonTheme:'soldier', shieldPct:0.22, defBuffSecs:8, defBuffPct:20},
+      {name:'潮汐枷锁', icon:'🌀', desc:'17.6倍伤害,冻结并灵魂链接', type:'dmg', mul:17.6, castTime:3.6, freeze:1700, soulLink:true, cripple:true},
+      {name:'古神谕令', icon:'👁️', desc:'获得护盾并提升攻击、暴击与攻速', type:'support', cd:19, castTime:3.1, shieldPct:0.18, atkBuffSecs:8, atkBuffPct:30, critBuffSecs:8, critBuffPct:36, spdBuffSecs:8, spdBuffPct:24},
+      {name:'永恒王宫坍塌', icon:'🌌', desc:'20.2倍范围伤害,衰亡、恐惧并必定暴击', type:'dmg', mul:20.2, castTime:5.1, aoe:true, decay2:true, fear:2000, silence:2200, alwaysCrit:true, brittle:true}
+    ]
+  },
   raszageth_storm: {
     passive:{ dmgReduction:0.56, critChance:0.36, dodgeChance:0.2, atkBonus:0.5, leech:0.1, stunChance:0.24 },
     supportCount:6,
@@ -3982,6 +3996,21 @@ const WORLD_BOSS_SKILLSETS = {
       {name:'雷霆牢笼', icon:'🔗', desc:'16.8倍伤害，吸取资源并灵魂链接', type:'dmg', mul:16.8, castTime:3.4, manaDrain:95, soulLink:true, cripple:true},
       {name:'暴风唤醒', icon:'🪽', desc:'召唤2名风暴元素并提升攻击', type:'support', cd:20, castTime:3.2, summonCount:2, summonTheme:'elemental', atkBuffSecs:7, atkBuffPct:28},
       {name:'化身崩雷', icon:'💥', desc:'19.5倍范围伤害，恐惧、沉默并引发衰亡', type:'dmg', mul:19.5, castTime:5.2, aoe:true, fear:1900, silence:2200, decay2:true, brittle:true}
+    ]
+  },
+  sire_denathrius: {
+    passive:{ dmgReduction:0.59, critChance:0.38, dodgeChance:0.22, atkBonus:0.54, leech:0.18, stunChance:0.22 },
+    supportCount:7,
+    atkInterval:1000,
+    instantCastChance:0.18,
+    skills:[
+      {name:'罪碑突刺', icon:'🗡️', desc:'17.2倍暗影伤害,破甲并虚弱', type:'dmg', mul:17.2, castTime:2.7, sunder:true, weaken:true, brittle:true},
+      {name:'深红收割', icon:'🩸', desc:'17.8倍范围伤害,流血并吸取资源', type:'dmg', mul:17.8, castTime:3.4, aoe:true, bleed:true, manaDrain:95},
+      {name:'噬渊赐力', icon:'🕳️', desc:'获得护盾并提高攻击、攻速与吸血', type:'support', cd:17, castTime:2.8, shieldPct:0.22, atkBuffSecs:8, atkBuffPct:32, spdBuffSecs:8, spdBuffPct:28, leechBuffSecs:8, leechBuffPct:24},
+      {name:'石裔断罪', icon:'🗿', desc:'召唤2尊石裔守卫并强化减伤', type:'support', cd:20, castTime:3.2, summonCount:2, summonTheme:'soldier', drBuffSecs:8, drBuffPct:0.2},
+      {name:'赎罪回响', icon:'🔔', desc:'18.4倍伤害,恐惧、沉默并吸魂', type:'dmg', mul:18.4, castTime:3.7, fear:2000, silence:2200, soulDrain:true},
+      {name:'深红夜宴', icon:'🍷', desc:'18.9倍范围伤害,衰亡并附加易爆', type:'dmg', mul:18.9, castTime:4.3, aoe:true, decay2:true, brittle:true, weaken:true},
+      {name:'主宰终罚', icon:'👑', desc:'20.8倍范围终局伤害,灵魂链接并必定暴击', type:'dmg', mul:20.8, castTime:5.5, aoe:true, soulLink:true, silence:2300, fear:2100, alwaysCrit:true, brittle:true}
     ]
   },
   xal_atath: {
@@ -4803,8 +4832,13 @@ function normalizeWorldBossSkillsets(){
     lei_shen:{ name:'雷神·雷霆之王', lvl:88, final:true },
     rukhmar:{ name:'鲁克玛', lvl:89, final:true },
     argus_unmaker:{ name:'阿古斯·寂灭者', lvl:90, final:true },
+    queen_azshara:{ name:'阿兹莎拉女王', lvl:91, final:true },
+    raszageth_storm:{ name:'莱萨杰丝·风暴化身', lvl:92, final:true },
+    sire_denathrius:{ name:'主宰者德纳修斯', lvl:93, final:true },
     xal_atath:{ name:'虚空先驱萨拉塔斯', lvl:96, final:true },
     reshanor:{ name:'雷沙诺尔·无缚者', lvl:100, final:true },
+    shadowpoint_vexis:{ name:'影点总督维克席斯', lvl:102, final:true },
+    shandorah_astromancer:{ name:'群星占相者诺维萨', lvl:104, final:true },
   };
   for(const [key, boss] of Object.entries(WORLD_BOSS_SKILLSETS)){
     const info = meta[key] || { name:key, lvl:60, final:false };
@@ -4964,7 +4998,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'freehold', name:'自由镇', icon:'🏴‍☠️', reqLvl:72, waves:9, desc:'库尔提拉斯海盗盘踞的无法之港',
+      key:'freehold', name:'自由镇', icon:'🏴‍☠️', reqLvl:72, waves:9, art:'assets/wow/art/timewalking-bfa-banner.jpg', desc:'库尔提拉斯海盗盘踞的无法之港',
       bosses:[
         { name:'断牙海狗', emoji:'🦈', skills:[dmg('鲨鱼狂袭','🦈',6,{ bleed:true, frenzy:true })] },
         { name:'酒桶炸药师', emoji:'🛢️', skills:[dmg('火药桶','💥',6.5,{ aoe:true, stun:1300 })] },
@@ -4972,7 +5006,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'mechagon', name:'麦卡贡', icon:'⚙️', reqLvl:75, waves:9, desc:'机械侏儒打造的废土发明工坊',
+      key:'mechagon', name:'麦卡贡', icon:'⚙️', reqLvl:75, waves:9, art:'assets/wow/art/timewalking-bfa-banner.jpg', desc:'机械侏儒打造的废土发明工坊',
       bosses:[
         { name:'回收机器人', emoji:'🤖', skills:[dmg('废料喷射','⚙️',6.5,{ dot:true, brittle:true })] },
         { name:'爆破专家', emoji:'💣', skills:[dmg('集束炸弹','💣',7,{ aoe:true, stun:1400 })] },
@@ -4980,7 +5014,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'boralus', name:'围攻伯拉勒斯', icon:'⚓', reqLvl:77, waves:10, desc:'库尔提拉斯海军要塞的巷战与码头攻防',
+      key:'boralus', name:'围攻伯拉勒斯', icon:'⚓', reqLvl:77, waves:10, art:'assets/wow/art/timewalking-bfa-banner.jpg', desc:'库尔提拉斯海军要塞的巷战与码头攻防',
       bosses:[
         { name:'海军统领', emoji:'⚓', skills:[dmg('齐射炮火','💥',7,{ aoe:true, dot:true })] },
         { name:'巡夜指挥官', emoji:'🐕', skills:[dmg('猎犬扑咬','🐕',7.5,{ bleed:true, cripple:true })] },
@@ -5088,7 +5122,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'necrotic', name:'通灵之刺', icon:'💀', reqLvl:76, waves:10, desc:'玛卓克萨斯的腐败造物工坊,缚霜者纳索尔守护的死灵兵工厂',
+      key:'necrotic', name:'通灵之刺', icon:'💀', reqLvl:76, waves:10, art:'assets/wow/art/timewalking-shadowlands-banner.png', desc:'玛卓克萨斯的腐败造物工坊,缚霜者纳索尔守护的死灵兵工厂',
       bosses:[
         { name:'疫骨', emoji:'☠️', skills:[dmg('腐液喷吐','🟢',7,{ plague:true, dot:true, aoe:true })] },
         { name:'外科医生缝肉', emoji:'🧟', skills:[dmg('缝合钩链','🪝',7.5,{ bleed:true, cripple:true })] },
@@ -5145,7 +5179,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'ataldazar', name:'阿塔达萨', icon:'🏛️', reqLvl:77, waves:10, desc:'赞达拉黄金金字塔,巨魔诸王长眠的陵墓',
+      key:'ataldazar', name:'阿塔达萨', icon:'🏛️', reqLvl:77, waves:10, art:'assets/wow/art/timewalking-bfa-banner.jpg', desc:'赞达拉黄金金字塔,巨魔诸王长眠的陵墓',
       bosses:[
         { name:'瓦兹拉吉', emoji:'🐆', skills:[dmg('神圣狩猎','🐆',7.5,{ bleed:true, frenzy:true })] },
         { name:'监护者沃尔卡', emoji:'🛡️', skills:[dmg('黄金壁垒','🟡',7.5,{ brittle:true, stun:1400 })] },
@@ -5154,7 +5188,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'uldir', name:'奥迪尔', icon:'🧬', type:'raid', reqLvl:79, waves:13, desc:'泰坦造物实验室,被腐化之血污染的血肉囚牢',
+      key:'uldir', name:'奥迪尔', icon:'🧬', type:'raid', reqLvl:79, waves:13, art:'assets/wow/art/timewalking-bfa-banner.jpg', desc:'泰坦造物实验室,被腐化之血污染的血肉囚牢',
       bosses:[
         { name:'魔血之触', emoji:'🩸', skills:[dmg('腐血爆发','🩸',9,{ aoe:true, plague:true, dot:true })] },
         { name:'垫脚石', emoji:'🪨', skills:[dmg('崩解践踏','🪨',9.5,{ stun:1500, sunder:true })] },
@@ -5175,7 +5209,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'atonement', name:'赎罪大厅', icon:'⛪', reqLvl:73, waves:9, desc:'雷文德斯的哥特式审判殿堂,贪婪者的赎罪之地',
+      key:'atonement', name:'赎罪大厅', icon:'⛪', reqLvl:73, waves:9, art:'assets/wow/art/timewalking-shadowlands-banner.png', desc:'雷文德斯的哥特式审判殿堂,贪婪者的赎罪之地',
       bosses:[
         { name:'石裔典狱官', emoji:'🗿', skills:[dmg('石化打击','🪨',7,{ stun:1400, brittle:true })] },
         { name:'忏悔者阿德琳娜', emoji:'🕯️', skills:[dmg('罪孽箭雨','🏹',7.5,{ aoe:true, bleed:true })] },
@@ -5183,7 +5217,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'plaguefall', name:'凋魂之殇', icon:'☣️', reqLvl:75, waves:10, desc:'玛卓克萨斯的瘟疫泥沼,炼金腐化的死亡兵工厂',
+      key:'plaguefall', name:'凋魂之殇', icon:'☣️', reqLvl:75, waves:10, art:'assets/wow/art/timewalking-shadowlands-banner.png', desc:'玛卓克萨斯的瘟疫泥沼,炼金腐化的死亡兵工厂',
       bosses:[
         { name:'全球大瘟疫', emoji:'🦠', skills:[dmg('瘟疫喷涌','🟢',7.5,{ plague:true, dot:true, aoe:true })] },
         { name:'多曼戈斯', emoji:'🧪', skills:[dmg('腐蚀药剂','🧪',8,{ weaken:true, decay:true })] },
@@ -5192,7 +5226,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'mists', name:'彼界', icon:'🍃', reqLvl:71, waves:9, desc:'玉色林地深处的迷雾幻境,森林之灵在此考验来客',
+      key:'mists', name:'彼界', icon:'🍃', reqLvl:71, waves:9, art:'assets/wow/art/timewalking-shadowlands-banner.png', desc:'玉色林地深处的迷雾幻境,森林之灵在此考验来客',
       bosses:[
         { name:'因格拉·玛洛克', emoji:'🌳', skills:[dmg('缠根禁锢','🌿',6.5,{ stun:1400, dot:true })] },
         { name:'迷雾呼唤者', emoji:'🌫️', skills:[dmg('迷雾箭雨','🌫️',7,{ aoe:true, weaken:true, mirror:true })] },
@@ -5200,7 +5234,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'theater', name:'苦痛剧场', icon:'⚔️', reqLvl:73, waves:9, desc:'玛卓克萨斯的角斗竞技场,亡者为荣耀与娱乐而厮杀',
+      key:'theater', name:'苦痛剧场', icon:'⚔️', reqLvl:73, waves:9, art:'assets/wow/art/timewalking-shadowlands-banner.png', desc:'玛卓克萨斯的角斗竞技场,亡者为荣耀与娱乐而厮杀',
       bosses:[
         { name:'角斗士的挑衅', emoji:'🛡️', skills:[dmg('协同围攻','⚔️',7,{ aoe:true, bleed:true })] },
         { name:'血肉钩刃戈莱什', emoji:'🪝', skills:[dmg('钩链拖拽','🪝',7.5,{ cripple:true, sunder:true })] },
@@ -5209,7 +5243,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'waycrest', name:'维克雷斯庄园', icon:'🏚️', reqLvl:74, waves:10, desc:'德鲁斯特女巫盘踞的腐朽庄园,被诅咒的贵族血脉之地',
+      key:'waycrest', name:'维克雷斯庄园', icon:'🏚️', reqLvl:74, waves:10, art:'assets/wow/art/timewalking-bfa-banner.jpg', desc:'德鲁斯特女巫盘踞的腐朽庄园,被诅咒的贵族血脉之地',
       bosses:[
         { name:'噬心三姐妹', emoji:'🕯️', skills:[dmg('诅咒齐唱','🎶',7,{ aoe:true, dot:true, manaDrain:40 })] },
         { name:'灵魂巨像', emoji:'🗿', skills:[dmg('恐惧重击','👊',7.5,{ stun:1500, fear:1500 })] },
@@ -5218,7 +5252,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'kingsrest', name:'国王之眠', icon:'⚰️', reqLvl:76, waves:10, desc:'赞达拉巨魔历代先王长眠的黄金陵墓,盗墓者惊扰了沉睡的死者',
+      key:'kingsrest', name:'国王之眠', icon:'⚰️', reqLvl:76, waves:10, art:'assets/wow/art/timewalking-bfa-banner.jpg', desc:'赞达拉巨魔历代先王长眠的黄金陵墓,盗墓者惊扰了沉睡的死者',
       bosses:[
         { name:'守墓人迪萨克', emoji:'🗿', skills:[dmg('陵墓践踏','🪨',7.5,{ stun:1400, sunder:true })] },
         { name:'监工艾克泽勒', emoji:'⚙️', skills:[dmg('黄金洪流','🟡',8,{ aoe:true, dot:true })] },
@@ -5244,7 +5278,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'nyalotha', name:'尼奥罗萨,觉醒之城', icon:'🐙', type:'raid', reqLvl:79, waves:14, desc:'恩佐斯的虚空之城自梦魇中浮现,古神低语侵蚀着艾泽拉斯',
+      key:'nyalotha', name:'尼奥罗萨,觉醒之城', icon:'🐙', type:'raid', reqLvl:79, waves:14, art:'assets/wow/art/timewalking-bfa-banner.jpg', desc:'恩佐斯的虚空之城自梦魇中浮现,古神低语侵蚀着艾泽拉斯',
       bosses:[
         { name:'黑龙王子拉希奥', emoji:'🐲', skills:[dmg('腐化烈焰','🔥',9.5,{ aoe:true, dot:true })] },
         { name:'先知斯基特拉', emoji:'👁️', skills:[dmg('幻象箭雨','🪞',10,{ mirror:true, fear:1700 })] },
@@ -5261,7 +5295,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'nathria', name:'纳斯利亚堡', icon:'🦇', type:'raid', reqLvl:79, waves:13, desc:'雷文德斯主宰者德纳修斯的哥特城堡,以噬渊之力供养无尽的灵魂',
+      key:'nathria', name:'纳斯利亚堡', icon:'🦇', type:'raid', reqLvl:79, waves:13, art:'assets/wow/art/timewalking-shadowlands-banner.png', desc:'雷文德斯主宰者德纳修斯的哥特城堡,以噬渊之力供养无尽的灵魂',
       bosses:[
         { name:'尖啸之翼', emoji:'🦇', skills:[dmg('回声尖啸','📢',9.5,{ aoe:true, fear:1600 })] },
         { name:'猎手阿尔提莫', emoji:'🏹', skills:[dmg('猎犬撕咬','🐕',9.5,{ bleed:true, cripple:true })] },
@@ -5348,7 +5382,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'eternalpalace', name:'阿萨拉的永恒王宫', icon:'🔱', type:'raid', reqLvl:79, waves:13, desc:'纳沙塔尔深海之下,女王阿兹莎拉以古神之力召唤暗影的海妖王庭',
+      key:'eternalpalace', name:'阿萨拉的永恒王宫', icon:'🔱', type:'raid', reqLvl:79, waves:13, art:'assets/wow/art/timewalking-bfa-banner.jpg', desc:'纳沙塔尔深海之下,女王阿兹莎拉以古神之力召唤暗影的海妖王庭',
       bosses:[
         { name:'暗鳞军团', emoji:'🐟', skills:[dmg('深海齐射','🌊',9,{ aoe:true, dot:true })] },
         { name:'飘雾艾尔', emoji:'🪼', skills:[dmg('迷雾毒针','🟣',9.5,{ plague:true, cripple:true })] },

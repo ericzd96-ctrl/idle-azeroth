@@ -4,6 +4,8 @@ const TIMEWALKING_ATLAS_BANNER = 'assets/wow/art/timewalking-atlas-banner.jpg';
 const TIMEWALKING_WRATH_BANNER = 'assets/wow/art/timewalking-wrath-banner.jpg';
 const TIMEWALKING_PANDARIA_BANNER = 'assets/wow/art/timewalking-pandaria-banner.jpg';
 const TIMEWALKING_DRAENOR_BANNER = 'assets/wow/art/timewalking-draenor-banner.jpg';
+const TIMEWALKING_BFA_BANNER = 'assets/wow/art/timewalking-bfa-banner.jpg';
+const TIMEWALKING_SHADOWLANDS_BANNER = 'assets/wow/art/timewalking-shadowlands-banner.png';
 const TIMEWALKING_CACHE_COST = 18;
 const TIMEWALKING_MISSION_COUNT = 5;
 const TIMEWALKING_DISTORTION_OFFER_COUNT = 4;
@@ -118,6 +120,32 @@ const TIMEWALKING_ERAS = [
     lootFallback:'antorus',
   },
   {
+    key:'bfa',
+    name:'争霸艾泽拉斯时光漫游',
+    short:'争霸艾泽拉斯',
+    icon:'🌊',
+    color:'#0ea5e9',
+    banner:TIMEWALKING_BFA_BANNER,
+    desc:'库尔提拉斯、赞达拉与纳沙塔尔的海权战争重新回潮,海盗、泰坦实验体与古神低语会一起把你拖回 BFA 的终局节奏。',
+    dungeons:['freehold', 'ataldazar', 'waycrest', 'kingsrest', 'boralus', 'mechagon'],
+    raids:['uldir', 'eternalpalace', 'nyalotha'],
+    worldBoss:'queen_azshara',
+    lootFallback:'nyalotha',
+  },
+  {
+    key:'shadowlands',
+    name:'暗影国度时光漫游',
+    short:'暗影国度',
+    icon:'🩸',
+    color:'#e11d48',
+    banner:TIMEWALKING_SHADOWLANDS_BANNER,
+    desc:'雷文德斯、晋升堡垒与玛卓克萨斯的战线再次折返现世,每一轮轮值都会把噬渊风格的终局压迫完整带回来。',
+    dungeons:['mists', 'atonement', 'plaguefall', 'theater', 'necrotic'],
+    raids:['nathria'],
+    worldBoss:'sire_denathrius',
+    lootFallback:'nathria',
+  },
+  {
     key:'dragonflight',
     name:'巨龙时代时光漫游',
     short:'巨龙时代',
@@ -179,6 +207,8 @@ function timewalkingLootContextKey(targetKey, era) {
     lei_shen:'throne',
     rukhmar:'hfc',
     argus_unmaker:'antorus',
+    queen_azshara:'eternalpalace',
+    sire_denathrius:'nathria',
     raszageth_storm:'amirdrassil',
   };
   return map[targetKey] || targetKey || era?.lootFallback || 'aq40';
