@@ -4825,7 +4825,7 @@ function extendDungeonCatalog(){
 
   const extraDungeons = [
     {
-      key:'diremaul', name:'厄运之槌', icon:'🪵', reqLvl:60, waves:10, desc:'食人魔王庭与扭曲秘法交织的古老圣地',
+      key:'diremaul', name:'厄运之槌', icon:'🪵', reqLvl:60, waves:10, art:'assets/wow/art/timewalking-banner.png', desc:'食人魔王庭与扭曲秘法交织的古老圣地',
       bosses:[
         { name:'普希林', emoji:'😼', skills:[dmg('魔藤乱舞','🍃',4,{ cripple:true, dot:true })] },
         { name:'伊莫塔尔', emoji:'👾', skills:[dmg('邪能碾压','🟣',5,{ weaken:true, manaDrain:40 })] },
@@ -4833,7 +4833,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'lbrs', name:'黑石塔下层', icon:'🐉', reqLvl:61, waves:11, desc:'黑石兽人与龙人的炼狱堡垒',
+      key:'lbrs', name:'黑石塔下层', icon:'🐉', reqLvl:61, waves:11, art:'assets/wow/art/timewalking-banner.png', desc:'黑石兽人与龙人的炼狱堡垒',
       bosses:[
         { name:'欧莫克大王', emoji:'🪓', skills:[dmg('碎骨践踏','🪓',4.5,{ stun:1200, bleed:true })] },
         { name:'暗影猎手沃什加斯', emoji:'🏹', skills:[dmg('暗影箭雨','🌑',5,{ weaken:true, fear:1500 })] },
@@ -4842,7 +4842,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'shattered', name:'破碎大厅', icon:'🧱', reqLvl:67, waves:10, desc:'钢铁部落囚笼中的血腥屠场',
+      key:'shattered', name:'破碎大厅', icon:'🧱', reqLvl:67, waves:10, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'钢铁部落囚笼中的血腥屠场',
       bosses:[
         { name:'高阶术士奈瑟库斯', emoji:'🧿', skills:[dmg('痛苦灌体','🟣',5,{ dot:true, soulDrain:true })] },
         { name:'血卫士伯鲁恩', emoji:'🛡️', skills:[dmg('碾骨冲锋','🛡️',5,{ stun:1200, sunder:true })] },
@@ -4850,7 +4850,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'arcatraz', name:'禁魔监狱', icon:'🔒', reqLvl:69, waves:10, desc:'纳鲁监狱深处的恶魔实验场',
+      key:'arcatraz', name:'禁魔监狱', icon:'🔒', reqLvl:69, waves:10, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'纳鲁监狱深处的恶魔实验场',
       bosses:[
         { name:'佐拉多尔米', emoji:'🛰️', skills:[dmg('虚空监禁','🛰️',5,{ silence:1800, manaDrain:45 })] },
         { name:'预言者斯克瑞斯', emoji:'👁️', skills:[dmg('心智撕裂','👁️',5.5,{ fear:1600, mirror:true })] },
@@ -4858,7 +4858,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'culling', name:'净化斯坦索姆', icon:'⏳', reqLvl:73, waves:10, desc:'时光之穴中的亡城肃清战',
+      key:'culling', name:'净化斯坦索姆', icon:'⏳', reqLvl:73, waves:10, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'时光之穴中的亡城肃清战',
       bosses:[
         { name:'肉钩', emoji:'🪝', skills:[dmg('勾链撕扯','🪝',5,{ bleed:true, cripple:true })] },
         { name:'塑血者沙尔拉姆', emoji:'🧪', skills:[dmg('瘟疫缝合','🧪',5.5,{ plague:true, decay:true })] },
@@ -4866,7 +4866,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'pit', name:'萨隆矿坑', icon:'⛓️', reqLvl:75, waves:10, desc:'冰冠脚下以血与矿熔铸的深坑',
+      key:'pit', name:'萨隆矿坑', icon:'⛓️', reqLvl:75, waves:10, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'冰冠脚下以血与矿熔铸的深坑',
       bosses:[
         { name:'熔炉之主加弗斯特', emoji:'🔨', skills:[dmg('萨隆重压','🔨',5.5,{ brittle:true, sunder:true })] },
         { name:'艾克', emoji:'🧟', skills:[dmg('瘟疫喷发','🦠',6,{ plague:true, dot:true, aoe:true })] },
@@ -4874,7 +4874,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'oculus', name:'魔环', icon:'💫', reqLvl:76, waves:10, desc:'魔网裂口上方失控旋转的浮空圣所',
+      key:'oculus', name:'魔环', icon:'💫', reqLvl:76, waves:10, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'魔网裂口上方失控旋转的浮空圣所',
       bosses:[
         { name:'审讯者达拉科', emoji:'💫', skills:[dmg('法网审讯','✨',5.5,{ silence:1800, manaDrain:45 })] },
         { name:'法师领主伊洛姆', emoji:'🧙', skills:[dmg('法能飓风','🌀',6,{ aoe:true, mirror:true, weaken:true })] },
@@ -4882,7 +4882,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'hor', name:'映像大厅', icon:'🧊', reqLvl:78, waves:10, desc:'冰封王座回廊中最残酷的追猎战',
+      key:'hor', name:'映像大厅', icon:'🧊', reqLvl:78, waves:10, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'冰封王座回廊中最残酷的追猎战',
       bosses:[
         { name:'法瑞克', emoji:'🛡️', skills:[dmg('绝望打击','🛡️',6,{ weaken:true, fear:1500 })] },
         { name:'玛维恩', emoji:'⚔️', skills:[dmg('冰冷斩击','⚔️',6.2,{ slow:true, brittle:true })] },
@@ -4890,7 +4890,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'aq40', name:'安其拉神殿', icon:'🦂', type:'raid', reqLvl:60, waves:12, desc:'其拉帝国与古神低语支配的虫巢神殿',
+      key:'aq40', name:'安其拉神殿', icon:'🦂', type:'raid', reqLvl:60, waves:12, art:'assets/wow/art/timewalking-banner.png', desc:'其拉帝国与古神低语支配的虫巢神殿',
       bosses:[
         { name:'预言者斯克拉姆', emoji:'🔮', skills:[dmg('心智震爆','🔮',7.5,{ mirror:true, silence:1800 })] },
         { name:'战争守卫沙尔图拉', emoji:'🦂', skills:[dmg('锋刃狂舞','🦂',8,{ aoe:true, bleed:true, cripple:true })] },
@@ -4927,7 +4927,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'bt', name:'黑暗神殿', icon:'🗡️', type:'raid', reqLvl:70, waves:12, desc:'伊利达雷与恶魔残响交织的黑色圣殿',
+      key:'bt', name:'黑暗神殿', icon:'🗡️', type:'raid', reqLvl:70, waves:12, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'伊利达雷与恶魔残响交织的黑色圣殿',
       bosses:[
         { name:'高阶督军纳因图斯', emoji:'🔱', skills:[dmg('脊骨长矛','🔱',8,{ bleed:true, brittle:true })] },
         { name:'灵魂之匣', emoji:'📦', skills:[dmg('折磨律令','📦',8.5,{ manaDrain:55, decay2:true, weaken:true })] },
@@ -4937,7 +4937,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'ubrs', name:'黑石塔上层', icon:'🔥', reqLvl:63, waves:8, desc:'黑石氏族最高处的兽人将军议事厅',
+      key:'ubrs', name:'黑石塔上层', icon:'🔥', reqLvl:63, waves:8, art:'assets/wow/art/timewalking-banner.png', desc:'黑石氏族最高处的兽人将军议事厅',
       bosses:[
         { name:'督军沃克', emoji:'🪓', skills:[dmg('狂暴战吼','🪓',5,{ frenzy:true, stun:1200 })] },
         { name:'烈焰使者索拉卡尔', emoji:'🔥', skills:[dmg('烈焰风暴','🔥',5.5,{ aoe:true, dot:true })] },
@@ -4969,7 +4969,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'firelands', name:'火焰之地', icon:'🌋', type:'raid', reqLvl:76, waves:12, desc:'炎魔之王麾下烈焰泰坦的炽热领域',
+      key:'firelands', name:'火焰之地', icon:'🌋', type:'raid', reqLvl:76, waves:12, art:'assets/wow/art/timewalking-cataclysm-banner.jpg', desc:'炎魔之王麾下烈焰泰坦的炽热领域',
       bosses:[
         { name:'贝丝缇拉克', emoji:'🕷️', skills:[dmg('炽焰蛛网','🕸️',8.5,{ dot:true, cripple:true })] },
         { name:'熔岩之王莱奥利斯', emoji:'🌋', skills:[dmg('火山喷发','🌋',9,{ aoe:true, brittle:true, stun:1400 })] },
@@ -4989,7 +4989,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'dragonsoul', name:'巨龙之魂', icon:'🐲', type:'raid', reqLvl:79, waves:12, desc:'对抗灭世者死亡之翼的终局决战',
+      key:'dragonsoul', name:'巨龙之魂', icon:'🐲', type:'raid', reqLvl:79, waves:12, art:'assets/wow/art/timewalking-cataclysm-banner.jpg', desc:'对抗灭世者死亡之翼的终局决战',
       bosses:[
         { name:'晨曦荒野之莫戈尔', emoji:'🐢', skills:[dmg('腐蚀践踏','🟣',9,{ aoe:true, weaken:true })] },
         { name:'亡语者', emoji:'💀', skills:[dmg('亡者低语','👻',9.5,{ fear:1700, soulDrain:true })] },
@@ -5021,7 +5021,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'tomb', name:'萨格拉斯之墓', icon:'⚰️', type:'raid', reqLvl:79, waves:13, desc:'破岛之上、堕落泰坦的陵墓中阻止基尔加丹重开军团传送门',
+      key:'tomb', name:'萨格拉斯之墓', icon:'⚰️', type:'raid', reqLvl:79, waves:13, art:'assets/wow/art/timewalking-legion-banner.jpg', desc:'破岛之上、堕落泰坦的陵墓中阻止基尔加丹重开军团传送门',
       bosses:[
         { name:'戈罗斯', emoji:'🌋', skills:[dmg('炽炎喷发','🔥',9.5,{ aoe:true, dot:true, brittle:true })] },
         { name:'恶魔审判官', emoji:'⚖️', skills:[dmg('折磨灵魂','💀',9.5,{ soulDrain:true, fear:1700 })] },
@@ -5032,7 +5032,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'antorus', name:'安托鲁斯,燃烧的王座', icon:'🌌', type:'raid', reqLvl:79, waves:14, desc:'追入阿古斯,在燃烧军团母星的王座上终结萨格拉斯的远征',
+      key:'antorus', name:'安托鲁斯,燃烧的王座', icon:'🌌', type:'raid', reqLvl:79, waves:14, art:'assets/wow/art/timewalking-legion-banner.jpg', desc:'追入阿古斯,在燃烧军团母星的王座上终结萨格拉斯的远征',
       bosses:[
         { name:'加洛希世界破坏者', emoji:'🤖', skills:[dmg('湮灭炮','💥',9.5,{ aoe:true, brittle:true, stun:1500 })] },
         { name:'萨格拉斯的地狱犬', emoji:'🐶', skills:[dmg('双犬撕咬','🟢',10,{ bleed:true, frenzy:true, dot:true })] },
@@ -5043,7 +5043,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'valor', name:'英灵殿', icon:'⚡', reqLvl:70, waves:9, desc:'瓦尔基拉守护的天界殿堂,泰坦守护者奥丁的英灵之厅',
+      key:'valor', name:'英灵殿', icon:'⚡', reqLvl:70, waves:9, art:'assets/wow/art/timewalking-legion-banner.jpg', desc:'瓦尔基拉守护的天界殿堂,泰坦守护者奥丁的英灵之厅',
       bosses:[
         { name:'海姆达尔', emoji:'⚔️', skills:[dmg('符文斩','⚡',6,{ aoe:true, stun:1300 })] },
         { name:'芬里尔', emoji:'🐺', skills:[dmg('暗影猛扑','🌑',6.5,{ bleed:true, frenzy:true })] },
@@ -5052,7 +5052,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'darkheart', name:'黑心林地', icon:'🌳', reqLvl:67, waves:9, desc:'被梦魇侵蚀的瓦尔莎拉密林,萨维斯的暗影在此盘踞',
+      key:'darkheart', name:'黑心林地', icon:'🌳', reqLvl:67, waves:9, art:'assets/wow/art/timewalking-legion-banner.jpg', desc:'被梦魇侵蚀的瓦尔莎拉密林,萨维斯的暗影在此盘踞',
       bosses:[
         { name:'大德鲁伊格莱达利斯', emoji:'🐗', skills:[dmg('野性突袭','🐗',5.5,{ bleed:true, cripple:true })] },
         { name:'橡树之心', emoji:'🌳', skills:[dmg('缠绕根须','🌿',6,{ stun:1400, dot:true })] },
@@ -5061,7 +5061,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'court', name:'群星庭院', icon:'🌟', reqLvl:73, waves:9, desc:'苏拉玛贵族区的隐秘庭院,潜行夺取上层精灵的禁忌情报',
+      key:'court', name:'群星庭院', icon:'🌟', reqLvl:73, waves:9, art:'assets/wow/art/timewalking-legion-banner.jpg', desc:'苏拉玛贵族区的隐秘庭院,潜行夺取上层精灵的禁忌情报',
       bosses:[
         { name:'巡逻队长格尔多', emoji:'🛡️', skills:[dmg('警戒突刺','⚔️',6.5,{ sunder:true, stun:1300 })] },
         { name:'烈焰缠绕塔利克丝', emoji:'🔥', skills:[dmg('恶魔烈焰','😈',7,{ aoe:true, dot:true, manaDrain:40 })] },
@@ -5192,7 +5192,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'nighthold', name:'暗夜要塞', icon:'🌙', type:'raid', reqLvl:79, waves:13, desc:'苏拉玛城核心的奥术堡垒,古尔丹引燃军团传送门的最后据点',
+      key:'nighthold', name:'暗夜要塞', icon:'🌙', type:'raid', reqLvl:79, waves:13, art:'assets/wow/art/timewalking-legion-banner.jpg', desc:'苏拉玛城核心的奥术堡垒,古尔丹引燃军团传送门的最后据点',
       bosses:[
         { name:'蝎钳魔', emoji:'🦂', skills:[dmg('破甲钳击','🦂',9,{ sunder:true, aoe:true })] },
         { name:'提克迪奥斯', emoji:'🧪', skills:[dmg('黏液喷涌','🟢',9.5,{ dot:true, cripple:true, brittle:true })] },
@@ -5243,7 +5243,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'vortex', name:'旋云之巅', icon:'🌪️', reqLvl:72, waves:9, desc:'巨石之核上方失控旋转的风暴圣堂,气元素肆虐的浮空回廊',
+      key:'vortex', name:'旋云之巅', icon:'🌪️', reqLvl:72, waves:9, art:'assets/wow/art/timewalking-cataclysm-banner.jpg', desc:'巨石之核上方失控旋转的风暴圣堂,气元素肆虐的浮空回廊',
       bosses:[
         { name:'格鲁达鲁', emoji:'💨', skills:[dmg('飓风之拳','🌬️',6.5,{ aoe:true, stun:1400 })] },
         { name:'大主祭奥兹鲁克', emoji:'🪨', skills:[dmg('坠石轰击','🪨',7,{ brittle:true, sunder:true })] },
@@ -5268,7 +5268,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'neltharus', name:'奈萨利亚熔炉', icon:'🌋', reqLvl:76, waves:10, desc:'黑龙军团守护的熔岩兵工厂,炽热的龙裔锻造着毁灭之器',
+      key:'neltharus', name:'奈萨利亚熔炉', icon:'🌋', reqLvl:76, waves:10, art:'assets/wow/art/aberrus-banner.jpg', desc:'黑龙军团守护的熔岩兵工厂,炽热的龙裔锻造着毁灭之器',
       bosses:[
         { name:'熔铸者卡格尼', emoji:'🔨', skills:[dmg('炽炎重锤','🔨',7.5,{ sunder:true, stun:1400 })] },
         { name:'守护者陶提斯', emoji:'🛡️', skills:[dmg('熔岩壁垒','🟠',7.5,{ brittle:true, dot:true })] },
@@ -5277,7 +5277,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'azurevault', name:'碧蓝魔馆', icon:'💠', reqLvl:78, waves:10, desc:'蓝龙军团封存奥术遗产的浮空宝库,魔网回声在大厅中失控共鸣',
+      key:'azurevault', name:'碧蓝魔馆', icon:'💠', reqLvl:78, waves:10, art:'assets/wow/art/aberrus-banner.jpg', desc:'蓝龙军团封存奥术遗产的浮空宝库,魔网回声在大厅中失控共鸣',
       bosses:[
         { name:'莱魔', emoji:'🧿', skills:[dmg('奥术撕裂','💠',8,{ silence:1800, manaDrain:50 })] },
         { name:'青刃构装体', emoji:'🤖', skills:[dmg('法力切割','🔷',8.2,{ brittle:true, stun:1400 })] },
@@ -5286,7 +5286,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'nokhud', name:'诺库德阻击战', icon:'🏹', reqLvl:78, waves:10, desc:'欧恩哈拉平原上的疾风战场,诺库德氏族以弓骑与风暴压制远征军',
+      key:'nokhud', name:'诺库德阻击战', icon:'🏹', reqLvl:78, waves:10, art:'assets/wow/art/amirdrassil-banner.png', desc:'欧恩哈拉平原上的疾风战场,诺库德氏族以弓骑与风暴压制远征军',
       bosses:[
         { name:'格拉尼斯', emoji:'🦅', skills:[dmg('鹰风俯冲','🦅',8,{ bleed:true, cripple:true })] },
         { name:'风暴召唤者巴拉卡尔', emoji:'🌩️', skills:[dmg('雷矛投掷','⚡',8.4,{ stun:1500, sunder:true })] },
@@ -5295,7 +5295,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'hallsinfusion', name:'注能大厅', icon:'💧', reqLvl:79, waves:10, desc:'泰坦水渠与原始元素交汇的注能核心,每一次脉冲都在撕裂防线',
+      key:'hallsinfusion', name:'注能大厅', icon:'💧', reqLvl:79, waves:10, art:'assets/wow/art/amirdrassil-banner.png', desc:'泰坦水渠与原始元素交汇的注能核心,每一次脉冲都在撕裂防线',
       bosses:[
         { name:'守望者艾瑞克', emoji:'🛡️', skills:[dmg('水盾猛击','🛡️',8.2,{ sunder:true, slow:true })] },
         { name:'注能吞噬者', emoji:'🫧', skills:[dmg('吞噬喷潮','🫧',8.6,{ aoe:true, plague:true, dot:true })] },
@@ -5304,7 +5304,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'brackenhide', name:'蕨皮山谷', icon:'🦴', reqLvl:79, waves:10, desc:'腐臭豺狼人占据的林谷营地,炼金毒雾与瘟疫篝火笼罩山道',
+      key:'brackenhide', name:'蕨皮山谷', icon:'🦴', reqLvl:79, waves:10, art:'assets/wow/art/amirdrassil-banner.png', desc:'腐臭豺狼人占据的林谷营地,炼金毒雾与瘟疫篝火笼罩山道',
       bosses:[
         { name:'劈爪战团', emoji:'🪓', skills:[dmg('乱斧围猎','🪓',8.2,{ bleed:true, aoe:true })] },
         { name:'腐喉', emoji:'🦴', skills:[dmg('腐臭啃咬','🦴',8.6,{ plague:true, cripple:true })] },
@@ -5330,7 +5330,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'aberrus', name:'厄苏戈尔,暗影熔炉', icon:'🔥', type:'raid', reqLvl:79, waves:13, desc:'死亡之翼当年的炼成之所,黑龙萨拉塔斯重启了奈萨里奥的禁忌实验',
+      key:'aberrus', name:'厄苏戈尔,暗影熔炉', icon:'🔥', type:'raid', reqLvl:79, waves:13, art:'assets/wow/art/aberrus-banner.jpg', desc:'死亡之翼当年的炼成之所,黑龙萨拉塔斯重启了奈萨里奥的禁忌实验',
       bosses:[
         { name:'卡赞', emoji:'🌀', skills:[dmg('奥术湮灭','✨',9.5,{ aoe:true, manaDrain:55, silence:1800 })] },
         { name:'焚化者拉什卡尔', emoji:'🔥', skills:[dmg('熔火喷涌','🌋',10,{ aoe:true, dot:true, brittle:true }), dmgP('烈焰风暴','🔥',5,0.5,{ aoe:true, dot:true, weaken:true, cd:12 })] },
@@ -5347,7 +5347,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'amirdrassil', name:'阿米德拉希尔,希望之梦', icon:'🌳', type:'raid', reqLvl:79, waves:14, desc:'守护新生世界之树,抵御炎魔之王弗拉戈斯将梦境付之一炬的终局会战',
+      key:'amirdrassil', name:'阿米德拉希尔,希望之梦', icon:'🌳', type:'raid', reqLvl:79, waves:14, art:'assets/wow/art/amirdrassil-banner.png', desc:'守护新生世界之树,抵御炎魔之王弗拉戈斯将梦境付之一炬的终局会战',
       bosses:[
         { name:'古加冯', emoji:'🐗', skills:[dmg('远古践踏','🦶',9.5,{ aoe:true, stun:1500 })] },
         { name:'史矛莱什', emoji:'🐛', skills:[dmg('腐化吐息','🟣',10,{ plague:true, dot:true, weaken:true })] },

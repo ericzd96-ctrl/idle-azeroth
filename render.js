@@ -3001,22 +3001,28 @@ function buildDungeonInfoHtml(dg) {
     }
     if (tacticPreview.length) {
       html += `<div class="dungeon-boss-tactic-preview">
-        ${tacticPreview.map(m => `<span>${symbolIconHtml(m.icon, 12, m.name, 'ability_warrior_battleshout')} ${m.name}</span>`).join('')}
+        ${tacticPreview.map(m => `<span title="${(m.desc || '').replace(/"/g, '&quot;')}">${symbolIconHtml(m.icon, 12, m.name, 'ability_warrior_battleshout')} ${m.name}</span>`).join('')}
       </div>`;
     }
     if (weakpointPreview.length) {
       html += `<div class="dungeon-boss-weakpoint-preview">
-        ${weakpointPreview.map(m => `<span>${symbolIconHtml(m.icon, 12, m.name, 'inv_misc_gem_diamond_02')} ${m.name}</span>`).join('')}
+        ${weakpointPreview.map(m => `<span title="${(m.desc || '').replace(/"/g, '&quot;')}">${symbolIconHtml(m.icon, 12, m.name, 'inv_misc_gem_diamond_02')} ${m.name}</span>`).join('')}
       </div>`;
     }
     if (challengePreview.length) {
       html += `<div class="dungeon-boss-challenge-preview">
-        ${challengePreview.map(m => `<span>${symbolIconHtml(m.icon, 12, m.name, 'achievement_bg_killxenemies_generalsroom')} ${m.name}</span>`).join('')}
+        ${challengePreview.map(m => `<span title="${(m.desc || '').replace(/"/g, '&quot;')}">${symbolIconHtml(m.icon, 12, m.name, 'achievement_bg_killxenemies_generalsroom')} ${m.name}</span>`).join('')}
+      </div>`;
+      html += `<div style="display:flex;flex-direction:column;gap:4px;margin:6px 0 8px 8px">
+        ${challengePreview.map(m => `<div style="font-size:11px;line-height:1.5"><span style="color:#fde68a">${symbolIconHtml(m.icon, 13, m.name, 'achievement_bg_killxenemies_generalsroom')} ${m.name}</span><span class="muted"> - ${m.desc || 'Boss 挑战目标'}</span></div>`).join('')}
       </div>`;
     }
     if (grandPreview.length) {
       html += `<div class="dungeon-boss-grand-preview">
-        ${grandPreview.map(m => `<span>${symbolIconHtml(m.icon, 12, m.name, 'spell_arcane_arcanetorrent')} ${m.name}</span>`).join('')}
+        ${grandPreview.map(m => `<span title="${(m.desc || '').replace(/"/g, '&quot;')}">${symbolIconHtml(m.icon, 12, m.name, 'spell_arcane_arcanetorrent')} ${m.name}</span>`).join('')}
+      </div>`;
+      html += `<div style="display:flex;flex-direction:column;gap:4px;margin:6px 0 8px 8px">
+        ${grandPreview.map(m => `<div style="font-size:11px;line-height:1.5"><span style="color:${m.color || '#67e8f9'}">${symbolIconHtml(m.icon, 13, m.name, 'spell_arcane_arcanetorrent')} ${m.name}</span><span class="muted"> - ${m.desc || '额外首领机制'}</span></div>`).join('')}
       </div>`;
     }
     if (directorSkillPreview.length) {

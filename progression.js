@@ -116,6 +116,9 @@ function accountTimewalkingEraMasteryCount() {
   const eras = accEns().timewalking?.erasMastered || {};
   return Object.keys(eras).filter(key => (eras[key] || 0) > 0).length;
 }
+function accountTimewalkingDistortionClearCount() {
+  return accEns().timewalking?.distortionClears || 0;
+}
 const APEX_WORLD_BOSS_KEYS = ['deathwing','ragnaros','cthun','yogg_saron','alakir','lei_shen','argus_unmaker','raszageth_storm','shadowpoint_vexis','shandorah_astromancer'];
 
 function ensureUnlockedTitles() {
@@ -415,6 +418,10 @@ const ACHIEVEMENTS = [
     cond:()=>({cur:accountTimewalkingCollectionCount(),goal:5}), reward:{gold:1800000,gem:900,honor:18000,title:'永恒陈列馆馆长',stat:{atkPct:6,hpPct:6,defPct:4,mastery:16,goldMult:8,dropMult:10}} },
   { key:'timewalking_meta5', name:'时序总指挥', cat:'时光漫游', icon:'⏳',
     cond:()=>({cur:accountTimewalkingMetaClaimCount(),goal:5}), reward:{gold:2600000,gem:1400,honor:26000,title:'时序总指挥',stat:{atkPct:8,hpPct:8,defPct:5,mastery:20,goldMult:10,dropMult:12}} },
+  { key:'timewalking_distortion12', name:'扭曲破拆者', cat:'时光漫游', icon:'⛓️',
+    cond:()=>({cur:accountTimewalkingDistortionClearCount(),goal:12}), reward:{gold:980000,gem:420,honor:9800,stat:{atkPct:3,hpPct:3,defPct:2,mastery:8}} },
+  { key:'timewalking_distortion40', name:'时序破界者', cat:'时光漫游', icon:'🌀',
+    cond:()=>({cur:accountTimewalkingDistortionClearCount(),goal:40}), reward:{gold:2200000,gem:1100,honor:22000,title:'时序破界者',stat:{atkPct:7,hpPct:7,defPct:4,mastery:18,dropMult:10}} },
 ];
 
 /* ============ 图鉴 ============ */

@@ -3,6 +3,8 @@ const TIMEWALKING_BANNER = 'assets/wow/art/timewalking-banner.png';
 const TIMEWALKING_ATLAS_BANNER = 'assets/wow/art/timewalking-atlas-banner.jpg';
 const TIMEWALKING_CACHE_COST = 18;
 const TIMEWALKING_MISSION_COUNT = 5;
+const TIMEWALKING_DISTORTION_OFFER_COUNT = 4;
+const TIMEWALKING_DISTORTION_ACTIVE_LIMIT = 3;
 const TIMEWALKING_RESEARCH = [
   { key:'bronze_attunement', icon:'⏳', name:'青铜调谐', baseCost:8, max:5, gain:{ atkPct:1, hpPct:1 }, desc:'稳定旧时代战斗节奏,每级永久提高攻击与生命。' },
   { key:'paradox_weave', icon:'🧵', name:'悖论织线', baseCost:10, max:5, gain:{ defPct:1, mastery:1 }, desc:'修补破碎时间线的纤维,每级永久提高防御与精通。' },
@@ -14,6 +16,14 @@ const TIMEWALKING_COLLECTIONS = [
   { key:'infinite_timereaver', type:'mount', cost:48, icon:'🕰️', name:'无尽时空掠夺者', rewardKey:'infinite_timereaver', desc:'永恒龙军团丢失在裂隙中的时空坐骑。' },
   { key:'timewalker_title', type:'title', cost:18, icon:'📜', name:'称号: 时序旅者', rewardKey:'时序旅者', desc:'证明你能在多个时代之间来回作战。' },
   { key:'chronicle_keeper_title', type:'title', cost:36, icon:'👑', name:'称号: 时光修补师', rewardKey:'时光修补师', desc:'只有真正修补过旧年代裂口的旅者才配拥有。' },
+];
+const TIMEWALKING_DISTORTIONS = [
+  { key:'volcanic', icon:'🌋', name:'熔火断层', desc:'脚下会喷发火山裂隙,旧时代战场被重新撕开。', mod:{ volcanic:true, trashHp:0.08, bossHp:0.10, bossDmg:0.05, worldBossHp:0.10, worldBossAtk:0.05 }, reward:{ goldPct:0.08, essencePct:0.08, badgesFlat:1 } },
+  { key:'arcane', icon:'🔮', name:'奥能回旋', desc:'首领会周期性获得奥术护盾,远古法阵反复重启。', mod:{ arcane:true, bossHp:0.08, bossDef:0.12, worldBossHp:0.06, worldBossDef:0.10, worldBossDr:0.02 }, reward:{ honorPct:0.10, gemPct:0.08, lootPower:1 } },
+  { key:'afflicted', icon:'😈', name:'苦楚回响', desc:'时序苦痛会持续侵蚀冒险者,拖长旧本作战节奏。', mod:{ afflicted:true, trashDmg:0.10, bossDmg:0.06, worldBossAtk:0.08 }, reward:{ essencePct:0.10, badgesFlat:1 } },
+  { key:'sanguine', icon:'🩸', name:'鲜血洪流', desc:'倒下的敌人会将周围同伴重新浸入鲜血回响。', mod:{ sanguine:true, trashHp:0.10, trashDef:0.10, bossHp:0.05, worldBossHp:0.06, worldBossDef:0.06 }, reward:{ goldPct:0.10, dropPct:0.08 } },
+  { key:'tyranny', icon:'👑', name:'永恒暴君', desc:'旧时代首领会在鏖战后狂暴,强迫你用更高节奏处理战斗。', mod:{ bossEnrage:true, bossHp:0.16, bossDmg:0.10, bossDef:0.08, worldBossHp:0.14, worldBossAtk:0.08, worldBossDr:0.03 }, reward:{ badgesFlat:1, lootPower:1, legendaryChance:0.03 } },
+  { key:'raging', icon:'💢', name:'暴怒纪元', desc:'残血敌人进入暴怒,让小怪与精英波次更危险。', mod:{ raging:true, trashHp:0.08, trashDmg:0.14, worldBossAtk:0.06 }, reward:{ honorPct:0.08, dropPct:0.06, badgesFlat:1 } },
 ];
 
 const TIMEWALKING_ERAS = [
@@ -205,11 +215,24 @@ function createTimewalkingMissions(weekId) {
   };
 }
 
+function createTimewalkingDistortions(weekId) {
+  const week = typeof weekId === 'number' ? weekId : timewalkingWeekId();
+  const pool = TIMEWALKING_DISTORTIONS.slice();
+  const out = [];
+  const max = Math.min(TIMEWALKING_DISTORTION_OFFER_COUNT, pool.length);
+  for (let i = 0; i < max; i++) {
+    const roll = timewalkingHash(week * 4099 + i * 131 + 23);
+    const idx = Math.floor(roll * pool.length);
+    out.push(pool.splice(Math.max(0, Math.min(pool.length - 1, idx)), 1)[0].key);
+  }
+  return out;
+}
+
 function ensureTimewalkingState() {
   if (typeof account === 'undefined' || !account) {
     const week = timewalkingWeekId();
     const setup = createTimewalkingMissions(week);
-    return { weekId:week, eraKey:setup.eraKey, missions:setup.missions, claimed:{}, badges:0, totalBadges:0, totalClaims:0, cacheClaims:0, metaClaimed:false, metaClaims:0, history:[], research:{}, bought:{}, erasMastered:{}, maxThreat:0 };
+    return { weekId:week, eraKey:setup.eraKey, missions:setup.missions, claimed:{}, badges:0, totalBadges:0, totalClaims:0, cacheClaims:0, metaClaimed:false, metaClaims:0, history:[], research:{}, bought:{}, erasMastered:{}, maxThreat:0, distortions:createTimewalkingDistortions(week), selected:{}, distortionClears:0 };
   }
   if (!account.timewalking) account.timewalking = {};
   const tw = account.timewalking;
@@ -228,6 +251,9 @@ function ensureTimewalkingState() {
   if (!tw.bought || typeof tw.bought !== 'object') tw.bought = {};
   if (!tw.erasMastered || typeof tw.erasMastered !== 'object') tw.erasMastered = {};
   if (typeof tw.maxThreat !== 'number') tw.maxThreat = 0;
+  if (!Array.isArray(tw.distortions)) tw.distortions = [];
+  if (!tw.selected || typeof tw.selected !== 'object') tw.selected = {};
+  if (typeof tw.distortionClears !== 'number') tw.distortionClears = 0;
   const week = timewalkingWeekId();
   if (tw.weekId !== week || !tw.missions.length) {
     tw.history.unshift({
@@ -245,7 +271,10 @@ function ensureTimewalkingState() {
     tw.missions = setup.missions;
     tw.claimed = {};
     tw.metaClaimed = false;
+    tw.distortions = createTimewalkingDistortions(week);
+    tw.selected = {};
   }
+  if (!tw.distortions.length) tw.distortions = createTimewalkingDistortions(tw.weekId);
   for (const mission of tw.missions) {
     if (typeof mission.progress !== 'number') mission.progress = 0;
   }
@@ -301,6 +330,83 @@ function timewalkingResearchLevel(key) {
   return ensureTimewalkingState().research?.[key] || 0;
 }
 
+function timewalkingDistortionDef(key) {
+  return TIMEWALKING_DISTORTIONS.find(x => x.key === key) || null;
+}
+
+function timewalkingOfferedDistortions() {
+  return ensureTimewalkingState().distortions.map(timewalkingDistortionDef).filter(Boolean);
+}
+
+function timewalkingActiveDistortions() {
+  const tw = ensureTimewalkingState();
+  return timewalkingOfferedDistortions().filter(def => !!tw.selected?.[def.key]);
+}
+
+function timewalkingActiveDistortionCount() {
+  return timewalkingActiveDistortions().length;
+}
+
+function timewalkingDistortionRewardProfile() {
+  const out = { goldPct:0, gemPct:0, honorPct:0, essencePct:0, badgesFlat:0, lootPower:0, legendaryChance:0, dropPct:0 };
+  for (const def of timewalkingActiveDistortions()) {
+    const reward = def.reward || {};
+    for (const key of Object.keys(out)) out[key] += reward[key] || 0;
+  }
+  return out;
+}
+
+function timewalkingDistortionRewardText(reward) {
+  const parts = [];
+  if (reward.badgesFlat) parts.push(`+${reward.badgesFlat}🪙`);
+  if (reward.goldPct) parts.push(`金币+${Math.round(reward.goldPct * 100)}%`);
+  if (reward.gemPct) parts.push(`宝石+${Math.round(reward.gemPct * 100)}%`);
+  if (reward.honorPct) parts.push(`荣誉+${Math.round(reward.honorPct * 100)}%`);
+  if (reward.essencePct) parts.push(`精华+${Math.round(reward.essencePct * 100)}%`);
+  if (reward.lootPower) parts.push(`掉落装等+${reward.lootPower}`);
+  if (reward.dropPct) parts.push(`额外掉落+${Math.round(reward.dropPct * 100)}%`);
+  if (reward.legendaryChance) parts.push(`橙装机率+${Math.round(reward.legendaryChance * 100)}%`);
+  return parts.join(' · ');
+}
+
+function timewalkingDistortionDangerText(def) {
+  const mod = def?.mod || {};
+  const parts = [];
+  if (mod.volcanic) parts.push('每8秒火山喷发');
+  if (mod.arcane) parts.push('首领周期护盾');
+  if (mod.afflicted) parts.push('每5秒苦痛侵蚀');
+  if (mod.sanguine) parts.push('敌人倒地后治疗同伴');
+  if (mod.bossEnrage) parts.push('首领40秒后狂暴');
+  if (mod.raging) parts.push('残血敌人暴怒');
+  if (mod.trashHp) parts.push(`小怪生命+${Math.round(mod.trashHp * 100)}%`);
+  if (mod.trashDmg) parts.push(`小怪伤害+${Math.round(mod.trashDmg * 100)}%`);
+  if (mod.bossHp) parts.push(`首领生命+${Math.round(mod.bossHp * 100)}%`);
+  if (mod.bossDmg) parts.push(`首领伤害+${Math.round(mod.bossDmg * 100)}%`);
+  if (mod.worldBossHp) parts.push(`世界Boss生命+${Math.round(mod.worldBossHp * 100)}%`);
+  if (mod.worldBossAtk) parts.push(`世界Boss伤害+${Math.round(mod.worldBossAtk * 100)}%`);
+  return parts.join(' · ');
+}
+
+function timewalkingToggleDistortion(key) {
+  const tw = ensureTimewalkingState();
+  const def = timewalkingDistortionDef(key);
+  if (!def || !tw.distortions.includes(key)) return false;
+  if (tw.selected[key]) {
+    delete tw.selected[key];
+    if (typeof markDirty === 'function') markDirty('events');
+    log(`🕰️ 关闭时序扭曲「${def.name}」`, 'info');
+    return true;
+  }
+  if (timewalkingActiveDistortionCount() >= TIMEWALKING_DISTORTION_ACTIVE_LIMIT) {
+    log(`最多只能同时启用 ${TIMEWALKING_DISTORTION_ACTIVE_LIMIT} 条时序扭曲`, 'bad');
+    return false;
+  }
+  tw.selected[key] = Date.now();
+  if (typeof markDirty === 'function') markDirty('events');
+  log(`⛓️ 启用时序扭曲「${def.name}」`, 'legend');
+  return true;
+}
+
 function timewalkingResearchTotal() {
   return Object.values(ensureTimewalkingState().research || {}).reduce((sum, n) => sum + (n || 0), 0);
 }
@@ -321,6 +427,13 @@ function timewalkingEraMasteryCount() {
 function timewalkingRecordThreat() {
   const tw = ensureTimewalkingState();
   tw.maxThreat = Math.max(tw.maxThreat || 0, timewalkingThreatLevel());
+}
+
+function timewalkingRecordDistortionClear() {
+  const tw = ensureTimewalkingState();
+  if (timewalkingActiveDistortionCount() <= 0) return;
+  tw.distortionClears = (tw.distortionClears || 0) + 1;
+  if (typeof progressionCheckAch === 'function') progressionCheckAch();
 }
 
 function timewalkingBuyResearch(key) {
@@ -390,15 +503,29 @@ function timewalkingEnemyAffixFor(dg) {
   };
 }
 
+function timewalkingDungeonDistortionAffixes(dg) {
+  const era = timewalkingEra();
+  const key = (typeof baseDungeonKey === 'function') ? baseDungeonKey(dg?.key) : dg?.key;
+  if (!key || (!era.dungeons.includes(key) && !era.raids.includes(key))) return [];
+  return timewalkingActiveDistortions().map(def => ({
+    key:`timewalking_${def.key}`,
+    name:def.name,
+    icon:def.icon,
+    desc:def.desc,
+    mod:Object.assign({}, def.mod || {}),
+  }));
+}
+
 function grantTimewalkingReward(r, targetKey, bossName, options) {
   if (!r) return null;
   const tw = ensureTimewalkingState();
   const broker = timewalkingBrokerActive();
-  const badgeGain = Math.max(0, Math.floor((r.badges || 0) * (broker ? 1.2 : 1)));
-  if (r.gold) state.gold += broker ? Math.floor(r.gold * 1.1) : r.gold;
-  if (r.gem) state.gem += broker ? Math.ceil(r.gem * 1.1) : r.gem;
-  if (r.honor) state.honor += broker ? Math.floor(r.honor * 1.08) : r.honor;
-  if (r.essence) state.essence = (state.essence || 0) + (broker ? Math.floor(r.essence * 1.1) : r.essence);
+  const distortion = timewalkingDistortionRewardProfile();
+  const badgeGain = Math.max(0, Math.floor(((r.badges || 0) + (distortion.badgesFlat || 0)) * (broker ? 1.2 : 1)));
+  if (r.gold) state.gold += Math.floor((broker ? 1.1 : 1) * r.gold * (1 + (distortion.goldPct || 0)));
+  if (r.gem) state.gem += Math.ceil((broker ? 1.1 : 1) * r.gem * (1 + (distortion.gemPct || 0)));
+  if (r.honor) state.honor += Math.floor((broker ? 1.08 : 1) * r.honor * (1 + (distortion.honorPct || 0)));
+  if (r.essence) state.essence = (state.essence || 0) + Math.floor((broker ? 1.1 : 1) * r.essence * (1 + (distortion.essencePct || 0)));
   if (badgeGain) {
     tw.badges += badgeGain;
     tw.totalBadges += badgeGain;
@@ -409,8 +536,9 @@ function grantTimewalkingReward(r, targetKey, bossName, options) {
     const era = timewalkingEra();
     const lootKey = timewalkingLootContextKey(targetKey, era);
     const dg = (typeof DUNGEONS !== 'undefined' ? DUNGEONS : []).find(x => x.key === lootKey);
-    const power = dg ? ((dg.powerLvl || dg.reqLvl || 75) + (broker ? 2 : 0)) : 80;
-    const maxRarity = options?.legendary ? 'legend' : (dg?.type === 'raid' ? 'legend' : 'epic');
+    const power = dg ? ((dg.powerLvl || dg.reqLvl || 75) + (broker ? 2 : 0) + (distortion.lootPower || 0)) : 80;
+    const canLegend = !!options?.legendary || ((distortion.legendaryChance || 0) > 0 && Math.random() < distortion.legendaryChance);
+    const maxRarity = canLegend ? 'legend' : (dg?.type === 'raid' ? 'legend' : 'epic');
     const minRarity = dg?.type === 'raid' ? 'epic' : 'rare';
     item = rollItem(maxRarity, power, lootKey, bossName || timewalkingDungeonFinalBoss(lootKey), { minRarity });
     if (item) {
@@ -418,7 +546,7 @@ function grantTimewalkingReward(r, targetKey, bossName, options) {
       if (typeof eventsOnItemGet === 'function') eventsOnItemGet(item);
       if (item.rarity === 'legend' && typeof progressionOnLegendary === 'function') progressionOnLegendary();
     }
-    if (broker && typeof rollItem === 'function' && Math.random() < 0.25) {
+    if ((broker || (distortion.dropPct || 0) > 0) && typeof rollItem === 'function' && Math.random() < Math.min(0.55, (broker ? 0.25 : 0) + (distortion.dropPct || 0))) {
       const extra = rollItem('epic', Math.max(70, power - 1), lootKey, bossName || timewalkingDungeonFinalBoss(lootKey), { minRarity:'rare' });
       if (extra) {
         addToInventory(extra);
@@ -541,6 +669,10 @@ function renderTimewalkingSub() {
   const collectionTotal = timewalkingCollectionCount();
   const metaTotal = timewalkingMetaClaimCount();
   const eraMastered = timewalkingEraMasteryCount();
+  const activeDistortions = timewalkingActiveDistortions();
+  const activeDistortionCount = activeDistortions.length;
+  const activeDistortionKeys = new Set(activeDistortions.map(def => def.key));
+  const distortionProfile = timewalkingDistortionRewardProfile();
   const researchCards = TIMEWALKING_RESEARCH.map(def => {
     const cur = timewalkingResearchLevel(def.key);
     const maxed = cur >= def.max;
@@ -591,6 +723,23 @@ function renderTimewalkingSub() {
       </div>
     </div>`;
   }).join('');
+  const distortionCards = timewalkingOfferedDistortions().map(def => {
+    const active = activeDistortionKeys.has(def.key);
+    const capped = !active && activeDistortionCount >= TIMEWALKING_DISTORTION_ACTIVE_LIMIT;
+    const cls = active ? 'active' : (capped ? '' : 'ready');
+    return `<div class="timewalking-store-card ${cls}">
+      <div class="timewalking-head">
+        <span class="timewalking-icon">${def.icon}</span>
+        <div><b>${def.name}</b><div class="muted" style="font-size:10px">${def.desc}</div></div>
+      </div>
+      <div class="muted" style="font-size:10px;margin-top:6px">敌方强化: ${timewalkingDistortionDangerText(def)}</div>
+      <div class="muted" style="font-size:10px;margin-top:3px">${timewalkingDistortionRewardText(def.reward || {})}</div>
+      <div class="timewalking-foot">
+        <span class="muted" style="font-size:10px">${active ? '已启用' : (capped ? '已达上限' : '可启用')}</span>
+        <button class="${active || !capped ? 'gold' : ''}" data-action="toggletimewalkingdistortion" data-key="${def.key}" ${active || !capped ? '' : 'disabled'}>${active ? '停用' : '启用'}</button>
+      </div>
+    </div>`;
+  }).join('');
   const cards = tw.missions.map(m => {
     const done = (m.progress || 0) >= (m.goal || 1);
     const claimedMission = !!tw.claimed[m.id];
@@ -623,6 +772,7 @@ function renderTimewalkingSub() {
       <span>宝箱 <b>${tw.cacheClaims || 0}</b></span>
       <span>周终总奖励 <b>${metaTotal}</b></span>
       <span>精通时代 <b>${eraMastered}</b></span>
+      <span>扭曲通关 <b>${tw.distortionClears || 0}</b></span>
     </div>
     <div class="timewalking-note">${era.desc} 本周地下城: ${era.dungeons.map(timewalkingDungeonName).join(' · ')} · 团本池: ${era.raids.map(timewalkingDungeonName).join(' · ')}。被轮值点名的旧时代内容会同步变强,避免高等级角色直接平推。</div>
     <div class="timewalking-grid">${cards}</div>
@@ -630,6 +780,9 @@ function renderTimewalkingSub() {
       <button class="${allDone && !tw.metaClaimed ? 'gold' : ''}" data-action="claimtimewalkingmeta" ${allDone && !tw.metaClaimed ? '' : 'disabled'}>${tw.metaClaimed ? '总奖励已领' : '领取周终总奖励'}</button>
       <button class="${(tw.badges || 0) >= TIMEWALKING_CACHE_COST ? 'gold' : ''}" data-action="exchangetimewalking" ${(tw.badges || 0) >= TIMEWALKING_CACHE_COST ? '' : 'disabled'}>时光宝箱 ${TIMEWALKING_CACHE_COST} 徽记</button>
     </div>
+    <div class="timewalking-store-title">⛓️ 时序扭曲</div>
+    <div class="timewalking-note">每周提供 ${TIMEWALKING_DISTORTION_OFFER_COUNT} 条时序扭曲,最多可同时启用 <b>${TIMEWALKING_DISTORTION_ACTIVE_LIMIT}</b> 条。当前启用 <b>${activeDistortionCount}</b> 条,会直接强化地下城、团本与本周世界Boss,并带来额外奖励 ${timewalkingDistortionRewardText(distortionProfile) || '无'}。</div>
+    <div class="timewalking-grid">${distortionCards}</div>
     <div class="timewalking-hero" style="margin-top:14px;background-image:linear-gradient(90deg, rgba(8,12,24,.92), rgba(8,12,24,.48)), url('${TIMEWALKING_ATLAS_BANNER}')">
       <div class="timewalking-title">🗺️ 时序图谱</div>
       <div class="timewalking-text">已解锁研究 <b>${researchTotal}</b> 层 · 已收集 <b>${collectionTotal}</b> 件时光收藏 · 最高时序压力 <b>${tw.maxThreat || threat}</b>。你每把一条旧时代航线推到精通,对应地下城、团本与世界Boss都会继续变强。</div>
@@ -655,10 +808,10 @@ function renderTimewalkingSub() {
       oldEnter.apply(this, arguments);
       const ds = state?.dungeonState;
       const dg = (typeof DUNGEONS !== 'undefined' ? DUNGEONS : []).find(d => d.key === key);
-      const affix = timewalkingEnemyAffixFor(dg);
-      if (ds && affix && Array.isArray(ds.affixes) && !ds.affixes.some(a => a?.key === affix.key)) {
-        ds.affixes.push(affix);
-        if (typeof log === 'function') log(`🕰️ 时光漫游重新标定了 ${dg.name}`, 'bad');
+      const affixes = [timewalkingEnemyAffixFor(dg), ...timewalkingDungeonDistortionAffixes(dg)].filter(Boolean);
+      if (ds && Array.isArray(ds.affixes) && affixes.length) {
+        for (const affix of affixes) if (!ds.affixes.some(a => a?.key === affix.key)) ds.affixes.push(affix);
+        if (typeof log === 'function') log(`🕰️ 时光漫游重新标定了 ${dg.name}${timewalkingActiveDistortionCount() ? ' · 扭曲已介入' : ''}`, 'bad');
       }
     }
     wrappedEnterDungeon._timewalkingWrapped = true;
@@ -671,10 +824,10 @@ function renderTimewalkingSub() {
       oldEnterMythic.apply(this, arguments);
       const ms = state?.mythicState;
       const dg = (typeof DUNGEONS !== 'undefined' ? DUNGEONS : []).find(d => d.key === ms?.key);
-      const affix = timewalkingEnemyAffixFor(dg);
-      if (ms && affix && Array.isArray(ms.affixes) && !ms.affixes.some(a => a?.key === affix.key)) {
-        ms.affixes.push(affix);
-        if (typeof log === 'function') log(`🕰️ 时光漫游同步强化了大秘境 [${dg.name}]`, 'bad');
+      const affixes = [timewalkingEnemyAffixFor(dg), ...timewalkingDungeonDistortionAffixes(dg)].filter(Boolean);
+      if (ms && Array.isArray(ms.affixes) && affixes.length) {
+        for (const affix of affixes) if (!ms.affixes.some(a => a?.key === affix.key)) ms.affixes.push(affix);
+        if (typeof log === 'function') log(`🕰️ 时光漫游同步强化了大秘境 [${dg.name}]${timewalkingActiveDistortionCount() ? ' · 扭曲已介入' : ''}`, 'bad');
       }
     }
     wrappedEnterMythic._timewalkingWrapped = true;
@@ -690,6 +843,7 @@ function renderTimewalkingSub() {
       let challengeGain = 0;
       if (dg?.heroic || dg?.epic5) challengeGain = 1;
       if (dg?.type === 'raid') challengeGain = 1;
+      timewalkingRecordDistortionClear();
       timewalkingAddDungeonProgress({ baseKey, challengeGain });
     }
     wrappedOnDungeonClear._timewalkingWrapped = true;
@@ -703,6 +857,7 @@ function renderTimewalkingSub() {
       oldMythicClear.apply(this, arguments);
       const baseKey = (typeof baseDungeonKey === 'function') ? baseDungeonKey(key) : key;
       if (!baseKey || !isTimewalkingDungeon(baseKey)) return;
+      timewalkingRecordDistortionClear();
       timewalkingAddDungeonProgress({ baseKey, challengeGain:2 });
     }
     wrappedOnMythicClear._timewalkingWrapped = true;
@@ -714,6 +869,8 @@ function renderTimewalkingSub() {
     function wrappedOnWorldBossKill(mon) {
       oldWorldBossKill.apply(this, arguments);
       const key = mon?.wbKey || mon?.key;
+      const era = timewalkingEra();
+      if (key && key === era.worldBoss) timewalkingRecordDistortionClear();
       if (key) timewalkingOnWorldBossKill(key);
     }
     wrappedOnWorldBossKill._timewalkingWrapped = true;
@@ -735,6 +892,16 @@ function renderTimewalkingSub() {
       mon.atk = Math.floor(mon.atk * (1 + threat * 0.04 * focus));
       mon.def = Math.floor(mon.def * (1 + threat * 0.025 * focus));
       mon.dmgReduction = Math.min(0.82, (mon.dmgReduction || 0) + threat * 0.004 * focus);
+      for (const def of timewalkingActiveDistortions()) {
+        const mod = def.mod || {};
+        if (mod.worldBossHp) {
+          mon.hpMax = Math.floor(mon.hpMax * (1 + mod.worldBossHp));
+          mon.hp = mon.hpMax;
+        }
+        if (mod.worldBossAtk) mon.atk = Math.floor(mon.atk * (1 + mod.worldBossAtk));
+        if (mod.worldBossDef) mon.def = Math.floor(mon.def * (1 + mod.worldBossDef));
+        if (mod.worldBossDr) mon.dmgReduction = Math.min(0.88, (mon.dmgReduction || 0) + mod.worldBossDr);
+      }
       return mon;
     }
     wrappedBuildWorldBossMonsterData._timewalkingWrapped = true;
@@ -742,7 +909,7 @@ function renderTimewalkingSub() {
   }
 
   document.addEventListener('click', e => {
-    const btn = e.target.closest && e.target.closest('button[data-action^="claimtimewalking"],button[data-action="exchangetimewalking"],button[data-action="buytimewalkingresearch"],button[data-action="buytimewalkingcollection"]');
+    const btn = e.target.closest && e.target.closest('button[data-action^="claimtimewalking"],button[data-action="exchangetimewalking"],button[data-action="buytimewalkingresearch"],button[data-action="buytimewalkingcollection"],button[data-action="toggletimewalkingdistortion"]');
     if (!btn) return;
     e.preventDefault();
     e.stopPropagation();
@@ -751,6 +918,7 @@ function renderTimewalkingSub() {
     else if (btn.dataset.action === 'exchangetimewalking') exchangeTimewalkingCache();
     else if (btn.dataset.action === 'buytimewalkingresearch') timewalkingBuyResearch(btn.dataset.key);
     else if (btn.dataset.action === 'buytimewalkingcollection') timewalkingBuyCollection(btn.dataset.key);
+    else if (btn.dataset.action === 'toggletimewalkingdistortion') timewalkingToggleDistortion(btn.dataset.key);
     if (typeof renderEvents === 'function') renderEvents();
   }, true);
 })();

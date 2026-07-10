@@ -167,7 +167,7 @@ function defaultAccount() {
     chronicles: { claimed:{} }, // 艾泽拉斯编年史 {claimed:{chapterKey:timestamp}}
     worldInvasions: { progress:{}, claimed:{}, totalClaims:0 }, // 世界入侵轮换
     kareshExpedition: { weekId:0, missions:[], claimed:{}, seals:0, totalClaims:0, totalSeals:0, cacheClaims:0, metaClaimed:false, history:[] }, // 卡雷什终局远征周常
-    timewalking: { weekId:0, eraKey:'classic', missions:[], claimed:{}, badges:0, totalBadges:0, totalClaims:0, cacheClaims:0, metaClaimed:false, metaClaims:0, history:[], research:{}, bought:{}, erasMastered:{}, maxThreat:0 }, // 时光漫游周轮换
+    timewalking: { weekId:0, eraKey:'classic', missions:[], claimed:{}, badges:0, totalBadges:0, totalClaims:0, cacheClaims:0, metaClaimed:false, metaClaims:0, history:[], research:{}, bought:{}, erasMastered:{}, maxThreat:0, distortions:[], selected:{}, distortionClears:0 }, // 时光漫游周轮换
     stronghold: { buildings:{}, totalUpgrades:0 }, // 要塞建设(账号共享):建筑等级与长期经营目标
     astrology: { stardust:0, unlocked:{}, lastObserve:0, totalObserved:0 }, // 占星命盘:星尘与点亮节点
     // 光辉值(账号共享)
@@ -239,6 +239,8 @@ function mergeAccount(saved) {
       research: saved.timewalking.research || {},
       bought: saved.timewalking.bought || {},
       erasMastered: saved.timewalking.erasMastered || {},
+      distortions: Array.isArray(saved.timewalking.distortions) ? saved.timewalking.distortions : [],
+      selected: saved.timewalking.selected || {},
     }) : d.timewalking,
     stronghold: saved.stronghold ? Object.assign({}, d.stronghold, saved.stronghold, {
       buildings: saved.stronghold.buildings || {},
