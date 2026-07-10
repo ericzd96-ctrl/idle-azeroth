@@ -1015,6 +1015,7 @@ function setupMainButtons() {
       if (!btn) return;
       const act = btn.dataset.action;
       if (act === 'challengewb') challengeWorldBoss(btn.dataset.key);
+      else if (act === 'setwbosscontract' && typeof setWorldBossContractLevel === 'function') setWorldBossContractLevel(parseInt(btn.dataset.level || '0', 10));
       else if (act === 'challengerare' && typeof challengeRareElite === 'function') challengeRareElite(btn.dataset.key);
       else if (act === 'claimdaily') claimDaily(parseInt(btn.dataset.idx));
       else if (act === 'claimweekly') claimWeeklyChest();
@@ -1022,6 +1023,7 @@ function setupMainButtons() {
       else if (act === 'claimdragontreasure' && typeof claimDragonTreasure === 'function') claimDragonTreasure(btn.dataset.key);
       else if (act === 'claimalldragontreasures' && typeof claimAllDragonTreasures === 'function') claimAllDragonTreasures();
       else if (act === 'exchangeshards') exchangeShards();
+      else if (act === 'exchangeapexmarks' && typeof exchangeApexMarks === 'function') exchangeApexMarks();
       else if (act === 'claimbounty' && typeof claimBounty === 'function') claimBounty(parseInt(btn.dataset.idx, 10));
       renderEvents();
     });

@@ -2314,11 +2314,13 @@ function renderMap() {
     div.dataset.mapKey = m.key;
     const bossPanelIcon = (typeof entityIcon === 'function') ? entityIcon(m.boss.name, 18, m.boss.emoji) : m.boss.emoji;
     const mapIconHtml = symbolIconHtml(m.icon, 18, m.name, 'inv_misc_map_01');
+    const mapArt = m.art ? `<div class="map-art-banner" style="background-image:linear-gradient(180deg, rgba(11,15,25,.14), rgba(11,15,25,.72)), url('${m.art}')"></div>` : '';
     let html = `
       <div class="map-head">
         <span class="mname">${mapIconHtml} ${m.name}</span>
         <span><span class="map-faction faction-${m.faction}">${m.faction}</span> <span class="pill">${typeof contentRangeLabel === 'function' ? contentRangeLabel(m.lvlRange[0], m.lvlRange[1]) : `等级${m.lvlRange[0]}-${m.lvlRange[1]}`}</span></span>
       </div>
+      ${mapArt}
       <div class="map-desc">${m.desc}${tooHigh?' · ⚠️ 当前终局进度偏低,请谨慎推进':''}</div>
       <div class="sub-list">`;
     m.sub.forEach((s, idx) => {

@@ -37,6 +37,8 @@ const MOUNTS = [
   { key:'leishen_thundercloud', name:'雷霆帝王云端翔龙', icon:'⚡', tier:'legend', mod:{spdPct:21, atkPct:15, crit:4, mastery:10}, src:'世界Boss: 雷神·雷霆之王(极低概率)' },
   { key:'argus_starbinder', name:'群星寂灭者', icon:'🌌', tier:'legend', mod:{spdPct:22, atkPct:16, hpPct:16, defPct:8, mastery:12}, src:'世界Boss: 阿古斯·寂灭者(极低概率)' },
   { key:'raszageth_stormwing', name:'莱萨杰丝风暴之翼', icon:'🌩️', tier:'legend', mod:{spdPct:23, atkPct:17, hpPct:12, haste:8, mastery:12}, src:'世界Boss: 莱萨杰丝·风暴化身(极低概率)' },
+  { key:'shadowpoint_skyrazor', name:'影点裂轨天刃', icon:'🌑', tier:'legend', mod:{spdPct:23, atkPct:18, hpPct:12, vers:8, mastery:12}, src:'世界Boss: 影点总督维克席斯(极低概率)' },
+  { key:'shandorah_starweave', name:'沙恩多拉星纱翔兽', icon:'🌠', tier:'legend', mod:{spdPct:24, atkPct:18, hpPct:14, haste:8, mastery:14}, src:'世界Boss: 群星占相者诺维萨(极低概率)' },
   // 新增:接入 endgame 系统(大秘境/竞技场/巅峰)—— mod 只用 atk/hp/def/spd/mastery(crit/critd/leech/vers 会被 spd_tuning 从 MOUNTS 剥离)
   { key:'warbear',      name:'板甲战熊',   icon:'🐻', tier:'rare',   mod:{spdPct:12, hpPct:8, defPct:5},            src:'竞技场 大师段位' },
   { key:'felRaptor',    name:'魔誓迅猛龙', icon:'😈', tier:'epic',   mod:{spdPct:15, atkPct:10, mastery:6},          src:'大秘境 +8 通关' },
@@ -55,6 +57,8 @@ const WORLD_BOSS_MOUNT_DROPS = {
   lei_shen:{ key:'leishen_thundercloud', chance:0.010 },
   argus_unmaker:{ key:'argus_starbinder', chance:0.008 },
   raszageth_storm:{ key:'raszageth_stormwing', chance:0.008 },
+  shadowpoint_vexis:{ key:'shadowpoint_skyrazor', chance:0.007 },
+  shandorah_astromancer:{ key:'shandorah_starweave', chance:0.007 },
 };
 if (typeof globalThis !== 'undefined') {
   globalThis.MOUNTS = MOUNTS;

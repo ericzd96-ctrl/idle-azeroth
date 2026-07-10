@@ -66,6 +66,14 @@ const WORLD_BOSSES = [
     desc:'卡雷什相位风暴中的新世界Boss,不羁能量会把终局角色的续航与打断窗口一起压到极限。',
     hpMul:88, atkMul:7.85, defMul:6.25, cdHours:8,
     rewards:{ gold:280000, gem:420, honor:12800, essence:150, shards:40 } },
+  { key:'shadowpoint_vexis', name:'影点总督维克席斯', emoji:'🌑', lvl:102, minLvl:90, color:'#8b5cf6',
+    desc:'Shadow Point 的裂隙总督把轨道炮列和影卫誓约都搬上了世界战场,专门拦截试图深入卡雷什的终局队伍。',
+    hpMul:95, atkMul:8.2, defMul:6.65, cdHours:8,
+    rewards:{ gold:330000, gem:480, honor:14200, essence:172, shards:46 } },
+  { key:'shandorah_astromancer', name:'群星占相者诺维萨', emoji:'🌠', lvl:104, minLvl:94, color:'#60a5fa',
+    desc:'沙恩多拉最高阶的占星师能把整片裂空天幕压缩成武器,是卡雷什终局事件线新的硬门槛。',
+    hpMul:104, atkMul:8.55, defMul:7.05, cdHours:8,
+    rewards:{ gold:390000, gem:560, honor:15800, essence:195, shards:54 } },
 ];
 for (const wb of WORLD_BOSSES) {
   const profile = (typeof WORLD_BOSS_SKILLSETS === 'object' && WORLD_BOSS_SKILLSETS[wb.key]) || null;
@@ -73,6 +81,29 @@ for (const wb of WORLD_BOSSES) {
 }
 const WBOSS_CD_HOURS = 8;
 const SHARD_EXCHANGE_COST = 50; // 50 碎片 = 1 自选橙装
+const APEX_MARK_EXCHANGE_COST = 120;
+const WORLD_BOSS_CONTRACTS = [
+  { level:0, name:'常规猎杀', icon:'📘', desc:'标准终局世界Boss难度与奖励。', hp:1, atk:1, def:1, reward:1, marks:0 },
+  { level:1, name:'裂隙猎令', icon:'📕', desc:'世界Boss生命+20%、攻击+12%、防御+8%;追加1条天幕戒律,奖励+22%。', hp:1.20, atk:1.12, def:1.08, reward:1.22, marks:10 },
+  { level:2, name:'群星军律', icon:'📙', desc:'世界Boss生命+46%、攻击+28%、防御+18%;追加2条天幕戒律与更多阶段,奖励+50%。', hp:1.46, atk:1.28, def:1.18, reward:1.50, marks:18 },
+  { level:3, name:'吞界悬令', icon:'📓', desc:'世界Boss生命+88%、攻击+46%、防御+30%;追加3条天幕戒律、更多阶段与更快压迫,奖励+92%。', hp:1.88, atk:1.46, def:1.30, reward:1.92, marks:30 },
+];
+const WORLD_BOSS_ASSAULTS = [
+  { key:'riftDrain', name:'裂隙抽离', icon:'🌀', desc:'每11秒燃烧 14% 最大资源。', mod:{ drainTickMs:11000, resourceDrainPct:0.14 } },
+  { key:'starfall', name:'碎星雨幕', icon:'🌠', desc:'每13秒落下坠星,造成最大生命 6% 伤害并短暂震荡。', mod:{ ceilingTickMs:13000, ceilingDamagePct:0.06, stunMs:650 } },
+  { key:'voidMiasma', name:'虚空瘴雾', icon:'☣️', desc:'每10.5秒施加侵蚀,持续造成伤害。', mod:{ poisonTickMs:10500, poisonDpsPct:0.017, poisonMs:4200 } },
+  { key:'wardPulse', name:'棱界护壁', icon:'🔷', desc:'世界Boss每15秒获得护盾。', mod:{ shieldTickMs:15000, monsterShieldPct:0.05 } },
+  { key:'dreadEdict', name:'惧意军律', icon:'🌫️', desc:'每12秒施加虚弱。', mod:{ weakenTickMs:12000, weakenMs:5000 } },
+  { key:'execution', name:'终局清算', icon:'⚔️', desc:'Boss 在 35% 生命以下时会周期性施加处刑脉冲。', mod:{ executePulsePct:0.045, executeBelow:0.35 } },
+];
+const WORLD_BOSS_PHASE_EVENTS = [
+  { key:'phaseShield', name:'壁垒重构', icon:'🛡️', desc:'获得最大生命 10% 护盾并提高防御。', mod:{ shieldPct:0.10, defBuffSecs:10, defBuffPct:26 } },
+  { key:'phaseFrenzy', name:'狂怒升格', icon:'💢', desc:'提高攻击与攻速 12 秒。', mod:{ atkBuffSecs:12, atkBuffPct:32, spdBuffSecs:12, spdBuffPct:22 } },
+  { key:'phaseGuard', name:'裂隙亲卫', icon:'🚩', desc:'召唤 1 名援军并获得少量护盾。', mod:{ summonCount:1, summonTheme:'soldier', shieldPct:0.05 } },
+  { key:'phaseDecay', name:'坍缩领域', icon:'🌑', desc:'对玩家造成一次压迫伤害并施加凋零。', mod:{ phaseDamagePct:0.05, heroDebuff:'decay2', heroDebuffMs:6500 } },
+  { key:'phaseExecution', name:'终幕宣告', icon:'⚔️', desc:'使玩家短暂易伤,并强化 Boss 暴击。', mod:{ heroDebuff:'vulnerable', heroDebuffMs:7000, critBuffSecs:10, critBuffPct:42 } },
+  { key:'phaseLeech', name:'暗血虹吸', icon:'🩸', desc:'Boss 获得吸血,并燃烧玩家资源。', mod:{ leechBuffSecs:10, leechBuffPct:22, manaDrainPct:0.16 } },
+];
 
 /* 世界Boss 累计击杀里程碑(per-char,达标一次性奖励) */
 const WBOSS_KILL_MILESTONES = [
@@ -110,6 +141,9 @@ function ensureEventState() {
   if (!state.worldBoss.rareKills) state.worldBoss.rareKills = {};
   if (typeof state.worldBoss.shards !== 'number') state.worldBoss.shards = 0;
   if (typeof state.worldBoss.totalKilled !== 'number') state.worldBoss.totalKilled = 0;
+  if (typeof state.worldBoss.contractLevel !== 'number') state.worldBoss.contractLevel = 0;
+  if (typeof state.worldBoss.apexMarks !== 'number') state.worldBoss.apexMarks = 0;
+  if (!state.worldBoss.activeEncounter) state.worldBoss.activeEncounter = null;
   if (!state.daily) state.daily = { resetAt:0, tasks:[], weekStreak:0, weeklyClaimedAt:0 };
   if (!state.eventsCounters) state.eventsCounters = { itemsRare:0, sessionGold:0, sessionKills:0, sessionDungeons:0 };
   // 赛季已搬到 account, 用 ensureSeason()
@@ -134,6 +168,108 @@ function worldBossCooldownMs(wb) {
 function worldBossMinLevel(wb) {
   return wb?.minLvl || Math.max(1, (wb?.lvl || 1) - 5);
 }
+function worldBossAccessLevel() {
+  return (typeof playerProgressLevel === 'function') ? playerProgressLevel() : (state.hero.lvl || 1);
+}
+function worldBossMeetsReq(wb) {
+  return worldBossAccessLevel() >= worldBossMinLevel(wb);
+}
+function worldBossReqLabel(wb) {
+  if (typeof contentReqLabel === 'function') return contentReqLabel(worldBossMinLevel(wb));
+  return `Lv.${worldBossMinLevel(wb)}`;
+}
+function worldBossContractLevel() {
+  ensureEventState();
+  return Math.max(0, Math.min(3, Math.floor(state.worldBoss.contractLevel || 0)));
+}
+function worldBossContractInfo(level) {
+  return WORLD_BOSS_CONTRACTS[Math.max(0, Math.min(3, Math.floor(level || 0)))] || WORLD_BOSS_CONTRACTS[0];
+}
+function setWorldBossContractLevel(level) {
+  ensureEventState();
+  if (state.mode !== 'world') { log('请先结束当前战斗再调整世界Boss猎令', 'bad'); return; }
+  state.worldBoss.contractLevel = Math.max(0, Math.min(3, Math.floor(Number(level) || 0)));
+  const info = worldBossContractInfo(state.worldBoss.contractLevel);
+  log(`${info.icon} 世界Boss猎令调整为 [${info.name}]`, state.worldBoss.contractLevel ? 'legend' : 'info');
+  markDirty('events');
+}
+function getWorldBossAssaults(wb, contractLevel) {
+  const level = Math.max(0, Math.min(3, Math.floor(contractLevel || 0)));
+  if (!wb || !isApexWorldBoss(wb) || level <= 0) return [];
+  const count = level;
+  const day = Math.floor(Date.now() / 86400000);
+  let seed = ((wb.lvl || 1) * 613 + level * 1231 + (day % 100000) * 421) % 2147483647;
+  const source = wb.key || '';
+  for (let i = 0; i < source.length; i++) seed = (seed * 43 + source.charCodeAt(i)) % 2147483647;
+  seed = seed || 1;
+  const pool = WORLD_BOSS_ASSAULTS.slice();
+  for (let i = pool.length - 1; i > 0; i--) {
+    seed = (seed * 16807) % 2147483647;
+    const j = seed % (i + 1);
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, count).map(a => ({ ...a, mod:{ ...(a.mod || {}) } }));
+}
+function getWorldBossPhaseEvents(wb, contractLevel) {
+  const level = Math.max(0, Math.min(3, Math.floor(contractLevel || 0)));
+  if (!wb || !isApexWorldBoss(wb) || level <= 0) return [];
+  const thresholdsByLevel = {
+    1: [0.55],
+    2: [0.72, 0.32],
+    3: [0.82, 0.54, 0.24],
+  };
+  const thresholds = thresholdsByLevel[level] || [];
+  const day = Math.floor(Date.now() / 86400000);
+  let seed = ((wb.lvl || 1) * 251 + level * 991 + (day % 100000) * 433) % 2147483647;
+  const source = `${wb.key || ''}:${wb.name || ''}`;
+  for (let i = 0; i < source.length; i++) seed = (seed * 41 + source.charCodeAt(i)) % 2147483647;
+  seed = seed || 1;
+  const pool = WORLD_BOSS_PHASE_EVENTS.slice();
+  for (let i = pool.length - 1; i > 0; i--) {
+    seed = (seed * 16807) % 2147483647;
+    const j = seed % (i + 1);
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return thresholds.map((threshold, i) => {
+    const event = pool[i % pool.length];
+    return { ...event, threshold, phaseKey:`wb:${wb.key}:${event.key}:${Math.round(threshold * 100)}` };
+  });
+}
+function createWorldBossEncounter(wb) {
+  if (!wb || !isApexWorldBoss(wb)) return null;
+  const contractLevel = worldBossContractLevel();
+  if (contractLevel <= 0) return null;
+  const contract = worldBossContractInfo(contractLevel);
+  const assaults = getWorldBossAssaults(wb, contractLevel);
+  const phases = getWorldBossPhaseEvents(wb, contractLevel);
+  return {
+    key: wb.key,
+    contractLevel,
+    contract,
+    assaults,
+    phases,
+    pressure: 0,
+    maxPressure: 0,
+    assaultHits: 0,
+    bossPhasesTriggered: 0,
+    lastPressureAt: Date.now(),
+    startAt: Date.now(),
+  };
+}
+function worldBossEncounterRewardMult(encounter, includePressure=true) {
+  if (!encounter || !encounter.contractLevel) return 1;
+  const assaultBonus = (encounter.assaults?.length || 0) * 0.04;
+  const pressureBonus = includePressure ? Math.min(0.24, (encounter.maxPressure || encounter.pressure || 0) * 0.02) : 0;
+  return (encounter.contract?.reward || 1) * (1 + assaultBonus + pressureBonus);
+}
+function worldBossEncounterMarkGain(wb, encounter) {
+  if (!wb || !encounter || !encounter.contractLevel) return 0;
+  const base = encounter.contract?.marks || 0;
+  const lvlBonus = Math.max(0, Math.floor(((wb.lvl || 80) - 80) / 2));
+  const assaultBonus = (encounter.assaults?.length || 0) * 4;
+  const pressureBonus = Math.max(0, encounter.maxPressure || 0);
+  return Math.max(8, base + lvlBonus + assaultBonus + pressureBonus);
+}
 function worldBossStageCleared(wb) {
   ensureEventState();
   return !!(wb && isStageWorldBoss(wb) && state.worldBoss.stageClears[wb.key]);
@@ -153,8 +289,15 @@ const WORLD_BOSS_HP_BUFF = 2.5;
 const WORLD_BOSS_ATK_BUFF = 1.15;
 function buildWorldBossMonsterData(wb) {
   const boss = wb || {};
-  const baseHp = Math.floor((100 + boss.lvl * boss.lvl * 6.0) * (boss.hpMul || 1) * WORLD_BOSS_HP_BUFF);
-  const baseAtk = Math.floor((8 + boss.lvl * 3.0) * (boss.atkMul || 1) * WORLD_BOSS_ATK_BUFF);
+  const encounter = state.worldBoss?.activeEncounter && state.worldBoss.activeEncounter.key === boss.key
+    ? state.worldBoss.activeEncounter
+    : null;
+  const contract = encounter?.contract || worldBossContractInfo(0);
+  const rewardMult = worldBossEncounterRewardMult(encounter, false);
+  const baseHp = Math.floor((100 + boss.lvl * boss.lvl * 6.0) * (boss.hpMul || 1) * WORLD_BOSS_HP_BUFF * (contract.hp || 1));
+  const baseAtk = Math.floor((8 + boss.lvl * 3.0) * (boss.atkMul || 1) * WORLD_BOSS_ATK_BUFF * (contract.atk || 1));
+  const def = Math.floor((3 + boss.lvl * 1.3) * (boss.defMul || 1) * (contract.def || 1));
+  const supportCount = (boss.supportCount || 4) + (encounter?.contractLevel || 0);
   return {
     name: boss.emoji + boss.name,
     bossName: boss.name,
@@ -166,11 +309,11 @@ function buildWorldBossMonsterData(wb) {
     hpMax: baseHp,
     hp: baseHp,
     atk: Math.floor(baseAtk * (1 + (boss.passive?.atkBonus || 0))),
-    def: Math.floor((3 + boss.lvl * 1.3) * (boss.defMul || 1)),
-    baseGold: Math.max(1, Math.floor((boss.rewards?.gold || 1) / 30)),
+    def,
+    baseGold: Math.max(1, Math.floor((boss.rewards?.gold || 1) / 30) * rewardMult),
     baseXp: isStageWorldBoss(boss) ? Math.max(180, boss.lvl * 16) : 300,
-    goldReward: boss.rewards?.gold || 0,
-    honorReward: boss.rewards?.honor || 0,
+    goldReward: Math.floor((boss.rewards?.gold || 0) * rewardMult),
+    honorReward: Math.floor((boss.rewards?.honor || 0) * rewardMult),
     dropRate: isApexWorldBoss(boss) ? 1.0 : 0.9,
     gemChance: 0,
     maxRarity: isApexWorldBoss(boss) ? 'legend' : (boss.lvl >= 50 ? 'epic' : 'rare'),
@@ -184,16 +327,18 @@ function buildWorldBossMonsterData(wb) {
     stunChance: boss.passive?.stunChance || 0,
     instantCast: boss.instantCast !== undefined ? !!boss.instantCast : true,
     instantCastChance: typeof boss.instantCastChance === 'number' ? boss.instantCastChance : undefined,
-    atkInterval: boss.atkInterval || (isApexWorldBoss(boss) ? 1125 : boss.lvl >= 70 ? 1225 : 1325),
+    atkInterval: Math.max(860, (boss.atkInterval || (isApexWorldBoss(boss) ? 1125 : boss.lvl >= 70 ? 1225 : 1325)) - (encounter?.contractLevel || 0) * 35),
     _monSkills: [],
     _monSkill: null,
     _monSupportSkills: typeof buildMonsterSupportPool === 'function'
-      ? buildMonsterSupportPool(boss.name, null, boss.lvl, true, boss.supportCount || 4)
+      ? buildMonsterSupportPool(boss.name, null, boss.lvl, true, supportCount)
       : [],
     _supportSkillCooldowns: {},
     _lastSupportSkill: Date.now() - 4000,
     _lastTrick: 0,
-    _nextTrickAt: Date.now() + (isApexWorldBoss(boss) ? 6500 : 7800)
+    _nextTrickAt: Date.now() + (isApexWorldBoss(boss) ? 6500 : 7800),
+    _wbContractLevel: encounter?.contractLevel || 0,
+    _wbRewardMult: rewardMult,
   };
 }
 
@@ -282,8 +427,8 @@ function challengeWorldBoss(key) {
   if (!worldBossReady(key)) { log('世界BOSS冷却中', 'bad'); return; }
   if (state.mode === 'travel') { log('正在旅行中', 'bad'); return; }
   if (state.mode !== 'world') { log('请先结束当前战斗', 'bad'); return; }
-  const minLvl = worldBossMinLevel(wb);
-  if (state.hero.lvl < minLvl) { log(`需要等级 Lv.${minLvl}+`, 'bad'); return; }
+  if (!worldBossMeetsReq(wb)) { log(`进度不足,需要 ${worldBossReqLabel(wb)}+`, 'bad'); return; }
+  state.worldBoss.activeEncounter = createWorldBossEncounter(wb);
   state.mode = 'worldboss';
   state._currentWBoss = key;
   state._currentRareElite = null;
@@ -293,12 +438,18 @@ function challengeWorldBoss(key) {
   if (typeof clearAllBuffs === 'function') clearAllBuffs();
   state.currentMonsters.push(buildWorldBossMonsterData(wb));
   log(`⚔️ 挑战世界BOSS [${wb.name}]!`, isApexWorldBoss(wb) ? 'legend' : 'epic');
+  if (state.worldBoss.activeEncounter) {
+    const enc = state.worldBoss.activeEncounter;
+    log(`${enc.contract.icon} 已启用 ${enc.contract.name}: 怪物生命 ×${enc.contract.hp.toFixed(2)} · 攻击 ×${enc.contract.atk.toFixed(2)} · 防御 ×${enc.contract.def.toFixed(2)}`, 'legend');
+    if (enc.assaults?.length) log(`🌌 天幕戒律: ${enc.assaults.map(a => `${a.icon}${a.name}`).join(' · ')}`, 'bad');
+  }
   markDirty('stage','events');
 }
 
 function leaveWorldBoss() {
   state.mode = 'world';
   state._currentWBoss = null;
+  if (state.worldBoss) state.worldBoss.activeEncounter = null;
   state.currentMonsters = [];
   spawnMonster();
 }
@@ -308,13 +459,22 @@ function onWorldBossKill(mon) {
   ensureEventState();
   const key = mon.wbKey;
   const wb = getWorldBossDef(key); if (!wb) return;
+  const encounter = state.worldBoss.activeEncounter && state.worldBoss.activeEncounter.key === key
+    ? state.worldBoss.activeEncounter
+    : null;
+  const rewardMult = worldBossEncounterRewardMult(encounter);
+  const bonusGem = encounter ? Math.max(0, Math.floor((wb.rewards?.gem || 0) * (rewardMult - 1))) : 0;
+  const bonusEssence = encounter ? Math.max(0, Math.floor((wb.rewards?.essence || 0) * (rewardMult - 1))) : 0;
+  const bonusShards = encounter ? Math.max(0, Math.floor((wb.rewards?.shards || 0) * (rewardMult - 1))) : 0;
+  const bonusMarks = worldBossEncounterMarkGain(wb, encounter);
   state.worldBoss.lastKill[key] = Date.now();
   state.worldBoss.totalKilled = (state.worldBoss.totalKilled||0) + 1;
   worldBossCheckKillMilestone();
   if (typeof mountOnWorldBossKill==='function') mountOnWorldBossKill(key);
-  state.gem += wb.rewards?.gem || 0;
+  state.gem += (wb.rewards?.gem || 0) + bonusGem;
   if (typeof ensureMats==='function') ensureMats();
-  state.essence += wb.rewards?.essence || 0;
+  state.essence += (wb.rewards?.essence || 0) + bonusEssence;
+  if (bonusMarks) state.worldBoss.apexMarks = (state.worldBoss.apexMarks || 0) + bonusMarks;
 
   if (isStageWorldBoss(wb)) {
     const firstClear = !worldBossStageCleared(wb);
@@ -339,7 +499,7 @@ function onWorldBossKill(mon) {
     seasonAddPoints(180 + wb.lvl * 3, '阶段世界Boss');
     if (typeof gainXP === 'function') gainXP(0);
   } else {
-    state.worldBoss.shards = (state.worldBoss.shards||0) + (wb.rewards?.shards || 0);
+    state.worldBoss.shards = (state.worldBoss.shards||0) + (wb.rewards?.shards || 0) + bonusShards;
     for (let i = 0; i < 2; i++) {
       const ep = rollItem('epic', wb.lvl);
       addToInventory(ep);
@@ -351,8 +511,18 @@ function onWorldBossKill(mon) {
       if (typeof eventsOnItemGet==='function') eventsOnItemGet(lg);
       if (typeof progressionOnLegendary==='function') progressionOnLegendary();
     }
+    if (encounter && Math.random() < Math.min(0.72, 0.10 + encounter.contractLevel * 0.14)) {
+      const bonusLegend = rollItem('legend', wb.lvl + encounter.contractLevel);
+      addToInventory(bonusLegend);
+      if (typeof eventsOnItemGet==='function') eventsOnItemGet(bonusLegend);
+      if (typeof progressionOnLegendary==='function') progressionOnLegendary();
+      log(`🌌 猎令战利品: 额外获得 [${bonusLegend.rarityName}] ${bonusLegend.name}`, 'legend');
+    }
     seasonAddPoints(500, '世界Boss');
-    log(`🏆 击败 ${wb.name}! +${wb.rewards.shards || 0}橙装碎片 +${wb.rewards.gem || 0}💎 +${wb.rewards.essence || 0}✨`, 'legend');
+    const encounterText = encounter
+      ? ` · ${encounter.contract.icon}${encounter.contract.name} · 奖励 ×${rewardMult.toFixed(2)} · 星痕 +${bonusMarks} · 戒律触发 ${encounter.assaultHits || 0} · 阶段 ${encounter.bossPhasesTriggered || 0} · 压迫 ${encounter.maxPressure || 0}`
+      : '';
+    log(`🏆 击败 ${wb.name}! +${(wb.rewards.shards || 0) + bonusShards}橙装碎片 +${(wb.rewards.gem || 0) + bonusGem}💎 +${(wb.rewards.essence || 0) + bonusEssence}✨${encounterText}`, 'legend');
   }
 
   leaveWorldBoss();
@@ -399,6 +569,22 @@ function exchangeShards() {
   if (typeof progressionOnLegendary==='function') progressionOnLegendary();
   log(`🎁 用碎片合成 [${it.rarityName}] ${it.name}`, 'legend');
   markDirty('events','inventory');
+}
+function exchangeApexMarks() {
+  ensureEventState();
+  if ((state.worldBoss.apexMarks || 0) < APEX_MARK_EXCHANGE_COST) { log('星痕不足', 'bad'); return; }
+  state.worldBoss.apexMarks -= APEX_MARK_EXCHANGE_COST;
+  const progLvl = (typeof playerProgressLevel === 'function') ? playerProgressLevel() : (state.hero.lvl || 1);
+  const lootLvl = Math.max(90, progLvl);
+  const legend = rollItem('legend', lootLvl);
+  addToInventory(legend);
+  if (typeof eventsOnItemGet === 'function') eventsOnItemGet(legend);
+  if (typeof progressionOnLegendary === 'function') progressionOnLegendary();
+  state.gem += 140;
+  state.essence += 55;
+  state.worldBoss.shards = (state.worldBoss.shards || 0) + 18;
+  log(`🌌 铸造顶峰猎箱: 获得 [${legend.rarityName}] ${legend.name} · +140💎 +55✨ +18🧩`, 'legend');
+  markDirty('events', 'inventory', 'hero');
 }
 
 /* ============ 日常任务 ============ */
@@ -656,9 +842,31 @@ function renderWorldBossSub() {
     : '';
   const _wbTotal = state.worldBoss.totalKilled||0;
   const _wbNext = WBOSS_KILL_MILESTONES.find(m => _wbTotal < m.n);
+  const contract = worldBossContractInfo(worldBossContractLevel());
+  const contractButtons = WORLD_BOSS_CONTRACTS.map(c => `
+    <button data-action="setwbosscontract" data-level="${c.level}" class="${contract.level === c.level ? 'active' : ''}" title="${c.desc}">
+      ${c.icon} ${c.name}
+    </button>`).join('');
   let html = `<div class="prog-summary muted">${gateHtml}橙装碎片: <b style="color:var(--legend)">${state.worldBoss.shards||0}</b> / ${SHARD_EXCHANGE_COST} · 累计击败 ${_wbTotal} 次
     ${(state.worldBoss.shards||0)>=SHARD_EXCHANGE_COST ? '<button class="gold" data-action="exchangeshards" style="margin-left:8px">合成橙装</button>' : ''}
+    · 星痕 <b style="color:#67e8f9">${state.worldBoss.apexMarks||0}</b> / ${APEX_MARK_EXCHANGE_COST}
+    ${(state.worldBoss.apexMarks||0)>=APEX_MARK_EXCHANGE_COST ? '<button class="gold" data-action="exchangeapexmarks" style="margin-left:8px">铸造猎箱</button>' : ''}
     <div style="font-size:10px;margin-top:3px">🏆 击杀里程碑: ${WBOSS_KILL_MILESTONES.map(m=>`<span style="opacity:${_wbTotal>=m.n?1:0.5}">${_wbTotal>=m.n?'✅':'🔒'}${m.n}${m.title?'👑':''}</span>`).join(' · ')}${_wbNext?` · 下一档还需 ${_wbNext.n-_wbTotal} 次`:' · 全部达成'}</div>
+  </div>`;
+  html += `<div class="worldboss-contract-panel">
+    <div class="worldboss-contract-title">
+      <span>🌌 顶峰猎令</span>
+      <span class="muted">${contract.desc}</span>
+    </div>
+    <div class="worldboss-contract-hero" style="background-image:linear-gradient(180deg, rgba(10,14,24,.18), rgba(10,14,24,.84)), url('assets/wow/art/karesh-apex-hunt.png')">
+      <div class="worldboss-contract-hero-main">
+        <div style="font-weight:700;font-size:14px">${contract.icon} 当前猎令: ${contract.name}</div>
+        <div class="muted">怪物生命 ×${contract.hp.toFixed(2)} · 攻击 ×${contract.atk.toFixed(2)} · 防御 ×${contract.def.toFixed(2)} · 基础奖励 ×${contract.reward.toFixed(2)}</div>
+        <div class="muted" style="margin-top:4px">顶峰世界Boss会在高猎令下获得更多天幕戒律、阶段变化与战斗压迫;额外奖励会折算成星痕与猎箱。</div>
+      </div>
+    </div>
+    <div class="worldboss-contract-buttons">${contractButtons}</div>
+    <div class="dungeon-contract-info">契约奖励会在顶峰世界Boss结算时追加生效,并按实际战斗中的压迫层数继续上浮。推荐在雷沙诺尔之后逐步提高,以便和新坐骑、终局装备成长保持难度匹配。</div>
   </div>`;
   const renderRewardLine = wb => {
     const parts = [];
@@ -681,8 +889,8 @@ function renderWorldBossSub() {
   for (const wb of trialWorldBosses()) {
     const cleared = worldBossStageCleared(wb);
     const ready = worldBossReady(wb.key);
-    const statusText = state.hero.lvl < worldBossMinLevel(wb)
-      ? `需 Lv.${worldBossMinLevel(wb)}`
+    const statusText = !worldBossMeetsReq(wb)
+      ? `需 ${worldBossReqLabel(wb)}`
       : cleared
         ? '已突破'
         : (gate?.key === wb.key ? '正在卡级' : '可挑战');
@@ -694,7 +902,7 @@ function renderWorldBossSub() {
       </div>
       <div class="wb-act">
         <div class="muted" style="font-size:10px;margin-bottom:4px">${statusText}</div>
-        <button class="${cleared ? 'primary' : 'danger'}" data-action="challengewb" data-key="${wb.key}" ${state.hero.lvl < worldBossMinLevel(wb) ? 'disabled' : ''}>${cleared ? '再战' : '挑战'}</button>
+        <button class="${cleared ? 'primary' : 'danger'}" data-action="challengewb" data-key="${wb.key}" ${!worldBossMeetsReq(wb) ? 'disabled' : ''}>${cleared ? '再战' : '挑战'}</button>
       </div>
     </div>`;
   }
@@ -704,14 +912,21 @@ function renderWorldBossSub() {
     const ready = worldBossReady(wb.key);
     const nextTs = worldBossAvailableAt(wb.key);
     const cd = Math.max(0, Math.ceil((nextTs - Date.now())/1000));
+    const accessText = worldBossMeetsReq(wb) ? `推荐 ${worldBossReqLabel(wb)}` : `需 ${worldBossReqLabel(wb)}`;
+    const assaults = contract.level > 0 ? getWorldBossAssaults(wb, contract.level) : [];
+    const phases = contract.level > 0 ? getWorldBossPhaseEvents(wb, contract.level) : [];
+    const contractLine = contract.level > 0
+      ? `<div class="muted" style="font-size:10px;margin-top:3px">${contract.icon}${contract.name} · 奖励 ×${worldBossEncounterRewardMult({ contractLevel:contract.level, contract, assaults, maxPressure:0 }, false).toFixed(2)} · 戒律: ${assaults.map(a => `${a.icon}${a.name}`).join(' · ')} · 阶段 ${phases.length}</div>`
+      : '';
     html += `<div class="wb-item ${ready?'wb-ready':''}" style="border-left:4px solid ${wb.color}">
       <div class="wb-main">
         <div class="wb-name wb-name-tip" data-wb-key="${wb.key}" style="color:${wb.color};cursor:help">${wb.emoji} ${wb.name} <span class="muted" style="font-size:10px">Lv.${wb.lvl}</span></div>
         <div class="muted" style="font-size:11px">${wb.desc}</div>
-        <div class="muted" style="font-size:10px;margin-top:2px">奖励: ${renderRewardLine(wb)}</div>
+        <div class="muted" style="font-size:10px;margin-top:2px">${accessText} · 奖励: ${renderRewardLine(wb)}</div>
+        ${contractLine}
       </div>
       <div class="wb-act">
-        ${ready ? `<button class="danger" data-action="challengewb" data-key="${wb.key}" ${state.hero.lvl < worldBossMinLevel(wb) ? 'disabled' : ''}>挑战</button>`
+        ${ready ? `<button class="danger" data-action="challengewb" data-key="${wb.key}" ${!worldBossMeetsReq(wb) ? 'disabled' : ''}>挑战</button>`
                 : `<span class="muted" style="font-size:11px">${fmtCd(cd)}</span>`}
       </div>
     </div>`;

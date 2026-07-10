@@ -57,7 +57,7 @@ function accountMountOwnedCount() {
   return Object.values(acc.mounts || {}).filter(m => m && m.obtained).length;
 }
 function accountWorldBossMountCount() {
-  const fallbackKeys = ['twilight_drake_wb','sulfuras_firehawk','qiraji_mindscarab','yogg_dreambeast','alakir_stormdrake','leishen_thundercloud','argus_starbinder','raszageth_stormwing'];
+  const fallbackKeys = ['twilight_drake_wb','sulfuras_firehawk','qiraji_mindscarab','yogg_dreambeast','alakir_stormdrake','leishen_thundercloud','argus_starbinder','raszageth_stormwing','shadowpoint_skyrazor','shandorah_starweave'];
   const drops = (typeof globalThis !== 'undefined' && globalThis.WORLD_BOSS_MOUNT_DROPS) || null;
   const keys = drops ? Object.values(drops).map(d => d.key) : fallbackKeys;
   const acc = accEns();
@@ -96,7 +96,7 @@ function accountAstrologyNodeCount() {
   if (typeof astrologyUnlockedCount === 'function') return astrologyUnlockedCount();
   return Object.keys(accEns().astrology?.unlocked || {}).length;
 }
-const APEX_WORLD_BOSS_KEYS = ['deathwing','ragnaros','cthun','yogg_saron','alakir','lei_shen','argus_unmaker','raszageth_storm'];
+const APEX_WORLD_BOSS_KEYS = ['deathwing','ragnaros','cthun','yogg_saron','alakir','lei_shen','argus_unmaker','raszageth_storm','shadowpoint_vexis','shandorah_astromancer'];
 
 function ensureUnlockedTitles() {
   const acc = accEns();

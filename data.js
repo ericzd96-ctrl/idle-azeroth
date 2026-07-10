@@ -3971,6 +3971,38 @@ const WORLD_BOSS_SKILLSETS = {
       {name:'星界撕裂', icon:'✨', desc:'21倍范围伤害,虚弱并灵魂链接', type:'dmg', mul:21, castTime:4.8, aoe:true, weaken:true, soulLink:true, silence:2200},
       {name:'无缚终局', icon:'🌌', desc:'23倍范围终局伤害', type:'dmg', mul:23, castTime:6, aoe:true, plague:true, fear:2500, silence:2500, mirror:true, alwaysCrit:true, brittle:true}
     ]
+  },
+  shadowpoint_vexis: {
+    passive:{ dmgReduction:0.69, critChance:0.42, dodgeChance:0.24, atkBonus:0.64, leech:0.18, stunChance:0.26 },
+    supportCount:8,
+    atkInterval:960,
+    instantCastChance:0.16,
+    skills:[
+      {name:'轨炮切线', icon:'🌑', desc:'20倍暗影伤害,撕裂防御并附加易爆', type:'dmg', mul:20, castTime:2.8, sunder:true, brittle:true},
+      {name:'界钉封锁', icon:'⚙️', desc:'20.5倍范围伤害,沉默并残废', type:'dmg', mul:20.5, castTime:3.6, aoe:true, silence:2400, cripple:true},
+      {name:'影卫总督令', icon:'📜', desc:'获得护盾并提升攻击/暴击/减伤', type:'support', cd:16, castTime:2.7, shieldPct:0.28, atkBuffSecs:9, atkBuffPct:38, critBuffSecs:9, critBuffPct:40, drBuffSecs:9, drBuffPct:0.24},
+      {name:'裂轨狙杀', icon:'🎯', desc:'21倍伤害,必定暴击并恐惧', type:'dmg', mul:21, castTime:3.4, alwaysCrit:true, fear:2200, manaDrain:120},
+      {name:'影点誓卫', icon:'🧿', desc:'召唤3名影卫誓卫并提高攻速', type:'support', cd:19, castTime:3.1, summonCount:3, summonTheme:'void', spdBuffSecs:8, spdBuffPct:34},
+      {name:'吞界火线', icon:'💥', desc:'22倍范围伤害,镜像错位并衰亡', type:'dmg', mul:22, castTime:4.8, aoe:true, mirror:true, decay2:true, silence:2300},
+      {name:'裂隙军律', icon:'🌌', desc:'21.5倍伤害,灵魂链接并吸取资源', type:'dmg', mul:21.5, castTime:4.1, soulLink:true, soulDrain:true, manaDrain:130},
+      {name:'影点终炮', icon:'🌑', desc:'24倍范围终局伤害', type:'dmg', mul:24, castTime:6.1, aoe:true, fear:2500, silence:2500, plague:true, alwaysCrit:true, brittle:true}
+    ]
+  },
+  shandorah_astromancer: {
+    passive:{ dmgReduction:0.73, critChance:0.44, dodgeChance:0.26, atkBonus:0.68, leech:0.2, stunChance:0.28 },
+    supportCount:9,
+    atkInterval:940,
+    instantCastChance:0.18,
+    skills:[
+      {name:'星潮裁定', icon:'🌠', desc:'21倍奥术伤害,沉默并虚弱', type:'dmg', mul:21, castTime:2.7, silence:2400, weaken:true},
+      {name:'天幕折镜', icon:'🪞', desc:'21.5倍范围伤害,镜像错位并灵魂链接', type:'dmg', mul:21.5, castTime:3.8, aoe:true, mirror:true, soulLink:true},
+      {name:'群星对焦', icon:'✨', desc:'获得护盾并提升攻击/攻速/减伤', type:'support', cd:16, castTime:2.6, shieldPct:0.3, atkBuffSecs:9, atkBuffPct:40, spdBuffSecs:9, spdBuffPct:36, drBuffSecs:9, drBuffPct:0.26},
+      {name:'零点测距', icon:'🔭', desc:'22倍伤害,吸取资源并附加易爆', type:'dmg', mul:22, castTime:3.5, manaDrain:135, brittle:true, alwaysCrit:true},
+      {name:'占相誓从', icon:'🔷', desc:'召唤3名棱镜誓从并提高暴击', type:'support', cd:19, castTime:3.2, summonCount:3, summonTheme:'construct', critBuffSecs:8, critBuffPct:42},
+      {name:'群星归航', icon:'🌌', desc:'23倍范围伤害,恐惧并衰亡', type:'dmg', mul:23, castTime:4.9, aoe:true, fear:2400, decay2:true, silence:2400},
+      {name:'仪轨封缚', icon:'📐', desc:'22.5倍伤害,残废并凋零', type:'dmg', mul:22.5, castTime:4.2, cripple:true, soulDrain:true, manaDrain:120},
+      {name:'终末天象', icon:'🪐', desc:'25倍范围终局伤害', type:'dmg', mul:25, castTime:6.3, aoe:true, mirror:true, fear:2600, silence:2600, alwaysCrit:true, brittle:true}
+    ]
   }
 };
 const RAID_EXTRA_BOSSES = {

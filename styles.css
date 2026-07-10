@@ -973,7 +973,23 @@ h1 {
   border-radius: 8px;
   background: rgba(126,34,206,.08);
 }
+.worldboss-contract-panel {
+  margin: 0 0 8px 0;
+  padding: 8px;
+  border: 1px solid rgba(96,165,250,.24);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(15,23,42,.82), rgba(30,41,59,.84));
+}
 .dungeon-contract-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 7px;
+}
+.worldboss-contract-title {
   display: flex;
   justify-content: space-between;
   gap: 8px;
@@ -986,7 +1002,16 @@ h1 {
   font-weight: 400;
   text-align: right;
 }
+.worldboss-contract-title .muted {
+  font-weight: 400;
+  text-align: right;
+}
 .dungeon-contract-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.worldboss-contract-buttons {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
@@ -996,10 +1021,34 @@ h1 {
   font-size: 11px;
   min-height: 30px;
 }
+.worldboss-contract-buttons button {
+  padding: 5px 6px;
+  font-size: 11px;
+  min-height: 30px;
+}
 .dungeon-contract-buttons button.active {
   border-color: rgba(192,132,252,.65);
   background: rgba(168,85,247,.26);
   color: #f3e8ff;
+}
+.worldboss-contract-buttons button.active {
+  border-color: rgba(96,165,250,.65);
+  background: rgba(59,130,246,.22);
+  color: #dbeafe;
+}
+.worldboss-contract-hero {
+  width: 100%;
+  height: 104px;
+  border-radius: 8px;
+  background-size: cover;
+  background-position: center;
+  border: 1px solid rgba(148,163,184,.18);
+  margin: 6px 0 8px;
+  display: flex;
+  align-items: flex-end;
+}
+.worldboss-contract-hero-main {
+  padding: 10px;
 }
 .waystone-panel {
   margin: 0 0 8px 0;
@@ -1351,11 +1400,19 @@ h1 {
   .dungeon-contract-buttons {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .worldboss-contract-buttons {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .dungeon-contract-title {
     align-items: flex-start;
     flex-direction: column;
   }
+  .worldboss-contract-title {
+    align-items: flex-start;
+    flex-direction: column;
+  }
   .dungeon-contract-title .muted,
+  .worldboss-contract-title .muted,
   .delve-title .muted,
   .worldsoul-title .muted,
   .phase-title .muted,
@@ -2297,7 +2354,8 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
 .dungeon-item .row .icon { font-size: 22px; }
 .cd-display { font-size: 11px; color: #fbbf24; }
 .dungeon-art-banner,
-.dungeon-info-art {
+.dungeon-info-art,
+.map-art-banner {
   width: 100%;
   border-radius: 8px;
   background-size: cover;
@@ -2306,6 +2364,10 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
 }
 .dungeon-art-banner {
   height: 88px;
+  margin: 7px 0 8px;
+}
+.map-art-banner {
+  height: 72px;
   margin: 7px 0 8px;
 }
 .dungeon-info-art {

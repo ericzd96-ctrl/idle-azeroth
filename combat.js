@@ -2891,6 +2891,139 @@ function checkDungeonBossPhases(mon, now){
     }
   }
 }
+function applyWorldBossContractPhase(mon, phase, encounter, now){
+  if(!mon || !phase || !encounter) return false;
+  const mod = phase.mod || {};
+  encounter.bossPhasesTriggered = (encounter.bossPhasesTriggered || 0) + 1;
+  const skill = {
+    name: phase.name,
+    icon: phase.icon || '⚔️',
+    shieldPct: mod.shieldPct,
+    atkBuffSecs: mod.atkBuffSecs,
+    atkBuffPct: mod.atkBuffPct,
+    spdBuffSecs: mod.spdBuffSecs,
+    spdBuffPct: mod.spdBuffPct,
+    defBuffSecs: mod.defBuffSecs,
+    defBuffPct: mod.defBuffPct,
+    critBuffSecs: mod.critBuffSecs,
+    critBuffPct: mod.critBuffPct,
+    leechBuffSecs: mod.leechBuffSecs,
+    leechBuffPct: mod.leechBuffPct,
+    summonCount: mod.summonCount,
+    summonTheme: mod.summonTheme,
+    cd: 60000,
+  };
+  applyMonsterSupportSkill(mon, skill, now, { announce:false });
+  if(mod.phaseDamagePct){
+    const dmg = Math.max(1, Math.floor((state.hero.hpMax || 1) * mod.phaseDamagePct));
+    applyHeroDamage(dmg, mon, { label:t=>(phase.icon || '⚔️') + '-' + t, color:'#fb7185', now });
+    if(typeof processTalentLowHp === 'function') processTalentLowHp(mon, now);
+  }
+  if(mod.heroDebuff && typeof applyHeroDebuff === 'function'){
+    applyHeroDebuff(mod.heroDebuff, mod.heroDebuffMs || 6000);
+  }
+  if(mod.manaDrainPct && state.resourceMax){
+    const drain = Math.min(state.resource || 0, Math.floor(state.resourceMax * mod.manaDrainPct));
+    if(drain > 0){
+      state.resource = Math.max(0, state.resource - drain);
+      showFloat($('hero-emoji'), '💧-' + drain, '#93c5fd', { variant:'status', scale:1.04 });
+    }
+  }
+  showMonsterFloat(mon, `${phase.icon || '⚔️'}${phase.name}`, '#fb7185', { variant:'boss', scale:1.12, important:true });
+  pulseMonsterEl(mon, 'bosscast', 320);
+  log(`🌌 世界Boss阶段: ${mon.bossName || mon.name} 触发 ${phase.icon || ''}${phase.name}! ${phase.desc || ''}`, 'bad');
+  return true;
+}
+function checkWorldBossContractPhases(mon, now){
+  if(state.mode !== 'worldboss' || !mon?.isWorldBoss || !state.worldBoss?.activeEncounter || !mon.bossName) return;
+  const encounter = state.worldBoss.activeEncounter;
+  if(!(encounter.contractLevel > 0) || !Array.isArray(encounter.phases) || !encounter.phases.length) return;
+  const hpFrac = mon.hpMax > 0 ? mon.hp / mon.hpMax : 1;
+  mon._worldBossPhaseSeen = mon._worldBossPhaseSeen || {};
+  for(const phase of encounter.phases){
+    if(hpFrac <= phase.threshold && !mon._worldBossPhaseSeen[phase.phaseKey]){
+      mon._worldBossPhaseSeen[phase.phaseKey] = 1;
+      applyWorldBossContractPhase(mon, phase, encounter, now);
+    }
+  }
+}
+function applyWorldBossAssaultEffects(encounter, mon, now){
+  if(state.mode !== 'worldboss' || !encounter?.assaults?.length || !mon) return;
+  const beforeHits = encounter.assaultHits || 0;
+  for(const assault of encounter.assaults){
+    const mod = assault.mod || {};
+    const prefix = `wb:${assault.key}`;
+    if(mod.drainTickMs && now - (encounter[`${prefix}:drain`] || 0) > mod.drainTickMs){
+      encounter[`${prefix}:drain`] = now;
+      const drain = Math.min(state.resource || 0, Math.floor((state.resourceMax || 0) * (mod.resourceDrainPct || 0.1)));
+      if(drain > 0){
+        state.resource = Math.max(0, state.resource - drain);
+        showFloat($('hero-emoji'), `${assault.icon || '💧'}-${drain}`, '#93c5fd', { variant:'status', scale:1.04 });
+        encounter.assaultHits = (encounter.assaultHits || 0) + 1;
+      }
+    }
+    if(mod.poisonTickMs && now - (encounter[`${prefix}:poison`] || 0) > mod.poisonTickMs){
+      encounter[`${prefix}:poison`] = now;
+      const dps = Math.max(1, Math.floor((state.hero.hpMax || 1) * (mod.poisonDpsPct || 0.015)));
+      applyHeroDebuff('burn', mod.poisonMs || 4200, { dps });
+      showFloat($('hero-emoji'), `${assault.icon || '☣️'}侵蚀`, '#a3e635', { variant:'status', scale:1.04 });
+      encounter.assaultHits = (encounter.assaultHits || 0) + 1;
+    }
+    if(mod.ceilingTickMs && now - (encounter[`${prefix}:ceiling`] || 0) > mod.ceilingTickMs){
+      encounter[`${prefix}:ceiling`] = now;
+      const dmg = Math.max(1, Math.floor((state.hero.hpMax || 1) * (mod.ceilingDamagePct || 0.05)));
+      applyHeroDamage(dmg, mon, { label:t=>(assault.icon || '🌠') + '-' + t, color:'#f59e0b', now });
+      if(mod.stunMs){
+        state.heroStunUntil = Math.max(state.heroStunUntil || 0, now + mod.stunMs);
+        showFloat($('hero-emoji'), '💫震荡', '#fde047', { variant:'status', scale:1.04 });
+      }
+      encounter.assaultHits = (encounter.assaultHits || 0) + 1;
+    }
+    if(mod.shieldTickMs && now - (encounter[`${prefix}:shield`] || 0) > mod.shieldTickMs){
+      encounter[`${prefix}:shield`] = now;
+      for(const target of (state.currentMonsters || [])){
+        if(!target || target.hp <= 0) continue;
+        const shield = Math.max(1, Math.floor(target.hpMax * (mod.monsterShieldPct || 0.04)));
+        target._arcaneShield = (target._arcaneShield || 0) + shield;
+        syncMonsterShieldAura(target);
+        showMonsterFloat(target, `${assault.icon || '🔷'}盾`, '#93c5fd');
+      }
+      encounter.assaultHits = (encounter.assaultHits || 0) + 1;
+    }
+    if(mod.weakenTickMs && now - (encounter[`${prefix}:weaken`] || 0) > mod.weakenTickMs){
+      encounter[`${prefix}:weaken`] = now;
+      applyHeroDebuff('weaken', mod.weakenMs || 5000);
+      showFloat($('hero-emoji'), `${assault.icon || '🌫️'}虚弱`, '#fca5a5', { variant:'status', scale:1.04 });
+      encounter.assaultHits = (encounter.assaultHits || 0) + 1;
+    }
+    if(mod.executePulsePct && mon.isBoss && mon.hpMax > 0 && mon.hp / mon.hpMax <= (mod.executeBelow || 0.35) && now - (encounter[`${prefix}:execute`] || 0) > 9000){
+      encounter[`${prefix}:execute`] = now;
+      const dmg = Math.max(1, Math.floor((state.hero.hpMax || 1) * mod.executePulsePct));
+      applyHeroDamage(dmg, mon, { label:t=>(assault.icon || '⚔️') + '-' + t, color:'#fb7185', now });
+      encounter.assaultHits = (encounter.assaultHits || 0) + 1;
+    }
+  }
+  if((encounter.assaultHits || 0) !== beforeHits && typeof markDirty === 'function') markDirty('hero', 'stage');
+}
+function advanceWorldBossPressure(encounter, mon, now){
+  if(state.mode !== 'worldboss' || !encounter?.contractLevel || !mon?.isWorldBoss) return;
+  const interval = Math.max(8500, 17000 - encounter.contractLevel * 1300);
+  if(now - (encounter.lastPressureAt || 0) < interval) return;
+  encounter.lastPressureAt = now;
+  encounter.pressure = Math.min(12, (encounter.pressure || 0) + 1);
+  encounter.maxPressure = Math.max(encounter.maxPressure || 0, encounter.pressure);
+  mon.atk = Math.max(1, Math.floor(mon.atk * (1 + 0.025 * encounter.contractLevel)));
+  mon.def = Math.max(1, Math.floor(mon.def * (1 + 0.018 * encounter.contractLevel)));
+  const shield = Math.max(1, Math.floor(mon.hpMax * (0.025 + encounter.contractLevel * 0.01)));
+  mon._arcaneShield = (mon._arcaneShield || 0) + shield;
+  syncMonsterShieldAura(mon);
+  const dmg = Math.max(1, Math.floor((state.hero.hpMax || 1) * (0.018 + encounter.contractLevel * 0.008)));
+  applyHeroDamage(dmg, mon, { label:t=>'🔥-' + t, color:'#fb7185', now });
+  if(encounter.pressure % 2 === 0) applyHeroDebuff('weaken', 3200 + encounter.contractLevel * 700);
+  showMonsterFloat(mon, `🔥压迫${encounter.pressure}`, '#fb7185', { variant:'boss', scale:1.08 });
+  log(`🔥 世界Boss压迫升至 ${encounter.pressure}: ${mon.bossName || mon.name} 的攻击、防御与护盾进一步提升`, 'bad');
+  if(typeof markDirty === 'function') markDirty('hero', 'stage');
+}
 function applyDungeonEnvironmentEffects(ds, mon, now){
   if(state.mode !== 'dungeon' || !ds?.environments?.length || !mon) return;
   const beforeHits = ds.environmentHits || 0;
@@ -4834,6 +4967,10 @@ function tickBattle(now){
   if (state.mode === 'dungeon' && state.dungeonState?.timer) {
     applyDungeonTimerPressure(state.dungeonState, mon, now);
   }
+  if (state.mode === 'worldboss' && mon?.isWorldBoss && state.worldBoss?.activeEncounter) {
+    applyWorldBossAssaultEffects(state.worldBoss.activeEncounter, mon, now);
+    advanceWorldBossPressure(state.worldBoss.activeEncounter, mon, now);
+  }
 
   // 玩家攻击(锁定焦点 = 仇恨最高者)
   const spd=state.hero.spd||1;
@@ -5003,6 +5140,7 @@ function tickBattle(now){
     const _allBossSkills=(bossData?.skills||[]).filter(sk => !isPassiveMonsterSupportTrick(sk)).concat(_directorSkills);
     const _hpFrac=mon.hpMax>0?mon.hp/mon.hpMax:1;
     checkDungeonBossPhases(mon, now);
+    checkWorldBossContractPhases(mon, now);
     let _forcedPhaseSk=null;
     for(const _s of _allBossSkills){ if(typeof _s.hpBelow==='number'&&_hpFrac<=_s.hpBelow){ mon._phasesSeen=mon._phasesSeen||{}; if(!mon._phasesSeen[_s.name]){ mon._phasesSeen[_s.name]=1; _forcedPhaseSk=_s; } } }
     if(_forcedPhaseSk){ log('⚔️ '+(mon.bossName||mon.name)+' 进入新阶段 —— '+(_forcedPhaseSk.icon||'')+_forcedPhaseSk.name+'!','bad'); if(typeof showMonsterFloat==='function')showMonsterFloat(mon,'⚔️ 阶段转换!','#f59e0b'); lastBossSkill=0; }
