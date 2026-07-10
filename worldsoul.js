@@ -171,6 +171,7 @@ function renderWorldsoulSub() {
           <span class="sub-tab ${eventsSubTab==='dragonTreasure'?'active':''}" data-sub="dragonTreasure">🧭 龙岛宝藏</span>
           <span class="sub-tab ${eventsSubTab==='worldsoul'?'active':''}" data-sub="worldsoul">🌌 世界之魂</span>
           ${typeof renderPhaseDivingSub === 'function' ? `<span class="sub-tab ${eventsSubTab==='phaseDiving'?'active':''}" data-sub="phaseDiving">🧿 相位潜航</span>` : ''}
+          ${typeof renderKareshEcologySub === 'function' ? `<span class="sub-tab ${eventsSubTab==='kareshEcology'?'active':''}" data-sub="kareshEcology">🌱 生态演替</span>` : ''}
           <span class="sub-tab ${eventsSubTab==='daily'?'active':''}" data-sub="daily">📅 日常</span>
           <span class="sub-tab ${eventsSubTab==='season'?'active':''}" data-sub="season">🏁 赛季</span>
         </div>`;
@@ -181,6 +182,7 @@ function renderWorldsoulSub() {
       else if (eventsSubTab === 'dragonTreasure') body = typeof renderDragonTreasureSub === 'function' ? renderDragonTreasureSub() : '<div class="prog-summary muted">龙岛宝藏载入中...</div>';
       else if (eventsSubTab === 'worldsoul') body = renderWorldsoulSub();
       else if (eventsSubTab === 'phaseDiving' && typeof renderPhaseDivingSub === 'function') body = renderPhaseDivingSub();
+      else if (eventsSubTab === 'kareshEcology' && typeof renderKareshEcologySub === 'function') body = renderKareshEcologySub();
       else if (eventsSubTab === 'daily') body = renderDailySub();
       else body = renderSeasonSub();
       root.innerHTML = head + body;

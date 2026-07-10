@@ -856,6 +856,116 @@ h1 {
   margin-top: 6px;
   font-size: 11px;
 }
+.eco-panel {
+  margin: 0 0 8px 0;
+  padding: 8px;
+  border: 1px solid rgba(74,222,128,.24);
+  border-radius: 8px;
+  background: rgba(20,83,45,.12);
+}
+.eco-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.eco-title .muted {
+  font-weight: 400;
+  text-align: right;
+}
+.eco-wallet {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 11px;
+}
+.eco-wallet span {
+  padding: 5px 6px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 6px;
+  background: rgba(0,0,0,.14);
+  color: #bbf7d0;
+}
+.eco-bars {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 7px;
+}
+.eco-bar-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: #dcfce7;
+  font-size: 10px;
+  line-height: 1.4;
+}
+.eco-stability i {
+  background: linear-gradient(90deg,#22c55e,#84cc16);
+}
+.eco-weekly i {
+  background: linear-gradient(90deg,#facc15,#22c55e);
+}
+.eco-note {
+  margin: 0 0 7px;
+  padding: 7px 8px;
+  border: 1px solid rgba(34,211,238,.18);
+  border-radius: 7px;
+  background: rgba(8,145,178,.08);
+  color: #cffafe;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.eco-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 7px;
+}
+.eco-actions button {
+  padding: 5px 6px;
+  font-size: 11px;
+}
+.eco-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.eco-species {
+  border: 1px solid rgba(74,222,128,.18);
+  border-radius: 7px;
+  padding: 7px;
+  background: rgba(5,46,22,.18);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.eco-species.active {
+  border-color: rgba(250,204,21,.34);
+  box-shadow: inset 0 0 0 1px rgba(250,204,21,.10);
+}
+.eco-species-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 5px;
+}
+.eco-sync {
+  margin: 5px 0;
+  color: #fef3c7;
+  font-size: 10px;
+  line-height: 1.4;
+}
+.eco-species button {
+  width: 100%;
+  padding: 5px 6px;
+  margin-top: 6px;
+  font-size: 11px;
+}
 .dungeon-contract-panel {
   margin: 0 0 8px 0;
   padding: 8px;
@@ -1160,7 +1270,11 @@ h1 {
   .phase-grid,
   .phase-wallet,
   .phase-bars,
-  .phase-actions {
+  .phase-actions,
+  .eco-grid,
+  .eco-wallet,
+  .eco-bars,
+  .eco-actions {
     grid-template-columns: 1fr;
   }
   .dungeon-mastery-grid {
@@ -1177,6 +1291,7 @@ h1 {
   .delve-title .muted,
   .worldsoul-title .muted,
   .phase-title .muted,
+  .eco-title .muted,
   .dungeon-mastery-title .muted {
     text-align: left;
   }
@@ -1189,6 +1304,10 @@ h1 {
     flex-direction: column;
   }
   .phase-title {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .eco-title {
     align-items: flex-start;
     flex-direction: column;
   }

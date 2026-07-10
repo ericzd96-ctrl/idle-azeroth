@@ -5369,6 +5369,19 @@ function extendDungeonCatalog(){
       ]
     },
     {
+      key:'oasis_succession', name:'绿洲生态圆顶防卫', icon:'🌱', reqLvl:98, waves:8, desc:'护送生态样本进入卡雷什绿洲圆顶,吞噬者会优先攻击刚复苏的物种巢穴',
+      bosses:[
+        { name:'水化幼体群', emoji:'🦎', skills:[dmg('水化啃噬','💧',13.2,{ lifeSteal:0.2, plague:true }), dmg('幼体撕咬','🩸',13.5,{ bleed:true, cripple:true })] },
+        { name:'入侵孢母', emoji:'🍄', skills:[dmg('侵蚀孢云','☣️',13.8,{ aoe:true, plague:true, dot:true }), summonP('孢子幼体','🍄',0.5,'召唤 2 个孢子幼体并获得护盾',{ summonCount:2, summonTheme:'plant', shieldPct:0.18 })] },
+        { name:'绿洲守望者菲拉', emoji:'🌱', skills:[
+          dmg('守望藤鞭','🌿',14.2,{ sunder:true, stun:1700 }),
+          dmg('生态反冲','🍃',14.5,{ aoe:true, weaken:true }),
+          buffP('绿洲复苏','🌱',0.58,'绿洲复苏:回复并提高防御/减伤',{ healPct:0.22, defBuffSecs:14, defBuffPct:44, drBuffSecs:14, drBuffPct:0.22 }),
+          dmgP('生命网爆发','🌿',7.8,0.32,{ aoe:true, alwaysCrit:true, brittle:true, fear:2100, cd:16 })
+        ] }
+      ]
+    },
+    {
       key:'tazavesh_streets', name:'塔扎维什:帷纱街巷', icon:'💠', reqLvl:98, waves:10, desc:'帷纱集市的回归街区,掮灵、虚灵与失控交易契约把每条巷道都变成战场',
       bosses:[
         { name:'佐·帕克斯', emoji:'📦', skills:[dmg('快递碾压','📦',13.2,{ stun:1700, sunder:true }), dmg('市场震荡','💥',13.5,{ aoe:true, brittle:true })] },
@@ -5811,6 +5824,11 @@ function extendDungeonCatalog(){
       '荒原双子':[L('荒原双刃','weapon','epic',{atk:3,str:2}),L('掠夺者契约戒','ring','epic',{str:2,vers:1})],
       '生态看护者阿尔达尼':[L('阿尔达尼生命法杖','weapon','legend',{atk:5,int:4}),L('生态看护胸甲','armor','epic',{def:3,spi:2}),L('圆顶复苏徽记','trinket','legend',{sta:3,spi:3})]
     }, trash:[L('生态圆顶护肩','shoulder','rare',{sta:1,spi:1}),L('荒原行者战靴','boots','rare',{agi:1})] },
+    oasis_succession: { bosses:{
+      '水化幼体群':[L('水化幼体骨镰','weapon','epic',{atk:3,agi:2}),L('幼体甲壳护手','gloves','epic',{atk:2,sta:2})],
+      '入侵孢母':[L('孢母菌丝法杖','weapon','epic',{atk:3,int:2}),L('侵蚀孢云指环','ring','epic',{int:2,vers:1})],
+      '绿洲守望者菲拉':[L('菲拉的复苏长杖','weapon','legend',{atk:5,spi:4}),L('绿洲守望胸甲','armor','epic',{def:3,spi:2}),L('生命网晶核','trinket','legend',{sta:3,spi:3})]
+    }, trash:[L('复苏圆顶腰带','belt','rare',{def:1,spi:1}),L('绿洲巡行靴','boots','rare',{agi:1})] },
     tazavesh_streets: { bosses:{
       '佐·帕克斯':[L('佐帕克斯快递锤','weapon','epic',{atk:3,str:2}),L('分拣员护手','gloves','epic',{haste:2,sta:1})],
       '卖品会':[L('竞拍会切肉刀','weapon','epic',{atk:3,agi:2}),L('成交价码戒','ring','epic',{atk:2,vers:1})],

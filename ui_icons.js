@@ -72,7 +72,8 @@
     stonevault:'achievement_dungeon_ulduar_raildriver', prioryflame:'spell_holy_divineillumination',
     nightfall_sanctum:'inv_misc_key_14', earthcrawl_mines:'ability_creature_poison_05',
     fungal_folly:'ability_creature_disease_02', archival_assault:'inv_misc_map_01',
-    ecodome_aldani:'spell_nature_stranglevines', tazavesh_streets:'inv_11_0_etherealraid_communicator_color1',
+    ecodome_aldani:'spell_nature_stranglevines', oasis_succession:'inv_misc_herb_felweed',
+    tazavesh_streets:'inv_11_0_etherealraid_communicator_color1',
     tazavesh_gambit:'spell_arcane_portalshattrath', nerubar:'ability_creature_poison_05',
     manaforge_omega:'spell_arcane_portalshattrath'
   };
@@ -173,7 +174,8 @@
     '☀️':'spell_fire_fireball02',
     '☁️':'spell_nature_cyclone',
     '🌞':'spell_fire_fire',
-    '🌱':'spell_nature_naturetouchgrow',
+    '🌱':'inv_misc_herb_felweed',
+    '🌿':'spell_nature_rejuvenation',
     '🌲':'spell_nature_starfall',
     '🌳':'spell_nature_starfall',
     '🌴':'spell_nature_starfall',
