@@ -151,6 +151,7 @@ function defaultAccount() {
     enchantsApplied: 0,
     rerollsDone: 0,
     dungeonClearsTotal: 0,
+    dungeonClearsByKey: {},
     bossesKilled: {},       // {mapKey: count} 累计所有角色击败的地图Boss
     subzonesCleared: {},    // {map-sub: true} 所有角色合并的探索进度
     legendariesEverFound: 0,// 拾取过的橙装总数(任何角色)
@@ -200,6 +201,7 @@ function mergeAccount(saved) {
     unlockedTitles: Array.isArray(saved.unlockedTitles) ? saved.unlockedTitles : [],
     permanentStats: saved.permanentStats || {},
     bossesKilled: saved.bossesKilled || {},
+    dungeonClearsByKey: saved.dungeonClearsByKey || {},
     subzonesCleared: saved.subzonesCleared || {},
     bestiary: saved.bestiary || {},
     reputation: saved.reputation || {},

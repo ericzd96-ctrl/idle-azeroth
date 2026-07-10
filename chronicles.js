@@ -1,7 +1,7 @@
 /* =========================================================
    chronicles.js — 艾泽拉斯编年史
    ----------------------------------------------------------
-   6 卷 x 6 章的叙事收藏。通过全局进度解锁章节,领取资源与少量永久属性。
+   现为 7 卷、每卷 6 章的叙事收藏。通过全局进度解锁章节,领取资源与少量永久属性。
    ========================================================= */
 
 const CHRONICLE_VOLUMES = [
@@ -71,6 +71,17 @@ const CHRONICLE_VOLUMES = [
       ['starbound_codex','群星终章','完成 30 个职业大厅委托并领取 60 个成就奖励。',{type:'combined',goal:1,parts:[{type:'classOrder',goal:30},{type:'achievement',goal:60}]},{gold:1600000,gem:700,honor:15000,title:'群星编年官',stat:{atkPct:6,hpPct:6,defPct:4,mastery:16,dropMult:16}}],
     ],
   },
+  {
+    key:'karesh', title:'卷七: 卡雷什裂界录', icon:'🪐', color:'#67e8f9',
+    chapters:[
+      ['trust_foothold','裂界落点','卡雷什信托开始把你的行迹写入幸存者档案。',{type:'rep',faction:'卡雷什信托',goal:5000},{gold:580000,gem:210,essence:110}],
+      ['waystone_sutures','界碑缝线','界碑网络开始稳定卡雷什的高端循环。',{type:'waystone',goal:12},{gold:680000,honor:4800,essence:140}],
+      ['unbound_warrant','无缚缉令','击败雷沙诺尔,才能踏入更深的裂隙航线。',{type:'worldBossKey',key:'reshanor',goal:1},{gold:820000,gem:280,honor:6200,stat:{defPct:2}}],
+      ['primeus_index','普莱姆斯索引','把普莱姆斯档案秘库写入你的终局航图。',{type:'dungeonKey',key:'primeus_repository',goal:1},{gold:900000,gem:320,essence:180,stat:{mastery:4}}],
+      ['shadowpoint_apex','影点军律','影点总督的猎令,必须由更强的猎手亲手撕碎。',{type:'worldBossKey',key:'shadowpoint_vexis',goal:1},{gold:1100000,gem:360,honor:7600,essence:210,stat:{atkPct:2}}],
+      ['sanctum_last_entry','终域末页','完成卡雷什终局的最后一段抄录。',{type:'combined',goal:1,parts:[{type:'worldBossKey',key:'shandorah_astromancer',goal:1},{type:'dungeonKey',key:'voidrazor_sanctum',goal:1},{type:'rep',faction:'卡雷什信托',goal:40000},{type:'waystone',goal:30},{type:'invasion',goal:6}]},{gold:1800000,gem:760,honor:16000,title:'裂界编年官',stat:{atkPct:5,hpPct:5,defPct:3,mastery:14,dropMult:12}}],
+    ],
+  },
 ];
 
 const CHRONICLE_CHAPTERS = CHRONICLE_VOLUMES.flatMap(volume => volume.chapters.map((row, idx) => ({
@@ -103,6 +114,14 @@ function chronicleWorldBossKeys() {
   }
   return keys;
 }
+function chronicleWorldBossName(key) {
+  const wb = (typeof WORLD_BOSSES !== 'undefined' ? WORLD_BOSSES : []).find(x => x.key === key);
+  return wb?.name || key;
+}
+function chronicleDungeonName(key) {
+  const dg = (typeof DUNGEONS !== 'undefined' ? DUNGEONS : []).find(x => x.key === key);
+  return dg?.name || key;
+}
 
 function chronicleMetric(cond) {
   const acc = typeof accEns === 'function' ? accEns() : account;
@@ -111,6 +130,7 @@ function chronicleMetric(cond) {
   if (cond.type === 'kills') return acc?.killsTotal || 0;
   if (cond.type === 'mapBoss') return Object.values(acc?.bossesKilled || {}).reduce((s, n) => s + (n || 0), 0);
   if (cond.type === 'dungeon') return acc?.dungeonClearsTotal || 0;
+  if (cond.type === 'dungeonKey') return typeof accountDungeonClearCount === 'function' ? accountDungeonClearCount(cond.key) : ((acc?.dungeonClearsByKey || {})[cond.key] || 0);
   if (cond.type === 'worldBoss') return typeof accountWorldBossTotalKills === 'function' ? accountWorldBossTotalKills() : 0;
   if (cond.type === 'worldBossKey') return chronicleWorldBossKeys().has(cond.key) ? 1 : 0;
   if (cond.type === 'rare') return typeof accountRareEliteTotalKills === 'function' ? accountRareEliteTotalKills() : 0;
@@ -121,6 +141,8 @@ function chronicleMetric(cond) {
   if (cond.type === 'classOrder') return Object.keys(acc?.classOrders?.claimed || {}).length;
   if (cond.type === 'achievement') return Object.keys(acc?.achievementsClaimed || {}).length;
   if (cond.type === 'ascend') return acc?.ascendLvl || 0;
+  if (cond.type === 'waystone') return typeof ensureWaystoneState === 'function' ? (ensureWaystoneState().totalEarned || 0) : (acc?.waystones?.totalEarned || 0);
+  if (cond.type === 'invasion') return typeof invasionCompletedCount === 'function' ? invasionCompletedCount() : (acc?.worldInvasions?.totalClaims || 0);
   if (cond.type === 'combined') return cond.parts.every(p => chronicleMetric(p) >= p.goal) ? 1 : 0;
   return 0;
 }
@@ -128,12 +150,13 @@ function chronicleMetric(cond) {
 function chronicleCondText(cond) {
   const labels = {
     level:'账号等级', kills:'累计击杀', mapBoss:'地图首领', dungeon:'副本通关',
-    worldBoss:'世界Boss', worldBossKey:'指定世界Boss', rare:'稀有精英', mount:'坐骑收藏',
+    worldBoss:'世界Boss', worldBossKey:'指定世界Boss', dungeonKey:'指定副本', rare:'稀有精英', mount:'坐骑收藏',
     anyRep:'最高声望', dragonTreasure:'龙岛宝藏', classOrder:'职业委托',
-    achievement:'成就领取', ascend:'觉醒等级', combined:'复合目标',
+    achievement:'成就领取', ascend:'觉醒等级', waystone:'界碑碎片', invasion:'入侵压制', combined:'复合目标',
   };
   if (cond?.type === 'rep') return `${cond.faction}声望 ${fmt(cond.goal)}`;
-  if (cond?.type === 'worldBossKey') return '击败指定世界Boss';
+  if (cond?.type === 'worldBossKey') return `击败 ${chronicleWorldBossName(cond.key)}`;
+  if (cond?.type === 'dungeonKey') return `通关 ${chronicleDungeonName(cond.key)} ${fmt(cond.goal)} 次`;
   if (cond?.type === 'combined') return cond.parts.map(chronicleCondText).join(' + ');
   return `${labels[cond?.type] || cond?.type}: ${fmt(cond?.goal || 0)}`;
 }
@@ -222,9 +245,11 @@ function renderChronicleChapter(chapter) {
 
 function renderChronicleSubtab() {
   const sum = chronicleSummary();
-  let html = `<div class="prog-summary muted">艾泽拉斯编年史: <b>${sum.claimed}/${sum.total}</b> · 可补完 <b style="color:var(--legend)">${sum.ready}</b>
-    <div style="font-size:10px;margin-top:3px">编年史从全游戏进度取材: 等级、击杀、首领、副本、坐骑、声望、龙岛、职业大厅与觉醒都会写入章节。</div>
-  </div>`;
+  let html = `<div class="chronicle-hero" style="background-image:linear-gradient(90deg, rgba(8,12,24,.92), rgba(8,12,24,.56)), url('assets/wow/art/karesh-chronicle-banner.png')">
+    <div class="chronicle-hero-title">📖 艾泽拉斯编年史</div>
+    <div class="chronicle-hero-text">已补完 <b>${sum.claimed}/${sum.total}</b> 章 · 可补完 <b style="color:var(--legend)">${sum.ready}</b> 章 · 卡雷什卷册现已接入界碑碎片、终局入侵与 100+ 远征。</div>
+  </div>
+  <div class="prog-summary muted">编年史从全游戏进度取材: 等级、击杀、首领、副本、坐骑、声望、龙岛、职业大厅、界碑网络与世界入侵都会写入章节。</div>`;
   for (const volume of CHRONICLE_VOLUMES) {
     const chapters = CHRONICLE_CHAPTERS.filter(c => c.volumeKey === volume.key);
     const claimed = chronicleClaimedCount(volume.key);

@@ -55,18 +55,24 @@ function waystoneFragmentRewardForDungeon(dg) {
   return 2;
 }
 
+function grantWaystoneFragmentsRaw(gain, sourceKey, logText) {
+  const amount = Math.max(0, Math.floor(Number(gain) || 0));
+  if (!amount) return 0;
+  const ws = ensureWaystoneState();
+  ws.fragments += amount;
+  ws.totalEarned += amount;
+  const key = `${Math.floor(Date.now() / 86400000)}:${sourceKey || 'misc'}:${Object.keys(ws.history || {}).length}`;
+  ws.history[key] = (ws.history[key] || 0) + amount;
+  if (typeof log === 'function' && logText) log(`${logText} Waystone Fragment +${amount}`, 'legend');
+  if (typeof markDirty === 'function') markDirty('events', 'dungeon', 'hero');
+  return amount;
+}
+
 function grantWaystoneFragments(dg) {
   const gain = waystoneFragmentRewardForDungeon(dg);
   if (!gain) return 0;
-  const ws = ensureWaystoneState();
-  ws.fragments += gain;
-  ws.totalEarned += gain;
-  const key = `${Math.floor(Date.now() / 86400000)}:${dg.key}`;
-  ws.history[key] = gain;
   const label = (typeof dungeonIcon === 'function') ? dungeonIcon(dg.key, dg.name, 16, dg.icon || '🪨') : (dg.icon || '🪨');
-  if (typeof log === 'function') log(`${label} 界碑网络记录了本次通关, Waystone Fragment +${gain}`, 'legend');
-  if (typeof markDirty === 'function') markDirty('dungeon', 'hero');
-  return gain;
+  return grantWaystoneFragmentsRaw(gain, dg.key, `${label} 界碑网络记录了本次通关,`);
 }
 
 function waystoneExtraBountyTarget(resetAt, excludeKeys) {
@@ -146,6 +152,7 @@ function unlockWaystoneNode(key) {
   globalThis.ensureWaystoneState = ensureWaystoneState;
   globalThis.waystoneNodeActive = waystoneNodeActive;
   globalThis.waystoneProgressBonus = waystoneProgressBonus;
+  globalThis.grantWaystoneFragmentsRaw = grantWaystoneFragmentsRaw;
   globalThis.renderWaystonePanel = renderWaystonePanel;
 
   const oldClear = globalThis.onDungeonClear;

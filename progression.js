@@ -56,6 +56,10 @@ function accountMountOwnedCount() {
   const acc = accEns();
   return Object.values(acc.mounts || {}).filter(m => m && m.obtained).length;
 }
+function accountDungeonClearCount(dungeonKey) {
+  if (!dungeonKey) return 0;
+  return (accEns().dungeonClearsByKey || {})[dungeonKey] || 0;
+}
 function accountWorldBossMountCount() {
   const fallbackKeys = ['twilight_drake_wb','sulfuras_firehawk','qiraji_mindscarab','yogg_dreambeast','alakir_stormdrake','leishen_thundercloud','argus_starbinder','raszageth_stormwing','shadowpoint_skyrazor','shandorah_starweave'];
   const drops = (typeof globalThis !== 'undefined' && globalThis.WORLD_BOSS_MOUNT_DROPS) || null;
@@ -645,6 +649,8 @@ function progressionOnGoldGain(amount) {
 function progressionOnDungeonClear(dgKey, opts) {
   const acc = accEns();
   acc.dungeonClearsTotal = (acc.dungeonClearsTotal||0) + 1;
+  if (!acc.dungeonClearsByKey) acc.dungeonClearsByKey = {};
+  if (dgKey) acc.dungeonClearsByKey[dgKey] = (acc.dungeonClearsByKey[dgKey] || 0) + 1;
   if (typeof questAdvance === 'function') questAdvance('dungeon', 1);
   const dg = (typeof DUNGEONS!=='undefined') ? DUNGEONS.find(d=>d.key===dgKey) : null;
   const fac = dg ? (dg.faction || '中立') : '中立';
