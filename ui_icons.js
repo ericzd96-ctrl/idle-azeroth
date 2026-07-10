@@ -361,6 +361,7 @@
     '化身奈萨里奥':'inv_misc_head_dragon_black',
     '炎魔之王弗拉戈斯':'spell_fire_volcano',
     '雷神·雷霆之王':'spell_nature_lightningoverload',
+    '鲁克玛':'ability_hunter_pet_vulture',
     '奥拉基尔·风暴王座':'spell_shaman_thunderstorm',
     '辛达苟萨之影':'spell_frost_freezingbreath',
     '虚空先驱萨拉塔斯':'spell_shadow_possession',
@@ -851,6 +852,7 @@
     [/群星|占星|占相|观星|诺维萨/i, 'spell_arcane_starfire'],
     [/虚灵|以太|相位|卡雷什|吞界|影点|沙恩多拉/i, 'inv_11_0_etherealraid_communicator_color1'],
     [/野猪|狼|熊|兽|霍格/i, 'ability_hunter_pet_boar'],
+    [/鲁克玛|太阳鸟|巨鸟|阿兰卡/i, 'ability_hunter_pet_vulture'],
     [/骑士|圣光|提里奥|安度因|伯瓦尔/i, 'spell_holy_holybolt'],
     [/战士|步兵|督军|加尔鲁什|瓦里安|格罗玛什/i, 'ability_warrior_savageblow']
   ];

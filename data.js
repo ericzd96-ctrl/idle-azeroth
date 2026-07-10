@@ -2773,6 +2773,7 @@ const DUNGEONS = [{
   icon: '☠️',
   reqLvl: 70,
   waves: 15,
+  art:'assets/wow/art/timewalking-wrath-banner.jpg',
     type: "raid",
   cd: 5400,
   bosses: [
@@ -3166,6 +3167,7 @@ const DUNGEONS = [{
   icon: '⚙️',
   reqLvl: 80,
   waves: 15,
+  art:'assets/wow/art/timewalking-wrath-banner.jpg',
     type: "raid",
   cd: 7200,
   bosses: [
@@ -3296,6 +3298,7 @@ const DUNGEONS = [{
   icon: '💎',
   reqLvl: 80,
   waves: 9,
+  art:'assets/wow/art/timewalking-wrath-banner.jpg',
     type: "raid",
   cd: 9000,
   bosses: [
@@ -3342,6 +3345,7 @@ const DUNGEONS = [{
   icon: '❄️',
   reqLvl: 80,
   waves: 15,
+  art:'assets/wow/art/timewalking-wrath-banner.jpg',
     type: "raid",
   cd: 10800,
   bosses: [
@@ -3936,6 +3940,20 @@ const WORLD_BOSS_SKILLSETS = {
       {name:'处刑雷枪', icon:'🔱', desc:'16倍伤害', type:'dmg', mul:16, castTime:3.6, sunder:true, manaDrain:85, alwaysCrit:true},
       {name:'暴君号令', icon:'👑', desc:'召唤2名魔古守卫', type:'support', cd:20, castTime:3, summonCount:2, summonTheme:'soldier', atkBuffSecs:6, atkBuffPct:24},
       {name:'雷神终裁', icon:'⚡', desc:'18倍范围伤害', type:'dmg', mul:18, castTime:5.1, aoe:true, stun:1800, silence:1800, decay2:true}
+    ]
+  },
+  rukhmar: {
+    passive:{ dmgReduction:0.51, critChance:0.3, dodgeChance:0.24, atkBonus:0.4, leech:0.08, stunChance:0.16 },
+    supportCount:5,
+    atkInterval:1060,
+    instantCastChance:0.15,
+    skills:[
+      {name:'日炎俯冲', icon:'☀️', desc:'15.5倍火焰伤害,附带灼烧与破甲', type:'dmg', mul:15.5, castTime:2.4, dot:true, sunder:true, brittle:true},
+      {name:'烈羽风暴', icon:'🪶', desc:'16倍范围伤害,沉默并削弱目标', type:'dmg', mul:16, castTime:3.3, aoe:true, silence:1900, weaken:true},
+      {name:'天火升空', icon:'🪽', desc:'获得护盾并提升攻速/减伤', type:'support', cd:17, castTime:2.6, shieldPct:0.18, spdBuffSecs:8, spdBuffPct:30, drBuffSecs:8, drBuffPct:0.14},
+      {name:'炽阳尖啸', icon:'🌞', desc:'16.5倍伤害,恐惧并消耗资源', type:'dmg', mul:16.5, castTime:3.5, fear:1800, manaDrain:80, silence:1600},
+      {name:'阿兰卡雏鸟', icon:'🦅', desc:'召唤2只太阳雏鸟夹击玩家', type:'support', cd:20, castTime:3, summonCount:2, summonTheme:'beast', atkBuffSecs:7, atkBuffPct:24},
+      {name:'炽日终啼', icon:'💥', desc:'18.5倍范围伤害,点燃并震晕全场', type:'dmg', mul:18.5, castTime:5, aoe:true, dot:true, stun:1700, fear:1400, brittle:true}
     ]
   },
   argus_unmaker: {
@@ -4783,6 +4801,7 @@ function normalizeWorldBossSkillsets(){
     yogg_saron:{ name:'尤格萨隆·千喉之梦', lvl:86, final:true },
     alakir:{ name:'奥拉基尔·风暴王座', lvl:86, final:true },
     lei_shen:{ name:'雷神·雷霆之王', lvl:88, final:true },
+    rukhmar:{ name:'鲁克玛', lvl:89, final:true },
     argus_unmaker:{ name:'阿古斯·寂灭者', lvl:90, final:true },
     xal_atath:{ name:'虚空先驱萨拉塔斯', lvl:96, final:true },
     reshanor:{ name:'雷沙诺尔·无缚者', lvl:100, final:true },
@@ -4858,7 +4877,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'culling', name:'净化斯坦索姆', icon:'⏳', reqLvl:73, waves:10, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'时光之穴中的亡城肃清战',
+      key:'culling', name:'净化斯坦索姆', icon:'⏳', reqLvl:73, waves:10, art:'assets/wow/art/timewalking-wrath-banner.jpg', desc:'时光之穴中的亡城肃清战',
       bosses:[
         { name:'肉钩', emoji:'🪝', skills:[dmg('勾链撕扯','🪝',5,{ bleed:true, cripple:true })] },
         { name:'塑血者沙尔拉姆', emoji:'🧪', skills:[dmg('瘟疫缝合','🧪',5.5,{ plague:true, decay:true })] },
@@ -4866,7 +4885,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'pit', name:'萨隆矿坑', icon:'⛓️', reqLvl:75, waves:10, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'冰冠脚下以血与矿熔铸的深坑',
+      key:'pit', name:'萨隆矿坑', icon:'⛓️', reqLvl:75, waves:10, art:'assets/wow/art/timewalking-wrath-banner.jpg', desc:'冰冠脚下以血与矿熔铸的深坑',
       bosses:[
         { name:'熔炉之主加弗斯特', emoji:'🔨', skills:[dmg('萨隆重压','🔨',5.5,{ brittle:true, sunder:true })] },
         { name:'艾克', emoji:'🧟', skills:[dmg('瘟疫喷发','🦠',6,{ plague:true, dot:true, aoe:true })] },
@@ -4874,7 +4893,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'oculus', name:'魔环', icon:'💫', reqLvl:76, waves:10, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'魔网裂口上方失控旋转的浮空圣所',
+      key:'oculus', name:'魔环', icon:'💫', reqLvl:76, waves:10, art:'assets/wow/art/timewalking-wrath-banner.jpg', desc:'魔网裂口上方失控旋转的浮空圣所',
       bosses:[
         { name:'审讯者达拉科', emoji:'💫', skills:[dmg('法网审讯','✨',5.5,{ silence:1800, manaDrain:45 })] },
         { name:'法师领主伊洛姆', emoji:'🧙', skills:[dmg('法能飓风','🌀',6,{ aoe:true, mirror:true, weaken:true })] },
@@ -4882,7 +4901,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'hor', name:'映像大厅', icon:'🧊', reqLvl:78, waves:10, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'冰封王座回廊中最残酷的追猎战',
+      key:'hor', name:'映像大厅', icon:'🧊', reqLvl:78, waves:10, art:'assets/wow/art/timewalking-wrath-banner.jpg', desc:'冰封王座回廊中最残酷的追猎战',
       bosses:[
         { name:'法瑞克', emoji:'🛡️', skills:[dmg('绝望打击','🛡️',6,{ weaken:true, fear:1500 })] },
         { name:'玛维恩', emoji:'⚔️', skills:[dmg('冰冷斩击','⚔️',6.2,{ slow:true, brittle:true })] },
@@ -4979,7 +4998,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'throne', name:'雷霆王座', icon:'⚡', type:'raid', reqLvl:78, waves:12, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'赞达拉巨魔帝国与雷神残响盘踞的天空堡垒',
+      key:'throne', name:'雷霆王座', icon:'⚡', type:'raid', reqLvl:78, waves:12, art:'assets/wow/art/timewalking-pandaria-banner.jpg', desc:'赞达拉巨魔帝国与雷神残响盘踞的天空堡垒',
       bosses:[
         { name:'赞达拉守卫贾林', emoji:'🦖', skills:[dmg('远古践踏','🦖',9,{ stun:1400, bleed:true })] },
         { name:'风暴祭司莱杉', emoji:'🌩️', skills:[dmg('雷霆链','⚡',9.5,{ aoe:true, silence:1800 })] },
@@ -4999,7 +5018,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'soo', name:'围攻奥格瑞玛', icon:'🪓', type:'raid', reqLvl:79, waves:13, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'讨伐暴君加尔鲁什·地狱咆哮的部落与联盟联军攻城战',
+      key:'soo', name:'围攻奥格瑞玛', icon:'🪓', type:'raid', reqLvl:79, waves:13, art:'assets/wow/art/timewalking-pandaria-banner.jpg', desc:'讨伐暴君加尔鲁什·地狱咆哮的部落与联盟联军攻城战',
       bosses:[
         { name:'不洁之溢', emoji:'💧', skills:[dmg('腐化潮涌','🌊',9,{ aoe:true, decay:true })] },
         { name:'傲慢之煞', emoji:'👁️', skills:[dmg('傲慢爆发','👁️',9.5,{ fear:1700, weaken:true })] },
@@ -5010,7 +5029,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'hfc', name:'地狱火堡垒', icon:'😈', type:'raid', reqLvl:79, waves:13, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'封堵塔纳安裂隙、阻止燃烧军团重返艾泽拉斯的最终防线',
+      key:'hfc', name:'地狱火堡垒', icon:'😈', type:'raid', reqLvl:79, waves:13, art:'assets/wow/art/timewalking-draenor-banner.jpg', desc:'封堵塔纳安裂隙、阻止燃烧军团重返艾泽拉斯的最终防线',
       bosses:[
         { name:'钢铁掠袭者', emoji:'🤖', skills:[dmg('火炮齐射','💥',9,{ aoe:true, dot:true })] },
         { name:'寇莫克', emoji:'👊', skills:[dmg('邪能重拳','🟢',9.5,{ stun:1500, brittle:true })] },
@@ -5102,7 +5121,23 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'irondocks', name:'钢铁码头', icon:'⚓', reqLvl:74, waves:9, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'钢铁部落在德拉诺的军械船坞',
+      key:'stormstout', name:'风暴烈酒酿造厂', icon:'🍺', reqLvl:72, waves:9, art:'assets/wow/art/timewalking-pandaria-banner.jpg', desc:'谷地深处的酿造圣地被顽皮酒灵与煞气彻底搅乱,是一场充满滚桶与酒雾的潘达利亚乱斗',
+      bosses:[
+        { name:'乌克乌克', emoji:'🐒', skills:[dmg('滚桶乱砸','🍺',6.8,{ aoe:true, stun:1400, brittle:true })] },
+        { name:'跳跳大王', emoji:'🐰', skills:[dmg('胡萝卜轰炸','🥕',7.1,{ aoe:true, dot:true, weaken:true })] },
+        { name:'炎诛', emoji:'🔥', skills:[dmg('烈酒吐息','🔥',7.6,{ dot:true, silence:1700, fear:1400 }), dmg('酿造爆燃','💥',8,{ aoe:true, brittle:true, manaDrain:45 })] }
+      ]
+    },
+    {
+      key:'shadopan', name:'影踪禅院', icon:'⚫', reqLvl:74, waves:10, art:'assets/wow/art/timewalking-pandaria-banner.jpg', desc:'影踪派的山巅堡垒被煞气侵蚀,每一处回廊都在考验你对控制、爆发与续航的平衡',
+      bosses:[
+        { name:'古·穿云', emoji:'🐉', skills:[dmg('穿云重拳','💨',7.2,{ stun:1400, silence:1600 })] },
+        { name:'雪流大师', emoji:'❄️', skills:[dmg('寒霜震击','❄️',7.5,{ freeze:1500, slow:true, weaken:true })] },
+        { name:'狂之煞', emoji:'👁️', skills:[dmg('绝望波纹','🟣',8,{ aoe:true, fear:1700, decay:true }), dmg('煞能引爆','💢',8.4,{ aoe:true, brittle:true, soulDrain:true })] }
+      ]
+    },
+    {
+      key:'irondocks', name:'钢铁码头', icon:'⚓', reqLvl:74, waves:9, art:'assets/wow/art/timewalking-draenor-banner.jpg', desc:'钢铁部落在德拉诺的军械船坞',
       bosses:[
         { name:'尼奥库勒·蒸汽碾', emoji:'⚙️', skills:[dmg('蒸汽碾压','⚙️',7,{ stun:1400, sunder:true })] },
         { name:'格鲁布', emoji:'🐗', skills:[dmg('野兽狂袭','🐗',7.5,{ bleed:true, frenzy:true })] },
@@ -5251,7 +5286,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'grimrail', name:'铁路深谷', icon:'🚂', reqLvl:74, waves:9, desc:'钢铁部落穿越霜火岭的军用列车,在高速行进中夺取军械',
+      key:'grimrail', name:'铁路深谷', icon:'🚂', reqLvl:74, waves:9, art:'assets/wow/art/timewalking-draenor-banner.jpg', desc:'钢铁部落穿越霜火岭的军用列车,在高速行进中夺取军械',
       bosses:[
         { name:'工头泽奥格雷尔', emoji:'⚙️', skills:[dmg('蒸汽鞭笞','💨',7,{ dot:true, cripple:true })] },
         { name:'永燃者拉克玛雷', emoji:'🔥', skills:[dmg('烈焰炮塔','🔥',7.5,{ aoe:true, dot:true })] },
@@ -5259,7 +5294,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'everbloom', name:'永茂林地', icon:'🌺', reqLvl:75, waves:10, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'失控的德拉诺自然之力涌入塔拉多,藤蔓与元素疯长的温室裂口',
+      key:'everbloom', name:'永茂林地', icon:'🌺', reqLvl:75, waves:10, art:'assets/wow/art/timewalking-draenor-banner.jpg', desc:'失控的德拉诺自然之力涌入塔拉多,藤蔓与元素疯长的温室裂口',
       bosses:[
         { name:'古杉魔藤', emoji:'🌿', skills:[dmg('缠绕荆棘','🌿',7,{ cripple:true, dot:true })] },
         { name:'喷涌元素', emoji:'🌊', skills:[dmg('洪流冲击','🌊',7.5,{ aoe:true, slow:true })] },

@@ -1,6 +1,9 @@
 /* timewalking.js - Weekly Timewalking campaigns for classic expansions */
 const TIMEWALKING_BANNER = 'assets/wow/art/timewalking-banner.png';
 const TIMEWALKING_ATLAS_BANNER = 'assets/wow/art/timewalking-atlas-banner.jpg';
+const TIMEWALKING_WRATH_BANNER = 'assets/wow/art/timewalking-wrath-banner.jpg';
+const TIMEWALKING_PANDARIA_BANNER = 'assets/wow/art/timewalking-pandaria-banner.jpg';
+const TIMEWALKING_DRAENOR_BANNER = 'assets/wow/art/timewalking-draenor-banner.jpg';
 const TIMEWALKING_CACHE_COST = 18;
 const TIMEWALKING_MISSION_COUNT = 5;
 const TIMEWALKING_DISTORTION_OFFER_COUNT = 4;
@@ -57,6 +60,7 @@ const TIMEWALKING_ERAS = [
     short:'诺森德',
     icon:'❄️',
     color:'#38bdf8',
+    banner:TIMEWALKING_WRATH_BANNER,
     desc:'寒锋年代的旧战场再次开放,冰冠的压力也被一并带回现世。',
     dungeons:['culling', 'pit', 'oculus', 'hor'],
     raids:['naxx', 'ulduar', 'ruby', 'icc'],
@@ -74,6 +78,32 @@ const TIMEWALKING_ERAS = [
     raids:['firelands', 'dragonsoul'],
     worldBoss:'deathwing',
     lootFallback:'dragonsoul',
+  },
+  {
+    key:'pandaria',
+    name:'熊猫人之谜时光漫游',
+    short:'熊猫人之谜',
+    icon:'🐼',
+    color:'#f59e0b',
+    banner:TIMEWALKING_PANDARIA_BANNER,
+    desc:'潘达利亚的煞气、雷霆帝国与部落终战重新归位,每次轮值都像再打一遍战争编年史。',
+    dungeons:['stormstout', 'shadopan'],
+    raids:['throne', 'soo'],
+    worldBoss:'lei_shen',
+    lootFallback:'soo',
+  },
+  {
+    key:'draenor',
+    name:'德拉诺之王时光漫游',
+    short:'德拉诺',
+    icon:'🛡️',
+    color:'#fb7185',
+    banner:TIMEWALKING_DRAENOR_BANNER,
+    desc:'钢铁部落的军械线、列车战与地狱火堡垒再度回归,会用更高频的爆发和援军考验你的终局构筑。',
+    dungeons:['irondocks', 'grimrail', 'everbloom'],
+    raids:['hfc'],
+    worldBoss:'rukhmar',
+    lootFallback:'hfc',
   },
   {
     key:'legion',
@@ -145,6 +175,11 @@ function timewalkingLootContextKey(targetKey, era) {
     kazzak_doom:'aq40',
     magtheridon_wrath:'karazhan',
     sindragosa_shadow:'icc',
+    deathwing:'dragonsoul',
+    lei_shen:'throne',
+    rukhmar:'hfc',
+    argus_unmaker:'antorus',
+    raszageth_storm:'amirdrassil',
   };
   return map[targetKey] || targetKey || era?.lootFallback || 'aq40';
 }
@@ -320,6 +355,131 @@ function timewalkingRewardText(r) {
   if (r.badges) parts.push(`${r.badges}🪙`);
   if (r.title) parts.push(`称号「${r.title}」`);
   return parts.join(' ');
+}
+
+function timewalkingAttrText(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function timewalkingScopeNames(keys) {
+  return (keys || []).map(timewalkingDungeonName).filter(Boolean).join(' · ');
+}
+
+function timewalkingMissionTipData(mission) {
+  if (!mission) return null;
+  const tw = ensureTimewalkingState();
+  const era = timewalkingEra();
+  const progress = Math.max(0, mission.progress || 0);
+  const goal = Math.max(1, mission.goal || 1);
+  const rewardText = timewalkingRewardText(mission.reward || {}) || '无额外奖励';
+  const contentKeys = Array.isArray(mission.keys) && mission.keys.length
+    ? mission.keys
+    : (mission.key ? [mission.key] : []);
+  const scope = contentKeys.length ? timewalkingScopeNames(contentKeys) : `${era.short} 全部轮值内容`;
+  const head = `<b>${mission.icon || '🕰️'} ${timewalkingAttrText(mission.name)}</b><div class="muted" style="margin-top:4px;line-height:1.5">${timewalkingAttrText(mission.desc || '')}</div>`;
+  let body = `<div style="font-size:11px;line-height:1.55"><div>当前进度: <b>${progress}/${goal}</b>${tw.claimed?.[mission.id] ? ' · 已领取' : ((progress >= goal) ? ' · 可领取' : '')}</div><div style="margin-top:4px">计入内容: ${timewalkingAttrText(scope)}</div><div style="margin-top:4px">奖励: <span style="color:var(--legend)">${timewalkingAttrText(rewardText)}</span></div>`;
+  if (mission.type === 'challenge') body += '<div style="margin-top:6px" class="muted">英雄/史诗 5 人本、轮值团本与大秘境都算挑战进度,适合顺手和时序扭曲一起推进。</div>';
+  else if (mission.type === 'worldBoss') body += '<div style="margin-top:6px" class="muted">本周世界Boss会同步吃到时序压力和你启用的扭曲修正,不是白送的收尾任务。</div>';
+  else body += '<div style="margin-top:6px" class="muted">轮值时代中的旧本会随着图谱、研究和扭曲一起成长,不会因为角色后期变强就被直接碾过去。</div>';
+  body += '</div>';
+  return { head, body };
+}
+
+function timewalkingDistortionTipData(def) {
+  if (!def) return null;
+  const tw = ensureTimewalkingState();
+  const active = !!tw.selected?.[def.key];
+  const rewardText = timewalkingDistortionRewardText(def.reward || {}) || '无额外奖励';
+  const dangerText = timewalkingDistortionDangerText(def) || '该扭曲会直接抬升轮值旧本与世界Boss压力';
+  const head = `<b>${def.icon || '⛓️'} ${timewalkingAttrText(def.name)}</b><div class="muted" style="margin-top:4px;line-height:1.5">${timewalkingAttrText(def.desc || '')}</div>`;
+  const body = `<div style="font-size:11px;line-height:1.55"><div>状态: <b>${active ? '已启用' : '未启用'}</b> · 每周最多同时启用 <b>${TIMEWALKING_DISTORTION_ACTIVE_LIMIT}</b> 条</div><div style="margin-top:4px">敌方强化: ${timewalkingAttrText(dangerText)}</div><div style="margin-top:4px">奖励加成: <span style="color:var(--legend)">${timewalkingAttrText(rewardText)}</span></div><div style="margin-top:6px" class="muted">影响范围: 本周轮值地下城、团本与世界Boss全部吃到同一套扭曲强化,所以加奖励的同时也会显著提高战斗压力。</div></div>`;
+  return { head, body };
+}
+
+function timewalkingEraTipData(def) {
+  if (!def) return null;
+  const tw = ensureTimewalkingState();
+  const mastered = tw.erasMastered?.[def.key] || 0;
+  const active = def.key === timewalkingEra().key;
+  const head = `<b>${def.icon || '🗺️'} ${timewalkingAttrText(def.name)}</b><div class="muted" style="margin-top:4px;line-height:1.5">${timewalkingAttrText(def.desc || '')}</div>`;
+  const body = `<div style="font-size:11px;line-height:1.55"><div>当前状态: <b>${active ? '本周轮值中' : '未轮值'}</b>${mastered ? ` · 已精通 ${mastered} 次` : ''}</div><div style="margin-top:4px">地下城: ${timewalkingAttrText(timewalkingScopeNames(def.dungeons) || '暂无')}</div><div style="margin-top:4px">团本: ${timewalkingAttrText(timewalkingScopeNames(def.raids) || '暂无')}</div><div style="margin-top:4px">世界Boss: ${timewalkingAttrText(timewalkingWorldBossName(def.worldBoss))}</div><div style="margin-top:6px" class="muted">每精通一次时代路线,时序压力上限、后续奖励路线和该时代内容的实战强度都会继续上扬,防止旧本沦为纯领奖池。</div></div>`;
+  return { head, body };
+}
+
+function timewalkingResearchTipData(def) {
+  if (!def) return null;
+  const tw = ensureTimewalkingState();
+  const cur = timewalkingResearchLevel(def.key);
+  const maxed = cur >= def.max;
+  const gainText = Object.entries(def.gain || {}).map(([stat, val]) => typeof fmtMod === 'function' ? fmtMod(stat, val) : `${stat}+${val}`).join(' · ');
+  const nextCost = maxed ? 0 : timewalkingResearchCost(def, cur);
+  const head = `<b>${def.icon || '🧪'} ${timewalkingAttrText(def.name)}</b><div class="muted" style="margin-top:4px;line-height:1.5">${timewalkingAttrText(def.desc || '')}</div>`;
+  const body = `<div style="font-size:11px;line-height:1.55"><div>当前等级: <b>${cur}/${def.max}</b>${maxed ? ' · 已满级' : ''}</div><div style="margin-top:4px">每级收益: ${timewalkingAttrText(gainText || '无')}</div><div style="margin-top:4px">下一级花费: <span style="color:var(--legend)">${maxed ? '无需继续研究' : `${nextCost}🪙 时光徽记`}</span></div><div style="margin-top:6px" class="muted">研究属于永久成长,会直接写入账号向永久属性池,因此你给玩家加上的这部分强度会被时序压力和扭曲同步追上。</div></div>`;
+  return { head, body };
+}
+
+function timewalkingCollectionTipData(def) {
+  if (!def) return null;
+  const owned = timewalkingCollectionOwned(def.key);
+  const typeName = def.type === 'mount' ? '坐骑收藏' : (def.type === 'title' ? '称号收藏' : '时光收藏');
+  const head = `<b>${def.icon || '🛒'} ${timewalkingAttrText(def.name)}</b><div class="muted" style="margin-top:4px;line-height:1.5">${timewalkingAttrText(def.desc || '')}</div>`;
+  const body = `<div style="font-size:11px;line-height:1.55"><div>收藏类型: <b>${timewalkingAttrText(typeName)}</b></div><div style="margin-top:4px">兑换价格: <span style="color:var(--legend)">${def.cost}🪙 时光徽记</span></div><div style="margin-top:4px">当前状态: <b>${owned ? '已收集' : '未收集'}</b></div><div style="margin-top:6px" class="muted">时光收藏会一起抬高时序压力,意味着越想把旧时代外观和坐骑拿满,越要面对更完整的旧本强度回归。</div></div>`;
+  return { head, body };
+}
+
+function timewalkingTipDataFor(el) {
+  if (!el?.dataset) return null;
+  const tw = ensureTimewalkingState();
+  if (el.dataset.twTip === 'mission') return timewalkingMissionTipData((tw.missions || []).find(m => m.id === el.dataset.missionId));
+  if (el.dataset.twTip === 'distortion') return timewalkingDistortionTipData(timewalkingDistortionDef(el.dataset.distortionKey));
+  if (el.dataset.twTip === 'era') return timewalkingEraTipData(TIMEWALKING_ERAS.find(x => x.key === el.dataset.eraKey));
+  if (el.dataset.twTip === 'research') return timewalkingResearchTipData(TIMEWALKING_RESEARCH.find(x => x.key === el.dataset.researchKey));
+  if (el.dataset.twTip === 'collection') return timewalkingCollectionTipData(TIMEWALKING_COLLECTIONS.find(x => x.key === el.dataset.collectionKey));
+  return null;
+}
+
+function bindTimewalkingTooltips(root) {
+  if (!root || typeof document === 'undefined') return;
+  root.querySelectorAll('[data-tw-tip]').forEach(el => {
+    if (el.dataset.twTipBound === '1') return;
+    el.dataset.twTipBound = '1';
+    const showTip = e => {
+      if (typeof $ !== 'function') return;
+      const tip = $('compare-tip');
+      const data = timewalkingTipDataFor(el);
+      if (!tip || !data) return;
+      tip.querySelector('.compare-head').innerHTML = data.head || '';
+      tip.querySelector('.compare-body').innerHTML = data.body || '';
+      tip.style.display = 'block';
+      if (typeof positionTip === 'function') positionTip(tip, e);
+    };
+    el.style.cursor = 'help';
+    el.onmouseenter = e => { if (typeof tooltipHoverEnabled === 'function' && !tooltipHoverEnabled()) return; showTip(e); };
+    el.onmouseleave = () => {
+      if (typeof tooltipHoverEnabled === 'function' && !tooltipHoverEnabled()) return;
+      if (typeof hideLootTip === 'function') hideLootTip();
+    };
+    el.onmousemove = e => {
+      if (typeof tooltipHoverEnabled === 'function' && !tooltipHoverEnabled()) return;
+      if (typeof $ === 'function' && typeof positionTip === 'function') positionTip($('compare-tip'), e);
+    };
+    if (typeof addTouchPin === 'function') addTouchPin(el, showTip);
+  });
+}
+
+function installTimewalkingRenderHook() {
+  if (typeof globalThis.renderEvents !== 'function' || globalThis.renderEvents._timewalkingTooltipWrapped) return;
+  const oldRenderEvents = globalThis.renderEvents;
+  function wrappedRenderEvents() {
+    oldRenderEvents.apply(this, arguments);
+    const root = (typeof $ === 'function') ? $('tab-events') : null;
+    if (!root) return;
+    if (typeof eventsSubTab !== 'undefined' && eventsSubTab === 'timewalking') bindTimewalkingTooltips(root);
+  }
+  wrappedRenderEvents._timewalkingTooltipWrapped = true;
+  globalThis.renderEvents = wrappedRenderEvents;
+  const root = (typeof $ === 'function') ? $('tab-events') : null;
+  if (root && typeof eventsSubTab !== 'undefined' && eventsSubTab === 'timewalking') bindTimewalkingTooltips(root);
 }
 
 function timewalkingResearchCost(def, lvl) {
@@ -673,13 +833,14 @@ function renderTimewalkingSub() {
   const activeDistortionCount = activeDistortions.length;
   const activeDistortionKeys = new Set(activeDistortions.map(def => def.key));
   const distortionProfile = timewalkingDistortionRewardProfile();
+  const heroBanner = era.banner || TIMEWALKING_BANNER;
   const researchCards = TIMEWALKING_RESEARCH.map(def => {
     const cur = timewalkingResearchLevel(def.key);
     const maxed = cur >= def.max;
     const cost = timewalkingResearchCost(def, cur);
     const can = !maxed && (tw.badges || 0) >= cost;
     const gainText = Object.entries(def.gain || {}).map(([stat, val]) => typeof fmtMod === 'function' ? fmtMod(stat, val) : `${stat}+${val}`).join(' · ');
-    return `<div class="timewalking-store-card ${maxed ? 'claimed' : (can ? 'ready' : '')}">
+    return `<div class="timewalking-store-card ${maxed ? 'claimed' : (can ? 'ready' : '')}" data-tw-tip="research" data-research-key="${def.key}">
       <div class="timewalking-head">
         <span class="timewalking-icon">${def.icon}</span>
         <div><b>${def.name}</b><div class="muted" style="font-size:10px">${def.desc}</div></div>
@@ -694,7 +855,7 @@ function renderTimewalkingSub() {
   const collectionCards = TIMEWALKING_COLLECTIONS.map(def => {
     const owned = timewalkingCollectionOwned(def.key);
     const can = !owned && (tw.badges || 0) >= def.cost;
-    return `<div class="timewalking-store-card ${owned ? 'claimed' : (can ? 'ready' : '')}">
+    return `<div class="timewalking-store-card ${owned ? 'claimed' : (can ? 'ready' : '')}" data-tw-tip="collection" data-collection-key="${def.key}">
       <div class="timewalking-head">
         <span class="timewalking-icon">${def.icon}</span>
         <div><b>${def.name}</b><div class="muted" style="font-size:10px">${def.desc}</div></div>
@@ -710,7 +871,7 @@ function renderTimewalkingSub() {
     const mastered = tw.erasMastered?.[def.key] || 0;
     const cls = active ? 'ready' : (mastered ? 'claimed' : '');
     const tag = active ? '本周轮值' : (mastered ? `已精通 ${mastered} 次` : '未精通');
-    return `<div class="timewalking-store-card ${cls}">
+    return `<div class="timewalking-store-card ${cls}" data-tw-tip="era" data-era-key="${def.key}">
       <div class="timewalking-head">
         <span class="timewalking-icon">${def.icon}</span>
         <div><b>${def.name}</b><div class="muted" style="font-size:10px">${def.desc}</div></div>
@@ -727,7 +888,7 @@ function renderTimewalkingSub() {
     const active = activeDistortionKeys.has(def.key);
     const capped = !active && activeDistortionCount >= TIMEWALKING_DISTORTION_ACTIVE_LIMIT;
     const cls = active ? 'active' : (capped ? '' : 'ready');
-    return `<div class="timewalking-store-card ${cls}">
+    return `<div class="timewalking-store-card ${cls}" data-tw-tip="distortion" data-distortion-key="${def.key}">
       <div class="timewalking-head">
         <span class="timewalking-icon">${def.icon}</span>
         <div><b>${def.name}</b><div class="muted" style="font-size:10px">${def.desc}</div></div>
@@ -749,7 +910,7 @@ function renderTimewalkingSub() {
       : done
         ? `<button class="gold" data-action="claimtimewalking" data-id="${m.id}">领取</button>`
         : `<span class="muted" style="font-size:10px">${fmt(m.progress || 0)}/${fmt(m.goal || 1)}</span>`;
-    return `<div class="timewalking-card ${claimedMission ? 'claimed' : (done ? 'ready' : '')}" style="border-left-color:${era.color}">
+    return `<div class="timewalking-card ${claimedMission ? 'claimed' : (done ? 'ready' : '')}" style="border-left-color:${era.color}" data-tw-tip="mission" data-mission-id="${m.id}">
       <div class="timewalking-head">
         <span class="timewalking-icon">${m.icon}</span>
         <div><b>${m.name}</b><div class="muted" style="font-size:10px">${m.desc}</div></div>
@@ -761,7 +922,7 @@ function renderTimewalkingSub() {
   }).join('');
   const hist = (tw.history || []).slice(0, 3).map(h => `<div class="muted">周 ${h.weekId}: ${h.eraKey || 'unknown'} · 完成 ${h.completed || 0} 条 · 徽记 ${h.badges || 0}</div>`).join('');
   return `<div class="timewalking-panel">
-    <div class="timewalking-hero" style="background-image:linear-gradient(90deg, rgba(8,12,24,.92), rgba(8,12,24,.56)), url('${TIMEWALKING_BANNER}')">
+    <div class="timewalking-hero" style="background-image:linear-gradient(90deg, rgba(8,12,24,.92), rgba(8,12,24,.56)), url('${heroBanner}')">
       <div class="timewalking-title">${era.icon} ${era.name}</div>
       <div class="timewalking-text">周重置 ${fmtCd(left)} · 已领取 <b>${claimed}/${TIMEWALKING_MISSION_COUNT}</b> 条路线 · 可领取 <b style="color:var(--legend)">${ready}</b> 条 · 时序压力 <b>${threat}</b>${broker ? ' · 掮客加成已启用' : ''}</div>
     </div>
@@ -774,7 +935,7 @@ function renderTimewalkingSub() {
       <span>精通时代 <b>${eraMastered}</b></span>
       <span>扭曲通关 <b>${tw.distortionClears || 0}</b></span>
     </div>
-    <div class="timewalking-note">${era.desc} 本周地下城: ${era.dungeons.map(timewalkingDungeonName).join(' · ')} · 团本池: ${era.raids.map(timewalkingDungeonName).join(' · ')}。被轮值点名的旧时代内容会同步变强,避免高等级角色直接平推。</div>
+    <div class="timewalking-note">${era.desc} 本周地下城: ${era.dungeons.map(timewalkingDungeonName).join(' · ')} · 团本池: ${era.raids.map(timewalkingDungeonName).join(' · ')}。被轮值点名的旧时代内容会同步变强,避免高等级角色直接平推。悬停或点按卡片即可查看详细规则、奖励和影响范围。</div>
     <div class="timewalking-grid">${cards}</div>
     <div class="timewalking-actions">
       <button class="${allDone && !tw.metaClaimed ? 'gold' : ''}" data-action="claimtimewalkingmeta" ${allDone && !tw.metaClaimed ? '' : 'disabled'}>${tw.metaClaimed ? '总奖励已领' : '领取周终总奖励'}</button>
@@ -801,6 +962,7 @@ function renderTimewalkingSub() {
   globalThis.renderTimewalkingSub = renderTimewalkingSub;
   globalThis.ensureTimewalkingState = ensureTimewalkingState;
   globalThis.isTimewalkingDungeon = isTimewalkingDungeon;
+  globalThis.bindTimewalkingTooltips = bindTimewalkingTooltips;
 
   const oldEnter = globalThis.enterDungeon;
   if (typeof oldEnter === 'function' && !oldEnter._timewalkingWrapped) {
@@ -921,4 +1083,9 @@ function renderTimewalkingSub() {
     else if (btn.dataset.action === 'toggletimewalkingdistortion') timewalkingToggleDistortion(btn.dataset.key);
     if (typeof renderEvents === 'function') renderEvents();
   }, true);
+
+  if (typeof window !== 'undefined') {
+    if (document.readyState === 'complete') installTimewalkingRenderHook();
+    else window.addEventListener('load', installTimewalkingRenderHook, { once:true });
+  }
 })();
