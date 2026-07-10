@@ -1301,6 +1301,28 @@ const MAPS = [
       passive:{atkBonus:0.6,critChance:0.36,dmgReduction:0.33,dodgeChance:0.2,leech:0.14,stunChance:0.22,
       tricks:[{name:"星盘逆转",icon:"🌠",desc:"回复24%生命并提高防御",healPct:0.24,defBuff:5},{name:"仪轨暴涨",icon:"✨",desc:"接下来5秒攻击与攻速提升",atkBuff:5,spdBuff:5},{name:"观测终点",icon:"🔭",desc:"下一次攻击造成双倍伤害并附带沉默",nextDouble:1,critBuff:5}] },
       skills:[{name:'星纱裁切',icon:'✨',desc:'13.5倍伤害+吸取资源',type:'dmg',mul:13.5,manaDrain:115,castTime:3.2},{name:'棱镜谐振',icon:'💠',desc:'14倍范围伤害+镜像错位',type:'dmg',mul:14,aoe:true,mirror:true,silence:2200,castTime:4.2},{name:'群星归航',icon:'🌌',desc:'15倍终局伤害+恐惧与虚弱',type:'dmg',mul:15,aoe:true,fear:2400,weaken:true,alwaysCrit:true,castTime:5.2}] } },
+  { key:'primeus', name:'秘境:普莱姆斯', icon:'📚', faction:'卡雷什信托', lvlRange:[102,104],
+    art:'assets/wow/art/primeus-repository.png',
+    desc:'普莱姆斯残存的档案圣所把虚灵学识、折光枢纽与群星索引全部锁进高墙,如今却同时被影卫和掠夺者夺门而入',
+    sub:[
+      { name:'抄录者前庭', lvl:[102,103], mobs:'📚圣所抄录者|💠折光馆卫|📐索引校准者|🧿虚空读写体' },
+      { name:'群星档案穹厅', lvl:[103,104], mobs:'✨仪轨档案官|🔷镜壁守护者|🌀奥术回响体|📜星图删改师' },
+    ],
+    boss:{ name:'群星编目者涅普提拉', emoji:'📚', lvl:106, desc:'普莱姆斯最高权限的档案总管,已经把所有闯入者都列入“应被抹除”的灾厄条目',
+      passive:{atkBonus:0.62,critChance:0.37,dmgReduction:0.34,dodgeChance:0.2,leech:0.14,stunChance:0.22,
+      tricks:[{name:"卷册回卷",icon:"📜",desc:"回复24%生命并提高减伤",healPct:0.24,defBuff:5},{name:"索引超频",icon:"📚",desc:"接下来5秒攻击与暴击提升",atkBuff:5,critBuff:5},{name:"删改裁定",icon:"📐",desc:"下一次攻击造成双倍伤害并沉默目标",nextDouble:1,critBuff:5}] },
+      skills:[{name:'折光删页',icon:'📚',desc:'14倍伤害+沉默',type:'dmg',mul:14,silence:2300,brittle:true,castTime:3.2},{name:'群星索引错位',icon:'💠',desc:'14.5倍范围伤害+镜像错位',type:'dmg',mul:14.5,aoe:true,mirror:true,manaDrain:120,castTime:4.2},{name:'归档终审',icon:'🌌',desc:'15.5倍终局伤害+恐惧与灵魂链接',type:'dmg',mul:15.5,aoe:true,fear:2400,soulLink:true,alwaysCrit:true,castTime:5.3}] } },
+  { key:'voidrazor', name:'虚无剃刀庇护所', icon:'🪐', faction:'卡雷什信托', lvlRange:[103,105],
+    art:'assets/wow/art/voidrazor-sanctum.png',
+    desc:'在吞界漩涡边缘苟活的圆顶庇护所不断被虚空剃刀切开天幕,每一道裂口都在向影卫舰队泄露卡雷什最后的生机',
+    sub:[
+      { name:'剃锋外环圆顶', lvl:[103,104], mobs:'🪐剃锋难民卫兵|☣️虚空雾行者|🔮折光护穹师|🕳️吞界裂壳兽' },
+      { name:'漩涡观测壁垒', lvl:[104,105], mobs:'🌌边界观测者|⚙️裂口稳固机|🌫️饥渴回响体|🧿吞界誓约者' },
+    ],
+    boss:{ name:'庇护所裁断者维什卡', emoji:'🪐', lvl:107, desc:'负责以“剃刀规约”筛选幸存者的庇护所执裁官,把整片圆顶当作实验性的生死筛床',
+      passive:{atkBonus:0.64,critChance:0.38,dmgReduction:0.35,dodgeChance:0.2,leech:0.16,stunChance:0.24,
+      tricks:[{name:"剃锋换幕",icon:"🪐",desc:"接下来5秒闪避和减伤提高",defBuff:5},{name:"吞界切线",icon:"🌌",desc:"接下来5秒攻击与攻速提升",atkBuff:5,spdBuff:5},{name:"绝域裁落",icon:"⚔️",desc:"下一次攻击造成双倍伤害并附带虚弱",nextDouble:1,critBuff:5}] },
+      skills:[{name:'虚刃截面',icon:'🪐',desc:'14.5倍伤害+破甲',type:'dmg',mul:14.5,sunder:true,cripple:true,castTime:3.1},{name:'边界坍缩',icon:'🌫️',desc:'15倍范围伤害+凋零与沉默',type:'dmg',mul:15,aoe:true,decay2:true,silence:2300,castTime:4.2},{name:'吞界终域',icon:'🌌',desc:'16倍终局伤害+恐惧、镜像错位',type:'dmg',mul:16,aoe:true,fear:2500,mirror:true,alwaysCrit:true,castTime:5.4}] } },
 ];
 
 const RARE_ELITE_SKILLSETS = {
@@ -1471,14 +1493,16 @@ const MAP_RARE_ELITE_SEEDS = {
   dornogal:{ name:'裂隙钻探者格隆', emoji:'⚙️', theme:'brute', desc:'吞吃泰坦矿脉后失控的巨型钻探构装体。' },
   hallowfall:{ name:'暗潮烛噬者', emoji:'🕯️', theme:'shadow', desc:'专门猎杀圣焰守夜人的虚空潜伏者。' },
   azj_kahet:{ name:'王庭断丝者', emoji:'🕸️', theme:'poison', desc:'安苏雷克王廷派出的蛛魔处刑者。' },
-  karesh:{ name:'相位通缉犯欧姆拉', emoji:'🧿', theme:'shadow', desc:'被塔扎维什通缉的相位潜航者,只在裂隙折光中现身。' }
+  karesh:{ name:'相位通缉犯欧姆拉', emoji:'🧿', theme:'shadow', desc:'被塔扎维什通缉的相位潜航者,只在裂隙折光中现身。' },
+  primeus:{ name:'圣所删改体赫鲁赞', emoji:'📚', theme:'arcane', desc:'被普莱姆斯索引系统判定为“必须抹除”的失控档案守卫。' },
+  voidrazor:{ name:'虚刃庇护守望者', emoji:'🪐', theme:'shadow', desc:'在虚无剃刀边缘巡猎难民与闯入者的庇护所裁卫。' }
 };
 
 function buildRareElites() {
   return MAPS.map(map => {
     const seed = MAP_RARE_ELITE_SEEDS[map.key] || { name:`${map.name}稀有精英`, emoji:'⭐', theme:'brute', desc:`徘徊于${map.name}的危险目标。` };
     const profile = JSON.parse(JSON.stringify(RARE_ELITE_SKILLSETS[seed.theme] || RARE_ELITE_SKILLSETS.brute));
-    const rareEliteCap = ((typeof MAX_LEVEL === 'number') ? MAX_LEVEL : 80) + 8;
+    const rareEliteCap = Math.max(((typeof MAX_LEVEL === 'number') ? MAX_LEVEL : 80) + 8, (map.lvlRange?.[1] || 1) + 2);
     const lvl = Math.max(map.lvlRange[0] + 1, Math.min(rareEliteCap, map.lvlRange[1] + 2));
     return {
       key:`rare_${map.key}`,
@@ -1491,7 +1515,7 @@ function buildRareElites() {
       hpMul:11.8 + Math.min(2.8, lvl * 0.018),
       atkMul:1.62 + Math.min(0.4, lvl * 0.0045),
       defMul:1.26 + Math.min(0.28, lvl * 0.0035),
-      spawnChance:0.025,
+      spawnChance:lvl >= 100 ? 0.033 : (lvl >= 90 ? 0.03 : 0.025),
       rewards:{
         gold:Math.floor(220 + lvl * 42),
         gem:Math.max(2, Math.floor(lvl / 10)),
@@ -5517,6 +5541,19 @@ function extendDungeonCatalog(){
       ]
     },
     {
+      key:'primeus_repository', name:'普莱姆斯档案秘库', icon:'📚', reqLvl:102, waves:6, delve:true, art:'assets/wow/art/primeus-repository.png', desc:'普莱姆斯的高阶抄录圣所已进入战时封锁,每一层秘库都在主动改写闯入者的轨迹与记忆',
+      bosses:[
+        { name:'圣所馆卫', emoji:'📚', skills:[dmg('秘库击退','📚',14.1,{ silence:2200, brittle:true }), dmg('索引回响','💠',14.3,{ aoe:true, manaDrain:115 })] },
+        { name:'抄录审判官', emoji:'📐', skills:[dmg('删改裁线','📐',14.5,{ sunder:true, weaken:true }), buffP('卷宗重算','📜',0.54,'卷宗重算:攻击/暴击/减伤提升',{ atkBuffSecs:12, atkBuffPct:44, critBuffSecs:12, critBuffPct:48, drBuffSecs:12, drBuffPct:0.22 })] },
+        { name:'群星馆长索·普莱翁', emoji:'✨', skills:[
+          dmg('群星归档','✨',15,{ silence:2400, soulDrain:true }),
+          dmg('镜壁回灌','💠',15.4,{ aoe:true, mirror:true, manaDrain:120 }),
+          summonP('索引馆卫','📚',0.46,'召唤 2 名索引馆卫并获得护盾',{ summonCount:2, summonTheme:'construct', shieldPct:0.22 }),
+          dmgP('终卷删定','🌌',8.3,0.3,{ aoe:true, fear:2300, brittle:true, alwaysCrit:true, cd:15 })
+        ] }
+      ]
+    },
+    {
       key:'nerubar', name:"尼鲁巴尔王宫", icon:'🕸️', type:'raid', reqLvl:92, waves:14, desc:'艾基-卡赫特的蛛魔帝国王宫,安苏雷克女王用黑血与虚空丝线编织终局试炼',
       bosses:[
         { name:'乌格拉克斯', emoji:'🪲', skills:[dmg('贪食冲锋','🪲',11,{ bleed:true, cripple:true }), dmgP('暴食震荡','💥',5.8,0.5,{ aoe:true, stun:1700, brittle:true, cd:12 })] },
@@ -5568,6 +5605,24 @@ function extendDungeonCatalog(){
           buffP('观星大仪','✨',0.64,'观星大仪:攻击/暴击/攻速/减伤提升',{ atkBuffSecs:16, atkBuffPct:54, critBuffSecs:16, critBuffPct:58, spdBuffSecs:16, spdBuffPct:34, drBuffSecs:16, drBuffPct:0.24 }),
           summonP('星潮议卫','🔷',0.42,'召唤 3 名星潮议卫并获得护盾',{ summonCount:3, summonTheme:'construct', shieldPct:0.24 }),
           dmgP('终末定标','🪐',9,0.3,{ aoe:true, mirror:true, silence:2500, fear:2500, alwaysCrit:true, cd:16 })
+        ] }
+      ]
+    },
+    {
+      key:'voidrazor_sanctum', name:'虚无剃刀圣所', icon:'🪐', type:'raid', reqLvl:103, waves:15, art:'assets/wow/art/voidrazor-sanctum.png', desc:'圆顶庇护所最深处的虚无剃刀圣所正在被改造成吞界观察站,每一次边界波动都在把幸存者与敌意一并推向终局',
+      bosses:[
+        { name:'庇护壁垒机', emoji:'🔷', skills:[dmg('壁垒回冲','🔷',14.6,{ sunder:true, brittle:true }), dmgP('棱幕震荡','💥',7.4,0.42,{ aoe:true, silence:2200, cd:12 })] },
+        { name:'虚刃掠食兽', emoji:'🕳️', skills:[dmg('裂口啃噬','🕳️',14.9,{ plague:true, lifeSteal:0.24 }), dmg('剃锋扑杀','🪐',15.1,{ alwaysCrit:true, cripple:true })] },
+        { name:'裂幕引航者', emoji:'🌫️', skills:[dmg('边界导偏','🌫️',15.2,{ manaDrain:120, weaken:true }), summonP('引航誓从','📣',0.5,'召唤 2 名引航誓从并提高攻速',{ summonCount:2, summonTheme:'void', spdBuffSecs:12, spdBuffPct:30 })] },
+        { name:'圆顶求生议会', emoji:'🛡️', skills:[dmg('庇护反证','🛡️',15.4,{ aoe:true, silence:2300 }), dmgP('绝境共振','✨',7.6,0.4,{ aoe:true, fear:2100, mirror:true, cd:12 })] },
+        { name:'吞界剃刀体', emoji:'🌌', skills:[dmg('吞界剖面','🌌',15.8,{ decay2:true, brittle:true }), dmg('虚空剃切','🪐',16.1,{ aoe:true, mirror:true, silence:2400 })] },
+        { name:'庇护执裁官萨·维克斯', emoji:'⚖️', skills:[dmg('剃刀宣判','⚖️',16.3,{ soulLink:true, manaDrain:125 }), summonP('执裁影卫','🧿',0.48,'召唤 3 名执裁影卫并获得护盾',{ summonCount:3, summonTheme:'void', shieldPct:0.24 })] },
+        { name:'吞界观测主脑阿兹莫垩', emoji:'🌌', skills:[
+          dmg('边界剃灭','🌌',16.8,{ aoe:true, decay2:true, brittle:true }),
+          dmg('剃锋天幕','🪐',17.2,{ aoe:true, silence:2500, fear:2400, mirror:true }),
+          buffP('终域剃算','⚖️',0.64,'终域剃算:攻击/暴击/攻速/减伤提升',{ atkBuffSecs:16, atkBuffPct:56, critBuffSecs:16, critBuffPct:60, spdBuffSecs:16, spdBuffPct:36, drBuffSecs:16, drBuffPct:0.26 }),
+          summonP('裂幕观测体','🌫️',0.42,'召唤 3 个裂幕观测体并获得护盾',{ summonCount:3, summonTheme:'void', shieldPct:0.26 }),
+          dmgP('吞界终裁','🌌',9.3,0.3,{ aoe:true, mirror:true, silence:2600, fear:2600, alwaysCrit:true, brittle:true, cd:16 })
         ] }
       ]
     }
@@ -5983,6 +6038,11 @@ function extendDungeonCatalog(){
       '影卫相位校尉':[L('校尉折相刃','weapon','epic',{atk:3,agi:2}),L('影点校准指环','ring','epic',{agi:2,vers:1})],
       '影卫指挥官索拉辛':[L('索拉辛的裂轨战刃','weapon','legend',{atk:6,agi:4}),L('影点指挥胸甲','armor','epic',{def:3,sta:2}),L('吞界火线棱芯','trinket','legend',{sta:3,agi:3})]
     }, trash:[L('影卫战区束腰','belt','rare',{def:1,agi:1}),L('裂隙壕沟战靴','boots','rare',{haste:1})] },
+    primeus_repository: { bosses:{
+      '圣所馆卫':[L('馆卫折光槌','weapon','epic',{atk:3,str:2}),L('秘库索引护手','gloves','epic',{int:2,haste:1})],
+      '抄录审判官':[L('审判官删改尺','weapon','epic',{atk:3,int:2}),L('删定印戒','ring','epic',{int:2,vers:1})],
+      '群星馆长索·普莱翁':[L('普莱翁的群星馆匙','weapon','legend',{atk:6,int:4}),L('档案穹厅胸甲','armor','epic',{def:3,sta:2}),L('终卷抄录晶核','trinket','legend',{sta:3,int:3})]
+    }, trash:[L('抄录前庭肩垫','shoulder','rare',{atk:1,int:1}),L('秘库巡路长靴','boots','rare',{haste:1})] },
     nerubar: { bosses:{
       '乌格拉克斯':[L('暴食虫颚战斧','weapon','epic',{atk:3,str:2}),L('王宫甲壳护腿','pants','epic',{hp:2,sta:2})],
       '血缚恐魔':[L('黑血法典','weapon','epic',{atk:3,int:2}),L('血缚指环','ring','epic',{int:2,vers:1})],
@@ -6010,7 +6070,16 @@ function extendDungeonCatalog(){
       '天穹测距者':[L('测距者星眼长弓','weapon','epic',{atk:4,agi:2}),L('天穹步履','boots','epic',{atk:2,haste:1})],
       '虚空航线执笔人':[L('航线执笔权杖','weapon','epic',{atk:4,int:2}),L('议会刻线胸甲','armor','epic',{def:3,sta:2})],
       '群星议长索·阿兹拉':[L('索阿兹拉的群星议槌','weapon','legend',{atk:8,int:5}),L('沙恩多拉观星冠冕','helmet','legend',{def:5,int:4}),L('议会定标胸甲','armor','legend',{def:7,sta:5}),L('终末航线徽记','trinket','legend',{sta:5,int:5})]
-    }, trash:[L('观星议卫护肩','shoulder','rare',{atk:1,int:1}),L('星相长廊战靴','boots','rare',{haste:1})] }
+    }, trash:[L('观星议卫护肩','shoulder','rare',{atk:1,int:1}),L('星相长廊战靴','boots','rare',{haste:1})] },
+    voidrazor_sanctum: { bosses:{
+      '庇护壁垒机':[L('壁垒棱幕拳套','weapon','epic',{atk:4,str:2}),L('棱幕护肩','shoulder','epic',{def:2,sta:2})],
+      '虚刃掠食兽':[L('虚刃掠食弯爪','weapon','epic',{atk:4,agi:2}),L('剃锋甲壳护腿','pants','epic',{hp:2,agi:2})],
+      '裂幕引航者':[L('引航者裂幕法典','weapon','epic',{atk:4,int:2}),L('边界删定锁环','ring','epic',{int:2,vers:1})],
+      '圆顶求生议会':[L('求生议会壁盾','weapon','epic',{atk:4,str:2}),L('庇护辩证胸甲','armor','epic',{def:3,sta:2})],
+      '吞界剃刀体':[L('吞界剃刀巨镰','weapon','epic',{atk:4,agi:2}),L('裂隙剖面长靴','boots','epic',{atk:2,haste:1})],
+      '庇护执裁官萨·维克斯':[L('执裁官剃锋权杖','weapon','epic',{atk:4,int:2}),L('庇护宣判冠','helmet','epic',{def:3,int:2})],
+      '吞界观测主脑阿兹莫垩':[L('阿兹莫垩的吞界剃刃','weapon','legend',{atk:8,int:5}),L('虚无剃刀冠冕','helmet','legend',{def:5,int:4}),L('圣所终域胸甲','armor','legend',{def:7,sta:5}),L('吞界观测徽记','trinket','legend',{sta:5,int:5})]
+    }, trash:[L('庇护所裂幕护肩','shoulder','rare',{atk:1,int:1}),L('虚刃边界战靴','boots','rare',{haste:1})] }
   };
 
   for (const dg of extraDungeons) ensureDungeon(dg, extraLoot[dg.key]);
@@ -6073,6 +6142,7 @@ const EPIC_RAID_SET_THEME = {
   nerubar:{ tier:'T32', name:'尼鲁巴尔王宫', short:'蛛魔' },
   manaforge_omega:{ tier:'T33', name:'法力熔炉欧米伽', short:'欧米伽' },
   shandorah_conclave:{ tier:'T34', name:'沙恩多拉议会', short:'沙恩多拉' },
+  voidrazor_sanctum:{ tier:'T35', name:'虚无剃刀圣所', short:'虚刃' },
 };
 const RAID_PROGRESSION = {
   mc:{ order:1, expansion:'经典旧世', epicIlvl:140 },
@@ -6106,6 +6176,7 @@ const RAID_PROGRESSION = {
   nerubar:{ order:29, expansion:'地心之战', epicIlvl:424 },
   manaforge_omega:{ order:30, expansion:'地心之战', epicIlvl:438 },
   shandorah_conclave:{ order:31, expansion:'地心之战', epicIlvl:452 },
+  voidrazor_sanctum:{ order:32, expansion:'地心之战', epicIlvl:466 },
 };
 const EPIC_RAID_SET_LABELS = {
   mc:{

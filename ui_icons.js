@@ -73,6 +73,7 @@
     stonevault:'achievement_dungeon_ulduar_raildriver', prioryflame:'spell_holy_divineillumination',
     nightfall_sanctum:'inv_misc_key_14', earthcrawl_mines:'ability_creature_poison_05',
     fungal_folly:'ability_creature_disease_02', archival_assault:'inv_misc_map_01',
+    primeus_repository:'inv_misc_book_11',
     ecodome_aldani:'spell_nature_stranglevines', oasis_succession:'inv_misc_herb_felweed',
     tazavesh_streets:'inv_11_0_etherealraid_communicator_color1',
     tazavesh_gambit:'spell_arcane_portalshattrath', nerubar:'ability_creature_poison_05',
@@ -80,7 +81,8 @@
     overlook_zoshul:'inv_misc_spyglass_03',
     ecodome_rhovan:'spell_nature_naturetouchgrow',
     shadowpoint_breach:'spell_shadow_soulgem',
-    shandorah_conclave:'spell_arcane_starfire'
+    shandorah_conclave:'spell_arcane_starfire',
+    voidrazor_sanctum:'spell_shadow_possession'
   };
 
   const SYMBOL_ICON = {
@@ -95,6 +97,7 @@
     '🎫':'inv_misc_ticket_tarot_portal_01',
     '🗝️':'inv_10_blacksmithing_consumable_key_color1',
     '📜':'inv_misc_map_01',
+    '📚':'inv_misc_book_11',
     '👑':'achievement_boss_lichking',
     '🗡️':'ability_rogue_eviscerate',
     '⚔️':'ability_warrior_savageblow',
@@ -138,6 +141,7 @@
     '🛒':'inv_misc_coin_01',
     '🤯':'spell_shadow_unholyfrenzy',
     '🌑':'spell_shadow_deathanddecay',
+    '🪐':'spell_arcane_starfire',
     '🪞':'spell_arcane_mirrorimage',
     '🥀':'spell_shadow_deathanddecay',
     '💔':'spell_shadow_cripple',
