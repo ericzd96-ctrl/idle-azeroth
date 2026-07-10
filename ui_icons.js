@@ -17,6 +17,7 @@
     profession:'trade_engineering',
     progression:'achievement_bg_kill_flag_carrier',
     events:'achievement_general_stayclassy',
+    waystone:'inv_misc_stonetablet_02',
     ascend:'spell_holy_divineillumination',
     location:'ability_tracking',
     gold:'inv_misc_coin_02',
@@ -75,7 +76,11 @@
     ecodome_aldani:'spell_nature_stranglevines', oasis_succession:'inv_misc_herb_felweed',
     tazavesh_streets:'inv_11_0_etherealraid_communicator_color1',
     tazavesh_gambit:'spell_arcane_portalshattrath', nerubar:'ability_creature_poison_05',
-    manaforge_omega:'spell_arcane_portalshattrath'
+    manaforge_omega:'spell_arcane_portalshattrath',
+    overlook_zoshul:'inv_misc_spyglass_03',
+    ecodome_rhovan:'spell_nature_naturetouchgrow',
+    shadowpoint_breach:'spell_shadow_soulgem',
+    shandorah_conclave:'spell_arcane_starfire'
   };
 
   const SYMBOL_ICON = {
@@ -238,6 +243,9 @@
     '♻️':'spell_magic_lesserinvisibilty',
     '📦':'inv_crate_04',
     '🔭':'inv_misc_spyglass_03',
+    '📐':'inv_misc_stonetablet_02',
+    '🧬':'spell_arcane_prismaticcloak',
+    '🪐':'spell_arcane_starfire',
     '🛰️':'spell_arcane_portalshattrath',
     '⚫':'spell_shadow_shadowwordpain',
     '💜':'spell_shadow_lifedrain',

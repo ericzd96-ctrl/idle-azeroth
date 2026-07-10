@@ -2,7 +2,8 @@
 const WORLDSOUL_MEMORY_TIERS = [
   { cost: 1, name: '微光记忆', icon: '✨', rewardMult: 1, pressure: 1, desc: '低风险记忆,用于稳定获取钥匙碎片与精华。' },
   { cost: 5, name: '多重回响', icon: '💠', rewardMult: 5.4, pressure: 3, desc: '投入更多 Radiant Echo,奖励显著提升,卡雷什副本压迫同步上升。' },
-  { cost: 10, name: '辐耀失序', icon: '🌌', rewardMult: 11.5, pressure: 6, desc: '最高强度记忆,一次性奖励最强,但会引来更重的裂隙压迫。' }
+  { cost: 10, name: '辐耀失序', icon: '🌌', rewardMult: 11.5, pressure: 6, desc: '高强度记忆,一次性奖励极高,但会引来更重的裂隙压迫。' },
+  { cost: 15, name: '群星残响', icon: '🌠', rewardMult: 18.5, pressure: 9, desc: '终局记忆层,适合在法力熔炉与沙恩多拉线全面成型后释放。' }
 ];
 
 function worldsoulWeekId(now) {
@@ -56,7 +57,7 @@ function worldsoulPressureLevel() {
 function worldsoulEnemyAffixFor(dg) {
   if (!dg) return null;
   const key = (typeof baseDungeonKey === 'function') ? baseDungeonKey(dg.key) : dg.key;
-  const affected = ['archival_assault', 'ecodome_aldani', 'manaforge_omega'].includes(key);
+  const affected = ['archival_assault', 'ecodome_aldani', 'overlook_zoshul', 'shadowpoint_breach', 'manaforge_omega', 'shandorah_conclave'].includes(key);
   if (!affected) return null;
   const lvl = worldsoulPressureLevel();
   if (lvl <= 0) return null;

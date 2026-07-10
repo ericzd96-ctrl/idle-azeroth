@@ -1270,12 +1270,14 @@ function updateBattleVisuals() {
   const cls = getCls();
   const accountTitle = (typeof account!=='undefined' && account?.title) || '';
   const curTitle = accountTitle || state.title || '';
-  const hNameSig = `${state.name}|${curTitle}|${state.cls}|${state.hero.lvl}`;
+  const progLvl = (typeof playerProgressLevel === 'function') ? playerProgressLevel() : state.hero.lvl;
+  const hNameSig = `${state.name}|${curTitle}|${state.cls}|${state.hero.lvl}|${progLvl}`;
   if (_hNameLastSig !== hNameSig) {
     _hNameLastSig = hNameSig;
     const titleHtml = curTitle ? `<span class="pill" style="background:var(--gold);color:#000;font-weight:bold" title="成就称号">${curTitle}</span> ` : '';
     const heroChip = (typeof uiIcon === 'function') ? uiIcon('hero', 'xs', '角色') : (race?.icon || '👤');
-    $('h-name').innerHTML = `${heroChip} <b>${state.name||'冒险者'}</b> ${titleHtml}<span class="pill">${classIcon(state.cls, 16, cls?.icon||'')} 等级${state.hero.lvl}</span>`;
+    const progHtml = progLvl > state.hero.lvl ? `<span class="pill" style="background:rgba(125,211,252,.18);color:#7dd3fc">终局${progLvl}</span>` : '';
+    $('h-name').innerHTML = `${heroChip} <b>${state.name||'冒险者'}</b> ${titleHtml}<span class="pill">${classIcon(state.cls, 16, cls?.icon||'')} 等级${state.hero.lvl}</span>${progHtml}`;
   }
   $('h-name').title = '点击切换角色';
   $('h-gold').textContent = fmt(state.gold);
@@ -2289,7 +2291,7 @@ function renderMap() {
   if (mapCur) {
     const subCur = mapCur.sub[state.currentSubzone];
     const mapCurIconHtml = symbolIconHtml(mapCur.icon, 16, mapCur.name, 'inv_misc_map_01');
-    if (subCur) $('cur-location').innerHTML = `${mapCurIconHtml} ${mapCur.name} · ${subCur.name} (等级${subCur.lvl[0]}-${subCur.lvl[1]})`;
+    if (subCur) $('cur-location').innerHTML = `${mapCurIconHtml} ${mapCur.name} · ${subCur.name} (${typeof contentRangeLabel === 'function' ? contentRangeLabel(subCur.lvl[0], subCur.lvl[1]) : `等级${subCur.lvl[0]}-${subCur.lvl[1]}`})`;
     else $('cur-location').innerHTML = `${mapCurIconHtml} ${mapCur.name}`;
   }
   const ml = $('map-list');
@@ -2297,7 +2299,7 @@ function renderMap() {
   const sortedMaps = [...MAPS].sort((a, b) => {
     const aMid = (a.lvlRange[0] + a.lvlRange[1]) / 2;
     const bMid = (b.lvlRange[0] + b.lvlRange[1]) / 2;
-    const hl = state.hero.lvl;
+    const hl = (typeof playerProgressLevel === 'function') ? playerProgressLevel() : state.hero.lvl;
     const aFit = hl >= a.lvlRange[0] && hl <= a.lvlRange[1];
     const bFit = hl >= b.lvlRange[0] && hl <= b.lvlRange[1];
     if (aFit !== bFit) return aFit ? -1 : 1;
@@ -2305,7 +2307,8 @@ function renderMap() {
   });
   for (const m of sortedMaps) {
     const isCurrent = m.key === state.currentMap;
-    const tooHigh = state.hero.lvl < m.lvlRange[0] - 3;
+    const progressLvl = (typeof playerProgressLevel === 'function') ? playerProgressLevel() : state.hero.lvl;
+    const tooHigh = progressLvl < m.lvlRange[0] - 3;
     const div = document.createElement('div');
     div.className = 'map-item' + (isCurrent ? ' current' : '') + (tooHigh ? ' warn' : '');
     div.dataset.mapKey = m.key;
@@ -2314,9 +2317,9 @@ function renderMap() {
     let html = `
       <div class="map-head">
         <span class="mname">${mapIconHtml} ${m.name}</span>
-        <span><span class="map-faction faction-${m.faction}">${m.faction}</span> <span class="pill">等级${m.lvlRange[0]}-${m.lvlRange[1]}</span></span>
+        <span><span class="map-faction faction-${m.faction}">${m.faction}</span> <span class="pill">${typeof contentRangeLabel === 'function' ? contentRangeLabel(m.lvlRange[0], m.lvlRange[1]) : `等级${m.lvlRange[0]}-${m.lvlRange[1]}`}</span></span>
       </div>
-      <div class="map-desc">${m.desc}${tooHigh?' · ⚠️ 等级过低,小心怪物':''}</div>
+      <div class="map-desc">${m.desc}${tooHigh?' · ⚠️ 当前终局进度偏低,请谨慎推进':''}</div>
       <div class="sub-list">`;
     m.sub.forEach((s, idx) => {
       const subKey = `${m.key}-${idx}`;
@@ -2324,24 +2327,25 @@ function renderMap() {
       const cleared = state.subzoneCleared[subKey];
       html += `<button class="sub-btn ${active?'active':''}" data-action="subzone" data-map="${m.key}" data-sub="${idx}">
         ${cleared?'<span class="sub-cleared">✅ </span>':''}${s.name}
-        <span class="sub-lvl">等级${s.lvl[0]}-${s.lvl[1]}</span>
+        <span class="sub-lvl">${typeof contentRangeLabel === 'function' ? contentRangeLabel(s.lvl[0], s.lvl[1]) : `等级${s.lvl[0]}-${s.lvl[1]}`}</span>
       </button>`;
     });
     html += `</div>`;
     const bCdEnd = state.bossCd[m.key] || 0;
     const bCdLeft = Math.max(0, Math.ceil((bCdEnd - Date.now()) / 1000));
     const bOnCd = bCdLeft > 0;
-    const bLvlOk = state.hero.lvl >= m.boss.lvl - 5;
+    const bReq = Math.max(1, (m.boss.lvl || 1) - 5);
+    const bLvlOk = typeof contentReqMet === 'function' ? contentReqMet(bReq) : state.hero.lvl >= bReq;
     const bCanFree = bLvlOk && !bOnCd && state.mode === 'world';
     const bCanTicket = bLvlOk && bOnCd && state.tickets >= 1 && state.mode === 'world';
     const canBoss = bCanFree || bCanTicket;
-    const bossText = !bLvlOk ? '等级不足'
+    const bossText = !bLvlOk ? '进度不足'
       : (!bOnCd ? '挑战(免费)'
       : (bCanTicket ? `🎫挑战 (冷却 ${fmtCd(bCdLeft)})` : `冷却 ${fmtCd(bCdLeft)}`));
     html += `
       <div class="boss-row">
         <div class="boss-info">
-          <div><span class="bname boss-name-tip" data-bosskey="${m.key}">${bossPanelIcon} ${m.boss.name}</span> <span class="pill">等级${m.boss.lvl}</span></div>
+          <div><span class="bname boss-name-tip" data-bosskey="${m.key}">${bossPanelIcon} ${m.boss.name}</span> <span class="pill">${typeof contentReqLabel === 'function' ? contentReqLabel(m.boss.lvl) : `等级${m.boss.lvl}`}</span></div>
           <div class="muted">${m.boss.desc}</div>
         </div>
         <button class="boss-btn ${canBoss?'epic':''}" data-action="boss" data-map="${m.key}" ${canBoss?'':'disabled'}>${bossText}</button>
@@ -2366,7 +2370,7 @@ function renderMap() {
     if (nameEl && m.boss.skills) {
       nameEl.style.cursor = 'help';
       const showBossTip = e => {
-        let tip = '<b>'+bossPanelIcon+' '+m.boss.name+' 等级'+m.boss.lvl+'</b>';
+        let tip = '<b>'+bossPanelIcon+' '+m.boss.name+' '+(typeof contentReqLabel === 'function' ? contentReqLabel(m.boss.lvl) : ('等级'+m.boss.lvl))+'</b>';
         if (m.boss.skills) {
           tip += '<div style=\"margin-top:3px;color:#fbbf24\">技能:</div>';
           m.boss.skills.forEach(s => {
@@ -2869,10 +2873,11 @@ function buildDungeonInfoHtml(dg) {
   let html = `
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
       <div style="font-weight:700;font-size:16px">${dungeonIconHtml} ${dg.name}</div>
-      <div class="pill">等级${dg.reqLvl}</div>
+      <div class="pill">${typeof contentReqLabel === 'function' ? contentReqLabel(dg.reqLvl) : `等级${dg.reqLvl}`}</div>
       ${dg.raidExpansion ? `<div class="pill">${dg.raidExpansion}</div>` : ''}
       ${dg.raidIlvl ? `<div class="pill">推荐装等 ${dg.raidIlvl}</div>` : ''}
     </div>
+    ${dg.art ? `<div class="dungeon-info-art" style="background-image:linear-gradient(180deg, rgba(11,15,25,.12), rgba(11,15,25,.78)), url('${dg.art}')"></div>` : ''}
     <div class="muted" style="margin-bottom:10px;line-height:1.6">
       ${isEpicRaid?'<span style="color:#fb7185">[史诗团本]</span> ':(isRaid?'<span style="color:#fbbf24">[团本]</span> ':'<span style="color:#6ee7b7">[5人本]</span> ')}
       ${dg.desc}<br>
@@ -3092,6 +3097,7 @@ function renderDungeon() {
   if (epic5Dl) epic5Dl.innerHTML = '';
   renderDungeonBountyPanel();
   renderDungeonContractPanel();
+  if (typeof renderWaystonePanel === 'function') renderWaystonePanel();
   if (typeof renderDelvePanel === 'function') renderDelvePanel();
   if (typeof renderDungeonMasteryPanel === 'function') renderDungeonMasteryPanel();
   // 更新按钮状态
@@ -3104,7 +3110,7 @@ function renderDungeon() {
     const aCd = (state.dungeonCd && state.dungeonCd[a.key] || 0) > _now;
     const bCd = (state.dungeonCd && state.dungeonCd[b.key] || 0) > _now;
     if (aCd !== bCd) return aCd ? 1 : -1;
-    const hl = state.hero.lvl;
+    const hl = (typeof playerProgressLevel === 'function') ? playerProgressLevel() : state.hero.lvl;
     const aBase = (typeof baseDungeonKey === 'function') ? baseDungeonKey(a.key) : a.key;
     const bBase = (typeof baseDungeonKey === 'function') ? baseDungeonKey(b.key) : b.key;
     if (aBase === bBase && !!a.epicRaid !== !!b.epicRaid) return a.epicRaid ? 1 : -1;
@@ -3128,7 +3134,7 @@ function renderDungeon() {
     const cdEnd = state.dungeonCd[dg.key] || 0;
     const cdLeft = Math.max(0, Math.ceil((cdEnd - Date.now()) / 1000));
     const onCd = cdLeft > 0;
-    const lvlOk = state.hero.lvl >= dg.reqLvl;
+    const lvlOk = typeof contentReqMet === 'function' ? contentReqMet(dg.reqLvl) : state.hero.lvl >= dg.reqLvl;
     const canFree = lvlOk && !onCd && state.mode === 'world';
     const canTicket = lvlOk && onCd && state.tickets >= 1 && state.mode === 'world';
     const canEnter = canFree || canTicket;
@@ -3143,7 +3149,7 @@ function renderDungeon() {
           };
         })()
       : null;
-    const statusText = !lvlOk ? '等级不足'
+    const statusText = !lvlOk ? '进度不足'
       : onCd ? `<span style="color:#fb923c">⏳冷却 ${fmtCd(cdLeft)}</span>${canTicket ? ' · 🎫跳过' : ''}`
       : '<span style="color:#6ee7b7">✅可挑战(免费)</span>';
     const btnText = canFree ? '免费进入' : (canTicket ? '🎫进入' : '进入');
@@ -3171,6 +3177,7 @@ function renderDungeon() {
     const alertLine = selectedContractLevel > 0 ? '<div class="dungeon-alert-line">🚨 契约警戒: 波次推进会逐步强化敌人,高警戒可能出现戒备队长</div>' : '';
     const bossPhaseLine = selectedContractLevel > 0 ? '<div class="dungeon-boss-phase-line">⚔️ 首领阶段: Boss 血量下降时会触发额外阶段事件</div>' : '';
     const firstClearBadge = (!state.dungeonFirstClear || !state.dungeonFirstClear[dg.key]) ? '<span class="pill" style="background:rgba(246,196,83,.18);color:#f6c453">🎁首通</span>' : '';
+    const artBanner = dg.art ? `<div class="dungeon-art-banner" style="background-image:linear-gradient(180deg, rgba(11,15,25,.16), rgba(11,15,25,.78)), url('${dg.art}')"></div>` : '';
     // 必刷专属坐骑提示(读 DUNGEON_MOUNT_DROPS,按基础本key)
     let chaseLine = '';
     if (typeof DUNGEON_MOUNT_DROPS !== 'undefined' && typeof MOUNTS !== 'undefined') {
@@ -3196,8 +3203,9 @@ function renderDungeon() {
     div.innerHTML = `
       <div class="row">
         <span><span class="icon">${dungeonIconHtml}</span> <b>${dg.name}</b></span>
-        <span>${bountyBadge}${firstClearBadge}<span class="pill">等级${dg.reqLvl}</span></span>
+        <span>${bountyBadge}${firstClearBadge}<span class="pill">${typeof contentReqLabel === 'function' ? contentReqLabel(dg.reqLvl) : `等级${dg.reqLvl}`}</span></span>
       </div>
+      ${artBanner}
       <div class="muted">${typeLabel}${dg.desc}${raidProgressLine} · ${(dg.bosses||[]).length}名首领 · 最终: ${((dg.bosses||[])[dg.bosses.length-1]||{}).name||'??'}${dg.type==='raid'?(isEpicRaid?' · 掉落:史诗级紫装/全部首领超低概率橙装':' · 掉落:常规团本装备/关底低概率橙武'):''}</div>
       ${bountyLine}
       ${delveLine}
@@ -3246,11 +3254,12 @@ function updateCdDisplays() {
     if (!m || !btn) return;
     const bCdLeft = Math.max(0, Math.ceil(((state.bossCd[key] || 0) - Date.now()) / 1000));
     const bOnCd = bCdLeft > 0;
-    const bLvlOk = state.hero.lvl >= m.boss.lvl - 5;
+    const bReq = Math.max(1, (m.boss.lvl || 1) - 5);
+    const bLvlOk = typeof contentReqMet === 'function' ? contentReqMet(bReq) : state.hero.lvl >= bReq;
     const bCanFree = bLvlOk && !bOnCd && state.mode === 'world';
     const bCanTicket = bLvlOk && bOnCd && state.tickets >= 1 && state.mode === 'world';
     const canBoss = bCanFree || bCanTicket;
-    const newText = !bLvlOk ? '等级不足'
+    const newText = !bLvlOk ? '进度不足'
       : (!bOnCd ? '挑战(免费)'
       : (bCanTicket ? `🎫挑战 (冷却 ${fmtCd(bCdLeft)})` : `冷却 ${fmtCd(bCdLeft)}`));
     if (btn.textContent !== newText) btn.textContent = newText;
@@ -3266,11 +3275,11 @@ function updateCdDisplays() {
     const cdEnd = state.dungeonCd[key] || 0;
     const cdLeft = Math.max(0, Math.ceil((cdEnd - Date.now()) / 1000));
     const onCd = cdLeft > 0;
-    const lvlOk = state.hero.lvl >= dg.reqLvl;
+    const lvlOk = typeof contentReqMet === 'function' ? contentReqMet(dg.reqLvl) : state.hero.lvl >= dg.reqLvl;
     const canFree = lvlOk && !onCd && state.mode === 'world';
     const canTicket = lvlOk && onCd && state.tickets >= 1 && state.mode === 'world';
     const canEnter = canFree || canTicket;
-    const statusText = !lvlOk ? '等级不足'
+    const statusText = !lvlOk ? '进度不足'
       : onCd ? `<span style="color:#fb923c">⏳冷却 ${fmtCd(cdLeft)}</span>${canTicket ? ' · 🎫跳过' : ''}`
       : '<span style="color:#6ee7b7">✅可挑战(免费)</span>';
     const btnText = canFree ? '免费进入' : (canTicket ? '🎫进入' : '进入');

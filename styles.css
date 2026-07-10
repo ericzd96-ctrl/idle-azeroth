@@ -1001,6 +1001,74 @@ h1 {
   background: rgba(168,85,247,.26);
   color: #f3e8ff;
 }
+.waystone-panel {
+  margin: 0 0 8px 0;
+  padding: 8px;
+  border: 1px solid rgba(96,165,250,.24);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(15,23,42,.82), rgba(30,41,59,.84));
+}
+.waystone-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 7px;
+}
+.waystone-hero {
+  min-height: 112px;
+  border-radius: 8px;
+  background-size: cover;
+  background-position: center;
+  border: 1px solid rgba(125,211,252,.18);
+  padding: 10px;
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: 8px;
+}
+.waystone-hero-main {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.waystone-note {
+  color: #cbd5f5;
+  font-size: 11px;
+  line-height: 1.55;
+  margin-bottom: 8px;
+}
+.waystone-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+}
+.waystone-node {
+  border: 1px solid rgba(148,163,184,.18);
+  border-radius: 8px;
+  padding: 8px;
+  background: rgba(15,23,42,.58);
+}
+.waystone-node.active {
+  border-color: rgba(125,211,252,.45);
+  box-shadow: inset 0 0 0 1px rgba(125,211,252,.14);
+}
+.waystone-node-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+.waystone-node button {
+  width: 100%;
+  padding: 5px 6px;
+  margin-top: 6px;
+  font-size: 11px;
+}
 .dungeon-contract-info,
 .dungeon-contract-clear {
   margin-top: 7px;
@@ -2228,6 +2296,22 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
 
 .dungeon-item .row .icon { font-size: 22px; }
 .cd-display { font-size: 11px; color: #fbbf24; }
+.dungeon-art-banner,
+.dungeon-info-art {
+  width: 100%;
+  border-radius: 8px;
+  background-size: cover;
+  background-position: center;
+  border: 1px solid rgba(148,163,184,.18);
+}
+.dungeon-art-banner {
+  height: 88px;
+  margin: 7px 0 8px;
+}
+.dungeon-info-art {
+  height: 150px;
+  margin: 0 0 10px;
+}
 
 .map-list { max-height: 520px; overflow-y: auto; padding-right: 4px; }
 .map-item {
@@ -2246,6 +2330,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
 .faction-外域 { background: #6b21a8; color: #fff; }
 .faction-诺森德 { background: #075985; color: #fff; }
 .faction-龙岛 { background: #0e7490; color: #fff; }
+.faction-卡雷什信托 { background: #4c1d95; color: #f5f3ff; }
 .sub-list { display: flex; flex-wrap: wrap; gap: 4px; }
 .sub-btn {
   flex: 1 1 calc(33.33% - 3px);

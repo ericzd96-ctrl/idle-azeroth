@@ -14,6 +14,46 @@ function calcTravelTime(fromMapKey, toMapKey) {
   return Math.max(2, Math.min(25, Math.floor(diff * 0.35)));
 }
 
+function averageEquippedItemLevel() {
+  if (typeof itemLevelOf !== 'function') return 0;
+  const items = Object.values(state?.equipped || {}).filter(Boolean);
+  if (!items.length) return 0;
+  const total = items.reduce((sum, it) => sum + (itemLevelOf(it) || 0), 0);
+  return total / items.length;
+}
+
+function waystoneProgressLevelBonus() {
+  return (typeof globalThis.waystoneProgressBonus === 'function')
+    ? Math.max(0, globalThis.waystoneProgressBonus())
+    : 0;
+}
+
+function playerProgressLevel() {
+  const heroLvl = Math.max(1, state?.hero?.lvl || 1);
+  if (heroLvl < MAX_LEVEL) return heroLvl;
+  const paragon = Math.max(0, state?.paragon?.lvl || 0);
+  const ascend = Math.max(0, account?.ascendLvl || state?.ascendLvl || 0);
+  const avgIlvl = averageEquippedItemLevel();
+  const ilvlBonus = Math.max(0, Math.min(8, Math.floor((avgIlvl - 220) / 35)));
+  const extra = Math.min(22, Math.floor(paragon / 6) + Math.floor(ascend / 2) + ilvlBonus + waystoneProgressLevelBonus());
+  return heroLvl + extra;
+}
+
+function contentReqMet(req) {
+  return playerProgressLevel() >= Math.max(1, Math.floor(req || 1));
+}
+
+function contentReqLabel(req) {
+  const n = Math.max(1, Math.floor(req || 1));
+  return n > MAX_LEVEL ? `终局${n}` : `等级${n}`;
+}
+
+function contentRangeLabel(min, max) {
+  const lo = Math.max(1, Math.floor(min || 1));
+  const hi = Math.max(lo, Math.floor(max || lo));
+  return hi > MAX_LEVEL ? `终局${lo}-${hi}` : `等级${lo}-${hi}`;
+}
+
 function switchSubzone(mapKey, subIdx) {
   const map = MAPS.find(m => m.key === mapKey);
   if (!map) return;
@@ -104,7 +144,8 @@ function bossCdSec(map) { return Math.min(3600, Math.round((map.boss.lvl || 1) *
 function challengeBoss(mapKey) {
   const map = MAPS.find(m => m.key === mapKey);
   if (!map) return;
-  if (state.hero.lvl < map.boss.lvl - 5) { log(`等级不足 (需 等级${map.boss.lvl-5}+)`, 'bad'); return; }
+  const accessReq = Math.max(1, (map.boss.lvl || 1) - 5);
+  if (!contentReqMet(accessReq)) { log(`进度不足 (需 ${contentReqLabel(accessReq)}+)`, 'bad'); return; }
   if (state.mode === 'travel') { log('正在旅行中', 'bad'); return; }
   if (state.mode !== 'world') { log('请先结束当前战斗', 'bad'); return; }
   const cdEnd = state.bossCd[mapKey] || 0;
@@ -128,7 +169,7 @@ function challengeBoss(mapKey) {
 /* ---------- 副本 ---------- */
 function enterDungeon(key) {
   const dg = DUNGEONS.find(d => d.key === key);
-  if (state.hero.lvl < dg.reqLvl) { log(`需要等级 ${dg.reqLvl}`, 'bad'); return; }
+  if (!contentReqMet(dg.reqLvl)) { log(`需要${contentReqLabel(dg.reqLvl)}`, 'bad'); return; }
   if (state.mode === 'travel') { log('正在旅行中', 'bad'); return; }
   if (state.mode === 'dungeon') { log('已在副本中', 'bad'); return; }
   const cdEnd = state.dungeonCd[key] || 0;
@@ -623,7 +664,7 @@ function ensureDungeonBounties(force) {
   if (valid && state.dungeonBounty.targets.length) return state.dungeonBounty;
 
   const resetAt = dungeonBountyResetAt(now);
-  const lvl = state.hero?.lvl || 1;
+  const lvl = (typeof playerProgressLevel === 'function') ? playerProgressLevel() : (state.hero?.lvl || 1);
   const all = (typeof DUNGEONS !== 'undefined' ? DUNGEONS : [])
     .filter(dg => dg && lvl >= (dg.reqLvl || 1))
     .sort((a, b) => (b.reqLvl || 0) - (a.reqLvl || 0));

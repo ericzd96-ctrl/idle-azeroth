@@ -7,6 +7,8 @@ const PHASE_DIVING_WARRANTS = [
   { key:'devourer', name:'相位通缉令:无缚吞噬者', icon:'🌌', boss:'无缚吞噬者艾克索', reqRank:2, cost:28, progress:45, pressure:3, rewards:{ coin:3, strands:1, gold:125000, gem:30, essence:24 } },
   { key:'collector', name:'相位通缉令:财团收藏家', icon:'💠', boss:'财团收藏家维拉兹', reqRank:3, cost:34, progress:55, pressure:4, rewards:{ coin:4, strands:2, gold:170000, gem:42, essence:34 } },
   { key:'horror', name:'相位通缉令:解缚恐魔', icon:'👁️', boss:'解缚恐魔鲁姆萨', reqRank:4, cost:42, progress:70, pressure:5, rewards:{ coin:5, strands:2, gold:230000, gem:58, essence:46 } },
+  { key:'zoshul', name:'相位通缉令:瞰台司辰', icon:'🔭', boss:'瞰台司辰扎里克', reqRank:3, cost:36, progress:58, pressure:4, rewards:{ coin:4, strands:2, gold:182000, gem:45, essence:36 } },
+  { key:'azra', name:'相位通缉令:群星议长', icon:'🌠', boss:'群星议长索·阿兹拉', reqRank:5, cost:48, progress:82, pressure:6, rewards:{ coin:6, strands:3, gold:280000, gem:70, essence:56 } },
 ];
 
 function phaseWeekId(now) {
@@ -59,7 +61,7 @@ function phaseInstabilityLevel() {
 function phaseDivingEnemyAffixFor(dg) {
   if (!dg) return null;
   const key = (typeof baseDungeonKey === 'function') ? baseDungeonKey(dg.key) : dg.key;
-  const affected = ['archival_assault', 'ecodome_aldani', 'tazavesh_streets', 'tazavesh_gambit', 'manaforge_omega'].includes(key);
+  const affected = ['archival_assault', 'ecodome_aldani', 'tazavesh_streets', 'tazavesh_gambit', 'overlook_zoshul', 'shadowpoint_breach', 'manaforge_omega', 'shandorah_conclave'].includes(key);
   if (!affected) return null;
   const lvl = phaseInstabilityLevel();
   if (lvl <= 0) return null;

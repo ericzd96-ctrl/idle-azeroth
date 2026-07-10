@@ -5,6 +5,7 @@ const ECO_SPECIES = [
   { key:'thorntails', name:'影月刺尾蛇', icon:'🐍', cost:22, stability:15, pressure:2, reward:{ samples:5, gold:68000, gem:10, essence:10 }, bonus:{ atkPct:0.8 } },
   { key:'rays', name:'欧恩哈拉风鳐', icon:'🦅', cost:26, stability:18, pressure:2, reward:{ samples:6, gold:86000, gem:12, essence:12 }, bonus:{ spdPct:0.6 } },
   { key:'hydrobites', name:'水化幼体', icon:'🦎', cost:30, stability:22, pressure:3, reward:{ samples:7, gold:108000, gem:15, essence:15 }, bonus:{ hpPct:1.0 } },
+  { key:'starlotus', name:'群星莲冠', icon:'🌺', cost:34, stability:24, pressure:3, reward:{ samples:8, gold:132000, gem:18, essence:18 }, bonus:{ mastery:0.6, vers:0.5 } },
 ];
 
 function ecoWeekId(now) {
@@ -63,7 +64,7 @@ function ecoPressureLevel() {
 function ecoEnemyAffixFor(dg) {
   if (!dg) return null;
   const key = (typeof baseDungeonKey === 'function') ? baseDungeonKey(dg.key) : dg.key;
-  const affected = ['ecodome_aldani', 'oasis_succession', 'archival_assault', 'manaforge_omega'].includes(key);
+  const affected = ['ecodome_aldani', 'ecodome_rhovan', 'oasis_succession', 'archival_assault', 'manaforge_omega'].includes(key);
   if (!affected) return null;
   const lvl = ecoPressureLevel();
   if (lvl <= 0) return null;

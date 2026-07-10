@@ -1258,6 +1258,7 @@ const MAPS = [
       tricks:[{name:"命运织网",icon:"🕸️",desc:"接下来5秒防御提升50%且吸血20%",defBuff:5,leechBuff:5},{name:"王廷号令",icon:"👑",desc:"接下来5秒攻击力提升50%",atkBuff:5},{name:"断丝处刑",icon:"🗡️",desc:"下一次攻击造成双倍伤害",nextDouble:1}] },
       skills:[{name:'蛛网绞杀',icon:'🕸️',desc:'11倍伤害+沉默',type:'dmg',mul:11,silence:2300,cripple:true,castTime:3.2},{name:'虚空毒潮',icon:'🌑',desc:'12倍范围伤害+瘟疫',type:'dmg',mul:12,aoe:true,plague:true,dot:true,castTime:4.1},{name:'王廷断命',icon:'👑',desc:'13倍终局伤害+恐惧',type:'dmg',mul:13,alwaysCrit:true,fear:2200,soulLink:true,castTime:5}] } },
   { key:'karesh', name:"卡雷什", icon:'🌌', faction:'卡雷什信托', lvlRange:[95,100],
+    art:'assets/wow/art/karesh-map.png',
     desc:'被虚空撕裂的虚灵故乡,塔扎维什与生态圆顶在残破星球上撑起最后防线',
     sub:[
       { name:'塔扎维什帷纱集市', lvl:[95,97], mobs:'🧿虚灵仲裁者|💠相位潜行者|📜契约掮客|🌌虚空裂隙' },
@@ -1267,6 +1268,39 @@ const MAPS = [
       passive:{atkBonus:0.54,critChance:0.34,dmgReduction:0.3,dodgeChance:0.2,leech:0.14,stunChance:0.22,
       tricks:[{name:"相位潜航",icon:"🌀",desc:"接下来5秒闪避和减伤提高",defBuff:5},{name:"虚灵契约",icon:"📜",desc:"回复22%生命并提升攻击",healPct:0.22,atkBuff:5},{name:"裂隙狩猎",icon:"🎯",desc:"下一次攻击造成双倍且必定暴击",nextDouble:1,critBuff:5}] },
       skills:[{name:'相位切割',icon:'🌀',desc:'12倍伤害+镜像错位',type:'dmg',mul:12,mirror:true,brittle:true,castTime:3.1},{name:'虚空通缉令',icon:'📜',desc:'12.5倍范围伤害+沉默',type:'dmg',mul:12.5,aoe:true,silence:2300,threat:true,castTime:4},{name:'群星吞噬',icon:'🌌',desc:'13.5倍范围终局伤害+恐惧',type:'dmg',mul:13.5,aoe:true,plague:true,fear:2200,alwaysCrit:true,castTime:5}] } },
+  { key:'rhovan', name:"生态圆顶:罗凡", icon:'🌿', faction:'卡雷什信托', lvlRange:[99,101],
+    art:'assets/wow/art/ecodome-rhovan.png',
+    desc:'仍在复苏的巨型生态圆顶里保存着卡雷什最完整的生命样本,也是吞噬者与影卫最想撕碎的地方',
+    sub:[
+      { name:'罗凡湿地苗圃', lvl:[99,100], mobs:'🌿圆顶园艺师|🦎水化猎群|☣️裂网孢母|💧灌溉构装体' },
+      { name:'谱系温室环带', lvl:[100,101], mobs:'🧬生命编织体|🍃样本守护者|👁️虚空孢眼|🪴芽冠巨株' },
+    ],
+    boss:{ name:'谱系看护者赛弗琳', emoji:'🌿', lvl:103, desc:'负责维持罗凡生命谱系的虚灵看护者,在圆顶失衡后被迫进入战斗态势',
+      passive:{atkBonus:0.56,critChance:0.34,dmgReduction:0.31,dodgeChance:0.18,leech:0.12,stunChance:0.2,
+      tricks:[{name:"样本回灌",icon:"💧",desc:"回复22%生命并提高减伤",healPct:0.22,defBuff:5},{name:"温室催化",icon:"🌱",desc:"接下来5秒攻击与攻速提升",atkBuff:5,spdBuff:5},{name:"谱系封缚",icon:"🧬",desc:"下一次攻击造成双倍伤害并附带沉默",nextDouble:1,critBuff:5}] },
+      skills:[{name:'芽冠穿刺',icon:'🌿',desc:'12.5倍伤害+破甲',type:'dmg',mul:12.5,sunder:true,brittle:true,castTime:3.2},{name:'生态反冲',icon:'🍃',desc:'13倍范围伤害+虚弱',type:'dmg',mul:13,aoe:true,weaken:true,castTime:4},{name:'罗凡共鸣',icon:'🧬',desc:'14倍终局伤害+吸取资源',type:'dmg',mul:14,manaDrain:110,silence:2200,alwaysCrit:true,castTime:5}] } },
+  { key:'shadow_point', name:'影点', icon:'🌑', faction:'卡雷什信托', lvlRange:[100,102],
+    art:'assets/wow/art/shadow-point.png',
+    desc:'Shadow Point 被影卫虚灵改造成锁定裂隙航线的战争平台,所有路口都指向吞界前线',
+    sub:[
+      { name:'影点外环工事', lvl:[100,101], mobs:'🌑影卫步卒|⚙️界钉技师|🧿相位狙击手|🌀虚空瞭望机' },
+      { name:'吞界前线廊桥', lvl:[101,102], mobs:'👁️裂隙占卜者|💀无缚畸体|🌌影界碎喉者|🔮虚空蓄能塔' },
+    ],
+    boss:{ name:'影点执监阿萨瑞克', emoji:'🌑', lvl:104, desc:'统管 Shadow Point 轨道炮列与裂隙舰队的影卫执监',
+      passive:{atkBonus:0.58,critChance:0.35,dmgReduction:0.32,dodgeChance:0.2,leech:0.14,stunChance:0.22,
+      tricks:[{name:"影卫换相",icon:"🌀",desc:"接下来5秒闪避与减伤提升",defBuff:5},{name:"界炮蓄压",icon:"⚙️",desc:"接下来5秒攻击与暴击提升",atkBuff:5,critBuff:5},{name:"影点狙杀",icon:"🎯",desc:"下一次攻击造成双倍且必定暴击",nextDouble:1,critBuff:5}] },
+      skills:[{name:'裂轨狙击',icon:'🎯',desc:'13倍伤害+破绽',type:'dmg',mul:13,brittle:true,cripple:true,castTime:3.1},{name:'影炮齐鸣',icon:'🌑',desc:'13.5倍范围伤害+沉默',type:'dmg',mul:13.5,aoe:true,silence:2300,castTime:4.1},{name:'虚空航线锁定',icon:'🌌',desc:'14.5倍终局伤害+恐惧',type:'dmg',mul:14.5,aoe:true,mirror:true,fear:2300,alwaysCrit:true,castTime:5}] } },
+  { key:'shandorah', name:'沙恩多拉', icon:'🌠', faction:'卡雷什信托', lvlRange:[101,103],
+    art:'assets/wow/art/shandorah.png',
+    desc:'漂浮于裂岩之上的观星神殿曾为虚灵测绘群星航道,如今则成为影卫议会排演终局仪轨的场所',
+    sub:[
+      { name:'星相断阶', lvl:[101,102], mobs:'🌠星图记录者|📐测绘侍从|🧿观星誓约者|🔷棱镜浮卫' },
+      { name:'群星神殿回廊', lvl:[102,103], mobs:'✨议会预言者|💠星纱司辰|🌌虚空观测体|🪞折光圣像' },
+    ],
+    boss:{ name:'星潮观测者乌姆瑟斯', emoji:'🌠', lvl:105, desc:'沙恩多拉仪轨的总调度者,尝试用观星阵列为吞界舰队重新定标',
+      passive:{atkBonus:0.6,critChance:0.36,dmgReduction:0.33,dodgeChance:0.2,leech:0.14,stunChance:0.22,
+      tricks:[{name:"星盘逆转",icon:"🌠",desc:"回复24%生命并提高防御",healPct:0.24,defBuff:5},{name:"仪轨暴涨",icon:"✨",desc:"接下来5秒攻击与攻速提升",atkBuff:5,spdBuff:5},{name:"观测终点",icon:"🔭",desc:"下一次攻击造成双倍伤害并附带沉默",nextDouble:1,critBuff:5}] },
+      skills:[{name:'星纱裁切',icon:'✨',desc:'13.5倍伤害+吸取资源',type:'dmg',mul:13.5,manaDrain:115,castTime:3.2},{name:'棱镜谐振',icon:'💠',desc:'14倍范围伤害+镜像错位',type:'dmg',mul:14,aoe:true,mirror:true,silence:2200,castTime:4.2},{name:'群星归航',icon:'🌌',desc:'15倍终局伤害+恐惧与虚弱',type:'dmg',mul:15,aoe:true,fear:2400,weaken:true,alwaysCrit:true,castTime:5.2}] } },
 ];
 
 const RARE_ELITE_SKILLSETS = {
@@ -5343,7 +5377,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'archival_assault', name:'档案突袭地下堡', icon:'📜', reqLvl:96, waves:6, delve:true, desc:'虚灵海盗洗劫蓝龙档案库,相位斗篷会开启额外挑战门与首领房间',
+      key:'archival_assault', name:'档案突袭地下堡', icon:'📜', reqLvl:96, waves:6, delve:true, art:'assets/wow/art/tazavesh-banner.png', desc:'虚灵海盗洗劫蓝龙档案库,相位斗篷会开启额外挑战门与首领房间',
       bosses:[
         { name:'档案劫掠者', emoji:'📜', skills:[dmg('卷宗切割','📜',12.2,{ sunder:true, silence:1900 }), dmg('奥术爆页','💠',12.6,{ aoe:true, manaDrain:85, brittle:true })] },
         { name:'相位门卫欧索', emoji:'🌀', skills:[dmg('相位门击','🌀',13,{ mirror:true, stun:1700 }), buffP('折光护幕','💠',0.55,'折光护幕:闪避/减伤/暴击提升',{ critBuffSecs:12, critBuffPct:46, drBuffSecs:12, drBuffPct:0.22 })] },
@@ -5356,7 +5390,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'ecodome_aldani', name:"生态圆顶阿尔达尼", icon:'🍃', reqLvl:97, waves:10, desc:'卡雷什珍贵生态圆顶被荒原掠夺者占据,吞噬者正在啃食残存生命',
+      key:'ecodome_aldani', name:"生态圆顶阿尔达尼", icon:'🍃', reqLvl:97, waves:10, art:'assets/wow/art/ecodome-rhovan.png', desc:'卡雷什珍贵生态圆顶被荒原掠夺者占据,吞噬者正在啃食残存生命',
       bosses:[
         { name:'阿尔达尼吞噬者', emoji:'🦎', skills:[dmg('生命啃噬','🩸',13,{ lifeSteal:0.22, plague:true }), dmg('圆顶撕裂','🍃',13.2,{ aoe:true, sunder:true })] },
         { name:'荒原双子', emoji:'⚔️', skills:[dmg('荒原合击','⚔️',13.5,{ bleed:true, cripple:true }), summonP('掠夺帮众','📣',0.5,'召唤荒原帮众并提高攻击',{ summonCount:2, summonTheme:'soldier', atkBuffSecs:12, atkBuffPct:36 })] },
@@ -5369,7 +5403,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'oasis_succession', name:'绿洲生态圆顶防卫', icon:'🌱', reqLvl:98, waves:8, desc:'护送生态样本进入卡雷什绿洲圆顶,吞噬者会优先攻击刚复苏的物种巢穴',
+      key:'oasis_succession', name:'绿洲生态圆顶防卫', icon:'🌱', reqLvl:98, waves:8, art:'assets/wow/art/ecodome-rhovan.png', desc:'护送生态样本进入卡雷什绿洲圆顶,吞噬者会优先攻击刚复苏的物种巢穴',
       bosses:[
         { name:'水化幼体群', emoji:'🦎', skills:[dmg('水化啃噬','💧',13.2,{ lifeSteal:0.2, plague:true }), dmg('幼体撕咬','🩸',13.5,{ bleed:true, cripple:true })] },
         { name:'入侵孢母', emoji:'🍄', skills:[dmg('侵蚀孢云','☣️',13.8,{ aoe:true, plague:true, dot:true }), summonP('孢子幼体','🍄',0.5,'召唤 2 个孢子幼体并获得护盾',{ summonCount:2, summonTheme:'plant', shieldPct:0.18 })] },
@@ -5382,7 +5416,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'tazavesh_streets', name:'塔扎维什:帷纱街巷', icon:'💠', reqLvl:98, waves:10, desc:'帷纱集市的回归街区,掮灵、虚灵与失控交易契约把每条巷道都变成战场',
+      key:'tazavesh_streets', name:'塔扎维什:帷纱街巷', icon:'💠', reqLvl:98, waves:10, art:'assets/wow/art/tazavesh-banner.png', desc:'帷纱集市的回归街区,掮灵、虚灵与失控交易契约把每条巷道都变成战场',
       bosses:[
         { name:'佐·帕克斯', emoji:'📦', skills:[dmg('快递碾压','📦',13.2,{ stun:1700, sunder:true }), dmg('市场震荡','💥',13.5,{ aoe:true, brittle:true })] },
         { name:'卖品会', emoji:'🛒', skills:[dmg('竞拍乱斗','🛒',13.8,{ bleed:true, cripple:true }), summonP('竞拍保镖','📣',0.5,'召唤竞拍保镖并提高暴击',{ summonCount:2, summonTheme:'soldier', critBuffSecs:12, critBuffPct:44 })] },
@@ -5396,7 +5430,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'tazavesh_gambit', name:'塔扎维什:索财的宏图', icon:'🧿', reqLvl:99, waves:10, desc:'索·莉亚的宏图牵动星界航线,海盗、星术师与财团债务追猎者一同登场',
+      key:'tazavesh_gambit', name:'塔扎维什:索财的宏图', icon:'🧿', reqLvl:99, waves:10, art:'assets/wow/art/tazavesh-banner.png', desc:'索·莉亚的宏图牵动星界航线,海盗、星术师与财团债务追猎者一同登场',
       bosses:[
         { name:'海盗议会', emoji:'🏴', skills:[dmg('财团炮击','💥',13.6,{ aoe:true, bleed:true }), dmg('登船钩索','⚓',13.8,{ stun:1700, cripple:true })] },
         { name:'邮件室混乱体', emoji:'📦', skills:[dmg('错投爆弹','💣',14,{ aoe:true, dot:true }), buffP('超量分拣','⚙️',0.5,'超量分拣:攻击/减伤提升',{ atkBuffSecs:12, atkBuffPct:42, drBuffSecs:12, drBuffPct:0.2 })] },
@@ -5406,6 +5440,47 @@ function extendDungeonCatalog(){
           dmg('市场坍缩','🌀',15.2,{ aoe:true, mirror:true, decay2:true }),
           summonP('债务收割者','💠',0.45,'召唤 3 名债务收割者',{ summonCount:3, summonTheme:'void', shieldPct:0.22 }),
           dmgP('宏图清算','💎',8,0.3,{ aoe:true, silence:2400, fear:2300, alwaysCrit:true, cd:16 })
+        ] }
+      ]
+    },
+    {
+      key:'overlook_zoshul', name:'佐舒尔瞰台地下堡', icon:'🔭', reqLvl:99, waves:6, delve:true, art:'assets/wow/art/shandorah.png', desc:'佐舒尔高处的相位瞰台被改造成锁定圆顶航线的观测站,是一座短波次高压地下堡',
+      bosses:[
+        { name:'瞰台测绘师', emoji:'🔭', skills:[dmg('测距切线','📐',13.2,{ silence:2000, brittle:true }), dmg('瞰台坠星','🌠',13.4,{ aoe:true, weaken:true })] },
+        { name:'裂隙校准体', emoji:'🌀', skills:[dmg('校准脉冲','🌀',13.7,{ mirror:true, manaDrain:100 }), buffP('相位复位','💠',0.52,'相位复位:减伤与暴击提升',{ critBuffSecs:12, critBuffPct:46, drBuffSecs:12, drBuffPct:0.22 })] },
+        { name:'瞰台司辰扎里克', emoji:'✨', skills:[
+          dmg('司辰裁定','✨',14.2,{ silence:2200, soulDrain:true }),
+          dmg('观测归零','🌌',14.6,{ aoe:true, mirror:true, decay2:true }),
+          summonP('折光卫兵','🔷',0.45,'召唤 2 名折光卫兵并获得护盾',{ summonCount:2, summonTheme:'construct', shieldPct:0.2 }),
+          dmgP('群星锁定','🌠',7.9,0.3,{ aoe:true, fear:2200, brittle:true, alwaysCrit:true, cd:15 })
+        ] }
+      ]
+    },
+    {
+      key:'ecodome_rhovan', name:'生态圆顶:罗凡', icon:'🌿', reqLvl:100, waves:10, art:'assets/wow/art/ecodome-rhovan.png', desc:'尚未完全复苏的罗凡圆顶充满失控灌溉与吞噬者巢群,每一条生命谱系都需要守住',
+      bosses:[
+        { name:'灌溉执机者', emoji:'💧', skills:[dmg('回灌脉冲','💧',13.5,{ weaken:true, manaDrain:95 }), dmg('苗圃冲蚀','🌿',13.8,{ aoe:true, sunder:true })] },
+        { name:'吞壤孵母', emoji:'🦎', skills:[dmg('吞壤啃噬','🩸',14,{ lifeSteal:0.24, plague:true }), summonP('孵群破壳','🥚',0.5,'召唤 2 只孵群幼体并获得护盾',{ summonCount:2, summonTheme:'beast', shieldPct:0.18 })] },
+        { name:'谱系修补师', emoji:'🧬', skills:[dmg('谱系重写','🧬',14.2,{ silence:2200, mirror:true }), buffP('温室纠偏','🌱',0.55,'温室纠偏:回复并提高防御/减伤',{ healPct:0.2, defBuffSecs:13, defBuffPct:42, drBuffSecs:13, drBuffPct:0.22 })] },
+        { name:'芽冠主脑瑞欧萨', emoji:'🌿', skills:[
+          dmg('芽冠洪流','🌿',14.8,{ aoe:true, dot:true, brittle:true }),
+          dmg('罗凡共振','💠',15.1,{ manaDrain:110, silence:2300 }),
+          summonP('样本守卫','🍃',0.45,'召唤 2 名样本守卫并提高攻速',{ summonCount:2, summonTheme:'plant', spdBuffSecs:12, spdBuffPct:26 }),
+          dmgP('谱系坍缩','🧬',8.1,0.3,{ aoe:true, fear:2200, weaken:true, alwaysCrit:true, cd:16 })
+        ] }
+      ]
+    },
+    {
+      key:'shadowpoint_breach', name:'影点突破', icon:'🌑', reqLvl:100, waves:10, art:'assets/wow/art/shadow-point.png', desc:'对 Shadow Point 发动反突击,影卫把裂隙火炮、航线界钉和虚空守军缝成了一整座战场',
+      bosses:[
+        { name:'界钉炮手', emoji:'⚙️', skills:[dmg('界钉贯体','⚙️',13.7,{ sunder:true, brittle:true }), dmg('火炮回震','💥',14,{ aoe:true, stun:1700 })] },
+        { name:'裂航狙击队', emoji:'🎯', skills:[dmg('裂航点射','🎯',14.1,{ alwaysCrit:true, cripple:true }), summonP('瞄准副官','📣',0.5,'召唤 2 名副官并提高暴击',{ summonCount:2, summonTheme:'soldier', critBuffSecs:12, critBuffPct:44 })] },
+        { name:'影卫相位校尉', emoji:'🧿', skills:[dmg('相位横切','🌀',14.4,{ mirror:true, silence:2200 }), buffP('影点轮转','🌑',0.55,'影点轮转:攻击/减伤提升',{ atkBuffSecs:12, atkBuffPct:42, drBuffSecs:12, drBuffPct:0.22 })] },
+        { name:'影卫指挥官索拉辛', emoji:'🌌', skills:[
+          dmg('裂轨处刑','🌌',15,{ aoe:true, decay2:true, brittle:true }),
+          dmg('航线封锁','🌑',15.3,{ silence:2400, fear:2200 }),
+          summonP('影点誓卫','🧿',0.45,'召唤 3 名影点誓卫并获得护盾',{ summonCount:3, summonTheme:'void', shieldPct:0.22 }),
+          dmgP('吞界火线','💥',8.2,0.3,{ aoe:true, mirror:true, alwaysCrit:true, cd:16 })
         ] }
       ]
     },
@@ -5428,7 +5503,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'manaforge_omega', name:'法力熔炉欧米伽', icon:'🌌', type:'raid', reqLvl:100, waves:16, desc:'卡雷什的巨型宇宙能量设施,影卫虚灵试图在熔炉核心复活诸界吞噬者',
+      key:'manaforge_omega', name:'法力熔炉欧米伽', icon:'🌌', type:'raid', reqLvl:100, waves:16, art:'assets/wow/art/karesh-map.png', desc:'卡雷什的巨型宇宙能量设施,影卫虚灵试图在熔炉核心复活诸界吞噬者',
       bosses:[
         { name:'枢纽哨兵', emoji:'💠', skills:[dmg('枢纽切割','💠',13.5,{ sunder:true, brittle:true }), dmgP('哨兵矩阵','⚙️',6.8,0.45,{ aoe:true, silence:2000, cd:12 })] },
         { name:"卢米萨尔", emoji:'🧵', skills:[dmg('星丝缠缚','🧵',13.8,{ cripple:true, soulLink:true }), summonP('织星虫群','🕸️',0.5,'召唤织星虫群并获得护盾',{ summonCount:2, summonTheme:'spider', shieldPct:0.2 })] },
@@ -5443,6 +5518,24 @@ function extendDungeonCatalog(){
           buffP('诸界饥渴','🩸',0.66,'诸界饥渴:攻击/暴击/吸血/减伤提升',{ atkBuffSecs:16, atkBuffPct:56, critBuffSecs:16, critBuffPct:60, leechBuffSecs:16, leechBuffPct:28, drBuffSecs:16, drBuffPct:0.26 }),
           summonP('吞噬裂隙','🌌',0.45,'召唤 3 个吞噬裂隙并获得护盾',{ summonCount:3, summonTheme:'void', shieldPct:0.26 }),
           dmgP('欧米伽终幕','🌌',8.8,0.3,{ aoe:true, plague:true, fear:2500, silence:2500, soulLink:true, mirror:true, alwaysCrit:true, cd:16 })
+        ] }
+      ]
+    },
+    {
+      key:'shandorah_conclave', name:'沙恩多拉议会', icon:'🌠', type:'raid', reqLvl:101, waves:15, art:'assets/wow/art/shandorah.png', desc:'沙恩多拉观星神殿漂浮于裂岩之上,影卫议会试图以群星仪轨为吞界舰队重新定标',
+      bosses:[
+        { name:'断阶守誓者', emoji:'🪨', skills:[dmg('断阶震击','🪨',14.2,{ sunder:true, stun:1800 }), dmgP('观星坠片','🌠',7.2,0.45,{ aoe:true, brittle:true, cd:12 })] },
+        { name:'棱镜观测者', emoji:'🔷', skills:[dmg('棱镜穿刺','🔷',14.4,{ silence:2200, manaDrain:105 }), dmg('折光错位','🪞',14.8,{ aoe:true, mirror:true })] },
+        { name:'仪轨编年官', emoji:'📜', skills:[dmg('仪轨删改','📜',15,{ weaken:true, soulDrain:true }), summonP('星图抄写员','✨',0.5,'召唤 2 名抄写员并获得护盾',{ summonCount:2, summonTheme:'construct', shieldPct:0.2 })] },
+        { name:'沙恩多拉双星', emoji:'🌠', skills:[dmg('双星会切','🌠',15.2,{ aoe:true, alwaysCrit:true }), dmgP('星潮对冲','💠',7.4,0.42,{ aoe:true, silence:2300, fear:1900, cd:12 })] },
+        { name:'天穹测距者', emoji:'🔭', skills:[dmg('天穹锁定','🔭',15.5,{ cripple:true, brittle:true }), dmg('零点测距','✨',15.7,{ manaDrain:115, silence:2300 })] },
+        { name:'虚空航线执笔人', emoji:'🧿', skills:[dmg('航线改写','🧿',16,{ soulLink:true, mirror:true }), summonP('议会校谱者','📣',0.5,'召唤 3 名校谱者并提高攻速',{ summonCount:3, summonTheme:'void', spdBuffSecs:14, spdBuffPct:30 })] },
+        { name:'群星议长索·阿兹拉', emoji:'🌌', skills:[
+          dmg('议长谕令','🌌',16.4,{ aoe:true, decay2:true, brittle:true }),
+          dmg('沙恩多拉归航','🌠',16.8,{ aoe:true, silence:2500, fear:2400 }),
+          buffP('观星大仪','✨',0.64,'观星大仪:攻击/暴击/攻速/减伤提升',{ atkBuffSecs:16, atkBuffPct:54, critBuffSecs:16, critBuffPct:58, spdBuffSecs:16, spdBuffPct:34, drBuffSecs:16, drBuffPct:0.24 }),
+          summonP('星潮议卫','🔷',0.42,'召唤 3 名星潮议卫并获得护盾',{ summonCount:3, summonTheme:'construct', shieldPct:0.24 }),
+          dmgP('终末定标','🪐',9,0.3,{ aoe:true, mirror:true, silence:2500, fear:2500, alwaysCrit:true, cd:16 })
         ] }
       ]
     }
@@ -5841,6 +5934,23 @@ function extendDungeonCatalog(){
       '希尔布兰德':[L('希尔布兰德安保锤','weapon','epic',{atk:3,str:2}),L('泰坦安保胸甲','armor','epic',{def:3,sta:2})],
       '索·莉亚的宏图':[L('索财的星界宏图','weapon','legend',{atk:6,int:4}),L('财团债务王冠','helmet','epic',{def:3,int:2}),L('宏图清算徽记','trinket','legend',{sta:3,int:3})]
     }, trash:[L('索财水手护肩','shoulder','rare',{atk:1,agi:1}),L('星界航线长靴','boots','rare',{haste:1})] },
+    overlook_zoshul: { bosses:{
+      '瞰台测绘师':[L('测绘师裂距尺','weapon','epic',{atk:3,int:2}),L('瞰台校准护手','gloves','epic',{int:2,haste:1})],
+      '裂隙校准体':[L('裂隙校准晶杖','weapon','epic',{atk:3,int:2}),L('折光校准指环','ring','epic',{int:2,vers:1})],
+      '瞰台司辰扎里克':[L('扎里克的司辰星镜','weapon','legend',{atk:6,int:4}),L('瞰台观星胸甲','armor','epic',{def:3,sta:2}),L('群星锁定徽记','trinket','legend',{sta:3,int:3})]
+    }, trash:[L('测绘巡路肩甲','shoulder','rare',{atk:1,int:1}),L('瞰台踏风长靴','boots','rare',{haste:1})] },
+    ecodome_rhovan: { bosses:{
+      '灌溉执机者':[L('执机回灌杖','weapon','epic',{atk:3,int:2}),L('灌溉护带','belt','epic',{def:2,spi:1})],
+      '吞壤孵母':[L('吞壤啃蚀骨镰','weapon','epic',{atk:3,agi:2}),L('孵群甲壳护腿','pants','epic',{hp:2,sta:2})],
+      '谱系修补师':[L('谱系修补法典','weapon','epic',{atk:3,int:2}),L('修补师灵纹戒','ring','epic',{int:2,mastery:1})],
+      '芽冠主脑瑞欧萨':[L('瑞欧萨的芽冠脉杖','weapon','legend',{atk:6,spi:4}),L('罗凡谱系胸甲','armor','epic',{def:3,spi:2}),L('生命谱系晶核','trinket','legend',{sta:3,spi:3})]
+    }, trash:[L('圆顶苗圃肩垫','shoulder','rare',{atk:1,spi:1}),L('湿地园丁长靴','boots','rare',{int:1})] },
+    shadowpoint_breach: { bosses:{
+      '界钉炮手':[L('界钉炮手破城枪','weapon','epic',{atk:3,str:2}),L('火炮回震护手','gloves','epic',{str:2,haste:1})],
+      '裂航狙击队':[L('裂航狙击弓','weapon','epic',{atk:3,agi:2}),L('锁定者肩甲','shoulder','epic',{atk:2,agi:2})],
+      '影卫相位校尉':[L('校尉折相刃','weapon','epic',{atk:3,agi:2}),L('影点校准指环','ring','epic',{agi:2,vers:1})],
+      '影卫指挥官索拉辛':[L('索拉辛的裂轨战刃','weapon','legend',{atk:6,agi:4}),L('影点指挥胸甲','armor','epic',{def:3,sta:2}),L('吞界火线棱芯','trinket','legend',{sta:3,agi:3})]
+    }, trash:[L('影卫战区束腰','belt','rare',{def:1,agi:1}),L('裂隙壕沟战靴','boots','rare',{haste:1})] },
     nerubar: { bosses:{
       '乌格拉克斯':[L('暴食虫颚战斧','weapon','epic',{atk:3,str:2}),L('王宫甲壳护腿','pants','epic',{hp:2,sta:2})],
       '血缚恐魔':[L('黑血法典','weapon','epic',{atk:3,int:2}),L('血缚指环','ring','epic',{int:2,vers:1})],
@@ -5859,7 +5969,16 @@ function extendDungeonCatalog(){
       '碎裂者弗拉克提勒斯':[L('弗拉克提勒斯晶刃','weapon','epic',{atk:3,agi:2}),L('棱镜胸甲','armor','epic',{def:3,sta:2})],
       '枢纽之王萨哈达尔':[L('萨哈达尔王权权杖','weapon','epic',{atk:4,int:2}),L('枢纽王冠','helmet','epic',{def:3,int:2})],
       '诸界吞噬者迪门修斯':[L('迪门修斯的吞界星刃','weapon','legend',{atk:8,int:5}),L('欧米伽熔炉冠冕','helmet','legend',{def:5,int:5}),L('诸界吞噬胸甲','armor','legend',{def:7,sta:5}),L('无界虚空徽记','trinket','legend',{sta:5,int:5})]
-    }, trash:[L('影卫虚灵护肩','shoulder','rare',{atk:1,int:1}),L('欧米伽管道战靴','boots','rare',{haste:1})] }
+    }, trash:[L('影卫虚灵护肩','shoulder','rare',{atk:1,int:1}),L('欧米伽管道战靴','boots','rare',{haste:1})] },
+    shandorah_conclave: { bosses:{
+      '断阶守誓者':[L('守誓者碎阶锤','weapon','epic',{atk:4,str:2}),L('断阶肩甲','shoulder','epic',{def:2,sta:2})],
+      '棱镜观测者':[L('观测者棱镜杖','weapon','epic',{atk:4,int:2}),L('折光锁环','ring','epic',{int:2,mastery:1})],
+      '仪轨编年官':[L('编年仪轨法典','weapon','epic',{atk:4,int:2}),L('仪轨抄录手套','gloves','epic',{int:2,haste:1})],
+      '沙恩多拉双星':[L('双星会切之刃','weapon','epic',{atk:4,agi:2}),L('星潮合鸣护腿','pants','epic',{hp:2,agi:2})],
+      '天穹测距者':[L('测距者星眼长弓','weapon','epic',{atk:4,agi:2}),L('天穹步履','boots','epic',{atk:2,haste:1})],
+      '虚空航线执笔人':[L('航线执笔权杖','weapon','epic',{atk:4,int:2}),L('议会刻线胸甲','armor','epic',{def:3,sta:2})],
+      '群星议长索·阿兹拉':[L('索阿兹拉的群星议槌','weapon','legend',{atk:8,int:5}),L('沙恩多拉观星冠冕','helmet','legend',{def:5,int:4}),L('议会定标胸甲','armor','legend',{def:7,sta:5}),L('终末航线徽记','trinket','legend',{sta:5,int:5})]
+    }, trash:[L('观星议卫护肩','shoulder','rare',{atk:1,int:1}),L('星相长廊战靴','boots','rare',{haste:1})] }
   };
 
   for (const dg of extraDungeons) ensureDungeon(dg, extraLoot[dg.key]);
@@ -5921,6 +6040,7 @@ const EPIC_RAID_SET_THEME = {
   amirdrassil:{ tier:'T31', name:'阿米德拉希尔', short:'梦境' },
   nerubar:{ tier:'T32', name:'尼鲁巴尔王宫', short:'蛛魔' },
   manaforge_omega:{ tier:'T33', name:'法力熔炉欧米伽', short:'欧米伽' },
+  shandorah_conclave:{ tier:'T34', name:'沙恩多拉议会', short:'沙恩多拉' },
 };
 const RAID_PROGRESSION = {
   mc:{ order:1, expansion:'经典旧世', epicIlvl:140 },
@@ -5953,6 +6073,7 @@ const RAID_PROGRESSION = {
   amirdrassil:{ order:28, expansion:'巨龙时代', epicIlvl:408 },
   nerubar:{ order:29, expansion:'地心之战', epicIlvl:424 },
   manaforge_omega:{ order:30, expansion:'地心之战', epicIlvl:438 },
+  shandorah_conclave:{ order:31, expansion:'地心之战', epicIlvl:452 },
 };
 const EPIC_RAID_SET_LABELS = {
   mc:{
