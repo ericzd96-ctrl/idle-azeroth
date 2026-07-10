@@ -664,6 +664,10 @@ function monsterEncounterDetailHtml(mon, bossData) {
       desc:'这是首领额外导演机制召来的单位，不尽快处理会持续抬高战斗压力。'
     }], 'achievement_boss_illidan');
   }
+  if (state.mode === 'worldboss' && bossData?.key) {
+    html += worldBossEncounterDetailHtml(bossData, mon);
+    return html;
+  }
   if (!bossData || (state.mode !== 'dungeon' && state.mode !== 'mythic')) return html;
   const challengeList = mon._bossChallenges?.length
     ? mon._bossChallenges
@@ -699,6 +703,71 @@ function monsterEncounterDetailHtml(mon, bossData) {
       meta:member.role || '',
       desc:member.role ? `该成员负责 ${member.role}。` : '多目标首领成员'
     }));
+  }
+  return html;
+}
+function worldBossPreviewEncounter(wb) {
+  if (!wb || typeof isApexWorldBoss !== 'function' || !isApexWorldBoss(wb)) return null;
+  const active = state.worldBoss?.activeEncounter;
+  if (active?.key === wb.key) return active;
+  if (typeof worldBossContractLevel !== 'function' || typeof worldBossContractInfo !== 'function') return null;
+  const level = worldBossContractLevel();
+  if (!(level > 0)) return null;
+  return {
+    key:wb.key,
+    contractLevel:level,
+    contract:worldBossContractInfo(level),
+    assaults:(typeof getWorldBossAssaults === 'function') ? getWorldBossAssaults(wb, level) : [],
+    phases:(typeof getWorldBossPhaseEvents === 'function') ? getWorldBossPhaseEvents(wb, level) : [],
+    pressure:0,
+    maxPressure:0,
+    preview:true
+  };
+}
+function worldBossEncounterDetailHtml(wb, mon) {
+  const encounter = worldBossPreviewEncounter(wb);
+  if (!encounter?.contractLevel || !encounter.contract) return '';
+  let html = '';
+  const rewardMult = (typeof worldBossEncounterRewardMult === 'function')
+    ? worldBossEncounterRewardMult(encounter, false).toFixed(2)
+    : Number(encounter.contract.reward || 1).toFixed(2);
+  html += monsterMechanicSectionHtml('顶峰猎令', '#fde68a', [{
+    icon:encounter.contract.icon || '📘',
+    name:encounter.contract.name || '常规猎杀',
+    meta:`奖励 ×${rewardMult}`,
+    desc:`${encounter.contract.desc || '世界Boss契约'} 生命 ×${Number(encounter.contract.hp || 1).toFixed(2)} · 攻击 ×${Number(encounter.contract.atk || 1).toFixed(2)} · 防御 ×${Number(encounter.contract.def || 1).toFixed(2)}。`
+  }], 'inv_scroll_03');
+  if (encounter.assaults?.length) {
+    html += monsterMechanicSectionHtml('天幕戒律', '#67e8f9', encounter.assaults, 'spell_arcane_blink', assault => ({
+      icon:assault.icon,
+      name:assault.name,
+      meta:'周期生效',
+      desc:assault.desc || '世界Boss附加规则'
+    }));
+  }
+  if (encounter.phases?.length) {
+    html += monsterMechanicSectionHtml('阶段变化', '#f9a8d4', encounter.phases, 'achievement_boss_illidan', phase => ({
+      icon:phase.icon,
+      name:phase.name,
+      meta:`${Math.round((phase.threshold || 0) * 100)}%血线`,
+      desc:phase.desc || '进入血量阶段后触发'
+    }));
+  }
+  if (!encounter.preview) {
+    html += monsterMechanicSectionHtml('战场压迫', '#fb7185', [{
+      icon:'🔥',
+      name:'终局压迫',
+      meta:`当前 ${encounter.pressure || 0} · 最高 ${encounter.maxPressure || 0}`,
+      desc:'顶峰世界Boss会随着时间提高攻击、防御与护盾,并周期性压低你的血线与节奏。'
+    }], 'spell_fire_volcano');
+  }
+  if (mon?._wbRewardMult && mon._wbRewardMult > 1) {
+    html += monsterMechanicSectionHtml('结算倍率', '#86efac', [{
+      icon:'💠',
+      name:'当前结算加成',
+      meta:`×${Number(mon._wbRewardMult || 1).toFixed(2)}`,
+      desc:'会放大金币、荣誉和部分终局奖励,高猎令与更高压迫层数都会抬升这条线。'
+    }], 'inv_misc_gem_crystal_02');
   }
   return html;
 }
@@ -902,7 +971,24 @@ function worldBossTipHtml(wb) {
     html += '<div style="margin-top:4px;color:#fbbf24">技能:</div>';
     wb.skills.forEach(s => { html += bossSkillLineHtml(s, { iconSize:15, tagColor:'#fbbf24' }); });
   }
+  html += worldBossEncounterDetailHtml(wb, mon);
   return html;
+}
+function bindWorldBossTip(el, builder) {
+  if (!el || typeof builder !== 'function') return;
+  const showTip = e => {
+    const tip = $('compare-tip');
+    const data = builder();
+    if (!tip || !data) return;
+    tip.querySelector('.compare-head').innerHTML = data.head || '';
+    tip.querySelector('.compare-body').innerHTML = data.body || '';
+    tip.style.display = 'block';
+    positionTip(tip, e);
+  };
+  el.onmouseenter = e => { if (!tooltipHoverEnabled()) return; showTip(e); };
+  el.onmouseleave = () => { if (!tooltipHoverEnabled()) return; if (!_tipPinned) hideLootTip(); };
+  el.onmousemove = e => { if (!tooltipHoverEnabled()) return; positionTip($('compare-tip'), e); };
+  addTouchPin(el, showTip);
 }
 function rareEliteTipHtml(rare) {
   if (!rare) return '<b>稀有精英</b>';
@@ -930,6 +1016,48 @@ function bindWorldBossTooltips(root) {
     el.onmouseleave = () => { if (!tooltipHoverEnabled()) return; if (!_tipPinned) $('compare-tip').style.display = 'none'; };
     el.onmousemove = e => { if (!tooltipHoverEnabled()) return; positionTip($('compare-tip'), e); };
     addTouchPin(el, showTip);
+  });
+  root.querySelectorAll('.wb-contract-tip[data-contract-level]').forEach(el => {
+    bindWorldBossTip(el, () => {
+      const level = Math.max(0, Math.floor(Number(el.dataset.contractLevel) || 0));
+      const wb = (typeof getWorldBossDef === 'function' && el.dataset.wbKey) ? getWorldBossDef(el.dataset.wbKey) : null;
+      const contract = (typeof worldBossContractInfo === 'function') ? worldBossContractInfo(level) : null;
+      if (!contract) return null;
+      const assaults = (wb && typeof getWorldBossAssaults === 'function') ? getWorldBossAssaults(wb, level) : [];
+      const phases = (wb && typeof getWorldBossPhaseEvents === 'function') ? getWorldBossPhaseEvents(wb, level) : [];
+      return {
+        head:`<b>${contract.icon || '📘'} ${tipAttrText(contract.name || '顶峰猎令')}</b><div class="muted" style="margin-top:4px;line-height:1.5">${tipAttrText(contract.desc || '世界Boss契约')}</div>`,
+        body:`<div style="font-size:11px;line-height:1.55"><div>生命 ×${Number(contract.hp || 1).toFixed(2)} · 攻击 ×${Number(contract.atk || 1).toFixed(2)} · 防御 ×${Number(contract.def || 1).toFixed(2)} · 奖励 ×${Number(contract.reward || 1).toFixed(2)}</div><div style="margin-top:4px">天幕戒律 ${assaults.length} 条 · 阶段变化 ${phases.length} 条</div><div style="margin-top:6px" class="muted">猎令会直接提高终局世界Boss的压迫节奏,因此星痕、猎箱和坐骑成长不会把战斗难度甩开。</div></div>`
+      };
+    });
+  });
+  root.querySelectorAll('.wb-assault-tip[data-wb-key][data-wb-assault-key]').forEach(el => {
+    bindWorldBossTip(el, () => {
+      const wb = (typeof getWorldBossDef === 'function') ? getWorldBossDef(el.dataset.wbKey) : null;
+      const level = Math.max(0, Math.floor(Number(el.dataset.contractLevel) || 0));
+      const assault = (wb && typeof getWorldBossAssaults === 'function')
+        ? getWorldBossAssaults(wb, level).find(x => x.key === el.dataset.wbAssaultKey)
+        : null;
+      if (!assault) return null;
+      return {
+        head:`<b>${assault.icon || '🌌'} ${tipAttrText(assault.name || '天幕戒律')}</b>`,
+        body:`<div style="font-size:11px;line-height:1.55">${tipAttrText(assault.desc || '世界Boss附加戒律')}<div style="margin-top:6px" class="muted">该戒律会在战斗中周期生效,直接改变资源、护盾、持续伤害或收尾压迫。</div></div>`
+      };
+    });
+  });
+  root.querySelectorAll('.wb-phase-tip[data-wb-key][data-wb-phase-key]').forEach(el => {
+    bindWorldBossTip(el, () => {
+      const wb = (typeof getWorldBossDef === 'function') ? getWorldBossDef(el.dataset.wbKey) : null;
+      const level = Math.max(0, Math.floor(Number(el.dataset.contractLevel) || 0));
+      const phase = (wb && typeof getWorldBossPhaseEvents === 'function')
+        ? getWorldBossPhaseEvents(wb, level).find(x => x.phaseKey === el.dataset.wbPhaseKey)
+        : null;
+      if (!phase) return null;
+      return {
+        head:`<b>${phase.icon || '⚔️'} ${tipAttrText(phase.name || '阶段变化')}</b><div class="muted" style="margin-top:4px">${Math.round((phase.threshold || 0) * 100)}% 血线触发</div>`,
+        body:`<div style="font-size:11px;line-height:1.55">${tipAttrText(phase.desc || '世界Boss血量阶段机制')}<div style="margin-top:6px" class="muted">进入该血线后会立刻触发,并把这场顶峰战推向更高压迫段。</div></div>`
+      };
+    });
   });
 }
 function lookupMonsterBossData(mon) {

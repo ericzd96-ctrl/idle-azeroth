@@ -848,7 +848,7 @@ function renderWorldBossSub() {
   const _wbNext = WBOSS_KILL_MILESTONES.find(m => _wbTotal < m.n);
   const contract = worldBossContractInfo(worldBossContractLevel());
   const contractButtons = WORLD_BOSS_CONTRACTS.map(c => `
-    <button data-action="setwbosscontract" data-level="${c.level}" class="${contract.level === c.level ? 'active' : ''}" title="${c.desc}">
+    <button data-action="setwbosscontract" data-level="${c.level}" data-contract-level="${c.level}" class="wb-contract-tip ${contract.level === c.level ? 'active' : ''}" title="${c.desc}">
       ${c.icon} ${c.name}
     </button>`).join('');
   let html = `<div class="prog-summary muted">${gateHtml}橙装碎片: <b style="color:var(--legend)">${state.worldBoss.shards||0}</b> / ${SHARD_EXCHANGE_COST} · 累计击败 ${_wbTotal} 次
@@ -920,7 +920,7 @@ function renderWorldBossSub() {
     const assaults = contract.level > 0 ? getWorldBossAssaults(wb, contract.level) : [];
     const phases = contract.level > 0 ? getWorldBossPhaseEvents(wb, contract.level) : [];
     const contractLine = contract.level > 0
-      ? `<div class="muted" style="font-size:10px;margin-top:3px">${contract.icon}${contract.name} · 奖励 ×${worldBossEncounterRewardMult({ contractLevel:contract.level, contract, assaults, maxPressure:0 }, false).toFixed(2)} · 戒律: ${assaults.map(a => `${a.icon}${a.name}`).join(' · ')} · 阶段 ${phases.length}</div>`
+      ? `<div class="muted wb-contract-tip" data-wb-key="${wb.key}" data-contract-level="${contract.level}" style="font-size:10px;margin-top:3px">${contract.icon}${contract.name} · 奖励 ×${worldBossEncounterRewardMult({ contractLevel:contract.level, contract, assaults, maxPressure:0 }, false).toFixed(2)} · 戒律: ${assaults.map(a => `<span class="wb-assault-tip" data-wb-key="${wb.key}" data-contract-level="${contract.level}" data-wb-assault-key="${a.key}" style="cursor:help">${a.icon}${a.name}</span>`).join(' · ')} · 阶段 ${phases.map(p => `<span class="wb-phase-tip" data-wb-key="${wb.key}" data-contract-level="${contract.level}" data-wb-phase-key="${p.phaseKey}" style="cursor:help">${Math.round(p.threshold * 100)}%${p.icon || '⚔️'}</span>`).join(' · ') || '0'}</div>`
       : '';
     html += `<div class="wb-item ${ready?'wb-ready':''}" style="border-left:4px solid ${wb.color}">
       <div class="wb-main">
