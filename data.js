@@ -2461,6 +2461,7 @@ const DUNGEONS = [{
   icon: '🏘️',
   reqLvl: 58,
   waves: 10,
+  art:'assets/wow/art/timewalking-banner.png',
   cd: 2400,
   bosses: [{
     name: '悲惨的提米',
@@ -2605,6 +2606,7 @@ const DUNGEONS = [{
   icon: '⚱️',
   reqLvl: 63,
   waves: 8,
+  art:'assets/wow/art/timewalking-outland-banner.jpg',
   cd: 3600,
   bosses: [{
     name: '潘德莫努斯',
@@ -2724,6 +2726,7 @@ const DUNGEONS = [{
   icon: '💧',
   reqLvl: 67,
   waves: 9,
+  art:'assets/wow/art/timewalking-outland-banner.jpg',
   cd: 4200,
   bosses: [{
     name: '水术师瑟丝比亚',
@@ -2845,6 +2848,7 @@ const DUNGEONS = [{
   icon: '🔮',
   reqLvl: 72,
   waves: 9,
+  art:'assets/wow/art/timewalking-outland-banner.jpg',
   cd: 5400,
   bosses: [{
     name: '塞林·火心',
@@ -2987,6 +2991,7 @@ const DUNGEONS = [{
   icon: '⚡',
   reqLvl: 77,
   waves: 10,
+  art:'assets/wow/art/timewalking-wrath-banner.jpg',
   cd: 6000,
   bosses: [{
     name: '比亚格里将军',
@@ -3047,6 +3052,7 @@ const DUNGEONS = [{
   icon: '🏟️',
   reqLvl: 78,
   waves: 10,
+  art:'assets/wow/art/timewalking-wrath-banner.jpg',
   cd: 6000,
   bosses: [{
     name: '银色勇士',
