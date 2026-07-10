@@ -72,7 +72,8 @@
     stonevault:'achievement_dungeon_ulduar_raildriver', prioryflame:'spell_holy_divineillumination',
     nightfall_sanctum:'inv_misc_key_14', earthcrawl_mines:'ability_creature_poison_05',
     fungal_folly:'ability_creature_disease_02', archival_assault:'inv_misc_map_01',
-    ecodome_aldani:'spell_nature_stranglevines', nerubar:'ability_creature_poison_05',
+    ecodome_aldani:'spell_nature_stranglevines', tazavesh_streets:'inv_11_0_etherealraid_communicator_color1',
+    tazavesh_gambit:'spell_arcane_portalshattrath', nerubar:'ability_creature_poison_05',
     manaforge_omega:'spell_arcane_portalshattrath'
   };
 
@@ -121,12 +122,14 @@
     '💨':'ability_rogue_sprint',
     '🩸':'spell_shadow_lifedrain02',
     '🧿':'spell_shadow_unholyfrenzy',
+    '🧣':'inv_11_0_etherealraid_communicator_color1',
     '🌪️':'spell_nature_cyclone',
     '☄️':'spell_fire_meteorstorm',
     '🦿':'ability_warrior_disarm',
     '💧':'spell_arcane_blast',
     '🧛':'spell_shadow_lifedrain02',
     '🎯':'ability_hunter_focusedaim',
+    '🛒':'inv_misc_coin_01',
     '🤯':'spell_shadow_unholyfrenzy',
     '🌑':'spell_shadow_deathanddecay',
     '🪞':'spell_arcane_mirrorimage',

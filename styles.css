@@ -746,6 +746,116 @@ h1 {
   font-size: 11px;
   line-height: 1.45;
 }
+.phase-panel {
+  margin: 0 0 8px 0;
+  padding: 8px;
+  border: 1px solid rgba(56,189,248,.26);
+  border-radius: 8px;
+  background: rgba(12,74,110,.12);
+}
+.phase-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.phase-title .muted {
+  font-weight: 400;
+  text-align: right;
+}
+.phase-wallet {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 11px;
+}
+.phase-wallet span {
+  padding: 5px 6px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 6px;
+  background: rgba(0,0,0,.16);
+  color: #bae6fd;
+}
+.phase-bars {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 7px;
+}
+.phase-bar-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: #dbeafe;
+  font-size: 10px;
+  line-height: 1.4;
+}
+.phase-stability i {
+  background: linear-gradient(90deg,#22d3ee,#818cf8);
+}
+.phase-weekly i {
+  background: linear-gradient(90deg,#fbbf24,#38bdf8);
+}
+.phase-note {
+  margin: 0 0 7px;
+  padding: 7px 8px;
+  border: 1px solid rgba(129,140,248,.20);
+  border-radius: 7px;
+  background: rgba(49,46,129,.12);
+  color: #ddd6fe;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.phase-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 7px;
+}
+.phase-actions button {
+  padding: 5px 6px;
+  font-size: 11px;
+}
+.phase-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.phase-warrant {
+  border: 1px solid rgba(56,189,248,.18);
+  border-radius: 7px;
+  padding: 7px;
+  background: rgba(8,47,73,.16);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.phase-warrant.done,
+.phase-warrant.locked {
+  opacity: .62;
+}
+.phase-warrant-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 5px;
+}
+.phase-sync {
+  margin: 5px 0;
+  color: #fca5a5;
+  font-size: 10px;
+  line-height: 1.4;
+}
+.phase-warrant button {
+  width: 100%;
+  padding: 5px 6px;
+  margin-top: 6px;
+  font-size: 11px;
+}
 .dungeon-contract-panel {
   margin: 0 0 8px 0;
   padding: 8px;
@@ -1046,7 +1156,11 @@ h1 {
   .delve-grid,
   .delve-wallet,
   .worldsoul-grid,
-  .worldsoul-wallet {
+  .worldsoul-wallet,
+  .phase-grid,
+  .phase-wallet,
+  .phase-bars,
+  .phase-actions {
     grid-template-columns: 1fr;
   }
   .dungeon-mastery-grid {
@@ -1062,6 +1176,7 @@ h1 {
   .dungeon-contract-title .muted,
   .delve-title .muted,
   .worldsoul-title .muted,
+  .phase-title .muted,
   .dungeon-mastery-title .muted {
     text-align: left;
   }
@@ -1070,6 +1185,10 @@ h1 {
     flex-direction: column;
   }
   .worldsoul-title {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .phase-title {
     align-items: flex-start;
     flex-direction: column;
   }

@@ -5369,6 +5369,34 @@ function extendDungeonCatalog(){
       ]
     },
     {
+      key:'tazavesh_streets', name:'塔扎维什:帷纱街巷', icon:'💠', reqLvl:98, waves:10, desc:'帷纱集市的回归街区,掮灵、虚灵与失控交易契约把每条巷道都变成战场',
+      bosses:[
+        { name:'佐·帕克斯', emoji:'📦', skills:[dmg('快递碾压','📦',13.2,{ stun:1700, sunder:true }), dmg('市场震荡','💥',13.5,{ aoe:true, brittle:true })] },
+        { name:'卖品会', emoji:'🛒', skills:[dmg('竞拍乱斗','🛒',13.8,{ bleed:true, cripple:true }), summonP('竞拍保镖','📣',0.5,'召唤竞拍保镖并提高暴击',{ summonCount:2, summonTheme:'soldier', critBuffSecs:12, critBuffPct:44 })] },
+        { name:'麦扎的绿洲', emoji:'🎵', skills:[dmg('音浪爆破','🎵',14,{ aoe:true, silence:2100 }), buffP('绿洲返场','✨',0.55,'绿洲返场:回复并提高攻速',{ healPct:0.18, spdBuffSecs:12, spdBuffPct:28 })] },
+        { name:'索·莉亚', emoji:'💎', skills:[
+          dmg('超光束切割','💎',14.5,{ mirror:true, brittle:true }),
+          dmg('财团扣押','📜',14.8,{ aoe:true, manaDrain:105, silence:2200 }),
+          summonP('绿洲安保','🧿',0.45,'召唤 2 名安保并获得护盾',{ summonCount:2, summonTheme:'void', shieldPct:0.2 }),
+          dmgP('索财终幕','🌌',7.8,0.3,{ aoe:true, alwaysCrit:true, fear:2200, cd:16 })
+        ] }
+      ]
+    },
+    {
+      key:'tazavesh_gambit', name:'塔扎维什:索财的宏图', icon:'🧿', reqLvl:99, waves:10, desc:'索·莉亚的宏图牵动星界航线,海盗、星术师与财团债务追猎者一同登场',
+      bosses:[
+        { name:'海盗议会', emoji:'🏴', skills:[dmg('财团炮击','💥',13.6,{ aoe:true, bleed:true }), dmg('登船钩索','⚓',13.8,{ stun:1700, cripple:true })] },
+        { name:'邮件室混乱体', emoji:'📦', skills:[dmg('错投爆弹','💣',14,{ aoe:true, dot:true }), buffP('超量分拣','⚙️',0.5,'超量分拣:攻击/减伤提升',{ atkBuffSecs:12, atkBuffPct:42, drBuffSecs:12, drBuffPct:0.2 })] },
+        { name:'希尔布兰德', emoji:'🤖', skills:[dmg('净化协议','⚙️',14.2,{ silence:2200, sunder:true }), dmg('泰坦安保光束','✨',14.5,{ aoe:true, alwaysCrit:true })] },
+        { name:'索·莉亚的宏图', emoji:'🌌', skills:[
+          dmg('星界抵押','🌌',15,{ manaDrain:115, soulDrain:true }),
+          dmg('市场坍缩','🌀',15.2,{ aoe:true, mirror:true, decay2:true }),
+          summonP('债务收割者','💠',0.45,'召唤 3 名债务收割者',{ summonCount:3, summonTheme:'void', shieldPct:0.22 }),
+          dmgP('宏图清算','💎',8,0.3,{ aoe:true, silence:2400, fear:2300, alwaysCrit:true, cd:16 })
+        ] }
+      ]
+    },
+    {
       key:'nerubar', name:"尼鲁巴尔王宫", icon:'🕸️', type:'raid', reqLvl:92, waves:14, desc:'艾基-卡赫特的蛛魔帝国王宫,安苏雷克女王用黑血与虚空丝线编织终局试炼',
       bosses:[
         { name:'乌格拉克斯', emoji:'🪲', skills:[dmg('贪食冲锋','🪲',11,{ bleed:true, cripple:true }), dmgP('暴食震荡','💥',5.8,0.5,{ aoe:true, stun:1700, brittle:true, cd:12 })] },
@@ -5783,6 +5811,18 @@ function extendDungeonCatalog(){
       '荒原双子':[L('荒原双刃','weapon','epic',{atk:3,str:2}),L('掠夺者契约戒','ring','epic',{str:2,vers:1})],
       '生态看护者阿尔达尼':[L('阿尔达尼生命法杖','weapon','legend',{atk:5,int:4}),L('生态看护胸甲','armor','epic',{def:3,spi:2}),L('圆顶复苏徽记','trinket','legend',{sta:3,spi:3})]
     }, trash:[L('生态圆顶护肩','shoulder','rare',{sta:1,spi:1}),L('荒原行者战靴','boots','rare',{agi:1})] },
+    tazavesh_streets: { bosses:{
+      '佐·帕克斯':[L('佐帕克斯快递锤','weapon','epic',{atk:3,str:2}),L('分拣员护手','gloves','epic',{haste:2,sta:1})],
+      '卖品会':[L('竞拍会切肉刀','weapon','epic',{atk:3,agi:2}),L('成交价码戒','ring','epic',{atk:2,vers:1})],
+      '麦扎的绿洲':[L('绿洲返场法杖','weapon','epic',{atk:3,int:2}),L('麦扎的节拍护肩','shoulder','epic',{int:2,haste:1})],
+      '索·莉亚':[L('索莉亚的市场星刃','weapon','legend',{atk:5,agi:4}),L('绿洲财团胸甲','armor','epic',{def:3,sta:2}),L('超光束折射器','trinket','legend',{sta:3,int:3})]
+    }, trash:[L('帷纱街巷腰带','belt','rare',{def:1,agi:1}),L('掮灵跑腿靴','boots','rare',{haste:1})] },
+    tazavesh_gambit: { bosses:{
+      '海盗议会':[L('财团海盗弯刀','weapon','epic',{atk:3,agi:2}),L('登船钩索护手','gloves','epic',{atk:2,haste:1})],
+      '邮件室混乱体':[L('错投爆弹发射器','weapon','epic',{atk:3,int:2}),L('分拣矩阵指环','ring','epic',{int:2,vers:1})],
+      '希尔布兰德':[L('希尔布兰德安保锤','weapon','epic',{atk:3,str:2}),L('泰坦安保胸甲','armor','epic',{def:3,sta:2})],
+      '索·莉亚的宏图':[L('索财的星界宏图','weapon','legend',{atk:6,int:4}),L('财团债务王冠','helmet','epic',{def:3,int:2}),L('宏图清算徽记','trinket','legend',{sta:3,int:3})]
+    }, trash:[L('索财水手护肩','shoulder','rare',{atk:1,agi:1}),L('星界航线长靴','boots','rare',{haste:1})] },
     nerubar: { bosses:{
       '乌格拉克斯':[L('暴食虫颚战斧','weapon','epic',{atk:3,str:2}),L('王宫甲壳护腿','pants','epic',{hp:2,sta:2})],
       '血缚恐魔':[L('黑血法典','weapon','epic',{atk:3,int:2}),L('血缚指环','ring','epic',{int:2,vers:1})],
