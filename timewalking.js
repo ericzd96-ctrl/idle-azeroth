@@ -1,6 +1,7 @@
 /* timewalking.js - Weekly Timewalking campaigns for classic expansions */
 const TIMEWALKING_BANNER = 'assets/wow/art/timewalking-banner.png';
 const TIMEWALKING_ATLAS_BANNER = 'assets/wow/art/timewalking-atlas-banner.jpg';
+const TIMEWALKING_OUTLAND_BANNER = 'assets/wow/art/timewalking-outland-banner.jpg';
 const TIMEWALKING_WRATH_BANNER = 'assets/wow/art/timewalking-wrath-banner.jpg';
 const TIMEWALKING_PANDARIA_BANNER = 'assets/wow/art/timewalking-pandaria-banner.jpg';
 const TIMEWALKING_DRAENOR_BANNER = 'assets/wow/art/timewalking-draenor-banner.jpg';
@@ -50,6 +51,7 @@ const TIMEWALKING_ERAS = [
     short:'外域',
     icon:'💠',
     color:'#a855f7',
+    banner:TIMEWALKING_OUTLAND_BANNER,
     desc:'外域裂隙重新张开,沙塔斯与黑暗神殿的旧账被翻出。',
     dungeons:['shattered', 'arcatraz'],
     raids:['karazhan', 'bt', 'sunwell'],

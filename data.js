@@ -2535,6 +2535,7 @@ const DUNGEONS = [{
   icon: '🌋',
   reqLvl: 60,
   waves: 14,
+  art:'assets/wow/art/timewalking-banner.png',
     type: "raid",
   cd: 3600,
   bosses: [
@@ -2664,6 +2665,7 @@ const DUNGEONS = [{
   icon: '🐉',
   reqLvl: 65,
   waves: 12,
+  art:'assets/wow/art/timewalking-banner.png',
     type: "raid",
   cd: 4200,
   bosses: [
@@ -2903,6 +2905,7 @@ const DUNGEONS = [{
   icon: '🌌',
   reqLvl: 75,
   waves: 14,
+  art:'assets/wow/art/timewalking-outland-banner.jpg',
     type: "raid",
   cd: 6000,
   bosses: [
@@ -3109,6 +3112,7 @@ const DUNGEONS = [{
   icon: '☀️',
   reqLvl: 80,
   waves: 12,
+  art:'assets/wow/art/timewalking-outland-banner.jpg',
     type: "raid",
   cd: 7200,
   bosses: [
@@ -4895,7 +4899,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'shattered', name:'破碎大厅', icon:'🧱', reqLvl:67, waves:10, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'钢铁部落囚笼中的血腥屠场',
+      key:'shattered', name:'破碎大厅', icon:'🧱', reqLvl:67, waves:10, art:'assets/wow/art/timewalking-outland-banner.jpg', desc:'钢铁部落囚笼中的血腥屠场',
       bosses:[
         { name:'高阶术士奈瑟库斯', emoji:'🧿', skills:[dmg('痛苦灌体','🟣',5,{ dot:true, soulDrain:true })] },
         { name:'血卫士伯鲁恩', emoji:'🛡️', skills:[dmg('碾骨冲锋','🛡️',5,{ stun:1200, sunder:true })] },
@@ -4903,7 +4907,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'arcatraz', name:'禁魔监狱', icon:'🔒', reqLvl:69, waves:10, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'纳鲁监狱深处的恶魔实验场',
+      key:'arcatraz', name:'禁魔监狱', icon:'🔒', reqLvl:69, waves:10, art:'assets/wow/art/timewalking-outland-banner.jpg', desc:'纳鲁监狱深处的恶魔实验场',
       bosses:[
         { name:'佐拉多尔米', emoji:'🛰️', skills:[dmg('虚空监禁','🛰️',5,{ silence:1800, manaDrain:45 })] },
         { name:'预言者斯克瑞斯', emoji:'👁️', skills:[dmg('心智撕裂','👁️',5.5,{ fear:1600, mirror:true })] },
@@ -4953,7 +4957,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'ssc', name:'毒蛇神殿', icon:'🐍', type:'raid', reqLvl:70, waves:11, desc:'盘牙水库最深处的女王王庭',
+      key:'ssc', name:'毒蛇神殿', icon:'🐍', type:'raid', reqLvl:70, waves:11, art:'assets/wow/art/timewalking-outland-banner.jpg', desc:'盘牙水库最深处的女王王庭',
       bosses:[
         { name:'不稳定的海度斯', emoji:'🌊', skills:[dmg('元素相位','🌊',8,{ dot:true, weaken:true })] },
         { name:'盲眼者莱欧瑟拉斯', emoji:'😈', skills:[dmg('恶魔旋刃','😈',8.5,{ aoe:true, frenzy:true, bleed:true })] },
@@ -4962,7 +4966,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'tk', name:'风暴要塞', icon:'🌌', type:'raid', reqLvl:70, waves:11, desc:'虚空风暴中悬浮的奥术王庭',
+      key:'tk', name:'风暴要塞', icon:'🌌', type:'raid', reqLvl:70, waves:11, art:'assets/wow/art/timewalking-outland-banner.jpg', desc:'虚空风暴中悬浮的奥术王庭',
       bosses:[
         { name:'空灵机甲', emoji:'🤖', skills:[dmg('星界重击','🤖',8,{ brittle:true, stun:1400 })] },
         { name:'奥', emoji:'🌠', skills:[dmg('迁跃冲击','🌠',8.5,{ mirror:true, silence:1800 })] },
@@ -4971,7 +4975,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'hyjal', name:'海加尔山之战', icon:'🌲', type:'raid', reqLvl:70, waves:11, desc:'燃烧军团与守护者在世界之树前的终局会战',
+      key:'hyjal', name:'海加尔山之战', icon:'🌲', type:'raid', reqLvl:70, waves:11, art:'assets/wow/art/timewalking-outland-banner.jpg', desc:'燃烧军团与守护者在世界之树前的终局会战',
       bosses:[
         { name:'雷基·冬寒', emoji:'❄️', skills:[dmg('死寒侵袭','❄️',8,{ slow:true, freeze:1500, decay:true })] },
         { name:'安纳塞隆', emoji:'🦇', skills:[dmg('恐惧魔王之拥','🦇',8.5,{ fear:1800, soulDrain:true, weaken:true })] },
@@ -4980,7 +4984,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'bt', name:'黑暗神殿', icon:'🗡️', type:'raid', reqLvl:70, waves:12, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'伊利达雷与恶魔残响交织的黑色圣殿',
+      key:'bt', name:'黑暗神殿', icon:'🗡️', type:'raid', reqLvl:70, waves:12, art:'assets/wow/art/timewalking-outland-banner.jpg', desc:'伊利达雷与恶魔残响交织的黑色圣殿',
       bosses:[
         { name:'高阶督军纳因图斯', emoji:'🔱', skills:[dmg('脊骨长矛','🔱',8,{ bleed:true, brittle:true })] },
         { name:'灵魂之匣', emoji:'📦', skills:[dmg('折磨律令','📦',8.5,{ manaDrain:55, decay2:true, weaken:true })] },
@@ -5147,7 +5151,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'sethekk', name:'塞泰克大厅', icon:'🦅', reqLvl:69, waves:9, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'鸦人膜拜乌鸦之神的黑暗大厅',
+      key:'sethekk', name:'塞泰克大厅', icon:'🦅', reqLvl:69, waves:9, art:'assets/wow/art/timewalking-outland-banner.jpg', desc:'鸦人膜拜乌鸦之神的黑暗大厅',
       bosses:[
         { name:'达克丝塔', emoji:'🪶', skills:[dmg('暗影箭雨','🌑',6,{ aoe:true, weaken:true })] },
         { name:'塞泰克先知', emoji:'🔮', skills:[dmg('预言震爆','🔮',6.5,{ silence:1700, manaDrain:40 })] },
@@ -5199,7 +5203,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'nightmare', name:'翡翠梦魇', icon:'🌳', type:'raid', reqLvl:79, waves:13, desc:'翡翠梦境被梦魇侵蚀,萨维斯散播堕落的腐林',
+      key:'nightmare', name:'翡翠梦魇', icon:'🌳', type:'raid', reqLvl:79, waves:13, art:'assets/wow/art/timewalking-legion-banner.jpg', desc:'翡翠梦境被梦魇侵蚀,萨维斯散播堕落的腐林',
       bosses:[
         { name:'尼提兹', emoji:'🐛', skills:[dmg('梦魇之茧','🕸️',9,{ cripple:true, dot:true })] },
         { name:'噩梦巨龙', emoji:'🐲', skills:[dmg('腐蚀吐息','🟣',9.5,{ aoe:true, decay:true, weaken:true })] },
@@ -5433,7 +5437,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'stonevault', name:'矶石宝库', icon:'🏛️', reqLvl:88, waves:10, desc:'多恩岛地底的泰坦宝库,土灵守卫与失控机械共同保护沉睡矩阵',
+      key:'stonevault', name:'矶石宝库', icon:'🏛️', reqLvl:88, waves:10, art:'assets/wow/art/warwithin-dungeon-banner.png', desc:'多恩岛地底的泰坦宝库,土灵守卫与失控机械共同保护沉睡矩阵',
       bosses:[
         { name:'掌炉者艾里克', emoji:'⚒️', skills:[dmg('熔炉重击','🔨',9.5,{ sunder:true, stun:1600 }), dmgP('熔炉过载','🔥',5.5,0.5,{ aoe:true, dot:true, brittle:true, cd:12 })] },
         { name:'晶化守卫', emoji:'💠', skills:[dmg('晶体切割','🔷',10,{ brittle:true, manaDrain:65 }), buffP('晶壁重组','🛡️',0.55,'晶体壁垒重组:减伤和防御提升',{ defBuffSecs:12, defBuffPct:45, drBuffSecs:12, drBuffPct:0.2 })] },
@@ -5448,7 +5452,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'prioryflame', name:'圣焰隐修院', icon:'✝️', reqLvl:90, waves:10, desc:'陨圣峪的阿拉希圣焰堡垒,光明与狂热在地下苍穹下爆燃',
+      key:'prioryflame', name:'圣焰隐修院', icon:'✝️', reqLvl:90, waves:10, art:'assets/wow/art/warwithin-dungeon-banner.png', desc:'陨圣峪的阿拉希圣焰堡垒,光明与狂热在地下苍穹下爆燃',
       bosses:[
         { name:'信标守卫加伦', emoji:'🛡️', skills:[dmg('信标盾击','🛡️',10,{ sunder:true, stun:1600 }), dmg('圣焰回旋','🔥',10.2,{ aoe:true, dot:true })] },
         { name:'烛光修士艾丹', emoji:'🕯️', skills:[dmg('烛焰诅咒','🕯️',10.5,{ dot:true, weaken:true, silence:1800 }), summonP('唤烛仪式','✨',0.55,'召唤圣焰信徒并提高攻速',{ summonCount:1, summonTheme:'soldier', spdBuffSecs:12, spdBuffPct:24 })] },
@@ -5463,7 +5467,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'nightfall_sanctum', name:'夜落圣所地下堡', icon:'🔒', reqLvl:91, waves:6, delve:true, desc:'短波次地下堡挑战:潜入陨圣峪暗潮据点,用更少波次换取更密集的首领压迫',
+      key:'nightfall_sanctum', name:'夜落圣所地下堡', icon:'🔒', reqLvl:91, waves:6, delve:true, art:'assets/wow/art/warwithin-dungeon-banner.png', desc:'短波次地下堡挑战:潜入陨圣峪暗潮据点,用更少波次换取更密集的首领压迫',
       bosses:[
         { name:'暗潮钥卫', emoji:'🔒', skills:[dmg('暗潮钥击','🗝️',10.5,{ silence:1900, sunder:true }), dmg('黑水喷涌','🌑',11,{ aoe:true, plague:true, dot:true })] },
         { name:'低语宝箱', emoji:'📦', skills:[dmg('贪婪低语','👁️',11.5,{ fear:1800, soulDrain:true, manaDrain:75 }), buffP('宝箱反噬','💜',0.5,'宝箱反噬:攻击与减伤提升',{ atkBuffSecs:12, atkBuffPct:40, drBuffSecs:12, drBuffPct:0.2 })] },
@@ -5476,7 +5480,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'earthcrawl_mines', name:'地匍矿洞地下堡', icon:'⚒️', reqLvl:89, waves:6, delve:true, desc:'多恩岛地下的蛛网矿坑,矿车轨道与蛛魔巢穴交错,适合短线高压挑战',
+      key:'earthcrawl_mines', name:'地匍矿洞地下堡', icon:'⚒️', reqLvl:89, waves:6, delve:true, art:'assets/wow/art/warwithin-dungeon-banner.png', desc:'多恩岛地下的蛛网矿坑,矿车轨道与蛛魔巢穴交错,适合短线高压挑战',
       bosses:[
         { name:'蛛网矿工队', emoji:'🕷️', skills:[dmg('蛛网矿镐','⚒️',10.2,{ bleed:true, sunder:true }), dmg('毒丝喷溅','🕸️',10.8,{ aoe:true, plague:true, cripple:true })] },
         { name:'工头皮夫克', emoji:'⚙️', skills:[dmg('钻机冲撞','⚙️',11.2,{ stun:1700, brittle:true }), buffP('超载矿灯','💡',0.5,'矿灯超载:攻击与暴击提升',{ atkBuffSecs:12, atkBuffPct:38, critBuffSecs:12, critBuffPct:42 })] },
@@ -5489,7 +5493,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'fungal_folly', name:'真菌之愚地下堡', icon:'🍄', reqLvl:90, waves:6, delve:true, desc:'充满发光孢子的荒诞地下堡,孢子云会让短波次战斗变得更凶险',
+      key:'fungal_folly', name:'真菌之愚地下堡', icon:'🍄', reqLvl:90, waves:6, delve:true, art:'assets/wow/art/warwithin-dungeon-banner.png', desc:'充满发光孢子的荒诞地下堡,孢子云会让短波次战斗变得更凶险',
       bosses:[
         { name:'孢子看守', emoji:'🍄', skills:[dmg('孢子鞭笞','🌿',10.4,{ dot:true, weaken:true }), dmg('菌雾爆裂','☣️',11,{ aoe:true, plague:true })] },
         { name:'蘑菇术士维洛', emoji:'🧙', skills:[dmg('菌丝诅咒','💜',11.3,{ silence:1900, manaDrain:70, soulDrain:true }), summonP('唤醒蘑菇人','🍄',0.52,'召唤蘑菇仆从并提高攻速',{ summonCount:2, summonTheme:'plant', spdBuffSecs:12, spdBuffPct:24 })] },
@@ -5623,7 +5627,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'nerubar', name:"尼鲁巴尔王宫", icon:'🕸️', type:'raid', reqLvl:92, waves:14, desc:'艾基-卡赫特的蛛魔帝国王宫,安苏雷克女王用黑血与虚空丝线编织终局试炼',
+      key:'nerubar', name:"尼鲁巴尔王宫", icon:'🕸️', type:'raid', reqLvl:92, waves:14, art:'assets/wow/art/warwithin-dungeon-banner.png', desc:'艾基-卡赫特的蛛魔帝国王宫,安苏雷克女王用黑血与虚空丝线编织终局试炼',
       bosses:[
         { name:'乌格拉克斯', emoji:'🪲', skills:[dmg('贪食冲锋','🪲',11,{ bleed:true, cripple:true }), dmgP('暴食震荡','💥',5.8,0.5,{ aoe:true, stun:1700, brittle:true, cd:12 })] },
         { name:'血缚恐魔', emoji:'🩸', skills:[dmg('黑血喷洒','🩸',11.2,{ plague:true, dot:true, weaken:true })] },

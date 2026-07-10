@@ -74,6 +74,42 @@ function addTouchPin(el, showFn) {
   });
 }
 
+function buildInlineTipHeadHtml(name, icon, fallbackIcon, desc, color, meta) {
+  const safeName = tipAttrText(name || '机制');
+  const safeDesc = tipAttrText(desc || '暂无机制说明');
+  const safeMeta = tipAttrText(meta || '');
+  const safeColor = tipAttrText(color || '#f8fafc');
+  const iconHtml = symbolIconHtml(icon || '⚙️', 14, safeName, fallbackIcon || 'achievement_boss_illidan');
+  return `<div style="font-size:12px;font-weight:700;color:${safeColor}">${iconHtml} ${safeName}${safeMeta ? ` <span style="font-size:10px;color:#cbd5e1">${safeMeta}</span>` : ''}</div><div class="muted" style="margin-top:4px;line-height:1.55">${safeDesc}</div>`;
+}
+
+function bindInlineTipElements(root) {
+  const scope = root && root.querySelectorAll ? root : document;
+  scope.querySelectorAll('[data-inline-tip-name]').forEach(el => {
+    if (el.dataset.inlineTipBound === '1') return;
+    el.dataset.inlineTipBound = '1';
+    const showTip = e => {
+      const tip = $('compare-tip');
+      if (!tip) return;
+      tip.querySelector('.compare-head').innerHTML = buildInlineTipHeadHtml(
+        el.dataset.inlineTipName,
+        el.dataset.inlineTipIcon,
+        el.dataset.inlineTipFallback,
+        el.dataset.inlineTipDesc,
+        el.dataset.inlineTipColor,
+        el.dataset.inlineTipMeta
+      );
+      tip.querySelector('.compare-body').innerHTML = '';
+      tip.style.display = 'block';
+      positionTip(tip, e);
+    };
+    el.addEventListener('mouseenter', e => { if (!tooltipHoverEnabled()) return; showTip(e); });
+    el.addEventListener('mouseleave', () => { if (!tooltipHoverEnabled()) return; if (!_tipPinned) $('compare-tip').style.display = 'none'; });
+    el.addEventListener('mousemove', e => { if (!tooltipHoverEnabled()) return; positionTip($('compare-tip'), e); });
+    addTouchPin(el, showTip);
+  });
+}
+
 function setupAttrHover() {
   document.querySelectorAll('.attr-cell').forEach(cell => {
     const showFn = e => {
@@ -621,6 +657,17 @@ function monsterUnitTipHtml(mon, bossData) {
 }
 function tipAttrText(s) {
   return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function inlineTipSpanHtml(item, options) {
+  const cfg = options || {};
+  const name = item?.name || cfg.name || '机制';
+  const icon = item?.icon || cfg.icon || '⚙️';
+  const desc = item?.desc || cfg.desc || '暂无机制说明';
+  const meta = cfg.meta || item?.meta || '';
+  const fallbackIcon = cfg.fallbackIcon || 'achievement_boss_illidan';
+  const color = cfg.color || '#f8fafc';
+  const iconHtml = symbolIconHtml(icon, cfg.iconSize || 12, name, fallbackIcon);
+  return `<span class="${cfg.className || 'dungeon-inline-tip'}" style="cursor:help" data-inline-tip-name="${tipAttrText(name)}" data-inline-tip-icon="${tipAttrText(icon)}" data-inline-tip-desc="${tipAttrText(desc)}" data-inline-tip-meta="${tipAttrText(meta)}" data-inline-tip-color="${tipAttrText(color)}" data-inline-tip-fallback="${tipAttrText(fallbackIcon)}">${iconHtml} ${tipAttrText(name)}${cfg.metaVisible && meta ? ` · ${tipAttrText(meta)}` : ''}</span>`;
 }
 function monsterMechanicSectionHtml(title, color, list, fallbackIcon, mapper) {
   if (!Array.isArray(list) || !list.length) return '';
@@ -3199,37 +3246,37 @@ function buildDungeonInfoHtml(dg) {
         <div style="color:var(--legend);font-size:13px;font-weight:700;margin-bottom:6px">${bossIconHtml} ${bossName} ${dropLabel}</div>`;
     if (councilPreview.length > 1) {
       html += `<div class="dungeon-council-preview">
-        ${councilPreview.map(m => `<span>${symbolIconHtml(m.icon || bossData.emoji || '👹', 12, m.name, 'achievement_boss_illidan')} ${m.name}${m.role ? ` · ${m.role}` : ''}</span>`).join('')}
+        ${councilPreview.map(m => inlineTipSpanHtml({ name:m.name, icon:m.icon || bossData.emoji || '👹', desc:m.role ? `该成员负责 ${m.role}。` : '多目标首领成员。', meta:m.role || '' }, { fallbackIcon:'achievement_boss_illidan', color:'#fcd34d', metaVisible:true })).join('')}
       </div>`;
     }
     if (phasePreview.length) {
       html += `<div class="dungeon-boss-phase-preview">
-        ${phasePreview.map(p => `<span>${Math.round(p.threshold * 100)}% ${symbolIconHtml(p.icon, 12, p.name, 'ability_warrior_battleshout')}${p.name}</span>`).join('')}
+        ${phasePreview.map(p => inlineTipSpanHtml({ name:p.name, icon:p.icon, desc:p.desc || '血线阶段事件会在首领跌到对应阈值时触发。', meta:`${Math.round((p.threshold || 0) * 100)}%触发` }, { fallbackIcon:'ability_warrior_battleshout', color:'#fb7185', metaVisible:true })).join('')}
       </div>`;
     }
     if (spectaclePreview.length) {
       html += `<div class="dungeon-boss-spectacle-preview">
-        ${spectaclePreview.map(m => `<span>${symbolIconHtml(m.icon, 12, m.name, 'spell_shadow_shadowfury')} ${m.name}</span>`).join('')}
+        ${spectaclePreview.map(m => inlineTipSpanHtml(m, { fallbackIcon:'spell_shadow_shadowfury', color:'#f0abfc' })).join('')}
       </div>`;
     }
     if (directorEventPreview.length) {
       html += `<div class="dungeon-boss-director-preview">
-        ${directorEventPreview.map(m => `<span>${symbolIconHtml(m.icon, 12, m.name, 'achievement_boss_illidan')} ${m.name}</span>`).join('')}
+        ${directorEventPreview.map(m => inlineTipSpanHtml(m, { fallbackIcon:'achievement_boss_illidan', color:'#93c5fd' })).join('')}
       </div>`;
     }
     if (tacticPreview.length) {
       html += `<div class="dungeon-boss-tactic-preview">
-        ${tacticPreview.map(m => `<span title="${(m.desc || '').replace(/"/g, '&quot;')}">${symbolIconHtml(m.icon, 12, m.name, 'ability_warrior_battleshout')} ${m.name}</span>`).join('')}
+        ${tacticPreview.map(m => inlineTipSpanHtml(m, { fallbackIcon:'ability_warrior_battleshout', color:'#fca5a5' })).join('')}
       </div>`;
     }
     if (weakpointPreview.length) {
       html += `<div class="dungeon-boss-weakpoint-preview">
-        ${weakpointPreview.map(m => `<span title="${(m.desc || '').replace(/"/g, '&quot;')}">${symbolIconHtml(m.icon, 12, m.name, 'inv_misc_gem_diamond_02')} ${m.name}</span>`).join('')}
+        ${weakpointPreview.map(m => inlineTipSpanHtml({ name:m.name, icon:m.icon, desc:m.desc || '击破弱点会制造首领破绽。', meta:typeof m.threshold === 'number' ? `${Math.round(m.threshold * 100)}%触发` : '' }, { fallbackIcon:'inv_misc_gem_diamond_02', color:'#fde68a', metaVisible:true })).join('')}
       </div>`;
     }
     if (challengePreview.length) {
       html += `<div class="dungeon-boss-challenge-preview">
-        ${challengePreview.map(m => `<span title="${(m.desc || '').replace(/"/g, '&quot;')}">${symbolIconHtml(m.icon, 12, m.name, 'achievement_bg_killxenemies_generalsroom')} ${m.name}</span>`).join('')}
+        ${challengePreview.map(m => inlineTipSpanHtml(m, { fallbackIcon:'achievement_bg_killxenemies_generalsroom', color:'#fde68a' })).join('')}
       </div>`;
       html += `<div style="display:flex;flex-direction:column;gap:4px;margin:6px 0 8px 8px">
         ${challengePreview.map(m => `<div style="font-size:11px;line-height:1.5"><span style="color:#fde68a">${symbolIconHtml(m.icon, 13, m.name, 'achievement_bg_killxenemies_generalsroom')} ${m.name}</span><span class="muted"> - ${m.desc || 'Boss 挑战目标'}</span></div>`).join('')}
@@ -3237,7 +3284,7 @@ function buildDungeonInfoHtml(dg) {
     }
     if (grandPreview.length) {
       html += `<div class="dungeon-boss-grand-preview">
-        ${grandPreview.map(m => `<span title="${(m.desc || '').replace(/"/g, '&quot;')}">${symbolIconHtml(m.icon, 12, m.name, 'spell_arcane_arcanetorrent')} ${m.name}</span>`).join('')}
+        ${grandPreview.map(m => inlineTipSpanHtml(m, { fallbackIcon:'spell_arcane_arcanetorrent', color:m.color || '#67e8f9' })).join('')}
       </div>`;
       html += `<div style="display:flex;flex-direction:column;gap:4px;margin:6px 0 8px 8px">
         ${grandPreview.map(m => `<div style="font-size:11px;line-height:1.5"><span style="color:${m.color || '#67e8f9'}">${symbolIconHtml(m.icon, 13, m.name, 'spell_arcane_arcanetorrent')} ${m.name}</span><span class="muted"> - ${m.desc || '额外首领机制'}</span></div>`).join('')}
@@ -3309,6 +3356,7 @@ function openDungeonInfo(dungeonKey) {
   const body = $('dungeon-info-content');
   if (!dg || !modal || !body) return;
   body.innerHTML = buildDungeonInfoHtml(dg);
+  bindInlineTipElements(body);
   modal.classList.add('show');
 }
 
@@ -3390,14 +3438,14 @@ function renderDungeon() {
     div.dataset.dungeonKey = dg.key;
     const dungeonIconHtml = (typeof dungeonIcon === 'function') ? dungeonIcon(dg.key, dg.name, 18, dg.icon) : dg.icon;
     const dgAffixes = (typeof getDungeonAffixes === 'function') ? getDungeonAffixes(dg) : [];
-    const affixLine = dgAffixes.length ? `<div class="muted" style="font-size:11px">⚙️ 词缀: ${dgAffixes.map(a => `${symbolIconHtml(a.icon, 12, a.name, 'spell_holy_powerinfusion')} ${a.name}`).join(' · ')}</div>` : '';
+    const affixLine = dgAffixes.length ? `<div class="muted" style="font-size:11px">⚙️ 词缀: ${dgAffixes.map(a => inlineTipSpanHtml(a, { fallbackIcon:'spell_holy_powerinfusion', color:'#67e8f9' })).join(' · ')}</div>` : '';
     const selectedContractLevel = (typeof dungeonContractLevel === 'function') ? dungeonContractLevel() : 0;
     const trialPreview = (selectedContractLevel > 0 && typeof getDungeonContractTrials === 'function') ? getDungeonContractTrials(dg, selectedContractLevel) : [];
-    const trialLine = trialPreview.length ? `<div class="dungeon-trial-line">🔥 试炼: ${trialPreview.map(t => `${symbolIconHtml(t.icon, 12, t.name, 'ability_warrior_battleshout')} ${t.name}`).join(' · ')}</div>` : '';
+    const trialLine = trialPreview.length ? `<div class="dungeon-trial-line">🔥 试炼: ${trialPreview.map(t => inlineTipSpanHtml(t, { fallbackIcon:'ability_warrior_battleshout', color:'#fb7185' })).join(' · ')}</div>` : '';
     const environmentPreview = (selectedContractLevel > 0 && typeof getDungeonEnvironments === 'function') ? getDungeonEnvironments(dg, selectedContractLevel) : [];
-    const environmentLine = environmentPreview.length ? `<div class="dungeon-environment-line">🧭 环境: ${environmentPreview.map(e => `${symbolIconHtml(e.icon, 12, e.name, 'spell_frost_arcticwinds')} ${e.name}`).join(' · ')}</div>` : '';
+    const environmentLine = environmentPreview.length ? `<div class="dungeon-environment-line">🧭 环境: ${environmentPreview.map(e => inlineTipSpanHtml(e, { fallbackIcon:'spell_frost_arcticwinds', color:'#67e8f9' })).join(' · ')}</div>` : '';
     const edictPreview = (selectedContractLevel > 0 && typeof getDungeonTacticalEdicts === 'function') ? getDungeonTacticalEdicts(dg, selectedContractLevel) : [];
-    const edictLine = edictPreview.length ? `<div class="dungeon-edict-line">📜 禁令: ${edictPreview.map(e => `${symbolIconHtml(e.icon, 12, e.name, 'inv_scroll_03')} ${e.name}`).join(' · ')}</div>` : '';
+    const edictLine = edictPreview.length ? `<div class="dungeon-edict-line">📜 禁令: ${edictPreview.map(e => inlineTipSpanHtml(e, { fallbackIcon:'inv_scroll_03', color:'#fcd34d' })).join(' · ')}</div>` : '';
     const timerPreview = (selectedContractLevel > 0 && typeof createDungeonTimer === 'function') ? createDungeonTimer(dg, selectedContractLevel) : null;
     const timerLine = timerPreview ? `<div class="dungeon-timer-line">⏳ 限时: ${timerPreview.label} · 达成奖励 ×${timerPreview.rewardMult.toFixed(2)} · 超时叠加压迫</div>` : '';
     const alertLine = selectedContractLevel > 0 ? '<div class="dungeon-alert-line">🚨 契约警戒: 波次推进会逐步强化敌人,高警戒可能出现戒备队长</div>' : '';
@@ -3451,6 +3499,7 @@ function renderDungeon() {
           <button class="enter-btn ${canEnter?'epic':''}" data-action="enterdungeon" data-key="${dg.key}" ${canEnter?'':'disabled'}>${btnText}</button>
         </div>
       </div>`;
+    bindInlineTipElements(div);
     target.appendChild(div);
   };
   for (const dg of normalDungeons) renderDungeonCard(dg, dl);
