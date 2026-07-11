@@ -3829,24 +3829,25 @@ const DUNGEON_ART_BACKFILL = {
   ragefire:'assets/wow/art/classic-ragefire.jpg',
   deadmines:'assets/wow/art/classic-deadmines.jpg',
   wailing:'assets/wow/art/classic-wailing.jpg',
-  bfd:'assets/wow/art/timewalking-atlas-banner.jpg',
+  bfd:'assets/wow/art/classic-blackfathom-deeps.jpg',
   shadowfang:'assets/wow/art/classic-shadowfang.jpg',
   gnomeregan:'assets/wow/art/classic-gnomeregan.jpg',
-  razorfen:'assets/wow/art/timewalking-atlas-banner.jpg',
+  razorfen:'assets/wow/art/classic-razorfen-kraul.jpg',
   scarlet:'assets/wow/art/classic-scarlet.jpg',
-  razorfend:'assets/wow/art/timewalking-atlas-banner.jpg',
+  razorfend:'assets/wow/art/classic-razorfen-downs.jpg',
   uldaman:'assets/wow/art/classic-uldaman.jpg',
   maraudon:'assets/wow/art/classic-maraudon.jpg',
   zulfarrak:'assets/wow/art/classic-zulfarrak.jpg',
-  sunktemple:'assets/wow/art/timewalking-atlas-banner.jpg',
+  sunktemple:'assets/wow/art/classic-sunken-temple.jpg',
   scholomance:'assets/wow/art/classic-scholo.jpg',
   brd:'assets/wow/art/classic-blackrock-depths.jpg',
   stratholme:'assets/wow/art/classic-stratholme.jpg',
   mc:'assets/wow/art/classic-molten-core.jpg',
   bwl:'assets/wow/art/classic-blackwing-lair.jpg',
-  diremaul:'assets/wow/art/timewalking-atlas-banner.jpg',
-  lbrs:'assets/wow/art/timewalking-atlas-banner.jpg',
-  ubrs:'assets/wow/art/timewalking-atlas-banner.jpg',
+  diremaul:'assets/wow/art/classic-dire-maul.jpg',
+  lbrs:'assets/wow/art/classic-blackrock-spire.jpg',
+  ubrs:'assets/wow/art/classic-blackrock-spire.jpg',
+  aq40:'assets/wow/art/classic-ahnqiraj-temple.jpg',
   manatombs:'assets/wow/art/timewalking-outland-banner.jpg',
   steamvault:'assets/wow/art/timewalking-outland-banner.jpg',
   magister:'assets/wow/art/timewalking-outland-banner.jpg',
@@ -4975,7 +4976,7 @@ function extendDungeonCatalog(){
 
   const extraDungeons = [
     {
-      key:'diremaul', name:'厄运之槌', icon:'🪵', reqLvl:60, waves:10, art:'assets/wow/art/timewalking-banner.png', desc:'食人魔王庭与扭曲秘法交织的古老圣地',
+      key:'diremaul', name:'厄运之槌', icon:'🪵', reqLvl:60, waves:10, art:'assets/wow/art/classic-dire-maul.jpg', desc:'食人魔王庭与扭曲秘法交织的古老圣地',
       bosses:[
         { name:'普希林', emoji:'😼', skills:[dmg('魔藤乱舞','🍃',4,{ cripple:true, dot:true })] },
         { name:'伊莫塔尔', emoji:'👾', skills:[dmg('邪能碾压','🟣',5,{ weaken:true, manaDrain:40 })] },
@@ -4983,7 +4984,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'lbrs', name:'黑石塔下层', icon:'🐉', reqLvl:61, waves:11, art:'assets/wow/art/timewalking-banner.png', desc:'黑石兽人与龙人的炼狱堡垒',
+      key:'lbrs', name:'黑石塔下层', icon:'🐉', reqLvl:61, waves:11, art:'assets/wow/art/classic-blackrock-spire.jpg', desc:'黑石兽人与龙人的炼狱堡垒',
       bosses:[
         { name:'欧莫克大王', emoji:'🪓', skills:[dmg('碎骨践踏','🪓',4.5,{ stun:1200, bleed:true })] },
         { name:'暗影猎手沃什加斯', emoji:'🏹', skills:[dmg('暗影箭雨','🌑',5,{ weaken:true, fear:1500 })] },
@@ -5040,7 +5041,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'aq40', name:'安其拉神殿', icon:'🦂', type:'raid', reqLvl:60, waves:12, art:'assets/wow/art/timewalking-banner.png', desc:'其拉帝国与古神低语支配的虫巢神殿',
+      key:'aq40', name:'安其拉神殿', icon:'🦂', type:'raid', reqLvl:60, waves:12, art:'assets/wow/art/classic-ahnqiraj-temple.jpg', desc:'其拉帝国与古神低语支配的虫巢神殿',
       bosses:[
         { name:'预言者斯克拉姆', emoji:'🔮', skills:[dmg('心智震爆','🔮',7.5,{ mirror:true, silence:1800 })] },
         { name:'战争守卫沙尔图拉', emoji:'🦂', skills:[dmg('锋刃狂舞','🦂',8,{ aoe:true, bleed:true, cripple:true })] },
@@ -5087,7 +5088,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'ubrs', name:'黑石塔上层', icon:'🔥', reqLvl:63, waves:8, art:'assets/wow/art/timewalking-banner.png', desc:'黑石氏族最高处的兽人将军议事厅',
+      key:'ubrs', name:'黑石塔上层', icon:'🔥', reqLvl:63, waves:8, art:'assets/wow/art/classic-blackrock-spire.jpg', desc:'黑石氏族最高处的兽人将军议事厅',
       bosses:[
         { name:'督军沃克', emoji:'🪓', skills:[dmg('狂暴战吼','🪓',5,{ frenzy:true, stun:1200 })] },
         { name:'烈焰使者索拉卡尔', emoji:'🔥', skills:[dmg('烈焰风暴','🔥',5.5,{ aoe:true, dot:true })] },
