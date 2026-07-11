@@ -3125,6 +3125,35 @@ function renderCompanion() {
 }
 
 let dgFilter = 'all'; // 'all' | '5man' | 'raid'
+function dungeonBountyTipHtml(target, options) {
+  if (!target) return '';
+  const cfg = options || {};
+  const reward = (typeof dungeonBountyRewardText === 'function') ? dungeonBountyRewardText(target) : '';
+  const meta = cfg.meta || reward || (target.tier ? `T${target.tier}` : '');
+  return inlineTipSpanHtml({
+    name: target.themeName || target.name || '副本悬赏',
+    icon: target.icon || '🎯',
+    desc: target.desc || '今日指定副本的额外目标。通关后会追加货币、精华与保底品质装备奖励。',
+    meta,
+  }, {
+    fallbackIcon: 'achievement_bg_kill_flag_carrier',
+    color: '#f6c453',
+    metaVisible: cfg.metaVisible !== false,
+  });
+}
+function dungeonBountyRewardTipHtml(target, rewardText, options) {
+  const cfg = options || {};
+  return inlineTipSpanHtml({
+    name: cfg.name || '悬赏奖励',
+    icon: cfg.icon || '🎁',
+    desc: '完成今日目标副本后追加发放。蓝装+代表至少稀有装备;紫装+代表至少史诗装备,高阶副本仍有机会向上掉落。',
+    meta: rewardText || ((typeof dungeonBountyRewardText === 'function') ? dungeonBountyRewardText(target) : ''),
+  }, {
+    fallbackIcon: 'inv_misc_bag_08',
+    color: '#93c5fd',
+    metaVisible: true,
+  });
+}
 function renderDungeonBountyPanel() {
   const el = $('dungeon-bounty-panel');
   if (!el) return;
@@ -3139,9 +3168,11 @@ function renderDungeonBountyPanel() {
     const dg = DUNGEONS.find(x => x.key === t.key);
     const type = dg?.epicRaid ? '史诗团本' : dg?.epic5 ? '史诗5人' : dg?.heroic ? '英雄' : dg?.type === 'raid' ? '团本' : '5人本';
     const reward = (typeof dungeonBountyRewardText === 'function') ? dungeonBountyRewardText(t) : '';
+    const bountyTip = dungeonBountyTipHtml(t, { metaVisible: false });
+    const rewardTip = dungeonBountyRewardTipHtml(t, reward);
     return `<div class="dungeon-bounty-mini ${done ? 'done' : ''}">
       <div><b>${t.icon || '🎯'} ${t.name}</b> <span class="muted">[${type}]</span>${done ? ' <span class="pos">已完成</span>' : ''}</div>
-      <div class="muted">${t.themeName || '悬赏'} · ${reward}</div>
+      <div class="muted">${bountyTip} · ${rewardTip}</div>
     </div>`;
   }).join('');
   el.innerHTML = `
@@ -3152,6 +3183,7 @@ function renderDungeonBountyPanel() {
       </div>
       <div class="dungeon-bounty-grid">${items}</div>
     </div>`;
+  bindInlineTipElements(el);
 }
 
 function renderDungeonContractPanel() {
@@ -3287,10 +3319,11 @@ function buildDungeonInfoHtml(dg) {
   }
   const bountyTarget = (typeof dungeonBountyTargetFor === 'function') ? dungeonBountyTargetFor(dg.key) : null;
   if (bountyTarget) {
+    const rewardText = (typeof dungeonBountyRewardText === 'function') ? dungeonBountyRewardText(bountyTarget) : '';
     html += `<div class="dungeon-bounty-info ${bountyTarget.claimed ? 'done' : ''}">
-      <b>${bountyTarget.icon || '🎯'} 今日悬赏: ${bountyTarget.themeName || '悬赏'}</b>
+      <b>今日悬赏: ${dungeonBountyTipHtml(bountyTarget, { metaVisible:true })}</b>
       <div class="muted">${bountyTarget.desc || ''}</div>
-      <div>${typeof dungeonBountyRewardText === 'function' ? dungeonBountyRewardText(bountyTarget) : ''}${bountyTarget.claimed ? ' · 已完成' : ''}</div>
+      <div>${dungeonBountyRewardTipHtml(bountyTarget, rewardText)}${bountyTarget.claimed ? ' · 已完成' : ''}</div>
     </div>`;
   }
   for (const bossData of (dg.bosses || [])) {
@@ -3501,7 +3534,7 @@ function renderDungeon() {
     const bountyTarget = (typeof dungeonBountyTargetFor === 'function') ? dungeonBountyTargetFor(dg.key) : null;
     const bountyActive = bountyTarget && !bountyTarget.claimed;
     const bountyBadge = bountyActive ? `<span class="pill dungeon-bounty-pill">${bountyTarget.icon || '🎯'}悬赏</span>` : '';
-    const bountyLine = bountyTarget ? `<div class="dungeon-bounty-line ${bountyTarget.claimed ? 'done' : ''}">${bountyTarget.icon || '🎯'} ${bountyTarget.themeName || '悬赏'} · ${typeof dungeonBountyRewardText === 'function' ? dungeonBountyRewardText(bountyTarget) : ''}${bountyTarget.claimed ? ' · 已完成' : ''}</div>` : '';
+    const bountyLine = bountyTarget ? `<div class="dungeon-bounty-line ${bountyTarget.claimed ? 'done' : ''}">${dungeonBountyTipHtml(bountyTarget, { metaVisible:true })}${bountyTarget.claimed ? ' · 已完成' : ''}</div>` : '';
     const delveLine = (typeof renderDelveCardLine === 'function') ? renderDelveCardLine(dg) : '';
     const div = document.createElement('div');
     div.className = 'dungeon-item' + (onCd ? ' on-cd' : '') + (bountyActive ? ' bounty-target' : '');

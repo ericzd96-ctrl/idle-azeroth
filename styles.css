@@ -634,6 +634,17 @@ h1 {
 .dungeon-bounty-clear {
   font-size: 12px;
 }
+.dungeon-clear-mechanics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 8px;
+  align-items: center;
+  line-height: 1.55;
+}
+.dungeon-clear-mechanics .dungeon-inline-tip,
+.dungeon-bounty-clear .dungeon-inline-tip {
+  white-space: nowrap;
+}
 .delve-panel {
   margin: 0 0 8px 0;
   padding: 8px;

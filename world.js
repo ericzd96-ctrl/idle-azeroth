@@ -738,6 +738,53 @@ function dungeonBountyRewardText(target) {
   return `💰${r.gold} · 💎${r.gem} · 🏅${r.honor} · ✨${r.essence} · 额外${r.minRarity === 'epic' ? '紫装' : '蓝装'}+`;
 }
 
+function dungeonCodexEntry(key) {
+  return DUNGEON_MECHANIC_CODEX.find(x => x.key === key);
+}
+
+function dungeonClearTipFallbackText(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function dungeonClearInlineTip(item, options) {
+  if (typeof inlineTipSpanHtml === 'function') return inlineTipSpanHtml(item, options);
+  const cfg = options || {};
+  const name = item?.name || cfg.name || '机制';
+  const icon = item?.icon || cfg.icon || '⚙️';
+  const meta = cfg.meta || item?.meta || '';
+  return `<span class="${cfg.className || 'dungeon-inline-tip'}">${dungeonClearTipFallbackText(icon)} ${dungeonClearTipFallbackText(name)}${cfg.metaVisible && meta ? ` · ${dungeonClearTipFallbackText(meta)}` : ''}</span>`;
+}
+
+function dungeonClearMetricTip(name, icon, desc, meta, fallbackIcon, color) {
+  return dungeonClearInlineTip({ name, icon, desc, meta }, {
+    fallbackIcon: fallbackIcon || 'achievement_boss_illidan',
+    color: color || '#fde68a',
+    metaVisible: !!meta,
+  });
+}
+
+function dungeonClearCodexTip(key, meta) {
+  const entry = dungeonCodexEntry(key) || {};
+  return dungeonClearInlineTip({ ...entry, meta }, {
+    fallbackIcon: 'inv_misc_book_11',
+    color: '#fde68a',
+    metaVisible: !!meta,
+  });
+}
+
+function dungeonBountyClearTip(target, rewardText) {
+  return dungeonClearInlineTip({
+    name: target?.themeName || '副本悬赏',
+    icon: target?.icon || '🎯',
+    desc: target?.desc || '今日指定副本的额外目标。通关后会追加货币、精华与保底品质装备奖励。',
+    meta: rewardText || (target ? dungeonBountyRewardText(target) : ''),
+  }, {
+    fallbackIcon: 'achievement_bg_kill_flag_carrier',
+    color: '#f6c453',
+    metaVisible: true,
+  });
+}
+
 function grantDungeonBountyReward(dg, opts) {
   const target = dungeonBountyTargetFor(dg?.key);
   if (!target || target.claimed) return '';
@@ -773,9 +820,10 @@ function grantDungeonBountyReward(dg, opts) {
 
   log(`${target.icon || '🎯'} 完成副本悬赏 [${target.name}]! 💰+${gold} 💎+${gem} ✨+${essence}`, 'legend');
   markDirty('dungeon', 'inventory', 'hero');
+  const rewardText = `💰${gold} · 💎${gem} · 🏅${honor} · ✨${essence}`;
   return `
     <div class="dungeon-bounty-clear">
-      <div style="font-weight:700">${target.icon || '🎯'} 副本悬赏完成: ${target.themeName || '悬赏'}</div>
+      <div style="font-weight:700">副本悬赏完成: ${dungeonBountyClearTip(target, rewardText)}</div>
       <div>💰 金币 +${gold} · 💎 钻石 +${gem} · 🏅 荣誉 +${honor} · ✨ 精华 +${essence}</div>
       ${itemHtml}
     </div>`;
@@ -851,36 +899,58 @@ function onDungeonClear(dg) {
     : '<div class="muted">　无</div>';
 
   const affixHtml = affixes.length
-    ? `<div class="muted" style="font-size:12px">本次词缀: ${affixes.map(a => (a.icon||'') + a.name).join(' · ')}</div>`
+    ? `<div class="muted" style="font-size:12px">本次词缀: ${affixes.map(a => dungeonClearInlineTip(a, { fallbackIcon:'spell_holy_powerinfusion', color:'#67e8f9' })).join(' · ')}</div>`
     : '';
   const contractInfo = dungeonContractInfo(dungeonStateSnapshot?.contractLevel || 0);
   const timerStatus = dungeonStateSnapshot?.timer ? dungeonTimerStatus(dungeonStateSnapshot, dungeonStateSnapshot.timer.clearedAt || Date.now()) : null;
+  const timerTip = timerStatus
+    ? (timerStatus.expired
+      ? dungeonClearCodexTip('timePulse', dungeonStateSnapshot.timer.overtimeStacks ? `${dungeonStateSnapshot.timer.overtimeStacks}层` : '')
+      : dungeonClearMetricTip('限时挑战', '⏳', '在限定时间内通关可获得额外奖励;超时后会进入时序脉冲。', timerStatus.text || '', 'inv_misc_pocketwatch_01', '#fde68a'))
+    : '';
   const timerHtml = timerStatus
-    ? `<div class="muted" style="font-size:12px">⏳ 限时挑战: ${dungeonStateSnapshot.timer.onTime ? `达成 · 奖励 ×${(dungeonStateSnapshot.timer.rewardMult || 1).toFixed(2)}` : `超时 · 压迫 ${dungeonStateSnapshot.timer.overtimeStacks || 0}层 · 脉冲 ${dungeonStateSnapshot.timer.overtimePulses || 0}次`}</div>`
+    ? `<div class="muted" style="font-size:12px">${timerTip}: ${dungeonStateSnapshot.timer.onTime ? `达成 · 奖励 ×${(dungeonStateSnapshot.timer.rewardMult || 1).toFixed(2)}` : `超时 · 压迫 ${dungeonStateSnapshot.timer.overtimeStacks || 0}层 · 脉冲 ${dungeonStateSnapshot.timer.overtimePulses || 0}次`}</div>`
     : '';
   const bossMechanicHtml = dungeonStateSnapshot?.bossMechanicsTriggered && !(dungeonStateSnapshot?.contractLevel > 0)
-    ? `<div class="muted" style="font-size:12px">🎭 Boss专属机制触发 ${dungeonStateSnapshot.bossMechanicsTriggered || 0} 次</div>`
+    ? `<div class="muted" style="font-size:12px">${dungeonClearMetricTip('Boss专属机制', '🎭', '首领自带的额外机制,可能包含特殊读条、召唤、区域压力或阶段变化。', `${dungeonStateSnapshot.bossMechanicsTriggered || 0}次`, 'spell_shadow_shadowfury', '#f0abfc')} 触发</div>`
     : '';
   const bossDirectorHtml = dungeonStateSnapshot?.bossDirectorEvents && !(dungeonStateSnapshot?.contractLevel > 0)
-    ? `<div class="muted" style="font-size:12px">🎬 Boss流程机制触发 ${dungeonStateSnapshot.bossDirectorEvents || 0} 次</div>`
+    ? `<div class="muted" style="font-size:12px">${dungeonClearMetricTip('Boss流程机制', '🎬', '战斗导演事件,会按节奏插入额外压力,例如点名、召唤、范围压制或爆发窗口。', `${dungeonStateSnapshot.bossDirectorEvents || 0}次`, 'achievement_boss_illidan', '#93c5fd')} 触发</div>`
     : '';
   const bossTacticHtml = dungeonStateSnapshot?.bossTacticEvents && !(dungeonStateSnapshot?.contractLevel > 0)
-    ? `<div class="muted" style="font-size:12px">🎭 Boss战术触发 ${dungeonStateSnapshot.bossTacticEvents || 0} 次${dungeonStateSnapshot.bossTacticObjectivesBroken ? ` · 战术目标击破 ${dungeonStateSnapshot.bossTacticObjectivesBroken}` : ''}</div>`
+    ? `<div class="muted" style="font-size:12px">${dungeonClearMetricTip('Boss战术', '🎭', '首领战术事件,通常需要打断、转火、击破目标或用防御覆盖。', `${dungeonStateSnapshot.bossTacticEvents || 0}次`, 'ability_warrior_battleshout', '#fca5a5')} 触发${dungeonStateSnapshot.bossTacticObjectivesBroken ? ` · 战术目标击破 ${dungeonStateSnapshot.bossTacticObjectivesBroken}` : ''}</div>`
     : '';
   const bossWeakpointHtml = dungeonStateSnapshot?.bossWeakpointEvents && !(dungeonStateSnapshot?.contractLevel > 0)
-    ? `<div class="muted" style="font-size:12px">💠 Boss弱点出现 ${dungeonStateSnapshot.bossWeakpointsSpawned || 0} 次 · 击破 ${dungeonStateSnapshot.bossWeakpointsBroken || 0}</div>`
+    ? `<div class="muted" style="font-size:12px">${dungeonClearMetricTip('Boss弱点', '💠', '弱点出现后及时击破可制造首领破绽,并记录额外战斗表现。', `${dungeonStateSnapshot.bossWeakpointsBroken || 0}/${dungeonStateSnapshot.bossWeakpointsSpawned || 0}`, 'inv_misc_gem_diamond_02', '#fde68a')} 出现 ${dungeonStateSnapshot.bossWeakpointsSpawned || 0} 次</div>`
     : '';
   const bossChallengeHtml = dungeonStateSnapshot?.bossChallengesStarted && !(dungeonStateSnapshot?.contractLevel > 0)
-    ? `<div class="muted" style="font-size:12px">🏅 Boss挑战完成 ${dungeonStateSnapshot.bossChallengesCompleted || 0}/${dungeonStateSnapshot.bossChallengesStarted || 0}${dungeonStateSnapshot.bossChallengeBonusGold ? ` · 奖励 +${dungeonStateSnapshot.bossChallengeBonusGold}金币` : ''}${dungeonStateSnapshot.bossChallengeBonusGems ? ` · +${dungeonStateSnapshot.bossChallengeBonusGems}钻石` : ''}</div>`
+    ? `<div class="muted" style="font-size:12px">${dungeonClearCodexTip('bossChallenge', `${dungeonStateSnapshot.bossChallengesCompleted || 0}/${dungeonStateSnapshot.bossChallengesStarted || 0}`)} 完成${dungeonStateSnapshot.bossChallengeBonusGold ? ` · 奖励 +${dungeonStateSnapshot.bossChallengeBonusGold}金币` : ''}${dungeonStateSnapshot.bossChallengeBonusGems ? ` · +${dungeonStateSnapshot.bossChallengeBonusGems}钻石` : ''}</div>`
     : '';
   const bossGrandHtml = dungeonStateSnapshot?.bossGrandMechanicsAssigned && !(dungeonStateSnapshot?.contractLevel > 0)
-    ? `<div class="muted" style="font-size:12px">🌌 扩展Boss机制库: 200项 · 本次分配 ${dungeonStateSnapshot.bossGrandMechanicsAssigned || 0} · 触发 ${dungeonStateSnapshot.bossGrandMechanicsTriggered || 0} 次</div>`
+    ? `<div class="muted" style="font-size:12px">${dungeonClearMetricTip('扩展Boss机制库', '🌌', '大规模首领机制池。每次副本会分配若干项并在战斗中记录实际触发。', `${dungeonStateSnapshot.bossGrandMechanicsTriggered || 0}/${dungeonStateSnapshot.bossGrandMechanicsAssigned || 0}`, 'spell_arcane_arcanetorrent', '#67e8f9')}: 200项</div>`
     : '';
   const roomHtml = dungeonStateSnapshot?.combatRooms?.length
-    ? `<div class="muted" style="font-size:12px">🎲 战斗房间: ${dungeonStateSnapshot.combatRooms.map(r => (r.icon || '🎲') + r.name).join(' · ')} · 触发 ${dungeonStateSnapshot.roomEvents || 0} 次 · 击破目标 ${dungeonStateSnapshot.roomObjectivesBroken || 0}${dungeonStateSnapshot.roomBonusGold ? ` · 额外金币 +${dungeonStateSnapshot.roomBonusGold}` : ''}</div>`
+    ? `<div class="muted" style="font-size:12px">${dungeonClearCodexTip('combatRoom', `${dungeonStateSnapshot.roomEvents || 0}次`)}: ${dungeonStateSnapshot.combatRooms.map(r => dungeonClearInlineTip(r, { fallbackIcon:'inv_misc_dice_02', color:'#f9a8d4' })).join(' · ')} · 击破目标 ${dungeonStateSnapshot.roomObjectivesBroken || 0}${dungeonStateSnapshot.roomBonusGold ? ` · 额外金币 +${dungeonStateSnapshot.roomBonusGold}` : ''}</div>`
+    : '';
+  const contractSummaryTags = dungeonStateSnapshot?.contractLevel > 0
+    ? [
+        dungeonClearMetricTip(`契约:${contractInfo.name}`, contractInfo.icon, contractInfo.desc || '副本契约会提高怪物强度并同步提高通关奖励。', `奖励 ×${contractMult.toFixed(2)}`, 'inv_scroll_03', '#f6c453'),
+        dungeonClearCodexTip('alert', `最高 ${dungeonStateSnapshot.maxAlert || dungeonStateSnapshot.alertLevel || 0}`),
+        dungeonClearMetricTip('首领阶段', '⚔️', 'Boss 血量跌破指定阈值后触发的阶段事件。', `${dungeonStateSnapshot.bossPhasesTriggered || 0}次`, 'ability_warrior_savageblow', '#fca5a5'),
+        dungeonClearMetricTip('Boss机制', '🎭', '首领自带的额外机制触发次数。', `${dungeonStateSnapshot.bossMechanicsTriggered || 0}次`, 'spell_shadow_shadowfury', '#f0abfc'),
+        dungeonClearMetricTip('流程机制', '🎬', '战斗导演按节奏插入的额外压力。', `${dungeonStateSnapshot.bossDirectorEvents || 0}次`, 'achievement_boss_illidan', '#93c5fd'),
+        dungeonClearMetricTip('Boss战术', '🎭', '需要打断、转火、击破目标或防御覆盖的首领战术。', `${dungeonStateSnapshot.bossTacticEvents || 0}次`, 'ability_warrior_battleshout', '#fca5a5'),
+        dungeonClearMetricTip('扩展机制', '🌌', '扩展Boss机制库在本次副本中的实际触发。', `${dungeonStateSnapshot.bossGrandMechanicsTriggered || 0}次`, 'spell_arcane_arcanetorrent', '#67e8f9'),
+        dungeonClearMetricTip('弱点击破', '💠', '击破首领弱点的次数。', `${dungeonStateSnapshot.bossWeakpointsBroken || 0}/${dungeonStateSnapshot.bossWeakpointsSpawned || 0}`, 'inv_misc_gem_diamond_02', '#fde68a'),
+        dungeonClearCodexTip('bossChallenge', `${dungeonStateSnapshot.bossChallengesCompleted || 0}/${dungeonStateSnapshot.bossChallengesStarted || 0}`),
+        dungeonClearCodexTip('combatRoom', `${dungeonStateSnapshot.roomEvents || 0}次`),
+        dungeonClearMetricTip('环境触发', '🧭', '契约环境危害在本次副本中的触发次数。', `${dungeonStateSnapshot.environmentHits || 0}次`, 'spell_frost_arcticwinds', '#67e8f9'),
+        dungeonClearCodexTip('timeEdict', `${dungeonStateSnapshot.edictHits || 0}次`),
+        dungeonClearMetricTip('禁令增援', '👥', '战术禁令额外召唤或派出的增援数量。', `${dungeonStateSnapshot.edictAdds || 0}`, 'achievement_bg_killxenemies_generalsroom', '#fcd34d'),
+      ].join(' · ')
     : '';
   const contractHtml = dungeonStateSnapshot?.contractLevel > 0
-    ? `<div class="muted" style="font-size:12px">${contractInfo.icon} 契约: ${contractInfo.name} · 通关奖励 ×${contractMult.toFixed(2)} · 最高警戒 ${dungeonStateSnapshot.maxAlert || dungeonStateSnapshot.alertLevel || 0} · 首领阶段 ${dungeonStateSnapshot.bossPhasesTriggered || 0} · Boss机制 ${dungeonStateSnapshot.bossMechanicsTriggered || 0} · 流程机制 ${dungeonStateSnapshot.bossDirectorEvents || 0} · Boss战术 ${dungeonStateSnapshot.bossTacticEvents || 0} · 扩展机制 ${dungeonStateSnapshot.bossGrandMechanicsTriggered || 0} · 弱点击破 ${dungeonStateSnapshot.bossWeakpointsBroken || 0}/${dungeonStateSnapshot.bossWeakpointsSpawned || 0} · 挑战 ${dungeonStateSnapshot.bossChallengesCompleted || 0}/${dungeonStateSnapshot.bossChallengesStarted || 0} · 房间事件 ${dungeonStateSnapshot.roomEvents || 0} · 环境触发 ${dungeonStateSnapshot.environmentHits || 0} · 禁令触发 ${dungeonStateSnapshot.edictHits || 0} · 禁令增援 ${dungeonStateSnapshot.edictAdds || 0}</div>`
+    ? `<div class="muted dungeon-clear-mechanics">${contractSummaryTags}</div>`
     : '';
   const contractChestHtml = grantDungeonContractChest(dg, dungeonStateSnapshot);
   const bountyHtml = grantDungeonBountyReward(dg, { loot:uniqueLoot });
@@ -909,6 +979,7 @@ function onDungeonClear(dg) {
     ${contractChestHtml}
     ${bountyHtml}
   `;
+  if (typeof bindInlineTipElements === 'function') bindInlineTipElements($('dungeon-clear-text'));
   $('modal-dungeon-clear').classList.add('show');
   log(`🏆 通关 ${dg.name}! 获得 ${uniqueLoot.length} 件装备`, 'legend');
   leaveDungeon();
@@ -1397,6 +1468,7 @@ function onMythicClear() {
   `;
   state.gold += dg.reqLvl * 80;
   state.gem += gemReward;
+  if (typeof bindInlineTipElements === 'function') bindInlineTipElements($('dungeon-clear-text'));
   $('modal-dungeon-clear').classList.add('show');
   log(`🌟 大秘境 +${clearedLevel} 通关! 光辉+1 (累积: ${pending})`, 'legend');
   state.mode = 'world';
