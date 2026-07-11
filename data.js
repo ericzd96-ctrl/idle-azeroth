@@ -3859,17 +3859,17 @@ const DUNGEON_ART_BACKFILL = {
   hyjal:'assets/wow/art/tbc-mount-hyjal.jpg',
   bt:'assets/wow/art/tbc-black-temple.jpg',
   sunwell:'assets/wow/art/tbc-sunwell-plateau.jpg',
-  culling:'assets/wow/art/timewalking-wrath-banner.jpg',
-  pit:'assets/wow/art/timewalking-wrath-banner.jpg',
-  oculus:'assets/wow/art/timewalking-wrath-banner.jpg',
+  culling:'assets/wow/art/wrath-culling-stratholme.jpg',
+  pit:'assets/wow/art/wrath-pit-saron.jpg',
+  oculus:'assets/wow/art/wrath-oculus.jpg',
   hor:'assets/wow/art/wrath-halls-reflection.jpg',
-  nexus:'assets/wow/art/timewalking-wrath-banner.jpg',
-  gundrak:'assets/wow/art/timewalking-wrath-banner.jpg',
-  hol:'assets/wow/art/timewalking-wrath-banner.jpg',
-  toc:'assets/wow/art/timewalking-wrath-banner.jpg',
-  forge:'assets/wow/art/timewalking-wrath-banner.jpg',
+  nexus:'assets/wow/art/wrath-nexus.jpg',
+  gundrak:'assets/wow/art/wrath-gundrak.jpg',
+  hol:'assets/wow/art/wrath-halls-lightning.jpg',
+  toc:'assets/wow/art/wrath-trial-champion.jpg',
+  forge:'assets/wow/art/wrath-forge-souls.jpg',
   naxx:'assets/wow/art/classic-naxxramas.jpg',
-  ruby:'assets/wow/art/timewalking-wrath-banner.jpg',
+  ruby:'assets/wow/art/wrath-ruby-sanctum.jpg',
   icc:'assets/wow/art/wrath-icecrown-citadel.jpg'
 };
 function applyDungeonArtBackfill(){
@@ -5011,7 +5011,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'culling', name:'净化斯坦索姆', icon:'⏳', reqLvl:73, waves:10, art:'assets/wow/art/timewalking-wrath-banner.jpg', desc:'时光之穴中的亡城肃清战',
+      key:'culling', name:'净化斯坦索姆', icon:'⏳', reqLvl:73, waves:10, art:'assets/wow/art/wrath-culling-stratholme.jpg', desc:'时光之穴中的亡城肃清战',
       bosses:[
         { name:'肉钩', emoji:'🪝', skills:[dmg('勾链撕扯','🪝',5,{ bleed:true, cripple:true })] },
         { name:'塑血者沙尔拉姆', emoji:'🧪', skills:[dmg('瘟疫缝合','🧪',5.5,{ plague:true, decay:true })] },
@@ -5019,7 +5019,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'pit', name:'萨隆矿坑', icon:'⛓️', reqLvl:75, waves:10, art:'assets/wow/art/timewalking-wrath-banner.jpg', desc:'冰冠脚下以血与矿熔铸的深坑',
+      key:'pit', name:'萨隆矿坑', icon:'⛓️', reqLvl:75, waves:10, art:'assets/wow/art/wrath-pit-saron.jpg', desc:'冰冠脚下以血与矿熔铸的深坑',
       bosses:[
         { name:'熔炉之主加弗斯特', emoji:'🔨', skills:[dmg('萨隆重压','🔨',5.5,{ brittle:true, sunder:true })] },
         { name:'艾克', emoji:'🧟', skills:[dmg('瘟疫喷发','🦠',6,{ plague:true, dot:true, aoe:true })] },
@@ -5027,7 +5027,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'oculus', name:'魔环', icon:'💫', reqLvl:76, waves:10, art:'assets/wow/art/timewalking-wrath-banner.jpg', desc:'魔网裂口上方失控旋转的浮空圣所',
+      key:'oculus', name:'魔环', icon:'💫', reqLvl:76, waves:10, art:'assets/wow/art/wrath-oculus.jpg', desc:'魔网裂口上方失控旋转的浮空圣所',
       bosses:[
         { name:'审讯者达拉科', emoji:'💫', skills:[dmg('法网审讯','✨',5.5,{ silence:1800, manaDrain:45 })] },
         { name:'法师领主伊洛姆', emoji:'🧙', skills:[dmg('法能飓风','🌀',6,{ aoe:true, mirror:true, weaken:true })] },
@@ -5231,7 +5231,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'nexus', name:'魔枢', icon:'💠', reqLvl:68, waves:9, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'蓝龙军团守护的奥术螺旋,玛里苟斯的力量核心',
+      key:'nexus', name:'魔枢', icon:'💠', reqLvl:68, waves:9, art:'assets/wow/art/wrath-nexus.jpg', desc:'蓝龙军团守护的奥术螺旋,玛里苟斯的力量核心',
       bosses:[
         { name:'冰霜之王托塞德林', emoji:'❄️', skills:[dmg('寒冰尖刺','🧊',6,{ freeze:1500, slow:true })] },
         { name:'阿诺玛鲁斯', emoji:'🌀', skills:[dmg('虚空裂解','🌀',6.5,{ aoe:true, manaDrain:40 })] },
@@ -5239,7 +5239,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'gundrak', name:'古达克', icon:'🐊', reqLvl:71, waves:9, art:'assets/wow/art/timewalking-atlas-banner.jpg', desc:'卓格巴尔巨魔向血神献祭的古老神庙',
+      key:'gundrak', name:'古达克', icon:'🐊', reqLvl:71, waves:9, art:'assets/wow/art/wrath-gundrak.jpg', desc:'卓格巴尔巨魔向血神献祭的古老神庙',
       bosses:[
         { name:'斯拉德兰', emoji:'🐍', skills:[dmg('毒蛇缠绕','🐍',6.5,{ plague:true, cripple:true })] },
         { name:'莫拉格', emoji:'🦏', skills:[dmg('犀牛冲撞','🦏',7,{ stun:1500, bleed:true })] },

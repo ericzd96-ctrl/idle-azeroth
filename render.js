@@ -3189,8 +3189,16 @@ const DUNGEON_ATLAS_OVERRIDES = {
   hyjal:{ era:'The Burning Crusade', location:'时光之穴 · 海加尔山', route:'世界之树防线', theme:'燃烧军团 / 时间战役', source:'海加尔山之战团队副本' },
   bt:{ era:'The Burning Crusade', location:'影月谷 · 黑暗神殿', route:'神殿阶层', theme:'伊利达雷 / 恶魔', source:'黑暗神殿团队副本' },
   sunwell:{ era:'The Burning Crusade', location:'奎尔丹纳斯岛 · 太阳之井高地', route:'高地平台团本', theme:'燃烧军团 / 太阳井', source:'太阳之井高地团队副本' },
+  nexus:{ era:'Wrath of the Lich King', location:'北风苔原 · 考达拉', route:'奥术螺旋', theme:'蓝龙军团 / 魔网', source:'魔枢副本线' },
+  gundrak:{ era:'Wrath of the Lich King', location:'祖达克 · 古达克', route:'巨魔神庙', theme:'达卡莱巨魔 / 血神', source:'古达克副本线' },
   culling:{ era:'Wrath of the Lich King', location:'时光之穴 · 斯坦索姆', route:'限时肃清', theme:'青铜龙 / 亡灵', source:'净化斯坦索姆副本线' },
+  pit:{ era:'Wrath of the Lich King', location:'冰冠冰川 · 冰封大厅', route:'萨隆矿坑追击', theme:'天灾 / 萨隆邪铁', source:'萨隆矿坑副本线' },
+  oculus:{ era:'Wrath of the Lich King', location:'北风苔原 · 考达拉', route:'龙骑浮空环', theme:'蓝龙军团 / 魔网飞行', source:'魔环副本线' },
   hor:{ era:'Wrath of the Lich King', location:'冰冠冰川 · 冰封大厅', route:'追逃走廊', theme:'霜之哀伤 / 天灾', source:'映像大厅副本线' },
+  hol:{ era:'Wrath of the Lich King', location:'风暴峭壁 · 奥杜尔', route:'泰坦闪电大厅', theme:'泰坦造物 / 闪电', source:'闪电大厅副本线' },
+  toc:{ era:'Wrath of the Lich King', location:'冰冠冰川 · 银色比武场', route:'竞技试炼场', theme:'银色北伐军 / 亡灵突袭', source:'冠军的试炼副本线' },
+  forge:{ era:'Wrath of the Lich King', location:'冰冠冰川 · 冰封大厅', route:'灵魂熔炉前线', theme:'天灾 / 灵魂熔炉', source:'灵魂洪炉副本线' },
+  ruby:{ era:'Wrath of the Lich King', location:'龙骨荒野 · 龙眠神殿下层', route:'红玉圣殿团本', theme:'红龙军团 / 暮光龙', source:'红玉圣殿团队副本' },
   icc:{ era:'Wrath of the Lich King', location:'冰冠冰川 · 冰冠堡垒', route:'多翼团本', theme:'天灾 / 冰霜', source:'冰冠堡垒团队副本' },
 };
 function dungeonEraGuess(dg) {
