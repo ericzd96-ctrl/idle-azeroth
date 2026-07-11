@@ -3570,7 +3570,7 @@ function buildDungeonInfoHtml(dg) {
     const bossName = bossData.name;
     const items = (typeof getDungeonBossLoot === 'function') ? getDungeonBossLoot(dg.key, bossName, state.cls) : [];
     const isFinal = bossName === lastBossName;
-    const bossIconHtml = (typeof entityIcon === 'function') ? entityIcon(bossName, 16, bossData.emoji || '👹') : (bossData.emoji || '👹');
+    const bossIconHtml = (typeof entityIcon === 'function') ? entityIcon(bossName, 38, bossData.emoji || '👹') : (bossData.emoji || '👹');
     const dropLabel = isEpicRaid
       ? `(必掉史诗紫装${isFinal ? '×2' : ''}${items.some(it => it.rarity === 'legend') ? ' · 含超低概率橙装' : ''})`
       : (isRaid ? (isFinal ? '(常规团本装备 · 低概率橙武)' : '(常规团本装备)') : '(必掉1件)');
@@ -3586,8 +3586,14 @@ function buildDungeonInfoHtml(dg) {
     const challengePreview = (typeof getDungeonBossChallengeSeals === 'function') ? getDungeonBossChallengeSeals(bossData) : [];
     const grandPreview = (typeof getDungeonBossGrandMechanics === 'function') ? getDungeonBossGrandMechanics(bossData, 6) : [];
     html += `
-      <div style="margin:10px 0 0;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.03)">
-        <div style="color:var(--legend);font-size:13px;font-weight:700;margin-bottom:6px">${bossIconHtml} ${bossName} ${dropLabel}</div>`;
+      <div class="dungeon-boss-card">
+        <div class="dungeon-boss-head">
+          <div class="dungeon-boss-avatar">${bossIconHtml}</div>
+          <div class="dungeon-boss-title">
+            <div>${bossName} ${isFinal ? '<span class="pill boss-final-pill">尾王</span>' : ''}</div>
+            <div class="muted">波次 ${bossData.wave || '?'} · ${dropLabel}</div>
+          </div>
+        </div>`;
     if (councilPreview.length > 1) {
       html += `<div class="dungeon-council-preview">
         ${councilPreview.map(m => inlineTipSpanHtml({ name:m.name, icon:m.icon || bossData.emoji || '👹', desc:m.role ? `该成员负责 ${m.role}。` : '多目标首领成员。', meta:m.role || '' }, { fallbackIcon:'achievement_boss_illidan', color:'#fcd34d', metaVisible:true })).join('')}
