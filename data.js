@@ -3870,7 +3870,36 @@ const DUNGEON_ART_BACKFILL = {
   forge:'assets/wow/art/wrath-forge-souls.jpg',
   naxx:'assets/wow/art/classic-naxxramas.jpg',
   ruby:'assets/wow/art/wrath-ruby-sanctum.jpg',
-  icc:'assets/wow/art/wrath-icecrown-citadel.jpg'
+  icc:'assets/wow/art/wrath-icecrown-citadel.jpg',
+  vortex:'assets/wow/art/cataclysm-vortex-pinnacle.jpg',
+  firelands:'assets/wow/art/cataclysm-firelands.jpg',
+  dragonsoul:'assets/wow/art/cataclysm-dragon-soul.jpg',
+  stormstout:'assets/wow/art/pandaria-stormstout-brewery.jpg',
+  shadopan:'assets/wow/art/pandaria-shadopan-monastery.jpg',
+  throne:'assets/wow/art/pandaria-throne-thunder.jpg',
+  soo:'assets/wow/art/pandaria-siege-orgrimmar.jpg',
+  irondocks:'assets/wow/art/draenor-iron-docks.jpg',
+  grimrail:'assets/wow/art/draenor-grimrail-depot.jpg',
+  everbloom:'assets/wow/art/draenor-everbloom.jpg',
+  hfc:'assets/wow/art/draenor-hellfire-citadel.jpg',
+  valor:'assets/wow/art/legion-halls-valor.jpg',
+  darkheart:'assets/wow/art/legion-darkheart-thicket.jpg',
+  court:'assets/wow/art/legion-court-stars.jpg',
+  tomb:'assets/wow/art/legion-tomb-sargeras.jpg',
+  antorus:'assets/wow/art/legion-antorus.jpg',
+  nightmare:'assets/wow/art/legion-emerald-nightmare.jpg',
+  nighthold:'assets/wow/art/legion-nighthold.jpg',
+  freehold:'assets/wow/art/bfa-freehold.jpg',
+  mechagon:'assets/wow/art/bfa-mechagon.jpg',
+  boralus:'assets/wow/art/bfa-siege-boralus.jpg',
+  ataldazar:'assets/wow/art/bfa-ataldazar.jpg',
+  uldir:'assets/wow/art/bfa-uldir.jpg',
+  waycrest:'assets/wow/art/bfa-waycrest-manor.jpg',
+  kingsrest:'assets/wow/art/bfa-kings-rest.jpg',
+  eternalpalace:'assets/wow/art/bfa-eternal-palace.jpg',
+  nyalotha:'assets/wow/art/bfa-nyalotha.jpg',
+  necrotic:'assets/wow/art/shadowlands-necrotic-wake.jpg',
+  nathria:'assets/wow/art/shadowlands-castle-nathria.jpg'
 };
 function applyDungeonArtBackfill(){
   for (const dg of DUNGEONS) {
@@ -4962,6 +4991,8 @@ function extendDungeonCatalog(){
   const buffP = (name, icon, hpBelow, desc, extra) => Object.assign({ name, icon, desc, type:'buff', castTime:0, cd:24, hpBelow }, extra || {});
   const summonP = (name, icon, hpBelow, desc, extra) => Object.assign({ name, icon, desc, type:'summon', castTime:0, cd:26, hpBelow }, extra || {});
   const ensureDungeon = (dg, loot) => {
+    const art = DUNGEON_ART_BACKFILL[dg.key];
+    if (art) dg.art = art;
     if (!DUNGEONS.some(x => x.key === dg.key)) DUNGEONS.push(dg);
     if (loot && !DUNGEON_LOOT[dg.key]) DUNGEON_LOOT[dg.key] = loot;
   };
