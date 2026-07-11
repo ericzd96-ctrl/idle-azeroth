@@ -5580,33 +5580,49 @@ function gearTierForDungeon(dungeonKey){
 }
 
 const DUNGEON_GEAR_TRAITS = [
-  {key:'emberbrand', name:'熔火印记', icon:'🔥', slots:['weapon','ring','trinket'], mod:{atkPct:2.0,crit:0.6}, desc:'首领余烬仍在装备里跳动。'},
-  {key:'riftneedle', name:'裂隙针脚', icon:'🪡', slots:['weapon','gloves','ring'], mod:{crit:0.8,critdPct:4}, desc:'命中弱点时会放大爆发窗口。'},
-  {key:'stormpulse', name:'风暴脉冲', icon:'🌩️', slots:['weapon','boots','trinket'], mod:{spdPct:1.8,haste:0.8}, desc:'装备里封存着副本风暴的回响。'},
-  {key:'bulwarkmark', name:'壁垒刻印', icon:'🛡️', slots:['helmet','shoulder','armor','belt','pants','boots'], mod:{hpPct:2.4,defPct:1.6}, desc:'来自守关者护甲的硬化纹路。'},
-  {key:'ironroot', name:'铁根铭文', icon:'🌿', slots:['armor','belt','pants','boots'], mod:{defPct:2.2,dodge:0.5}, desc:'站稳后更难被连续压低血线。'},
-  {key:'bloodseal', name:'鲜血封印', icon:'🩸', slots:['weapon','ring','trinket'], mod:{leech:0.9,vers:0.7}, desc:'把危险的副本魔力转成续航。'},
-  {key:'arcanefocus', name:'奥术聚焦', icon:'🔷', slots:['helmet','ring','trinket'], mod:{mastery:1.0,cdReduction:0.8}, desc:'让技能循环变得更紧。'},
-  {key:'ritualflame', name:'仪式火痕', icon:'🕯️', minTier:1, slots:['weapon','gloves','trinket'], mod:{dotBonus:2.6,mastery:0.8}, desc:'适合持续伤害与精通构筑。'},
-  {key:'executionmark', name:'处决标记', icon:'⚔️', minTier:1, slots:['weapon','ring','trinket'], mod:{executeBonus:2.4,extraAtk:0.8}, desc:'低血量目标会暴露更多破绽。'},
-  {key:'lifeward', name:'生命护符', icon:'💚', slots:['helmet','armor','trinket'], mod:{healBonus:2.2,hpPct:1.2}, desc:'治疗与自保效果更稳定。'},
-  {key:'spellweave', name:'法纹织线', icon:'✨', slots:['shoulder','gloves','ring'], mod:{costReduction:0.8,haste:0.7}, desc:'技能消耗更轻,衔接更快。'},
-  {key:'echoedge', name:'回声锋棱', icon:'〽️', minTier:1, slots:['weapon','gloves'], mod:{extraAtk:1.6,critdPct:3}, desc:'爆发期会把装备力量推得更尖。'},
-  {key:'wardmirror', name:'镜盾碎片', icon:'🪞', slots:['helmet','armor','trinket'], mod:{reflectDmg:1.8,defPct:1.2}, desc:'挨打时反震一部分压力。'},
-  {key:'giantbone', name:'巨骨铆钉', icon:'🦴', slots:['shoulder','armor','belt','pants'], mod:{staPct:1.8,hpPct:1.4}, desc:'耐力型装备会更厚实。'},
-  {key:'quickstep', name:'疾步扣环', icon:'👟', slots:['boots','belt','ring'], mod:{spdPct:1.4,dodge:0.7}, desc:'移动感更轻,闪避窗口更宽。'},
-  {key:'nightglass', name:'夜玻璃棱镜', icon:'🔮', slots:['helmet','ring','trinket'], mod:{crit:0.5,mastery:1.1}, desc:'把副本里的暗光折成精准判断。'},
-  {key:'kingward', name:'王庭护令', icon:'👑', minTier:2, slots:['helmet','shoulder','armor','trinket'], mod:{vers:1.4,defPct:1.8}, desc:'团本守卫留下的高阶护令。'},
-  {key:'dragonspark', name:'龙息火星', icon:'🔥', minTier:2, slots:['weapon','ring','trinket'], mod:{atkPct:2.8,critdPct:5}, desc:'团本装备才更容易承载的危险火星。'},
-  {key:'voidstamp', name:'虚空烙印', icon:'🌌', minTier:2, slots:['weapon','helmet','trinket'], mod:{mastery:1.5,dotBonus:3.2}, desc:'偏向精通与持续压制的深层烙印。'},
-  {key:'titanclasp', name:'泰坦扣件', icon:'🔩', minTier:2, slots:['belt','pants','boots','armor'], mod:{strPct:1.2,staPct:1.4}, desc:'力量与耐力都被抬高。'},
-  {key:'moonchannel', name:'月井导流', icon:'🌙', minTier:1, slots:['helmet','ring','trinket'], mod:{intPct:1.3,spiPct:1.3}, desc:'适合法系和治疗向成长。'},
-  {key:'wildhunt', name:'荒猎纹章', icon:'🏹', minTier:1, slots:['weapon','boots','ring'], mod:{agiPct:1.3,crit:0.6}, desc:'敏捷职业会更喜欢的副本纹章。'},
-  {key:'guardianoath', name:'守护誓印', icon:'🔰', minTier:3, slots:['armor','trinket'], mod:{hpPct:3.0,vers:1.6}, desc:'史诗团本装备上的重誓印。'},
-  {key:'soulfurnace', name:'魂炉余温', icon:'♨️', minTier:3, slots:['weapon','trinket'], mod:{atkPct:3.2,leech:1.2}, desc:'高阶首领掉落才可能封住的炉温。'},
-  {key:'chronolatch', name:'时序锁扣', icon:'⏱️', minTier:3, slots:['ring','trinket','gloves'], mod:{cdReduction:1.4,haste:1.1}, desc:'压缩技能空窗,适合频繁施法。'},
-  {key:'mythicbrand', name:'秘境强袭印', icon:'💠', minTier:4, slots:['weapon','ring','trinket'], mod:{extraAtk:2.0,spdPct:1.6}, desc:'史诗五人本常见的快节奏强袭痕迹。'},
-  {key:'mythicguard', name:'秘境坚守印', icon:'💠', minTier:4, slots:['helmet','armor','boots'], mod:{hpPct:2.6,dodge:0.8}, desc:'为高压五人本准备的生存印记。'},
+  {key:'emberbrand', name:'熔火印记', icon:'🔥', tags:['fire','dragon','forge'], slots:['weapon','ring','trinket'], mod:{atkPct:2.0,crit:0.6}, desc:'首领余烬仍在装备里跳动。'},
+  {key:'riftneedle', name:'裂隙针脚', icon:'🪡', tags:['void','shadow','precision'], slots:['weapon','gloves','ring'], mod:{crit:0.8,critdPct:4}, desc:'命中弱点时会放大爆发窗口。'},
+  {key:'stormpulse', name:'风暴脉冲', icon:'🌩️', tags:['storm','speed','air'], slots:['weapon','boots','trinket'], mod:{spdPct:1.8,haste:0.8}, desc:'装备里封存着副本风暴的回响。'},
+  {key:'bulwarkmark', name:'壁垒刻印', icon:'🛡️', tags:['fortress','holy','tank'], slots:['helmet','shoulder','armor','belt','pants','boots'], mod:{hpPct:2.4,defPct:1.6}, desc:'来自守关者护甲的硬化纹路。'},
+  {key:'ironroot', name:'铁根铭文', icon:'🌿', tags:['nature','tank','beast'], slots:['armor','belt','pants','boots'], mod:{defPct:2.2,dodge:0.5}, desc:'站稳后更难被连续压低血线。'},
+  {key:'bloodseal', name:'鲜血封印', icon:'🩸', tags:['blood','undead','naga'], slots:['weapon','ring','trinket'], mod:{leech:0.9,vers:0.7}, desc:'把危险的副本魔力转成续航。'},
+  {key:'arcanefocus', name:'奥术聚焦', icon:'🔷', tags:['arcane','titan','mech','time'], slots:['helmet','ring','trinket'], mod:{mastery:1.0,cdReduction:0.8}, desc:'让技能循环变得更紧。'},
+  {key:'ritualflame', name:'仪式火痕', icon:'🕯️', tags:['fire','shadow','ritual','dot'], minTier:1, slots:['weapon','gloves','trinket'], mod:{dotBonus:2.6,mastery:0.8}, desc:'适合持续伤害与精通构筑。'},
+  {key:'executionmark', name:'处决标记', icon:'⚔️', tags:['martial','orc','pirate','execute'], minTier:1, slots:['weapon','ring','trinket'], mod:{executeBonus:2.4,extraAtk:0.8}, desc:'低血量目标会暴露更多破绽。'},
+  {key:'lifeward', name:'生命护符', icon:'💚', tags:['nature','holy','heal','water'], slots:['helmet','armor','trinket'], mod:{healBonus:2.2,hpPct:1.2}, desc:'治疗与自保效果更稳定。'},
+  {key:'spellweave', name:'法纹织线', icon:'✨', tags:['arcane','holy','caster','time'], slots:['shoulder','gloves','ring'], mod:{costReduction:0.8,haste:0.7}, desc:'技能消耗更轻,衔接更快。'},
+  {key:'echoedge', name:'回声锋棱', icon:'〽️', tags:['martial','shadow','burst','speed'], minTier:1, slots:['weapon','gloves'], mod:{extraAtk:1.6,critdPct:3}, desc:'爆发期会把装备力量推得更尖。'},
+  {key:'wardmirror', name:'镜盾碎片', icon:'🪞', tags:['arcane','shadow','tank','void'], slots:['helmet','armor','trinket'], mod:{reflectDmg:1.8,defPct:1.2}, desc:'挨打时反震一部分压力。'},
+  {key:'giantbone', name:'巨骨铆钉', icon:'🦴', tags:['undead','beast','tank','giant'], slots:['shoulder','armor','belt','pants'], mod:{staPct:1.8,hpPct:1.4}, desc:'耐力型装备会更厚实。'},
+  {key:'quickstep', name:'疾步扣环', icon:'👟', tags:['pirate','beast','speed','martial'], slots:['boots','belt','ring'], mod:{spdPct:1.4,dodge:0.7}, desc:'移动感更轻,闪避窗口更宽。'},
+  {key:'nightglass', name:'夜玻璃棱镜', icon:'🔮', tags:['shadow','arcane','void','precision'], slots:['helmet','ring','trinket'], mod:{crit:0.5,mastery:1.1}, desc:'把副本里的暗光折成精准判断。'},
+  {key:'kingward', name:'王庭护令', icon:'👑', tags:['noble','holy','fortress','raid'], minTier:2, slots:['helmet','shoulder','armor','trinket'], mod:{vers:1.4,defPct:1.8}, desc:'团本守卫留下的高阶护令。'},
+  {key:'dragonspark', name:'龙息火星', icon:'🔥', tags:['dragon','fire','raid'], minTier:2, slots:['weapon','ring','trinket'], mod:{atkPct:2.8,critdPct:5}, desc:'团本装备才更容易承载的危险火星。'},
+  {key:'voidstamp', name:'虚空烙印', icon:'🌌', tags:['void','oldgod','shadow','raid'], minTier:2, slots:['weapon','helmet','trinket'], mod:{mastery:1.5,dotBonus:3.2}, desc:'偏向精通与持续压制的深层烙印。'},
+  {key:'titanclasp', name:'泰坦扣件', icon:'🔩', tags:['titan','mech','forge','raid'], minTier:2, slots:['belt','pants','boots','armor'], mod:{strPct:1.2,staPct:1.4}, desc:'力量与耐力都被抬高。'},
+  {key:'moonchannel', name:'月井导流', icon:'🌙', tags:['nature','arcane','heal','elf'], minTier:1, slots:['helmet','ring','trinket'], mod:{intPct:1.3,spiPct:1.3}, desc:'适合法系和治疗向成长。'},
+  {key:'wildhunt', name:'荒猎纹章', icon:'🏹', tags:['beast','nature','agility','pirate'], minTier:1, slots:['weapon','boots','ring'], mod:{agiPct:1.3,crit:0.6}, desc:'敏捷职业会更喜欢的副本纹章。'},
+  {key:'guardianoath', name:'守护誓印', icon:'🔰', tags:['holy','fortress','raid','tank'], minTier:3, slots:['armor','trinket'], mod:{hpPct:3.0,vers:1.6}, desc:'史诗团本装备上的重誓印。'},
+  {key:'soulfurnace', name:'魂炉余温', icon:'♨️', tags:['fire','undead','shadow','forge'], minTier:3, slots:['weapon','trinket'], mod:{atkPct:3.2,leech:1.2}, desc:'高阶首领掉落才可能封住的炉温。'},
+  {key:'chronolatch', name:'时序锁扣', icon:'⏱️', tags:['time','arcane','speed','raid'], minTier:3, slots:['ring','trinket','gloves'], mod:{cdReduction:1.4,haste:1.1}, desc:'压缩技能空窗,适合频繁施法。'},
+  {key:'mythicbrand', name:'秘境强袭印', icon:'💠', tags:['mythic','speed','martial'], minTier:4, slots:['weapon','ring','trinket'], mod:{extraAtk:2.0,spdPct:1.6}, desc:'史诗五人本常见的快节奏强袭痕迹。'},
+  {key:'mythicguard', name:'秘境坚守印', icon:'💠', tags:['mythic','tank','fortress'], minTier:4, slots:['helmet','armor','boots'], mod:{hpPct:2.6,dodge:0.8}, desc:'为高压五人本准备的生存印记。'},
+];
+
+const DUNGEON_TRAIT_TAG_RULES = [
+  { re:/熔火|火焰|炎|烈焰|火源|焰|黑石|萨弗隆|拉格纳罗斯|地狱火|暗焰|燧酿|燃烧|邪能|熔炉|铸|炉/i, tags:['fire','forge'] },
+  { re:/龙|龙眠|红玉|黑翼|奈萨里奥|死亡之翼|阿莱克丝塔萨|辛达苟萨|暮光/i, tags:['dragon','fire'] },
+  { re:/风暴|雷|电|闪电|旋云|英灵|奥丁|破晓|驭雷/i, tags:['storm','speed'] },
+  { re:/奥术|魔网|魔枢|魔环|法力|蓝龙|群星|星|夜井|苏拉玛|法师|时光|时序|净化斯坦索姆/i, tags:['arcane','time'] },
+  { re:/泰坦|奥杜尔|奥迪尔|奥达曼|矶石|宝库|机械|麦卡贡|诺莫瑞根|列车|钢铁|齿轮|矩阵/i, tags:['titan','mech'] },
+  { re:/虚空|古神|克苏恩|尤格|恩佐斯|尼奥罗萨|暗影|暮光|梦魇|萨维斯|黑心|裂隙|卡雷什|吞界/i, tags:['void','shadow'] },
+  { re:/亡灵|天灾|巫妖|通灵|纳克萨玛斯|冰冠|瘟疫|凋魂|死灵|灵魂|噬魂|纳斯利亚|雷文德斯|鲜血/i, tags:['undead','shadow','blood'] },
+  { re:/自然|翡翠|梦境|森林|林地|永茂|玛拉顿|塞纳里奥|生命|孢|真菌|绿洲|世界树|阿米德拉希尔/i, tags:['nature','heal'] },
+  { re:/娜迦|潮|海|水|盘牙|毒蛇|永恒王宫|深渊|伯拉勒斯/i, tags:['naga','water'] },
+  { re:/海盗|自由镇|码头|港|船|财团|塔扎维什|索财/i, tags:['pirate','speed'] },
+  { re:/兽|狼|熊|野猪|猎|鸦|鸟|蛛|虫|蝎|蛇|古达克|阿拉-卡拉|千丝/i, tags:['beast','nature'] },
+  { re:/圣光|圣焰|十字军|银色|隐修院|骑士|冠军|试炼|王庭|国王|王座|要塞|城堡|庄园/i, tags:['holy','fortress','noble'] },
+  { re:/战争|围攻|奥格瑞玛|兽人|督军|破碎大厅|钢铁部落|黑暗神殿|武器|军团/i, tags:['martial','orc'] },
 ];
 
 function dungeonGearRarityRank(rarityKey){
@@ -5624,6 +5640,62 @@ function dungeonTraitTierName(gearTier){
 
 function dungeonGearTraitTierRank(gearTier){
   return {0:0,1:1,4:2,2:3,3:4}[gearTier]||0;
+}
+
+function dungeonTraitBasePool(gearTier, rRank, slotKey){
+  const tierRank=dungeonGearTraitTierRank(gearTier);
+  return DUNGEON_GEAR_TRAITS.filter(t=>{
+    if(t.minTier!==undefined){
+      if(t.minTier===4){ if(gearTier!==4) return false; }
+      else if(tierRank<dungeonGearTraitTierRank(t.minTier)) return false;
+    }
+    if(t.maxTier!==undefined&&gearTier>t.maxTier) return false;
+    if(slotKey&&t.slots&&t.slots.length&&!t.slots.includes(slotKey)) return false;
+    if(t.minRarity&&rRank<dungeonGearRarityRank(t.minRarity)) return false;
+    return true;
+  });
+}
+
+function dungeonTraitTagsForDungeon(dungeonKey){
+  const baseKey=(typeof baseDungeonKey==='function')?baseDungeonKey(dungeonKey):String(dungeonKey||'');
+  const dg=(typeof DUNGEONS!=='undefined')?(DUNGEONS.find(d=>d.key===dungeonKey)||DUNGEONS.find(d=>d.key===baseKey)):null;
+  if(!dg) return [];
+  const bossText=(dg.bosses||[]).map(b=>`${b.name||''} ${b.emoji||''}`).join(' ');
+  const text=[dg.key,dg.name,dg.desc,dg.raidExpansion,dg.raidTier,bossText].filter(Boolean).join(' ');
+  const tags=[];
+  for(const rule of DUNGEON_TRAIT_TAG_RULES){
+    if(rule.re.test(text)) for(const tag of rule.tags) if(!tags.includes(tag)) tags.push(tag);
+  }
+  if(dg.epicRaid && !tags.includes('raid')) tags.push('raid');
+  if(dg.epic5 && !tags.includes('mythic')) tags.push('mythic');
+  return tags;
+}
+
+function dungeonTraitAffinityPool(dungeonKey, gearTier, rRank, slotKey){
+  const pool=dungeonTraitBasePool(gearTier,rRank,slotKey);
+  if(!pool.length) return [];
+  const tags=dungeonTraitTagsForDungeon(dungeonKey);
+  if(!tags.length) return pool;
+  const modeTags=tags.filter(tag=>tag==='raid'||tag==='mythic');
+  const coreTags=tags.filter(tag=>!modeTags.includes(tag));
+  const core=coreTags.length?pool.filter(t=>(t.tags||[]).some(tag=>coreTags.includes(tag))):[];
+  const mode=modeTags.length?pool.filter(t=>!core.includes(t)&&(t.tags||[]).some(tag=>modeTags.includes(tag))):[];
+  const tagged=core.concat(mode);
+  return tagged.length ? tagged : pool;
+}
+
+function dungeonTraitPreviewForDungeon(dungeonKey, limit){
+  const dg=(typeof DUNGEONS!=='undefined')?DUNGEONS.find(d=>d.key===dungeonKey):null;
+  const gearTier=(typeof gearTierForDungeon==='function')?gearTierForDungeon(dungeonKey):(dg?.epicRaid?3:(dg?.type==='raid'?2:0));
+  const tags=dungeonTraitTagsForDungeon(dungeonKey);
+  const rRank=dungeonGearRarityRank('epic');
+  const pool=dungeonTraitAffinityPool(dungeonKey,gearTier,rRank,null);
+  const score = (t) => (t.tags||[]).reduce((sum,tag)=>sum+(tags.includes(tag)?(tag==='raid'||tag==='mythic'?1:3):0),0);
+  const preferred=(tags.length?pool.filter(t=>(t.tags||[]).some(tag=>tags.includes(tag))):pool).sort((a,b)=>score(b)-score(a));
+  return {
+    tags,
+    traits:(preferred.length?preferred:pool).slice(0,limit||5).map(t=>({ key:t.key,name:t.name,icon:t.icon,desc:t.desc,tags:t.tags||[] })),
+  };
 }
 
 function scaleDungeonTraitMod(baseMod, rarityKey, gearTier){
@@ -5651,18 +5723,9 @@ function applyDungeonGearTrait(item,dungeonKey,rarity,opts){
   const chanceTier={0:0,1:0.10,2:0.18,3:0.28,4:0.15}[gearTier]||0;
   const chance=Math.min(0.98,chanceBase+chanceTier+(item.setKey?0.06:0));
   if(Math.random()>chance) return item;
-  const tierRank=dungeonGearTraitTierRank(gearTier);
-  const pool=DUNGEON_GEAR_TRAITS.filter(t=>{
-    if(t.minTier!==undefined){
-      if(t.minTier===4){ if(gearTier!==4) return false; }
-      else if(tierRank<dungeonGearTraitTierRank(t.minTier)) return false;
-    }
-    if(t.maxTier!==undefined&&gearTier>t.maxTier) return false;
-    if(t.slots&&t.slots.length&&!t.slots.includes(item.slot)) return false;
-    if(t.minRarity&&rRank<dungeonGearRarityRank(t.minRarity)) return false;
-    return true;
-  });
-  const picked=pool.length?choice(pool):choice(DUNGEON_GEAR_TRAITS);
+  const pool=dungeonTraitBasePool(gearTier,rRank,item.slot);
+  const affinity=dungeonTraitAffinityPool(sourceKey,gearTier,rRank,item.slot);
+  const picked=affinity.length&&Math.random()<0.82?choice(affinity):(pool.length?choice(pool):choice(DUNGEON_GEAR_TRAITS));
   item.sourceDungeonKey=sourceKey;
   item.dungeonTrait={
     key:picked.key,

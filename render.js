@@ -3290,6 +3290,26 @@ function dungeonProgressionPillsHtml(dg) {
   const loot = dungeonLootIlvlText(dg);
   return `${power ? `<div class="pill">${power}</div>` : ''}${loot ? `<div class="pill">${loot}</div>` : ''}`;
 }
+function dungeonTraitPreviewHtml(dg) {
+  if (!dg || typeof dungeonTraitPreviewForDungeon !== 'function') return '';
+  const preview = dungeonTraitPreviewForDungeon(dg.key, 5);
+  if (!preview?.traits?.length) return '';
+  const chips = preview.traits.map(t => inlineTipSpanHtml({
+    name: t.name,
+    icon: t.icon || '✦',
+    desc: t.desc || '该副本更容易掉落的装备印记。',
+    meta: '倾向印记',
+  }, {
+    fallbackIcon:'inv_misc_gem_diamond_02',
+    color:'#fde68a',
+    metaVisible:true,
+  })).join('');
+  return `<div class="dungeon-mechanic-codex">
+    <b>💎 掉落倾向</b>
+    <div class="muted" style="font-size:11px;margin:3px 0 6px">精良以上装备触发副本印记时，会优先从这些主题印记中抽取；少量掉落仍可能出现通用印记。</div>
+    <div class="dungeon-mechanic-codex-grid">${chips}</div>
+  </div>`;
+}
 function dungeonAtlasHtml(dg, compact) {
   const atlas = dungeonAtlasInfo(dg);
   if (!atlas) return '';
@@ -3399,6 +3419,7 @@ function buildDungeonInfoHtml(dg) {
       推荐波次: ${dg.waves || '?'} · 首领数量: ${(dg.bosses || []).length}${powerText ? ` · ${powerText}` : ''}${lootIlvlText ? ` · ${lootIlvlText}` : ''} · 精良以上装备有概率携带副本印记
       ${dg.type==='raid'?(isEpicRaid?' · 掉落: 史诗级紫装 / 全部首领超低概率橙装':' · 掉落: 常规团本装备 / 关底低概率橙武'):''}
     </div>`;
+  html += dungeonTraitPreviewHtml(dg);
   if (dgAffixes.length) {
     html += `<div style="margin-bottom:10px;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.03)">
       <div style="font-weight:700;font-size:13px;margin-bottom:6px">本期词缀</div>
