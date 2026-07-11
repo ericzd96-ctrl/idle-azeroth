@@ -483,11 +483,21 @@
     '祖尔詹':'ability_hunter_pet_vulture',
     '腐沼':'ui-ej-boss-fungariangiant',
     'Rotmire':'ui-ej-boss-fungariangiant',
+    '乌格拉克斯':'ability_creature_poison_05',
+    '血缚恐魔':'ability_creature_disease_02',
+    '席克兰':'ability_rogue_slicedice',
+    '拉夏南':'ability_hunter_pet_vulture',
+    '节点女亲王':'spell_arcane_prismaticcloak',
+    '流丝之庭':'spell_shadow_possession',
+    '安苏雷克女王':'spell_shadow_charm',
     '萨拉塔斯':'spell_shadow_possession',
     '萨拉塔斯的裂隙回声':'spell_shadow_possession',
     '纳洛拉克':'ability_hunter_pet_bear',
     '莉希尔·烬怒':'spell_shadow_summonfelhunter',
-    '诅咒载体乌拉泰克':'spell_shadow_shadowworddominate'
+    '诅咒载体乌拉泰克':'spell_shadow_shadowworddominate',
+    '姬丝蒂娅·法力之心':'spell_fire_burnout',
+    '扎恩·刃悲':'ability_rogue_slicedice',
+    '毁灭者萨苏克斯':'spell_shadow_summonfelhunter'
   };
 
   const SKILL_EXACT = {

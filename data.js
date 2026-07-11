@@ -5530,7 +5530,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'stonevault', name:'矶石宝库', icon:'🏛️', reqLvl:88, waves:10, art:'assets/wow/art/warwithin-dungeon-banner.png', desc:'多恩岛地底的泰坦宝库,土灵守卫与失控机械共同保护沉睡矩阵',
+      key:'stonevault', name:'矶石宝库', icon:'🏛️', reqLvl:88, waves:10, art:'assets/wow/art/warwithin-stonevault.png', desc:'多恩岛地底的泰坦宝库,土灵守卫与失控机械共同保护沉睡矩阵',
       bosses:[
         { name:'掌炉者艾里克', emoji:'⚒️', skills:[dmg('熔炉重击','🔨',9.5,{ sunder:true, stun:1600 }), dmgP('熔炉过载','🔥',5.5,0.5,{ aoe:true, dot:true, brittle:true, cd:12 })] },
         { name:'晶化守卫', emoji:'💠', skills:[dmg('晶体切割','🔷',10,{ brittle:true, manaDrain:65 }), buffP('晶壁重组','🛡️',0.55,'晶体壁垒重组:减伤和防御提升',{ defBuffSecs:12, defBuffPct:45, drBuffSecs:12, drBuffPct:0.2 })] },
@@ -5545,7 +5545,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'prioryflame', name:'圣焰隐修院', icon:'✝️', reqLvl:90, waves:10, art:'assets/wow/art/warwithin-dungeon-banner.png', desc:'陨圣峪的阿拉希圣焰堡垒,光明与狂热在地下苍穹下爆燃',
+      key:'prioryflame', name:'圣焰隐修院', icon:'✝️', reqLvl:90, waves:10, art:'assets/wow/art/warwithin-prioryflame.png', desc:'陨圣峪的阿拉希圣焰堡垒,光明与狂热在地下苍穹下爆燃',
       bosses:[
         { name:'信标守卫加伦', emoji:'🛡️', skills:[dmg('信标盾击','🛡️',10,{ sunder:true, stun:1600 }), dmg('圣焰回旋','🔥',10.2,{ aoe:true, dot:true })] },
         { name:'烛光修士艾丹', emoji:'🕯️', skills:[dmg('烛焰诅咒','🕯️',10.5,{ dot:true, weaken:true, silence:1800 }), summonP('唤烛仪式','✨',0.55,'召唤圣焰信徒并提高攻速',{ summonCount:1, summonTheme:'soldier', spdBuffSecs:12, spdBuffPct:24 })] },
@@ -5720,7 +5720,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'nerubar', name:"尼鲁巴尔王宫", icon:'🕸️', type:'raid', reqLvl:92, waves:14, art:'assets/wow/art/warwithin-dungeon-banner.png', desc:'艾基-卡赫特的蛛魔帝国王宫,安苏雷克女王用黑血与虚空丝线编织终局试炼',
+      key:'nerubar', name:"尼鲁巴尔王宫", icon:'🕸️', type:'raid', reqLvl:92, waves:14, art:'assets/wow/art/warwithin-nerubar-palace.jpg', desc:'艾基-卡赫特的蛛魔帝国王宫,安苏雷克女王用黑血与虚空丝线编织终局试炼',
       bosses:[
         { name:'乌格拉克斯', emoji:'🪲', skills:[dmg('贪食冲锋','🪲',11,{ bleed:true, cripple:true }), dmgP('暴食震荡','💥',5.8,0.5,{ aoe:true, stun:1700, brittle:true, cd:12 })] },
         { name:'血缚恐魔', emoji:'🩸', skills:[dmg('黑血喷洒','🩸',11.2,{ plague:true, dot:true, weaken:true })] },

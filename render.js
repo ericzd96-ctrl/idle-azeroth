@@ -685,6 +685,61 @@ function monsterMechanicSectionHtml(title, color, list, fallbackIcon, mapper) {
   if (!lines) return '';
   return `<div style="margin-top:4px;color:${color}">${tipAttrText(title)}:</div>${lines}`;
 }
+function dungeonProgressMechanicTags(ds, contract, alert, timerStatus) {
+  if (!ds) return '';
+  const tags = [];
+  if (contract) {
+    tags.push(inlineTipSpanHtml({
+      name:`契约:${contract.name}`,
+      icon:contract.icon || '📜',
+      desc:contract.desc || '当前副本契约',
+      meta:`生命×${Number(contract.hp || 1).toFixed(2)} 攻击×${Number(contract.atk || 1).toFixed(2)} 防御×${Number(contract.def || 1).toFixed(2)}`
+    }, { fallbackIcon:'inv_scroll_03', color:'#f6c453' }));
+  }
+  if (alert && alert.level > 0) {
+    tags.push(inlineTipSpanHtml({
+      name:`警戒 ${alert.level}`,
+      icon:'🚨',
+      desc:'契约副本每清一波和击败首领都会提高警戒。警戒越高,后续敌人越强,也更容易出现戒备队长。',
+      meta:alert.label || ''
+    }, { fallbackIcon:'achievement_bg_returnxflags_def_wsg', color:'#fb7185' }));
+  }
+  if (timerStatus) {
+    tags.push(inlineTipSpanHtml({
+      name:timerStatus.expired ? '时序脉冲' : '限时挑战',
+      icon:'⏳',
+      desc:timerStatus.expired ? '限时挑战超时后,每15秒叠加一次压迫脉冲,提高后续敌人压力。' : '在限定时间内通关可获得额外奖励;超时后会进入时序脉冲。',
+      meta:timerStatus.text || ''
+    }, { fallbackIcon:'inv_misc_pocketwatch_01', color:timerStatus.expired ? '#fb7185' : '#67e8f9' }));
+  }
+  const rooms = Array.isArray(ds.combatRooms) ? ds.combatRooms : [];
+  for (const room of rooms.slice(0, 3)) {
+    tags.push(inlineTipSpanHtml({
+      name:room.name || '战斗房间',
+      icon:room.icon || '🎲',
+      desc:room.desc || '额外战斗房间规则',
+      meta:'房间'
+    }, { fallbackIcon:'inv_misc_dice_02', color:'#f9a8d4' }));
+  }
+  const edicts = Array.isArray(ds.edicts) ? ds.edicts : [];
+  for (const edict of edicts.slice(0, 4)) {
+    tags.push(inlineTipSpanHtml({
+      name:edict.name || '时序禁令',
+      icon:edict.icon || '📜',
+      desc:edict.desc || '额外副本禁令',
+      meta:'禁令'
+    }, { fallbackIcon:'inv_scroll_03', color:'#fde68a' }));
+  }
+  if (edicts.length > 4) {
+    tags.push(inlineTipSpanHtml({
+      name:`禁令库 +${edicts.length - 4}`,
+      icon:'📜',
+      desc:'本次契约还有更多禁令正在生效。打开副本详情可查看完整列表。',
+      meta:`共${edicts.length}条`
+    }, { fallbackIcon:'inv_scroll_03', color:'#fde68a' }));
+  }
+  return tags.length ? `<span class="stage-mechanic-tags">${tags.join('')}</span>` : '';
+}
 function monsterEncounterDetailHtml(mon, bossData) {
   if (!mon) return '';
   let html = '';
@@ -1590,7 +1645,13 @@ function updateBattleVisuals() {
       const sk = `${state.currentMap}-${state.currentSubzone}`;
       return base + `|${state.subzoneKills[sk]||0}|${state.subzoneCleared[sk]||''}`;
     }
-    if (state.mode === 'dungeon') return base + `|${state.dungeonState?.wave}|${state.dungeonState?.key}`;
+    if (state.mode === 'dungeon') {
+      const ds = state.dungeonState || {};
+      const roomSig = (ds.combatRooms || []).map(r => r.key).join(',');
+      const edictSig = (ds.edicts || []).map(e => e.key).join(',');
+      const timerSig = ds.timer ? `${ds.timer.expired ? 1 : 0}:${ds.timer.overtimeStacks || 0}:${ds.timer.overtimePulses || 0}` : '';
+      return base + `|${ds.wave}|${ds.key}|${ds.alertLevel || 0}|${roomSig}|${edictSig}|${timerSig}`;
+    }
     if (state.mode === 'mythic') return base + `|${state.mythicState?.wave}|${state.mythicState?.key}|${state.mythicState?.level}`;
     if (state.mode === 'tower') return base + `|${state.towerState?.floor}|${state.towerState?.coinThisRun}`;
     if (state.mode === 'boss') return base;
@@ -1637,12 +1698,9 @@ function updateBattleVisuals() {
     const typeTag = isRaid ? '<span style=\"color:#fbbf24\">[团本]</span>' : '<span style=\"color:#6ee7b7\">[5人本]</span>';
     const dungeonIconHtml = (typeof dungeonIcon === 'function') ? dungeonIcon(dg.key, dg.name, 16, dg.icon) : dg.icon;
     const contract = (state.dungeonState.contractLevel > 0 && typeof dungeonContractInfo === 'function') ? dungeonContractInfo(state.dungeonState.contractLevel) : null;
-    const contractTag = contract ? ` <span style="color:#f6c453">${contract.icon}${contract.name}</span>` : '';
     const alert = (typeof dungeonAlertInfo === 'function') ? dungeonAlertInfo(state.dungeonState) : null;
-    const alertTag = alert && alert.level > 0 ? ` · <span style="color:#fb7185">🚨警戒 ${alert.level}(${alert.label})</span>` : '';
     const timerStatus = (typeof dungeonTimerStatus === 'function') ? dungeonTimerStatus(state.dungeonState) : null;
-    const timerTag = timerStatus ? ` · <span style="color:${timerStatus.expired ? '#fb7185' : '#67e8f9'}">⏳${timerStatus.text}</span>` : '';
-    const roomTag = state.dungeonState.combatRooms?.length ? ` · <span style="color:#f9a8d4">🎲${state.dungeonState.combatRooms.map(r => r.icon || '🎲').join('')}</span>` : '';
+    const mechanicTags = dungeonProgressMechanicTags(state.dungeonState, contract, alert, timerStatus);
     const councilMembers = curBoss && typeof getDungeonBossCouncilMembers === 'function' ? getDungeonBossCouncilMembers(curBoss) : [];
     const liveCouncil = councilMembers.length > 1 ? (state.currentMonsters || []).filter(m => m && m.hp > 0 && m._councilGroupName === curBoss.name).length : 0;
     const councilTag = liveCouncil ? ` · <span style="color:#fcd34d">👥${liveCouncil}/${councilMembers.length}</span>` : '';
@@ -1659,7 +1717,8 @@ function updateBattleVisuals() {
       if (tags.length) bossExtra += ' <span style=\"font-size:10px;color:#6ee7b7\">'+tags.join(' ')+'</span>';
     }
     const bossTag = curBoss ? ` ⚔️<b style=\"color:var(--legend)\">${curBoss.name}</b>${bossExtra}` : '';
-    $('progress-text').innerHTML = `波次 ${state.dungeonState.wave}/${dg.waves} · 首领 ${killedBosses}/${bossList.length}${bossTag}${councilTag}${contractTag}${alertTag}${timerTag}${roomTag}`;
+    $('progress-text').innerHTML = `波次 ${state.dungeonState.wave}/${dg.waves} · 首领 ${killedBosses}/${bossList.length}${bossTag}${councilTag}${mechanicTags ? ` · ${mechanicTags}` : ''}`;
+    bindInlineTipElements($('progress-text'));
   } else if (state.mode === 'mythic') {
     const ms = state.mythicState;
     const dg = DUNGEONS.find(d => d.key === ms.key);
