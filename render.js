@@ -3168,6 +3168,15 @@ function buildDungeonInfoHtml(dg) {
   }
   const selectedContract = (typeof dungeonContractLevel === 'function' && typeof dungeonContractInfo === 'function') ? dungeonContractInfo(dungeonContractLevel()) : null;
   const roomPreview = (typeof getDungeonCombatRooms === 'function') ? getDungeonCombatRooms(dg, selectedContract?.level || 0) : [];
+  const mechanicCodex = (typeof dungeonMechanicCodex === 'function') ? dungeonMechanicCodex() : [];
+  if (mechanicCodex.length) {
+    html += `<div class="dungeon-mechanic-codex">
+      <b>📖 机制说明</b>
+      <div class="dungeon-mechanic-codex-grid">
+        ${mechanicCodex.map(m => inlineTipSpanHtml(m, { fallbackIcon:'inv_misc_book_11', color:'#fde68a' })).join('')}
+      </div>
+    </div>`;
+  }
   if (roomPreview.length) {
     html += `<div class="dungeon-room-info">
       <b>🎲 战斗房间</b>
@@ -3447,6 +3456,8 @@ function renderDungeon() {
     const trialLine = trialPreview.length ? `<div class="dungeon-trial-line">🔥 试炼: ${trialPreview.map(t => inlineTipSpanHtml(t, { fallbackIcon:'ability_warrior_battleshout', color:'#fb7185' })).join(' · ')}</div>` : '';
     const environmentPreview = (selectedContractLevel > 0 && typeof getDungeonEnvironments === 'function') ? getDungeonEnvironments(dg, selectedContractLevel) : [];
     const environmentLine = environmentPreview.length ? `<div class="dungeon-environment-line">🧭 环境: ${environmentPreview.map(e => inlineTipSpanHtml(e, { fallbackIcon:'spell_frost_arcticwinds', color:'#67e8f9' })).join(' · ')}</div>` : '';
+    const roomPreview = (typeof getDungeonCombatRooms === 'function') ? getDungeonCombatRooms(dg, selectedContractLevel) : [];
+    const roomLine = roomPreview.length ? `<div class="dungeon-room-line">🎲 房间: ${roomPreview.map(r => inlineTipSpanHtml(r, { fallbackIcon:'inv_misc_dice_02', color:'#f9a8d4' })).join(' · ')}</div>` : '';
     const edictPreview = (selectedContractLevel > 0 && typeof getDungeonTacticalEdicts === 'function') ? getDungeonTacticalEdicts(dg, selectedContractLevel) : [];
     const edictLine = edictPreview.length ? `<div class="dungeon-edict-line">📜 禁令: ${edictPreview.map(e => inlineTipSpanHtml(e, { fallbackIcon:'inv_scroll_03', color:'#fcd34d' })).join(' · ')}</div>` : '';
     const timerPreview = (selectedContractLevel > 0 && typeof createDungeonTimer === 'function') ? createDungeonTimer(dg, selectedContractLevel) : null;
@@ -3492,6 +3503,7 @@ function renderDungeon() {
       ${chaseLine}
       ${affixLine}
       ${timerLine}
+      ${roomLine}
       ${edictLine}
       ${environmentLine}
       ${trialLine}

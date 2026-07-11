@@ -1323,6 +1323,39 @@ const MAPS = [
       passive:{atkBonus:0.64,critChance:0.38,dmgReduction:0.35,dodgeChance:0.2,leech:0.16,stunChance:0.24,
       tricks:[{name:"剃锋换幕",icon:"🪐",desc:"接下来5秒闪避和减伤提高",defBuff:5},{name:"吞界切线",icon:"🌌",desc:"接下来5秒攻击与攻速提升",atkBuff:5,spdBuff:5},{name:"绝域裁落",icon:"⚔️",desc:"下一次攻击造成双倍伤害并附带虚弱",nextDouble:1,critBuff:5}] },
       skills:[{name:'虚刃截面',icon:'🪐',desc:'14.5倍伤害+破甲',type:'dmg',mul:14.5,sunder:true,cripple:true,castTime:3.1},{name:'边界坍缩',icon:'🌫️',desc:'15倍范围伤害+凋零与沉默',type:'dmg',mul:15,aoe:true,decay2:true,silence:2300,castTime:4.2},{name:'吞界终域',icon:'🌌',desc:'16倍终局伤害+恐惧、镜像错位',type:'dmg',mul:16,aoe:true,fear:2500,mirror:true,alwaysCrit:true,castTime:5.4}] } },
+  { key:'eversong_midnight', name:'永歌森林:午夜', icon:'🍂', faction:'银月议庭', lvlRange:[104,106],
+    art:'assets/wow/art/timewalking-outland-banner.jpg',
+    desc:'Midnight 中重塑的奎尔萨拉斯前线,银月城、永歌森林与鬼魂之地在虚空风暴下重新连成一片',
+    sub:[
+      { name:'银月城谋杀巷', lvl:[104,105], mobs:'🗡️邪能走私者|🧙堕落魔导师|🌑虚空线人|🦅远行者密探' },
+      { name:'萨瑟利尔高庭', lvl:[105,106], mobs:'🍷贵族决斗者|✨日怒法师|🛡️血骑士哨兵|👁️虚空窥探者' },
+    ],
+    boss:{ name:'萨瑟利尔暗宴议会', emoji:'🍷', lvl:108, desc:'借高等精灵社交宴会掩护虚空渗透的银月阴谋议会',
+      passive:{atkBonus:0.66,critChance:0.39,dmgReduction:0.36,dodgeChance:0.22,leech:0.16,stunChance:0.24,
+      tricks:[{name:"日井护幕",icon:"✨",desc:"回复25%生命并提高减伤",healPct:0.25,defBuff:5},{name:"贵族决斗令",icon:"⚔️",desc:"接下来5秒攻击与暴击提升",atkBuff:5,critBuff:5},{name:"暗宴点名",icon:"🎯",desc:"下一次攻击造成双倍伤害并沉默目标",nextDouble:1,critBuff:5}] },
+      skills:[{name:'法力心针',icon:'💠',desc:'15倍伤害+吸取资源',type:'dmg',mul:15,manaDrain:125,brittle:true,castTime:3.2},{name:'虚空风暴来信',icon:'🌑',desc:'15.5倍范围伤害+沉默',type:'dmg',mul:15.5,aoe:true,silence:2400,mirror:true,castTime:4.2},{name:'银月暗幕',icon:'🍷',desc:'16.5倍终局伤害+恐惧与虚弱',type:'dmg',mul:16.5,aoe:true,fear:2500,weaken:true,alwaysCrit:true,castTime:5.4}] } },
+  { key:'zulaman_midnight', name:"祖阿曼:午夜", icon:'🐻', faction:'阿曼尼部族', lvlRange:[106,108],
+    art:'assets/wow/art/timewalking-cataclysm-banner.jpg',
+    desc:'Midnight 中重塑的阿曼尼领地,熊、鹰、山猫与龙鹰洛阿神庙在虚空压力下重新苏醒',
+    sub:[
+      { name:'纳洛拉克梦境兽穴', lvl:[106,107], mobs:'🐻洛阿试炼者|❄️冬境哨兵|🧿阿曼尼占卜者|🥩贪食囤货者' },
+      { name:'迈萨拉献祭洞窟', lvl:[107,108], mobs:'🦅复生巨鹰|💀邪枝魂祭司|🧟亡魂巨魔|🌑死灵图腾' },
+    ],
+    boss:{ name:'祖尔加拉', emoji:'🐻', lvl:110, desc:'阿曼尼新领袖,在守护部族与抵抗虚空之间被迫发动最严酷的洛阿试炼',
+      passive:{atkBonus:0.70,critChance:0.41,dmgReduction:0.38,dodgeChance:0.22,leech:0.18,stunChance:0.26,
+      tricks:[{name:"熊神耐力",icon:"🐻",desc:"回复26%生命并提高防御",healPct:0.26,defBuff:5},{name:"鹰神急袭",icon:"🦅",desc:"接下来5秒攻速与暴击提升",spdBuff:5,critBuff:5},{name:"山猫裂爪",icon:"🐾",desc:"下一次攻击造成双倍伤害并附带流血",nextDouble:1,critBuff:5}] },
+      skills:[{name:'洛阿战嚎',icon:'🐻',desc:'16倍伤害+眩晕',type:'dmg',mul:16,stun:2400,sunder:true,castTime:3.1},{name:'冬境鹰暴',icon:'❄️',desc:'16.5倍范围伤害+冰缚',type:'dmg',mul:16.5,aoe:true,freeze:2200,weaken:true,castTime:4.2},{name:'阿曼尼终誓',icon:'👑',desc:'17.5倍终局伤害+恐惧与灵魂链接',type:'dmg',mul:17.5,aoe:true,fear:2600,soulLink:true,alwaysCrit:true,castTime:5.5}] } },
+  { key:'harandar', name:'哈兰达尔', icon:'🍄', faction:'银月议庭', lvlRange:[108,109],
+    art:'assets/wow/art/timewalking-shadowlands-banner.png',
+    desc:'Revelations 中开放的孢落前线,生物荧光菌林与虚空孢潮在地底边境互相吞噬',
+    sub:[
+      { name:'孢落菌林', lvl:[108,109], mobs:'🍄爆裂末日菇|🦎孢壳爬行者|☣️毒孢喷吐者|🌿菌丝守卫' },
+      { name:'哈兰达尔裂谷', lvl:[109,109], mobs:'🪨真菌巨人|🧫腐沼孢团|🌑虚空感染体|🧿孢潮先知' },
+    ],
+    boss:{ name:'腐沼', emoji:'🍄', lvl:111, desc:'孢落单首领团本的真菌巨人,会召唤孢菇、孢团和毒雾压垮战场',
+      passive:{atkBonus:0.74,critChance:0.42,dmgReduction:0.40,dodgeChance:0.2,leech:0.18,stunChance:0.26,
+      tricks:[{name:"孢潮再生",icon:"🍄",desc:"回复28%生命并提高减伤",healPct:0.28,defBuff:5},{name:"菌丝暴涨",icon:"🌿",desc:"接下来5秒攻击与吸血提升",atkBuff:5,leechBuff:5},{name:"末日菇点名",icon:"🎯",desc:"下一次攻击造成双倍且必定暴击",nextDouble:1,critBuff:5}] },
+      skills:[{name:'毒孢爆发',icon:'☣️',desc:'17倍范围伤害+瘟疫',type:'dmg',mul:17,aoe:true,plague:true,dot:true,castTime:3.3},{name:'末日蘑菇',icon:'🍄',desc:'17.5倍伤害+召唤孢群',type:'dmg',mul:17.5,aoe:true,cripple:true,castTime:4.4},{name:'孢落坍塌',icon:'🌌',desc:'18.5倍终局伤害+恐惧与沉默',type:'dmg',mul:18.5,aoe:true,fear:2700,silence:2600,alwaysCrit:true,castTime:5.6}] } },
 ];
 
 const RARE_ELITE_SKILLSETS = {
@@ -1495,7 +1528,10 @@ const MAP_RARE_ELITE_SEEDS = {
   azj_kahet:{ name:'王庭断丝者', emoji:'🕸️', theme:'poison', desc:'安苏雷克王廷派出的蛛魔处刑者。' },
   karesh:{ name:'相位通缉犯欧姆拉', emoji:'🧿', theme:'shadow', desc:'被塔扎维什通缉的相位潜航者,只在裂隙折光中现身。' },
   primeus:{ name:'圣所删改体赫鲁赞', emoji:'📚', theme:'arcane', desc:'被普莱姆斯索引系统判定为“必须抹除”的失控档案守卫。' },
-  voidrazor:{ name:'虚刃庇护守望者', emoji:'🪐', theme:'shadow', desc:'在虚无剃刀边缘巡猎难民与闯入者的庇护所裁卫。' }
+  voidrazor:{ name:'虚刃庇护守望者', emoji:'🪐', theme:'shadow', desc:'在虚无剃刀边缘巡猎难民与闯入者的庇护所裁卫。' },
+  eversong_midnight:{ name:'暗巷邪能承运人', emoji:'🗡️', theme:'arcane', desc:'在谋杀巷转运非法邪能器物的银月叛徒。' },
+  zulaman_midnight:{ name:'失衡洛阿化身', emoji:'🐻', theme:'brute', desc:'在祖阿曼神庙间徘徊的洛阿试炼残影。' },
+  harandar:{ name:'孢潮破壳者', emoji:'🍄', theme:'nature', desc:'从哈兰达尔菌林深处挤出的虚空孢潮精英。' }
 };
 
 function buildRareElites() {
@@ -5755,6 +5791,88 @@ function extendDungeonCatalog(){
           dmgP('吞界终裁','🌌',9.3,0.3,{ aoe:true, mirror:true, silence:2600, fear:2600, alwaysCrit:true, brittle:true, cd:16 })
         ] }
       ]
+    },
+    {
+      key:'murder_row', name:'谋杀巷', icon:'🗡️', reqLvl:104, waves:10, art:'assets/wow/art/timewalking-outland-banner.jpg', desc:'银月城暗巷里的邪能走私行动在虚空风暴出现后急速扩张,魔导师、刃商与恶魔召唤物把整条街变成地下战场',
+      bosses:[
+        { name:'姬丝蒂娅·法力之心', emoji:'🧙', skills:[dmg('邪能余烬','🔥',15.2,{ dot:true, manaDrain:120 }), dmg('魔导师封口令','🔇',15.5,{ silence:2300, weaken:true })] },
+        { name:'扎恩·刃悲', emoji:'🗡️', skills:[dmg('走私刃舞','🗡️',15.8,{ bleed:true, alwaysCrit:true }), summonP('巷口打手','📣',0.48,'召唤 2 名走私打手并提高暴击',{ summonCount:2, summonTheme:'soldier', critBuffSecs:13, critBuffPct:48 })] },
+        { name:'毁灭者萨苏克斯', emoji:'😈', skills:[dmg('湮灭践踏','💥',16.1,{ aoe:true, stun:2100, brittle:true }), buffP('恶魔快感','😈',0.58,'恶魔快感:攻击/吸血/减伤提升',{ atkBuffSecs:14, atkBuffPct:50, leechBuffSecs:14, leechBuffPct:24, drBuffSecs:14, drBuffPct:0.24 })] },
+        { name:'莉希尔·烬怒', emoji:'🌑', skills:[
+          dmg('银月暗售契约','📜',16.5,{ aoe:true, silence:2400, manaDrain:135 }),
+          dmg('虚空风暴套现','🌑',16.9,{ aoe:true, mirror:true, decay2:true }),
+          summonP('邪能承运队','🌀',0.44,'召唤 3 名邪能承运者并获得护盾',{ summonCount:3, summonTheme:'demon', shieldPct:0.25 }),
+          dmgP('烬怒终幕','🔥',9.4,0.3,{ aoe:true, fear:2600, alwaysCrit:true, brittle:true, cd:15 })
+        ] }
+      ]
+    },
+    {
+      key:'den_nalorakk', name:'纳洛拉克兽穴', icon:'🐻', reqLvl:105, waves:10, art:'assets/wow/art/timewalking-cataclysm-banner.jpg', desc:'阿曼尼试炼深入熊神纳洛拉克的梦境,贪食、寒冬与洛阿怒火会轮流压迫挑战者',
+      bosses:[
+        { name:'囤货者霍尔蒙格', emoji:'🥩', skills:[dmg('囤积碾压','🥩',15.8,{ stun:2100, sunder:true }), dmg('饥饿税契','💀',16.1,{ manaDrain:125, soulDrain:true })] },
+        { name:'冬境哨兵', emoji:'❄️', skills:[dmg('严冬切面','❄️',16.3,{ freeze:2200, slow:true }), dmg('冰封试炼','🧊',16.6,{ aoe:true, brittle:true, weaken:true })] },
+        { name:'纳洛拉克', emoji:'🐻', skills:[
+          dmg('熊神裂地','🐻',17,{ aoe:true, stun:2300, sunder:true }),
+          dmg('洛阿战争梦','🌌',17.3,{ fear:2500, soulLink:true }),
+          buffP('战争洛阿祝福','🐾',0.62,'战争洛阿祝福:攻击/暴击/减伤提升',{ atkBuffSecs:15, atkBuffPct:54, critBuffSecs:15, critBuffPct:58, drBuffSecs:15, drBuffPct:0.25 }),
+          dmgP('纳洛拉克终判','👑',9.6,0.3,{ aoe:true, alwaysCrit:true, fear:2600, brittle:true, cd:15 })
+        ] }
+      ]
+    },
+    {
+      key:'maisara_caverns', name:'迈萨拉洞窟', icon:'💀', reqLvl:106, waves:10, art:'assets/wow/art/timewalking-cataclysm-banner.jpg', desc:'邪枝巨魔在迈萨拉丘陵下献祭俘虏,死灵仪式把被盗灵魂灌入巨魔造物深处',
+      bosses:[
+        { name:'穆罗金与奈克拉克斯', emoji:'🦅', skills:[dmg('追猎镰击','🦅',16.2,{ bleed:true, cripple:true }), summonP('复生巨鹰','🦅',0.48,'召唤复生巨鹰并提高攻速',{ summonCount:2, summonTheme:'beast', spdBuffSecs:13, spdBuffPct:30 })] },
+        { name:'沃达扎', emoji:'💀', skills:[dmg('魂能蒸馏','💀',16.6,{ soulDrain:true, manaDrain:130 }), dmg('禁忌死仪','🕯️',16.9,{ aoe:true, decay2:true, silence:2400 })] },
+        { name:'拉克图尔', emoji:'🧟', skills:[
+          dmg('死魂巨握','🧟',17.4,{ stun:2300, brittle:true }),
+          dmg('邪枝魂爆','🌑',17.7,{ aoe:true, fear:2500, decay2:true }),
+          buffP('缚魂暴涨','💀',0.6,'缚魂暴涨:攻击/吸血/减伤提升',{ atkBuffSecs:15, atkBuffPct:56, leechBuffSecs:15, leechBuffPct:26, drBuffSecs:15, drBuffPct:0.26 }),
+          dmgP('洞窟魂葬','⚰️',9.8,0.3,{ aoe:true, silence:2600, alwaysCrit:true, cd:15 })
+        ] }
+      ]
+    },
+    {
+      key:'silvermoon_voidspire', name:'银月虚空尖塔', icon:'💠', reqLvl:107, waves:11, art:'assets/wow/art/timewalking-outland-banner.jpg', desc:'虚空风暴在银月城上空撕开尖塔裂隙,魔导师与血骑士必须在街巷、塔桥和日井残响间重新夺回控制权',
+      bosses:[
+        { name:'日井裂隙守望者', emoji:'✨', skills:[dmg('日井裂辉','✨',16.5,{ aoe:true, silence:2300 }), dmg('奥术回灌','💠',16.8,{ manaDrain:135, mirror:true })] },
+        { name:'血骑士断誓者', emoji:'🛡️', skills:[dmg('断誓圣裁','🛡️',17,{ sunder:true, stun:2200 }), buffP('血誓反照','🩸',0.55,'血誓反照:回复并提高防御/减伤',{ healPct:0.24, defBuffSecs:14, defBuffPct:50, drBuffSecs:14, drBuffPct:0.24 })] },
+        { name:'远行者虚空猎手', emoji:'🏹', skills:[dmg('虚空标记','🎯',17.2,{ alwaysCrit:true, brittle:true }), summonP('远行者影矢队','🏹',0.45,'召唤 2 名影矢队员并提高暴击',{ summonCount:2, summonTheme:'soldier', critBuffSecs:13, critBuffPct:52 })] },
+        { name:'萨拉塔斯的裂隙回声', emoji:'🌑', skills:[
+          dmg('黑暗之心回声','🌑',17.8,{ aoe:true, decay2:true, fear:2500 }),
+          dmg('虚空风暴覆城','🌌',18.2,{ aoe:true, silence:2600, mirror:true }),
+          summonP('裂隙低语体','👁️',0.44,'召唤 3 个低语体并获得护盾',{ summonCount:3, summonTheme:'void', shieldPct:0.27 }),
+          dmgP('银月坠夜','🌘',10,0.3,{ aoe:true, alwaysCrit:true, fear:2700, silence:2700, cd:15 })
+        ] }
+      ]
+    },
+    {
+      key:'sporefall', name:'孢落', icon:'🍄', type:'raid', reqLvl:108, waves:8, art:'assets/wow/art/timewalking-shadowlands-banner.png', desc:'哈兰达尔的单首领团本,真菌巨人腐沼用末日蘑菇、孢潮增援与毒雾把短战斗压成高密度机制考验',
+      bosses:[
+        { name:'腐沼', emoji:'🍄', skills:[
+          dmg('毒孢爆发','☣️',18.5,{ aoe:true, plague:true, dot:true }),
+          dmg('末日蘑菇','🍄',19,{ aoe:true, brittle:true, cripple:true }),
+          summonP('孢潮暴动','🍄',0.42,'召唤 4 个孢潮爪牙并获得护盾',{ summonCount:4, summonTheme:'plant', shieldPct:0.30 }),
+          buffP('真菌巨人再生','🌿',0.62,'真菌巨人再生:回复并提高攻击/减伤',{ healPct:0.30, atkBuffSecs:16, atkBuffPct:60, drBuffSecs:16, drBuffPct:0.28 }),
+          dmgP('孢落灭顶','🌌',10.8,0.3,{ aoe:true, plague:true, fear:2800, silence:2800, alwaysCrit:true, cd:14 })
+        ] }
+      ]
+    },
+    {
+      key:'curse_ulatek', name:"乌拉泰克诅咒", icon:'🌀', type:'raid', reqLvl:109, waves:16, art:'assets/wow/art/timewalking-shadowlands-banner.png', desc:'Midnight 的大型诅咒团本线,虚空、洛阿与银月法阵在盘绕岛深处互相污染,是当前最高强度团队内容',
+      bosses:[
+        { name:'盘绕岛守门者', emoji:'🌀', skills:[dmg('盘绕门槛','🌀',17.2,{ aoe:true, stun:2300 }), dmgP('门槛坍缩','💥',8.6,0.45,{ aoe:true, brittle:true, cd:12 })] },
+        { name:'失语先知玛洛斯', emoji:'👁️', skills:[dmg('无声预言','👁️',17.5,{ silence:2600, manaDrain:140 }), dmg('低语折返','🌑',17.8,{ mirror:true, fear:2300 })] },
+        { name:'四神庙残影', emoji:'🐾', skills:[dmg('洛阿残响','🐾',18.1,{ aoe:true, weaken:true }), summonP('残影试炼','📣',0.48,'召唤 3 个洛阿残影并提高攻速',{ summonCount:3, summonTheme:'beast', spdBuffSecs:14, spdBuffPct:34 })] },
+        { name:'银月裂法者', emoji:'💠', skills:[dmg('裂法尖刺','💠',18.4,{ manaDrain:145, brittle:true }), buffP('裂法回路','✨',0.56,'裂法回路:攻击/暴击/减伤提升',{ atkBuffSecs:15, atkBuffPct:58, critBuffSecs:15, critBuffPct:60, drBuffSecs:15, drBuffPct:0.27 })] },
+        { name:'诅咒载体乌拉泰克', emoji:'🌌', skills:[
+          dmg('乌拉泰克咒印','🌌',19,{ aoe:true, decay2:true, silence:2700 }),
+          dmg('盘绕岛终咒','🌀',19.5,{ aoe:true, mirror:true, fear:2700 }),
+          summonP('诅咒回声','👁️',0.42,'召唤 4 个诅咒回声并获得护盾',{ summonCount:4, summonTheme:'void', shieldPct:0.30 }),
+          buffP('终咒升格','🌑',0.62,'终咒升格:攻击/暴击/吸血/减伤提升',{ atkBuffSecs:17, atkBuffPct:64, critBuffSecs:17, critBuffPct:66, leechBuffSecs:17, leechBuffPct:30, drBuffSecs:17, drBuffPct:0.30 }),
+          dmgP('午夜终末','🌘',11.2,0.3,{ aoe:true, plague:true, fear:2900, silence:2900, soulLink:true, alwaysCrit:true, cd:14 })
+        ] }
+      ]
     }
   ];
 
@@ -6242,7 +6360,39 @@ function extendDungeonCatalog(){
       '吞界剃刀体':[L('吞界剃刀巨镰','weapon','epic',{atk:4,agi:2}),L('裂隙剖面长靴','boots','epic',{atk:2,haste:1})],
       '庇护执裁官萨·维克斯':[L('执裁官剃锋权杖','weapon','epic',{atk:4,int:2}),L('庇护宣判冠','helmet','epic',{def:3,int:2})],
       '吞界观测主脑阿兹莫垩':[L('阿兹莫垩的吞界剃刃','weapon','legend',{atk:8,int:5}),L('虚无剃刀冠冕','helmet','legend',{def:5,int:4}),L('圣所终域胸甲','armor','legend',{def:7,sta:5}),L('吞界观测徽记','trinket','legend',{sta:5,int:5})]
-    }, trash:[L('庇护所裂幕护肩','shoulder','rare',{atk:1,int:1}),L('虚刃边界战靴','boots','rare',{haste:1})] }
+    }, trash:[L('庇护所裂幕护肩','shoulder','rare',{atk:1,int:1}),L('虚刃边界战靴','boots','rare',{haste:1})] },
+    murder_row: { bosses:{
+      '姬丝蒂娅·法力之心':[L('法力之心邪焰杖','weapon','epic',{atk:4,int:2}),L('暗巷魔导师护手','gloves','epic',{int:2,haste:1})],
+      '扎恩·刃悲':[L('刃悲走私双刃','weapon','epic',{atk:4,agi:2}),L('巷口账本指环','ring','epic',{agi:2,vers:1})],
+      '毁灭者萨苏克斯':[L('萨苏克斯毁灭战锤','weapon','epic',{atk:4,str:2}),L('恶魔承运胸甲','armor','epic',{def:3,sta:2})],
+      '莉希尔·烬怒':[L('烬怒的银月暗刃','weapon','legend',{atk:8,int:5}),L('谋杀巷黑账徽记','trinket','legend',{sta:5,int:5})]
+    }, trash:[L('邪能走私护肩','shoulder','rare',{atk:1,int:1}),L('暗巷快靴','boots','rare',{haste:1})] },
+    den_nalorakk: { bosses:{
+      '囤货者霍尔蒙格':[L('囤货者切肉斧','weapon','epic',{atk:4,str:2}),L('贪食者束腰','belt','epic',{def:2,sta:2})],
+      '冬境哨兵':[L('冬境冰矛','weapon','epic',{atk:4,int:2}),L('严冬哨兵护腿','pants','epic',{hp:2,sta:2})],
+      '纳洛拉克':[L('纳洛拉克战爪','weapon','legend',{atk:8,str:5}),L('熊神梦境胸甲','armor','legend',{def:7,sta:5}),L('洛阿战争徽记','trinket','legend',{sta:5,str:5})]
+    }, trash:[L('阿曼尼试炼护肩','shoulder','rare',{atk:1,str:1}),L('兽穴巡猎靴','boots','rare',{agi:1})] },
+    maisara_caverns: { bosses:{
+      '穆罗金与奈克拉克斯':[L('奈克拉克斯翼刃','weapon','epic',{atk:4,agi:2}),L('追猎者护手','gloves','epic',{atk:2,haste:1})],
+      '沃达扎':[L('沃达扎魂瓶法杖','weapon','epic',{atk:4,int:2}),L('死仪锁环','ring','epic',{int:2,vers:1})],
+      '拉克图尔':[L('拉克图尔缚魂巨刃','weapon','legend',{atk:8,str:5}),L('迈萨拉魂葬胸甲','armor','legend',{def:7,sta:5}),L('邪枝死魂徽记','trinket','legend',{sta:5,int:5})]
+    }, trash:[L('邪枝洞窟腰带','belt','rare',{def:1,int:1}),L('献祭洞窟战靴','boots','rare',{haste:1})] },
+    silvermoon_voidspire: { bosses:{
+      '日井裂隙守望者':[L('裂辉守望者法杖','weapon','epic',{atk:4,int:2}),L('日井回灌护肩','shoulder','epic',{int:2,mastery:1})],
+      '血骑士断誓者':[L('断誓圣裁锤','weapon','epic',{atk:4,str:2}),L('血誓反照胸甲','armor','epic',{def:3,sta:2})],
+      '远行者虚空猎手':[L('虚空猎手长弓','weapon','epic',{atk:4,agi:2}),L('远行者裂隙战靴','boots','epic',{atk:2,haste:1})],
+      '萨拉塔斯的裂隙回声':[L('裂隙回声暗星刃','weapon','legend',{atk:9,int:5}),L('银月坠夜冠冕','helmet','legend',{def:6,int:5}),L('虚空尖塔徽记','trinket','legend',{sta:5,int:5})]
+    }, trash:[L('银月尖塔护手','gloves','rare',{int:1,haste:1}),L('血骑士巡塔靴','boots','rare',{str:1})] },
+    sporefall: { bosses:{
+      '腐沼':[L('腐沼真菌巨槌','weapon','legend',{atk:9,str:5}),L('孢落菌冠','helmet','legend',{def:6,spi:5}),L('发光孢翼徽记','trinket','legend',{sta:6,spi:5}),L('末日蘑菇护胸','armor','legend',{def:8,sta:6})]
+    }, trash:[L('孢潮菌丝护肩','shoulder','epic',{atk:2,spi:2}),L('哈兰达尔孢靴','boots','epic',{haste:2,sta:1})] },
+    curse_ulatek: { bosses:{
+      '盘绕岛守门者':[L('盘绕门槛巨斧','weapon','epic',{atk:5,str:3}),L('守门者肩甲','shoulder','epic',{def:3,sta:2})],
+      '失语先知玛洛斯':[L('失语预言法典','weapon','epic',{atk:5,int:3}),L('低语折返戒','ring','epic',{int:3,vers:2})],
+      '四神庙残影':[L('四神庙残影战刃','weapon','epic',{atk:5,agi:3}),L('洛阿残响护腿','pants','epic',{hp:3,agi:2})],
+      '银月裂法者':[L('裂法者星杖','weapon','epic',{atk:5,int:3}),L('裂法回路胸甲','armor','epic',{def:4,sta:3})],
+      '诅咒载体乌拉泰克':[L('乌拉泰克的午夜终刃','weapon','legend',{atk:10,int:6}),L('终咒升格冠冕','helmet','legend',{def:7,int:6}),L('盘绕岛终末胸甲','armor','legend',{def:9,sta:7}),L('午夜终咒徽记','trinket','legend',{sta:7,int:6})]
+    }, trash:[L('盘绕岛巡礼护肩','shoulder','rare',{atk:2,int:1}),L('诅咒回声战靴','boots','rare',{haste:1,vers:1})] }
   };
 
   for (const dg of extraDungeons) ensureDungeon(dg, extraLoot[dg.key]);
@@ -6306,6 +6456,8 @@ const EPIC_RAID_SET_THEME = {
   manaforge_omega:{ tier:'T33', name:'法力熔炉欧米伽', short:'欧米伽' },
   shandorah_conclave:{ tier:'T34', name:'沙恩多拉议会', short:'沙恩多拉' },
   voidrazor_sanctum:{ tier:'T35', name:'虚无剃刀圣所', short:'虚刃' },
+  sporefall:{ tier:'T36', name:'孢落', short:'孢落' },
+  curse_ulatek:{ tier:'T37', name:'乌拉泰克诅咒', short:'终咒' },
 };
 const RAID_PROGRESSION = {
   mc:{ order:1, expansion:'经典旧世', epicIlvl:140 },
@@ -6340,6 +6492,8 @@ const RAID_PROGRESSION = {
   manaforge_omega:{ order:30, expansion:'地心之战', epicIlvl:438 },
   shandorah_conclave:{ order:31, expansion:'地心之战', epicIlvl:452 },
   voidrazor_sanctum:{ order:32, expansion:'地心之战', epicIlvl:466 },
+  sporefall:{ order:33, expansion:'午夜', epicIlvl:482 },
+  curse_ulatek:{ order:34, expansion:'午夜', epicIlvl:500 },
 };
 const EPIC_RAID_SET_LABELS = {
   mc:{

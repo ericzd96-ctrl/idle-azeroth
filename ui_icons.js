@@ -106,7 +106,16 @@
     ecodome_rhovan:'spell_nature_naturetouchgrow',
     shadowpoint_breach:'spell_shadow_soulgem',
     shandorah_conclave:'spell_arcane_starfire',
-    voidrazor_sanctum:'spell_shadow_possession'
+    voidrazor_sanctum:'spell_shadow_possession',
+    eversong_midnight:'spell_arcane_portalstormwind',
+    zulaman_midnight:'ability_hunter_pet_bear',
+    harandar:'ui-ej-boss-fungariangiant',
+    murder_row:'spell_shadow_summonfelhunter',
+    den_nalorakk:'ability_hunter_pet_bear',
+    maisara_caverns:'spell_shadow_raisedead',
+    silvermoon_voidspire:'spell_arcane_blast',
+    sporefall:'ui-ej-boss-fungariangiant',
+    curse_ulatek:'spell_shadow_shadowworddominate'
   };
 
   const SYMBOL_ICON = {
@@ -468,7 +477,17 @@
     '达卡莱先王':'achievement_boss_lichking',
     '拉莎农':'ability_hunter_pet_vulture',
     '可汗巴拉卡':'ability_hunter_pet_windserpent',
-    '克拉希克综合体':'ability_creature_poison_05'
+    '克拉希克综合体':'ability_creature_poison_05',
+    '萨瑟利尔暗宴议会':'spell_arcane_portalstormwind',
+    '祖尔加拉':'ability_hunter_pet_bear',
+    '祖尔詹':'ability_hunter_pet_vulture',
+    '腐沼':'ui-ej-boss-fungariangiant',
+    'Rotmire':'ui-ej-boss-fungariangiant',
+    '萨拉塔斯':'spell_shadow_possession',
+    '萨拉塔斯的裂隙回声':'spell_shadow_possession',
+    '纳洛拉克':'ability_hunter_pet_bear',
+    '莉希尔·烬怒':'spell_shadow_summonfelhunter',
+    '诅咒载体乌拉泰克':'spell_shadow_shadowworddominate'
   };
 
   const SKILL_EXACT = {

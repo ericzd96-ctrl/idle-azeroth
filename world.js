@@ -271,6 +271,22 @@ const DUNGEON_COMBAT_ROOMS = [
   { key:'unstablePortal', name:'不稳定传送门', icon:'🌀', desc:'传送门会把额外敌人拉进战场,也会随机扰动首领施法节奏。', mod:{portalTickMs:24000, portalDurationMs:10000, bossCastJitter:true} },
 ];
 
+const DUNGEON_MECHANIC_CODEX = [
+  { key:'bossChallenge', name:'Boss挑战', icon:'🏆', desc:'首领详情里的额外目标。完成后会记录挑战进度,并在通关结算中提高荣誉、精华、金币或额外掉落机会。' },
+  { key:'addControl', name:'控场清理', icon:'👥', desc:'击杀首领机制召唤出的援军。它检验你能不能优先处理场面压力,通常出现在会召唤、虫群、军团、血肉或议会主题首领。' },
+  { key:'swiftKill', name:'速战速决', icon:'⏱️', desc:'在指定秒数内击败首领。默认窗口为 55 秒,越适合爆发、斩杀和打断循环的角色越容易完成。' },
+  { key:'healthyFinish', name:'稳健收尾', icon:'❤️', desc:'击败首领时自身生命不低于指定比例。默认要求 35% 生命,鼓励带减伤、治疗、吸血或护盾来处理尾王终局压力。' },
+  { key:'timePulse', name:'时序脉冲', icon:'⏳', desc:'限时挑战超时后的惩罚脉冲。每 15 秒叠加一次压迫,提高后续伤害压力,防止高层契约被拖成无风险磨血。' },
+  { key:'timeEdict', name:'时序禁令', icon:'📜', desc:'契约副本抽取的战术禁令。禁令会提高怪物生命、攻击、防御、资源压力、治疗压力或增援概率,并同步提高通关奖励。' },
+  { key:'timeMark', name:'时序点名', icon:'🎯', desc:'高压时间线上的定向机制。常见表现为沉默、资源燃烧、易伤、处刑或召唤目标,需要优先打断、转火或用防御技能覆盖。' },
+  { key:'alert', name:'契约警戒', icon:'🚨', desc:'契约副本每清一波和击败首领都会提高警戒。警戒越高,后续敌人越强,也更容易出现戒备队长。' },
+  { key:'combatRoom', name:'战斗房间', icon:'🎲', desc:'副本路线中的房间规则。每个副本会轮换伏击、圣物库、祭坛、传送门等房间,让同一副本每天有不同处理重点。' },
+];
+
+function dungeonMechanicCodex() {
+  return DUNGEON_MECHANIC_CODEX.map(x => ({ ...x, dungeonCodex:true }));
+}
+
 function getDungeonCombatRooms(dg, contractLevel) {
   if (!dg) return [];
   const level = Math.max(0, Math.min(3, Math.floor(contractLevel || 0)));
