@@ -184,14 +184,16 @@ function enterDungeon(key) {
   state.mode = 'dungeon';
   const contractLevel = (typeof dungeonContractLevel === 'function') ? dungeonContractLevel() : 0;
   const contract = (typeof dungeonContractInfo === 'function') ? dungeonContractInfo(contractLevel) : null;
+  const themeAffixes = (typeof getDungeonThemeAffixes === 'function') ? getDungeonThemeAffixes(dg) : [];
   const baseAffixes = getDungeonAffixes(dg);
   const trials = (typeof getDungeonContractTrials === 'function') ? getDungeonContractTrials(dg, contractLevel) : [];
   const environments = (typeof getDungeonEnvironments === 'function') ? getDungeonEnvironments(dg, contractLevel) : [];
   const edicts = (typeof getDungeonTacticalEdicts === 'function') ? getDungeonTacticalEdicts(dg, contractLevel) : [];
   const combatRooms = (typeof getDungeonCombatRooms === 'function') ? getDungeonCombatRooms(dg, contractLevel) : [];
   const timer = (typeof createDungeonTimer === 'function') ? createDungeonTimer(dg, contractLevel) : null;
-  state.dungeonState = { key, wave: 1, loot: [], affixes: baseAffixes.concat(trials), trials, environments, edicts, combatRooms, timer, contractLevel, contract, alertLevel: 0, maxAlert: 0 };
+  state.dungeonState = { key, wave: 1, loot: [], affixes: themeAffixes.concat(baseAffixes, trials), themeAffixes, trials, environments, edicts, combatRooms, timer, contractLevel, contract, alertLevel: 0, maxAlert: 0 };
   if (contractLevel > 0 && contract) log(`${contract.icon || '📜'} 已启用 ${contract.name}: ${contract.desc}`, 'legend');
+  if (themeAffixes.length) log(`🧭 副本主题: ${themeAffixes.map(a => `${a.icon || '🧭'}${a.name}`).join(' · ')}`, 'bad');
   if (trials.length) log(`🔥 契约试炼: ${trials.map(t => `${t.icon || '🔥'}${t.name}`).join(' · ')}`, 'legend');
   if (environments.length) log(`🧭 副本环境: ${environments.map(e => `${e.icon || '🧭'}${e.name}`).join(' · ')}`, 'bad');
   if (edicts.length) log(`📜 战术禁令: ${edicts.map(e => `${e.icon || '📜'}${e.name}`).join(' · ')}`, 'bad');
@@ -239,6 +241,48 @@ const DUNGEON_ENVIRONMENTS = [
   { key:'wardedSanctum', name:'守护圣所', icon:'🔷', desc:'敌人每16秒获得小型吸收盾。', mod:{shieldTickMs:16000, monsterShieldPct:0.055} },
   { key:'dreadFog', name:'恐惧黑雾', icon:'🌫️', desc:'受到伤害提高10%,并周期性陷入虚弱。', mod:{vulnerableTaken:true, weakenTickMs:13000, weakenMs:5000} },
 ];
+
+const DUNGEON_THEME_AFFIX_POOL = {
+  fire: { key:'theme_fire', name:'熔火压迫', icon:'🔥', desc:'火焰、熔炉或邪能主题副本的常驻压力:敌人攻击提高,并周期性触发火山伤害。', mod:{trashDmg:0.06, bossDmg:0.08, volcanic:true}, themeAffix:true },
+  forge: { key:'theme_forge', name:'铸炉装甲', icon:'🔩', desc:'锻造、黑石或泰坦工坊主题副本的常驻压力:敌人防御提高,小怪更硬。', mod:{trashDef:0.09, bossDef:0.07, trashHp:0.05}, themeAffix:true },
+  dragon: { key:'theme_dragon', name:'龙息余烬', icon:'🐲', desc:'龙类主题副本的常驻压力:首领生命和攻击提高,终局阶段更危险。', mod:{bossHp:0.08, bossDmg:0.08, executePulsePct:0.018, executeBelow:0.36}, themeAffix:true },
+  storm: { key:'theme_storm', name:'风暴导流', icon:'⚡', desc:'风暴、雷霆或高空主题副本的常驻压力:敌人节奏更快,并周期性链击资源。', mod:{trashDmg:0.04, bossDmg:0.05, drainTickMs:15000, resourceDrainPct:0.08}, themeAffix:true },
+  speed: { key:'theme_speed', name:'急袭路线', icon:'👟', desc:'快节奏、海盗或突袭主题副本的常驻压力:非首领攻势提高,有更高伏击压力。', mod:{trashDmg:0.07, ambushChance:0.24}, themeAffix:true },
+  arcane: { key:'theme_arcane', name:'奥能回路', icon:'🔷', desc:'奥术、魔网或法师主题副本的常驻压力:首领会获得奥术吸收盾,并压缩资源窗口。', mod:{arcane:true, resourceDrainPct:0.05, drainTickMs:13000}, themeAffix:true },
+  time: { key:'theme_time', name:'时序错位', icon:'⏳', desc:'时光或秩序主题副本的常驻压力:敌人攻势更稳定,战斗拖长后资源压力更明显。', mod:{bossDmg:0.05, trashDef:0.04, resourceDrainPct:0.04, drainTickMs:12500}, themeAffix:true },
+  titan: { key:'theme_titan', name:'泰坦矩阵', icon:'🔷', desc:'泰坦设施主题副本的常驻压力:敌人护盾与防御提高,需要更稳定的破盾能力。', mod:{bossDef:0.08, trashDef:0.08, monsterShieldPct:0.026, shieldTickMs:17500}, themeAffix:true },
+  mech: { key:'theme_mech', name:'机械加固', icon:'⚙️', desc:'机械主题副本的常驻压力:敌人防御提高,并周期性获得小型护盾。', mod:{trashDef:0.10, bossDef:0.06, monsterShieldPct:0.022, shieldTickMs:16000}, themeAffix:true },
+  void: { key:'theme_void', name:'虚空低语', icon:'🌌', desc:'虚空或古神主题副本的常驻压力:玩家受到伤害提高,并周期性陷入虚弱。', mod:{takenMult:0.045, weakenTickMs:14000, weakenMs:4200}, themeAffix:true },
+  shadow: { key:'theme_shadow', name:'暗影侵蚀', icon:'🌑', desc:'暗影、梦魇或诅咒主题副本的常驻压力:治疗受限,并会受到持续折磨。', mod:{healReduction:0.08, afflicted:true, poisonDpsPct:0.004}, themeAffix:true },
+  undead: { key:'theme_undead', name:'亡者缠斗', icon:'💀', desc:'亡灵或天灾主题副本的常驻压力:敌人生命提高,战斗拖长会放大治疗压力。', mod:{trashHp:0.08, bossHp:0.06, healReduction:0.06}, themeAffix:true },
+  blood: { key:'theme_blood', name:'鲜血税契', icon:'🩸', desc:'鲜血或吸血主题副本的常驻压力:敌方低血量更危险,首领获得额外续航。', mod:{raging:true, bossHp:0.05, bossDmg:0.04}, themeAffix:true },
+  nature: { key:'theme_nature', name:'野性再生', icon:'🌿', desc:'自然、野兽或梦境主题副本的常驻压力:敌人生命提高,并更难被快速清场。', mod:{trashHp:0.08, bossHp:0.05, trashDef:0.04}, themeAffix:true },
+  heal: { key:'theme_heal', name:'生命回响', icon:'💚', desc:'生命或圣泉主题副本的常驻压力:首领更厚,小怪防御提高。', mod:{bossHp:0.08, trashDef:0.05}, themeAffix:true },
+  naga: { key:'theme_naga', name:'潮汐围困', icon:'🌊', desc:'娜迦、海潮或深水主题副本的常驻压力:玩家攻速降低,敌人更擅长拖慢战斗。', mod:{heroSpd:-0.045, trashDef:0.05, bossDef:0.04}, themeAffix:true },
+  water: { key:'theme_water', name:'深水压力', icon:'🌊', desc:'水域主题副本的常驻压力:行动节奏受限,资源消耗更紧。', mod:{heroSpd:-0.04, resourceDrainPct:0.04, drainTickMs:13500}, themeAffix:true },
+  pirate: { key:'theme_pirate', name:'海盗伏击', icon:'🏴‍☠️', desc:'海盗或港口主题副本的常驻压力:伏击频率提高,但通关结算也会因词缀获得更高金币收益。', mod:{trashDmg:0.05, ambushChance:0.30, bonusGoldPct:0.10}, themeAffix:true },
+  beast: { key:'theme_beast', name:'兽群奔袭', icon:'🐾', desc:'野兽或虫群主题副本的常驻压力:非首领生命和攻击提高,清怪压力更明显。', mod:{trashHp:0.08, trashDmg:0.06}, themeAffix:true },
+  holy: { key:'theme_holy', name:'圣光审判', icon:'✨', desc:'圣光、修道院或骑士主题副本的常驻压力:敌人防御提高,并周期性获得小型护盾。', mod:{bossDef:0.08, trashDef:0.06, monsterShieldPct:0.018, shieldTickMs:18000}, themeAffix:true },
+  fortress: { key:'theme_fortress', name:'要塞戒备', icon:'🛡️', desc:'城堡、要塞或王庭主题副本的常驻压力:守卫生命和防御提高。', mod:{trashHp:0.06, trashDef:0.08, bossDef:0.05}, themeAffix:true },
+  martial: { key:'theme_martial', name:'军势压阵', icon:'⚔️', desc:'军团、兽人或攻城主题副本的常驻压力:小怪攻击提高,并可能出现额外增援。', mod:{trashDmg:0.06, edictAddChance:0.08}, themeAffix:true },
+  orc: { key:'theme_orc', name:'战歌冲锋', icon:'🪓', desc:'兽人战争主题副本的常驻压力:敌人攻势提高,低血量时更危险。', mod:{trashDmg:0.06, bossDmg:0.05, raging:true}, themeAffix:true },
+  raid: { key:'theme_raid', name:'团队压轴', icon:'👑', desc:'团队副本的常驻压力:首领生命和防御提高,奖励随额外词缀同步提高。', mod:{bossHp:0.07, bossDef:0.05}, themeAffix:true },
+  mythic: { key:'theme_mythic', name:'秘境节奏', icon:'💠', desc:'史诗五人本的常驻压力:敌人攻势更紧,小怪波次更危险。', mod:{trashDmg:0.06, bossDmg:0.04, trashHp:0.04}, themeAffix:true },
+};
+
+function getDungeonThemeAffixes(dg) {
+  if (!dg) return [];
+  const tags = (typeof dungeonTraitTagsForDungeon === 'function') ? dungeonTraitTagsForDungeon(dg.key) : [];
+  const priority = ['void','shadow','fire','dragon','titan','mech','storm','arcane','time','undead','blood','nature','naga','pirate','beast','holy','fortress','martial','orc','water','heal','speed'];
+  const forcedTag = tags.includes('pirate') ? 'pirate'
+    : tags.includes('holy') ? 'holy'
+    : (tags.includes('nature') && tags.includes('dragon')) ? 'dragon'
+    : null;
+  const pickedTag = forcedTag || priority.find(tag => tags.includes(tag)) || (dg.epic5 ? 'mythic' : (dg.type === 'raid' ? 'raid' : null));
+  const def = pickedTag ? DUNGEON_THEME_AFFIX_POOL[pickedTag] : null;
+  if (!def) return [];
+  return [{ ...def, mod:{ ...(def.mod || {}) }, themeTag:pickedTag, tags }];
+}
 
 function getDungeonEnvironments(dg, contractLevel) {
   const level = Math.max(0, Math.min(3, Math.floor(contractLevel || 0)));

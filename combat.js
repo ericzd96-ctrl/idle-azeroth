@@ -2353,8 +2353,9 @@ function spawnDungeonMonster(){
     state.currentMonsters.push(captain);
     log(`🚨 警戒${alertInfo.level}: ${captain.name} 加入战斗`, 'bad');
   }
-  const edictAddChance = state.mode === 'dungeon' && !isBoss && Array.isArray(ds.edicts)
-    ? ds.edicts.reduce((sum, edict) => sum + (edict?.mod?.edictAddChance || 0), 0)
+  const edictAddChance = state.mode === 'dungeon' && !isBoss
+    ? (Array.isArray(ds.edicts) ? ds.edicts : []).concat(Array.isArray(ds.affixes) ? ds.affixes : [])
+      .reduce((sum, rule) => sum + (rule?.mod?.edictAddChance || 0) + (rule?.mod?.ambushChance || 0), 0)
     : 0;
   if (edictAddChance > 0 && Math.random() < Math.min(0.55, edictAddChance)) {
     const enforcer = Object.assign({}, mon, {
@@ -4516,6 +4517,9 @@ function heroDebuffTakenMult(){
   if(state.mode === 'dungeon' && state.dungeonState?.edicts?.length) {
     for(const edict of state.dungeonState.edicts) m *= 1 + (edict?.mod?.takenMult || 0);
   }
+  if(state.mode === 'dungeon' && state.dungeonState?.affixes?.length) {
+    for(const affix of state.dungeonState.affixes) m *= 1 + (affix?.mod?.takenMult || 0);
+  }
   return m;
 }
 function heroDebuffHealMult(){
@@ -4946,6 +4950,39 @@ function tickBattle(now){
         ms.lastArcane = now;
         mon._arcaneShield = (mon._arcaneShield||0) + Math.floor(mon.hpMax * 0.15);
         showMonsterFloat(mon, '🔮盾', '#a78bfa');
+      }
+      const prefix = `affix:${af.key || af.name || 'rule'}`;
+      if (mod.drainTickMs && now - (ms[`${prefix}:drain`] || 0) > mod.drainTickMs) {
+        ms[`${prefix}:drain`] = now;
+        const drain = Math.min(state.resource || 0, Math.floor((state.resourceMax || 0) * (mod.resourceDrainPct || 0.08)));
+        if (drain > 0) {
+          state.resource = Math.max(0, state.resource - drain);
+          showFloat($('hero-emoji'), `${af.icon || '💧'}-${drain}`, '#93c5fd', { variant:'status', scale:1.04 });
+          ms.affixHits = (ms.affixHits || 0) + 1;
+        }
+      }
+      if (mod.shieldTickMs && now - (ms[`${prefix}:shield`] || 0) > mod.shieldTickMs) {
+        ms[`${prefix}:shield`] = now;
+        for (const target of (state.currentMonsters || [])) {
+          if (!target || target.hp <= 0) continue;
+          const shield = Math.max(1, Math.floor(target.hpMax * (mod.monsterShieldPct || 0.03)));
+          target._arcaneShield = (target._arcaneShield || 0) + shield;
+          syncMonsterShieldAura(target);
+          showMonsterFloat(target, `${af.icon || '🔷'}盾`, '#93c5fd');
+        }
+        ms.affixHits = (ms.affixHits || 0) + 1;
+      }
+      if (mod.weakenTickMs && now - (ms[`${prefix}:weaken`] || 0) > mod.weakenTickMs) {
+        ms[`${prefix}:weaken`] = now;
+        applyHeroDebuff('weaken', mod.weakenMs || 4200);
+        showFloat($('hero-emoji'), `${af.icon || '🌫️'}虚弱`, '#fca5a5', { variant:'status', scale:1.04 });
+        ms.affixHits = (ms.affixHits || 0) + 1;
+      }
+      if (mod.executePulsePct && mon.isBoss && mon.hpMax > 0 && mon.hp / mon.hpMax <= (mod.executeBelow || 0.35) && now - (ms[`${prefix}:execute`] || 0) > 9000) {
+        ms[`${prefix}:execute`] = now;
+        const dmg = Math.max(1, Math.floor((state.hero.hpMax || 1) * mod.executePulsePct));
+        applyHeroDamage(dmg, mon, { label:t=>(af.icon || '⚔️') + '-' + t, color:'#fb7185', now });
+        ms.affixHits = (ms.affixHits || 0) + 1;
       }
       // 契约试炼:首领长时间战斗后狂暴
       if (mod.bossEnrage && mon.isBoss && !mon._trialEnraged && now - (mon._spawnAt || now) > 40000) {

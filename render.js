@@ -712,6 +712,15 @@ function dungeonProgressMechanicTags(ds, contract, alert, timerStatus) {
       meta:timerStatus.text || ''
     }, { fallbackIcon:'inv_misc_pocketwatch_01', color:timerStatus.expired ? '#fb7185' : '#67e8f9' }));
   }
+  const themeAffixes = Array.isArray(ds.themeAffixes) ? ds.themeAffixes : [];
+  for (const affix of themeAffixes.slice(0, 2)) {
+    tags.push(inlineTipSpanHtml({
+      name:affix.name || '主题压力',
+      icon:affix.icon || '🧭',
+      desc:affix.desc || '该副本按主题固定生效的战斗规则。',
+      meta:'主题'
+    }, { fallbackIcon:'spell_arcane_starfire', color:'#67e8f9' }));
+  }
   const rooms = Array.isArray(ds.combatRooms) ? ds.combatRooms : [];
   for (const room of rooms.slice(0, 3)) {
     tags.push(inlineTipSpanHtml({
@@ -3310,6 +3319,27 @@ function dungeonTraitPreviewHtml(dg) {
     <div class="dungeon-mechanic-codex-grid">${chips}</div>
   </div>`;
 }
+function dungeonThemeAffixHtml(dg, compact) {
+  if (!dg || typeof getDungeonThemeAffixes !== 'function') return '';
+  const affixes = getDungeonThemeAffixes(dg);
+  if (!affixes.length) return '';
+  const chips = affixes.map(a => inlineTipSpanHtml({
+    name:a.name || '主题压力',
+    icon:a.icon || '🧭',
+    desc:a.desc || '该副本按主题固定生效的战斗规则。',
+    meta:'主题压力',
+  }, {
+    fallbackIcon:'spell_arcane_starfire',
+    color:'#67e8f9',
+    metaVisible:!compact,
+  })).join(' · ');
+  if (compact) return `<div class="dungeon-theme-line">🧭 主题: ${chips}</div>`;
+  return `<div class="dungeon-mechanic-codex">
+    <b>🧭 主题压力</b>
+    <div class="muted" style="font-size:11px;margin:3px 0 6px">每座副本会按地图/Boss/资料片主题固定获得一条常驻战斗规则；它会提高对应怪物压力，并计入通关词缀奖励。</div>
+    <div class="dungeon-mechanic-codex-grid">${chips}</div>
+  </div>`;
+}
 function dungeonAtlasHtml(dg, compact) {
   const atlas = dungeonAtlasInfo(dg);
   if (!atlas) return '';
@@ -3419,6 +3449,7 @@ function buildDungeonInfoHtml(dg) {
       推荐波次: ${dg.waves || '?'} · 首领数量: ${(dg.bosses || []).length}${powerText ? ` · ${powerText}` : ''}${lootIlvlText ? ` · ${lootIlvlText}` : ''} · 精良以上装备有概率携带副本印记
       ${dg.type==='raid'?(isEpicRaid?' · 掉落: 史诗级紫装 / 全部首领超低概率橙装':' · 掉落: 常规团本装备 / 关底低概率橙武'):''}
     </div>`;
+  html += dungeonThemeAffixHtml(dg, false);
   html += dungeonTraitPreviewHtml(dg);
   if (dgAffixes.length) {
     html += `<div style="margin-bottom:10px;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.03)">
@@ -3720,6 +3751,7 @@ function renderDungeon() {
     div.dataset.dungeonKey = dg.key;
     const dungeonIconHtml = (typeof dungeonIcon === 'function') ? dungeonIcon(dg.key, dg.name, 18, dg.icon) : dg.icon;
     const dgAffixes = (typeof getDungeonAffixes === 'function') ? getDungeonAffixes(dg) : [];
+    const themeLine = dungeonThemeAffixHtml(dg, true);
     const affixLine = dgAffixes.length ? `<div class="muted" style="font-size:11px">⚙️ 词缀: ${dgAffixes.map(a => inlineTipSpanHtml(a, { fallbackIcon:'spell_holy_powerinfusion', color:'#67e8f9' })).join(' · ')}</div>` : '';
     const selectedContractLevel = (typeof dungeonContractLevel === 'function') ? dungeonContractLevel() : 0;
     const trialPreview = (selectedContractLevel > 0 && typeof getDungeonContractTrials === 'function') ? getDungeonContractTrials(dg, selectedContractLevel) : [];
@@ -3775,6 +3807,7 @@ function renderDungeon() {
       ${bountyLine}
       ${delveLine}
       ${chaseLine}
+      ${themeLine}
       ${affixLine}
       ${timerLine}
       ${roomLine}

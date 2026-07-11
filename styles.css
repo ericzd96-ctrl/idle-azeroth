@@ -1454,6 +1454,12 @@ h1 {
   color: #a5f3fc;
   line-height: 1.45;
 }
+.dungeon-theme-line {
+  font-size: 11px;
+  color: #bae6fd;
+  line-height: 1.45;
+  padding: 2px 0;
+}
 .dungeon-alert-rule,
 .dungeon-alert-line,
 .dungeon-edict-rule,
