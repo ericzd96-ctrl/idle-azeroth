@@ -3270,6 +3270,26 @@ function dungeonAtlasTipHtml(label, value, icon, desc, fallbackIcon, color) {
     className: 'dungeon-atlas-tip dungeon-inline-tip',
   });
 }
+function dungeonPowerText(dg) {
+  if (!dg) return '';
+  const power = (typeof dg.powerLvl === 'number' && dg.powerLvl > 0) ? dg.powerLvl : (dg.reqLvl || 1);
+  return `战斗强度 ${Math.round(power)}`;
+}
+function dungeonLootIlvlText(dg) {
+  if (!dg || dg.type !== 'raid' || typeof raidDropIlvl !== 'function') return '';
+  const baseKey = (typeof baseDungeonKey === 'function') ? baseDungeonKey(dg.key) : (dg.baseKey || dg.key);
+  const bossCount = Math.max(1, (dg.bosses || []).length);
+  const epicMode = !!dg.epicRaid;
+  const minRarity = epicMode ? 'epic' : 'rare';
+  const min = raidDropIlvl(baseKey, minRarity, epicMode, 0, bossCount);
+  const max = raidDropIlvl(baseKey, 'legend', epicMode, Math.max(0, bossCount - 1), bossCount);
+  return `掉落装等 ${min}-${max}`;
+}
+function dungeonProgressionPillsHtml(dg) {
+  const power = dungeonPowerText(dg);
+  const loot = dungeonLootIlvlText(dg);
+  return `${power ? `<div class="pill">${power}</div>` : ''}${loot ? `<div class="pill">${loot}</div>` : ''}`;
+}
 function dungeonAtlasHtml(dg, compact) {
   const atlas = dungeonAtlasInfo(dg);
   if (!atlas) return '';
@@ -3351,6 +3371,9 @@ function buildDungeonInfoHtml(dg) {
   const dgAffixes = (typeof getDungeonAffixes === 'function') ? getDungeonAffixes(dg) : [];
   const lastBossName = (dg.bosses || [])[(dg.bosses || []).length - 1]?.name;
   const dungeonIconHtml = (typeof dungeonIcon === 'function') ? dungeonIcon(dg.key, dg.name, 18, dg.icon) : dg.icon;
+  const progressionPills = dungeonProgressionPillsHtml(dg);
+  const lootIlvlText = dungeonLootIlvlText(dg);
+  const powerText = dungeonPowerText(dg);
   const setTierInfo = (!isEpicRaid && typeof setBandForDungeon === 'function' && typeof setLabelForClass === 'function' && typeof setTierIndex === 'function')
     ? (function getSetInfo() {
         const band = setBandForDungeon(dg);
@@ -3366,14 +3389,14 @@ function buildDungeonInfoHtml(dg) {
       <div style="font-weight:700;font-size:16px">${dungeonIconHtml} ${dg.name}</div>
       <div class="pill">${typeof contentReqLabel === 'function' ? contentReqLabel(dg.reqLvl) : `等级${dg.reqLvl}`}</div>
       ${dg.raidExpansion ? `<div class="pill">${dg.raidExpansion}</div>` : ''}
-      ${dg.raidIlvl ? `<div class="pill">推荐装等 ${dg.raidIlvl}</div>` : ''}
+      ${progressionPills}
     </div>
     ${dg.art ? `<div class="dungeon-info-art" style="background-image:linear-gradient(180deg, rgba(11,15,25,.12), rgba(11,15,25,.78)), url('${dg.art}')"></div>` : ''}
     ${dungeonAtlasHtml(dg, false)}
     <div class="muted" style="margin-bottom:10px;line-height:1.6">
       ${isEpicRaid?'<span style="color:#fb7185">[史诗团本]</span> ':(isRaid?'<span style="color:#fbbf24">[团本]</span> ':'<span style="color:#6ee7b7">[5人本]</span> ')}
       ${dg.desc}<br>
-      推荐波次: ${dg.waves || '?'} · 首领数量: ${(dg.bosses || []).length} · 精良以上装备有概率携带副本印记
+      推荐波次: ${dg.waves || '?'} · 首领数量: ${(dg.bosses || []).length}${powerText ? ` · ${powerText}` : ''}${lootIlvlText ? ` · ${lootIlvlText}` : ''} · 精良以上装备有概率携带副本印记
       ${dg.type==='raid'?(isEpicRaid?' · 掉落: 史诗级紫装 / 全部首领超低概率橙装':' · 掉落: 常规团本装备 / 关底低概率橙武'):''}
     </div>`;
   if (dgAffixes.length) {
@@ -3715,8 +3738,10 @@ function renderDungeon() {
       : dg.delve ? '<span style="color:#67e8f9">[地下堡]</span> '
       : dg.type === 'raid' ? '<span style="color:#fbbf24">[团本]</span> '
       : '<span style="color:#6ee7b7">[5人本]</span> ';
-    const raidProgressLine = dg.type === 'raid' && (dg.raidExpansion || dg.raidIlvl)
-      ? ` · ${dg.raidExpansion || ''}${dg.raidIlvl ? ` · 推荐装等:${dg.raidIlvl}` : ''}`
+    const powerText = dungeonPowerText(dg);
+    const lootIlvlText = dungeonLootIlvlText(dg);
+    const raidProgressLine = dg.type === 'raid' && (dg.raidExpansion || dg.raidIlvl || powerText || lootIlvlText)
+      ? ` · ${[dg.raidExpansion, powerText, lootIlvlText].filter(Boolean).join(' · ')}`
       : '';
     div.innerHTML = `
       <div class="row">

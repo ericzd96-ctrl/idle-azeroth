@@ -6546,41 +6546,56 @@ const EPIC_RAID_SET_THEME = {
   curse_ulatek:{ tier:'T37', name:'乌拉泰克诅咒', short:'终咒' },
 };
 const RAID_PROGRESSION = {
-  mc:{ order:1, expansion:'经典旧世', epicIlvl:140 },
-  bwl:{ order:2, expansion:'经典旧世', epicIlvl:150 },
-  aq40:{ order:3, expansion:'经典旧世', epicIlvl:160 },
-  naxx:{ order:4, expansion:'经典旧世', epicIlvl:170 },
-  karazhan:{ order:5, expansion:'燃烧的远征', epicIlvl:180 },
-  ssc:{ order:6, expansion:'燃烧的远征', epicIlvl:190 },
-  tk:{ order:7, expansion:'燃烧的远征', epicIlvl:194 },
-  hyjal:{ order:8, expansion:'燃烧的远征', epicIlvl:200 },
-  bt:{ order:9, expansion:'燃烧的远征', epicIlvl:204 },
-  sunwell:{ order:10, expansion:'燃烧的远征', epicIlvl:210 },
-  ulduar:{ order:11, expansion:'巫妖王之怒', epicIlvl:216 },
-  icc:{ order:12, expansion:'巫妖王之怒', epicIlvl:220 },
-  ruby:{ order:13, expansion:'巫妖王之怒', epicIlvl:224 },
-  firelands:{ order:14, expansion:'大地的裂变', epicIlvl:232 },
-  dragonsoul:{ order:15, expansion:'大地的裂变', epicIlvl:240 },
-  throne:{ order:16, expansion:'熊猫人之谜', epicIlvl:252 },
-  soo:{ order:17, expansion:'熊猫人之谜', epicIlvl:264 },
-  hfc:{ order:18, expansion:'德拉诺之王', epicIlvl:276 },
-  nightmare:{ order:19, expansion:'军团再临', epicIlvl:288 },
-  nighthold:{ order:20, expansion:'军团再临', epicIlvl:300 },
-  tomb:{ order:21, expansion:'军团再临', epicIlvl:312 },
-  antorus:{ order:22, expansion:'军团再临', epicIlvl:324 },
-  uldir:{ order:23, expansion:'争霸艾泽拉斯', epicIlvl:336 },
-  eternalpalace:{ order:24, expansion:'争霸艾泽拉斯', epicIlvl:348 },
-  nyalotha:{ order:25, expansion:'争霸艾泽拉斯', epicIlvl:360 },
-  nathria:{ order:26, expansion:'暗影国度', epicIlvl:372 },
-  aberrus:{ order:27, expansion:'巨龙时代', epicIlvl:396 },
-  amirdrassil:{ order:28, expansion:'巨龙时代', epicIlvl:408 },
-  nerubar:{ order:29, expansion:'地心之战', epicIlvl:424 },
-  manaforge_omega:{ order:30, expansion:'地心之战', epicIlvl:438 },
-  shandorah_conclave:{ order:31, expansion:'地心之战', epicIlvl:452 },
-  voidrazor_sanctum:{ order:32, expansion:'地心之战', epicIlvl:466 },
-  sporefall:{ order:33, expansion:'午夜', epicIlvl:482 },
-  curse_ulatek:{ order:34, expansion:'午夜', epicIlvl:500 },
+  mc:{ order:1, expansion:'经典旧世', epicIlvl:320 },
+  bwl:{ order:2, expansion:'经典旧世', epicIlvl:328 },
+  aq40:{ order:3, expansion:'经典旧世', epicIlvl:336 },
+  naxx:{ order:4, expansion:'经典旧世', epicIlvl:344 },
+  karazhan:{ order:5, expansion:'燃烧的远征', epicIlvl:352 },
+  ssc:{ order:6, expansion:'燃烧的远征', epicIlvl:360 },
+  tk:{ order:7, expansion:'燃烧的远征', epicIlvl:368 },
+  hyjal:{ order:8, expansion:'燃烧的远征', epicIlvl:376 },
+  bt:{ order:9, expansion:'燃烧的远征', epicIlvl:384 },
+  sunwell:{ order:10, expansion:'燃烧的远征', epicIlvl:392 },
+  ulduar:{ order:11, expansion:'巫妖王之怒', epicIlvl:400 },
+  icc:{ order:12, expansion:'巫妖王之怒', epicIlvl:408 },
+  ruby:{ order:13, expansion:'巫妖王之怒', epicIlvl:416 },
+  firelands:{ order:14, expansion:'大地的裂变', epicIlvl:424 },
+  dragonsoul:{ order:15, expansion:'大地的裂变', epicIlvl:432 },
+  throne:{ order:16, expansion:'熊猫人之谜', epicIlvl:440 },
+  soo:{ order:17, expansion:'熊猫人之谜', epicIlvl:448 },
+  hfc:{ order:18, expansion:'德拉诺之王', epicIlvl:456 },
+  nightmare:{ order:19, expansion:'军团再临', epicIlvl:464 },
+  nighthold:{ order:20, expansion:'军团再临', epicIlvl:472 },
+  tomb:{ order:21, expansion:'军团再临', epicIlvl:480 },
+  antorus:{ order:22, expansion:'军团再临', epicIlvl:488 },
+  uldir:{ order:23, expansion:'争霸艾泽拉斯', epicIlvl:496 },
+  eternalpalace:{ order:24, expansion:'争霸艾泽拉斯', epicIlvl:504 },
+  nyalotha:{ order:25, expansion:'争霸艾泽拉斯', epicIlvl:512 },
+  nathria:{ order:26, expansion:'暗影国度', epicIlvl:520 },
+  aberrus:{ order:27, expansion:'巨龙时代', epicIlvl:528 },
+  amirdrassil:{ order:28, expansion:'巨龙时代', epicIlvl:536 },
+  nerubar:{ order:29, expansion:'地心之战', epicIlvl:544 },
+  manaforge_omega:{ order:30, expansion:'地心之战', epicIlvl:552 },
+  shandorah_conclave:{ order:31, expansion:'地心之战', epicIlvl:560 },
+  voidrazor_sanctum:{ order:32, expansion:'地心之战', epicIlvl:568 },
+  sporefall:{ order:33, expansion:'午夜', epicIlvl:576 },
+  curse_ulatek:{ order:34, expansion:'午夜', epicIlvl:584 },
 };
+const RAID_NORMAL_ILVL_BASE = 118;
+const RAID_NORMAL_ILVL_STEP = 6;
+const RAID_EPIC_ILVL_BASE = 320;
+const RAID_EPIC_ILVL_STEP = 8;
+const RAID_EPIC_POWER_BASE = 82;
+const RAID_EPIC_POWER_STEP = 2.15;
+function raidNormalIlvlForOrder(order) {
+  return Math.round(RAID_NORMAL_ILVL_BASE + Math.max(0, (order || 1) - 1) * RAID_NORMAL_ILVL_STEP);
+}
+function raidEpicIlvlForOrder(order) {
+  return Math.round(RAID_EPIC_ILVL_BASE + Math.max(0, (order || 1) - 1) * RAID_EPIC_ILVL_STEP);
+}
+function raidEpicPowerForOrder(order) {
+  return Math.round(RAID_EPIC_POWER_BASE + Math.max(0, (order || 1) - 1) * RAID_EPIC_POWER_STEP);
+}
 const EPIC_RAID_SET_LABELS = {
   mc:{
     warrior:'力量', mage:'奥术师', priest:'预言', rogue:'夜幕杀手', hunter:'巨人追猎者',
@@ -6735,8 +6750,8 @@ function raidProgression(baseKey) {
       epicPowerLvl: 80,
     };
   }
-  const epicIlvl = raw.epicIlvl;
-  const normalIlvl = raw.normalIlvl || Math.max(80, epicIlvl - 18);
+  const epicIlvl = raw.epicIlvlOverride || raw.epicIlvl || raidEpicIlvlForOrder(raw.order);
+  const normalIlvl = raw.normalIlvl || raidNormalIlvlForOrder(raw.order);
   return {
     key,
     order: raw.order,
@@ -6745,7 +6760,7 @@ function raidProgression(baseKey) {
     normalIlvl,
     epicIlvl,
     normalPowerLvl: raw.normalPowerLvl || Math.round(52 + raw.order * 2.05),
-    epicPowerLvl: raw.epicPowerLvl || Math.round(68 + raw.order * 2.35),
+    epicPowerLvl: raw.epicPowerLvl || raidEpicPowerForOrder(raw.order),
   };
 }
 function epicRaidKey(baseKey) { return `${baseKey}_epic`; }
