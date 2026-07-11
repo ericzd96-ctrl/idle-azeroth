@@ -3154,6 +3154,80 @@ function dungeonBountyRewardTipHtml(target, rewardText, options) {
     metaVisible: true,
   });
 }
+const DUNGEON_ATLAS_OVERRIDES = {
+  ragefire:{ era:'Classic', location:'奥格瑞玛 · 裂影峡谷', route:'熔岩洞穴', theme:'火焰 / 恶魔', source:'怒焰裂谷原始副本线' },
+  deadmines:{ era:'Classic', location:'西部荒野 · 月溪镇', route:'矿道到战船', theme:'迪菲亚 / 工程', source:'死亡矿井副本线' },
+  wailing:{ era:'Classic', location:'贫瘠之地 · 哀嚎裂口', route:'梦魇洞窟', theme:'毒蛇 / 梦魇', source:'哀嚎洞穴副本线' },
+  shadowfang:{ era:'Classic', location:'银松森林 · 影牙城堡', route:'城堡回廊', theme:'狼人 / 亡灵', source:'影牙城堡副本线' },
+  gnomeregan:{ era:'Classic', location:'丹莫罗 · 诺莫瑞根', route:'机械城深层', theme:'机械 / 辐射', source:'诺莫瑞根副本线' },
+  scarlet:{ era:'Classic', location:'提瑞斯法林地 · 血色修道院', route:'修道院四翼', theme:'圣光狂热', source:'血色修道院副本线' },
+  brd:{ era:'Classic', location:'黑石山 · 黑铁城', route:'巨型迷宫', theme:'黑铁 / 熔火', source:'黑石深渊副本地图' },
+  stratholme:{ era:'Classic', location:'东瘟疫之地 · 斯坦索姆', route:'亡城巷战', theme:'天灾 / 恐惧魔王', source:'斯坦索姆副本线' },
+  karazhan:{ era:'The Burning Crusade', location:'逆风小径 · 麦迪文高塔', route:'高塔舞台', theme:'奥术 / 魅影', source:'卡拉赞团队副本' },
+  ssc:{ era:'The Burning Crusade', location:'赞加沼泽 · 盘牙水库', route:'水下王庭', theme:'娜迦 / 潮汐', source:'毒蛇神殿团队副本' },
+  tk:{ era:'The Burning Crusade', location:'虚空风暴 · 风暴要塞', route:'浮空船坞', theme:'血精灵 / 奥术', source:'风暴要塞团队副本' },
+  bt:{ era:'The Burning Crusade', location:'影月谷 · 黑暗神殿', route:'神殿阶层', theme:'伊利达雷 / 恶魔', source:'黑暗神殿团队副本' },
+  culling:{ era:'Wrath of the Lich King', location:'时光之穴 · 斯坦索姆', route:'限时肃清', theme:'青铜龙 / 亡灵', source:'净化斯坦索姆副本线' },
+  hor:{ era:'Wrath of the Lich King', location:'冰冠冰川 · 冰封大厅', route:'追逃走廊', theme:'霜之哀伤 / 天灾', source:'映像大厅副本线' },
+  icc:{ era:'Wrath of the Lich King', location:'冰冠冰川 · 冰冠堡垒', route:'多翼团本', theme:'天灾 / 冰霜', source:'冰冠堡垒团队副本' },
+};
+function dungeonEraGuess(dg) {
+  if (dg.raidExpansion) return dg.raidExpansion;
+  const lvl = dg.reqLvl || 1;
+  if (lvl >= 96) return 'Midnight / K\'aresh';
+  if (lvl >= 88) return 'The War Within';
+  if (lvl >= 80) return 'Dragonflight+';
+  if (lvl >= 76) return 'Wrath / Cataclysm';
+  if (lvl >= 70) return 'Burning Crusade+';
+  return 'Classic';
+}
+function dungeonAtlasInfo(dg) {
+  if (!dg) return null;
+  const baseKey = (typeof baseDungeonKey === 'function') ? baseDungeonKey(dg.key) : dg.key;
+  const override = DUNGEON_ATLAS_OVERRIDES[baseKey] || {};
+  const bosses = dg.bosses || [];
+  const finalBoss = bosses[bosses.length - 1]?.name || '最终首领';
+  const mode = dg.delve ? '地下堡' : (dg.type === 'raid' ? '团队副本' : '5人地下城');
+  return {
+    era: override.era || dungeonEraGuess(dg),
+    location: override.location || (dg.raidExpansion ? `${dg.raidExpansion} 战役` : '艾泽拉斯副本入口'),
+    route: override.route || (dg.delve ? '短线高压' : (dg.type === 'raid' ? '多首领推进' : '线性清剿')),
+    theme: override.theme || (dg.type === 'raid' ? '团队首领战' : '小队战斗路线'),
+    source: override.source || '副本手册记录',
+    mode,
+    finalBoss,
+  };
+}
+function dungeonAtlasTipHtml(label, value, icon, desc, fallbackIcon, color) {
+  return inlineTipSpanHtml({
+    name: label,
+    icon,
+    desc,
+    meta: value,
+  }, {
+    fallbackIcon,
+    color,
+    metaVisible: true,
+    className: 'dungeon-atlas-tip dungeon-inline-tip',
+  });
+}
+function dungeonAtlasHtml(dg, compact) {
+  const atlas = dungeonAtlasInfo(dg);
+  if (!atlas) return '';
+  const locationTip = dungeonAtlasTipHtml('入口区域', atlas.location, '🗺️', '副本在魔兽世界中的入口或叙事归属。', 'inv_misc_map_01', '#93c5fd');
+  const routeTip = dungeonAtlasTipHtml('路线结构', atlas.route, '🚩', '副本路线的战斗节奏:线性、迷宫、多翼、短线或追逃。', 'achievement_bg_returnxflags_def_wsg', '#f6c453');
+  const finalTip = dungeonAtlasTipHtml('关底首领', atlas.finalBoss, '👑', '本副本最后一名首领,通关结算与高价值掉落通常围绕这里。', 'achievement_boss_lichking', '#fbbf24');
+  if (compact) {
+    return `<div class="dungeon-atlas-strip compact">${locationTip}${routeTip}${finalTip}</div>`;
+  }
+  const eraTip = dungeonAtlasTipHtml('时代来源', atlas.era, '📜', '副本归属的资料片或内容阶段。', 'inv_misc_book_11', '#c4b5fd');
+  const modeTip = dungeonAtlasTipHtml('挑战类型', atlas.mode, '⚔️', '该内容使用的队伍规模与战斗结构。', 'ability_warrior_savageblow', '#fca5a5');
+  const themeTip = dungeonAtlasTipHtml('主题压力', atlas.theme, '🔮', '本副本最常见的怪物主题、机制风味或环境压力。', 'spell_arcane_starfire', '#67e8f9');
+  return `<div class="dungeon-atlas-panel">
+    <div class="dungeon-atlas-head"><b>副本手册</b><span>${tipAttrText(atlas.source)}</span></div>
+    <div class="dungeon-atlas-strip">${eraTip}${modeTip}${locationTip}${routeTip}${themeTip}${finalTip}</div>
+  </div>`;
+}
 function renderDungeonBountyPanel() {
   const el = $('dungeon-bounty-panel');
   if (!el) return;
@@ -3236,6 +3310,7 @@ function buildDungeonInfoHtml(dg) {
       ${dg.raidIlvl ? `<div class="pill">推荐装等 ${dg.raidIlvl}</div>` : ''}
     </div>
     ${dg.art ? `<div class="dungeon-info-art" style="background-image:linear-gradient(180deg, rgba(11,15,25,.12), rgba(11,15,25,.78)), url('${dg.art}')"></div>` : ''}
+    ${dungeonAtlasHtml(dg, false)}
     <div class="muted" style="margin-bottom:10px;line-height:1.6">
       ${isEpicRaid?'<span style="color:#fb7185">[史诗团本]</span> ':(isRaid?'<span style="color:#fbbf24">[团本]</span> ':'<span style="color:#6ee7b7">[5人本]</span> ')}
       ${dg.desc}<br>
@@ -3561,6 +3636,7 @@ function renderDungeon() {
     const bossPhaseLine = selectedContractLevel > 0 ? `<div class="dungeon-boss-phase-line">${bossPhaseLabelTip}: Boss 血量下降时会触发额外阶段事件</div>` : '';
     const firstClearBadge = (!state.dungeonFirstClear || !state.dungeonFirstClear[dg.key]) ? '<span class="pill" style="background:rgba(246,196,83,.18);color:#f6c453">🎁首通</span>' : '';
     const artBanner = dg.art ? `<div class="dungeon-art-banner" style="background-image:linear-gradient(180deg, rgba(11,15,25,.16), rgba(11,15,25,.78)), url('${dg.art}')"></div>` : '';
+    const atlasLine = dungeonAtlasHtml(dg, true);
     // 必刷专属坐骑提示(读 DUNGEON_MOUNT_DROPS,按基础本key)
     let chaseLine = '';
     if (typeof DUNGEON_MOUNT_DROPS !== 'undefined' && typeof MOUNTS !== 'undefined') {
@@ -3589,6 +3665,7 @@ function renderDungeon() {
         <span>${bountyBadge}${firstClearBadge}<span class="pill">${typeof contentReqLabel === 'function' ? contentReqLabel(dg.reqLvl) : `等级${dg.reqLvl}`}</span></span>
       </div>
       ${artBanner}
+      ${atlasLine}
       <div class="muted">${typeLabel}${dg.desc}${raidProgressLine} · ${(dg.bosses||[]).length}名首领 · 最终: ${((dg.bosses||[])[dg.bosses.length-1]||{}).name||'??'}${dg.type==='raid'?(isEpicRaid?' · 掉落:史诗级紫装/全部首领超低概率橙装':' · 掉落:常规团本装备/关底低概率橙武'):''}</div>
       ${bountyLine}
       ${delveLine}

@@ -3826,8 +3826,8 @@ const DUNGEON_LOOT_ALIASES = {
   ruby: { '萨维安娜·怒焰':'暮光龙·萨维安娜' },
 };
 const DUNGEON_ART_BACKFILL = {
-  ragefire:'assets/wow/art/timewalking-banner.png',
-  deadmines:'assets/wow/art/timewalking-atlas-banner.jpg',
+  ragefire:'assets/wow/art/classic-ragefire.jpg',
+  deadmines:'assets/wow/art/classic-deadmines.jpg',
   wailing:'assets/wow/art/timewalking-atlas-banner.jpg',
   bfd:'assets/wow/art/timewalking-atlas-banner.jpg',
   shadowfang:'assets/wow/art/timewalking-atlas-banner.jpg',
@@ -3840,7 +3840,7 @@ const DUNGEON_ART_BACKFILL = {
   zulfarrak:'assets/wow/art/timewalking-atlas-banner.jpg',
   sunktemple:'assets/wow/art/timewalking-atlas-banner.jpg',
   scholomance:'assets/wow/art/timewalking-atlas-banner.jpg',
-  brd:'assets/wow/art/timewalking-atlas-banner.jpg',
+  brd:'assets/wow/art/classic-blackrock-depths.jpg',
   stratholme:'assets/wow/art/timewalking-atlas-banner.jpg',
   mc:'assets/wow/art/timewalking-banner.png',
   bwl:'assets/wow/art/timewalking-banner.png',
@@ -3850,7 +3850,7 @@ const DUNGEON_ART_BACKFILL = {
   manatombs:'assets/wow/art/timewalking-outland-banner.jpg',
   steamvault:'assets/wow/art/timewalking-outland-banner.jpg',
   magister:'assets/wow/art/timewalking-outland-banner.jpg',
-  karazhan:'assets/wow/art/timewalking-outland-banner.jpg',
+  karazhan:'assets/wow/art/tbc-karazhan.jpg',
   ssc:'assets/wow/art/timewalking-outland-banner.jpg',
   tk:'assets/wow/art/timewalking-outland-banner.jpg',
   hyjal:'assets/wow/art/timewalking-outland-banner.jpg',
@@ -3859,7 +3859,7 @@ const DUNGEON_ART_BACKFILL = {
   culling:'assets/wow/art/timewalking-wrath-banner.jpg',
   pit:'assets/wow/art/timewalking-wrath-banner.jpg',
   oculus:'assets/wow/art/timewalking-wrath-banner.jpg',
-  hor:'assets/wow/art/timewalking-wrath-banner.jpg',
+  hor:'assets/wow/art/wrath-halls-reflection.jpg',
   nexus:'assets/wow/art/timewalking-wrath-banner.jpg',
   gundrak:'assets/wow/art/timewalking-wrath-banner.jpg',
   hol:'assets/wow/art/timewalking-wrath-banner.jpg',
@@ -3867,7 +3867,7 @@ const DUNGEON_ART_BACKFILL = {
   forge:'assets/wow/art/timewalking-wrath-banner.jpg',
   naxx:'assets/wow/art/timewalking-wrath-banner.jpg',
   ruby:'assets/wow/art/timewalking-wrath-banner.jpg',
-  icc:'assets/wow/art/timewalking-wrath-banner.jpg'
+  icc:'assets/wow/art/wrath-icecrown-citadel.jpg'
 };
 function applyDungeonArtBackfill(){
   for (const dg of DUNGEONS) {
