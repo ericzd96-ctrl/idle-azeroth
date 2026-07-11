@@ -3848,15 +3848,17 @@ const DUNGEON_ART_BACKFILL = {
   lbrs:'assets/wow/art/classic-blackrock-spire.jpg',
   ubrs:'assets/wow/art/classic-blackrock-spire.jpg',
   aq40:'assets/wow/art/classic-ahnqiraj-temple.jpg',
-  manatombs:'assets/wow/art/timewalking-outland-banner.jpg',
-  steamvault:'assets/wow/art/timewalking-outland-banner.jpg',
-  magister:'assets/wow/art/timewalking-outland-banner.jpg',
+  manatombs:'assets/wow/art/tbc-auchindoun.jpg',
+  steamvault:'assets/wow/art/tbc-coilfang-reservoir.jpg',
+  shattered:'assets/wow/art/tbc-hellfire-citadel.jpg',
+  arcatraz:'assets/wow/art/tbc-tempest-keep.jpg',
+  magister:'assets/wow/art/tbc-magisters-terrace.jpg',
   karazhan:'assets/wow/art/tbc-karazhan.jpg',
-  ssc:'assets/wow/art/timewalking-outland-banner.jpg',
-  tk:'assets/wow/art/timewalking-outland-banner.jpg',
-  hyjal:'assets/wow/art/timewalking-outland-banner.jpg',
-  bt:'assets/wow/art/timewalking-outland-banner.jpg',
-  sunwell:'assets/wow/art/timewalking-outland-banner.jpg',
+  ssc:'assets/wow/art/tbc-coilfang-reservoir.jpg',
+  tk:'assets/wow/art/tbc-tempest-keep.jpg',
+  hyjal:'assets/wow/art/tbc-mount-hyjal.jpg',
+  bt:'assets/wow/art/tbc-black-temple.jpg',
+  sunwell:'assets/wow/art/tbc-sunwell-plateau.jpg',
   culling:'assets/wow/art/timewalking-wrath-banner.jpg',
   pit:'assets/wow/art/timewalking-wrath-banner.jpg',
   oculus:'assets/wow/art/timewalking-wrath-banner.jpg',
@@ -4993,7 +4995,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'shattered', name:'破碎大厅', icon:'🧱', reqLvl:67, waves:10, art:'assets/wow/art/timewalking-outland-banner.jpg', desc:'钢铁部落囚笼中的血腥屠场',
+      key:'shattered', name:'破碎大厅', icon:'🧱', reqLvl:67, waves:10, art:'assets/wow/art/tbc-hellfire-citadel.jpg', desc:'钢铁部落囚笼中的血腥屠场',
       bosses:[
         { name:'高阶术士奈瑟库斯', emoji:'🧿', skills:[dmg('痛苦灌体','🟣',5,{ dot:true, soulDrain:true })] },
         { name:'血卫士伯鲁恩', emoji:'🛡️', skills:[dmg('碾骨冲锋','🛡️',5,{ stun:1200, sunder:true })] },
@@ -5001,7 +5003,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'arcatraz', name:'禁魔监狱', icon:'🔒', reqLvl:69, waves:10, art:'assets/wow/art/timewalking-outland-banner.jpg', desc:'纳鲁监狱深处的恶魔实验场',
+      key:'arcatraz', name:'禁魔监狱', icon:'🔒', reqLvl:69, waves:10, art:'assets/wow/art/tbc-tempest-keep.jpg', desc:'纳鲁监狱深处的恶魔实验场',
       bosses:[
         { name:'佐拉多尔米', emoji:'🛰️', skills:[dmg('虚空监禁','🛰️',5,{ silence:1800, manaDrain:45 })] },
         { name:'预言者斯克瑞斯', emoji:'👁️', skills:[dmg('心智撕裂','👁️',5.5,{ fear:1600, mirror:true })] },
@@ -5051,7 +5053,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'ssc', name:'毒蛇神殿', icon:'🐍', type:'raid', reqLvl:70, waves:11, art:'assets/wow/art/timewalking-outland-banner.jpg', desc:'盘牙水库最深处的女王王庭',
+      key:'ssc', name:'毒蛇神殿', icon:'🐍', type:'raid', reqLvl:70, waves:11, art:'assets/wow/art/tbc-coilfang-reservoir.jpg', desc:'盘牙水库最深处的女王王庭',
       bosses:[
         { name:'不稳定的海度斯', emoji:'🌊', skills:[dmg('元素相位','🌊',8,{ dot:true, weaken:true })] },
         { name:'盲眼者莱欧瑟拉斯', emoji:'😈', skills:[dmg('恶魔旋刃','😈',8.5,{ aoe:true, frenzy:true, bleed:true })] },
@@ -5060,7 +5062,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'tk', name:'风暴要塞', icon:'🌌', type:'raid', reqLvl:70, waves:11, art:'assets/wow/art/timewalking-outland-banner.jpg', desc:'虚空风暴中悬浮的奥术王庭',
+      key:'tk', name:'风暴要塞', icon:'🌌', type:'raid', reqLvl:70, waves:11, art:'assets/wow/art/tbc-tempest-keep.jpg', desc:'虚空风暴中悬浮的奥术王庭',
       bosses:[
         { name:'空灵机甲', emoji:'🤖', skills:[dmg('星界重击','🤖',8,{ brittle:true, stun:1400 })] },
         { name:'奥', emoji:'🌠', skills:[dmg('迁跃冲击','🌠',8.5,{ mirror:true, silence:1800 })] },
@@ -5069,7 +5071,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'hyjal', name:'海加尔山之战', icon:'🌲', type:'raid', reqLvl:70, waves:11, art:'assets/wow/art/timewalking-outland-banner.jpg', desc:'燃烧军团与守护者在世界之树前的终局会战',
+      key:'hyjal', name:'海加尔山之战', icon:'🌲', type:'raid', reqLvl:70, waves:11, art:'assets/wow/art/tbc-mount-hyjal.jpg', desc:'燃烧军团与守护者在世界之树前的终局会战',
       bosses:[
         { name:'雷基·冬寒', emoji:'❄️', skills:[dmg('死寒侵袭','❄️',8,{ slow:true, freeze:1500, decay:true })] },
         { name:'安纳塞隆', emoji:'🦇', skills:[dmg('恐惧魔王之拥','🦇',8.5,{ fear:1800, soulDrain:true, weaken:true })] },
@@ -5078,7 +5080,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'bt', name:'黑暗神殿', icon:'🗡️', type:'raid', reqLvl:70, waves:12, art:'assets/wow/art/timewalking-outland-banner.jpg', desc:'伊利达雷与恶魔残响交织的黑色圣殿',
+      key:'bt', name:'黑暗神殿', icon:'🗡️', type:'raid', reqLvl:70, waves:12, art:'assets/wow/art/tbc-black-temple.jpg', desc:'伊利达雷与恶魔残响交织的黑色圣殿',
       bosses:[
         { name:'高阶督军纳因图斯', emoji:'🔱', skills:[dmg('脊骨长矛','🔱',8,{ bleed:true, brittle:true })] },
         { name:'灵魂之匣', emoji:'📦', skills:[dmg('折磨律令','📦',8.5,{ manaDrain:55, decay2:true, weaken:true })] },
