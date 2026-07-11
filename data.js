@@ -3825,6 +3825,56 @@ const DUNGEON_LOOT_ALIASES = {
   ulduar: { 'XT-002拆解者':'芙蕾雅', '维扎克斯将军':'芙蕾雅', '尤格萨隆':'尤格-萨隆' },
   ruby: { '萨维安娜·怒焰':'暮光龙·萨维安娜' },
 };
+const DUNGEON_ART_BACKFILL = {
+  ragefire:'assets/wow/art/timewalking-banner.png',
+  deadmines:'assets/wow/art/timewalking-atlas-banner.jpg',
+  wailing:'assets/wow/art/timewalking-atlas-banner.jpg',
+  bfd:'assets/wow/art/timewalking-atlas-banner.jpg',
+  shadowfang:'assets/wow/art/timewalking-atlas-banner.jpg',
+  gnomeregan:'assets/wow/art/timewalking-atlas-banner.jpg',
+  razorfen:'assets/wow/art/timewalking-atlas-banner.jpg',
+  scarlet:'assets/wow/art/timewalking-atlas-banner.jpg',
+  razorfend:'assets/wow/art/timewalking-atlas-banner.jpg',
+  uldaman:'assets/wow/art/timewalking-atlas-banner.jpg',
+  maraudon:'assets/wow/art/timewalking-atlas-banner.jpg',
+  zulfarrak:'assets/wow/art/timewalking-atlas-banner.jpg',
+  sunktemple:'assets/wow/art/timewalking-atlas-banner.jpg',
+  scholomance:'assets/wow/art/timewalking-atlas-banner.jpg',
+  brd:'assets/wow/art/timewalking-atlas-banner.jpg',
+  stratholme:'assets/wow/art/timewalking-atlas-banner.jpg',
+  mc:'assets/wow/art/timewalking-banner.png',
+  bwl:'assets/wow/art/timewalking-banner.png',
+  diremaul:'assets/wow/art/timewalking-atlas-banner.jpg',
+  lbrs:'assets/wow/art/timewalking-atlas-banner.jpg',
+  ubrs:'assets/wow/art/timewalking-atlas-banner.jpg',
+  manatombs:'assets/wow/art/timewalking-outland-banner.jpg',
+  steamvault:'assets/wow/art/timewalking-outland-banner.jpg',
+  magister:'assets/wow/art/timewalking-outland-banner.jpg',
+  karazhan:'assets/wow/art/timewalking-outland-banner.jpg',
+  ssc:'assets/wow/art/timewalking-outland-banner.jpg',
+  tk:'assets/wow/art/timewalking-outland-banner.jpg',
+  hyjal:'assets/wow/art/timewalking-outland-banner.jpg',
+  bt:'assets/wow/art/timewalking-outland-banner.jpg',
+  sunwell:'assets/wow/art/timewalking-outland-banner.jpg',
+  culling:'assets/wow/art/timewalking-wrath-banner.jpg',
+  pit:'assets/wow/art/timewalking-wrath-banner.jpg',
+  oculus:'assets/wow/art/timewalking-wrath-banner.jpg',
+  hor:'assets/wow/art/timewalking-wrath-banner.jpg',
+  nexus:'assets/wow/art/timewalking-wrath-banner.jpg',
+  gundrak:'assets/wow/art/timewalking-wrath-banner.jpg',
+  hol:'assets/wow/art/timewalking-wrath-banner.jpg',
+  toc:'assets/wow/art/timewalking-wrath-banner.jpg',
+  forge:'assets/wow/art/timewalking-wrath-banner.jpg',
+  naxx:'assets/wow/art/timewalking-wrath-banner.jpg',
+  ruby:'assets/wow/art/timewalking-wrath-banner.jpg',
+  icc:'assets/wow/art/timewalking-wrath-banner.jpg'
+};
+function applyDungeonArtBackfill(){
+  for (const dg of DUNGEONS) {
+    const art = DUNGEON_ART_BACKFILL[dg.key];
+    if (art) dg.art = art;
+  }
+}
 function getBaseDungeonBossLoot(dungeonKey, bossName) {
   const loot = DUNGEON_LOOT[dungeonKey];
   if (!loot || !loot.bosses || !bossName) return null;
@@ -4896,6 +4946,7 @@ function normalizeWorldBossSkillsets(){
     });
   }
 }
+applyDungeonArtBackfill();
 normalizeBossContent();
 normalizeWorldBossSkillsets();
 
@@ -6419,6 +6470,7 @@ function extendDungeonCatalog(){
   DUNGEON_LOOT_ALIASES.karazhan = Object.assign({}, DUNGEON_LOOT_ALIASES.karazhan, { '玛克扎尔王子':'麦迪文' });
   DUNGEON_LOOT_ALIASES.aq40 = Object.assign({}, DUNGEON_LOOT_ALIASES.aq40, { '双子皇帝':'双子皇帝' });
   DUNGEON_LOOT_ALIASES.bt = Object.assign({}, DUNGEON_LOOT_ALIASES.bt, { '伊利达雷议会':'伊利达雷议会' });
+  applyDungeonArtBackfill();
   normalizeBossContent();
 }
 extendDungeonCatalog();
