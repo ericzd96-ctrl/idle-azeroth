@@ -873,6 +873,25 @@ function grantDungeonBountyReward(dg, opts) {
     </div>`;
 }
 
+function dungeonRewardPower(dg, bonus) {
+  if (!dg) return 1;
+  const base = (typeof dg.powerLvl === 'number' && dg.powerLvl > 0) ? dg.powerLvl : (dg.reqLvl || 1);
+  return base + (bonus || 0);
+}
+
+function grantDungeonFirstClearItem(dg, lastBoss, rarityKey, bonusPower) {
+  if (!dg || typeof rollItem !== 'function') return null;
+  const bossName = lastBoss ? lastBoss.name : null;
+  const power = dungeonRewardPower(dg, bonusPower || 2);
+  const item = rollItem(rarityKey || 'epic', power, dg.key, bossName, { minRarity:rarityKey || 'epic' });
+  if (!item) return null;
+  item.firstClearReward = true;
+  addToInventory(item);
+  if (typeof eventsOnItemGet === 'function') eventsOnItemGet(item);
+  if (item.rarity === 'legend' && typeof progressionOnLegendary === 'function') progressionOnLegendary();
+  return item;
+}
+
 function onDungeonClear(dg) {
   const dungeonStateSnapshot = state.dungeonState || {};
   if (dungeonStateSnapshot.timer) {
@@ -908,16 +927,11 @@ function onDungeonClear(dg) {
     state.dungeonFirstClear[dg.key] = true;
     const fcGem = 20 + dg.reqLvl;
     const fcEssence = Math.max(3, Math.floor(dg.reqLvl / 6));
-    let fcItem = null, fcLegend = null;
-    if (typeof rollItemOfRarity === 'function') {
-      // 首通保底紫装(橙装很稀有,不保底);团本/80级首通有小概率额外掉橙
-      fcItem = rollItemOfRarity('epic', dg.reqLvl);
-      addToInventory(fcItem); if (typeof eventsOnItemGet === 'function') eventsOnItemGet(fcItem);
-      if ((dg.type === 'raid' || dg.reqLvl >= 70) && Math.random() < 0.12) {
-        fcLegend = rollItemOfRarity('legend', dg.reqLvl);
-        addToInventory(fcLegend); if (typeof eventsOnItemGet === 'function') eventsOnItemGet(fcLegend);
-        if (typeof progressionOnLegendary === 'function') progressionOnLegendary();
-      }
+    // 首通保底装备改为真实副本来源:优先从尾王掉落池生成,继承副本装等、套装、来源梯队与副本印记倾向。
+    const fcItem = grantDungeonFirstClearItem(dg, lastBoss, 'epic', 2);
+    let fcLegend = null;
+    if ((dg.type === 'raid' || dg.reqLvl >= 70) && Math.random() < 0.12) {
+      fcLegend = grantDungeonFirstClearItem(dg, lastBoss, 'legend', 4);
     }
     state.gem += fcGem;
     if (typeof ensureMats === 'function') ensureMats();
@@ -925,8 +939,8 @@ function onDungeonClear(dg) {
     firstClearHtml = `
       <div style="margin-top:10px;padding:8px;border:1px solid #f6c453;border-radius:6px;background:rgba(246,196,83,0.08)">
         <div style="color:#f6c453;font-weight:bold">🎉 首次通关奖励</div>
-        ${fcItem ? `<div style="font-size:12px">　保底紫装 <span class="${fcItem.cls}">${fcItem.name}</span></div>` : ''}
-        ${fcLegend ? `<div style="font-size:12px">　🎉 幸运橙装 <span class="${fcLegend.cls}">${fcLegend.name}</span></div>` : ''}
+        ${fcItem ? `<div style="font-size:12px">　保底副本紫装 <span class="${fcItem.cls}">${fcItem.name}${typeof itemEpicRaidBadge==='function'?itemEpicRaidBadge(fcItem,true):''}</span>${typeof computeItemLevel==='function'?` · 装等${computeItemLevel(fcItem)}`:''}</div>` : ''}
+        ${fcLegend ? `<div style="font-size:12px">　🎉 幸运副本橙装 <span class="${fcLegend.cls}">${fcLegend.name}${typeof itemEpicRaidBadge==='function'?itemEpicRaidBadge(fcLegend,true):''}</span>${typeof computeItemLevel==='function'?` · 装等${computeItemLevel(fcLegend)}`:''}</div>` : ''}
         <div style="font-size:12px">　💎 钻石 +${fcGem} · ✨ 精华 +${fcEssence}</div>
       </div>`;
     log(`🎉 首次通关 ${dg.name}! 获得首通奖励`, 'legend');

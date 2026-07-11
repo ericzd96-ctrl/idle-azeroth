@@ -3340,6 +3340,36 @@ function dungeonThemeAffixHtml(dg, compact) {
     <div class="dungeon-mechanic-codex-grid">${chips}</div>
   </div>`;
 }
+function dungeonFirstClearPreviewHtml(dg) {
+  if (!dg) return '';
+  const cleared = !!(state.dungeonFirstClear && state.dungeonFirstClear[dg.key]);
+  const lastBoss = (dg.bosses || [])[(dg.bosses || []).length - 1];
+  const source = lastBoss ? `${lastBoss.name} 掉落池` : '最终首领掉落池';
+  const rewardTip = inlineTipSpanHtml({
+    name: cleared ? '首通战利品已领取' : '首通战利品',
+    icon: cleared ? '✅' : '🎁',
+    desc: '首次通关该副本会获得一件来自本副本尾王掉落池的保底史诗装备。装备会继承副本来源、装等梯队、套装/团本字段和副本印记倾向。',
+    meta: source,
+  }, {
+    fallbackIcon:'inv_misc_gem_topaz_02',
+    color:'#f6c453',
+    metaVisible:true,
+  });
+  const legendTip = (dg.type === 'raid' || dg.reqLvl >= 70) ? inlineTipSpanHtml({
+    name:'幸运副本橙装',
+    icon:'🌟',
+    desc:'团本或高等级副本首通有小概率额外获得一件副本来源传说装备；若尾王没有专属橙装池，会回退为带该副本来源和梯队的传说装备。',
+    meta:'小概率',
+  }, {
+    fallbackIcon:'inv_sword_39',
+    color:'#fb923c',
+    metaVisible:true,
+  }) : '';
+  return `<div class="dungeon-first-clear-preview ${cleared ? 'done' : ''}">
+    <b>${cleared ? '✅ 首通已完成' : '🎁 首通战利品'}</b>
+    <div class="muted" style="font-size:11px;margin-top:4px">${rewardTip}${legendTip ? ` · ${legendTip}` : ''}</div>
+  </div>`;
+}
 function dungeonAtlasHtml(dg, compact) {
   const atlas = dungeonAtlasInfo(dg);
   if (!atlas) return '';
@@ -3451,6 +3481,7 @@ function buildDungeonInfoHtml(dg) {
     </div>`;
   html += dungeonThemeAffixHtml(dg, false);
   html += dungeonTraitPreviewHtml(dg);
+  html += dungeonFirstClearPreviewHtml(dg);
   if (dgAffixes.length) {
     html += `<div style="margin-bottom:10px;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.03)">
       <div style="font-weight:700;font-size:13px;margin-bottom:6px">本期词缀</div>
