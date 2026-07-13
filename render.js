@@ -3789,6 +3789,50 @@ function dungeonBossHandlingTagsHtml(boss, options) {
   })).join('')}</div>`;
 }
 
+function dungeonRoutePrepChecklistHtml(dg) {
+  const bosses = Array.isArray(dg?.bosses) ? dg.bosses : [];
+  if (!bosses.length) return '';
+  const aggregate = new Map();
+  for (const boss of bosses) {
+    for (const tag of dungeonBossHandlingTags(boss)) {
+      const entry = aggregate.get(tag.key) || { ...tag, count:0, bosses:[] };
+      entry.count += 1;
+      if (boss?.name) entry.bosses.push(boss.name);
+      aggregate.set(tag.key, entry);
+    }
+  }
+  const priority = ['interrupt', 'adds', 'defensive', 'resource', 'purge', 'execute', 'clean'];
+  const entries = priority.map(key => aggregate.get(key)).filter(Boolean);
+  if (!entries.length) return '';
+  const maxCount = Math.max(1, ...entries.map(e => e.count));
+  const cards = entries.map(e => {
+    const percent = Math.max(12, Math.round((e.count / maxCount) * 100));
+    const bossText = e.bosses.slice(0, 4).join('、') + (e.bosses.length > 4 ? ` 等 ${e.bosses.length} 名` : '');
+    const tip = inlineTipSpanHtml({
+      name:e.name,
+      icon:e.icon,
+      desc:`${e.desc} 本副本中关联首领: ${bossText || '暂无'}。`,
+      meta:`${e.count}/${bosses.length}`,
+    }, {
+      fallbackIcon:e.fallbackIcon,
+      color:e.color,
+      metaVisible:true,
+    });
+    return `<div class="dungeon-route-prep-card">
+      <div class="dungeon-route-prep-label">${tip}</div>
+      <div class="dungeon-route-prep-bar"><i style="width:${percent}%"></i></div>
+      <div class="dungeon-route-prep-note">${tipAttrText(bossText || '标准路线')}</div>
+    </div>`;
+  }).join('');
+  return `<div class="dungeon-route-prep">
+    <div class="dungeon-route-prep-head">
+      <b>路线准备清单</b>
+      <span>${entries.length} 类处理重点 · ${bosses.length} 名首领</span>
+    </div>
+    <div class="dungeon-route-prep-grid">${cards}</div>
+  </div>`;
+}
+
 function dungeonBossRosterHtml(dg, selectedContract) {
   const bosses = Array.isArray(dg?.bosses) ? dg.bosses : [];
   if (!bosses.length) return '';
@@ -4011,6 +4055,7 @@ function buildDungeonInfoHtml(dg) {
       <div>${dungeonBountyRewardTipHtml(bountyTarget, rewardText)}${bountyTarget.claimed ? ' · 已完成' : ''}</div>
     </div>`;
   }
+  html += dungeonRoutePrepChecklistHtml(dg);
   html += dungeonBossRosterHtml(dg, selectedContract);
   for (const bossData of (dg.bosses || [])) {
     const bossName = bossData.name;
