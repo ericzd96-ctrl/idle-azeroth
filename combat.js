@@ -6875,7 +6875,20 @@ function claimCompanionMission(id){
   }
   ms.active.splice(idx, 1);
   ms.totalCompleted = (ms.totalCompleted || 0) + 1;
-  ms.history.unshift({ t:now, name:mission.name, comp:entry.tpl.name, success, reward });
+  ms.history.unshift({
+    t:now,
+    name:mission.name,
+    key:mission.key,
+    comp:entry.tpl.name,
+    compKey:entry.comp.key,
+    quality:q.name,
+    qualityKey:q.key,
+    stars:entry.comp.stars || 1,
+    score:Math.round(score),
+    durationMin:Math.max(1, Math.round(((run.endAt || now) - (run.startAt || now)) / 60000)),
+    success,
+    reward
+  });
   ms.history = ms.history.slice(0, 8);
   log(`🐾 ${entry.tpl.name} 完成「${mission.name}」${success?'大成功':'完成'}: ${companionMissionRewardText(reward, q.name)}`,'good');
   recomputeStats();

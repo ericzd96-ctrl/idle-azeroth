@@ -3366,9 +3366,20 @@ function companionMissionPanelHtml(entries){
       <div class="comp-mission-candidates">${candidateButtons}</div>
     </div>`;
   }).join('');
-  const lastReports = (ms.history || []).slice(0, 3).map(h => {
-    const reward = typeof companionMissionRewardText === 'function' ? companionMissionRewardText(h.reward || {}) : '';
-    return `<div class="comp-mission-report">${h.success ? '✅' : '📜'} ${tipAttrText(h.comp || '随从')} · ${tipAttrText(h.name || '派遣')} <span>${tipAttrText(reward)}</span></div>`;
+  const lastReports = (ms.history || []).slice(0, 4).map(h => {
+    const reward = typeof companionMissionRewardText === 'function' ? companionMissionRewardText(h.reward || {}, h.quality) : '';
+    const scoreText = h.score ? `${Math.round(h.score)}%` : '--';
+    const qCls = h.qualityKey ? `r-${h.qualityKey === 'orange' ? 'legend' : h.qualityKey === 'purple' ? 'epic' : h.qualityKey === 'blue' ? 'rare' : h.qualityKey === 'green' ? 'uncommon' : 'common'}` : '';
+    return `<div class="comp-mission-report ${h.success ? 'success' : ''}">
+      <div class="comp-mission-report-head">
+        <b>${h.success ? '✅ 大成功' : '📜 完成'} · ${tipAttrText(h.name || '派遣')}</b>
+        <span>${scoreText}</span>
+      </div>
+      <div class="comp-mission-report-meta">
+        ${tipAttrText(h.comp || '随从')}${h.quality ? ` · <span class="${qCls}">${tipAttrText(h.quality)}</span>` : ''}${h.stars ? ` · ${h.stars}星` : ''}${h.durationMin ? ` · ${h.durationMin}分钟` : ''}
+      </div>
+      <div class="comp-mission-report-reward">${tipAttrText(reward || '少量资源')}</div>
+    </div>`;
   }).join('');
   return `<div class="comp-mission-panel">
     <div class="comp-mission-title">
@@ -3380,7 +3391,7 @@ function companionMissionPanelHtml(entries){
     </div>
     ${activeCards ? `<div class="comp-mission-active-grid">${activeCards}</div>` : ''}
     <div class="comp-mission-grid">${missionCards}</div>
-    ${lastReports ? `<div class="comp-mission-history">${lastReports}</div>` : ''}
+    ${lastReports ? `<div class="comp-mission-history"><div class="comp-mission-history-title">最近战报</div>${lastReports}</div>` : ''}
   </div>`;
 }
 function companionSetFilter(group, value){

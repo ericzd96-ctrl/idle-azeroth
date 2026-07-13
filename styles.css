@@ -944,12 +944,46 @@ h1 {
   padding-top: 7px;
   border-top: 1px solid rgba(148, 163, 184, .14);
 }
+.comp-mission-history-title {
+  margin-bottom: 5px;
+  color: #fde68a;
+  font-size: 10px;
+  font-weight: 700;
+}
 .comp-mission-report {
+  margin-top: 5px;
+  padding: 6px 7px;
+  border: 1px solid rgba(148, 163, 184, .14);
+  border-radius: 7px;
+  background: rgba(2, 6, 23, .26);
   color: var(--muted);
   font-size: 10px;
   line-height: 1.45;
 }
-.comp-mission-report span {
+.comp-mission-report.success {
+  border-color: rgba(250, 204, 21, .28);
+  background: rgba(88, 28, 10, .18);
+}
+.comp-mission-report-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.comp-mission-report-head b {
+  min-width: 0;
+  color: #e5e7eb;
+}
+.comp-mission-report-head span {
+  flex: 0 0 auto;
+  color: #fde68a;
+  font-weight: 700;
+}
+.comp-mission-report-meta,
+.comp-mission-report-reward {
+  margin-top: 2px;
+}
+.comp-mission-report-reward {
   color: #cbd5e1;
 }
 .comp-missing-grid {
