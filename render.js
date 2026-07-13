@@ -3316,7 +3316,7 @@ function dungeonPowerText(dg) {
 function dungeonEstimatedDropPower(dg) {
   if (!dg) return 1;
   const power = (typeof dg.powerLvl === 'number' && dg.powerLvl > 0) ? dg.powerLvl : (dg.reqLvl || 1);
-  const spawnLvl = dg.epicRaid ? 80 : Math.max(1, Math.floor(power * 1.05));
+  const spawnLvl = Math.max(1, Math.floor(power * 1.05));
   return Math.max(1, spawnLvl + 2);
 }
 function dungeonEstimatedItemLevel(dg, rarityKey) {
@@ -3397,7 +3397,7 @@ function dungeonRaidProgressionHtml(dg, compact) {
   const modeTip = inlineTipSpanHtml({
     name:dg.epicRaid ? '史诗重制' : '普通进度',
     icon:dg.epicRaid ? '🔥' : '📜',
-    desc:dg.epicRaid ? '史诗团本把旧团本提升到 80 级以上强度，并使用史诗套装、散件和全首领低概率传说掉落。' : '普通团本保留资料片进度节奏，关底首领有低概率传说武器。',
+    desc:dg.epicRaid ? '史诗团本会按基础团本等级和团本进度阶梯提升战斗强度，并使用史诗套装、散件和全首领低概率传说掉落。' : '普通团本保留资料片进度节奏，关底首领有低概率传说武器。',
     meta:prog.expansion || '团本'
   }, {
     fallbackIcon:dg.epicRaid ? 'spell_fire_selfdestruct' : 'inv_misc_book_11',
