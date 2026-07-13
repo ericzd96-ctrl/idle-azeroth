@@ -634,6 +634,7 @@ function setupDelegation() {
     if(!btn)return;
     const act=btn.dataset.action;
     if(act==='compfilter'){ companionSetFilter(btn.dataset.group, btn.dataset.value); return; }
+    if(act==='compsort'){ companionSetSort(btn.dataset.value); return; }
     if(act==='compresetfilter'){ companionResetFilters(); return; }
     if(act==='clearcompsearch'){ companionClearSearch(); return; }
     if(act==='trackcompbond'){ companionTrackBond(btn.dataset.bond); return; }

@@ -477,6 +477,19 @@ h1 {
 .comp-filter-chip.active span {
   color: #fde68a;
 }
+.comp-sort-row {
+  padding-top: 6px;
+  border-top: 1px solid rgba(148, 163, 184, .14);
+}
+.comp-sort-chip::before {
+  content: "↕";
+  color: #94a3b8;
+  font-size: 10px;
+}
+.comp-sort-chip.active::before {
+  content: "↓";
+  color: #fde68a;
+}
 .comp-filter-reset {
   cursor: pointer;
   background: rgba(51, 65, 85, .78);

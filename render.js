@@ -2902,8 +2902,17 @@ function compSkillChips(tpl){
     return `<span class="comp-skill${s._signature?' sig':''}" data-tip="${tip}">${skillIconHtml}<span class="cs-name">${s.name}</span></span>`;
   }).join('');
 }
-const COMPANION_FILTER_DEFAULTS = { ownership:'all', quality:'all', role:'all', trait:'all', bond:'all', query:'' };
+const COMPANION_FILTER_DEFAULTS = { ownership:'all', quality:'all', role:'all', trait:'all', bond:'all', query:'', sort:'quality' };
 let companionFilters = Object.assign({}, COMPANION_FILTER_DEFAULTS);
+const COMPANION_SORT_OPTIONS = [
+  { value:'quality', label:'品质' },
+  { value:'stars', label:'星级' },
+  { value:'upgrade', label:'可升星' },
+  { value:'role', label:'定位' },
+  { value:'name', label:'名称' },
+];
+const COMPANION_QUALITY_ORDER = { orange:0, purple:1, blue:2, green:3, white:4 };
+const COMPANION_ROLE_ORDER = { tank:0, heal:1, dps:2 };
 const COMPANION_TRAIT_META = {
   summon: { label:'召唤', tone:'summon' },
   heal: { label:'治疗', tone:'heal' },
@@ -2927,6 +2936,41 @@ function companionTraitFlags(tpl){
 }
 function companionRoleLabel(role){
   return role === 'tank' ? '坦克' : role === 'heal' ? '辅助' : '输出';
+}
+function companionSortLabel(value){
+  return COMPANION_SORT_OPTIONS.find(opt => opt.value === value)?.label || '品质';
+}
+function companionEntryName(entry){
+  return entry?.tpl?.name || entry?.tpl?.key || '';
+}
+function companionNameCompare(a, b){
+  return companionEntryName(a).localeCompare(companionEntryName(b), 'zh-Hans-CN');
+}
+function companionQualityCompare(a, b){
+  const aq = COMPANION_QUALITY_ORDER[a?.quality || compQuality(a?.tpl).key] ?? 99;
+  const bq = COMPANION_QUALITY_ORDER[b?.quality || compQuality(b?.tpl).key] ?? 99;
+  return (aq - bq) || (((b?.owned?.stars) || 0) - ((a?.owned?.stars) || 0)) || companionNameCompare(a, b);
+}
+function companionUpgradeScore(entry){
+  if (!entry?.isOwned || !entry.owned) return -1;
+  const cost = getUpgradeCost(entry.owned);
+  if (cost.maxed) return -0.5;
+  const progress = cost.need ? Math.min(1, cost.have / cost.need) : 0;
+  return (cost.have >= cost.need ? 2 : 0) + progress;
+}
+function companionEntryCompare(a, b, sortValue){
+  const sort = sortValue || companionFilters.sort || 'quality';
+  if (sort === 'name') return companionNameCompare(a, b) || companionQualityCompare(a, b);
+  if (sort === 'stars') {
+    return (((b?.owned?.stars) || 0) - ((a?.owned?.stars) || 0)) || companionQualityCompare(a, b);
+  }
+  if (sort === 'upgrade') {
+    return (companionUpgradeScore(b) - companionUpgradeScore(a)) || companionQualityCompare(a, b);
+  }
+  if (sort === 'role') {
+    return ((COMPANION_ROLE_ORDER[a?.tpl?.role] ?? 9) - (COMPANION_ROLE_ORDER[b?.tpl?.role] ?? 9)) || companionQualityCompare(a, b);
+  }
+  return companionQualityCompare(a, b);
 }
 function companionBadge(label, tone){
   return `<span class="comp-badge is-${tone}">${label}</span>`;
@@ -3024,7 +3068,15 @@ function companionFilterSummaryText(){
   const bond = companionBondById(companionFilters.bond);
   if (bond) labels.push(`羁绊:${bond.name}`);
   if (companionFilters.query) labels.push(`搜索:${companionFilters.query}`);
+  if (companionFilters.sort !== COMPANION_FILTER_DEFAULTS.sort) labels.push(`排序:${companionSortLabel(companionFilters.sort)}`);
   return labels.length ? labels.join(' / ') : '全部随从';
+}
+function companionSortRow(){
+  const chips = COMPANION_SORT_OPTIONS.map(opt => {
+    const active = companionFilters.sort === opt.value;
+    return `<button class="comp-filter-chip comp-sort-chip${active?' active':''}" data-action="compsort" data-value="${opt.value}">${opt.label}</button>`;
+  }).join('');
+  return `<div class="comp-filter-row comp-sort-row"><span class="comp-filter-label">排序</span><div class="comp-filter-chips">${chips}</div></div>`;
 }
 function companionFilterPanelHtml(entries){
   const trackedBond = companionBondById(companionFilters.bond);
@@ -3074,6 +3126,7 @@ function companionFilterPanelHtml(entries){
       { value:'support', label:'辅助' },
       { value:'control', label:'控制' },
     ])}
+    ${companionSortRow()}
   </div>`;
 }
 function companionDrawGuideHtml(entries) {
@@ -3505,7 +3558,16 @@ function companionMissionPanelHtml(entries){
 }
 function companionSetFilter(group, value){
   if (!Object.prototype.hasOwnProperty.call(companionFilters, group)) return;
+  if (group === 'sort') {
+    companionSetSort(value);
+    return;
+  }
   companionFilters[group] = companionFilters[group] === value ? 'all' : value;
+  renderCompanion();
+}
+function companionSetSort(value){
+  if (!COMPANION_SORT_OPTIONS.some(opt => opt.value === value)) return;
+  companionFilters.sort = value;
   renderCompanion();
 }
 function companionTrackBond(id){
@@ -3617,10 +3679,9 @@ function renderCompanion() {
     </div>`;
   }
 
-  // ---- 已拥有随从(按品质降序)----
-  const qOrder = {orange:0,purple:1,blue:2,green:3,white:4};
+  // ---- 已拥有随从 ----
   const ownedList = filteredEntries.filter(entry => entry.isOwned);
-  ownedList.sort((a,b)=>(qOrder[compQuality(a.tpl).key]-qOrder[compQuality(b.tpl).key])||(((b.owned?.stars)||1)-(((a.owned?.stars)||1))));
+  ownedList.sort(companionEntryCompare);
   if (ownedList.some(entry => !entry.isActive)) {
     html += `<div class="detail-label" style="margin-top:6px">🐾 已拥有 (${ownedList.filter(entry => !entry.isActive).length})</div>`;
   }
@@ -3650,9 +3711,9 @@ function renderCompanion() {
   }
 
   // ---- 图鉴:未获得(灰色)----
-  const missing = filteredEntries.filter(entry => !entry.isOwned).map(entry => entry.tpl);
+  const missingEntries = filteredEntries.filter(entry => !entry.isOwned).sort(companionEntryCompare);
+  const missing = missingEntries.map(entry => entry.tpl);
   if (missing.length) {
-    missing.sort((a,b)=>qOrder[compQuality(a).key]-qOrder[compQuality(b).key]);
     html += `<div class="detail-label" style="margin-top:6px">📖 未获得 (${missing.length})</div>
       <div class="comp-missing-grid">`;
     for (const t of missing) {
