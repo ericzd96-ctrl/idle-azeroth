@@ -2904,6 +2904,7 @@ function compSkillChips(tpl){
 }
 const COMPANION_FILTER_DEFAULTS = { ownership:'all', quality:'all', role:'all', trait:'all', bond:'all', query:'', sort:'quality' };
 let companionFilters = Object.assign({}, COMPANION_FILTER_DEFAULTS);
+let companionDetailKey = '';
 const COMPANION_SORT_OPTIONS = [
   { value:'quality', label:'品质' },
   { value:'stars', label:'星级' },
@@ -3251,6 +3252,86 @@ function companionBondChipsHtml(tpl, entries) {
   if (bonds.length > chips.length) chips.push(`<span class="comp-bond-chip more">+${bonds.length - chips.length}</span>`);
   return `<div class="comp-card-bonds">${chips.join('')}</div>`;
 }
+function companionDetailSkillListHtml(tpl) {
+  const skills = companionSkillPool(tpl);
+  if (!skills.length) return '<div class="muted">暂无随从技能</div>';
+  return `<div class="comp-detail-skill-grid">${skills.map(sk => `<div class="comp-detail-skill${sk._signature ? ' sig' : ''}">${companionSkillTipHtml(sk)}</div>`).join('')}</div>`;
+}
+function companionDetailBondsHtml(tpl, entries) {
+  if (!tpl || typeof COMPANION_BONDS === 'undefined') return '';
+  const bonds = COMPANION_BONDS.filter(bond => bond.keys.includes(tpl.key));
+  if (!bonds.length) return '<div class="muted">暂无羁绊组合</div>';
+  return bonds.map(bond => {
+    const bondId = companionBondId(bond);
+    const missing = companionBondMissingKeys(bond, entries);
+    const active = missing.length === 0;
+    const missingText = missing.length ? `缺口: ${missing.map(key => COMPANIONS.find(c => c.key === key)?.name || key).join('、')}` : '已激活:属性已计入角色面板';
+    const memberText = bond.keys.map(key => {
+      const member = COMPANIONS.find(c => c.key === key);
+      const owned = (entries || []).some(entry => entry.tpl.key === key && entry.isOwned);
+      return `${owned ? '✅' : '□'} ${member?.name || key}`;
+    }).join(' · ');
+    return `<div class="comp-detail-bond ${active ? 'active' : 'locked'}">
+      <div class="comp-detail-bond-head">
+        <b>⚜️ ${tipAttrText(bond.name)}</b>
+        <button data-action="trackcompbond" data-bond="${bondId}">${companionFilters.bond === bondId ? '取消追踪' : '追踪'}</button>
+      </div>
+      <div>${tipAttrText(companionBondModText(bond) || bond.desc || '')}</div>
+      <div class="muted">${tipAttrText(memberText)}</div>
+      <div class="muted">${tipAttrText(missingText)}</div>
+    </div>`;
+  }).join('');
+}
+function companionDetailPanelHtml(entries) {
+  if (!companionDetailKey) return '';
+  const entry = (entries || buildCompanionEntries()).find(item => item.tpl.key === companionDetailKey);
+  if (!entry) return '';
+  const { tpl, owned } = entry;
+  const q = compQuality(tpl);
+  const stars = owned?.stars || 0;
+  const starText = entry.isOwned ? `${'⭐'.repeat(stars || 1)} ${stars || 1}星` : '未获得';
+  const traits = companionTraitFlags(tpl);
+  const traitText = Object.entries(COMPANION_TRAIT_META).filter(([key]) => traits[key]).map(([, meta]) => meta.label).join(' / ') || '常规';
+  const roleBonus = Object.entries((typeof ROLE_BONUS === 'object' && ROLE_BONUS[tpl.role]) || {}).map(([k, v]) => (typeof fmtMod === 'function') ? fmtMod(k, v) : `${k}+${v}`).join(' ');
+  const starF = entry.isOwned ? 1 + 0.2 * ((stars || 1) - 1) : 1;
+  const ownBonus = Object.entries(tpl.bonus || {}).map(([k, v]) => (typeof fmtMod === 'function') ? fmtMod(k, +(v * starF).toFixed(1)) : `${k}+${v}`).join(' ');
+  const status = entry.isActive ? '出战中' : entry.isOwned ? '已拥有' : `${q.name}池未获得`;
+  const cost = entry.isOwned ? getUpgradeCost(owned) : null;
+  const canUp = cost && !cost.maxed && cost.have >= cost.need;
+  const actionHtml = entry.isOwned
+    ? `<div class="comp-detail-actions">
+        ${entry.isActive ? '<button class="danger" data-action="unequipcomp">休息</button>' : `<button class="primary" data-action="usecomp" data-idx="${entry.idx}">出战</button>`}
+        <button class="gold" data-action="upgradecomp" data-idx="${entry.idx}" ${canUp ? '' : 'disabled'}>${cost.maxed ? '满星 ⭐5' : `升星 ${stars || 1}/5`}</button>
+      </div>`
+    : '<div class="comp-detail-actions muted">抽取到该随从后可出战、派遣，并参与对应羁绊。</div>';
+  return `<div class="comp-detail-panel">
+    <div class="comp-detail-head">
+      <div>
+        <div class="comp-detail-title">${companionIconHtml(tpl, 22)} <b>${tipAttrText(tpl.name)}</b><span class="${q.cls}">${q.name}</span></div>
+        <div class="muted">${status} · ${starText} · ${roleTag(tpl.role)} · ${traitText}</div>
+      </div>
+      <button class="comp-detail-close" data-action="compclosedetail">关闭</button>
+    </div>
+    <div class="comp-detail-lore">${tipAttrText(tpl.desc || '')}</div>
+    <div class="comp-detail-grid">
+      <div class="comp-detail-block">
+        <div class="comp-detail-block-title">参战加成</div>
+        <div class="muted">专属: ${tipAttrText(ownBonus || '无')}</div>
+        <div class="muted">定位: ${tipAttrText(roleBonus || '无')}</div>
+        ${entry.isOwned ? companionUpgradePreviewHtml(tpl, owned) : `<div class="comp-upgrade-preview"><div class="comp-upgrade-head"><b>⭐ 培养预览</b><span>${q.name}</span></div><div class="comp-upgrade-note">获得后可用同名碎片与${q.name}通用碎片升星。</div></div>`}
+        ${actionHtml}
+      </div>
+      <div class="comp-detail-block">
+        <div class="comp-detail-block-title">技能说明</div>
+        ${companionDetailSkillListHtml(tpl)}
+      </div>
+    </div>
+    <div class="comp-detail-block">
+      <div class="comp-detail-block-title">相关羁绊</div>
+      <div class="comp-detail-bond-list">${companionDetailBondsHtml(tpl, entries)}</div>
+    </div>
+  </div>`;
+}
 function companionCardTrackClass(tpl) {
   if (!tpl || companionFilters.bond === 'all') return '';
   const bond = companionBondById(companionFilters.bond);
@@ -3570,6 +3651,14 @@ function companionSetSort(value){
   companionFilters.sort = value;
   renderCompanion();
 }
+function companionShowDetail(key){
+  companionDetailKey = key || '';
+  renderCompanion();
+}
+function companionCloseDetail(){
+  companionDetailKey = '';
+  renderCompanion();
+}
 function companionTrackBond(id){
   const nextId = companionFilters.bond === id ? 'all' : id;
   companionFilters.bond = nextId;
@@ -3612,7 +3701,7 @@ function companionPanelRenderSig(){
     : '';
   const active = `${state.activeCompanion}|${getActiveCompanion()?.key || ''}`;
   const bonds = (typeof activeCompanionBonds==='function' ? activeCompanionBonds() : []).map(b=>b.name).join('|');
-  const filters = Object.values(companionFilters).join('|');
+  const filters = `${Object.values(companionFilters).join('|')}#${companionDetailKey || ''}`;
   const missions = state.companionMissions?.active
     ? state.companionMissions.active.map(m => `${m.id}:${m.endAt}:${m.compKey}`).join('|') + `#${state.companionMissions.totalCompleted || 0}#${Math.floor(Date.now()/30000)}`
     : '';
@@ -3649,6 +3738,7 @@ function renderCompanion() {
 
   html += companionDrawGuideHtml(entries);
   html += companionFilterPanelHtml(entries);
+  html += companionDetailPanelHtml(entries);
   html += companionBondRoadmapHtml(entries);
   html += companionAdvisorPanelHtml(entries);
   html += companionMissionPanelHtml(entries);
@@ -3675,7 +3765,10 @@ function renderCompanion() {
       ${tpl?.signature?`<div class="muted" style="font-size:10px;color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')} ${tpl.signature.name}${tpl.signature.mode==='passive'?' [被动]':''}</div>`:''}
       ${companionUpgradePreviewHtml(tpl, act, { compact:true })}
       <div class="comp-skills">${compSkillChips(tpl)}</div>
-      <button class="danger" data-action="unequipcomp" style="margin-top:4px">休息</button>
+      <div class="comp-card-actions">
+        <button data-action="compdetail" data-key="${tpl.key}">详情</button>
+        <button class="danger" data-action="unequipcomp">休息</button>
+      </div>
     </div>`;
   }
 
@@ -3702,7 +3795,8 @@ function renderCompanion() {
       <div class="comp-skills">${compSkillChips(tpl)}</div>
       <div class="row">
         <span class="muted" style="font-size:10px">可用碎片 ${cost.have}${cost.maxed?'':' / 升星需'+cost.need}${(state.compUniversalShards[q.key]||0)>0?' (含通用×'+state.compUniversalShards[q.key]+')':''}</span>
-        <div style="display:flex;gap:3px">
+        <div style="display:flex;flex-wrap:wrap;gap:3px">
+          <button data-action="compdetail" data-key="${tpl.key}">详情</button>
           <button class="primary" data-action="usecomp" data-idx="${i}">出战</button>
           <button class="gold" data-action="upgradecomp" data-idx="${i}" ${canUp?'':'disabled'}>${cost.maxed?'满星 ⭐5':'升星 '+(c.stars||1)+'/5'}</button>
         </div>
@@ -3724,6 +3818,7 @@ function renderCompanion() {
         ${companionMetaBadges(t)}
         ${companionBondChipsHtml(t, entries)}
         <div class="muted" style="font-size:10px">${t.desc}</div>
+        <button class="comp-missing-detail" data-action="compdetail" data-key="${t.key}">详情</button>
       </div>`;
     }
     html += `</div>`;

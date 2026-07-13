@@ -660,6 +660,99 @@ h1 {
   border-color: rgba(250, 204, 21, .42);
   box-shadow: inset 0 0 0 1px rgba(250, 204, 21, .10);
 }
+.comp-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+.comp-detail-panel {
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid rgba(250, 204, 21, .32);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(88, 28, 10, .24), rgba(15, 23, 42, .30));
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .20);
+}
+.comp-detail-head,
+.comp-detail-title,
+.comp-detail-actions,
+.comp-detail-bond-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+}
+.comp-detail-head,
+.comp-detail-bond-head {
+  justify-content: space-between;
+}
+.comp-detail-title {
+  align-items: center;
+  font-size: 13px;
+}
+.comp-detail-title span {
+  font-size: 11px;
+}
+.comp-detail-close {
+  flex: 0 0 auto;
+}
+.comp-detail-lore {
+  margin: 7px 0;
+  color: #d8c7a2;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.comp-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 8px;
+}
+.comp-detail-block {
+  min-width: 0;
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid rgba(148, 163, 184, .18);
+  border-radius: 7px;
+  background: rgba(2, 6, 23, .24);
+}
+.comp-detail-block-title {
+  margin-bottom: 6px;
+  color: #fde68a;
+  font-size: 11px;
+  font-weight: 700;
+}
+.comp-detail-skill-grid,
+.comp-detail-bond-list {
+  display: grid;
+  gap: 6px;
+}
+.comp-detail-skill,
+.comp-detail-bond {
+  min-width: 0;
+  padding: 7px;
+  border: 1px solid rgba(148, 163, 184, .16);
+  border-radius: 6px;
+  background: rgba(15, 23, 42, .45);
+  color: #cbd5e1;
+  font-size: 10px;
+  line-height: 1.45;
+}
+.comp-detail-skill.sig {
+  border-color: rgba(250, 204, 21, .34);
+  background: rgba(113, 63, 18, .22);
+}
+.comp-detail-bond.active {
+  border-color: rgba(74, 222, 128, .32);
+  background: rgba(20, 83, 45, .18);
+}
+.comp-detail-bond.locked {
+  border-color: rgba(250, 204, 21, .22);
+}
+.comp-detail-actions {
+  flex-wrap: wrap;
+  margin-top: 7px;
+}
 .comp-advisor-panel {
   margin: 10px 0;
   padding: 10px;
@@ -1202,6 +1295,11 @@ h1 {
   border-radius: 10px;
   padding: 8px;
   background: rgba(15, 23, 42, .18);
+}
+.comp-missing-detail {
+  margin-top: 6px;
+  min-height: 24px;
+  padding: 3px 8px;
 }
 .ally-summons {
   margin: 0 14px 8px;
