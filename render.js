@@ -3733,6 +3733,73 @@ function renderDungeonContractPanel() {
     </div>`;
 }
 
+function dungeonBossRosterHtml(dg, selectedContract) {
+  const bosses = Array.isArray(dg?.bosses) ? dg.bosses : [];
+  if (!bosses.length) return '';
+  const contractLevel = Math.max(0, Math.floor(selectedContract?.level || 0));
+  const lastBossName = bosses[bosses.length - 1]?.name;
+  const cards = bosses.map(boss => {
+    const bossName = boss.name || '未知首领';
+    const isFinal = bossName === lastBossName;
+    const icon = (typeof entityIcon === 'function') ? entityIcon(bossName, 34, boss.emoji || '👹') : (boss.emoji || '👹');
+    const items = (typeof getDungeonBossLoot === 'function') ? getDungeonBossLoot(dg.key, bossName, state.cls) : [];
+    const phaseCount = contractLevel > 0 && typeof getDungeonBossPhases === 'function' ? getDungeonBossPhases(dg, bossName, contractLevel).length : 0;
+    const councilCount = typeof getDungeonBossCouncilMembers === 'function' ? Math.max(0, getDungeonBossCouncilMembers(boss).length - 1) : 0;
+    const spectacleCount = typeof getDungeonBossSpectacleMechanics === 'function' ? getDungeonBossSpectacleMechanics(boss).length : 0;
+    const directorEventCount = typeof getDungeonBossDirectorEvents === 'function' ? getDungeonBossDirectorEvents(boss).length : 0;
+    const tacticCount = typeof getDungeonBossTactics === 'function' ? getDungeonBossTactics(boss).length : 0;
+    const weakpointCount = typeof getDungeonBossWeakpoints === 'function' ? getDungeonBossWeakpoints(boss).length : 0;
+    const challengeCount = typeof getDungeonBossChallengeSeals === 'function' ? getDungeonBossChallengeSeals(boss).length : 0;
+    const grandCount = typeof getDungeonBossGrandMechanics === 'function' ? getDungeonBossGrandMechanics(boss, 6).length : 0;
+    const directorSkillCount = typeof getDungeonBossDirectorSkills === 'function' ? getDungeonBossDirectorSkills(boss).length : 0;
+    const passiveCount = Array.isArray(boss.passive?.tricks) ? boss.passive.tricks.length : 0;
+    const skillCount = (boss.skills || []).length + directorSkillCount + passiveCount;
+    const mechanicCount = phaseCount + councilCount + spectacleCount + directorEventCount + tacticCount + weakpointCount + challengeCount + grandCount;
+    const hasLegend = items.some(it => it.rarity === 'legend' || it.lowChanceLegend);
+    const previewNames = [];
+    if (phaseCount) previewNames.push('阶段');
+    if (tacticCount) previewNames.push('战术');
+    if (weakpointCount) previewNames.push('弱点');
+    if (challengeCount) previewNames.push('挑战');
+    if (grandCount) previewNames.push('扩展机制');
+    const mechanicTip = inlineTipSpanHtml({
+      name:'机制概览',
+      icon:'📖',
+      desc:`${bossName} 的副本手册摘要。技能 ${skillCount} 项,额外机制 ${mechanicCount} 项${previewNames.length ? `,包含 ${previewNames.join('、')}` : ''}。向下滚动可查看完整读条、挑战、弱点和掉落。`,
+      meta:mechanicCount ? `${mechanicCount}项` : '标准',
+    }, {
+      fallbackIcon:'inv_misc_book_11',
+      color:mechanicCount ? '#f6c453' : '#93c5fd',
+      metaVisible:true,
+    });
+    const lootTip = inlineTipSpanHtml({
+      name:'掉落预览',
+      icon:'🎁',
+      desc:items.length ? `该首领可预览 ${items.length} 件掉落。详情卡片中会显示掉率、典型属性和史诗团本标记。` : '该首领暂无专属掉落预览。',
+      meta:items.length ? `${items.length}件${hasLegend ? ' · 含橙装' : ''}` : '无',
+    }, {
+      fallbackIcon:hasLegend ? 'inv_misc_gem_topaz_02' : 'inv_crate_04',
+      color:hasLegend ? '#f59e0b' : '#c4b5fd',
+      metaVisible:true,
+    });
+    return `<div class="dungeon-boss-roster-card ${isFinal ? 'final' : ''}">
+      <div class="dungeon-boss-roster-icon">${icon}</div>
+      <div class="dungeon-boss-roster-main">
+        <div class="dungeon-boss-roster-name">${tipAttrText(bossName)}${isFinal ? '<span>尾王</span>' : ''}</div>
+        <div class="dungeon-boss-roster-meta">波次 ${boss.wave || '?'} · 技能 ${skillCount} · 机制 ${mechanicCount}</div>
+        <div class="dungeon-boss-roster-tags">${mechanicTip}${lootTip}</div>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="dungeon-boss-roster">
+    <div class="dungeon-boss-roster-head">
+      <b>首领目录</b>
+      <span>${bosses.length} 名首领 · 最终: ${tipAttrText(lastBossName || '未知')}</span>
+    </div>
+    <div class="dungeon-boss-roster-grid">${cards}</div>
+  </div>`;
+}
+
 function buildDungeonInfoHtml(dg) {
   if (!dg) return '<div class="muted">未找到副本信息</div>';
   const power = ((typeof dg.powerLvl === 'number' && dg.powerLvl > 0) ? dg.powerLvl : dg.reqLvl) + 5;
@@ -3886,6 +3953,7 @@ function buildDungeonInfoHtml(dg) {
       <div>${dungeonBountyRewardTipHtml(bountyTarget, rewardText)}${bountyTarget.claimed ? ' · 已完成' : ''}</div>
     </div>`;
   }
+  html += dungeonBossRosterHtml(dg, selectedContract);
   for (const bossData of (dg.bosses || [])) {
     const bossName = bossData.name;
     const items = (typeof getDungeonBossLoot === 'function') ? getDungeonBossLoot(dg.key, bossName, state.cls) : [];
