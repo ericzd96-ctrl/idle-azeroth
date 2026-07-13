@@ -430,6 +430,19 @@ function renderBuffBar() {
   if (state.heroSilenceUntil > now) heroDe.push({ kind:'self-de', icon:'🔇', name:'你·沉默', desc:'无法施放技能', left:Math.ceil((state.heroSilenceUntil-now)/1000) });
   if (state.heroDisarmUntil > now) heroDe.push({ kind:'self-de', icon:'⚔️❌', name:'你·缴械', desc:'无法普通攻击', left:Math.ceil((state.heroDisarmUntil-now)/1000) });
   const selfStates = buffs.concat(heroDe);
+  const specMeter = (typeof currentSpecCombatMeter === 'function') ? currentSpecCombatMeter() : null;
+  if (specMeter) {
+    selfStates.unshift({
+      kind: 'spec-meter',
+      icon: specMeter.icon || '✦',
+      name: specMeter.name,
+      base: '专精机制:' + specMeter.key,
+      desc: (specMeter.hint || '') + ` · 当前 ${specMeter.stacks || 0}/${specMeter.max || 0}`,
+      valText: `${specMeter.stacks || 0}/${specMeter.max || 0}`,
+      stacks: specMeter.stacks || 0,
+      left: 0
+    });
+  }
   const enemyStates = enemyBuffs.concat(debuffs);
 
   if (!bar.querySelector('.buff-side.self')) {

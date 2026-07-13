@@ -1062,6 +1062,80 @@ function stateRequirementMet(mon, req){
   if(Array.isArray(req)) return req.some(x => monsterStateActive(mon, x));
   return monsterStateActive(mon, req);
 }
+const SPEC_AUTO_PROFILES = {
+  'warrior:arms': { aura:'w_sunder', max:5, builder:/破甲|压制|碎颅|灭战者/, spender:/致死|巨人|斩杀|灭战者/, setup:/破甲|灭战者/ },
+  'warrior:fury': { aura:'w_rage', max:5, builder:/怒击|嗜血|浴血|乱舞|暴怒/, spender:/怒火|奥丁|斩杀|剑刃风暴/, setup:/鲁莽|战斗怒吼/ },
+  'warrior:prot': { aura:'w_block', max:5, builder:/盾|雷霆|复仇|挑战/, spender:/复仇|盾牌猛击|盾牌冲锋/, setup:/盾墙|破釜|铁壁/ },
+  'mage:arcane': { aura:'arcaneCharge', max:4, builder:/奥术冲击|飞弹|奥爆|大法师/, spender:/弹幕|涌动/, setup:/大法师|奥术强化|镜像/ },
+  'mage:fire': { aura:'m_heat', max:5, builder:/火球|活动炸弹|火焰冲击|灼烧|龙息/, spender:/炎爆|流星|烈焰风暴|凤凰/, setup:/燃烧|活动炸弹/ },
+  'mage:frost': { aura:'m_frost', max:5, builder:/寒冰箭|冰风暴|冰冻宝珠|暴风雪/, spender:/冰枪|彗星|冰冻宝珠/, setup:/冰风暴|冰冻|寒冰屏障/ },
+  'priest:discipline': { aura:'p_grace', max:5, builder:/惩击|惩罚|盾|教派/, spender:/教派|惩罚|神圣新星/, setup:/真言|灌注|障/ },
+  'priest:holy': { aura:'p_grace', max:5, builder:/治疗|恢复|愈合|祷言/, spender:/圣言|赞美诗|治疗祷言/, setup:/恢复|愈合/ },
+  'priest:shadow': { aura:'p_insanity', max:6, builder:/暗言|鞭笞|心灵|疫病/, spender:/虚空|疫病|冲撞|灭/, setup:/暗言|暗影形态/ },
+  'rogue:assassination': { aura:'r_venom', max:5, builder:/毒|毁伤|锁喉|割裂/, spender:/奉毒|君王|死亡标记/, setup:/毒|锁喉|割裂/ },
+  'rogue:combat': { aura:'r_combo', max:5, builder:/邪恶|背刺|剑刃|冲刺/, spender:/正中|杀戮|切割/, setup:/骨骰|冲动|剑刃乱舞/ },
+  'rogue:subtlety': { aura:'r_combo', max:5, builder:/幽暗|背刺|暗袭|袖剑|绞喉/, spender:/袖剑|暗袭|暗影/, setup:/暗影之舞|幽暗|肾击/ },
+  'hunter:bm': { aura:'h_beastBond', max:5, builder:/宠物|倒刺|野兽|杀戮|兽群/, spender:/杀戮|协同|野兽顺劈|兽群/, setup:/召唤|凶暴|狂野怒火/ },
+  'hunter:marks': { aura:'h_frenzy', max:5, builder:/印记|精确|奥术射击|急速/, spender:/瞄准|杀戮|奇美拉|百发/, setup:/印记|二连|百发/ },
+  'hunter:survival': { aura:'h_frenzy', max:5, builder:/钉刺|炸弹|陷阱|野火/, spender:/猫鼬|屠戮|爆炸|奇美拉/, setup:/陷阱|钉刺|野火/ },
+  'shaman:element': { aura:'stormCharge', max:4, builder:/闪电|熔岩|震击|元素/, spender:/元素冲击|风暴守护|地震|熔岩爆裂/, setup:/烈焰震击|风暴守护/ },
+  'shaman:enhancement': { aura:'sh_maelstrom', max:5, builder:/风怒|风暴打击|毁灭闪电|幽魂/, spender:/裂地|熔岩猛击|毁灭/, setup:/幽魂|嗜血|风怒/ },
+  'shaman:restoration': { aura:'sh_totem', max:5, builder:/治疗波|激流|大地之盾|治疗链/, spender:/治疗链|暴雨|灵魂链接/, setup:/大地之盾|治疗之泉|激流/ },
+  'paladin:holy': { aura:'pa_bulwark', max:5, builder:/圣光|震击|道标|祝福/, spender:/黎明|圣光道标|神圣愤怒/, setup:/道标|王者|圣洁护盾/ },
+  'paladin:prot': { aura:'pa_bulwark', max:5, builder:/审判|盾击|复仇者|奉献|祝福/, spender:/复仇者|正义盾击|守护者/, setup:/圣盾|炽热|王者|圣洁/ },
+  'paladin:ret': { aura:'pa_holyPower', max:5, builder:/十字军|公正|审判|灰烬/, spender:/裁决|清算|愤怒之锤|圣殿/, setup:/复仇之怒|灰烬|审判/ },
+  'warlock:affliction': { aura:'wl_shard', max:5, builder:/痛楚|腐蚀|鬼影|痛苦/, spender:/狂涌|腐蚀之种|鬼影/, setup:/痛楚|腐蚀|痛苦无常/ },
+  'warlock:demonology': { aura:'wl_shard', max:5, builder:/古尔丹|恐惧|召唤|恶魔/, spender:/内爆|恶魔之箭|古尔丹/, setup:/召唤|恐惧猎犬|地狱火/ },
+  'warlock:destruction': { aura:'wl_ember', max:5, builder:/献祭|烧尽|燃烧|火焰之雨/, spender:/混乱|大灾变|灵魂之火/, setup:/献祭|黑暗灵魂|火焰之雨/ },
+  'druid:balance': { aura:'d_astral', max:5, builder:/月火|阳炎|愤怒|星火/, spender:/星涌|星辰|新月|飓风/, setup:/月火|阳炎|根须/ },
+  'druid:feral': { aura:'d_combo', max:5, builder:/斜掠|撕碎|横扫/, spender:/割裂|凶猛|野性狂怒|原始/, setup:/斜掠|狂暴/ },
+  'druid:resto': { aura:'d_harmony', max:5, builder:/回春|生命绽放|迅捷|野性成长/, spender:/百花|宁静|野性成长/, setup:/回春|生命绽放|树皮/ },
+};
+function specIdentityAutoSkillScoreBonus(skillKey, sk, mon, ctx, dotCount){
+  const profile = SPEC_AUTO_PROFILES[activeHeroClassKey() + ':' + activeHeroSpecKey()];
+  if(!profile || !sk) return 0;
+  const name = sk.name || '';
+  const stacks = skillAuraStacks(profile.aura);
+  const max = profile.max || 5;
+  const high = stacks >= Math.max(3, Math.ceil(max * 0.8));
+  const low = stacks <= Math.floor(max * 0.4);
+  const builder = profile.builder && profile.builder.test(name);
+  const spender = profile.spender && profile.spender.test(name);
+  const setup = profile.setup && profile.setup.test(name);
+  let bonus = 0;
+  if(setup) bonus += 10;
+  if(builder) bonus += low ? 26 : 8;
+  if(spender) bonus += high ? 42 : -10;
+  if(sk.type === 'heal' && /priest:holy|priest:discipline|shaman:restoration|paladin:holy|druid:resto/.test(activeHeroClassKey() + ':' + activeHeroSpecKey())){
+    bonus += Math.round((1 - ctx.hpFrac) * 35) + stacks * 3;
+  }
+  if(activeHeroClassKey() === 'hunter' && activeHeroSpecKey() === 'bm'){
+    if((sk.type === 'summon' || sk.summonCount) && activeAllySummonCount(ctx.now) === 0) bonus += 34;
+    if(spender && activeAllySummonCount(ctx.now) > 0) bonus += 18;
+  }
+  if(activeHeroClassKey() === 'hunter' && activeHeroSpecKey() === 'marks'){
+    if(setup && !monsterStateActive(mon, 'marked')) bonus += 24;
+    if(spender && monsterStateActive(mon, 'marked')) bonus += 28;
+  }
+  if(activeHeroClassKey() === 'mage' && activeHeroSpecKey() === 'fire'){
+    if(setup && dotCount <= 0) bonus += 18;
+    if(spender && dotCount > 0) bonus += dotCount * 8;
+  }
+  if(activeHeroClassKey() === 'mage' && activeHeroSpecKey() === 'frost'){
+    if(setup && !monsterStateActive(mon, 'frozen')) bonus += 20;
+    if(spender && monsterStateActive(mon, 'frozen')) bonus += 32;
+  }
+  if(activeHeroClassKey() === 'warlock' && activeHeroSpecKey() === 'affliction'){
+    if(setup && dotCount < 2) bonus += 20;
+    if(spender && dotCount >= 2) bonus += dotCount * 10;
+  }
+  if(activeHeroClassKey() === 'druid' && activeHeroSpecKey() === 'feral'){
+    if(spender && dotCount > 0) bonus += dotCount * 8;
+  }
+  if(ctx.aliveN > 1 && sk.aoe) bonus += Math.min(18, ctx.aliveN * 5);
+  if(ctx.targetHpFrac < 0.25 && /斩杀|杀戮|愤怒之锤|凶猛|处决/.test(name)) bonus += 22;
+  return bonus;
+}
 function autoSkillScore(skillKey, sk, mon, ctx){
   const ai = skillAiMeta(skillKey, sk);
   const summonSkill = sk.type === 'summon' || sk.summonCount;
@@ -1104,6 +1178,7 @@ function autoSkillScore(skillKey, sk, mon, ctx){
   if(tag === 'spender' && ai.useIfDotCountAtLeast) score += dotCount * 8;
   if(tag === 'spender' && ai.useIfChargeKey) score += skillAuraStacks(ai.useIfChargeKey) * 6;
   if(tag === 'aoe') score += Math.min(18, ctx.aliveN * 6);
+  score += specIdentityAutoSkillScoreBonus(skillKey, sk, mon, ctx, dotCount);
   if((sk.mul || 0) >= 6 && mon.isBoss) score += 8;
   if(sk.castTime >= 2 && !mon.isBoss && ctx.targetHpFrac < 0.2) score -= 12;
   if((skillAiMeta(skillKey, sk).priorityTag === 'buff') && ctx.targetHpFrac < 0.35 && !mon.isBoss) score -= 8;

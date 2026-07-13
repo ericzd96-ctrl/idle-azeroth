@@ -3637,6 +3637,13 @@ h1 {
 .buff-chip.dr { background: rgba(96,165,250,.12); border-color: rgba(96,165,250,.5); }
 .buff-chip.debuff { background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.5); }
 .buff-chip.self-de { background: rgba(168,85,247,.15); border-color: rgba(168,85,247,.55); }
+.buff-chip.spec-meter {
+  background: linear-gradient(180deg, rgba(244,114,182,.18), rgba(250,204,21,.10));
+  border-color: rgba(244,114,182,.62);
+  box-shadow: inset 0 0 8px rgba(250,204,21,.12), 0 0 8px rgba(244,114,182,.08);
+}
+.buff-chip.spec-meter .b-t { color: #fbcfe8; font-weight: 700; }
+.buff-chip.spec-meter .b-s { color: #fde68a; }
 .buff-chip { cursor: help; }
 .buff-chip .b-ic {
   display: inline-flex;
