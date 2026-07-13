@@ -1978,7 +1978,7 @@ function updateBattleVisuals() {
         <div class="muted">定位:${tpl?.role==='tank'?'🛡️纯坦克 扛压吸仇恨/减伤结界/自疗':tpl?.role==='dps'?'⚔️纯输出 自带攻击攻速狂热/技能爆发':'💚辅助 加速+增伤+续航(助毕业DPS提速过本)'}</div>
         ${intent?`<div style="color:#bae6fd">当前意图: ${intent.icon} ${intent.label} · ${tipAttrText(intent.desc)}</div>`:''}
         ${coordinate?`<div style="color:#7dd3fc">协同追击: ${coordinate.ready?'就绪':'冷却 '+Math.ceil(coordinate.leftMs/1000)+'秒'}</div><div class="muted">${tipAttrText(coordinate.desc)}</div>`:''}
-        ${special?`<div style="color:#fcd34d">专属战斗: ${special.ready?'就绪':'冷却 '+Math.ceil(special.leftMs/1000)+'秒'}</div><div class="muted">${tipAttrText(special.desc)}</div>`:''}
+        ${special?`<div style="color:#fcd34d">专属战斗: ${special.icon || '🌟'} ${special.name} · ${special.ready?'就绪':'冷却 '+Math.ceil(special.leftMs/1000)+'秒'}</div>${companionCombatSpecialTipHtml(tpl, comp, { state:special })}`:''}
         ${reaction?`<div style="color:#fcd34d">战友反应: ${reaction.icon} ${reaction.name} · ${reaction.ready?'就绪':'冷却 '+Math.ceil(reaction.leftMs/1000)+'秒'}</div><div class="muted">${reaction.desc}</div>`:''}
         ${resonance?`<div style="color:#fcd34d">羁绊共鸣: ${resonance.icon} ${resonance.name} ${resonance.rank} · ${resonance.ready?'就绪':'冷却 '+Math.ceil(resonance.leftMs/1000)+'秒'}</div><div class="muted">${tipAttrText(resonance.desc)} 来源:${tipAttrText(resonance.bondNames)}</div>`:''}
         ${sig?`<div style="color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(sig.name, 14, sig.icon||'✨') : (sig.icon||'✨')} ${sig.name} · ${sig.desc||''}${sig.mode==='passive'?' (被动)':''}</div>`:''}
@@ -2990,6 +2990,105 @@ function companionSkillTipHtml(sk){
   const cdText = sk.mode === 'passive' ? mode : `${mode} · 冷却 ${String(cdSec).replace(/\.0$/,'')}秒`;
   return `<b>${skillIconHtml} ${sk.name}</b><div>${sk.desc || ''}</div>${lines.map(x=>`<div class="muted">${x}</div>`).join('')}<div class="muted">${cdText}</div>`;
 }
+function companionCombatSpecialTypeText(spec, tpl){
+  const type = spec?.type || '';
+  const map = {
+    guard: {
+      trigger:'主角生命低于 74%；支援位低于 66%；首领战；或启用守护战术时触发。',
+      effect:'进入约 6 秒护卫窗口，为主角施加约 5% 最大生命护盾；出战随从额外获得约 8% 最大生命护盾；当前目标破甲 9 秒。'
+    },
+    barrier: {
+      trigger:'主角生命低于 82%；主角带有可净化减益；或首领战时触发。',
+      effect:'为主角施加约 7% 最大生命护盾，出战随从获得约 6% 最大生命护盾，并尝试净化 1 个主角减益；部分随从还会附加破甲。'
+    },
+    rescue: {
+      trigger:`主角生命低于 ${tpl?.key === 'anduin' ? '34%' : '54%'}，或主角带有可净化减益时触发。`,
+      effect:'立即治疗主角并补护盾，净化 1 个减益。安度因、维伦、阿莱克丝塔萨等救场型随从拥有更高治疗比例。'
+    },
+    cleanse: {
+      trigger:'主角带有可净化减益，或生命低于 76% 时触发。',
+      effect:'治疗主角、净化 1 个减益；带召唤标签的随从会额外召唤单位牵制目标。'
+    },
+    heal: {
+      trigger:'主角生命低于 68%，主角受到连续伤害，或首领战进入高压阶段时触发。',
+      effect:'立即治疗主角并附带短护盾；治疗型随从会按自身品质、星级和独有性质提高救场量。'
+    },
+    buff: {
+      trigger:'首领战、目标低血，或主角/随从缺少该专属增益时触发。',
+      effect:'给主角或出战随从施加短时战斗增益，通常提高攻击、急速、减伤或协同追击效率。'
+    },
+    dmg: {
+      trigger:'首领战、目标低血，或目标已有标记/控制/持续伤害时触发。',
+      effect:'造成一次高额专属追击伤害；会吃随从星级、品质、独有性质、老兵特性和支援位倍率。'
+    },
+    execute: {
+      trigger:'目标生命低于 35%；首领战；目标已有控制/持续伤害/标记时触发。',
+      effect:'追加斩杀伤害。低血目标会强制暴击并提高伤害上限；部分随从会短暂击晕或进入狂热。'
+    },
+    mark: {
+      trigger:'首领战、目标低血，或目标尚未带有该随从标记时触发。',
+      effect:'施加专属标记 9 秒并破甲 9 秒，造成一次追击伤害；带持续伤害标签时会附加 DoT。'
+    },
+    control: {
+      trigger:'首领战，或目标未被减速/击晕时触发。',
+      effect:'造成控制追击伤害，减速 5 秒，并短暂击晕目标；带破甲或持续伤害标签时附加对应效果。'
+    },
+    aoe: {
+      trigger:'多目标战斗或首领战时触发。',
+      effect:'对当前目标造成范围压制伤害，并按本次伤害溅射其他敌人；通常附加持续伤害，部分技能短暂击晕。'
+    },
+    dot: {
+      trigger:'首领战、目标低血，或目标身上持续伤害不足 2 个时触发。',
+      effect:'造成一次追击并附加 8 秒持续伤害，同时减速目标；部分随从会给自身补护盾。'
+    },
+    summon: {
+      trigger:'多目标战斗、首领战，或目标低血时触发。',
+      effect:'召唤 1 个单位助战，出战时最多可保留 2 个同类召唤；支援位最多保留 1 个，并附带减速牵制。'
+    },
+    tempo: {
+      trigger:'首领战、协同追击还在较长冷却，或目标低血时触发。',
+      effect:'压缩协同追击冷却，为主角补护盾，减速目标并造成一次节奏追击伤害。'
+    }
+  };
+  return map[type] || { trigger:'首领战或目标低血时触发。', effect:'触发该随从的专属战斗效果。' };
+}
+function companionCombatSpecialTipHtml(tpl, comp, opts){
+  const spec = (typeof companionCombatSpecial === 'function') ? companionCombatSpecial(tpl?.key) : null;
+  if (!spec) return '';
+  const typeText = companionCombatSpecialTypeText(spec, tpl);
+  const cdMs = (typeof companionSpecialCooldownMs === 'function' && comp) ? companionSpecialCooldownMs(tpl, comp, !!opts?.support) : (spec.cd || 30000);
+  const baseCd = Math.round((spec.cd || 30000) / 1000);
+  const effCd = Math.round(cdMs / 1000);
+  const supportPower = (typeof COMPANION_SUPPORT_POWER === 'number') ? COMPANION_SUPPORT_POWER : 0.42;
+  const veteran = (typeof companionVeteranInfo === 'function' && comp) ? companionVeteranInfo(tpl, comp) : null;
+  const unique = (typeof companionUniqueTrait === 'function') ? companionUniqueTrait(tpl) : null;
+  const tags = (spec.tags || []).map(tag => companionDungeonTagLabel(tag)).join(' / ');
+  const state = opts?.state ? `<div style="margin-top:4px;color:#fcd34d">当前状态: ${opts.state.ready ? '就绪' : `冷却 ${Math.ceil((opts.state.leftMs || 0) / 1000)} 秒`}</div>` : '';
+  const scaling = [
+    `基础冷却 ${baseCd} 秒${comp ? ` · 当前冷却约 ${effCd} 秒` : ''}`,
+    `支援位强度约为出战的 ${Math.round(supportPower * 100)}%,且支援冷却更长`,
+    '护盾/治疗/伤害会继续受到战术、独有性质、老兵特性和支援位倍率影响'
+  ];
+  if (veteran) scaling.push(`${veteran.icon || '🎖️'} ${veteran.name}: ${veteran.desc}`);
+  if (unique) scaling.push(`${unique.icon || '✦'} ${unique.name}: ${unique.desc}`);
+  return `<b>${spec.icon || '🌟'} ${tipAttrText(spec.name || '专属战斗')}</b>
+    <div>${tipAttrText(spec.desc || '')}</div>
+    <div style="margin-top:5px;color:#fde68a">触发条件</div>
+    <div class="muted">${tipAttrText(typeText.trigger)}</div>
+    <div style="margin-top:5px;color:#93c5fd">实际效果</div>
+    <div class="muted">${tipAttrText(typeText.effect)}</div>
+    <div style="margin-top:5px;color:#c4b5fd">规则</div>
+    ${scaling.map(x => `<div class="muted">${tipAttrText(x)}</div>`).join('')}
+    ${tags ? `<div class="muted">定位标签: ${tipAttrText(tags)}</div>` : ''}
+    ${state}`;
+}
+function companionCombatSpecialLineHtml(tpl, comp, opts){
+  const spec = (typeof companionCombatSpecial === 'function') ? companionCombatSpecial(tpl?.key) : null;
+  if (!spec) return '';
+  const tip = companionTipAttr(companionCombatSpecialTipHtml(tpl, comp, opts));
+  const extra = opts?.extra ? ` · ${tipAttrText(opts.extra)}` : '';
+  return `<div class="${opts?.className || 'muted'} comp-tip" data-tip="${tip}" style="${opts?.style || 'font-size:10px;color:#fde68a'}">专属战斗: ${spec.icon || '🌟'} ${tipAttrText(spec.name)}${extra}</div>`;
+}
 /* 随从技能 → 可悬浮小图标(指向看描述) */
 function compSkillChips(tpl, comp){
   const skills = ((tpl&&tpl.skills)||[]).slice();
@@ -3821,7 +3920,7 @@ function companionDetailPanelHtml(entries) {
         ${uniqueTrait ? `<div class="comp-unique-note">${uniqueTrait.icon || '✦'} 独有性质: ${tipAttrText(uniqueTrait.name)} · ${tipAttrText(uniqueTrait.desc || '')}${uniqueSummary ? `<br><span>${tipAttrText(uniqueSummary)}</span>` : ''}</div>` : ''}
         ${companionLegendSkillHtml(tpl, false)}
         ${entry.isOwned ? companionAwakenSkillHtml(tpl, owned, false) : ''}
-        ${combatSpecialDesc ? `<div class="comp-combat-special-note">${combatSpecial?.icon || '🌟'} 专属战斗: ${tipAttrText(combatSpecialDesc)}${combatSpecial?.tags?.length ? `<br><span>定位标签: ${combatSpecial.tags.map(companionDungeonTagLabel).join(' / ')}</span>` : ''}</div>` : ''}
+        ${combatSpecialDesc ? companionCombatSpecialLineHtml(tpl, owned, { className:'comp-combat-special-note', style:'', extra:combatSpecial?.tags?.length ? `定位标签 ${combatSpecial.tags.map(companionDungeonTagLabel).join(' / ')}` : '' }) : ''}
         ${veteran ? `<div class="comp-veteran-note">${veteran.icon} ${veteran.name}: ${tipAttrText(veteran.desc)}</div>` : ''}
         ${companionDetailSkillListHtml(tpl, owned)}
       </div>
@@ -3916,7 +4015,8 @@ function companionSupportPanelHtml(entries) {
     const veteran = (typeof companionVeteranInfo === 'function') ? companionVeteranInfo(entry.tpl, entry.comp) : null;
     return `<div class="comp-support-slot filled">
       <div class="comp-support-head"><b>${companionIconHtml(entry.tpl, 18)} ${tipAttrText(entry.tpl.name)}</b><span class="${q.cls}">${q.name}</span></div>
-      <div class="muted">${unique?.icon || spec?.icon || '🌟'} ${tipAttrText(unique?.name || spec?.name || '专属支援')} · ${(entry.comp.stars || 1)}星${veteran ? ` · ${veteran.icon}${veteran.name}` : ''}</div>
+      ${unique ? `<div class="muted">${unique.icon || '✦'} ${tipAttrText(unique.name)} · ${(entry.comp.stars || 1)}星${veteran ? ` · ${veteran.icon}${veteran.name}` : ''}</div>` : `<div class="muted">${(entry.comp.stars || 1)}星${veteran ? ` · ${veteran.icon}${veteran.name}` : ''}</div>`}
+      ${spec ? companionCombatSpecialLineHtml(entry.tpl, entry.comp, { support:true, className:'muted', extra:'支援位触发' }) : ''}
       <button data-action="compsupport" data-key="${entry.tpl.key}">移出支援</button>
     </div>`;
   }).join('');
@@ -3925,8 +4025,9 @@ function companionSupportPanelHtml(entries) {
     const spec = (typeof companionCombatSpecial === 'function') ? companionCombatSpecial(entry.tpl.key) : null;
     const unique = (typeof companionUniqueTrait === 'function') ? companionUniqueTrait(entry.tpl) : null;
     const veteran = (typeof companionVeteranInfo === 'function') ? companionVeteranInfo(entry.tpl, entry.owned) : null;
-    return `<button class="comp-support-candidate" data-action="compsupport" data-key="${entry.tpl.key}">
-      ${companionIconHtml(entry.tpl, 16)}<span>${tipAttrText(entry.tpl.name)}</span><b class="${q.cls}">${q.name}</b><em>${unique?.icon || spec?.icon || '🌟'}${tipAttrText(unique?.name || spec?.name || '专属')}</em>${veteran ? `<i>${veteran.icon}</i>` : ''}
+    const candidateTip = spec ? companionTipAttr(companionCombatSpecialTipHtml(entry.tpl, entry.owned, { support:true })) : '';
+    return `<button class="comp-support-candidate${spec ? ' comp-tip' : ''}" ${spec ? `data-tip="${candidateTip}"` : ''} data-action="compsupport" data-key="${entry.tpl.key}">
+      ${companionIconHtml(entry.tpl, 16)}<span>${tipAttrText(entry.tpl.name)}</span><b class="${q.cls}">${q.name}</b><em>${spec?.icon || unique?.icon || '🌟'}${tipAttrText(spec?.name || unique?.name || '专属')}</em>${veteran ? `<i>${veteran.icon}</i>` : ''}
     </button>`;
   }).join('');
   return `<div class="comp-support-panel">
@@ -4378,7 +4479,7 @@ function renderCompanion() {
       ${tpl?.signature?`<div class="muted" style="font-size:10px;color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')} ${tpl.signature.name}${tpl.signature.mode==='passive'?' [被动]':''}</div>`:''}
       ${companionLegendSkillHtml(tpl, true)}
       ${companionAwakenSkillHtml(tpl, act, true)}
-      ${spec ? `<div class="muted" style="font-size:10px;color:#fde68a">专属战斗: ${spec.icon || '🌟'} ${spec.name}${fit?.score ? ` · 当前副本匹配 ${fit.label}` : ''}</div>` : ''}
+      ${spec ? companionCombatSpecialLineHtml(tpl, act, { extra:fit?.score ? `当前副本匹配 ${fit.label}` : '' }) : ''}
       ${companionUpgradePreviewHtml(tpl, act, { compact:true })}
       ${companionAwakenPreviewHtml(tpl, act, { compact:true })}
       <div class="comp-skills">${compSkillChips(tpl, act)}</div>
@@ -4420,7 +4521,7 @@ function renderCompanion() {
       ${tpl.signature?`<div class="muted" style="font-size:10px;color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')} ${tpl.signature.name}${tpl.signature.mode==='passive'?' [被动]':''}</div>`:''}
       ${companionLegendSkillHtml(tpl, true)}
       ${companionAwakenSkillHtml(tpl, c, true)}
-      ${spec ? `<div class="muted" style="font-size:10px;color:#fde68a">专属战斗: ${spec.icon || '🌟'} ${spec.name}${veteran ? ` · ${veteran.icon}${veteran.name}` : ''}</div>` : ''}
+      ${spec ? companionCombatSpecialLineHtml(tpl, c, { extra:veteran ? `${veteran.icon}${veteran.name}` : '' }) : ''}
       ${companionUpgradePreviewHtml(tpl, c)}
       ${companionAwakenPreviewHtml(tpl, c, { compact:true })}
       ${companionUseLockNoteHtml(tpl)}
@@ -4883,7 +4984,8 @@ function dungeonCompanionRecommendationHtml(dg, compact) {
   const recText = ownedEntries.map(entry => {
     const spec = (typeof companionCombatSpecial === 'function') ? companionCombatSpecial(entry.tpl.key) : null;
     const unique = (typeof companionUniqueTrait === 'function') ? companionUniqueTrait(entry.tpl) : null;
-    const tip = `<b>${tipAttrText(entry.tpl.name)}</b><br>${entry.q.name} · ${entry.comp.stars || 1}星 · ${tipAttrText(spec?.name || '专属战斗')}<br>${unique ? `${tipAttrText(unique.icon || '✦')} ${tipAttrText(unique.name)}: ${tipAttrText(unique.desc || '')}<br>` : ''}匹配: ${tipAttrText(entry.fit.matched.map(companionDungeonTagLabel).join(' / '))}${entry.veteran ? `<br>${tipAttrText(entry.veteran.desc)}` : ''}`.replace(/"/g, '&quot;');
+    const specTip = spec ? `<br>${companionCombatSpecialTipHtml(entry.tpl, entry.comp)}` : '';
+    const tip = `<b>${tipAttrText(entry.tpl.name)}</b><br>${entry.q.name} · ${entry.comp.stars || 1}星 · ${tipAttrText(spec?.name || '专属战斗')}${specTip}<br>${unique ? `${tipAttrText(unique.icon || '✦')} ${tipAttrText(unique.name)}: ${tipAttrText(unique.desc || '')}<br>` : ''}匹配: ${tipAttrText(entry.fit.matched.map(companionDungeonTagLabel).join(' / '))}${entry.veteran ? `<br>${tipAttrText(entry.veteran.desc)}` : ''}`.replace(/"/g, '&quot;');
     return `<span class="dungeon-comp-rec" data-tip="${tip}">${companionIconHtml(entry.tpl, compact ? 14 : 16)} ${tipAttrText(entry.tpl.name)}<b>${entry.fit.matched.map(companionDungeonTagLabel).join('/')}</b></span>`;
   }).join('');
   if (compact) {
