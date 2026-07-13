@@ -751,11 +751,12 @@ function dungeonProgressMechanicTags(ds, contract, alert, timerStatus) {
   }
   const rooms = Array.isArray(ds.combatRooms) ? ds.combatRooms : [];
   for (const room of rooms.slice(0, 3)) {
+    const matchedTags = (room.matchedTags || []).map(dungeonTraitTagLabel).join('/');
     tags.push(inlineTipSpanHtml({
       name:room.name || '战斗房间',
       icon:room.icon || '🎲',
-      desc:room.desc || '额外战斗房间规则',
-      meta:'房间'
+      desc:`${room.desc || '额外战斗房间规则'}${matchedTags ? ` 路线匹配: ${matchedTags}` : ''}`,
+      meta:room.routeMatched ? '路线匹配' : '房间'
     }, { fallbackIcon:'inv_misc_dice_02', color:'#f9a8d4' }));
   }
   const edicts = Array.isArray(ds.edicts) ? ds.edicts : [];
@@ -3428,6 +3429,11 @@ function dungeonTraitTagLabel(tag) {
     plague:'瘟疫', martial:'武备', orc:'兽人'
   })[tag] || tag;
 }
+function dungeonRoomRouteTagHtml(room) {
+  const matched = (room?.matchedTags || []).map(dungeonTraitTagLabel);
+  if (!room?.routeMatched || !matched.length) return '';
+  return `<span class="dungeon-room-route-tag">路线匹配:${matched.join('/')}</span>`;
+}
 function dungeonTraitChanceText(preview) {
   const c = preview?.chance || {};
   const pct = v => typeof v === 'number' ? `${Math.round(v * 100)}%` : '?';
@@ -3666,7 +3672,7 @@ function buildDungeonInfoHtml(dg) {
     html += `<div class="dungeon-room-info">
       <b>🎲 战斗房间</b>
       <div style="display:flex;flex-direction:column;gap:5px;margin-top:5px">
-        ${roomPreview.map(r => `<div><span style="color:#f9a8d4">${symbolIconHtml(r.icon, 14, r.name, 'inv_misc_dice_02')} ${r.name}</span><div class="muted">${r.desc || '额外遭遇规则'}</div></div>`).join('')}
+        ${roomPreview.map(r => `<div><span style="color:#f9a8d4">${symbolIconHtml(r.icon, 14, r.name, 'inv_misc_dice_02')} ${r.name}</span>${dungeonRoomRouteTagHtml(r)}<div class="muted">${r.desc || '额外遭遇规则'}</div></div>`).join('')}
       </div>
     </div>`;
   }
@@ -3967,7 +3973,14 @@ function renderDungeon() {
     const environmentPreview = (selectedContractLevel > 0 && typeof getDungeonEnvironments === 'function') ? getDungeonEnvironments(dg, selectedContractLevel) : [];
     const environmentLine = environmentPreview.length ? `<div class="dungeon-environment-line">🧭 环境: ${environmentPreview.map(e => inlineTipSpanHtml(e, { fallbackIcon:'spell_frost_arcticwinds', color:'#67e8f9' })).join(' · ')}</div>` : '';
     const roomPreview = (typeof getDungeonCombatRooms === 'function') ? getDungeonCombatRooms(dg, selectedContractLevel) : [];
-    const roomLine = roomPreview.length ? `<div class="dungeon-room-line">🎲 房间: ${roomPreview.map(r => inlineTipSpanHtml(r, { fallbackIcon:'inv_misc_dice_02', color:'#f9a8d4' })).join(' · ')}</div>` : '';
+    const roomLine = roomPreview.length ? `<div class="dungeon-room-line">🎲 房间: ${roomPreview.map(r => {
+      const matchedTags = (r.matchedTags || []).map(dungeonTraitTagLabel).join('/');
+      return inlineTipSpanHtml({
+        ...r,
+        desc:`${r.desc || '额外遭遇规则'}${matchedTags ? ` 路线匹配: ${matchedTags}` : ''}`,
+        meta:r.routeMatched ? '路线匹配' : (r.meta || '房间'),
+      }, { fallbackIcon:'inv_misc_dice_02', color:'#f9a8d4', metaVisible:!!r.routeMatched });
+    }).join(' · ')}</div>` : '';
     const edictPreview = (selectedContractLevel > 0 && typeof getDungeonTacticalEdicts === 'function') ? getDungeonTacticalEdicts(dg, selectedContractLevel) : [];
     const edictLine = edictPreview.length ? `<div class="dungeon-edict-line">📜 禁令: ${edictPreview.map(e => inlineTipSpanHtml(e, { fallbackIcon:'inv_scroll_03', color:'#fcd34d' })).join(' · ')}</div>` : '';
     const timerPreview = (selectedContractLevel > 0 && typeof createDungeonTimer === 'function') ? createDungeonTimer(dg, selectedContractLevel) : null;

@@ -341,16 +341,24 @@ function getDungeonEnvironments(dg, contractLevel) {
 }
 
 const DUNGEON_COMBAT_ROOMS = [
-  { key:'ambushPoint', name:'伏击岔路', icon:'🗡️', desc:'小怪波次有概率额外出现伏击者,开场数秒敌人攻速提高。', mod:{ambushChance:0.45, openerHasteMs:6500, openerHastePct:0.22} },
-  { key:'relicCache', name:'失控圣物库', icon:'🔮', desc:'战斗中会出现限时圣物;击破可获得资源和必暴,放任则强化敌人。', mod:{relicTickMs:22000, relicDurationMs:9500} },
-  { key:'flameJets', name:'烈焰喷口', icon:'🔥', desc:'地面周期喷火造成伤害,若已被灼烧则额外延长灼烧。', mod:{flameTickMs:10500, flameDamagePct:0.045, burnDpsPct:0.011, burnMs:3800} },
-  { key:'bloodAltar', name:'鲜血祭坛', icon:'🩸', desc:'首领战会出现祭坛;祭坛存活时会周期治疗敌人。', mod:{altarBoss:true, altarTickMs:16000, altarDurationMs:18000, altarHealPct:0.045} },
-  { key:'stormConduit', name:'风暴导管', icon:'⚡', desc:'导管会周期链击玩家;资源较高时额外沉默并燃烧资源。', mod:{stormTickMs:13500, stormDamagePct:0.04, drainPct:0.14, silenceMs:1200} },
-  { key:'cursedTreasure', name:'诅咒宝箱', icon:'🎁', desc:'部分波次出现宝箱守卫;击败可获得额外金币,但守卫会保护其他敌人。', mod:{treasureEvery:3, guardShieldPct:0.04, bonusGoldPct:0.18} },
-  { key:'frostLocks', name:'寒霜锁链', icon:'🧊', desc:'周期施加冰缚;玩家被冰缚时敌人获得小护盾。', mod:{frostTickMs:16500, chillMs:5200, shieldPct:0.028} },
-  { key:'shadowMaze', name:'暗影迷宫', icon:'🪞', desc:'迷宫周期召出幻影,并让玩家短暂易伤或恐惧。', mod:{mazeTickMs:21000, illusionDurationMs:12000, vulnerableMs:4200, fearMs:900} },
-  { key:'siegeGallery', name:'攻城长廊', icon:'🏹', desc:'箭雨周期落下,并在小怪波次派出攻城射手。', mod:{arrowTickMs:12000, arrowDamagePct:0.038, shooterChance:0.35} },
-  { key:'unstablePortal', name:'不稳定传送门', icon:'🌀', desc:'传送门会把额外敌人拉进战场,也会随机扰动首领施法节奏。', mod:{portalTickMs:24000, portalDurationMs:10000, bossCastJitter:true} },
+  { key:'ambushPoint', name:'伏击岔路', icon:'🗡️', tags:['pirate','martial','speed','beast','spider'], desc:'小怪波次有概率额外出现伏击者,开场数秒敌人攻速提高。', mod:{ambushChance:0.45, openerHasteMs:6500, openerHastePct:0.22} },
+  { key:'relicCache', name:'失控圣物库', icon:'🔮', tags:['arcane','titan','mech','noble'], desc:'战斗中会出现限时圣物;击破可获得资源和必暴,放任则强化敌人。', mod:{relicTickMs:22000, relicDurationMs:9500} },
+  { key:'flameJets', name:'烈焰喷口', icon:'🔥', tags:['fire','forge','dragon'], desc:'地面周期喷火造成伤害,若已被灼烧则额外延长灼烧。', mod:{flameTickMs:10500, flameDamagePct:0.045, burnDpsPct:0.011, burnMs:3800} },
+  { key:'bloodAltar', name:'鲜血祭坛', icon:'🩸', tags:['blood','undead','troll','ritual','shadow'], desc:'首领战会出现祭坛;祭坛存活时会周期治疗敌人。', mod:{altarBoss:true, altarTickMs:16000, altarDurationMs:18000, altarHealPct:0.045} },
+  { key:'stormConduit', name:'风暴导管', icon:'⚡', tags:['storm','air','titan','mech'], desc:'导管会周期链击玩家;资源较高时额外沉默并燃烧资源。', mod:{stormTickMs:13500, stormDamagePct:0.04, drainPct:0.14, silenceMs:1200} },
+  { key:'cursedTreasure', name:'诅咒宝箱', icon:'🎁', tags:['pirate','noble','ethereal','troll'], desc:'部分波次出现宝箱守卫;击败可获得额外金币,但守卫会保护其他敌人。', mod:{treasureEvery:3, guardShieldPct:0.04, bonusGoldPct:0.18} },
+  { key:'frostLocks', name:'寒霜锁链', icon:'🧊', tags:['undead','water','naga','fortress'], desc:'周期施加冰缚;玩家被冰缚时敌人获得小护盾。', mod:{frostTickMs:16500, chillMs:5200, shieldPct:0.028} },
+  { key:'shadowMaze', name:'暗影迷宫', icon:'🪞', tags:['shadow','void','oldgod','arcane'], desc:'迷宫周期召出幻影,并让玩家短暂易伤或恐惧。', mod:{mazeTickMs:21000, illusionDurationMs:12000, vulnerableMs:4200, fearMs:900} },
+  { key:'siegeGallery', name:'攻城长廊', icon:'🏹', tags:['martial','orc','fortress','noble'], desc:'箭雨周期落下,并在小怪波次派出攻城射手。', mod:{arrowTickMs:12000, arrowDamagePct:0.038, shooterChance:0.35} },
+  { key:'unstablePortal', name:'不稳定传送门', icon:'🌀', tags:['void','arcane','ethereal','time'], desc:'传送门会把额外敌人拉进战场,也会随机扰动首领施法节奏。', mod:{portalTickMs:24000, portalDurationMs:10000, bossCastJitter:true} },
+  { key:'defiasFoundry', name:'迪菲亚铸造间', icon:'⚙️', tags:['pirate','martial','mech','speed'], routeBias:0.25, desc:'矿道工坊会派出攻城射手和宝箱守卫,击败守卫可获得额外金币。', mod:{shooterChance:0.45, treasureEvery:3, guardShieldPct:0.035, bonusGoldPct:0.16} },
+  { key:'scarletReliquary', name:'血色圣物厅', icon:'✨', tags:['holy','fortress','noble'], routeBias:0.25, desc:'修道院圣物会在首领战生成祭坛;祭坛存活时周期治疗敌人。', mod:{altarBoss:true, altarTickMs:15000, altarDurationMs:17000, altarHealPct:0.04} },
+  { key:'blackrockForge', name:'黑石熔炉线', icon:'🌋', tags:['fire','forge','orc','martial'], routeBias:0.25, desc:'熔炉喷口会周期灼烧玩家,黑铁军械还会派出攻城射手。', mod:{flameTickMs:9800, flameDamagePct:0.046, burnDpsPct:0.012, burnMs:4200, shooterChance:0.28} },
+  { key:'trollArena', name:'巨魔竞技台', icon:'🪬', tags:['troll','blood','martial','beast','nature','shadow'], routeBias:0.25, desc:'竞技台开场会提高敌人攻速,并可能派出伏击斗士。', mod:{ambushChance:0.36, openerHasteMs:7600, openerHastePct:0.24, treasureEvery:4, bonusGoldPct:0.12} },
+  { key:'necromancyClass', name:'通灵讲堂', icon:'💀', tags:['undead','shadow','blood','plague'], routeBias:0.25, desc:'通灵讲堂会召出迷宫幻影,首领房间还可能立起鲜血祭坛。', mod:{mazeTickMs:20500, illusionDurationMs:12500, vulnerableMs:4600, fearMs:1000, altarBoss:true, altarTickMs:18000, altarHealPct:0.036} },
+  { key:'titanRelay', name:'泰坦继电厅', icon:'🔷', tags:['titan','mech','arcane','storm'], routeBias:0.25, desc:'泰坦回路会刷出失控圣物,并用风暴导管周期链击玩家资源。', mod:{relicTickMs:21000, relicDurationMs:9500, stormTickMs:14500, stormDamagePct:0.035, drainPct:0.10, silenceMs:900} },
+  { key:'nagaFloodgate', name:'娜迦水闸', icon:'🌊', tags:['naga','water'], routeBias:0.25, desc:'水闸周期施加冰缚并燃烧资源,拖慢战斗节奏。', mod:{frostTickMs:15000, chillMs:5600, shieldPct:0.024, stormTickMs:17000, stormDamagePct:0.028, drainPct:0.09, silenceMs:800} },
+  { key:'webbedNest', name:'蛛网巢室', icon:'🕸️', tags:['spider','poison','beast'], routeBias:0.25, desc:'蛛网巢室更容易触发伏击,并在暗影迷宫中制造幻影干扰。', mod:{ambushChance:0.34, openerHasteMs:6200, openerHastePct:0.18, mazeTickMs:23500, illusionDurationMs:10000, vulnerableMs:3600} },
 ];
 
 const DUNGEON_MECHANIC_CODEX = [
@@ -373,18 +381,26 @@ function getDungeonCombatRooms(dg, contractLevel) {
   if (!dg) return [];
   const level = Math.max(0, Math.min(3, Math.floor(contractLevel || 0)));
   const count = level >= 3 ? 3 : (level >= 1 ? 2 : 1);
+  const routeTags = (typeof dungeonTraitTagsForDungeon === 'function') ? dungeonTraitTagsForDungeon(dg.key) : [];
   const day = Math.floor(Date.now() / 86400000);
   let seed = ((dg.reqLvl || 1) * 811 + (dg.waves || 1) * 193 + level * 997 + (day % 100000) * 389) % 2147483647;
   const key = dg.key || '';
   for (let i = 0; i < key.length; i++) seed = (seed * 47 + key.charCodeAt(i)) % 2147483647;
   seed = seed || 1;
-  const pool = DUNGEON_COMBAT_ROOMS.slice();
-  for (let i = pool.length - 1; i > 0; i--) {
+  const score = room => (room.tags || []).filter(tag => routeTags.includes(tag)).length + (room.routeBias || 0);
+  const withRoll = room => {
     seed = (seed * 16807) % 2147483647;
-    const j = seed % (i + 1);
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-  return pool.slice(0, Math.min(count, pool.length)).map(r => ({ ...r, dungeonCombatRoom:true }));
+    return { room, score:score(room), roll:seed };
+  };
+  const preferredEntries = routeTags.length ? DUNGEON_COMBAT_ROOMS.filter(room => score(room) > 0).map(withRoll) : [];
+  const preferredKeys = new Set(preferredEntries.map(entry => entry.room.key));
+  const genericEntries = DUNGEON_COMBAT_ROOMS.filter(room => !preferredKeys.has(room.key)).map(withRoll);
+  const entries = preferredEntries.length ? preferredEntries.concat(genericEntries) : DUNGEON_COMBAT_ROOMS.map(withRoll);
+  entries.sort((a, b) => (b.score - a.score) || (a.roll - b.roll));
+  return entries.slice(0, Math.min(count, entries.length)).map(({ room:r }) => {
+    const matchedTags = (r.tags || []).filter(tag => routeTags.includes(tag));
+    return { ...r, matchedTags, routeMatched:matchedTags.length > 0, dungeonCombatRoom:true };
+  });
 }
 
 const DUNGEON_TACTICAL_EDICTS = (() => {
