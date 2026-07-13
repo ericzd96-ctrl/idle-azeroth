@@ -3966,6 +3966,26 @@ function applyDungeonBossChallengesOnSpawn(mon, bossData, dg, ds){
   mon._bossChallenges = challenges.map(ch => Object.assign({}, ch, { progress:0, completed:false, failed:false, startedAt:Date.now() }));
   if(ds){
     ds.bossChallengesStarted = (ds.bossChallengesStarted || 0) + mon._bossChallenges.length;
+    ds.bossChallengeSeals = ds.bossChallengeSeals || {};
+    for(const ch of mon._bossChallenges){
+      const key = ch.key || ch.name;
+      if(!key) continue;
+      if(!ds.bossChallengeSeals[key]){
+        ds.bossChallengeSeals[key] = {
+          key,
+          name:ch.name,
+          icon:ch.icon,
+          desc:ch.desc,
+          event:ch.event,
+          target:ch.target,
+          seconds:ch.seconds,
+          hpPct:ch.hpPct,
+          started:0,
+          completed:0,
+        };
+      }
+      ds.bossChallengeSeals[key].started = (ds.bossChallengeSeals[key].started || 0) + 1;
+    }
   }
   showMonsterFloat(mon, `🏅挑战×${mon._bossChallenges.length}`, '#facc15', { variant:'boss', scale:1.04 });
 }
@@ -3983,7 +4003,28 @@ function completeDungeonBossChallenge(mon, ch, reason){
   ch.completedAt = Date.now();
   ch.reason = reason || ch.name;
   const ds = state.dungeonState || state.mythicState;
-  if(ds) ds.bossChallengesCompleted = (ds.bossChallengesCompleted || 0) + 1;
+  if(ds){
+    ds.bossChallengesCompleted = (ds.bossChallengesCompleted || 0) + 1;
+    const key = ch.key || ch.name;
+    ds.bossChallengeSeals = ds.bossChallengeSeals || {};
+    if(key){
+      if(!ds.bossChallengeSeals[key]){
+        ds.bossChallengeSeals[key] = {
+          key,
+          name:ch.name,
+          icon:ch.icon,
+          desc:ch.desc,
+          event:ch.event,
+          target:ch.target,
+          seconds:ch.seconds,
+          hpPct:ch.hpPct,
+          started:0,
+          completed:0,
+        };
+      }
+      ds.bossChallengeSeals[key].completed = (ds.bossChallengeSeals[key].completed || 0) + 1;
+    }
+  }
   showMonsterFloat(mon, `🏅${ch.name}`, '#facc15', { variant:'boss', scale:1.08 });
   log(`🏅 Boss挑战完成: ${mon.bossName || mon.name} - ${ch.name}`, 'epic');
   return true;

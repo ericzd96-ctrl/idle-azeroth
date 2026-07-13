@@ -816,7 +816,7 @@ function monsterEncounterDetailHtml(mon, bossData) {
     html += monsterMechanicSectionHtml('Boss挑战', '#fde68a', challengeList, 'achievement_bg_killxenemies_generalsroom', ch => ({
       icon:ch.icon,
       name:ch.name,
-      meta:(typeof ch.target === 'number' && ch.target > 1) ? `${Math.min(ch.progress || 0, ch.target)}/${ch.target}` : ((ch.completed || ch.failed) ? (ch.completed ? '已完成' : '失败') : ''),
+      meta:[(typeof ch.target === 'number' && ch.target > 1) ? `${Math.min(ch.progress || 0, ch.target)}/${ch.target}` : '', (typeof bossChallengeMetaText === 'function') ? bossChallengeMetaText(ch) : '', (ch.completed || ch.failed) ? (ch.completed ? '已完成' : '失败') : ''].filter(Boolean).join(' · '),
       desc:ch.desc || '额外挑战目标'
     }));
   }

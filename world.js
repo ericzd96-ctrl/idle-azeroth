@@ -916,6 +916,28 @@ function dungeonClearCodexTip(key, meta) {
   });
 }
 
+function dungeonBossChallengeMeta(seal) {
+  if (!seal) return '';
+  const count = `${seal.completed || 0}/${seal.started || 0}`;
+  if (seal.key === 'swiftKill' || seal.seconds) return `${count} · ${seal.seconds || 55}秒内击杀`;
+  if (seal.key === 'healthyFinish' || seal.hpPct) return `${count} · 收尾生命≥${Math.round((seal.hpPct || 0.35) * 100)}%`;
+  if (seal.target) return `${count} · 目标${seal.target}次`;
+  return count;
+}
+
+function dungeonBossChallengeSealTip(seal) {
+  return dungeonClearInlineTip({
+    name: seal?.name || 'Boss挑战',
+    icon: seal?.icon || '🏆',
+    desc: seal?.desc || '首领额外挑战目标。完成后会在通关结算中追加荣誉、金币、钻石或其他奖励。',
+    meta: dungeonBossChallengeMeta(seal),
+  }, {
+    fallbackIcon: 'achievement_bg_killxenemies_generalsroom',
+    color: (seal?.completed || 0) > 0 ? '#fde68a' : '#cbd5e1',
+    metaVisible: true,
+  });
+}
+
 function dungeonBountyClearTip(target, rewardText) {
   return dungeonClearInlineTip({
     name: target?.themeName || '副本悬赏',
@@ -1086,7 +1108,7 @@ function onDungeonClear(dg) {
     ? `<div class="muted" style="font-size:12px">${dungeonClearMetricTip('Boss弱点', '💠', '弱点出现后及时击破可制造首领破绽,并记录额外战斗表现。', `${dungeonStateSnapshot.bossWeakpointsBroken || 0}/${dungeonStateSnapshot.bossWeakpointsSpawned || 0}`, 'inv_misc_gem_diamond_02', '#fde68a')} 出现 ${dungeonStateSnapshot.bossWeakpointsSpawned || 0} 次</div>`
     : '';
   const bossChallengeHtml = dungeonStateSnapshot?.bossChallengesStarted && !(dungeonStateSnapshot?.contractLevel > 0)
-    ? `<div class="muted" style="font-size:12px">${dungeonClearCodexTip('bossChallenge', `${dungeonStateSnapshot.bossChallengesCompleted || 0}/${dungeonStateSnapshot.bossChallengesStarted || 0}`)} 完成${dungeonStateSnapshot.bossChallengeBonusGold ? ` · 奖励 +${dungeonStateSnapshot.bossChallengeBonusGold}金币` : ''}${dungeonStateSnapshot.bossChallengeBonusGems ? ` · +${dungeonStateSnapshot.bossChallengeBonusGems}钻石` : ''}</div>`
+    ? `<div class="muted" style="font-size:12px">${dungeonClearCodexTip('bossChallenge', `${dungeonStateSnapshot.bossChallengesCompleted || 0}/${dungeonStateSnapshot.bossChallengesStarted || 0}`)} 完成${dungeonStateSnapshot.bossChallengeBonusGold ? ` · 奖励 +${dungeonStateSnapshot.bossChallengeBonusGold}金币` : ''}${dungeonStateSnapshot.bossChallengeBonusGems ? ` · +${dungeonStateSnapshot.bossChallengeBonusGems}钻石` : ''}${dungeonStateSnapshot.bossChallengeSeals ? `<div style="margin-top:4px">${Object.values(dungeonStateSnapshot.bossChallengeSeals).map(dungeonBossChallengeSealTip).join(' · ')}</div>` : ''}</div>`
     : '';
   const bossGrandHtml = dungeonStateSnapshot?.bossGrandMechanicsAssigned && !(dungeonStateSnapshot?.contractLevel > 0)
     ? `<div class="muted" style="font-size:12px">${dungeonClearMetricTip('扩展Boss机制库', '🌌', '大规模首领机制池。每次副本会分配若干项并在战斗中记录实际触发。', `${dungeonStateSnapshot.bossGrandMechanicsTriggered || 0}/${dungeonStateSnapshot.bossGrandMechanicsAssigned || 0}`, 'spell_arcane_arcanetorrent', '#67e8f9')}: 200项</div>`
@@ -1104,7 +1126,9 @@ function onDungeonClear(dg) {
         dungeonClearMetricTip('Boss战术', '🎭', '需要打断、转火、击破目标或防御覆盖的首领战术。', `${dungeonStateSnapshot.bossTacticEvents || 0}次`, 'ability_warrior_battleshout', '#fca5a5'),
         dungeonClearMetricTip('扩展机制', '🌌', '扩展Boss机制库在本次副本中的实际触发。', `${dungeonStateSnapshot.bossGrandMechanicsTriggered || 0}次`, 'spell_arcane_arcanetorrent', '#67e8f9'),
         dungeonClearMetricTip('弱点击破', '💠', '击破首领弱点的次数。', `${dungeonStateSnapshot.bossWeakpointsBroken || 0}/${dungeonStateSnapshot.bossWeakpointsSpawned || 0}`, 'inv_misc_gem_diamond_02', '#fde68a'),
-        dungeonClearCodexTip('bossChallenge', `${dungeonStateSnapshot.bossChallengesCompleted || 0}/${dungeonStateSnapshot.bossChallengesStarted || 0}`),
+        dungeonStateSnapshot.bossChallengeSeals
+          ? Object.values(dungeonStateSnapshot.bossChallengeSeals).map(dungeonBossChallengeSealTip).join(' · ')
+          : dungeonClearCodexTip('bossChallenge', `${dungeonStateSnapshot.bossChallengesCompleted || 0}/${dungeonStateSnapshot.bossChallengesStarted || 0}`),
         dungeonClearCodexTip('combatRoom', `${dungeonStateSnapshot.roomEvents || 0}次`),
         dungeonClearMetricTip('环境触发', '🧭', '契约环境危害在本次副本中的触发次数。', `${dungeonStateSnapshot.environmentHits || 0}次`, 'spell_frost_arcticwinds', '#67e8f9'),
         dungeonClearCodexTip('timeEdict', `${dungeonStateSnapshot.edictHits || 0}次`),
