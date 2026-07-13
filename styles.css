@@ -494,6 +494,69 @@ h1 {
   cursor: pointer;
   background: rgba(51, 65, 85, .78);
 }
+.comp-tip {
+  cursor: help;
+}
+.comp-glossary-panel {
+  margin: 10px 0;
+  padding: 9px 10px;
+  border: 1px solid rgba(250, 204, 21, .22);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(30, 41, 59, .34), rgba(15, 23, 42, .24));
+}
+.comp-glossary-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 7px;
+}
+.comp-glossary-head span {
+  color: #94a3b8;
+  font-size: 10px;
+}
+.comp-glossary-row {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 7px;
+  align-items: start;
+  margin-top: 6px;
+  color: #cbd5e1;
+  font-size: 10px;
+}
+.comp-glossary-row > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.comp-glossary-chip,
+.comp-effect-tag {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  border: 1px solid rgba(148, 163, 184, .20);
+  border-radius: 5px;
+  padding: 2px 7px;
+  background: rgba(15, 23, 42, .50);
+  color: #cbd5e1;
+  font-size: 10px;
+  line-height: 1.35;
+  word-break: break-word;
+}
+.comp-glossary-chip.role-tank { border-color: rgba(96, 165, 250, .34); color: #bfdbfe; }
+.comp-glossary-chip.role-heal { border-color: rgba(52, 211, 153, .34); color: #bbf7d0; }
+.comp-glossary-chip.role-dps { border-color: rgba(248, 113, 113, .34); color: #fecaca; }
+.comp-glossary-chip.trait-summon { border-color: rgba(167, 139, 250, .34); color: #ddd6fe; }
+.comp-glossary-chip.trait-heal { border-color: rgba(52, 211, 153, .34); color: #bbf7d0; }
+.comp-glossary-chip.trait-support { border-color: rgba(125, 211, 252, .34); color: #bae6fd; }
+.comp-glossary-chip.trait-control { border-color: rgba(251, 191, 36, .34); color: #fde68a; }
+.comp-glossary-note {
+  margin-top: 7px;
+  color: #94a3b8;
+  font-size: 10px;
+  line-height: 1.45;
+}
 .comp-search-row {
   display: flex;
   gap: 6px;
@@ -741,6 +804,17 @@ h1 {
 .comp-detail-skill.sig {
   border-color: rgba(250, 204, 21, .34);
   background: rgba(113, 63, 18, .22);
+}
+.comp-detail-effect-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+.comp-effect-tag {
+  border-color: rgba(250, 204, 21, .22);
+  background: rgba(30, 41, 59, .56);
+  color: #fde68a;
 }
 .comp-detail-bond.active {
   border-color: rgba(74, 222, 128, .32);

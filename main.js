@@ -658,19 +658,20 @@ function setupDelegation() {
   (() => {
     const root = $('companion-list'); if (!root) return;
     const tip = $('compare-tip');
+    const compTipSelector = '.comp-skill,.comp-tip[data-tip],.comp-bond-member[data-tip],.comp-bond-chip[data-tip],.comp-mission-reward-preview[data-tip],.comp-mission-roster-chip[data-tip],.comp-mission-best[data-tip],.comp-mission-send[data-tip],.comp-mission-score[data-tip]';
     root.addEventListener('mouseover', e => {
       if (!hoverTipsEnabled()) return;
-      const sk = e.target.closest('.comp-skill,.comp-bond-member[data-tip],.comp-bond-chip[data-tip],.comp-mission-reward-preview[data-tip],.comp-mission-roster-chip[data-tip],.comp-mission-best[data-tip],.comp-mission-send[data-tip],.comp-mission-score[data-tip]'); if (!sk) return;
+      const sk = e.target.closest(compTipSelector); if (!sk) return;
       tip.querySelector('.compare-head').innerHTML = sk.dataset.tip || '';
       tip.querySelector('.compare-body').innerHTML = '';
       tip.style.display = 'block';
       positionTip(tip, e);
     });
-    root.addEventListener('mousemove', e => { if (!hoverTipsEnabled()) return; if (tip.style.display === 'block' && e.target.closest('.comp-skill')) positionTip(tip, e); });
-    root.addEventListener('mouseout', e => { if (!hoverTipsEnabled()) return; const sk = e.target.closest('.comp-skill'); if (sk && (typeof _tipPinned === 'undefined' || !_tipPinned) && (!e.relatedTarget || !e.relatedTarget.closest || !e.relatedTarget.closest('.comp-skill'))) tip.style.display = 'none'; });
+    root.addEventListener('mousemove', e => { if (!hoverTipsEnabled()) return; if (tip.style.display === 'block' && e.target.closest(compTipSelector)) positionTip(tip, e); });
+    root.addEventListener('mouseout', e => { if (!hoverTipsEnabled()) return; const sk = e.target.closest(compTipSelector); if (sk && (typeof _tipPinned === 'undefined' || !_tipPinned) && (!e.relatedTarget || !e.relatedTarget.closest || !e.relatedTarget.closest(compTipSelector))) tip.style.display = 'none'; });
     // 触屏点击固定
     root.addEventListener('click', e => {
-      const sk = e.target.closest('.comp-skill'); if (!sk) return;
+      const sk = e.target.closest(compTipSelector); if (!sk) return;
       e.stopPropagation();
       if (typeof _tipPinned !== 'undefined' && _tipPinned && _tipPinnedOwner === sk) { if (typeof unpinTip === 'function') unpinTip(); }
       else { if (typeof _tipPinned !== 'undefined' && _tipPinned) { if (typeof unpinTip === 'function') unpinTip(); } tip.querySelector('.compare-head').innerHTML = sk.dataset.tip || ''; tip.querySelector('.compare-body').innerHTML = ''; tip.style.display = 'block'; positionTip(tip, e); if (typeof _tipPinned !== 'undefined') { _tipPinned = true; _tipPinnedOwner = sk; } }

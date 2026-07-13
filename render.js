@@ -2914,16 +2914,40 @@ const COMPANION_SORT_OPTIONS = [
 ];
 const COMPANION_QUALITY_ORDER = { orange:0, purple:1, blue:2, green:3, white:4 };
 const COMPANION_ROLE_ORDER = { tank:0, heal:1, dps:2 };
+const COMPANION_ROLE_META = {
+  tank: { label:'坦克', desc:'偏防御与承伤，定位加成会给主角提供生命、防御或全能类生存收益。' },
+  heal: { label:'辅助', desc:'偏治疗、护盾、增益与续航，定位加成通常提高循环稳定性或持续作战能力。' },
+  dps: { label:'输出', desc:'偏直接伤害、爆发和处决，定位加成主要提高攻击、暴击或伤害效率。' },
+};
 const COMPANION_TRAIT_META = {
-  summon: { label:'召唤', tone:'summon' },
-  heal: { label:'治疗', tone:'heal' },
-  support: { label:'辅助', tone:'support' },
-  control: { label:'控制', tone:'control' },
+  summon: { label:'召唤', tone:'summon', desc:'拥有召唤物或召唤类技能，适合拉长战斗、填补输出窗口。' },
+  heal: { label:'治疗', tone:'heal', desc:'拥有回复生命的技能，能救主角、救随从，或自动选择更危险的目标。' },
+  support: { label:'辅助', tone:'support', desc:'拥有护盾、增益或净化效果，用来稳定节奏、抵消减益和提高爆发窗口。' },
+  control: { label:'控制', tone:'control', desc:'拥有减速、击晕、破甲、状态标记等控场效果，可延缓敌人或制造增伤条件。' },
 };
 function companionSkillPool(tpl){
   const skills = ((tpl&&tpl.skills)||[]).slice();
   if (tpl?.signature) skills.push(Object.assign({_signature:true}, tpl.signature));
   return skills.filter(Boolean);
+}
+function companionSkillEffectTags(sk){
+  if (!sk) return [];
+  const tags = [];
+  const add = (label, tip) => tags.push({ label, tip });
+  if (sk.type === 'summon' || sk.summonCount) add('召唤', '制造额外助战单位，适合补输出窗口和拉长战斗。');
+  if (sk.type === 'dmg' || sk.mul || sk.alwaysCrit || sk.executeBonus || sk.bonusVsBoss) add('伤害', '直接造成伤害；倍率、暴击、处决和首领增伤会写在技能说明中。');
+  if (sk.dot || sk.dotPct) add('持续伤害', '给目标挂持续伤害，后续每秒造成额外伤害。');
+  if (sk.stun || sk.slow || sk.silence || sk.cripple || sk.weaken || sk.sunder || sk.debuff === 'sunder' || sk.stateKey) add('控制', '减速、击晕、破甲或状态标记等效果，可拖慢敌人或制造后续增伤条件。');
+  if (sk.type === 'heal' || sk.heal || sk.healPct || sk.healPctHero || sk.healPctComp) add('治疗', '回复主角、随从或自动选择更危险的一方。');
+  if (sk.type === 'buff' || sk.buff || sk.shieldPct || sk.shieldPctHero || sk.shieldPctComp || sk.cleanse) add('辅助', '提供护盾、增益或净化，偏向稳定节奏与爆发窗口。');
+  if (sk.mode === 'passive') add('被动', '无需主动释放，满足条件后按规则持续生效。');
+  if (sk._signature) add('专属', '该随从独有技能，会随详情和悬浮说明一起展示。');
+  return tags;
+}
+function companionSkillEffectTagsHtml(sk){
+  const tags = companionSkillEffectTags(sk);
+  if (!tags.length) return '';
+  return `<div class="comp-detail-effect-tags">${tags.map(tag => `<span class="comp-effect-tag comp-tip" data-tip="${companionTipAttr(`<b>${tag.label}</b><br>${tag.tip}`)}">${tag.label}</span>`).join('')}</div>`;
 }
 function companionTraitFlags(tpl){
   const flags = { summon:false, heal:false, support:false, control:false };
@@ -2936,7 +2960,7 @@ function companionTraitFlags(tpl){
   return flags;
 }
 function companionRoleLabel(role){
-  return role === 'tank' ? '坦克' : role === 'heal' ? '辅助' : '输出';
+  return COMPANION_ROLE_META[role]?.label || '输出';
 }
 function companionSortLabel(value){
   return COMPANION_SORT_OPTIONS.find(opt => opt.value === value)?.label || '品质';
@@ -2973,19 +2997,38 @@ function companionEntryCompare(a, b, sortValue){
   }
   return companionQualityCompare(a, b);
 }
-function companionBadge(label, tone){
-  return `<span class="comp-badge is-${tone}">${label}</span>`;
+function companionTipAttr(html){
+  return String(html || '').replace(/"/g, '&quot;');
+}
+function companionRoleTipHtml(role){
+  const meta = COMPANION_ROLE_META[role] || COMPANION_ROLE_META.dps;
+  const bonus = Object.entries((typeof ROLE_BONUS === 'object' && ROLE_BONUS[role]) || {}).map(([k, v]) => (typeof fmtMod === 'function') ? fmtMod(k, v) : `${k}+${v}`).join(' ');
+  return `<b>定位：${tipAttrText(meta.label)}</b><br>${tipAttrText(meta.desc)}${bonus ? `<br><span class="muted">出战定位加成：${tipAttrText(bonus)}</span>` : ''}`;
+}
+function companionTraitTipHtml(key){
+  const meta = COMPANION_TRAIT_META[key];
+  if (!meta) return '';
+  return `<b>特性：${tipAttrText(meta.label)}</b><br>${tipAttrText(meta.desc)}`;
+}
+function companionQualityTipHtml(q){
+  if (!q) return '';
+  const skillText = q.skills ? `${q.skills} 个基础主动技能` : '随从技能数量随模板决定';
+  return `<b>品质：${tipAttrText(q.name)}</b><br>决定随从基础倍率、抽取权重和同品质通用碎片池。<br><span class="muted">${tipAttrText(skillText)} · 抽取权重 ${q.weight ?? '-'}</span>`;
+}
+function companionBadge(label, tone, tip){
+  const tipAttr = tip ? ` data-tip="${companionTipAttr(tip)}"` : '';
+  return `<span class="comp-badge comp-tip is-${tone}"${tipAttr}>${label}</span>`;
 }
 function companionMetaBadges(tpl){
   if (!tpl) return '';
   const q = compQuality(tpl);
   const traits = companionTraitFlags(tpl);
   const badges = [
-    companionBadge(q.name, `quality-${q.key}`),
-    companionBadge(companionRoleLabel(tpl.role), tpl.role || 'dps'),
+    companionBadge(q.name, `quality-${q.key}`, companionQualityTipHtml(q)),
+    companionBadge(companionRoleLabel(tpl.role), tpl.role || 'dps', companionRoleTipHtml(tpl.role)),
   ];
   for (const [key, meta] of Object.entries(COMPANION_TRAIT_META)) {
-    if (traits[key]) badges.push(companionBadge(meta.label, meta.tone));
+    if (traits[key]) badges.push(companionBadge(meta.label, meta.tone, companionTraitTipHtml(key)));
   }
   return `<div class="comp-card-tags">${badges.join('')}</div>`;
 }
@@ -3130,6 +3173,24 @@ function companionFilterPanelHtml(entries){
     ${companionSortRow()}
   </div>`;
 }
+function companionGlossaryPanelHtml(){
+  const roleCards = Object.entries(COMPANION_ROLE_META).map(([key, meta]) => {
+    const tip = companionRoleTipHtml(key);
+    return `<span class="comp-glossary-chip comp-tip role-${key}" data-tip="${companionTipAttr(tip)}">${meta.label}</span>`;
+  }).join('');
+  const traitCards = Object.entries(COMPANION_TRAIT_META).map(([key, meta]) =>
+    `<span class="comp-glossary-chip comp-tip trait-${key}" data-tip="${companionTipAttr(companionTraitTipHtml(key))}">${meta.label}</span>`
+  ).join('');
+  return `<div class="comp-glossary-panel">
+    <div class="comp-glossary-head">
+      <b>随从术语速查</b>
+      <span>悬浮或点按标签查看效果</span>
+    </div>
+    <div class="comp-glossary-row"><span>定位</span><div>${roleCards}</div></div>
+    <div class="comp-glossary-row"><span>特性</span><div>${traitCards}</div></div>
+    <div class="comp-glossary-note">详情面板会把技能拆成伤害、控制、治疗、辅助等效果标签；升星只提高随从成长与专属加成，不改变这里的规则文字。</div>
+  </div>`;
+}
 function companionDrawGuideHtml(entries) {
   if (typeof COMPANION_QUALITY === 'undefined') return '';
   const ownedMap = new Map((state.companions || []).map(comp => [comp.key, comp]));
@@ -3255,7 +3316,7 @@ function companionBondChipsHtml(tpl, entries) {
 function companionDetailSkillListHtml(tpl) {
   const skills = companionSkillPool(tpl);
   if (!skills.length) return '<div class="muted">暂无随从技能</div>';
-  return `<div class="comp-detail-skill-grid">${skills.map(sk => `<div class="comp-detail-skill${sk._signature ? ' sig' : ''}">${companionSkillTipHtml(sk)}</div>`).join('')}</div>`;
+  return `<div class="comp-detail-skill-grid">${skills.map(sk => `<div class="comp-detail-skill${sk._signature ? ' sig' : ''}">${companionSkillTipHtml(sk)}${companionSkillEffectTagsHtml(sk)}</div>`).join('')}</div>`;
 }
 function companionDetailBondsHtml(tpl, entries) {
   if (!tpl || typeof COMPANION_BONDS === 'undefined') return '';
@@ -3738,6 +3799,7 @@ function renderCompanion() {
 
   html += companionDrawGuideHtml(entries);
   html += companionFilterPanelHtml(entries);
+  html += companionGlossaryPanelHtml();
   html += companionDetailPanelHtml(entries);
   html += companionBondRoadmapHtml(entries);
   html += companionAdvisorPanelHtml(entries);
