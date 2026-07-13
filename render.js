@@ -2902,7 +2902,7 @@ function compSkillChips(tpl){
     return `<span class="comp-skill${s._signature?' sig':''}" data-tip="${tip}">${skillIconHtml}<span class="cs-name">${s.name}</span></span>`;
   }).join('');
 }
-const COMPANION_FILTER_DEFAULTS = { ownership:'all', quality:'all', role:'all', trait:'all' };
+const COMPANION_FILTER_DEFAULTS = { ownership:'all', quality:'all', role:'all', trait:'all', bond:'all' };
 let companionFilters = Object.assign({}, COMPANION_FILTER_DEFAULTS);
 const COMPANION_TRAIT_META = {
   summon: { label:'召唤', tone:'summon' },
@@ -2960,12 +2960,34 @@ function buildCompanionEntries(){
     };
   });
 }
+function companionBondId(bond) {
+  if (typeof COMPANION_BONDS === 'undefined') return 'all';
+  const idx = COMPANION_BONDS.indexOf(bond);
+  return idx >= 0 ? String(idx) : 'all';
+}
+function companionBondById(id) {
+  if (typeof COMPANION_BONDS === 'undefined' || id === 'all') return null;
+  const idx = parseInt(id, 10);
+  return Number.isFinite(idx) ? COMPANION_BONDS[idx] || null : null;
+}
+function companionBondMissingKeys(bond, entries) {
+  if (!bond) return [];
+  const ownedKeys = new Set((entries || buildCompanionEntries()).filter(entry => entry.isOwned).map(entry => entry.tpl.key));
+  return bond.keys.filter(key => !ownedKeys.has(key));
+}
 function companionMatchesFilters(entry, filters){
   if (filters.ownership === 'owned' && !entry.isOwned) return false;
   if (filters.ownership === 'missing' && entry.isOwned) return false;
   if (filters.quality !== 'all' && entry.quality !== filters.quality) return false;
   if (filters.role !== 'all' && entry.tpl.role !== filters.role) return false;
   if (filters.trait !== 'all' && !entry.traits[filters.trait]) return false;
+  if (filters.bond !== 'all') {
+    const bond = companionBondById(filters.bond);
+    if (!bond) return false;
+    const missing = companionBondMissingKeys(bond);
+    const targetKeys = missing.length ? missing : bond.keys;
+    if (!targetKeys.includes(entry.tpl.key)) return false;
+  }
   return true;
 }
 function companionFilterCount(entries, group, value){
@@ -2987,9 +3009,14 @@ function companionFilterSummaryText(){
   if (companionFilters.quality !== 'all') labels.push({ white:'白色', green:'绿色', blue:'蓝色', purple:'紫色', orange:'橙色' }[companionFilters.quality] || companionFilters.quality);
   if (companionFilters.role !== 'all') labels.push(companionRoleLabel(companionFilters.role));
   if (companionFilters.trait !== 'all') labels.push(COMPANION_TRAIT_META[companionFilters.trait]?.label || companionFilters.trait);
+  const bond = companionBondById(companionFilters.bond);
+  if (bond) labels.push(`羁绊:${bond.name}`);
   return labels.length ? labels.join(' / ') : '全部随从';
 }
 function companionFilterPanelHtml(entries){
+  const trackedBond = companionBondById(companionFilters.bond);
+  const trackedMissing = trackedBond ? companionBondMissingKeys(trackedBond, entries) : [];
+  const trackedNames = trackedMissing.map(key => COMPANIONS.find(c => c.key === key)?.name || key).join('、');
   return `<div class="comp-filter-panel">
     <div class="comp-filter-head">
       <div>
@@ -2998,6 +3025,11 @@ function companionFilterPanelHtml(entries){
       </div>
       <button class="comp-filter-reset" data-action="compresetfilter">重置筛选</button>
     </div>
+    ${trackedBond ? `<div class="comp-filter-bond">
+      <div><b>⚜️ 正在追踪: ${tipAttrText(trackedBond.name)}</b><span>${trackedMissing.length ? `缺 ${trackedMissing.length} 名` : '已完成'}</span></div>
+      <div class="muted">${trackedMissing.length ? `缺口: ${tipAttrText(trackedNames)}` : '这条羁绊已激活,列表改为显示全部成员。'}</div>
+      <button data-action="clearcompbond">取消追踪</button>
+    </div>` : ''}
     ${companionFilterRow(entries, 'ownership', '收集', [
       { value:'all', label:'全部' },
       { value:'owned', label:'已拥有' },
@@ -3099,6 +3131,7 @@ function companionBondRoadmapHtml(entries) {
   const entryMap = new Map((entries || []).map(entry => [entry.tpl.key, entry]));
   const activeCnt = COMPANION_BONDS.filter(bond => bond.keys.every(key => entryMap.get(key)?.isOwned)).length;
   const cards = COMPANION_BONDS.map(bond => {
+    const bondId = companionBondId(bond);
     const members = bond.keys.map(key => {
       const entry = entryMap.get(key);
       const tpl = entry?.tpl || COMPANIONS.find(c => c.key === key);
@@ -3117,6 +3150,8 @@ function companionBondRoadmapHtml(entries) {
     const route = active
       ? '全员入队,属性已计入角色面板'
       : `下一目标: ${tipAttrText(nextTarget?.name || missing.map(m => m.key).join('、'))} · ${nextTarget ? `${compQuality(nextTarget).name}/${companionRoleLabel(nextTarget.role)}` : '继续抽取'}`;
+    const tracked = companionFilters.bond === bondId;
+    const actionText = active ? '查看成员' : tracked ? '追踪中' : '追踪缺口';
     return `<div class="comp-bond-card ${active ? 'active' : ''}" style="--bond-pct:${pct}%">
       <div class="comp-bond-card-head">
         <b>${active ? '✅' : '🔒'} ${tipAttrText(bond.name)}</b>
@@ -3126,6 +3161,9 @@ function companionBondRoadmapHtml(entries) {
       <div class="comp-bond-progress"><i></i></div>
       <div class="comp-bond-effect">${tipAttrText(companionBondModText(bond) || bond.desc || '')}</div>
       <div class="comp-bond-route">${tipAttrText(route)}</div>
+      <div class="comp-bond-actions">
+        <button class="${tracked ? 'gold' : 'primary'}" data-action="trackcompbond" data-bond="${bondId}">${actionText}</button>
+      </div>
     </div>`;
   }).join('');
   return `<div class="comp-bond-roadmap">
@@ -3277,6 +3315,23 @@ function companionMissionPanelHtml(entries){
 function companionSetFilter(group, value){
   if (!Object.prototype.hasOwnProperty.call(companionFilters, group)) return;
   companionFilters[group] = companionFilters[group] === value ? 'all' : value;
+  renderCompanion();
+}
+function companionTrackBond(id){
+  const nextId = companionFilters.bond === id ? 'all' : id;
+  companionFilters.bond = nextId;
+  const bond = companionBondById(nextId);
+  if (bond) {
+    const missing = companionBondMissingKeys(bond);
+    companionFilters.ownership = missing.length ? 'missing' : 'all';
+    companionFilters.quality = 'all';
+    companionFilters.role = 'all';
+    companionFilters.trait = 'all';
+  }
+  renderCompanion();
+}
+function companionClearBondTrack(){
+  companionFilters.bond = 'all';
   renderCompanion();
 }
 function companionResetFilters(){

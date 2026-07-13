@@ -635,6 +635,8 @@ function setupDelegation() {
     const act=btn.dataset.action;
     if(act==='compfilter'){ companionSetFilter(btn.dataset.group, btn.dataset.value); return; }
     if(act==='compresetfilter'){ companionResetFilters(); return; }
+    if(act==='trackcompbond'){ companionTrackBond(btn.dataset.bond); return; }
+    if(act==='clearcompbond'){ companionClearBondTrack(); return; }
     if(act==='startcompmission'){ startCompanionMission(btn.dataset.comp, btn.dataset.mission); return; }
     if(act==='claimcompmission'){ claimCompanionMission(btn.dataset.id); return; }
     const idx=parseInt(btn.dataset.idx, 10);
