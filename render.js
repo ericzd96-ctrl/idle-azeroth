@@ -3118,6 +3118,39 @@ function companionUpgradePreviewHtml(tpl, comp, options) {
 function companionBondModText(bond) {
   return Object.entries(bond?.mod || {}).map(([k, v]) => (typeof fmtMod === 'function') ? fmtMod(k, v) : `${k}+${v}`).join(' ');
 }
+function companionBondTipHtml(bond, entries) {
+  if (!bond) return '';
+  const entryMap = new Map((entries || buildCompanionEntries()).map(entry => [entry.tpl.key, entry]));
+  const missing = companionBondMissingKeys(bond, entries);
+  const memberText = bond.keys.map(key => {
+    const entry = entryMap.get(key);
+    const tpl = entry?.tpl || COMPANIONS.find(c => c.key === key);
+    return `${entry?.isOwned ? '✅' : '□'} ${tpl?.name || key}`;
+  }).join('<br>');
+  const stateText = missing.length ? `还缺 ${missing.length} 名: ${missing.map(key => COMPANIONS.find(c => c.key === key)?.name || key).join('、')}` : '已激活:属性已计入角色面板';
+  return `<b>${tipAttrText(bond.name)}</b><br>${tipAttrText(companionBondModText(bond) || bond.desc || '')}<br>${tipAttrText(stateText)}<br>${memberText}`;
+}
+function companionBondChipsHtml(tpl, entries) {
+  if (!tpl || typeof COMPANION_BONDS === 'undefined' || !COMPANION_BONDS.length) return '';
+  const bonds = COMPANION_BONDS.filter(bond => bond.keys.includes(tpl.key));
+  if (!bonds.length) return '';
+  const chips = bonds.slice(0, 4).map(bond => {
+    const bondId = companionBondId(bond);
+    const missing = companionBondMissingKeys(bond, entries);
+    const active = missing.length === 0;
+    const tracked = companionFilters.bond === bondId;
+    const tip = companionBondTipHtml(bond, entries).replace(/"/g, '&quot;');
+    const state = active ? '已激活' : `缺${missing.length}`;
+    return `<span class="comp-bond-chip ${active ? 'active' : 'locked'} ${tracked ? 'tracked' : ''}" data-tip="${tip}">⚜️ ${tipAttrText(bond.name)} <b>${state}</b></span>`;
+  });
+  if (bonds.length > chips.length) chips.push(`<span class="comp-bond-chip more">+${bonds.length - chips.length}</span>`);
+  return `<div class="comp-card-bonds">${chips.join('')}</div>`;
+}
+function companionCardTrackClass(tpl) {
+  if (!tpl || companionFilters.bond === 'all') return '';
+  const bond = companionBondById(companionFilters.bond);
+  return bond?.keys.includes(tpl.key) ? ' comp-card-tracked' : '';
+}
 function companionBondMemberTipHtml(tpl, entry) {
   if (!tpl) return '';
   const q = compQuality(tpl);
@@ -3396,10 +3429,11 @@ function renderCompanion() {
     const ownTxt = Object.entries(tpl?.bonus||{}).map(([k,v])=>(typeof fmtMod==='function')?fmtMod(k,+(v*starF).toFixed(1)):k+'+'+v).join(' ');
     const roleTxt = Object.entries(role).map(([k,v])=>(typeof fmtMod==='function')?fmtMod(k,v):k+'+'+v).join(' ');
     const compIconHtml = companionIconHtml(tpl, 18);
-    html += `<div class="shop-item" style="border-color:var(--${q.cls==='r-legend'?'legend':q.cls==='r-epic'?'epic':'border'})">
+    html += `<div class="shop-item${companionCardTrackClass(tpl)}" style="border-color:var(--${q.cls==='r-legend'?'legend':q.cls==='r-epic'?'epic':'border'})">
       <div class="row"><b>${compIconHtml} ${tpl?.name}</b><span class="pill" style="background:var(--accent);color:#000">出战中</span></div>
       <div class="muted"><span class="${q.cls}">${q.name}</span> · ${'⭐'.repeat(act.stars||1)} · ${roleTag(tpl?.role)} · ${(tpl?.skills?.length||0)}主动${tpl?.signature?'+1专属':''}</div>
       ${companionMetaBadges(tpl)}
+      ${companionBondChipsHtml(tpl, entries)}
       <div class="muted" style="font-size:10px">参战属性: 攻${fmt(st?.atk||0)} 防${fmt(st?.def||0)} 血${fmt(st?.hpMax||0)}</div>
       <div class="muted" style="font-size:10px;color:#6ee7b7">专属加成: ${ownTxt||'无'}</div>
       <div class="muted" style="font-size:10px;color:#93c5fd">定位加成: ${roleTxt||'无'}</div>
@@ -3424,10 +3458,11 @@ function renderCompanion() {
     const cost = getUpgradeCost(c);
     const canUp = !cost.maxed && cost.have>=cost.need;
     const compIconHtml = companionIconHtml(tpl, 18);
-    html += `<div class="shop-item">
+    html += `<div class="shop-item${companionCardTrackClass(tpl)}">
       <div class="row"><b>${compIconHtml} ${tpl.name}</b><span class="${q.cls}">${q.name} · ${(tpl.skills?.length||0)}主动${tpl.signature?'+1专属':''}</span></div>
       <div class="muted" style="font-size:10px">${'⭐'.repeat(c.stars||1)} · ${roleTag(tpl.role)} · ${tpl.desc}</div>
       ${companionMetaBadges(tpl)}
+      ${companionBondChipsHtml(tpl, entries)}
       ${tpl.signature?`<div class="muted" style="font-size:10px;color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')} ${tpl.signature.name}${tpl.signature.mode==='passive'?' [被动]':''}</div>`:''}
       ${companionUpgradePreviewHtml(tpl, c)}
       <div class="comp-skills">${compSkillChips(tpl)}</div>
@@ -3450,9 +3485,10 @@ function renderCompanion() {
     for (const t of missing) {
       const q = compQuality(t);
       const compIconHtml = companionIconHtml(t, 16);
-      html += `<div class="comp-missing-card" title="${t.name} · ${q.name} · ${roleTag(t.role)} · ${t.desc}">
+      html += `<div class="comp-missing-card${companionCardTrackClass(t)}" title="${t.name} · ${q.name} · ${roleTag(t.role)} · ${t.desc}">
         <div><b>${compIconHtml} <span class="${q.cls}">${t.name}</span></b></div>
         ${companionMetaBadges(t)}
+        ${companionBondChipsHtml(t, entries)}
         <div class="muted" style="font-size:10px">${t.desc}</div>
       </div>`;
     }
