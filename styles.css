@@ -799,6 +799,11 @@ h1 {
 .comp-badge.is-summon { border-color: rgba(250, 204, 21, .4); background: rgba(113, 63, 18, .3); color: #fde68a; }
 .comp-badge.is-support { border-color: rgba(165, 180, 252, .4); background: rgba(49, 46, 129, .3); color: #c7d2fe; }
 .comp-badge.is-control { border-color: rgba(244, 114, 182, .38); background: rgba(131, 24, 67, .28); color: #f9a8d4; }
+.comp-badge.is-locked {
+  border-color: rgba(248, 113, 113, .42);
+  background: rgba(127, 29, 29, .28);
+  color: #fecaca;
+}
 .comp-card-bonds {
   display: flex;
   flex-wrap: wrap;
@@ -865,6 +870,17 @@ h1 {
   flex-wrap: wrap;
   gap: 5px;
   margin-top: 6px;
+}
+.comp-use-lock-note {
+  width: 100%;
+  margin-top: 2px;
+  padding: 5px 7px;
+  border: 1px solid rgba(248, 113, 113, .24);
+  border-radius: 6px;
+  background: rgba(127, 29, 29, .18);
+  color: #fecaca;
+  font-size: 10px;
+  line-height: 1.35;
 }
 .comp-wishlist-panel {
   margin: 10px 0;

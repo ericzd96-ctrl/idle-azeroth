@@ -651,7 +651,7 @@ function setupDelegation() {
     if(act==='claimallcompmissions'){ claimAllCompanionMissions(); return; }
     if(act==='compsupport'){ companionSupportSet(btn.dataset.key); return; }
     const idx=parseInt(btn.dataset.idx, 10);
-    if(act==='usecomp'){state.activeCompanion=idx;if(typeof ensureCompanionSupportState==='function')ensureCompanionSupportState();initCompanionHp();recomputeStats();markDirty('companion','hero');log('🐾 随从出战!','good')}
+    if(act==='usecomp'){if(typeof companionUse==='function') companionUse(idx); else {state.activeCompanion=idx;if(typeof ensureCompanionSupportState==='function')ensureCompanionSupportState();initCompanionHp();recomputeStats();markDirty('companion','hero');log('🐾 随从出战!','good')}}
     else if(act==='upgradecomp')upgradeCompanion(idx);
     else if(act==='awakencomp')awakenCompanion(idx);
     else if(act==='unequipcomp'){state.activeCompanion=-1;state._compHp=0;recomputeStats();markDirty('companion','hero')}

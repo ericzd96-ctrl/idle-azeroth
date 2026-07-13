@@ -3114,7 +3114,20 @@ function companionTraitTipHtml(key){
 function companionQualityTipHtml(q){
   if (!q) return '';
   const skillText = q.skills ? `${q.skills} 个基础主动技能` : '随从技能数量随模板决定';
-  return `<b>品质：${tipAttrText(q.name)}</b><br>决定随从基础倍率、抽取权重和同品质通用碎片池。<br><span class="muted">${tipAttrText(skillText)} · 抽取权重 ${q.weight ?? '-'}</span>`;
+  const req = (typeof companionQualityUnlockLevel === 'function') ? companionQualityUnlockLevel(q.key) : 1;
+  const unlockText = req > 1 ? `${req}级后可出战/支援` : '1级即可出战/支援';
+  return `<b>品质：${tipAttrText(q.name)}</b><br>决定随从基础倍率、抽取权重和同品质通用碎片池。<br><span class="muted">${tipAttrText(skillText)} · 抽取权重 ${q.weight ?? '-'} · ${tipAttrText(unlockText)}</span>`;
+}
+function companionUseGateInfo(tpl){
+  return (typeof companionUseGate === 'function') ? companionUseGate(tpl) : { allowed:true, reqLevel:1, qName:compQuality(tpl).name, text:'' };
+}
+function companionUseLockNoteHtml(tpl){
+  const gate = companionUseGateInfo(tpl);
+  return gate.allowed ? '' : `<div class="comp-use-lock-note">🔒 ${tipAttrText(gate.text)}</div>`;
+}
+function companionUseTitle(tpl){
+  const gate = companionUseGateInfo(tpl);
+  return gate.allowed ? '出战' : gate.text;
 }
 function companionBadge(label, tone, tip){
   const tipAttr = tip ? ` data-tip="${companionTipAttr(tip)}"` : '';
@@ -3129,6 +3142,8 @@ function companionMetaBadges(tpl){
     companionBadge(q.name, `quality-${q.key}`, companionQualityTipHtml(q)),
     companionBadge(companionRoleLabel(tpl.role), tpl.role || 'dps', companionRoleTipHtml(tpl.role)),
   ];
+  const gate = companionUseGateInfo(tpl);
+  if (!gate.allowed) badges.push(companionBadge(`${gate.reqLevel}级解锁`, 'locked', `<b>等级封印</b><br>${tipAttrText(gate.text)}`));
   if (unique) badges.push(companionBadge(unique.name, 'unique', `<b>${tipAttrText(unique.icon || '✦')} ${tipAttrText(unique.name)}</b><br>${tipAttrText(unique.desc || '')}${typeof companionUniqueTraitSummary === 'function' ? `<br><span class="muted">${tipAttrText(companionUniqueTraitSummary(tpl) || '')}</span>` : ''}`));
   for (const [key, meta] of Object.entries(COMPANION_TRAIT_META)) {
     if (traits[key]) badges.push(companionBadge(meta.label, meta.tone, companionTraitTipHtml(key)));
@@ -3138,6 +3153,7 @@ function companionMetaBadges(tpl){
 function buildCompanionEntries(){
   const ownedMap = new Map();
   const wished = new Set(companionWishlistKeys());
+  const activeComp = (typeof getActiveCompanion === 'function') ? getActiveCompanion() : null;
   (state.companions || []).forEach((comp, idx) => ownedMap.set(comp.key, { comp, idx }));
   return (COMPANIONS || []).map(tpl => {
     const owned = ownedMap.get(tpl.key);
@@ -3146,7 +3162,7 @@ function buildCompanionEntries(){
       owned: owned?.comp || null,
       idx: owned?.idx ?? -1,
       isOwned: !!owned,
-      isActive: !!owned && owned.idx === state.activeCompanion,
+      isActive: !!owned && !!activeComp && activeComp.key === tpl.key && owned.idx === state.activeCompanion,
       isWished: wished.has(tpl.key),
       quality: compQuality(tpl).key,
       traits: companionTraitFlags(tpl),
@@ -3749,6 +3765,9 @@ function companionDetailPanelHtml(entries) {
   const uniqueSummary = (typeof companionUniqueTraitSummary === 'function') ? companionUniqueTraitSummary(tpl) : '';
   const veteran = (typeof companionVeteranInfo === 'function' && owned) ? companionVeteranInfo(tpl, owned) : null;
   const supportActive = (typeof companionSupportIsSlotted === 'function') ? companionSupportIsSlotted(tpl.key) : false;
+  const useGate = companionUseGateInfo(tpl);
+  const useDisabled = useGate.allowed ? '' : 'disabled';
+  const useTitle = tipAttrText(companionUseTitle(tpl));
   const resonanceInfo = (typeof companionResonanceInfo === 'function') ? companionResonanceInfo(tpl) : null;
   const cost = entry.isOwned ? getUpgradeCost(owned) : null;
   const canUp = cost && !cost.maxed && cost.have >= cost.need;
@@ -3758,15 +3777,16 @@ function companionDetailPanelHtml(entries) {
     : '';
   const wishButton = `<button data-action="compwish" data-key="${tpl.key}">${entry.isWished ? '取消目标' : '加入目标'}</button>`;
   const supportButton = entry.isOwned && !entry.isActive
-    ? `<button class="${supportActive ? 'gold' : ''}" data-action="compsupport" data-key="${tpl.key}">${supportActive ? '取消支援' : '设为支援'}</button>`
+    ? `<button class="${supportActive ? 'gold' : ''}" data-action="compsupport" data-key="${tpl.key}" ${(!supportActive && !useGate.allowed) ? 'disabled' : ''} title="${useTitle}">${supportActive ? '取消支援' : '设为支援'}</button>`
     : '';
   const actionHtml = entry.isOwned
     ? `<div class="comp-detail-actions">
-        ${entry.isActive ? '<button class="danger" data-action="unequipcomp">休息</button>' : `<button class="primary" data-action="usecomp" data-idx="${entry.idx}">出战</button>`}
+        ${entry.isActive ? '<button class="danger" data-action="unequipcomp">休息</button>' : `<button class="primary" data-action="usecomp" data-idx="${entry.idx}" ${useDisabled} title="${useTitle}">出战</button>`}
         ${supportButton}
         <button class="gold" data-action="upgradecomp" data-idx="${entry.idx}" ${canUp ? '' : 'disabled'}>${cost.maxed ? '满星 ⭐5' : `升星 ${stars || 1}/5`}</button>
         ${awakenButton}
         ${wishButton}
+        ${companionUseLockNoteHtml(tpl)}
       </div>`
     : `<div class="comp-detail-actions">${wishButton}<span class="muted">抽取到该随从后可出战、派遣，并参与对应羁绊。</span></div>`;
   return `<div class="comp-detail-panel">
@@ -3872,7 +3892,7 @@ function companionSupportPanelHtml(entries) {
   const supportEntries = (typeof companionSupportEntries === 'function') ? companionSupportEntries() : [];
   const used = new Set(supportEntries.map(e => e.key));
   const activeKey = getActiveCompanion()?.key;
-  const candidates = (entries || []).filter(e => e.isOwned && e.tpl.key !== activeKey && !used.has(e.tpl.key)).slice().sort((a, b) => {
+  const candidates = (entries || []).filter(e => e.isOwned && e.tpl.key !== activeKey && !used.has(e.tpl.key) && companionUseGateInfo(e.tpl).allowed).slice().sort((a, b) => {
     const av = (typeof companionVeteranInfo === 'function') ? companionVeteranInfo(a.tpl, a.owned) : null;
     const bv = (typeof companionVeteranInfo === 'function') ? companionVeteranInfo(b.tpl, b.owned) : null;
     const aq = compQuality(a.tpl), bq = compQuality(b.tpl);
@@ -3902,7 +3922,7 @@ function companionSupportPanelHtml(entries) {
   }).join('');
   return `<div class="comp-support-panel">
     <div class="comp-support-title">
-      <div><b>🛡️ 支援随从</b><div class="muted">支援位不普攻,但会以较低强度触发专属战斗机制；低品质满星随从会获得老兵加成。</div></div>
+      <div><b>🛡️ 支援随从</b><div class="muted">支援位不普攻,但会以较低强度触发专属战斗机制；${typeof companionUseRuleText === 'function' ? companionUseRuleText() : '高品质随从随等级解锁。'}</div></div>
       <span>${supportEntries.length}/${maxSlots}</span>
     </div>
     <div class="comp-support-slots">${slotCards}</div>
@@ -3918,8 +3938,9 @@ function companionAdvisorPanelHtml(entries) {
     </div>`;
   }
   const busy = typeof companionMissionBusyKeys === 'function' ? companionMissionBusyKeys() : new Set();
+  const usableOwned = owned.filter(entry => companionUseGateInfo(entry.tpl).allowed);
   const roleCards = ['tank','dps','heal'].map(role => {
-    const best = owned.slice().sort((a,b) => companionAdvisorScore(b, role) - companionAdvisorScore(a, role))[0];
+    const best = usableOwned.slice().sort((a,b) => companionAdvisorScore(b, role) - companionAdvisorScore(a, role))[0];
     if (!best) return '';
     const tpl = best.tpl;
     const q = compQuality(tpl);
@@ -4260,6 +4281,8 @@ function renderCompanion() {
   $('gem-cost').textContent = '(消耗1🐾随从券 · 技能含定位招牌技+专属技，品质/星级决定强度)';
   const cl = $('companion-list');
   if (!cl) return;
+  if (typeof ensureCompanionUseEligibility === 'function') ensureCompanionUseEligibility();
+  else if (typeof ensureCompanionSupportState === 'function') ensureCompanionSupportState();
   const renderSig = companionPanelRenderSig();
   if (cl.dataset.renderSig === renderSig && cl.dataset.rendered === '1') return;
   const owned = state.companions.length;
@@ -4275,6 +4298,7 @@ function renderCompanion() {
   html += `<div class="ascend-box">
     <div style="font-weight:bold">🐾 随从收藏 <span class="muted" style="font-size:11px">${owned}/${COMPANIONS.length}</span></div>
     <div class="muted" style="font-size:10px;margin-top:2px">收藏被动: 每随从 +0.05%攻击 / +0.08%生命 (当前 +${Math.min(owned*0.05,1.2).toFixed(2)}% / +${Math.min(owned*0.08,1.8).toFixed(2)}%)</div>
+    <div class="muted" style="font-size:10px;margin-top:2px;color:#fde68a">🔒 战斗使用: ${tipAttrText(typeof companionUseRuleText === 'function' ? companionUseRuleText() : '高品质随从随等级解锁。')}</div>
     ${uniStr ? `<div class="muted" style="font-size:10px;margin-top:2px;color:#fbbf24">🔧 通用碎片: ${uniStr}</div>` : ''}`;
   // 已满星品质提示
   const ownedM = {}; for(const c of state.companions) ownedM[c.key] = c;
@@ -4376,6 +4400,8 @@ function renderCompanion() {
     const unique = (typeof companionUniqueTrait === 'function') ? companionUniqueTrait(tpl) : null;
     const uniqueSummary = (typeof companionUniqueTraitSummary === 'function') ? companionUniqueTraitSummary(tpl) : '';
     const veteran = (typeof companionVeteranInfo === 'function') ? companionVeteranInfo(tpl, c) : null;
+    const useGate = companionUseGateInfo(tpl);
+    const useTitle = tipAttrText(companionUseTitle(tpl));
     html += `<div class="shop-item${companionCardTrackClass(tpl)}">
       <div class="row"><b>${compIconHtml} ${tpl.name}</b><span class="${q.cls}">${q.name} · ${(tpl.skills?.length||0)}主动${tpl.signature?'+1专属':''}</span></div>
       <div class="muted" style="font-size:10px">${'⭐'.repeat(c.stars||1)} · ${roleTag(tpl.role)} · ${tpl.desc}</div>
@@ -4388,14 +4414,15 @@ function renderCompanion() {
       ${spec ? `<div class="muted" style="font-size:10px;color:#fde68a">专属战斗: ${spec.icon || '🌟'} ${spec.name}${veteran ? ` · ${veteran.icon}${veteran.name}` : ''}</div>` : ''}
       ${companionUpgradePreviewHtml(tpl, c)}
       ${companionAwakenPreviewHtml(tpl, c, { compact:true })}
+      ${companionUseLockNoteHtml(tpl)}
       <div class="comp-skills">${compSkillChips(tpl, c)}</div>
       <div class="row">
         <span class="muted" style="font-size:10px">可用碎片 ${cost.have}${cost.maxed?'':' / 升星需'+cost.need}${(state.compUniversalShards[q.key]||0)>0?' (含通用×'+state.compUniversalShards[q.key]+')':''}</span>
         <div style="display:flex;flex-wrap:wrap;gap:3px">
           <button data-action="compdetail" data-key="${tpl.key}">详情</button>
           <button data-action="compwish" data-key="${tpl.key}">${entry.isWished ? '取消目标' : '加入目标'}</button>
-          <button class="${supportActive ? 'gold' : ''}" data-action="compsupport" data-key="${tpl.key}">${supportActive ? '取消支援' : '支援'}</button>
-          <button class="primary" data-action="usecomp" data-idx="${i}">出战</button>
+          <button class="${supportActive ? 'gold' : ''}" data-action="compsupport" data-key="${tpl.key}" ${(!supportActive && !useGate.allowed) ? 'disabled' : ''} title="${useTitle}">${supportActive ? '取消支援' : '支援'}</button>
+          <button class="primary" data-action="usecomp" data-idx="${i}" ${useGate.allowed ? '' : 'disabled'} title="${useTitle}">出战</button>
           <button class="gold" data-action="upgradecomp" data-idx="${i}" ${canUp?'':'disabled'}>${cost.maxed?'满星 ⭐5':'升星 '+(c.stars||1)+'/5'}</button>
           ${(() => { const ac = typeof getCompanionAwakenCost === 'function' ? getCompanionAwakenCost(c, tpl) : null; return ac ? `<button class="comp-awaken-btn ${ac.ready ? 'ready' : ''}" data-action="awakencomp" data-idx="${i}" ${(ac.ready && !ac.awakened) ? '' : 'disabled'}>${ac.awakened ? '已觉醒' : '觉醒'}</button>` : ''; })()}
         </div>

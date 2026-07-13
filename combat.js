@@ -6858,7 +6858,86 @@ function companionEffectiveSkillCdMs(sk){
   return Math.max(floor, Math.floor(base * COMPANION_SKILL_CD_MULT));
 }
 function companionEffectiveSkillCdSec(sk){ return +(companionEffectiveSkillCdMs(sk) / 1000).toFixed(1); }
-function getActiveCompanion(){if(state.activeCompanion<0||!state.companions[state.activeCompanion])return null;return state.companions[state.activeCompanion];}
+const COMPANION_USE_UNLOCK_LEVEL = { white:1, green:30, blue:50, purple:60, orange:70 };
+const COMPANION_USE_QUALITY_ORDER = ['white','green','blue','purple','orange'];
+function companionQualityUnlockLevel(qKey){ return COMPANION_USE_UNLOCK_LEVEL[qKey || 'white'] || 1; }
+function companionUseMaxQualityKey(lvl){
+  const level = Number.isFinite(lvl) ? lvl : (state.hero?.lvl || 1);
+  if(level >= 70) return 'orange';
+  if(level >= 60) return 'purple';
+  if(level >= 50) return 'blue';
+  if(level >= 30) return 'green';
+  return 'white';
+}
+function companionUseMaxQualityName(lvl){
+  const key = companionUseMaxQualityKey(lvl);
+  const q = (typeof COMPANION_QUALITY !== 'undefined') ? COMPANION_QUALITY.find(x => x.key === key) : null;
+  return q?.name || key;
+}
+function companionUseRuleText(lvl){
+  const level = Number.isFinite(lvl) ? lvl : (state.hero?.lvl || 1);
+  return `当前${level}级最高可出战${companionUseMaxQualityName(level)}随从。30级解锁优秀,50级解锁精良,60级解锁史诗,70级解锁传说。`;
+}
+function companionUseGate(tpl, lvl){
+  const q = (typeof compQuality === 'function') ? compQuality(tpl) : { key:tpl?.quality || 'white', name:tpl?.quality || '普通' };
+  const level = Number.isFinite(lvl) ? lvl : (state.hero?.lvl || 1);
+  const reqLevel = companionQualityUnlockLevel(q.key);
+  const allowed = level >= reqLevel;
+  return {
+    allowed,
+    level,
+    reqLevel,
+    qKey:q.key,
+    qName:q.name,
+    maxKey:companionUseMaxQualityKey(level),
+    maxName:companionUseMaxQualityName(level),
+    text:allowed ? companionUseRuleText(level) : `${q.name}随从需要${reqLevel}级才能出战或支援。${companionUseRuleText(level)}`
+  };
+}
+function companionCanUseTpl(tpl, lvl){ return companionUseGate(tpl, lvl).allowed; }
+function getActiveCompanion(){
+  if(state.activeCompanion<0||!state.companions[state.activeCompanion])return null;
+  const comp = state.companions[state.activeCompanion];
+  const tpl = COMPANIONS.find(c => c.key === comp.key);
+  if(tpl && !companionCanUseTpl(tpl)) return null;
+  return comp;
+}
+function companionUse(idx){
+  const comp = state.companions[idx];
+  const tpl = comp && COMPANIONS.find(c => c.key === comp.key);
+  if(!comp || !tpl) return false;
+  const gate = companionUseGate(tpl);
+  if(!gate.allowed){
+    log(`🐾 ${tpl.name} 暂未解锁: ${gate.text}`,'bad');
+    return false;
+  }
+  state.activeCompanion = idx;
+  if(typeof ensureCompanionSupportState === 'function') ensureCompanionSupportState();
+  initCompanionHp();
+  recomputeStats();
+  markDirty('companion','hero');
+  log('🐾 随从出战!','good');
+  return true;
+}
+function ensureCompanionUseEligibility(){
+  let changed = false;
+  const comp = state.activeCompanion >= 0 ? state.companions[state.activeCompanion] : null;
+  const tpl = comp && COMPANIONS.find(c => c.key === comp.key);
+  if(comp && tpl && !companionCanUseTpl(tpl)){
+    state.activeCompanion = -1;
+    state._compHp = 0;
+    changed = true;
+  }
+  const beforeSupport = Array.isArray(state.companionSupport) ? state.companionSupport.join('|') : '';
+  if(typeof ensureCompanionSupportState === 'function') ensureCompanionSupportState();
+  const afterSupport = Array.isArray(state.companionSupport) ? state.companionSupport.join('|') : '';
+  if(beforeSupport !== afterSupport) changed = true;
+  if(changed){
+    recomputeStats();
+    markDirty('companion','hero');
+  }
+  return !changed;
+}
 function companionIsAwakened(comp){ return !!(comp && (comp.awakened || (comp.awakenRank || 0) > 0)); }
 function companionAwakenCostBase(qKey){ return COMPANION_AWAKEN_COST[qKey || 'white'] || COMPANION_AWAKEN_COST.white; }
 function companionAwakenInfo(comp, tpl){
@@ -6912,6 +6991,8 @@ function ensureCompanionSupportState(){
   const out = [];
   for(const key of state.companionSupport){
     if(!key || !owned.has(key) || key === activeKey || out.includes(key)) continue;
+    const tpl = COMPANIONS.find(c => c.key === key);
+    if(tpl && !companionCanUseTpl(tpl)) continue;
     out.push(key);
     if(out.length >= companionSupportMaxSlots()) break;
   }
@@ -6935,6 +7016,8 @@ function companionSupportSet(key){
     state.companionSupport = arr.filter(k => k !== key);
     log(`🐾 ${tpl.name} 已离开支援位`,'good');
   }else{
+    const gate = companionUseGate(tpl);
+    if(!gate.allowed) return log(`🐾 ${tpl.name} 暂未解锁: ${gate.text}`,'bad');
     if(arr.length >= companionSupportMaxSlots()) arr.shift();
     arr.push(key);
     state.companionSupport = arr;
