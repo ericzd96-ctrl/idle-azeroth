@@ -827,6 +827,17 @@ h1 {
   color: #fde68a;
   font-size: 10px;
 }
+.comp-mission-title-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px;
+}
+.comp-mission-title-actions button {
+  min-height: 24px;
+  padding: 3px 7px;
+}
 .comp-mission-grid,
 .comp-mission-active-grid {
   display: grid;

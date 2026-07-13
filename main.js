@@ -639,6 +639,7 @@ function setupDelegation() {
     if(act==='clearcompbond'){ companionClearBondTrack(); return; }
     if(act==='startcompmission'){ startCompanionMission(btn.dataset.comp, btn.dataset.mission); return; }
     if(act==='claimcompmission'){ claimCompanionMission(btn.dataset.id); return; }
+    if(act==='claimallcompmissions'){ claimAllCompanionMissions(); return; }
     const idx=parseInt(btn.dataset.idx, 10);
     if(act==='usecomp'){state.activeCompanion=idx;initCompanionHp();recomputeStats();markDirty('companion','hero');log('🐾 随从出战!','good')}
     else if(act==='upgradecomp')upgradeCompanion(idx);

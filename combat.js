@@ -6895,6 +6895,14 @@ function claimCompanionMission(id){
   markDirty('companion','hero','shop');
   if(typeof saveState === 'function') saveState();
 }
+function claimAllCompanionMissions(){
+  const ms = ensureCompanionMissionState();
+  const now = Date.now();
+  const readyIds = (ms.active || []).filter(run => (run.endAt || 0) <= now).map(run => run.id);
+  if(!readyIds.length) return log('🐾 暂无可领取的派遣战报','bad');
+  for(const id of readyIds) claimCompanionMission(id);
+  log(`🐾 已领取 ${readyIds.length} 份派遣战报`,'good');
+}
 let _nextCompanionMissionDirtyAt = 0;
 function tickCompanionMissions(now){
   const ms = ensureCompanionMissionState();

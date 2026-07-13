@@ -3342,6 +3342,7 @@ function companionMissionPanelHtml(entries){
   const slots = typeof companionMissionSlots === 'function' ? companionMissionSlots() : 1;
   const active = Array.isArray(ms.active) ? ms.active : [];
   const now = Date.now();
+  const readyCount = active.filter(run => (run.endAt || 0) <= now).length;
   const available = typeof companionMissionAvailableEntries === 'function' ? companionMissionAvailableEntries() : [];
   const activeCards = active.map(run => {
     const mission = typeof companionMissionType === 'function' ? companionMissionType(run.key) : null;
@@ -3424,7 +3425,10 @@ function companionMissionPanelHtml(entries){
         <b>🗺️ 随从派遣</b>
         <div class="muted" style="font-size:10px">空闲随从可执行离线任务；品质、星级、定位和特性匹配会提高完成度与奖励。</div>
       </div>
-      <span>${active.length}/${slots} 栏位 · 已完成 ${ms.totalCompleted || 0}</span>
+      <div class="comp-mission-title-actions">
+        <span>${active.length}/${slots} 栏位 · 已完成 ${ms.totalCompleted || 0}</span>
+        ${readyCount ? `<button class="gold" data-action="claimallcompmissions">领取全部×${readyCount}</button>` : ''}
+      </div>
     </div>
     ${activeCards ? `<div class="comp-mission-active-grid">${activeCards}</div>` : ''}
     ${companionMissionRosterHtml(active, slots)}
