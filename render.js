@@ -281,6 +281,8 @@ function focusBuffs(now) {
       const shouldKeep =
         key === 'shield' ? (mon._arcaneShield > 0) :
         key === 'nextDouble' ? ((mon._nextAtkDouble || 0) > 0) :
+        key === 'specAdapt' ? !!mon._specAdaptTier :
+        key === 'specPressure' ? ((aura.expire || 0) > now) :
         activeKeys.includes(key);
       if (!shouldKeep) {
         delete auraMap[key];
@@ -2556,7 +2558,7 @@ function renderSkills() {
       const meter = (typeof currentSpecCombatMeter === 'function') ? currentSpecCombatMeter() : null;
       const meterHtml = meter ? `
         <div class="bar xp" style="height:14px;margin:7px 0 4px"><i style="width:${meter.pct || 0}%;background:linear-gradient(90deg,#f472b6,#facc15)"></i><span>${meter.icon || '✦'} ${meter.name}: ${meter.stacks || 0}/${meter.max || 0}</span></div>
-        <div class="muted" style="font-size:10px;line-height:1.35">${meter.hint || ''}</div>` : '';
+        <div class="muted" style="font-size:10px;line-height:1.35">${meter.hint || ''} · 高等级怪物、首领和副本敌人会获得“专精适应”,在你接近满层爆发时触发反制护盾/急速。</div>` : '';
       const ruleDiv = document.createElement('div');
       ruleDiv.className = 'skill-item';
       ruleDiv.style.borderColor = 'rgba(244,114,182,.55)';

@@ -732,6 +732,7 @@ function applySpecIdentityMechanicAfterSkill(skillKey, sk, mon, value, ctx){
       consumeSkillAura('d_harmony', { all:true });
     }
   }
+  if(dmgSkill) triggerMonsterSpecAdaptationPressure(mon, now);
 }
 function applyClassMechanicAfterSkill(skillKey, sk, mon, value, ctx){
   if(!sk) return;
@@ -2658,6 +2659,65 @@ function applyWildMonsterHpScaling(mon, lvl){
   mon._wildHpMult = mult;
   return mon;
 }
+const SPEC_ADAPTATION_NAMES = {
+  warrior:'破甲与怒气适应', mage:'法术循环适应', priest:'圣光暗影适应', rogue:'终结技适应',
+  hunter:'猎手节奏适应', shaman:'元素图腾适应', paladin:'圣能祝福适应', warlock:'灵魂契约适应', druid:'自然形态适应'
+};
+function specAdaptationTier(mon, opts){
+  if(!state?.specialization || !mon) return 0;
+  const lvl = Math.max(state.hero?.lvl || 1, mon.lvl || 1);
+  const base = lvl >= 70 ? 3 : lvl >= 50 ? 2 : lvl >= 30 ? 1 : 0;
+  const boss = mon.isBoss ? 1 : 0;
+  const dungeon = (state.mode === 'dungeon' || state.mode === 'mythic') ? 1 : 0;
+  const raid = mon._isRaid || mon._isEpicRaid ? 1 : 0;
+  const mythic = state.mode === 'mythic' ? 1 : 0;
+  const worldBoss = mon.isWorldBoss ? 2 : 0;
+  const extra = opts?.extra || 0;
+  return Math.max(0, Math.min(7, base + boss + dungeon + raid + mythic + worldBoss + extra));
+}
+function applySpecAdaptationToMonster(mon, opts){
+  const tier = specAdaptationTier(mon, opts);
+  if(!mon || tier <= 0 || mon._specAdaptTier) return mon;
+  const bossMul = mon.isBoss ? 1.45 : 1;
+  const hpPct = (0.055 + tier * 0.025) * bossMul;
+  const atkPct = (0.025 + tier * 0.014) * (mon.isBoss ? 1.25 : 1);
+  const defPct = 0.018 + tier * 0.010;
+  mon.hpMax = Math.max(1, Math.floor(mon.hpMax * (1 + hpPct)));
+  mon.hp = mon.hpMax;
+  mon.atk = Math.max(1, Math.floor(mon.atk * (1 + atkPct)));
+  mon.def = Math.max(0, Math.floor(mon.def * (1 + defPct)));
+  mon._specAdaptTier = tier;
+  mon._specAdaptName = SPEC_ADAPTATION_NAMES[state.cls] || '专精适应';
+  mon._specAdaptDesc = `敌人正在适应你的专精循环: 生命+${Math.round(hpPct*100)}%, 攻击+${Math.round(atkPct*100)}%, 防御+${Math.round(defPct*100)}%`;
+  if(mon.isBoss || state.mode === 'dungeon' || state.mode === 'mythic'){
+    mon.dmgReduction = Math.max(mon.dmgReduction || 0, Math.min(0.26, 0.04 + tier * 0.018));
+  }
+  setMonsterTrickAura(mon, 'specAdapt', { name:mon._specAdaptName, icon:'🧬', desc:mon._specAdaptDesc }, 0, { stacks:tier });
+  return mon;
+}
+function currentSpecMeterForCombat(){
+  if(typeof currentSpecCombatMeter === 'function') return currentSpecCombatMeter();
+  if(typeof globalThis?.currentSpecCombatMeter === 'function') return globalThis.currentSpecCombatMeter();
+  return null;
+}
+function triggerMonsterSpecAdaptationPressure(mon, now){
+  if(!mon || mon.hp <= 0 || !mon._specAdaptTier) return;
+  const meter = currentSpecMeterForCombat();
+  if(!meter || !(meter.max > 0)) return;
+  const hot = (meter.stacks || 0) >= Math.max(3, Math.ceil(meter.max * 0.8));
+  if(!hot) return;
+  const cd = mon.isBoss ? 6000 : 9000;
+  if(!classRuntimeReady('monster-spec-adapt:' + (mon._uid || mon.name), cd, now)) return;
+  const tier = mon._specAdaptTier || 1;
+  const shield = Math.max(1, Math.floor(mon.hpMax * (mon.isBoss ? 0.018 : 0.012) * Math.min(5, tier)));
+  mon._arcaneShield = (mon._arcaneShield || 0) + shield;
+  syncMonsterShieldAura(mon);
+  mon._trickSpdBuff = Math.max(mon._trickSpdBuff || 0, now + (mon.isBoss ? 4200 : 2800));
+  mon._trickSpdPct = Math.max(mon._trickSpdPct || 0, 10 + tier * 5);
+  setMonsterTrickAura(mon, 'specPressure', { name:'专精反制', icon:'🧬', desc:`你即将完成${meter.name || '专精'}循环,敌人获得护盾与急速` }, mon._trickSpdBuff);
+  showMonsterFloat(mon, '🧬反制', '#f9a8d4', { variant:'boss', scale:1.05 });
+  if(mon.isBoss) log(`🧬 ${mon.bossName || mon.name} 适应了你的${meter.name || '专精节奏'}, 获得护盾与急速`, 'bad');
+}
 
 function makeMonster(name,lvl,isBoss,maxRarity){
   const hp=Math.floor((100+lvl*lvl*9.0)*(isBoss?18:1));
@@ -2714,6 +2774,7 @@ function spawnMonster(){
     const maxR=rareRoll<0.06?'epic':rareRoll<0.20?'rare':'uncommon';   // 2026-06-16 提高小怪爆蓝/紫上限概率(epic 0.02→0.06, rare 0.08→0.20)
     const m=makeMonster(mobName,lvl,false,maxR);
     applyWildMonsterHpScaling(m, lvl);
+    applySpecAdaptationToMonster(m);
     if(atkDamp!==1)m.atk=Math.max(1,Math.floor(m.atk*atkDamp));
     m.threat=m.atk*(0.6+Math.random()*0.8);   // 初始仇恨(攻击越高越容易被英雄锁定)
     state.currentMonsters.push(m);
@@ -2735,6 +2796,7 @@ function spawnZoneBoss(){
     if(map.boss.passive.atkBonus)mon.atk=Math.floor(mon.atk*(1+map.boss.passive.atkBonus));
     if(map.boss.passive.leech)mon.lifeSteal=map.boss.passive.leech;
   }
+  applySpecAdaptationToMonster(mon, { extra:1 });
   state.currentMonsters.push(mon);
   applyCompanionChallengeScalingToCurrent();
 }
@@ -2967,6 +3029,9 @@ function spawnDungeonMonster(){
   }
   if (state.mode === 'dungeon' && typeof applyDungeonCombatRoomSpawn === 'function') {
     applyDungeonCombatRoomSpawn(ds, dg, mon, isBoss, Date.now());
+  }
+  for(const unit of (state.currentMonsters || [])){
+    if(unit && unit.hp > 0) applySpecAdaptationToMonster(unit, { extra:isFinalBoss ? 1 : 0 });
   }
   applyCompanionChallengeScalingToCurrent();
 }
