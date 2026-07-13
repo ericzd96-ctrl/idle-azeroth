@@ -635,6 +635,7 @@ function setupDelegation() {
     const act=btn.dataset.action;
     if(act==='compfilter'){ companionSetFilter(btn.dataset.group, btn.dataset.value); return; }
     if(act==='compresetfilter'){ companionResetFilters(); return; }
+    if(act==='clearcompsearch'){ companionClearSearch(); return; }
     if(act==='trackcompbond'){ companionTrackBond(btn.dataset.bond); return; }
     if(act==='clearcompbond'){ companionClearBondTrack(); return; }
     if(act==='startcompmission'){ startCompanionMission(btn.dataset.comp, btn.dataset.mission); return; }
@@ -644,6 +645,11 @@ function setupDelegation() {
     if(act==='usecomp'){state.activeCompanion=idx;initCompanionHp();recomputeStats();markDirty('companion','hero');log('🐾 随从出战!','good')}
     else if(act==='upgradecomp')upgradeCompanion(idx);
     else if(act==='unequipcomp'){state.activeCompanion=-1;state._compHp=0;recomputeStats();markDirty('companion','hero')}
+  });
+  $('companion-list').addEventListener('input', e => {
+    const input = e.target.closest('input[data-action="compsearch"]');
+    if(!input) return;
+    companionSetSearch(input.value);
   });
   // 随从技能 悬浮看描述(复用 compare-tip)
   (() => {

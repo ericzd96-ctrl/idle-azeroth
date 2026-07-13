@@ -2902,7 +2902,7 @@ function compSkillChips(tpl){
     return `<span class="comp-skill${s._signature?' sig':''}" data-tip="${tip}">${skillIconHtml}<span class="cs-name">${s.name}</span></span>`;
   }).join('');
 }
-const COMPANION_FILTER_DEFAULTS = { ownership:'all', quality:'all', role:'all', trait:'all', bond:'all' };
+const COMPANION_FILTER_DEFAULTS = { ownership:'all', quality:'all', role:'all', trait:'all', bond:'all', query:'' };
 let companionFilters = Object.assign({}, COMPANION_FILTER_DEFAULTS);
 const COMPANION_TRAIT_META = {
   summon: { label:'召唤', tone:'summon' },
@@ -2975,12 +2975,24 @@ function companionBondMissingKeys(bond, entries) {
   const ownedKeys = new Set((entries || buildCompanionEntries()).filter(entry => entry.isOwned).map(entry => entry.tpl.key));
   return bond.keys.filter(key => !ownedKeys.has(key));
 }
+function companionSearchText(entry) {
+  const tpl = entry?.tpl;
+  if (!tpl) return '';
+  const q = compQuality(tpl);
+  const traits = companionTraitFlags(tpl);
+  const traitText = Object.entries(COMPANION_TRAIT_META).filter(([key]) => traits[key]).map(([, meta]) => meta.label).join(' ');
+  const skills = companionSkillPool(tpl).map(sk => `${sk.name || ''} ${sk.desc || ''}`).join(' ');
+  const bonds = (typeof COMPANION_BONDS !== 'undefined' ? COMPANION_BONDS : []).filter(bond => bond.keys.includes(tpl.key)).map(bond => `${bond.name} ${bond.desc || ''}`).join(' ');
+  return `${tpl.name || ''} ${tpl.key || ''} ${tpl.desc || ''} ${q.name || ''} ${companionRoleLabel(tpl.role)} ${traitText} ${skills} ${bonds}`.toLowerCase();
+}
 function companionMatchesFilters(entry, filters){
   if (filters.ownership === 'owned' && !entry.isOwned) return false;
   if (filters.ownership === 'missing' && entry.isOwned) return false;
   if (filters.quality !== 'all' && entry.quality !== filters.quality) return false;
   if (filters.role !== 'all' && entry.tpl.role !== filters.role) return false;
   if (filters.trait !== 'all' && !entry.traits[filters.trait]) return false;
+  const query = String(filters.query || '').trim().toLowerCase();
+  if (query && !companionSearchText(entry).includes(query)) return false;
   if (filters.bond !== 'all') {
     const bond = companionBondById(filters.bond);
     if (!bond) return false;
@@ -3011,12 +3023,14 @@ function companionFilterSummaryText(){
   if (companionFilters.trait !== 'all') labels.push(COMPANION_TRAIT_META[companionFilters.trait]?.label || companionFilters.trait);
   const bond = companionBondById(companionFilters.bond);
   if (bond) labels.push(`羁绊:${bond.name}`);
+  if (companionFilters.query) labels.push(`搜索:${companionFilters.query}`);
   return labels.length ? labels.join(' / ') : '全部随从';
 }
 function companionFilterPanelHtml(entries){
   const trackedBond = companionBondById(companionFilters.bond);
   const trackedMissing = trackedBond ? companionBondMissingKeys(trackedBond, entries) : [];
   const trackedNames = trackedMissing.map(key => COMPANIONS.find(c => c.key === key)?.name || key).join('、');
+  const searchValue = tipAttrText(companionFilters.query || '');
   return `<div class="comp-filter-panel">
     <div class="comp-filter-head">
       <div>
@@ -3030,6 +3044,10 @@ function companionFilterPanelHtml(entries){
       <div class="muted">${trackedMissing.length ? `缺口: ${tipAttrText(trackedNames)}` : '这条羁绊已激活,列表改为显示全部成员。'}</div>
       <button data-action="clearcompbond">取消追踪</button>
     </div>` : ''}
+    <div class="comp-search-row">
+      <input id="companion-search" data-action="compsearch" value="${searchValue}" placeholder="搜索随从、技能、羁绊…" autocomplete="off">
+      ${companionFilters.query ? '<button data-action="clearcompsearch">清空</button>' : ''}
+    </div>
     ${companionFilterRow(entries, 'ownership', '收集', [
       { value:'all', label:'全部' },
       { value:'owned', label:'已拥有' },
@@ -3505,6 +3523,20 @@ function companionTrackBond(id){
 }
 function companionClearBondTrack(){
   companionFilters.bond = 'all';
+  renderCompanion();
+}
+function companionSetSearch(value){
+  companionFilters.query = String(value || '').trim();
+  renderCompanion();
+  const input = $('companion-search');
+  if (input) {
+    input.focus();
+    const end = input.value.length;
+    if (typeof input.setSelectionRange === 'function') input.setSelectionRange(end, end);
+  }
+}
+function companionClearSearch(){
+  companionFilters.query = '';
   renderCompanion();
 }
 function companionResetFilters(){
