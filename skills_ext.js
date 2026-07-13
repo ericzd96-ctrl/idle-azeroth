@@ -754,14 +754,75 @@ const SPEC_COMBAT_RULES = {
   },
 };
 
+const SPEC_COMBAT_METERS = {
+  warrior:{
+    arms:{ key:'w_sunder', icon:'🪓', name:'破甲印记', max:5, hint:'满层后用致死打击/巨人之击/斩杀收束' },
+    fury:{ key:'w_rage', icon:'😡', name:'暴怒', max:5, hint:'层数越高,所有狂暴伤害和续战越强' },
+    prot:{ key:'w_block', icon:'🛡️', name:'盾牌格挡', max:5, hint:'承伤、盾击和防御技能叠层,满层转护盾反震' },
+  },
+  mage:{
+    arcane:{ key:'arcaneCharge', icon:'🔷', name:'奥术充能', max:4, hint:'充能越高奥术越痛,弹幕/涌动负责倾泻' },
+    fire:{ key:'m_heat', icon:'🔥', name:'炽热', max:5, hint:'满层让炎爆/流星/烈焰风暴引爆点燃' },
+    frost:{ key:'m_frost', icon:'❄️', name:'指尖寒冰', max:5, hint:'冻结目标后用冰枪/彗星风暴打碎裂' },
+  },
+  priest:{
+    discipline:{ key:'p_grace', icon:'⚖️', name:'恩典', max:5, hint:'伤害与防御会转成主角/随从护盾' },
+    holy:{ key:'p_grace', icon:'✨', name:'圣言恩典', max:5, hint:'满层治疗会回响到主角和随从' },
+    shadow:{ key:'p_insanity', icon:'🌑', name:'疯狂', max:6, hint:'满层用虚空爆发/噬灵疫病扩散痛苦' },
+  },
+  rogue:{
+    assassination:{ key:'r_venom', icon:'🐍', name:'毒锋', max:5, hint:'满层用奉毒/君王之灾打毒爆' },
+    combat:{ key:'r_combo', icon:'⚔️', name:'连击点', max:5, hint:'满点用正中眉心/杀戮盛宴追加乱舞' },
+    subtlety:{ key:'r_combo', icon:'🌑', name:'暗影连击', max:5, hint:'暗影之舞和破绽窗口内爆发' },
+  },
+  hunter:{
+    bm:{ key:'h_beastBond', icon:'🐾', name:'兽群羁绊', max:5, hint:'宠物/召唤物越多,追咬越频繁' },
+    marks:{ key:'h_frenzy', icon:'🎯', name:'狙击窗口', max:5, hint:'印记目标会被瞄准/杀戮射击穿透' },
+    survival:{ key:'h_frenzy', icon:'💣', name:'野火节奏', max:5, hint:'炸弹、陷阱和DOT越多,猫鼬/屠戮越痛' },
+  },
+  shaman:{
+    element:{ key:'stormCharge', icon:'⛈️', name:'雷霆充能', max:4, hint:'元素冲击和风暴守护者触发过载' },
+    enhancement:{ key:'sh_maelstrom', icon:'🌀', name:'漩涡之力', max:5, hint:'裂地术/熔岩猛击消耗漩涡追加风怒' },
+    restoration:{ key:'sh_totem', icon:'🌊', name:'图腾共鸣', max:5, hint:'治疗链/暴雨图腾同步治疗随从并护盾' },
+  },
+  paladin:{
+    holy:{ key:'pa_bulwark', icon:'🌟', name:'圣光道标', max:5, hint:'祝福和治疗让随从获得治疗与护盾' },
+    prot:{ key:'pa_bulwark', icon:'🛡️', name:'圣光壁垒', max:5, hint:'祝福窗口内回血、护盾和盾击更强' },
+    ret:{ key:'pa_holyPower', icon:'⚜️', name:'圣能', max:5, hint:'满层用裁决/最终清算打圣能爆发' },
+  },
+  warlock:{
+    affliction:{ key:'wl_shard', icon:'💜', name:'灵魂碎片', max:5, hint:'多DOT目标会被邪能狂涌/腐蚀之种收割' },
+    demonology:{ key:'wl_shard', icon:'😈', name:'恶魔碎片', max:5, hint:'召唤物在场时恶魔之箭/内爆更强' },
+    destruction:{ key:'wl_ember', icon:'🔥', name:'余烬', max:5, hint:'满层用混乱之箭/大灾变引爆' },
+  },
+  druid:{
+    balance:{ key:'d_astral', icon:'🌗', name:'星界能量', max:5, hint:'星涌/星辰坠落消耗能量触发星界追击' },
+    feral:{ key:'d_combo', icon:'🐾', name:'撕咬连击', max:5, hint:'满层割裂/凶猛撕咬按流血数量爆发' },
+    resto:{ key:'d_harmony', icon:'🌿', name:'自然调和', max:5, hint:'满层让治疗扩展到随从并生成护盾' },
+  },
+};
+
 function currentSpecCombatRule() {
   if (typeof state === 'undefined' || !state) return null;
   return SPEC_COMBAT_RULES[state.cls]?.[state.specialization] || null;
 }
 
+function currentSpecCombatMeter() {
+  if (typeof state === 'undefined' || !state) return null;
+  const cfg = SPEC_COMBAT_METERS[state.cls]?.[state.specialization];
+  if (!cfg) return null;
+  const aura = state.skillRuntime?.auras?.[cfg.key];
+  const now = Date.now();
+  const stacks = aura && (!aura.expire || aura.expire > now) ? (aura.stacks || 0) : 0;
+  const max = aura?.max || cfg.max || 5;
+  return Object.assign({}, cfg, { stacks, max, pct: max ? Math.min(100, Math.round(stacks / max * 100)) : 0 });
+}
+
 if (typeof window !== 'undefined') {
   window.SPEC_COMBAT_RULES = SPEC_COMBAT_RULES;
+  window.SPEC_COMBAT_METERS = SPEC_COMBAT_METERS;
   window.currentSpecCombatRule = currentSpecCombatRule;
+  window.currentSpecCombatMeter = currentSpecCombatMeter;
 }
 
 const SPEC_STARTER_UNLOCKS = {

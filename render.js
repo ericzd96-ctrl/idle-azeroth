@@ -2540,12 +2540,17 @@ function renderSkills() {
     skl.appendChild(specDiv);
     const rule = (typeof currentSpecCombatRule === 'function') ? currentSpecCombatRule() : null;
     if (rule) {
+      const meter = (typeof currentSpecCombatMeter === 'function') ? currentSpecCombatMeter() : null;
+      const meterHtml = meter ? `
+        <div class="bar xp" style="height:14px;margin:7px 0 4px"><i style="width:${meter.pct || 0}%;background:linear-gradient(90deg,#f472b6,#facc15)"></i><span>${meter.icon || '✦'} ${meter.name}: ${meter.stacks || 0}/${meter.max || 0}</span></div>
+        <div class="muted" style="font-size:10px;line-height:1.35">${meter.hint || ''}</div>` : '';
       const ruleDiv = document.createElement('div');
       ruleDiv.className = 'skill-item';
       ruleDiv.style.borderColor = 'rgba(244,114,182,.55)';
       ruleDiv.innerHTML = `
         <div class="row"><b style="color:#fbcfe8">${rule.icon || '✦'} 专精特色: ${rule.name}</b><span class="pill">实战规则</span></div>
-        <div class="muted" style="font-size:11px;line-height:1.45">${rule.desc}</div>`;
+        <div class="muted" style="font-size:11px;line-height:1.45">${rule.desc}</div>
+        ${meterHtml}`;
       skl.appendChild(ruleDiv);
     }
   } else {

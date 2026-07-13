@@ -365,7 +365,108 @@ function calcSkillRuntimeBonus(skillKey, sk, mon, now){
   if(fx.forceCritIfBuff && buffActive(fx.forceCritIfBuff, now)) forceCrit = true;
   if(fx.forceCritIfState && monsterStateActive(mon, fx.forceCritIfState)) forceCrit = true;
   if(fx.forceCritIfDotCount && dotCount >= fx.forceCritIfDotCount) forceCrit = true;
+  const specMod = calcSpecIdentityRuntimeBonus(skillKey, sk, mon, now, dotCount);
+  if(specMod.mult) mult *= specMod.mult;
+  if(specMod.forceCrit) forceCrit = true;
   return { fx, mult, forceCrit, dotCount };
+}
+function calcSpecIdentityRuntimeBonus(skillKey, sk, mon, now, dotCount){
+  if(!sk || sk.type !== 'dmg') return { mult:1, forceCrit:false };
+  const cls = activeHeroClassKey();
+  const spec = activeHeroSpecKey();
+  const name = sk.name || '';
+  const lowHp = !!(mon && mon.hp > 0 && mon.hp <= mon.hpMax * 0.35);
+  const hasSummon = activeAllySummonCount(now) > 0;
+  let mult = 1;
+  let forceCrit = false;
+
+  if(cls === 'warrior' && spec === 'arms'){
+    const st = skillAuraStacks('w_sunder');
+    mult *= 1 + st * (/致死|巨人|斩杀|灭战者/.test(name) ? 0.08 : 0.04);
+    if(lowHp && /斩杀|致死|巨人/.test(name)) forceCrit = true;
+  } else if(cls === 'warrior' && spec === 'fury'){
+    const st = skillAuraStacks('w_rage');
+    mult *= 1 + st * 0.045 + (buffActive('w_recklessness', now) ? 0.14 : 0);
+  } else if(cls === 'warrior' && spec === 'prot'){
+    const st = skillAuraStacks('w_block');
+    mult *= 1 + st * 0.045 + (buffActive('shield', now) || buffActive('w_ironwall', now) ? 0.12 : 0);
+  } else if(cls === 'mage' && spec === 'arcane'){
+    const st = skillAuraStacks('arcaneCharge');
+    mult *= 1 + st * (/弹幕|涌动/.test(name) ? 0.13 : 0.065);
+  } else if(cls === 'mage' && spec === 'fire'){
+    const st = skillAuraStacks('m_heat');
+    mult *= 1 + st * 0.045 + dotCount * 0.045;
+    if(st >= 5 && /炎爆|流星|火焰冲击|凤凰/.test(name)) forceCrit = true;
+  } else if(cls === 'mage' && spec === 'frost'){
+    const st = skillAuraStacks('m_frost');
+    mult *= 1 + st * 0.035;
+    if(monsterStateActive(mon, 'frozen')){
+      mult *= /冰枪|彗星|宝珠|冰风暴/.test(name) ? 1.42 : 1.22;
+      if(/冰枪|彗星/.test(name)) forceCrit = true;
+    }
+  } else if(cls === 'priest' && spec === 'discipline'){
+    mult *= 1 + skillAuraStacks('p_grace') * 0.035 + (monsterStateActive(mon, 'exposed') ? 0.22 : 0);
+  } else if(cls === 'priest' && spec === 'holy'){
+    mult *= 1 + skillAuraStacks('p_grace') * 0.025;
+  } else if(cls === 'priest' && spec === 'shadow'){
+    mult *= 1 + skillAuraStacks('p_insanity') * 0.045 + dotCount * 0.055;
+  } else if(cls === 'rogue' && spec === 'assassination'){
+    mult *= 1 + skillAuraStacks('r_venom') * 0.045 + dotCount * 0.06;
+  } else if(cls === 'rogue' && spec === 'combat'){
+    const st = skillAuraStacks('r_combo');
+    mult *= 1 + st * (/正中|杀戮|切割/.test(name) ? 0.075 : 0.035) + (buffActive('s_haste', now) ? 0.12 : 0);
+  } else if(cls === 'rogue' && spec === 'subtlety'){
+    mult *= 1 + skillAuraStacks('r_combo') * 0.045 + (monsterStateActive(mon, 'exposed') ? 0.24 : 0) + (buffActive('shadowstep', now) ? 0.22 : 0);
+  } else if(cls === 'hunter' && spec === 'bm'){
+    mult *= 1 + skillAuraStacks('h_beastBond') * 0.045 + (hasSummon ? 0.18 : 0);
+  } else if(cls === 'hunter' && spec === 'marks'){
+    mult *= 1 + (monsterStateActive(mon, 'marked') ? 0.34 : 0) + (/瞄准|精确|杀戮|百发|二连/.test(name) ? 0.10 : 0);
+    if(monsterStateActive(mon, 'marked') && /杀戮|瞄准/.test(name)) forceCrit = true;
+  } else if(cls === 'hunter' && spec === 'survival'){
+    mult *= 1 + dotCount * 0.085 + (/炸弹|陷阱|屠戮|猫鼬/.test(name) ? 0.12 : 0);
+  } else if(cls === 'shaman' && spec === 'element'){
+    mult *= 1 + skillAuraStacks('stormCharge') * 0.07 + (buffActive('s_empower', now) ? 0.14 : 0);
+  } else if(cls === 'shaman' && spec === 'enhancement'){
+    mult *= 1 + skillAuraStacks('sh_maelstrom') * 0.055 + (buffActive('windfury', now) ? 0.16 : 0);
+  } else if(cls === 'shaman' && spec === 'restoration'){
+    mult *= 1 + skillAuraStacks('sh_totem') * 0.025;
+  } else if(cls === 'paladin' && spec === 'holy'){
+    mult *= 1 + skillAuraStacks('pa_bulwark') * 0.025;
+  } else if(cls === 'paladin' && spec === 'prot'){
+    const st = skillAuraStacks('pa_bulwark');
+    mult *= 1 + st * 0.045 + (buffActive('pa_devotion', now) || buffActive('sacredShield', now) ? 0.12 : 0);
+  } else if(cls === 'paladin' && spec === 'ret'){
+    const st = skillAuraStacks('pa_holyPower');
+    mult *= 1 + st * (/裁决|清算|愤怒之锤/.test(name) ? 0.09 : 0.045) + (monsterStateActive(mon, 'judged') ? 0.16 : 0);
+  } else if(cls === 'warlock' && spec === 'affliction'){
+    mult *= 1 + skillAuraStacks('wl_shard') * 0.035 + dotCount * 0.075;
+  } else if(cls === 'warlock' && spec === 'demonology'){
+    mult *= 1 + skillAuraStacks('wl_shard') * 0.045 + (hasSummon ? 0.22 : 0);
+  } else if(cls === 'warlock' && spec === 'destruction'){
+    const st = skillAuraStacks('wl_ember');
+    mult *= 1 + st * (/混乱|大灾变|灵魂之火/.test(name) ? 0.095 : 0.05) + dotCount * 0.03;
+  } else if(cls === 'druid' && spec === 'balance'){
+    const st = skillAuraStacks('d_astral');
+    mult *= 1 + st * (/星涌|星辰|新月/.test(name) ? 0.085 : 0.045) + dotCount * 0.035;
+  } else if(cls === 'druid' && spec === 'feral'){
+    mult *= 1 + skillAuraStacks('d_combo') * 0.055 + dotCount * 0.065;
+  } else if(cls === 'druid' && spec === 'resto'){
+    mult *= 1 + skillAuraStacks('d_harmony') * 0.025;
+  }
+  return { mult, forceCrit };
+}
+function calcSpecIdentityHealMult(skillKey, sk, now){
+  const cls = activeHeroClassKey();
+  const spec = activeHeroSpecKey();
+  if(!sk || sk.type !== 'heal') return 1;
+  let mult = 1;
+  if(cls === 'priest' && spec === 'discipline') mult += skillAuraStacks('p_grace') * 0.04;
+  else if(cls === 'priest' && spec === 'holy') mult += skillAuraStacks('p_grace') * 0.065;
+  else if(cls === 'shaman' && spec === 'restoration') mult += skillAuraStacks('sh_totem') * 0.065;
+  else if(cls === 'paladin' && spec === 'holy') mult += skillAuraStacks('pa_bulwark') * 0.045 + (buffActive('kings', now) ? 0.10 : 0);
+  else if(cls === 'druid' && spec === 'resto') mult += skillAuraStacks('d_harmony') * 0.065;
+  else if(cls === 'warrior' && spec === 'prot') mult += skillAuraStacks('w_block') * 0.035;
+  return mult;
 }
 function applySkillFollowupDamage(mon, amount, icon, color, now){
   now = now || Date.now();
@@ -556,11 +657,15 @@ function applySpecIdentityMechanicAfterSkill(skillKey, sk, mon, value, ctx){
       applySkillFollowupDamage(mon, value * Math.min(0.55, 0.12 + stacks * 0.07), '🐾', '#86efac', now);
     }
   } else if(cls === 'hunter' && spec === 'marks' && dmgSkill){
-    if(/印记|精确|瞄准|二连|百发/.test(name)) applyMonsterState(mon, 'marked', 10000);
+    if(/印记|精确|瞄准|二连|百发/.test(name)){
+      applyMonsterState(mon, 'marked', 10000);
+      addSkillAura('h_frenzy', { add:/二连|百发/.test(name)?2:1, max:5, duration:12000 });
+    }
     if(monsterStateActive(mon, 'marked') && /瞄准|精确|杀戮|奇美拉/.test(name) && classRuntimeReady('spec-marks-pierce', 1500, now)){
       applySkillFollowupDamage(mon, value * (mon.isBoss ? 0.38 : 0.28), '🎯', '#facc15', now);
     }
   } else if(cls === 'hunter' && spec === 'survival' && dmgSkill){
+    if(sk.dot || /炸弹|陷阱|钉刺|野火|屠戮|猫鼬/.test(name)) addSkillAura('h_frenzy', { add:1, max:5, duration:12000 });
     if((sk.dot || /炸弹|陷阱|钉刺|野火/.test(name)) && classRuntimeReady('spec-surv-bomb', 1500, now)) applySkillFollowupDamage(mon, value * (0.18 + dots * 0.08), '💣', '#fb923c', now);
   } else if(cls === 'shaman' && spec === 'element' && dmgSkill){
     if(/闪电|熔岩|震击|风暴|元素/.test(name)) addSkillAura('stormCharge', { add:1, max:4, duration:12000 });
@@ -732,6 +837,40 @@ function applyClassMechanicOnTakeDamage(mon, taken, rawAmount, now){
       addTalentShield(Math.floor(state.hero.hpMax * Math.min(0.06, 0.015 + stacks * 0.006)), true);
       addSkillAura('pa_bulwark', { add:1, max:5, duration:15000 });
     }
+  }
+  if(cls === 'priest' && spec === 'discipline'){
+    const stacks = addSkillAura('p_grace', { add:1, max:5, duration:15000 });
+    if(classRuntimeReady('priest-disc-reactive-shield', 1600, now)){
+      addTalentShield(Math.floor(state.hero.hpMax * (0.018 + Math.min(5, stacks) * 0.006)), true);
+      if(companionTargetable()){
+        const st = computeCompanionStats();
+        if(st) addCompanionBarrier(Math.floor(st.hpMax * (0.025 + Math.min(5, stacks) * 0.006)), '⚖️', '#fef3c7');
+      }
+    }
+  }
+  if(cls === 'priest' && spec === 'holy' && state.hp > 0 && state.hp <= state.hero.hpMax * 0.45 && classRuntimeReady('priest-holy-desperate-prayer', 9000, now)){
+    healHeroAmount(Math.floor(state.hero.hpMax * 0.075), '✨', '#fde68a', 'hero', '守护圣言');
+    addSkillAura('p_grace', { add:2, max:5, duration:15000 });
+  }
+  if(cls === 'shaman' && spec === 'restoration'){
+    const stacks = addSkillAura('sh_totem', { add:1, max:5, duration:15000 });
+    if(stacks >= 3 && classRuntimeReady('shaman-resto-earth-tide', 2800, now)){
+      addTalentShield(Math.floor(state.hero.hpMax * 0.035), true);
+      if(companionTargetable()){
+        const st = computeCompanionStats();
+        if(st) healCompanionAmount(Math.floor(st.hpMax * 0.055), '🌊', '#67e8f9', 'hero', '潮汐守护');
+      }
+    }
+  }
+  if(cls === 'druid' && spec === 'resto'){
+    const stacks = addSkillAura('d_harmony', { add:1, max:5, duration:15000 });
+    if(stacks >= 3 && classRuntimeReady('druid-resto-ironbark-bloom', 3200, now)){
+      healHeroAmount(Math.floor(state.hero.hpMax * 0.045), '🌿', '#86efac', 'hero', '树皮新芽');
+      addTalentShield(Math.floor(state.hero.hpMax * 0.025), true);
+    }
+  }
+  if(cls === 'warrior' && spec === 'fury' && classRuntimeReady('warrior-fury-painrage', 1800, now)){
+    addSkillAura('w_rage', { add:1, max:5, duration:12000 });
   }
 }
 function applyMonsterState(mon, stateKey, durMs){
@@ -6920,7 +7059,7 @@ function castSkill(skillKey,manual){
     }
     processTalentAfterSkill(skillKey, sk, mon, dmgDone, { cost });
   }else if(sk.type==='heal'){
-    const healMult=1+(state.hero.healBonus||0)/100;
+    const healMult=(1+(state.hero.healBonus||0)/100)*calcSpecIdentityHealMult(skillKey, sk, now);
     const h=Math.floor(state.hero.hpMax*sk.heal*healMult);
     const hr=healHeroAmount(h, sk.icon, '#6ee7b7', 'hero', sk.name);
     log(sk.name+'! 恢复 '+hr.applied+' 生命','good');
