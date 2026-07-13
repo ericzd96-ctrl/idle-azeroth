@@ -122,7 +122,10 @@
     maisara_caverns:'spell_shadow_raisedead',
     silvermoon_voidspire:'spell_arcane_blast',
     sporefall:'ui-ej-boss-fungariangiant',
-    curse_ulatek:'spell_shadow_shadowworddominate'
+    curse_ulatek:'spell_shadow_shadowworddominate',
+    karesh_apex_hunt:'ability_hunter_focusedaim',
+    karesh_expedition_front:'achievement_bg_returnxflags_def_wsg',
+    karesh_chronicle_vault:'inv_misc_book_11'
   };
 
   const SYMBOL_ICON = {
@@ -1444,7 +1447,19 @@
     '裂航狙击队':'ability_hunter_focusedaim',
     '影卫相位校尉':'inv_11_0_etherealraid_communicator_color1',
     '影卫指挥官索拉辛':'spell_arcane_portalshattrath',
-    '圣所馆卫':'inv_misc_book_11'
+    '圣所馆卫':'inv_misc_book_11',
+    '荒原嗅猎者萨克提':'ability_hunter_pet_wolf',
+    '晶壳吞噬兽':'ability_hunter_pet_scorpid',
+    '影卫猎团长沃莱克':'ability_hunter_focusedaim',
+    '顶峰猎王阿兹科尔':'ability_hunter_mastermarksman',
+    '裂界补给官塔沃':'inv_crate_04',
+    '相位炮匠伊欧克':'trade_engineering',
+    '吞界突袭体':'spell_shadow_soulgem',
+    '远征统帅维兰托':'ability_warrior_battleshout',
+    '裂界将军萨哈兰':'ability_warrior_savageblow',
+    '编年抄写员阿提什':'inv_misc_book_11',
+    '失序档案构装':'trade_engineering',
+    '编年馆长索·维尔':'inv_misc_spyglass_03'
   });
 
   Object.assign(SKILL_EXACT, {

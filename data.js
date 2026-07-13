@@ -6001,6 +6001,50 @@ function extendDungeonCatalog(){
           dmgP('午夜终末','🌘',11.2,0.3,{ aoe:true, plague:true, fear:2900, silence:2900, soulLink:true, alwaysCrit:true, cd:14 })
         ] }
       ]
+    },
+    {
+      key:'karesh_apex_hunt', name:'卡雷什顶峰狩猎', icon:'🏹', reqLvl:110, waves:10, art:'assets/wow/art/karesh-apex-hunt.png', desc:'卡雷什荒原的顶峰猎令路线,财团猎手把吞界兽群、相位陷阱和影卫追猎者压进同一片猎场',
+      bosses:[
+        { name:'荒原嗅猎者萨克提', emoji:'🐺', skills:[dmg('相位追咬','🐺',18.8,{ bleed:true, cripple:true, alwaysCrit:true }), dmg('猎场标记','🎯',19.1,{ manaDrain:135, brittle:true })] },
+        { name:'晶壳吞噬兽', emoji:'🦂', skills:[dmg('晶壳裂刺','💎',19.2,{ sunder:true, plague:true }), buffP('晶壳硬化','🔷',0.58,'晶壳硬化:获得护盾并提高减伤',{ shieldPct:0.25, drBuffSecs:15, drBuffPct:0.28 })] },
+        { name:'影卫猎团长沃莱克', emoji:'🏹', skills:[dmg('猎团齐射','🏹',19.6,{ aoe:true, bleed:true, silence:2500 }), summonP('影卫猎犬','🐺',0.46,'召唤 3 只影卫猎犬并提高暴击',{ summonCount:3, summonTheme:'beast', critBuffSecs:14, critBuffPct:56 })] },
+        { name:'顶峰猎王阿兹科尔', emoji:'👑', skills:[
+          dmg('顶峰处刑','👑',20.2,{ aoe:true, alwaysCrit:true, brittle:true }),
+          dmg('猎王裂界箭','🌌',20.6,{ silence:2700, mirror:true, manaDrain:150 }),
+          summonP('狩猎终幕','📣',0.42,'召唤 4 名顶峰猎手并获得护盾',{ summonCount:4, summonTheme:'soldier', shieldPct:0.28 }),
+          buffP('猎王狂热','🔥',0.62,'猎王狂热:攻击/暴击/攻速提升',{ atkBuffSecs:17, atkBuffPct:66, critBuffSecs:17, critBuffPct:68, spdBuffSecs:17, spdBuffPct:34 }),
+          dmgP('卡雷什猎令','🎯',11.4,0.3,{ aoe:true, fear:2900, silence:2900, alwaysCrit:true, cd:14 })
+        ] }
+      ]
+    },
+    {
+      key:'karesh_expedition_front', name:'卡雷什远征前线', icon:'🚩', reqLvl:111, waves:11, art:'assets/wow/art/karesh-expedition-banner.png', desc:'远征队在裂界沙海建立的前线据点,护送、夺旗、相位炮和吞界突袭会不断改变战斗节奏',
+      bosses:[
+        { name:'裂界补给官塔沃', emoji:'📦', skills:[dmg('补给征收','📦',19.1,{ manaDrain:140, weaken:true }), summonP('补给护卫','🚩',0.5,'召唤 2 名补给护卫并获得护盾',{ summonCount:2, summonTheme:'soldier', shieldPct:0.22 })] },
+        { name:'相位炮匠伊欧克', emoji:'⚙️', skills:[dmg('相位炮轰','💥',19.5,{ aoe:true, stun:2300, brittle:true }), buffP('炮台重校','🔧',0.55,'炮台重校:提高攻击与防御',{ atkBuffSecs:14, atkBuffPct:54, defBuffSecs:14, defBuffPct:56 })] },
+        { name:'吞界突袭体', emoji:'🌌', skills:[dmg('吞界啃噬','🌌',19.9,{ soulDrain:true, decay2:true }), dmg('虚空践踏','🌀',20.1,{ aoe:true, fear:2500, cripple:true })] },
+        { name:'远征统帅维兰托', emoji:'🛡️', skills:[dmg('远征号令','🚩',20.4,{ aoe:true, silence:2600, sunder:true }), summonP('前线集结','📣',0.48,'召唤 3 名前线士兵并提高减伤',{ summonCount:3, summonTheme:'soldier', drBuffSecs:15, drBuffPct:0.26 })] },
+        { name:'裂界将军萨哈兰', emoji:'⚔️', skills:[
+          dmg('裂界军令','⚔️',21,{ aoe:true, silence:2800, manaDrain:155 }),
+          dmg('沙海碾压','🏜️',21.3,{ stun:2500, sunder:true, brittle:true }),
+          summonP('远征终阵','🚩',0.42,'召唤 4 名远征精锐并获得护盾',{ summonCount:4, summonTheme:'soldier', shieldPct:0.30 }),
+          buffP('统帅升格','👑',0.62,'统帅升格:攻击/减伤/吸血提升',{ atkBuffSecs:18, atkBuffPct:68, drBuffSecs:18, drBuffPct:0.30, leechBuffSecs:18, leechBuffPct:30 }),
+          dmgP('前线崩解','💥',11.8,0.3,{ aoe:true, fear:3000, silence:3000, alwaysCrit:true, cd:14 })
+        ] }
+      ]
+    },
+    {
+      key:'karesh_chronicle_vault', name:'卡雷什编年秘库地下堡', icon:'📚', reqLvl:112, waves:7, delve:true, art:'assets/wow/art/karesh-chronicle-banner.png', desc:'短波次地下堡挑战:深入卡雷什编年秘库,被改写的战斗记录会召回旧战场幻影并不断重排首领时间线',
+      bosses:[
+        { name:'编年抄写员阿提什', emoji:'📜', skills:[dmg('战史删改','📜',19.8,{ silence:2600, manaDrain:145 }), dmg('错页回响','✨',20,{ mirror:true, weaken:true })] },
+        { name:'失序档案构装', emoji:'🤖', skills:[dmg('档案碾压','🤖',20.3,{ stun:2400, sunder:true }), buffP('索引护壁','🔷',0.55,'索引护壁:获得护盾并提高防御',{ shieldPct:0.26, defBuffSecs:15, defBuffPct:58 })] },
+        { name:'编年馆长索·维尔', emoji:'🔭', skills:[
+          dmg('编年归档','📚',20.9,{ aoe:true, silence:2800, soulDrain:true }),
+          dmg('时间线折返','⏳',21.2,{ mirror:true, fear:2600, manaDrain:155 }),
+          summonP('旧战场幻影','🪞',0.45,'召唤 3 个旧战场幻影并获得护盾',{ summonCount:3, summonTheme:'void', shieldPct:0.28 }),
+          dmgP('终卷封存','🌌',11.6,0.3,{ aoe:true, decay2:true, silence:3000, alwaysCrit:true, cd:14 })
+        ] }
+      ]
     }
   ];
 
@@ -6520,7 +6564,25 @@ function extendDungeonCatalog(){
       '四神庙残影':[L('四神庙残影战刃','weapon','epic',{atk:5,agi:3}),L('洛阿残响护腿','pants','epic',{hp:3,agi:2})],
       '银月裂法者':[L('裂法者星杖','weapon','epic',{atk:5,int:3}),L('裂法回路胸甲','armor','epic',{def:4,sta:3})],
       '诅咒载体乌拉泰克':[L('乌拉泰克的午夜终刃','weapon','legend',{atk:10,int:6}),L('终咒升格冠冕','helmet','legend',{def:7,int:6}),L('盘绕岛终末胸甲','armor','legend',{def:9,sta:7}),L('午夜终咒徽记','trinket','legend',{sta:7,int:6})]
-    }, trash:[L('盘绕岛巡礼护肩','shoulder','rare',{atk:2,int:1}),L('诅咒回声战靴','boots','rare',{haste:1,vers:1})] }
+    }, trash:[L('盘绕岛巡礼护肩','shoulder','rare',{atk:2,int:1}),L('诅咒回声战靴','boots','rare',{haste:1,vers:1})] },
+    karesh_apex_hunt: { bosses:{
+      '荒原嗅猎者萨克提':[L('萨克提的相位猎牙','weapon','epic',{atk:5,agi:3}),L('猎场标记指环','ring','epic',{agi:3,crit:2})],
+      '晶壳吞噬兽':[L('晶壳裂刺战刃','weapon','epic',{atk:5,str:3}),L('晶壳硬化胸甲','armor','epic',{def:4,sta:3})],
+      '影卫猎团长沃莱克':[L('沃莱克的影卫长弓','weapon','epic',{atk:5,agi:3}),L('猎团长护肩','shoulder','epic',{atk:3,agi:2})],
+      '顶峰猎王阿兹科尔':[L('阿兹科尔的顶峰猎弓','weapon','legend',{atk:10,agi:6}),L('猎王裂界冠冕','helmet','legend',{def:7,agi:6}),L('卡雷什猎令徽记','trinket','legend',{sta:7,agi:6})]
+    }, trash:[L('荒原猎手护手','gloves','rare',{agi:2,haste:1}),L('顶峰追猎战靴','boots','rare',{atk:2,agi:1})] },
+    karesh_expedition_front: { bosses:{
+      '裂界补给官塔沃':[L('塔沃的补给账刃','weapon','epic',{atk:5,agi:3}),L('裂界补给腰带','belt','epic',{def:3,sta:2})],
+      '相位炮匠伊欧克':[L('伊欧克相位炮锤','weapon','epic',{atk:5,str:3}),L('炮匠校准护手','gloves','epic',{str:3,haste:2})],
+      '吞界突袭体':[L('吞界突袭利爪','weapon','epic',{atk:5,agi:3}),L('虚空践踏护腿','pants','epic',{hp:3,sta:2})],
+      '远征统帅维兰托':[L('维兰托远征战旗','trinket','epic',{sta:3,str:3}),L('统帅前线胸甲','armor','epic',{def:4,sta:3})],
+      '裂界将军萨哈兰':[L('萨哈兰的裂界军刀','weapon','legend',{atk:11,str:6}),L('前线崩解肩铠','shoulder','legend',{atk:6,str:5}),L('远征终阵徽记','trinket','legend',{sta:7,str:6})]
+    }, trash:[L('远征队护肩','shoulder','rare',{atk:2,sta:1}),L('裂界沙海长靴','boots','rare',{haste:1,vers:1})] },
+    karesh_chronicle_vault: { bosses:{
+      '编年抄写员阿提什':[L('阿提什删改法杖','weapon','epic',{atk:5,int:3}),L('错页回响指环','ring','epic',{int:3,vers:2})],
+      '失序档案构装':[L('失序索引巨槌','weapon','epic',{atk:5,str:3}),L('档案构装胸甲','armor','epic',{def:4,sta:3})],
+      '编年馆长索·维尔':[L('索维尔的终卷钥匙','weapon','legend',{atk:10,int:6}),L('编年秘库冠冕','helmet','legend',{def:7,int:6}),L('时间线折返徽记','trinket','legend',{sta:7,int:6})]
+    }, trash:[L('秘库索引护肩','shoulder','rare',{atk:2,int:1}),L('编年巡回战靴','boots','rare',{haste:1,int:1})] }
   };
 
   for (const dg of extraDungeons) ensureDungeon(dg, extraLoot[dg.key]);
