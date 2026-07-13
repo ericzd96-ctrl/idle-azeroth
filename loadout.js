@@ -108,6 +108,7 @@ function applyTalentsFromLoadout(lo) {
   state.specialization = lo.spec;
   state.talents = JSON.parse(JSON.stringify(lo.talents || {}));
   state.talentPoints = total - need;
+  if (typeof syncAllowedSkillUnlocks === 'function') syncAllowedSkillUnlocks();
   // 重新授予满级天赋解锁的技能
   for (const [treeKey, tals] of Object.entries(state.talents)) {
     const tree = c.trees.find(t => t.key === treeKey);
@@ -153,7 +154,8 @@ function applyLoadout(idx) {
   const lo = list[idx];
   if (!lo) return;
   applyTalentsFromLoadout(lo);
-  state.selectedSkills = (lo.skills || []).filter(k => state.unlockedSkills[k]).slice(0, 8);
+  state.selectedSkills = (lo.skills || []).filter(k => state.unlockedSkills[k] && (typeof isSkillAllowedForCurrentSpec !== 'function' || isSkillAllowedForCurrentSpec(k))).slice(0, 8);
+  if (typeof pruneSelectedSkillsForCurrentSpec === 'function') pruneSelectedSkillsForCurrentSpec();
   applyEquipFromLoadout(lo);
   if (typeof recomputeStats === 'function') recomputeStats();
   log('🎽 已应用配装方案「' + lo.name + '」', 'epic');

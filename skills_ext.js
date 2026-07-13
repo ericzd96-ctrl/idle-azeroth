@@ -94,6 +94,9 @@ const MONSTER_STATE_META = {
   frozen:  { icon:'🧊', name:'冻结',   desc:'暴风雪额外+50%伤害' },
   exposed: { icon:'🗡️', name:'破绽',   desc:'背刺额外+60%伤害' },
   terror:  { icon:'👻', name:'恐惧',   desc:'目标陷入恐惧状态' },
+  marked:  { icon:'🎯', name:'猎人印记', desc:'射击猎精准技能会造成额外伤害' },
+  rooted:  { icon:'🌿', name:'缠绕',   desc:'被自然法术束缚,后续自然技能更容易接上' },
+  dot:     { icon:'☠️', name:'持续伤害', desc:'目标身上已有持续伤害效果' },
 };
 
 /* 每个职业 4 个新技能:爆发 / 减伤 / 功能性 / 职业特色 */
@@ -406,6 +409,211 @@ const CLASS_MECHANIC_SKILL_PATCHES = {
     }
   }
 })();
+
+const SPEC_SIGNATURE_SKILLS = {
+  warrior: {
+    w_overpower:{ name:'压制', icon:'⚔️', desc:'武器专精:4倍攻击,对破甲目标更强并叠破甲印记', mp:24, type:'dmg', mul:4, unlockLvl:16, fx:{ bonusStates:{ sunder:0.45 }, grantAura:{ key:'w_sunder', add:1, max:5, duration:15000 } } },
+    w_ragingBlow:{ name:'怒击', icon:'😡', desc:'狂暴专精:4倍双持猛击,叠暴怒并追加一次轻击', mp:26, type:'dmg', mul:4, unlockLvl:16, fx:{ grantAura:{ key:'w_rage', add:2, max:5, duration:12000 }, extraHitPct:0.25 } },
+    w_shieldSlam:{ name:'盾牌猛击', icon:'🛡️', desc:'防护专精:3倍盾击,按盾牌格挡层数提高伤害并转化护盾', mp:22, type:'dmg', mul:3, unlockLvl:1, fx:{ bonusPerAuraStack:{ key:'w_block', pct:0.18 }, grantAura:{ key:'w_block', add:1, max:5, duration:12000 }, shieldFromDamagePct:0.12 } },
+    w_revenge:{ name:'复仇', icon:'🧱', desc:'防护专精:4倍反击,盾牌格挡越高伤害越高', mp:28, type:'dmg', mul:4, unlockLvl:24, fx:{ bonusPerAuraStack:{ key:'w_block', pct:0.22 }, extraHitPctIfBuff:{ key:'w_shieldBlock', pct:0.35 } } },
+  },
+  mage: {
+    m_arcaneBlast:{ name:'奥术冲击', icon:'🔷', desc:'奥术专精:3倍奥术伤害,叠奥术充能;充能越高蓝耗越高但爆发更强', mp:18, type:'dmg', mul:3, unlockLvl:1, castTime:1.8, fx:{ grantAura:{ key:'arcaneCharge', add:1, max:4, duration:12000 } } },
+    m_livingBomb:{ name:'活动炸弹', icon:'💣', desc:'火焰专精:3倍火焰伤害并附加活动炸弹,为炎爆/流星铺点燃', mp:26, type:'dmg', mul:3, dot:true, unlockLvl:18, castTime:0, fx:{ applyTargetState:'decay', stateDurationMs:8000, applyDotKey:'skill:m_livingBomb', dotName:'活动炸弹', dotIcon:'💣', dotPct:0.2, dotMs:8000, grantAura:{ key:'m_heat', add:1, max:5, duration:12000 } } },
+    m_frozenOrb:{ name:'冰冻宝珠', icon:'🧊', desc:'冰霜专精:4倍范围冰霜伤害,冻结敌人并叠指尖寒冰', mp:36, type:'dmg', mul:4, aoe:true, unlockLvl:18, castTime:0, fx:{ applyTargetState:[{ key:'frozen', durMs:8000 }, { key:'slow', durMs:8000 }], grantAura:{ key:'m_frost', add:2, max:5, duration:12000 } } },
+  },
+  priest: {
+    p_prayerMending:{ name:'愈合祷言', icon:'✨', desc:'神圣专精:恢复生命,并给随从弹跳治疗与恩典', mp:32, type:'heal', heal:0.32, unlockLvl:16, fx:{ companionHealPct:0.22, companionShieldPct:0.05, companionBuff:'p_grace', companionBuffMs:10000, grantAura:{ key:'p_grace', add:1, max:5, duration:15000 } } },
+    p_devouringPlague:{ name:'噬灵疫病', icon:'🦠', desc:'暗影专精:4倍暗影伤害,目标痛苦越多越强并治疗自身', mp:34, type:'dmg', mul:4, dot:true, unlockLvl:18, fx:{ bonusPerDot:0.28, healFromDamagePct:0.28, grantAura:{ key:'p_insanity', add:2, max:6, duration:12000 } } },
+  },
+  rogue: {
+    r_mutilate:{ name:'毁伤', icon:'🗡️', desc:'刺杀专精:4倍攻击,对中毒目标额外提高并叠毒锋', mp:28, type:'dmg', mul:4, unlockLvl:16, fx:{ bonusPerDot:0.3, grantAura:{ key:'r_venom', add:2, max:5, duration:12000 } } },
+    r_bladeRush:{ name:'剑刃冲刺', icon:'⚔️', desc:'战斗专精:4倍攻击,叠连击点并追加乱舞追击', mp:30, type:'dmg', mul:4, unlockLvl:18, fx:{ grantAura:{ key:'r_combo', add:2, max:5, duration:12000 }, extraHitPct:0.28 } },
+    r_shadowDance:{ name:'暗影之舞', icon:'🌑', desc:'敏锐专精:6秒进入暗影爆发,暗袭/背刺更致命', mp:30, type:'buff', buff:'shadowstep', duration:6000, unlockLvl:22 },
+  },
+  hunter: {
+    h_barbedShot:{ name:'倒刺射击', icon:'🐾', desc:'兽王专精:3倍射击,叠兽群羁绊并让宠物追击', mp:22, type:'dmg', mul:3, unlockLvl:1, fx:{ grantAura:{ key:'h_beastBond', add:1, max:5, duration:15000 }, extraHitPctIfSummon:0.25 } },
+    h_preciseShot:{ name:'精确射击', icon:'🎯', desc:'射击专精:4倍远程伤害,对猎人印记目标额外提高', mp:30, type:'dmg', mul:4, unlockLvl:16, fx:{ bonusStates:{ marked:0.45, exposed:0.3 } } },
+    h_wildfireBomb:{ name:'野火炸弹', icon:'💣', desc:'生存专精:4倍火焰范围伤害,附加持续灼烧', mp:34, type:'dmg', mul:4, aoe:true, dot:true, unlockLvl:18, fx:{ applyDotKey:'skill:h_wildfireBomb', dotName:'野火', dotIcon:'💣', dotPct:0.18, dotMs:7000, splashPct:0.25 } },
+  },
+  shaman: {
+    sh_elementalBlast:{ name:'元素冲击', icon:'🌋', desc:'元素专精:4倍元素伤害,消耗雷霆充能爆发', mp:34, type:'dmg', mul:4, unlockLvl:18, fx:{ bonusPerAuraStack:{ key:'stormCharge', pct:0.24 }, consumeAura:{ key:'stormCharge', all:true } } },
+    sh_crashLightning:{ name:'毁灭闪电', icon:'⚡', desc:'增强专精:4倍范围近战闪电,叠漩涡并触发风怒追击', mp:32, type:'dmg', mul:4, aoe:true, unlockLvl:18, fx:{ grantAura:{ key:'sh_maelstrom', add:2, max:5, duration:12000 }, extraHitPctIfBuff:{ key:'windfury', pct:0.35 } } },
+    sh_riptide:{ name:'激流', icon:'🌊', desc:'恢复专精:快速治疗主角和随从,叠图腾共鸣', mp:28, type:'heal', heal:0.28, unlockLvl:1, fx:{ companionHealPct:0.18, companionBuff:'sh_ancestral', companionBuffMs:9000, grantAura:{ key:'sh_totem', add:1, max:5, duration:15000 } } },
+  },
+  paladin: {
+    pa_beacon:{ name:'圣光道标', icon:'🌟', desc:'神圣专精:治疗主角并把一部分圣光转给随从', mp:30, type:'heal', heal:0.30, unlockLvl:16, fx:{ companionHealPct:0.24, companionShieldPct:0.06, companionBuff:'pa_devotion', companionBuffMs:10000 } },
+    pa_shieldRighteous:{ name:'正义盾击', icon:'🛡️', desc:'防护专精:3倍盾击,叠圣光壁垒并获得护盾', mp:24, type:'dmg', mul:3, unlockLvl:1, fx:{ grantAura:{ key:'pa_bulwark', add:1, max:5, duration:15000 }, shieldFromDamagePct:0.16 } },
+    pa_bladeJustice:{ name:'公正之剑', icon:'⚔️', desc:'惩戒专精:4倍神圣攻击,对审判目标额外提高并叠圣能', mp:30, type:'dmg', mul:4, unlockLvl:16, fx:{ bonusStates:{ judged:0.5 }, grantAura:{ key:'pa_holyPower', add:2, max:5, duration:15000 } } },
+  },
+  warlock: {
+    wl_agony:{ name:'痛楚', icon:'💜', desc:'痛苦专精:2倍暗影伤害,附加痛楚并叠灵魂碎片', mp:20, type:'dmg', mul:2, dot:true, unlockLvl:1, fx:{ applyDotKey:'skill:wl_agony', dotName:'痛楚', dotIcon:'💜', dotPct:0.16, dotMs:9000, grantAura:{ key:'wl_shard', add:1, max:5, duration:12000 } } },
+    wl_handGuldan:{ name:'古尔丹之手', icon:'😈', desc:'恶魔学识专精:4倍暗影火,恶魔在场时追加追击', mp:34, type:'dmg', mul:4, unlockLvl:16, fx:{ grantAura:{ key:'wl_shard', add:1, max:5, duration:12000 }, extraHitPctIfSummon:0.35 } },
+    wl_conflagrate:{ name:'燃烧', icon:'🔥', desc:'毁灭专精:瞬发火焰爆发,对献祭目标更强并叠余烬', mp:26, type:'dmg', mul:4, unlockLvl:16, castTime:0, fx:{ bonusPerDot:0.22, grantAura:{ key:'wl_ember', add:2, max:5, duration:12000 } } },
+  },
+  druid: {
+    d_eclipse:{ name:'星涌术', icon:'🌠', desc:'平衡专精:4倍星界伤害,消耗星界能量爆发', mp:34, type:'dmg', mul:4, unlockLvl:16, fx:{ bonusPerAuraStack:{ key:'d_astral', pct:0.24 }, consumeAura:{ key:'d_astral', all:true } } },
+    d_rake:{ name:'斜掠', icon:'🐾', desc:'野性专精:3倍流血攻击,叠撕咬连击并铺持续伤害', mp:24, type:'dmg', mul:3, dot:true, unlockLvl:1, fx:{ applyDotKey:'skill:d_rake', dotName:'斜掠流血', dotIcon:'🐾', dotPct:0.16, dotMs:7000, grantAura:{ key:'d_combo', add:1, max:5, duration:12000 } } },
+    d_lifebloomSpell:{ name:'生命绽放', icon:'🌿', desc:'恢复专精:恢复生命,过量治疗转护盾并强化随从', mp:30, type:'heal', heal:0.30, unlockLvl:16, fx:{ shieldFromOverhealPct:0.55, companionHealPct:0.20, companionBuff:'d_lifebloom', companionBuffMs:10000, grantAura:{ key:'d_harmony', add:1, max:5, duration:15000 } } },
+  },
+};
+
+(function injectSpecSignatureSkills() {
+  if (typeof CLASSES === 'undefined') return;
+  for (const [clsKey, skills] of Object.entries(SPEC_SIGNATURE_SKILLS)) {
+    const cls = CLASSES[clsKey];
+    if (!cls || !cls.skills) continue;
+    for (const [skillKey, sk] of Object.entries(skills)) {
+      if (!cls.skills[skillKey]) cls.skills[skillKey] = sk;
+    }
+  }
+})();
+
+const SPEC_SKILL_LOADOUTS = {
+  warrior: {
+    core:['interrupt'], novice:['cleave','thunderClap'],
+    arms:{ icon:'⚔️', name:'武器战', desc:'围绕破甲印记、压制、致死打击与斩杀构建节奏,偏单体斩杀。', skills:['cleave','sunderArmor','w_overpower','mortalStrike','shatteringThrow','execute','sweepingStrikes','w_recklessness','w_avatar','w_colossus','bladestorm'] },
+    fury:{ icon:'😡', name:'狂暴战', desc:'用怒击、嗜血和怒火乱舞叠暴怒,靠多段追击与吸血续战。', skills:['cleave','w_ragingBlow','bloodthirst','battleShout','w_recklessness','w_enrageRegen','execute','w_rampage','bladestorm'] },
+    prot:{ icon:'🛡️', name:'防护战', desc:'盾牌猛击、雷霆一击和盾牌格挡叠防线,承伤反震并把满层转护盾。', skills:['thunderClap','w_shieldSlam','shieldWall','w_ironwall','w_revenge','challengingShout','w_enrageRegen'] },
+  },
+  mage: {
+    core:['interrupt','polymorph'], novice:['arcane','fireball','frostbolt'],
+    arcane:{ icon:'🔷', name:'奥术法', desc:'只使用奥术冲击、飞弹、奥爆、弹幕和时间系技能,叠充能后爆发。', skills:['m_arcaneBlast','arcane','arcaneExplosion','m_arcanePower','m_arcaneBarrage','mirrorImage','timeWarp','polymorph'] },
+    fire:{ icon:'🔥', name:'火法', desc:'只使用火焰技能,点燃、活动炸弹、燃烧、炎爆和流星组成爆发链。', skills:['fireball','m_livingBomb','m_combustion','pyroblast','dragonBreath','m_meteor'] },
+    frost:{ icon:'❄️', name:'冰法', desc:'只使用冰霜控制与碎裂技能,冻结后用冰枪、暴风雪、冰冻宝珠打爆发。', skills:['frostbolt','iceBarrier','m_iceBlock','slow','blizzard','m_frozenOrb','m_iceLance'] },
+  },
+  priest: {
+    core:['interrupt','smite'], novice:['smite','shield','heal','shadowWord'],
+    discipline:{ icon:'🛡️', name:'戒律牧', desc:'真言术盾、惩罚和能量灌注把伤害转成治疗与随从护盾。', skills:['smite','shield','p_pwShield','p_penance','powerInfusion','p_holyNova'] },
+    holy:{ icon:'✨', name:'神牧', desc:'治疗术、恢复、愈合祷言、神圣新星和赞美诗专注群体回复。', skills:['smite','heal','renew','p_prayerMending','holyNova','holyFire','p_holyNova','divineHymn'] },
+    shadow:{ icon:'🌑', name:'暗牧', desc:'暗言术、心灵震爆、噬灵疫病、暗影形态和虚空爆发组成持续伤害循环。', skills:['shadowWord','mindBlast','p_devouringPlague','p_shadowform','p_mindBlast','shadowDeath','p_voidEruption'] },
+  },
+  rogue: {
+    core:['interrupt','evasion'], novice:['sinister','poison','backstab'],
+    assassination:{ icon:'🐍', name:'刺杀贼', desc:'只围绕毒药、毁伤、割裂、奉毒和死亡标记打持续毒伤。', skills:['poison','r_mutilate','garrote','rupture','r_envenom','deathMark','r_evasion'] },
+    combat:{ icon:'⚔️', name:'战斗贼', desc:'邪恶打击、背刺、剑刃乱舞、冲动和杀戮盛宴走正面连击。', skills:['sinister','backstab','r_bladeRush','r_bladeflurry','r_adrenaline','killingSpree','throw','evasion'] },
+    subtlety:{ icon:'🌑', name:'敏锐贼', desc:'背刺、暗影之舞、暗袭、绞喉和暗影斗篷围绕破绽爆发。', skills:['backstab','kidneyShot','r_shadowDance','r_shadowstrike','garrote','shadow','cloakOfShadows','r_evasion'] },
+  },
+  hunter: {
+    core:['interrupt'], novice:['arcaneShot','serpentSting','summonPet'],
+    bm:{ icon:'🐾', name:'兽王猎', desc:'召唤宠物、倒刺射击、狂野怒火和协同猛攻强化宠物追击。', skills:['summonPet','h_barbedShot','bestialWrath','h_killCommand','h_coordinatedAssault','stampede','h_feignDeath'] },
+    marks:{ icon:'🎯', name:'射击猎', desc:'猎人印记、精确射击、瞄准射击、急速射击和杀戮射击组成远程狙击。', skills:['arcaneShot','huntersMark','h_preciseShot','aimed','rapidFire','h_rapidFire','killShot','barrage','h_chimaera'] },
+    survival:{ icon:'💣', name:'生存猎', desc:'毒蛇钉刺、野火炸弹、爆炸射击、冰冻陷阱和奇美拉打陷阱DOT。', skills:['serpentSting','h_wildfireBomb','explosiveShot','h_explosiveShot','freezingTrap','multi','h_chimaera','h_feignDeath'] },
+  },
+  shaman: {
+    core:['interrupt'], novice:['lightning','healingWave'],
+    element:{ icon:'🌋', name:'元素萨', desc:'闪电箭、烈焰震击、熔岩爆裂、闪电链和元素冲击走法术爆发。', skills:['lightning','flameShock','lavaBurst','chainLightning','sh_earthShock','sh_elementalBlast','earthquake','thunderstorm'] },
+    enhancement:{ icon:'⚡', name:'增强萨', desc:'风怒武器、风暴打击、毁灭闪电、熔岩猛击和嗜血走近战漩涡。', skills:['windfury','s_stormstrike','sh_crashLightning','sh_lavaLash','s_bloodlust','bloodlust','s_earthShield'] },
+    restoration:{ icon:'🌊', name:'恢复萨', desc:'治疗波、激流、大地之盾、治疗之泉和灵魂链接支援主角与随从。', skills:['healingWave','sh_riptide','earthShield','s_earthShield','s_healingTide','spiritLink','bloodlust'] },
+  },
+  paladin: {
+    core:['interrupt','judgement'], novice:['judgement','holyLight','crusader'],
+    holy:{ icon:'✨', name:'奶骑', desc:'圣光术、圣光闪现、道标、王者祝福和神圣愤怒专注治疗支援。', skills:['holyLight','flashOfLight','pa_flashLight','pa_beacon','blessingKings','sacredShield','holyWrath'] },
+    prot:{ icon:'🛡️', name:'防骑', desc:'审判、正义盾击、圣盾、奉献和圣洁护盾滚圣光壁垒。', skills:['judgement','pa_shieldRighteous','divineShield','consecration','hammerOfRighteous','sacredShield','pa_guardian','blessingKings'] },
+    ret:{ icon:'⚔️', name:'惩戒骑', desc:'十字军打击、公正之剑、审判、复仇之怒、圣殿裁决和愤怒之锤打圣能爆发。', skills:['judgement','crusader','pa_bladeJustice','avengingWrath','pa_avengingWrath','pa_templarVerdict','pa_hammerWrath','pa_holyWrath','seraphim'] },
+  },
+  warlock: {
+    core:['interrupt','fear'], novice:['shadowBolt','corruption','incinerate'],
+    affliction:{ icon:'💜', name:'痛苦术', desc:'痛楚、腐蚀术、痛苦无常和邪能狂涌堆多DOT后引爆。', skills:['wl_agony','corruption','unstableAffliction','drainLife','wl_maleficRapture','wl_darkSoul','fear'] },
+    demonology:{ icon:'😈', name:'恶魔术', desc:'暗影箭、古尔丹之手、地狱火、恶魔变身和恶魔之箭围绕召唤物。', skills:['shadowBolt','drainLife','wl_handGuldan','inferno','metamorphosis','wl_demonbolt','wl_demonSkin','wl_lifeTap'] },
+    destruction:{ icon:'🔥', name:'毁灭术', desc:'献祭、烧尽、燃烧、灵魂之火和混乱之箭堆余烬爆发。', skills:['immolate','incinerate','wl_conflagrate','soulFire','chaosBolt','wl_chaosBolt','wl_darkSoul','wl_demonSkin'] },
+  },
+  druid: {
+    core:['interrupt'], novice:['wrath','moonfire','d_rake','rejuvenation'],
+    balance:{ icon:'🌗', name:'平衡德', desc:'月火、愤怒、星火、星涌、新月强击和飓风走星界能量循环。', skills:['moonfire','wrath','starfire','d_eclipse','d_starsurge','hurricane','entanglingRoots'] },
+    feral:{ icon:'🐾', name:'野德', desc:'斜掠、横扫、凶猛撕咬、狂暴和野性狂怒围绕连击点/流血。', skills:['d_rake','swipe','bite','berserk','d_berserk','d_ferociousBite','d_primalWrath'] },
+    resto:{ icon:'🌿', name:'奶德', desc:'回春、生命绽放、野性成长、树皮术和宁静治疗主角与随从。', skills:['rejuvenation','d_lifebloomSpell','d_rejuv','barkskin','d_barkskin','wildGrowth','tranquility','entanglingRoots'] },
+  },
+};
+
+const SPEC_STARTER_UNLOCKS = {
+  mage:{ fireball:1, frostbolt:1, m_arcaneBlast:1 },
+  priest:{ shield:1, heal:1, shadowWord:1 },
+  rogue:{ poison:1, backstab:1 },
+  hunter:{ summonPet:1, aimed:1, serpentSting:1 },
+  shaman:{ healingWave:1, windfury:1, s_stormstrike:1 },
+  paladin:{ holyLight:1, crusader:1, divineShield:12 },
+  warlock:{ corruption:1, drainLife:1, incinerate:1 },
+  druid:{ moonfire:1, bite:1, barkskin:12, rejuvenation:1 },
+};
+
+(function applySpecStarterUnlocks() {
+  if (typeof CLASSES === 'undefined') return;
+  for (const [clsKey, skills] of Object.entries(SPEC_STARTER_UNLOCKS)) {
+    const cls = CLASSES[clsKey];
+    if (!cls || !cls.skills) continue;
+    for (const [skillKey, lvl] of Object.entries(skills)) {
+      if (cls.skills[skillKey]) cls.skills[skillKey].unlockLvl = lvl;
+    }
+  }
+})();
+
+function specSkillProfile(clsKey, specKey) {
+  const clsProfile = SPEC_SKILL_LOADOUTS[clsKey];
+  if (!clsProfile) return null;
+  return (specKey && clsProfile[specKey]) || null;
+}
+
+function specSkillAllowedSet(clsKey, specKey) {
+  const clsProfile = SPEC_SKILL_LOADOUTS[clsKey];
+  if (!clsProfile) return null;
+  const keys = new Set(clsProfile.core || []);
+  const profile = specSkillProfile(clsKey, specKey);
+  const pool = profile ? (profile.skills || []) : (clsProfile.novice || []);
+  for (const key of pool) keys.add(key);
+  return keys;
+}
+
+function isSkillAllowedForSpec(clsKey, specKey, skillKey) {
+  const set = specSkillAllowedSet(clsKey, specKey);
+  return !set || set.has(skillKey);
+}
+
+function isSkillAllowedForCurrentSpec(skillKey) {
+  if (typeof state === 'undefined' || !state) return true;
+  return isSkillAllowedForSpec(state.cls, state.specialization, skillKey);
+}
+
+function classSkillEntriesForCurrentSpec(cls) {
+  const entries = Object.entries((cls && cls.skills) || {});
+  const filtered = (typeof state === 'undefined') ? entries : entries.filter(([key]) => isSkillAllowedForCurrentSpec(key));
+  return filtered.sort((a, b) => {
+    const sa = a[1] || {}, sb = b[1] || {};
+    const la = Number.isFinite(sa.unlockLvl) ? sa.unlockLvl : 9999;
+    const lb = Number.isFinite(sb.unlockLvl) ? sb.unlockLvl : 9999;
+    if (la !== lb) return la - lb;
+    return entries.findIndex(([key]) => key === a[0]) - entries.findIndex(([key]) => key === b[0]);
+  });
+}
+
+function pruneSelectedSkillsForCurrentSpec() {
+  if (typeof state === 'undefined' || !state || !Array.isArray(state.selectedSkills)) return 0;
+  const before = state.selectedSkills.length;
+  state.selectedSkills = state.selectedSkills.filter(key => state.unlockedSkills?.[key] && isSkillAllowedForCurrentSpec(key));
+  return before - state.selectedSkills.length;
+}
+
+function syncAllowedSkillUnlocks(opts) {
+  if (typeof state === 'undefined' || !state || typeof getCls !== 'function') return 0;
+  const cls = getCls();
+  if (!cls || !cls.skills) return 0;
+  let learned = 0;
+  for (const [key, sk] of classSkillEntriesForCurrentSpec(cls)) {
+    if (sk.unlockLvl && state.hero.lvl >= sk.unlockLvl && !state.unlockedSkills[key]) {
+      state.unlockedSkills[key] = true;
+      learned++;
+      if (opts?.logNew && typeof log === 'function') log('✨ 学会了 [' + sk.name + ']', 'good');
+    }
+  }
+  pruneSelectedSkillsForCurrentSpec();
+  if (learned && typeof markDirty === 'function') markDirty('skills');
+  return learned;
+}
+
+function currentSpecSkillProfile() {
+  if (typeof state === 'undefined' || !state) return null;
+  return specSkillProfile(state.cls, state.specialization);
+}
 
 function skillPctText(pct) {
   return Math.round((pct || 0) * 100) + '%';

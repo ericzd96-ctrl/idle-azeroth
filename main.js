@@ -298,6 +298,10 @@ function setupDelegation() {
     if (!btn) return;
     if (btn.dataset.action === 'selectskill') {
       const key = btn.dataset.key;
+      if (typeof isSkillAllowedForCurrentSpec === 'function' && !isSkillAllowedForCurrentSpec(key)) {
+        log('该技能不属于当前专精', 'bad');
+        return;
+      }
       const idx = state.selectedSkills.indexOf(key);
       if (idx >= 0) {
         state.selectedSkills.splice(idx, 1);
@@ -557,6 +561,12 @@ function setupDelegation() {
     const key = btn.dataset.skill;
     if (!key) return;
     const c = getCls(); const sk = c?.skills[key];
+    if (typeof isSkillAllowedForCurrentSpec === 'function' && !isSkillAllowedForCurrentSpec(key)) {
+      state.selectedSkills = (state.selectedSkills || []).filter(s => s !== key);
+      log('该技能不属于当前专精,已从快捷栏移除', 'bad');
+      markDirty('skills', 'stage');
+      return;
+    }
     // 打断与防御/减伤技能随时可用(即使正在读条)
     if (sk && sk.type === 'interrupt') { castSkill(key, true); return; }
     if (sk && casting && typeof canWeaveSkillDuringCast === 'function' && canWeaveSkillDuringCast(key, sk)) { castSkill(key, true); return; }

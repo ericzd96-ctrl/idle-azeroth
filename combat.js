@@ -803,7 +803,7 @@ function autoSkillScore(skillKey, sk, mon, ctx){
 function autoCastSkillEntries(cls){
   if(!cls || !cls.skills) return [];
   return Object.entries(cls.skills)
-    .filter(([skillKey, sk]) => !!state.unlockedSkills[skillKey] && sk && sk.type !== 'passive')
+    .filter(([skillKey, sk]) => !!state.unlockedSkills[skillKey] && sk && sk.type !== 'passive' && (typeof isSkillAllowedForCurrentSpec !== 'function' || isSkillAllowedForCurrentSpec(skillKey)))
     .sort((a, b) => {
       const la = Number.isFinite(a[1]?.unlockLvl) ? a[1].unlockLvl : 9999;
       const lb = Number.isFinite(b[1]?.unlockLvl) ? b[1].unlockLvl : 9999;
@@ -5829,7 +5829,9 @@ function gainXP(amt){
 function xpNeeded(lvl){if(lvl>=MAX_LEVEL)return Infinity;return Math.floor((30+lvl*lvl*5+lvl*10)*(typeof XP_CURVE_MULT==='number'?XP_CURVE_MULT:1));}
 function checkSkillUnlocks(){
   const c=getCls();if(!c)return;
-  for(const[key,sk]of Object.entries(c.skills)){if(sk.unlockLvl&&state.hero.lvl>=sk.unlockLvl&&!state.unlockedSkills[key]){state.unlockedSkills[key]=true;if(state.selectedSkills.length===0)state.selectedSkills.push(key);log('✨ 学会了 ['+sk.name+']','good');markDirty('skills');}}
+  const entries=(typeof classSkillEntriesForCurrentSpec==='function')?classSkillEntriesForCurrentSpec(c):Object.entries(c.skills);
+  for(const[key,sk]of entries){if(sk.unlockLvl&&state.hero.lvl>=sk.unlockLvl&&!state.unlockedSkills[key]){state.unlockedSkills[key]=true;if(state.selectedSkills.length===0&&(typeof isSkillAllowedForCurrentSpec!=='function'||isSkillAllowedForCurrentSpec(key)))state.selectedSkills.push(key);log('✨ 学会了 ['+sk.name+']','good');markDirty('skills');}}
+  if(typeof pruneSelectedSkillsForCurrentSpec==='function')pruneSelectedSkillsForCurrentSpec();
   if(typeof passiveCheckUnlocks==='function'){passiveCheckUnlocks();markDirty('skills');}
   checkDungeonUnlocks();
 }
@@ -6466,6 +6468,7 @@ function cancelHeroCast(){
 function getSkillCd(sk){let base;if(sk.cd)base=sk.cd;else if(sk.type==='buff')base=40;else if(sk.type==='heal')base=16;else{const mul=sk.mul||1;if(mul>=8)base=35;else if(mul>=6)base=24;else if(mul>=5)base=18;else if(mul>=4)base=13;else if(mul>=3)base=9;else base=7;}if(state.hero.cdReduction>0)base=Math.max(3,Math.floor(base*(1-state.hero.cdReduction/100)));return base;}
 function startCast(skillKey,manual){
   const c=getCls();const sk=c.skills[skillKey];if(!sk)return;
+  if(typeof isSkillAllowedForCurrentSpec==='function'&&!isSkillAllowedForCurrentSpec(skillKey)){if(manual)log('该技能不属于当前专精','bad');return;}
   const now=Date.now();
   if(state.heroSilenceUntil>now){if(manual)log('你被沉默了,无法施法','bad');return;}
   const castTime=getCastTime(sk);if(castTime<=0){castSkill(skillKey,manual);return;}
@@ -6663,6 +6666,7 @@ function tickCast(now){
 }
 function castSkill(skillKey,manual){
   const c=getCls();const sk=c.skills[skillKey];if(!sk)return;
+  if(typeof isSkillAllowedForCurrentSpec==='function'&&!isSkillAllowedForCurrentSpec(skillKey)){if(manual)log('该技能不属于当前专精','bad');return;}
   const ai=skillAiMeta(skillKey, sk);
   const summonSkill = sk.type==='summon' || sk.summonCount;
   if(!state.unlockedSkills[skillKey]){if(manual)log('技能未解锁','bad');return;}

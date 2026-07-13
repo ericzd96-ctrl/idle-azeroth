@@ -30,6 +30,7 @@ function tooltipHoverEnabled() {
 
 function classSkillEntriesSorted(cls) {
   const entries = Object.entries((cls && cls.skills) || {});
+  if (typeof classSkillEntriesForCurrentSpec === 'function') return classSkillEntriesForCurrentSpec(cls);
   const order = new Map(entries.map(([key], idx) => [key, idx]));
   return entries.sort((a, b) => {
     const sa = a[1] || {}, sb = b[1] || {};
@@ -2514,6 +2515,8 @@ function renderSourceTable() {
 
 function renderSkills() {
   const c = getCls(); if (!c) return;
+  if (typeof syncAllowedSkillUnlocks === 'function') syncAllowedSkillUnlocks();
+  if (typeof pruneSelectedSkillsForCurrentSpec === 'function') pruneSelectedSkillsForCurrentSpec();
   const skl = $('skill-list');
   skl.innerHTML = `<div class="muted" style="margin-bottom:6px;font-size:11px">手动技能栏 <b style="color:var(--accent)">${state.selectedSkills.length}</b>/8 · 自动施法按上方分类勾选使用已解锁技能,这里仅影响手动快捷栏</div>`;
   const mech = (typeof CLASS_COMBAT_MECHANICS === 'object') ? CLASS_COMBAT_MECHANICS[state.cls] : null;
@@ -2525,6 +2528,22 @@ function renderSkills() {
       <div class="row"><b style="color:#fde68a">${mech.icon || '✦'} 职业机制: ${mech.name}</b><span class="pill">核心玩法</span></div>
       <div class="muted" style="font-size:11px;line-height:1.45">${mech.desc}</div>`;
     skl.appendChild(mechDiv);
+  }
+  const specProfile = (typeof currentSpecSkillProfile === 'function') ? currentSpecSkillProfile() : null;
+  if (specProfile) {
+    const specDiv = document.createElement('div');
+    specDiv.className = 'skill-item';
+    specDiv.style.borderColor = 'rgba(96,165,250,.55)';
+    specDiv.innerHTML = `
+      <div class="row"><b style="color:#bfdbfe">${specProfile.icon || '🎯'} 当前专精: ${specProfile.name}</b><span class="pill">专精技能池</span></div>
+      <div class="muted" style="font-size:11px;line-height:1.45">${specProfile.desc}</div>`;
+    skl.appendChild(specDiv);
+  } else {
+    const hintDiv = document.createElement('div');
+    hintDiv.className = 'skill-item';
+    hintDiv.style.borderColor = 'rgba(148,163,184,.35)';
+    hintDiv.innerHTML = `<div class="muted" style="font-size:11px;line-height:1.45">未选择专精时只显示少量入门技能。选择专精后,技能页会切换为该专精独有技能池。</div>`;
+    skl.appendChild(hintDiv);
   }
   for (const [skKey, sk] of classSkillEntriesSorted(c)) {
     const unlocked = !!state.unlockedSkills[skKey];
@@ -2591,8 +2610,10 @@ function renderTalents() {
     btn.addEventListener('click', () => {
       if (state.specialization === tree.key) return; // 不能取消,只能切换
       state.specialization = tree.key;
+      if (typeof syncAllowedSkillUnlocks === 'function') syncAllowedSkillUnlocks({ logNew:true });
+      if (typeof pruneSelectedSkillsForCurrentSpec === 'function') pruneSelectedSkillsForCurrentSpec();
       recomputeStats();
-      markDirty('talents', 'hero');
+      markDirty('talents', 'skills', 'stage', 'hero');
     });
     specBar.appendChild(btn);
   }
@@ -2699,6 +2720,7 @@ function renderSkillBar() {
   const bar = $('skill-bar');
   if (!bar) return;
   const c = getCls(); if (!c) return;
+  if (typeof pruneSelectedSkillsForCurrentSpec === 'function') pruneSelectedSkillsForCurrentSpec();
   const now = Date.now();
 
   if (state.selectedSkills.length === 0) {
