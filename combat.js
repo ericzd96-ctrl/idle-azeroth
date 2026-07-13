@@ -5674,6 +5674,14 @@ const DUNGEON_GEAR_TRAITS = [
   {key:'phasebroker', name:'相位账印', icon:'🧿', tags:['ethereal','arcane','void','precision'], minTier:1, slots:['helmet','ring','trinket'], mod:{mastery:1.2,costReduction:0.9,crit:0.5}, desc:'虚灵、掮灵和卡雷什副本的结算印记,压缩资源压力。'},
   {key:'delversignal', name:'地下堡信标', icon:'🔦', tags:['delve','mythic','speed','fortress'], minTier:1, slots:['weapon','boots','trinket'], mod:{haste:1.0,hpPct:1.6,extraAtk:0.8}, desc:'短波次地下堡的紧急信标,适合快节奏推进。'},
   {key:'plagueglass', name:'疫池玻片', icon:'☣️', tags:['plague','poison','undead','nature'], minTier:1, slots:['weapon','gloves','trinket'], mod:{dotBonus:2.4,leech:0.7,mastery:0.8}, desc:'瘟疫、孢子和腐化实验副本的危险样本。'},
+  {key:'defiaspowder', name:'迪菲亚黑火药', icon:'⚙️', tags:['pirate','martial','speed'], sourceKeys:['deadmines'], minTier:0, slots:['weapon','gloves','belt','trinket'], mod:{extraAtk:1.2,haste:0.6}, desc:'死亡矿井的火药工坊印记,让开场爆发和技能衔接更快。'},
+  {key:'scarletverdict', name:'血色审判印', icon:'📕', tags:['holy','fortress','noble'], sourceKeys:['scarlet','stratholme'], minTier:0, slots:['weapon','helmet','armor','trinket'], mod:{vers:0.9,crit:0.5}, desc:'血色十字军和斯坦索姆圣焰的审判烙印,兼顾稳定伤害与抗压。'},
+  {key:'uldamanrunecog', name:'奥达曼符文齿轮', icon:'🔩', tags:['titan','forge','mech'], sourceKeys:['uldaman','gnomeregan'], minTier:0, slots:['belt','ring','trinket'], mod:{mastery:1.1,cdReduction:0.6}, desc:'泰坦遗迹与机械回路中的小型齿轮,压缩循环并提高精通收益。'},
+  {key:'sandfuryfang', name:'沙怒洛阿牙饰', icon:'🦷', tags:['troll','blood','nature','execute'], sourceKeys:['zulfarrak'], minTier:0, slots:['weapon','ring','trinket'], mod:{executeBonus:1.9,leech:0.6}, desc:'祖尔法拉克沙怒祭司留下的洛阿牙饰,更擅长收割残血目标。'},
+  {key:'scholowax', name:'通灵骨粉封蜡', icon:'💀', tags:['undead','shadow','blood'], sourceKeys:['scholomance'], minTier:0, slots:['helmet','gloves','trinket'], mod:{dotBonus:2.0,mastery:0.7}, desc:'通灵学院讲堂里的骨粉封蜡,强化持续压制和暗影系精通。'},
+  {key:'darkironrivet', name:'黑铁炉心铆钉', icon:'🌋', tags:['fire','forge','martial'], sourceKeys:['brd','lbrs','ubrs','mc'], minTier:0, slots:['weapon','armor','belt','trinket'], mod:{atkPct:1.7,defPct:1.1}, desc:'黑石深处的黑铁铆钉,把进攻和重甲防护熔在一起。'},
+  {key:'diremaulvine', name:'厄运秘法藤环', icon:'🌿', tags:['nature','arcane','noble'], sourceKeys:['diremaul','maraudon'], minTier:0, slots:['helmet','ring','trinket'], mod:{intPct:1.1,spiPct:1.1}, desc:'厄运之槌和玛拉顿的奥术藤蔓,更偏向法系与恢复构筑。'},
+  {key:'depthstidepearl', name:'深渊潮汐珠', icon:'🌊', tags:['water','naga','shadow'], sourceKeys:['bfd','sunktemple'], minTier:0, slots:['ring','trinket','armor'], mod:{hpPct:1.4,healBonus:1.4}, desc:'黑暗深渊与沉没神庙的潮湿珠核,提升续航和水域副本生存。'},
   {key:'guardianoath', name:'守护誓印', icon:'🔰', tags:['holy','fortress','raid','tank'], minTier:3, slots:['armor','trinket'], mod:{hpPct:3.0,vers:1.6}, desc:'史诗团本装备上的重誓印。'},
   {key:'soulfurnace', name:'魂炉余温', icon:'♨️', tags:['fire','undead','shadow','forge'], minTier:3, slots:['weapon','trinket'], mod:{atkPct:3.2,leech:1.2}, desc:'高阶首领掉落才可能封住的炉温。'},
   {key:'chronolatch', name:'时序锁扣', icon:'⏱️', tags:['time','arcane','speed','raid'], minTier:3, slots:['ring','trinket','gloves'], mod:{cdReduction:1.4,haste:1.1}, desc:'压缩技能空窗,适合频繁施法。'},
@@ -5754,6 +5762,16 @@ function dungeonTraitBasePool(gearTier, rRank, slotKey){
   });
 }
 
+function dungeonTraitSourceMatch(trait, dungeonKey){
+  if(!trait||!trait.sourceKeys||!trait.sourceKeys.length||!dungeonKey) return false;
+  const baseKey=(typeof baseDungeonKey==='function')?baseDungeonKey(dungeonKey):String(dungeonKey||'');
+  return trait.sourceKeys.includes(dungeonKey)||trait.sourceKeys.includes(baseKey);
+}
+
+function dungeonTraitPoolForSource(pool, dungeonKey){
+  return (pool||[]).filter(t=>!t.sourceKeys||!t.sourceKeys.length||dungeonTraitSourceMatch(t,dungeonKey));
+}
+
 function dungeonTraitTagsForDungeon(dungeonKey){
   const baseKey=(typeof baseDungeonKey==='function')?baseDungeonKey(dungeonKey):String(dungeonKey||'');
   const dg=(typeof DUNGEONS!=='undefined')?(DUNGEONS.find(d=>d.key===dungeonKey)||DUNGEONS.find(d=>d.key===baseKey)):null;
@@ -5772,15 +5790,16 @@ function dungeonTraitTagsForDungeon(dungeonKey){
 }
 
 function dungeonTraitAffinityPool(dungeonKey, gearTier, rRank, slotKey){
-  const pool=dungeonTraitBasePool(gearTier,rRank,slotKey);
+  const pool=dungeonTraitPoolForSource(dungeonTraitBasePool(gearTier,rRank,slotKey),dungeonKey);
   if(!pool.length) return [];
   const tags=dungeonTraitTagsForDungeon(dungeonKey);
+  const exact=pool.filter(t=>dungeonTraitSourceMatch(t,dungeonKey));
   if(!tags.length) return pool;
   const modeTags=tags.filter(tag=>tag==='raid'||tag==='mythic');
   const coreTags=tags.filter(tag=>!modeTags.includes(tag));
-  const core=coreTags.length?pool.filter(t=>(t.tags||[]).some(tag=>coreTags.includes(tag))):[];
-  const mode=modeTags.length?pool.filter(t=>!core.includes(t)&&(t.tags||[]).some(tag=>modeTags.includes(tag))):[];
-  const tagged=core.concat(mode);
+  const core=coreTags.length?pool.filter(t=>!exact.includes(t)&&(t.tags||[]).some(tag=>coreTags.includes(tag))):[];
+  const mode=modeTags.length?pool.filter(t=>!exact.includes(t)&&!core.includes(t)&&(t.tags||[]).some(tag=>modeTags.includes(tag))):[];
+  const tagged=exact.concat(core,mode);
   return tagged.length ? tagged : pool;
 }
 
@@ -5790,7 +5809,7 @@ function dungeonTraitPreviewForDungeon(dungeonKey, limit){
   const tags=dungeonTraitTagsForDungeon(dungeonKey);
   const rRank=dungeonGearRarityRank('epic');
   const pool=dungeonTraitAffinityPool(dungeonKey,gearTier,rRank,null);
-  const score = (t) => (t.tags||[]).reduce((sum,tag)=>sum+(tags.includes(tag)?(tag==='raid'||tag==='mythic'?1:3):0),0);
+  const score = (t) => (dungeonTraitSourceMatch(t,dungeonKey)?40:0) + (t.tags||[]).reduce((sum,tag)=>sum+(tags.includes(tag)?(tag==='raid'||tag==='mythic'?1:3):0),0);
   const preferred=(tags.length?pool.filter(t=>(t.tags||[]).some(tag=>tags.includes(tag))):pool).sort((a,b)=>score(b)-score(a));
   return {
     tags,
@@ -5834,9 +5853,12 @@ function applyDungeonGearTrait(item,dungeonKey,rarity,opts){
   if(rRank<2) return item;
   const chance=dungeonTraitChance(rarityKey,gearTier,!!item.setKey);
   if(Math.random()>chance) return item;
-  const pool=dungeonTraitBasePool(gearTier,rRank,item.slot);
+  const pool=dungeonTraitPoolForSource(dungeonTraitBasePool(gearTier,rRank,item.slot),sourceKey);
   const affinity=dungeonTraitAffinityPool(sourceKey,gearTier,rRank,item.slot);
-  const picked=affinity.length&&Math.random()<0.88?choice(affinity):(pool.length?choice(pool):choice(DUNGEON_GEAR_TRAITS));
+  const signature=affinity.filter(t=>dungeonTraitSourceMatch(t,sourceKey));
+  const picked=signature.length&&Math.random()<0.62
+    ? choice(signature)
+    : (affinity.length&&Math.random()<0.88?choice(affinity):(pool.length?choice(pool):choice(DUNGEON_GEAR_TRAITS)));
   const sourceDg=(typeof DUNGEONS!=='undefined')?DUNGEONS.find(d=>d.key===sourceKey):null;
   const sourceTags=dungeonTraitTagsForDungeon(sourceKey);
   const matchedTags=(picked.tags||[]).filter(tag=>sourceTags.includes(tag));
