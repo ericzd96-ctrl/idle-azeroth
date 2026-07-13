@@ -3382,6 +3382,12 @@ function dungeonRaidProgressionHtml(dg, compact) {
     <div class="dungeon-raid-track-grid">${modeTip}${trackTip}${powerTip}${lootTip}</div>
   </div>`;
 }
+const DUNGEON_SHARED_ART_KEYS = new Set([
+  'ulduar','sethekk','atonement','plaguefall','mists','theater',
+  'azurevault','hallsinfusion','brackenhide','neltharus','nokhud',
+  'ecodome_aldani','oasis_succession','tazavesh_streets','tazavesh_gambit',
+  'overlook_zoshul','manaforge_omega'
+]);
 function dungeonArtInfo(dg) {
   if (!dg?.art) return null;
   const baseKey = (typeof baseDungeonKey === 'function') ? baseDungeonKey(dg.key) : dg.key;
@@ -3390,6 +3396,9 @@ function dungeonArtInfo(dg) {
   const isBackfilled = !!backfill && art === backfill;
   const generic = /timewalking-|warwithin-dungeon-banner|dungeon-banner/i.test(art);
   const shared = /ecodome-rhovan|tazavesh-banner|karesh-map|shadow-point|shandorah|primeus-repository|voidrazor-sanctum|aberrus-banner|amirdrassil-banner/i.test(art);
+  if (DUNGEON_SHARED_ART_KEYS.has(baseKey)) {
+    return { label:'区域图', cls:'shared', icon:'🌐', desc:'使用同区域、同战役或同副本群的共享图片，优先保证视觉主题贴近该副本。' };
+  }
   if (isBackfilled && !generic) {
     return { label:'副本图', cls:'specific', icon:'🗺️', desc:'使用本地 WoW 风格副本/入口/区域图片。克隆难度会继承基础副本图片。' };
   }
