@@ -74,12 +74,14 @@
     hyjal:'spell_shadow_summonfelhunter', bt:'achievement_boss_illidan',
     stratholme:'inv_misc_head_undead_01', manatombs:'spell_arcane_portalshattrath',
     steamvault:'spell_frost_summonwaterelemental', magister:'spell_arcane_blast',
-    hol:'spell_nature_lightningoverload', toc:'achievement_reputation_08',
+    hol:'spell_nature_lightningoverload', toc:'achievement_reputation_08', forge:'spell_shadow_soulgem',
     diremaul:'inv_misc_head_orc_01', lbrs:'inv_misc_head_dragon_black', shattered:'inv_sword_48',
     arcatraz:'spell_arcane_portaldarnassus', culling:'inv_misc_head_undead_01', pit:'inv_ore_saronite_01',
     oculus:'spell_arcane_portalshattrath', hor:'achievement_boss_lichking',
     nexus:'spell_arcane_portalshattrath', gundrak:'ability_hunter_pet_crocolisk', sethekk:'ability_hunter_pet_vulture',
     vortex:'spell_shaman_thunderstorm',
+    ubrs:'inv_misc_head_dragon_black',
+    firelands:'spell_fire_volcano', dragonsoul:'ability_deathwing_bloodcorruption_death',
     throne:'spell_nature_lightningoverload', soo:'classicon_warrior', hfc:'spell_shadow_summonfelhunter',
     tomb:'spell_shadow_summonfelhunter', antorus:'spell_arcane_portalshattrath',
     valor:'spell_holy_divineillumination', darkheart:'spell_shadow_charm', court:'spell_arcane_starfire',
@@ -1574,8 +1576,10 @@
   };
 
   window.dungeonIcon = function (key, name, size, fallback) {
+    const baseKey = String(key || '').replace(/_(heroic|epic5|epic)$/i, '');
     const iconName =
       DUNGEON_ICON[key] ||
+      DUNGEON_ICON[baseKey] ||
       resolveSymbolIconName(fallback) ||
       resolveLabelIconName(name, '') ||
       'achievement_dungeon_naxxramas';
