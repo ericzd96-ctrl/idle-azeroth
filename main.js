@@ -634,6 +634,7 @@ function setupDelegation() {
     const btn=e.target.closest('button[data-action]');
     if(!btn)return;
     const act=btn.dataset.action;
+    if(act==='compsheettab'){ companionSetSheetTab(btn.dataset.value); return; }
     if(act==='compfilter'){ companionSetFilter(btn.dataset.group, btn.dataset.value); return; }
     if(act==='compsort'){ companionSetSort(btn.dataset.value); return; }
     if(act==='compdetail'){ companionShowDetail(btn.dataset.key); return; }

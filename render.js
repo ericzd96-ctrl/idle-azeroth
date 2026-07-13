@@ -2977,6 +2977,14 @@ function compSkillChips(tpl){
 const COMPANION_FILTER_DEFAULTS = { ownership:'all', target:'all', quality:'all', role:'all', trait:'all', bond:'all', query:'', sort:'quality' };
 let companionFilters = Object.assign({}, COMPANION_FILTER_DEFAULTS);
 let companionDetailKey = '';
+let companionSheetTab = 'roster';
+const COMPANION_SHEET_TABS = [
+  { key:'roster', label:'名册', icon:'🐾' },
+  { key:'draw', label:'抽取', icon:'🎟️' },
+  { key:'combat', label:'作战', icon:'⚔️' },
+  { key:'bond', label:'羁绊', icon:'⚜️' },
+  { key:'mission', label:'派遣', icon:'🗺️' },
+];
 const COMPANION_SORT_OPTIONS = [
   { value:'quality', label:'品质' },
   { value:'stars', label:'星级' },
@@ -4074,6 +4082,7 @@ function companionSetSort(value){
 }
 function companionShowDetail(key){
   companionDetailKey = key || '';
+  companionSheetTab = 'roster';
   renderCompanion();
 }
 function companionCloseDetail(){
@@ -4115,6 +4124,32 @@ function companionResetFilters(){
   companionFilters = Object.assign({}, COMPANION_FILTER_DEFAULTS);
   renderCompanion();
 }
+function companionSetSheetTab(tab){
+  if (!COMPANION_SHEET_TABS.some(t => t.key === tab)) return;
+  companionSheetTab = tab;
+  renderCompanion();
+}
+function companionSheetTabsHtml(entries){
+  const owned = (state.companions || []).length;
+  const support = Array.isArray(state.companionSupport) ? state.companionSupport.length : 0;
+  const bondCount = (typeof activeCompanionBonds === 'function') ? activeCompanionBonds().length : 0;
+  const missionReady = state.companionMissions?.active
+    ? state.companionMissions.active.filter(m => (m.endAt || 0) <= Date.now()).length
+    : 0;
+  const badge = {
+    roster: `${owned}/${COMPANIONS.length}`,
+    draw: state.compTickets || 0,
+    combat: support ? `${support}/2` : '',
+    bond: bondCount || '',
+    mission: missionReady || '',
+  };
+  const buttons = COMPANION_SHEET_TABS.map(tab => {
+    const active = companionSheetTab === tab.key;
+    const b = badge[tab.key];
+    return `<button class="comp-sheet-tab ${active ? 'active' : ''}" data-action="compsheettab" data-value="${tab.key}">${tab.icon} ${tab.label}${b !== '' ? `<span>${b}</span>` : ''}</button>`;
+  }).join('');
+  return `<div class="comp-sheet-tabs">${buttons}</div>`;
+}
 function companionPanelRenderSig(){
   const compList = (state.companions || []).map(c => `${c.key}:${c.stars||1}`).sort().join('|');
   const shards = state.compUniversalShards
@@ -4129,7 +4164,7 @@ function companionPanelRenderSig(){
   const missions = state.companionMissions?.active
     ? state.companionMissions.active.map(m => `${m.id}:${m.endAt}:${m.compKey}`).join('|') + `#${state.companionMissions.totalCompleted || 0}#${Math.floor(Date.now()/30000)}`
     : '';
-  return [state.cls||'', state.hero?.lvl||0, state.compTickets||0, active, support, compList, shards, bonds, filters, wishlist, tactic, missions].join('||');
+  return [state.cls||'', state.hero?.lvl||0, state.compTickets||0, active, support, compList, shards, bonds, filters, wishlist, tactic, missions, companionSheetTab].join('||');
 }
 function renderCompanion() {
   $('gem-cost').textContent = '(消耗1🐾随从券 · 技能含定位招牌技+专属技，品质/星级决定强度)';
@@ -4160,17 +4195,38 @@ function renderCompanion() {
   if(fullQ.length) html += `<div class="muted" style="font-size:10px;margin-top:2px;color:var(--accent)">✅ 已满星品质: ${fullQ.map(k=>qLabel[k]).join(' ')} (不再抽到)</div>`;
   html += `</div>`;
 
-  html += companionDrawGuideHtml(entries);
+  html += companionSheetTabsHtml(entries);
+  if (companionSheetTab === 'draw') {
+    html += `<div class="comp-sheet-pane">${companionDrawGuideHtml(entries)}${companionWishlistPanelHtml(entries)}${companionGlossaryPanelHtml()}</div>`;
+    cl.innerHTML = html;
+    cl.dataset.renderSig = renderSig;
+    cl.dataset.rendered = '1';
+    return;
+  }
+  if (companionSheetTab === 'combat') {
+    html += `<div class="comp-sheet-pane">${companionSupportPanelHtml(entries)}${companionTacticPanelHtml()}${companionPowerPanelHtml(entries)}</div>`;
+    cl.innerHTML = html;
+    cl.dataset.renderSig = renderSig;
+    cl.dataset.rendered = '1';
+    return;
+  }
+  if (companionSheetTab === 'bond') {
+    html += `<div class="comp-sheet-pane">${companionBondRoadmapHtml(entries)}${companionAdvisorPanelHtml(entries)}</div>`;
+    cl.innerHTML = html;
+    cl.dataset.renderSig = renderSig;
+    cl.dataset.rendered = '1';
+    return;
+  }
+  if (companionSheetTab === 'mission') {
+    html += `<div class="comp-sheet-pane">${companionMissionPanelHtml(entries)}</div>`;
+    cl.innerHTML = html;
+    cl.dataset.renderSig = renderSig;
+    cl.dataset.rendered = '1';
+    return;
+  }
+
   html += companionFilterPanelHtml(entries);
-  html += companionWishlistPanelHtml(entries);
-  html += companionGlossaryPanelHtml();
   html += companionDetailPanelHtml(entries);
-  html += companionSupportPanelHtml(entries);
-  html += companionTacticPanelHtml();
-  html += companionPowerPanelHtml(entries);
-  html += companionBondRoadmapHtml(entries);
-  html += companionAdvisorPanelHtml(entries);
-  html += companionMissionPanelHtml(entries);
 
   // ---- 出战随从 ----
   const act = getActiveCompanion();
