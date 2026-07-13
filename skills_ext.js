@@ -759,6 +759,11 @@ function currentSpecCombatRule() {
   return SPEC_COMBAT_RULES[state.cls]?.[state.specialization] || null;
 }
 
+if (typeof window !== 'undefined') {
+  window.SPEC_COMBAT_RULES = SPEC_COMBAT_RULES;
+  window.currentSpecCombatRule = currentSpecCombatRule;
+}
+
 const SPEC_STARTER_UNLOCKS = {
   mage:{ fireball:1, frostbolt:1, m_arcaneBlast:1 },
   priest:{ shield:1, heal:1, shadowWord:1 },
