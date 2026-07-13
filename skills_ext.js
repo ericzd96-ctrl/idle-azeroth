@@ -31,6 +31,12 @@ const BUFF_FX = {
   pa_wrath:   { atkMul:1.28, critAdd:12, critdAdd:24 },    // 骑士·复仇之怒
   wl_dark:    { critAdd:20, critdAdd:38 },                 // 术士·黑暗灵魂
   d_zerk:     { atkMul:1.20, spdMul:1.20, critAdd:8 },     // 德鲁伊·狂暴
+  w_shieldBlock:{ defMul:1.22, dr:0.18 },                  // 防战·盾牌格挡:高防御+反击窗口
+  pa_devotion:{ atkMul:1.13, defMul:1.18, regAdd:6, dr:0.16 }, // 防骑·虔诚祝福:属性+回复+减伤
+  p_grace:    { defMul:1.12, critAdd:4, regAdd:5 },        // 牧师·恩典:治疗职业给随从/自身的续航增益
+  sh_ancestral:{ spdMul:1.12, regAdd:4, dr:0.10 },         // 萨满·先祖护持:图腾式支援
+  d_lifebloom:{ defMul:1.10, regAdd:7 },                   // 德鲁伊·生命绽放:持续恢复与小防御
+  h_beastBond:{ atkMul:1.14, spdMul:1.10 },                // 猎人·兽群羁绊:宠物/召唤物协同
 };
 
 const SKILL_AURA_LIBRARY = {
@@ -59,6 +65,24 @@ const SKILL_AURA_LIBRARY = {
   /* ===== 德鲁伊 ===== */
   d_astral:     { icon:'🌗', name:'星界能量', desc:'月火/星火叠加,新月强击按层暴增', maxStacks:5 },
   d_combo:      { icon:'🐾', name:'撕咬连击', desc:'斜掠/撕碎叠加,凶猛撕咬按层引爆', maxStacks:5 },
+  w_block:      { icon:'🧱', name:'盾牌格挡', desc:'防战承伤和盾系技能叠加,提高反震并可转成护盾', maxStacks:5 },
+  pa_bulwark:   { icon:'🛡️', name:'圣光壁垒', desc:'防骑祝福/审判叠加,治疗、护盾和属性越滚越厚', maxStacks:5 },
+  p_grace:      { icon:'✨', name:'恩典', desc:'牧师治疗/护盾叠加,强化随从与主角的保护窗口', maxStacks:5 },
+  h_beastBond:  { icon:'🐾', name:'兽群羁绊', desc:'猎人与宠物/召唤物共同叠加,强化协同猛攻', maxStacks:5 },
+  sh_totem:     { icon:'🪬', name:'图腾共鸣', desc:'萨满治疗、护盾与元素技能叠加,强化全队支援', maxStacks:5 },
+  d_harmony:    { icon:'🌿', name:'自然调和', desc:'德鲁伊治疗、月火与野性技能叠加,在恢复/输出间转换', maxStacks:5 },
+};
+
+const CLASS_COMBAT_MECHANICS = {
+  warrior: { icon:'🧱', name:'战士姿态', desc:'防护战士承伤会叠盾牌格挡并按防御反震；武器围绕破甲与斩杀；狂暴围绕暴怒和多段追击。' },
+  mage: { icon:'🔷', name:'三系法术循环', desc:'奥术叠充能爆发，火焰铺点燃再引爆，冰霜冻结后用冰枪/暴风雪打碎裂伤害。' },
+  priest: { icon:'✨', name:'圣光与暗影', desc:'戒律/神圣治疗会同步照顾随从，给随从加血、护盾和恩典；暗影依靠疯狂与持续伤害爆发。' },
+  rogue: { icon:'🔪', name:'潜行者终结技', desc:'通过连击点、毒锋、破绽和持续伤害组织终结技，不再只靠高倍率技能硬砍。' },
+  hunter: { icon:'🐾', name:'兽群协同', desc:'宠物和召唤物会给猎人叠兽群羁绊，猎人印记/钉刺/杀戮命令共同推动协同猛攻。' },
+  shaman: { icon:'🪬', name:'元素与图腾', desc:'元素叠雷霆充能，增强叠漩涡，恢复会通过图腾共鸣为随从和主角提供治疗、护盾与属性。' },
+  paladin: { icon:'⚜️', name:'圣能祝福', desc:'圣骑士靠审判、祝福、圣盾和圣能滚属性；防骑在祝福窗口中拥有更强回血与护盾。' },
+  warlock: { icon:'💜', name:'痛苦契约', desc:'术士通过多种 DOT、余烬和灵魂碎片打伤害，混乱之箭/邪能狂涌负责引爆痛苦。' },
+  druid: { icon:'🌗', name:'自然形态', desc:'平衡靠月火与星界能量，野性靠连击和斩杀，恢复德会把治疗与自然护盾扩展到随从。' },
 };
 
 const MONSTER_STATE_META = {
@@ -304,6 +328,85 @@ const SKILL_REWORKS = {
   }
 })();
 
+const CLASS_MECHANIC_SKILL_PATCHES = {
+  warrior: {
+    shieldWall:{ desc:'15秒减伤50%,叠加盾牌格挡;防护专精承伤会按防御高额反震', fx:{ grantAura:{ key:'w_block', add:3, max:5, duration:15000 }, classMechanic:'防护:承伤叠盾牌格挡并反震;盾牌格挡满层会转为护盾' } },
+    challengingShout:{ desc:'10秒减伤并嘲讽战场,立即叠加盾牌格挡', buff:'w_shieldBlock', fx:{ grantAura:{ key:'w_block', add:2, max:5, duration:12000 }, classMechanic:'防护:挑战期间反伤更高' } },
+    w_ironwall:{ desc:'5秒钢铁壁垒,叠加盾牌格挡并提高反震效率', buff:'w_ironwall', fx:{ grantAura:{ key:'w_block', add:3, max:5, duration:12000 }, classMechanic:'防护:壁垒期间承伤会额外反击' } },
+    thunderClap:{ desc:'范围雷霆一击,降低敌速并叠1层盾牌格挡', fx:{ bonusVsLowHp:0.18, executeThreshold:0.35, grantAura:{ key:'w_block', add:1, max:5, duration:12000 } } },
+  },
+  mage: {
+    dragonBreath:{ desc:'瞬发龙息造成火焰伤害,对点燃目标额外提高并刷新炽热', fx:{ bonusStates:{ dot:0.35 }, applyDotKey:'skill:dragonBreath', dotName:'龙息余焰', dotIcon:'🐲', dotPct:0.12, dotMs:5000, grantAura:{ key:'m_heat', add:1, max:5, duration:12000 } } },
+    slow:{ desc:'减速并施加冻结印记,冰枪术和暴风雪会吃到碎裂收益', fx:{ applyTargetState:[{ key:'frozen', durMs:7000 }], grantAura:{ key:'m_frost', add:1, max:5, duration:12000 } } },
+    timeWarp:{ desc:'15秒时间扭曲,立即获得奥术充能并让爆发窗口更集中', fx:{ grantAura:{ key:'arcaneCharge', add:2, max:3, duration:12000 } } },
+    m_arcanePower:{ desc:'5秒奥术强化,获得2层奥术充能并加速施法', fx:{ grantAura:{ key:'arcaneCharge', add:2, max:3, duration:12000 } } },
+  },
+  priest: {
+    shield:{ desc:'15秒真言术盾,同时给随从施加恩典护盾', fx:{ grantAura:{ key:'p_grace', add:1, max:5, duration:15000 }, companionShieldPct:0.10, companionBuff:'p_grace', companionBuffMs:10000, classMechanic:'戒律/神圣:护盾也会保护随从' } },
+    p_pwShield:{ desc:'5秒强力真言术盾,同步给随从加盾和恩典', fx:{ grantAura:{ key:'p_grace', add:2, max:5, duration:15000 }, companionShieldPct:0.12, companionBuff:'p_grace', companionBuffMs:10000 } },
+    heal:{ desc:'治疗主角并让随从获得溅射治疗与恩典', fx:{ shieldFromOverhealPct:0.65, grantAura:{ key:'p_grace', add:1, max:5, duration:15000 }, companionHealPct:0.28, companionShieldPct:0.05, companionBuff:'p_grace', companionBuffMs:10000 } },
+    p_holyNova:{ desc:'立即恢复生命,并让随从获得治疗、护盾和恩典', fx:{ shieldFromHealPct:0.25, grantAura:{ key:'p_grace', add:1, max:5, duration:15000 }, companionHealPct:0.22, companionShieldPct:0.08, companionBuff:'p_grace', companionBuffMs:10000 } },
+    powerInfusion:{ desc:'15秒能量灌注,主角和随从一起获得急速与恩典', fx:{ companionBuff:'p_grace', companionBuffMs:12000, companionShieldPct:0.06 } },
+    divineHymn:{ desc:'神圣赞美诗大治疗,会同时治疗随从并给双方加护盾', fx:{ companionHealPct:0.40, companionShieldPct:0.10, companionBuff:'p_grace', companionBuffMs:12000, grantAura:{ key:'p_grace', add:2, max:5, duration:15000 } } },
+  },
+  hunter: {
+    summonPet:{ desc:'召唤宠物持续作战;宠物在场时猎人获得兽群羁绊', fx:{ grantAura:{ key:'h_beastBond', add:2, max:5, duration:16000 }, classMechanic:'宠物/召唤物在场时协同猛攻更强' } },
+    huntersMark:{ desc:'猎人印记施加破绽和钉刺窗口,并叠兽群羁绊', fx:{ applyTargetState:[{ key:'marked', durMs:14000 }, { key:'exposed', durMs:9000 }], grantAura:{ key:'h_beastBond', add:1, max:5, duration:15000 } } },
+    bestialWrath:{ desc:'野兽狂怒强化猎人与宠物,并立即叠兽群羁绊', fx:{ grantAura:{ key:'h_beastBond', add:2, max:5, duration:15000 } } },
+    h_killCommand:{ desc:'短爆发命令宠物撕咬,宠物/召唤物在场时额外追击', fx:{ grantAura:{ key:'h_beastBond', add:1, max:5, duration:15000 }, extraHitPctIfSummon:0.35 } },
+    h_coordinatedAssault:{ desc:'兽群协同猛攻,消耗兽群羁绊后多段追击', fx:{ bonusPerAuraStack:{ key:'h_beastBond', pct:0.20 }, consumeAura:{ key:'h_beastBond', all:true }, extraHitPct:0.45, extraHitPctIfSummon:0.35 } },
+    stampede:{ desc:'兽群奔腾召唤多只野兽,大幅堆叠兽群羁绊', fx:{ grantAura:{ key:'h_beastBond', add:3, max:5, duration:16000 } } },
+  },
+  shaman: {
+    earthShield:{ desc:'大地之盾保护主角与随从,叠图腾共鸣', fx:{ grantAura:{ key:'sh_totem', add:1, max:5, duration:15000 }, companionShieldPct:0.08, companionBuff:'sh_ancestral', companionBuffMs:10000 } },
+    s_earthShield:{ desc:'强力大地之盾,同步保护随从并叠图腾共鸣', fx:{ grantAura:{ key:'sh_totem', add:2, max:5, duration:15000 }, companionShieldPct:0.10, companionBuff:'sh_ancestral', companionBuffMs:10000 } },
+    healingWave:{ desc:'治疗主角,过量转盾;恢复专精会额外治疗随从并叠图腾共鸣', fx:{ shieldFromOverhealPct:0.55, shieldBonusIfBuff:{ key:'earthShield', pct:0.2 }, grantAura:{ key:'sh_totem', add:1, max:5, duration:15000 }, companionHealPct:0.24, companionShieldPct:0.05, companionBuff:'sh_ancestral', companionBuffMs:9000 } },
+    s_healingTide:{ desc:'治疗之泉涌起,同时治疗随从并给双方图腾护持', fx:{ grantAura:{ key:'sh_totem', add:2, max:5, duration:15000 }, companionHealPct:0.30, companionShieldPct:0.07, companionBuff:'sh_ancestral', companionBuffMs:10000 } },
+    spiritLink:{ desc:'灵魂链接让主角与随从互相分担压力,并叠满图腾共鸣', fx:{ grantAura:{ key:'sh_totem', add:3, max:5, duration:15000 }, companionHealPct:0.18, companionShieldPct:0.12, companionBuff:'sh_ancestral', companionBuffMs:12000 } },
+    thunderstorm:{ desc:'雷霆风暴击退战场,图腾共鸣越高伤害越强', fx:{ bonusPerAuraStack:{ key:'sh_totem', pct:0.12 }, consumeAura:{ key:'sh_totem', add:-1 }, applyTargetState:'shocked', stateDurationMs:8000 } },
+  },
+  paladin: {
+    blessingKings:{ desc:'王者祝福提高属性并叠圣光壁垒,防骑依靠祝福滚回复和护盾', fx:{ grantAura:{ key:'pa_bulwark', add:2, max:5, duration:15000 }, companionBuff:'pa_devotion', companionBuffMs:12000, companionShieldPct:0.08 } },
+    sacredShield:{ desc:'圣洁护盾叠圣光壁垒,同时保护随从', fx:{ grantAura:{ key:'pa_bulwark', add:2, max:5, duration:15000 }, companionBuff:'pa_devotion', companionBuffMs:12000, companionShieldPct:0.10 } },
+    divineShield:{ desc:'圣盾术高额减伤并叠圣光壁垒;防骑低血时会触发圣光回涌', fx:{ grantAura:{ key:'pa_bulwark', add:3, max:5, duration:15000 }, companionShieldPct:0.08, companionBuff:'pa_devotion', companionBuffMs:10000 } },
+    pa_guardian:{ desc:'守护者减伤并叠圣光壁垒,随从同步获得虔诚祝福', fx:{ grantAura:{ key:'pa_bulwark', add:2, max:5, duration:15000 }, companionBuff:'pa_devotion', companionBuffMs:10000, companionShieldPct:0.08 } },
+    holyLight:{ desc:'圣光术恢复生命,消耗部分圣光壁垒会额外给随从回血和护盾', fx:{ shieldFromOverhealPct:0.75, companionHealPct:0.20, companionShieldPct:0.06, companionBuff:'pa_devotion', companionBuffMs:9000 } },
+    flashOfLight:{ desc:'圣光闪现快速救急,同时给随从小治疗', fx:{ shieldFromHealPct:0.22, companionHealPct:0.16, companionShieldPct:0.04, companionBuff:'pa_devotion', companionBuffMs:7000 } },
+    pa_flashLight:{ desc:'瞬发圣光闪现,随从同步获得治疗与虔诚护持', fx:{ shieldFromHealPct:0.3, companionHealPct:0.22, companionShieldPct:0.08, companionBuff:'pa_devotion', companionBuffMs:9000 } },
+    hammerOfRighteous:{ desc:'正义之锤对被审判目标更痛,并叠圣光壁垒', fx:{ bonusStates:{ judged:0.40 }, grantAura:{ key:'pa_bulwark', add:1, max:5, duration:15000 } } },
+  },
+  warlock: {
+    inferno:{ desc:'召唤地狱火,每个恶魔在场都会让恶魔之箭更强', fx:{ grantAura:{ key:'wl_ember', add:2, max:5, duration:15000 }, classMechanic:'恶魔在场时恶魔之箭和混乱之箭获得额外收益' } },
+    metamorphosis:{ desc:'恶魔变身,强化恶魔之箭、吸血和恶魔召唤循环', fx:{ grantAura:{ key:'wl_shard', add:2, max:5, duration:15000 } } },
+    shadowFury:{ desc:'暗影之怒范围压制,对多DOT目标额外提高并散播痛苦', fx:{ bonusPerDot:0.18, spreadDotsPct:0.45, applyTargetState:'terror', stateDurationMs:7000 } },
+    soulFire:{ desc:'灵魂之火必暴,目标痛苦越多越痛并转化为护盾', fx:{ bonusPerDot:0.25, shieldFromDamagePct:0.10, grantAura:{ key:'wl_ember', add:1, max:5, duration:12000 } } },
+    wl_demonbolt:{ desc:'恶魔之箭,恶魔形态或召唤物在场时都会强化', fx:{ bonusIfBuff:{ demonForm:0.5 }, bonusPerAuraStack:{ key:'wl_shard', pct:0.10 }, extraHitPctIfSummon:0.30 } },
+  },
+  druid: {
+    rejuvenation:{ desc:'回春术治疗主角,恢复专精会同步滋养随从并叠自然调和', fx:{ shieldFromOverhealPct:0.5, grantAura:{ key:'d_harmony', add:1, max:5, duration:15000 }, companionHealPct:0.22, companionShieldPct:0.05, companionBuff:'d_lifebloom', companionBuffMs:10000 } },
+    wildGrowth:{ desc:'野性成长治疗主角和随从,叠自然调和', fx:{ grantAura:{ key:'d_harmony', add:2, max:5, duration:15000 }, companionHealPct:0.28, companionShieldPct:0.06, companionBuff:'d_lifebloom', companionBuffMs:10000 } },
+    tranquility:{ desc:'宁静大量治疗,为随从和主角留下自然护盾', fx:{ grantAura:{ key:'d_harmony', add:3, max:5, duration:15000 }, companionHealPct:0.38, companionShieldPct:0.10, companionBuff:'d_lifebloom', companionBuffMs:12000 } },
+    barkskin:{ desc:'树皮术减伤,同时给随从套上生命绽放', fx:{ grantAura:{ key:'d_harmony', add:1, max:5, duration:15000 }, companionShieldPct:0.08, companionBuff:'d_lifebloom', companionBuffMs:10000 } },
+    entanglingRoots:{ desc:'纠缠根须施加缠绕,平衡/恢复德可借自然调和强化后续伤害', fx:{ applyTargetState:'rooted', stateDurationMs:9000, bonusPerAuraStack:{ key:'d_harmony', pct:0.08 }, grantAura:{ key:'d_harmony', add:1, max:5, duration:15000 } } },
+    hurricane:{ desc:'飓风范围伤害,会消耗1层自然调和打出额外风暴', fx:{ bonusPerAuraStack:{ key:'d_harmony', pct:0.10 }, consumeAura:{ key:'d_harmony', add:-1 }, applyTargetState:'slow', stateDurationMs:6000 } },
+  },
+};
+
+(function injectClassMechanicSkillPatches() {
+  if (typeof CLASSES === 'undefined') return;
+  for (const [clsKey, skills] of Object.entries(CLASS_MECHANIC_SKILL_PATCHES)) {
+    const cls = CLASSES[clsKey];
+    if (!cls || !cls.skills) continue;
+    for (const [skillKey, patch] of Object.entries(skills)) {
+      if (!cls.skills[skillKey]) continue;
+      const sk = cls.skills[skillKey];
+      const mergedFx = Object.assign({}, sk.fx || {}, patch.fx || {});
+      Object.assign(sk, patch);
+      if (Object.keys(mergedFx).length) sk.fx = mergedFx;
+    }
+  }
+})();
+
 function skillPctText(pct) {
   return Math.round((pct || 0) * 100) + '%';
 }
@@ -333,6 +436,12 @@ const BUFF_NAME_OVERRIDES = {
   berserk: '狂暴',
   shadowstep: '暗影步',
   bloodlust: '嗜血',
+  w_shieldBlock: '盾牌格挡',
+  pa_devotion: '虔诚祝福',
+  p_grace: '恩典',
+  sh_ancestral: '先祖护持',
+  d_lifebloom: '生命绽放',
+  h_beastBond: '兽群羁绊',
 };
 
 function skillBuffName(key, clsKey) {
@@ -422,6 +531,11 @@ function buildSkillDetailParts(clsKey, sk, baseDesc) {
   if (fx.splashPct) parts.push(`对附近敌人造成${skillPctText(fx.splashPct)}溅射伤害`);
   if (fx.resourceGain) parts.push(`命中获得${fx.resourceGain}点资源`);
   if (fx.resourceGainOnKill) parts.push(`击杀返还${fx.resourceGainOnKill}点资源`);
+  if (fx.companionHealPct) parts.push(`同时治疗随从${skillPctText(fx.companionHealPct)}随从最大生命`);
+  if (fx.companionShieldPct) parts.push(`同时给随从${skillPctText(fx.companionShieldPct)}最大生命护盾`);
+  if (fx.companionBuff) parts.push(`随从获得${skillBuffName(fx.companionBuff, clsKey)}${skillSecText(fx.companionBuffMs || 8000)}`);
+  if (fx.extraHitPctIfSummon) parts.push(`有召唤物/宠物时追加${skillPctText(fx.extraHitPctIfSummon)}伤害追击`);
+  if (fx.classMechanic) parts.push(fx.classMechanic);
 
   return parts;
 }
@@ -444,7 +558,7 @@ function syncSkillDescriptions() {
 
 syncSkillDescriptions();
 
-const AUTO_DEFENSIVE_BUFFS = new Set(['shield','divine','bark','iceBarrier','earthShield','evasion','s_mitigate','s_barrier','sacredShield']);
+const AUTO_DEFENSIVE_BUFFS = new Set(['shield','divine','bark','iceBarrier','earthShield','evasion','s_mitigate','s_barrier','sacredShield','w_shieldBlock','pa_devotion','p_grace','sh_ancestral','d_lifebloom']);
 
 const SKILL_AI_OVERRIDES = {
   warrior: {

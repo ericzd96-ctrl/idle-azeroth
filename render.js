@@ -2516,6 +2516,16 @@ function renderSkills() {
   const c = getCls(); if (!c) return;
   const skl = $('skill-list');
   skl.innerHTML = `<div class="muted" style="margin-bottom:6px;font-size:11px">手动技能栏 <b style="color:var(--accent)">${state.selectedSkills.length}</b>/8 · 自动施法按上方分类勾选使用已解锁技能,这里仅影响手动快捷栏</div>`;
+  const mech = (typeof CLASS_COMBAT_MECHANICS === 'object') ? CLASS_COMBAT_MECHANICS[state.cls] : null;
+  if (mech) {
+    const mechDiv = document.createElement('div');
+    mechDiv.className = 'skill-item';
+    mechDiv.style.borderColor = 'rgba(251,191,36,.55)';
+    mechDiv.innerHTML = `
+      <div class="row"><b style="color:#fde68a">${mech.icon || '✦'} 职业机制: ${mech.name}</b><span class="pill">核心玩法</span></div>
+      <div class="muted" style="font-size:11px;line-height:1.45">${mech.desc}</div>`;
+    skl.appendChild(mechDiv);
+  }
   for (const [skKey, sk] of classSkillEntriesSorted(c)) {
     const unlocked = !!state.unlockedSkills[skKey];
     const isSel = state.selectedSkills.includes(skKey);

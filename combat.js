@@ -18,15 +18,21 @@ const BUFF_NAMES = {
   // 职业技能 buff (来自 skills_ext.js BUFF_FX / SKILL_AURA_LIBRARY)
   w_reckless:    { icon:'😡', name:'鲁莽',     desc:'攻击+27%·暴伤+20' },
   w_ironwall:    { icon:'🛡️', name:'钢铁壁垒', desc:'受到伤害-45%' },
+  w_shieldBlock: { icon:'🧱', name:'盾牌格挡', desc:'防御+22%·减伤18%' },
   m_combust:     { icon:'🔥', name:'燃烧',     desc:'暴击+17·暴伤+34' },
   m_iceblock:    { icon:'❄️', name:'寒冰护体', desc:'受到伤害-40%' },
+  p_grace:       { icon:'✨', name:'恩典',     desc:'防御+12%·暴击+4·回复+5' },
   p_voidform:    { icon:'🌑', name:'暗影形态', desc:'攻击+22%·暴击+10·暴伤+20' },
   r_dance:       { icon:'🔪', name:'剑刃乱舞', desc:'攻击+20%·攻速+18%·暴伤+15' },
   h_burst:       { icon:'🎯', name:'杀戮命令', desc:'攻击+28%·暴击+10·暴伤+22' },
+  h_beastBond:   { icon:'🐾', name:'兽群羁绊', desc:'攻击+14%·攻速+10%' },
   sh_frenzy:     { icon:'⚡', name:'嗜血',     desc:'攻击+18%·攻速+25%' },
+  sh_ancestral:  { icon:'🪬', name:'先祖护持', desc:'攻速+12%·回复+4·减伤10%' },
   pa_wrath:      { icon:'⚖️', name:'复仇之怒', desc:'攻击+28%·暴击+12·暴伤+24' },
+  pa_devotion:   { icon:'⚜️', name:'虔诚祝福', desc:'攻击+13%·防御+18%·回复+6·减伤16%' },
   wl_dark:       { icon:'👁️', name:'黑暗灵魂', desc:'暴击+20·暴伤+38' },
   d_zerk:        { icon:'🐻', name:'狂暴',     desc:'攻击+20%·攻速+20%·暴击+8' },
+  d_lifebloom:   { icon:'🌿', name:'生命绽放', desc:'防御+10%·回复+7' },
   // 硬编码 buff (效果已减1/3)
   shield:        { icon:'🛡️', name:'盾墙',     desc:'受到伤害-33%' },
   divine:        { icon:'✨', name:'神圣守护', desc:'受到伤害-45%' },
@@ -410,6 +416,7 @@ function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
   if(fx.splashPct && !ctx?.isAOE) splashSkillDamage(mon, dmgDone, fx.splashPct, sk.icon || '💥', now);
   if(fx.spreadDotsPct) spreadDotFromMonster(mon, fx.spreadDotsPct, fx.dotMs || 5000);
   if(fx.resourceGainOnKill && mon.hp <= 0) grantTalentResource(fx.resourceGainOnKill);
+  applyClassMechanicAfterSkill(skillKey, sk, mon, dmgDone, Object.assign({ now, hit:true }, ctx || {}));
 }
 function applySkillHealEffects(skillKey, sk, amount, overheal){
   const fx = skillFxMeta(skillKey, sk);
@@ -417,6 +424,145 @@ function applySkillHealEffects(skillKey, sk, amount, overheal){
   if(fx.shieldFromHealPct && amount > 0) addTalentShield(Math.floor(amount * fx.shieldFromHealPct), true);
   if(fx.shieldBonusIfBuff && buffActive(fx.shieldBonusIfBuff.key)) addTalentShield(Math.floor(amount * (fx.shieldBonusIfBuff.pct || 0)), true);
   if(fx.grantAura) addSkillAura(fx.grantAura.key, fx.grantAura);
+  applyClassMechanicAfterSkill(skillKey, sk, null, amount, { overheal, heal:true, now:Date.now() });
+}
+function ensureClassRuntime(){
+  if(!state.classRuntime) state.classRuntime = { cds:{} };
+  if(!state.classRuntime.cds) state.classRuntime.cds = {};
+  return state.classRuntime;
+}
+function classRuntimeReady(key, cooldownMs, now){
+  const rt = ensureClassRuntime();
+  const ts = now || Date.now();
+  if((rt.cds[key] || 0) > ts) return false;
+  rt.cds[key] = ts + (cooldownMs || 0);
+  return true;
+}
+function activeHeroClassKey(){ return state.cls || ''; }
+function activeHeroSpecKey(){ return state.specialization || ''; }
+function activeAllySummonCount(now){
+  return (typeof livingAllySummons === 'function') ? livingAllySummons(now || Date.now()).length : 0;
+}
+function applyCompanionClassSupport(fx, sk, amount, now){
+  if(!fx || typeof companionTargetable !== 'function' || !companionTargetable() || typeof computeCompanionStats !== 'function') return;
+  const st = computeCompanionStats();
+  if(!st || compDowned()) return;
+  if(fx.companionHealPct){
+    healCompanionAmount(Math.floor(st.hpMax * fx.companionHealPct), sk?.icon || '💚', '#6ee7b7', 'hero', sk?.name || '职业支援');
+  }
+  if(fx.companionShieldPct){
+    addCompanionBarrier(Math.floor(st.hpMax * fx.companionShieldPct), sk?.icon || '🛡️', '#93c5fd');
+  }
+  if(fx.companionBuff){
+    if(!state._compBuffs) state._compBuffs = {};
+    state._compBuffs[fx.companionBuff] = now + (fx.companionBuffMs || 8000);
+    markDirty('companion');
+  }
+}
+function applyClassMechanicAfterSkill(skillKey, sk, mon, value, ctx){
+  if(!sk) return;
+  const now = ctx?.now || Date.now();
+  const cls = activeHeroClassKey();
+  const spec = activeHeroSpecKey();
+  const fx = skillFxMeta(skillKey, sk);
+  applyCompanionClassSupport(fx, sk, value, now);
+  if(mon && mon.hp > 0 && fx.extraHitPctIfSummon && activeAllySummonCount(now) > 0){
+    applySkillFollowupDamage(mon, value * fx.extraHitPctIfSummon, sk.icon || '🐾', '#7dd3fc', now);
+  }
+  if(cls === 'hunter'){
+    if(sk.type === 'summon' || sk.summonCount || /宠物|野兽|杀戮|兽群/.test(sk.name || '')){
+      addSkillAura('h_beastBond', { add:1, max:5, duration:15000 });
+    }
+    if(mon && mon.hp > 0 && activeAllySummonCount(now) > 0 && sk.type === 'dmg' && classRuntimeReady('hunter-pack:' + skillKey, 1800, now)){
+      const stacks = skillAuraStacks('h_beastBond');
+      if(stacks > 0) applySkillFollowupDamage(mon, value * Math.min(0.45, 0.08 * stacks), '🐾', '#7dd3fc', now);
+    }
+  } else if(cls === 'warrior'){
+    if(spec === 'prot' && (isDefensiveSkill(skillKey, sk) || /盾|壁垒|挑战|雷霆/.test(sk.name || ''))){
+      const stacks = addSkillAura('w_block', { add:1, max:5, duration:12000 });
+      if(stacks >= 5 && classRuntimeReady('warrior-block-shield', 3500, now)){
+        addTalentShield(Math.floor(state.hero.hpMax * 0.045 + state.hero.def * 0.8), true);
+        consumeSkillAura('w_block', { all:true });
+        showFloat($('hero-emoji'), '🧱盾反护体', '#93c5fd', { variant:'shield', scale:1.04 });
+      }
+    }
+  } else if(cls === 'paladin'){
+    if(/审判|十字军|圣光|祝福|圣盾|守护|裁决|正义/.test(sk.name || '')) addSkillAura('pa_bulwark', { add:1, max:5, duration:15000 });
+    if((spec === 'holy' || spec === 'prot') && (sk.type === 'heal' || isDefensiveSkill(skillKey, sk)) && classRuntimeReady('paladin-devotion:' + skillKey, 1200, now)){
+      const stacks = Math.max(1, skillAuraStacks('pa_bulwark'));
+      healHeroAmount(Math.floor(state.hero.hpMax * Math.min(0.08, 0.012 * stacks)), '✨', '#fef3c7', 'hero', '圣光壁垒');
+      if(companionTargetable()){
+        const st = computeCompanionStats();
+        if(st) addCompanionBarrier(Math.floor(st.hpMax * Math.min(0.08, 0.012 * stacks)), '✨', '#fef3c7');
+      }
+    }
+  } else if(cls === 'priest'){
+    if(sk.type === 'heal' || isDefensiveSkill(skillKey, sk)) addSkillAura('p_grace', { add:1, max:5, duration:15000 });
+    if((spec === 'holy' || spec === 'discipline') && companionTargetable() && (sk.type === 'heal' || isDefensiveSkill(skillKey, sk)) && classRuntimeReady('priest-grace:' + skillKey, 1000, now)){
+      const st = computeCompanionStats();
+      if(st){
+        healCompanionAmount(Math.floor(st.hpMax * 0.045 + (value || 0) * 0.12), sk.icon || '✨', '#fef3c7', 'hero', '恩典');
+        addCompanionBarrier(Math.floor(st.hpMax * 0.035), sk.icon || '🛡️', '#fef3c7');
+      }
+    }
+  } else if(cls === 'shaman'){
+    if(/闪电|震击|风暴|熔岩|治疗|大地|灵魂|嗜血|风怒/.test(sk.name || '')) addSkillAura('sh_totem', { add:1, max:5, duration:15000 });
+    if(spec === 'restoration' && (sk.type === 'heal' || isDefensiveSkill(skillKey, sk)) && companionTargetable() && classRuntimeReady('shaman-totem:' + skillKey, 1200, now)){
+      const st = computeCompanionStats();
+      if(st){
+        healCompanionAmount(Math.floor(st.hpMax * 0.055), sk.icon || '🌊', '#67e8f9', 'hero', '图腾共鸣');
+        addCompanionBarrier(Math.floor(st.hpMax * 0.035), '🪬', '#67e8f9');
+      }
+    }
+  } else if(cls === 'druid'){
+    if(/月火|星火|愤怒|回春|成长|宁静|树皮|根须|横扫|撕咬/.test(sk.name || '')) addSkillAura('d_harmony', { add:1, max:5, duration:15000 });
+    if(spec === 'resto' && (sk.type === 'heal' || isDefensiveSkill(skillKey, sk)) && companionTargetable() && classRuntimeReady('druid-harmony:' + skillKey, 1200, now)){
+      const st = computeCompanionStats();
+      if(st){
+        healCompanionAmount(Math.floor(st.hpMax * 0.06), sk.icon || '🌿', '#86efac', 'hero', '自然调和');
+        addCompanionBarrier(Math.floor(st.hpMax * 0.035), '🌿', '#86efac');
+      }
+    }
+  } else if(cls === 'warlock'){
+    if(mon && mon.hp > 0 && sk.type === 'dmg' && getMonsterDotCount(mon, now) >= 2 && classRuntimeReady('warlock-agony:' + skillKey, 1600, now)){
+      addSkillAura(spec === 'destruction' ? 'wl_ember' : 'wl_shard', { add:1, max:5, duration:12000 });
+      if(spec === 'affliction') spreadDotFromMonster(mon, 0.35, 7000);
+    }
+  } else if(cls === 'mage'){
+    if(mon && mon.hp > 0 && sk.type === 'dmg'){
+      if(spec === 'fire' && getMonsterDotCount(mon, now) > 0 && classRuntimeReady('mage-heat:' + skillKey, 1400, now)) addSkillAura('m_heat', { add:1, max:5, duration:12000 });
+      if(spec === 'frost' && monsterStateActive(mon, 'frozen') && classRuntimeReady('mage-shatter:' + skillKey, 1400, now)) applySkillFollowupDamage(mon, value * 0.18, '🧊', '#93c5fd', now);
+    }
+  }
+}
+function applyClassMechanicOnTakeDamage(mon, taken, rawAmount, now){
+  if(!(taken > 0)) return;
+  const cls = activeHeroClassKey();
+  const spec = activeHeroSpecKey();
+  if(cls === 'warrior' && spec === 'prot' && mon && mon.hp > 0){
+    const stacks = addSkillAura('w_block', { add:1, max:5, duration:12000 });
+    const wallActive = buffActive('shield', now) || buffActive('w_ironwall', now) || buffActive('w_shieldBlock', now);
+    const reflectPct = (0.16 + stacks * 0.025) * (wallActive ? 1.45 : 1);
+    const reflect = Math.min(mon.hp, Math.floor(taken * reflectPct + state.hero.def * (wallActive ? 0.65 : 0.42)));
+    if(reflect > 0 && classRuntimeReady('warrior-prot-reflect', 650, now)){
+      mon.hp -= reflect;
+      trackDmg('hero', reflect, false, '盾牌反震');
+      showMonsterFloat(mon, '🧱' + reflect, '#fbbf24');
+    }
+    if(stacks >= 5 && classRuntimeReady('warrior-prot-bulwark', 3500, now)){
+      addTalentShield(Math.floor(state.hero.hpMax * 0.05 + state.hero.def * 0.8), true);
+      consumeSkillAura('w_block', { all:true });
+    }
+  }
+  if(cls === 'paladin' && spec === 'prot' && classRuntimeReady('paladin-prot-recover', 1500, now)){
+    const blessed = buffActive('kings', now) || buffActive('sacredShield', now) || buffActive('divine', now) || buffActive('pa_devotion', now);
+    const stacks = skillAuraStacks('pa_bulwark');
+    if(blessed || stacks > 0){
+      healHeroAmount(Math.floor(state.hero.hpMax * Math.min(0.055, 0.012 + stacks * 0.008)), '✨', '#fef3c7', 'hero', '圣光回涌');
+      addTalentShield(Math.floor(state.hero.hpMax * Math.min(0.06, 0.015 + stacks * 0.006)), true);
+      addSkillAura('pa_bulwark', { add:1, max:5, duration:15000 });
+    }
+  }
 }
 function applyMonsterState(mon, stateKey, durMs){
   if(!mon || !stateKey) return;
@@ -582,6 +728,7 @@ function applyHeroDamage(amount, mon, opts){
   if(defensiveArtifactFx.length) artifactProcVisual(defensiveArtifactFx[0], mon, { now, target:'hero', tag:'taken' });
   state.hp -= taken;
   trackTaken(taken);
+  applyClassMechanicOnTakeDamage(mon, taken, amountIn, now);
   if(state._soulLinkUntil > now && mon && mon.hp > 0){
     const healBack = Math.max(1, Math.floor(taken * 0.25));
     mon.hp = Math.min(mon.hpMax, mon.hp + healBack);
@@ -6612,10 +6759,11 @@ function castSkill(skillKey,manual){
     const summoned = summonAlliedUnits(sk, now, owner);
     if(summoned > 0){
       log(`${sk.icon || '🐾'} ${sk.name}! 召唤了 ${summoned} 个单位助战`,'good');
+      applyClassMechanicAfterSkill(skillKey, sk, state.currentMonsters[0] || null, 0, { cost, summoned, now });
       processTalentAfterSkill(skillKey, sk, state.currentMonsters[0] || null, 0, { cost, summoned });
     }
   }
-  else if(sk.type==='buff'){const dur=sk.duration+(state.hero.buffDuration||0)*1000;state.buffs[sk.buff]=Date.now()+dur;recomputeStats();log(sk.name+'!','good');}
+  else if(sk.type==='buff'){const dur=sk.duration+(state.hero.buffDuration||0)*1000;state.buffs[sk.buff]=Date.now()+dur;recomputeStats();log(sk.name+'!','good');applyClassMechanicAfterSkill(skillKey, sk, state.currentMonsters[0] || null, 0, { cost, buff:true, now });}
   if(sk.type==='buff') processTalentAfterSkill(skillKey, sk, state.currentMonsters[0] || null, 0, { cost });
 }
 /* BOSS 施法目标(用于施法条提前显示"对谁释放";单体伤害在开始施法时预选,结算时复用) */
