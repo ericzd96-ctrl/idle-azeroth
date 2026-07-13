@@ -3299,6 +3299,43 @@ function companionMissionScoreTipHtml(tpl, comp, mission, score, rewardText) {
   const result = total >= 75 ? '高完成度:奖励预览按大成功估算' : '普通完成度:仍可完成,但额外奖励较少';
   return `<b>${tipAttrText(tpl.name)} · ${tipAttrText(mission.name)}</b><br>${rows}<br><b>完成度 ${total}%</b><br>${tipAttrText(result)}${rewardText ? `<br>预览: ${tipAttrText(rewardText)}` : ''}`;
 }
+function companionMissionRosterHtml(activeRuns, slots) {
+  const comps = (state.companions || []).map(comp => {
+    const tpl = COMPANIONS.find(t => t.key === comp.key);
+    return tpl ? { comp, tpl } : null;
+  }).filter(Boolean);
+  const activeKey = getActiveCompanion()?.key;
+  const busyMap = new Map((activeRuns || []).map(run => [run.compKey, run]));
+  const free = comps.filter(entry => entry.comp.key !== activeKey && !busyMap.has(entry.comp.key));
+  const owned = comps.length;
+  const nextNeed = slots >= 4 ? null : Math.max(2, slots * 8);
+  const nextText = nextNeed ? `下一栏位: ${owned}/${nextNeed} 随从` : '派遣栏位已满级';
+  const chips = comps.slice().sort((a, b) => {
+    const stateScore = entry => entry.comp.key === activeKey ? 2 : busyMap.has(entry.comp.key) ? 1 : 0;
+    return stateScore(a) - stateScore(b) || (compQuality(b.tpl).mult - compQuality(a.tpl).mult) || ((b.comp.stars || 1) - (a.comp.stars || 1));
+  }).slice(0, 10).map(entry => {
+    const q = compQuality(entry.tpl);
+    const busy = busyMap.get(entry.comp.key);
+    const stateLabel = entry.comp.key === activeKey ? '出战' : busy ? '执行中' : '空闲';
+    const stateCls = entry.comp.key === activeKey ? 'active' : busy ? 'busy' : 'free';
+    const mission = busy ? companionMissionType(busy.key) : null;
+    const reason = entry.comp.key === activeKey
+      ? '出战随从不能派遣'
+      : busy
+        ? `正在执行「${mission?.name || '派遣任务'}」`
+        : '可执行派遣任务';
+    const tip = `<b>${tipAttrText(entry.tpl.name)}</b><br>${q.name} · ${entry.comp.stars || 1}星 · ${companionRoleLabel(entry.tpl.role)}<br>${tipAttrText(reason)}`.replace(/"/g, '&quot;');
+    return `<span class="comp-mission-roster-chip ${stateCls}" data-tip="${tip}">${companionIconHtml(entry.tpl, 16)} ${tipAttrText(entry.tpl.name)}<b>${stateLabel}</b></span>`;
+  }).join('');
+  const hidden = Math.max(0, comps.length - 10);
+  return `<div class="comp-mission-roster">
+    <div class="comp-mission-roster-head">
+      <b>🧾 派遣名册</b>
+      <span>空闲 ${free.length}/${owned} · ${nextText}</span>
+    </div>
+    <div class="comp-mission-roster-chips">${chips}${hidden ? `<span class="comp-mission-roster-chip more">+${hidden}</span>` : ''}</div>
+  </div>`;
+}
 function companionMissionPanelHtml(entries){
   if (typeof COMPANION_MISSION_TYPES === 'undefined' || typeof ensureCompanionMissionState !== 'function') return '';
   const ms = ensureCompanionMissionState();
@@ -3390,6 +3427,7 @@ function companionMissionPanelHtml(entries){
       <span>${active.length}/${slots} 栏位 · 已完成 ${ms.totalCompleted || 0}</span>
     </div>
     ${activeCards ? `<div class="comp-mission-active-grid">${activeCards}</div>` : ''}
+    ${companionMissionRosterHtml(active, slots)}
     <div class="comp-mission-grid">${missionCards}</div>
     ${lastReports ? `<div class="comp-mission-history"><div class="comp-mission-history-title">最近战报</div>${lastReports}</div>` : ''}
   </div>`;
