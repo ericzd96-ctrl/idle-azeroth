@@ -1705,6 +1705,22 @@ h1 {
   font-size: 10px;
   line-height: 1.25;
 }
+.dungeon-boss-roster-handles,
+.dungeon-boss-handle-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 7px;
+}
+.dungeon-boss-roster-handles {
+  margin-top: 5px;
+  font-size: 10px;
+  line-height: 1.25;
+}
+.dungeon-boss-handle-tags {
+  margin: 0 0 7px 64px;
+  font-size: 11px;
+  line-height: 1.35;
+}
 .dungeon-boss-card {
   margin: 10px 0 0;
   padding: 10px;

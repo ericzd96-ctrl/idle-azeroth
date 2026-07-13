@@ -3733,6 +3733,62 @@ function renderDungeonContractPanel() {
     </div>`;
 }
 
+function dungeonBossPreviewSkills(boss) {
+  const skills = Array.isArray(boss?.skills) ? boss.skills.slice() : [];
+  if (Array.isArray(boss?.passive?.tricks)) skills.push(...boss.passive.tricks);
+  if (typeof getDungeonBossDirectorSkills === 'function') skills.push(...getDungeonBossDirectorSkills(boss));
+  return skills.filter(Boolean);
+}
+
+function dungeonBossHandlingTags(boss) {
+  const skills = dungeonBossPreviewSkills(boss);
+  const has = predicate => skills.some(predicate);
+  const maxMul = skills.reduce((m, s) => Math.max(m, typeof s.mul === 'number' ? s.mul : 0), 0);
+  const tags = [];
+  const push = (key, name, icon, desc, meta, fallbackIcon, color) => {
+    if (tags.some(t => t.key === key)) return;
+    tags.push({ key, name, icon, desc, meta, fallbackIcon, color });
+  };
+  if (has(s => s.interruptPolicy === 'hard' || s.interruptPolicy === 'soft' || ((s.castTime || 0) > 0 && (s.silence || s.stun || s.manaDrain || s.summonCount || s.aoe)))) {
+    push('interrupt', '打断优先', '🔇', '该首领存在高价值读条。优先打断沉默、资源燃烧、召唤或范围压制技能,可以显著降低战斗压力。', '读条', 'ability_kick', '#fca5a5');
+  }
+  if (has(s => s.summonCount || s.type === 'summon')) {
+    push('adds', '转火清场', '👥', '该首领会召唤援军或机制目标。及时转火可减少额外读条、护盾、献祭或持续伤害压力。', '增援', 'ability_warrior_battleshout', '#f9a8d4');
+  }
+  if (has(s => s.aoe || s.alwaysCrit || s.fear || s.freeze || s.stun) || maxMul >= 10) {
+    push('defensive', '减伤覆盖', '🛡️', '该首领有范围爆发、控制链或高倍率攻击。把减伤、治疗、护盾留给这些窗口会更稳。', '爆发', 'ability_warrior_shieldwall', '#93c5fd');
+  }
+  if (has(s => s.manaDrain || s.silence || s.soulDrain || s.soulLink)) {
+    push('resource', '资源管理', '💧', '该首领会压缩资源或施法窗口。避免把核心技能全交在沉默/资源燃烧前,必要时保留爆发资源。', '资源', 'spell_shadow_manaburn', '#67e8f9');
+  }
+  if (has(s => s.shieldPct || s.healPct || s.heal || s.drBuffSecs || s.defBuffSecs)) {
+    push('purge', '破盾压制', '🔷', '该首领会获得护盾、治疗或防御强化。爆发期优先压过护盾,拖太久会放大后续机制。', '护盾', 'spell_holy_powerwordshield', '#c4b5fd');
+  }
+  if (has(s => s.hpBelow || s.alwaysCrit || /处刑|斩杀|终幕|终裁|绝命/.test(s.name || ''))) {
+    push('execute', '稳健收尾', '⏱️', '低血量阶段可能变得更危险。保留防御、打断或斩杀爆发,避免尾王残血翻车。', '尾段', 'inv_misc_pocketwatch_01', '#fde68a');
+  }
+  if (has(s => s.dot || s.dotSkill || s.plague || s.bleed || s.decay || s.decay2 || s.wither)) {
+    push('clean', '治疗清理', '💚', '该首领会叠加持续伤害或治疗压力。需要稳定续航,不要只看单次爆发伤害。', '持续伤害', 'spell_holy_heal', '#86efac');
+  }
+  return tags;
+}
+
+function dungeonBossHandlingTagsHtml(boss, options) {
+  const cfg = options || {};
+  const tags = dungeonBossHandlingTags(boss).slice(0, cfg.limit || 5);
+  if (!tags.length) return '';
+  return `<div class="${cfg.className || 'dungeon-boss-handle-tags'}">${tags.map(t => inlineTipSpanHtml({
+    name:t.name,
+    icon:t.icon,
+    desc:t.desc,
+    meta:t.meta,
+  }, {
+    fallbackIcon:t.fallbackIcon,
+    color:t.color,
+    metaVisible:!!t.meta,
+  })).join('')}</div>`;
+}
+
 function dungeonBossRosterHtml(dg, selectedContract) {
   const bosses = Array.isArray(dg?.bosses) ? dg.bosses : [];
   if (!bosses.length) return '';
@@ -3762,6 +3818,7 @@ function dungeonBossRosterHtml(dg, selectedContract) {
     if (weakpointCount) previewNames.push('弱点');
     if (challengeCount) previewNames.push('挑战');
     if (grandCount) previewNames.push('扩展机制');
+    const handlingTags = dungeonBossHandlingTagsHtml(boss, { limit:3, className:'dungeon-boss-roster-handles' });
     const mechanicTip = inlineTipSpanHtml({
       name:'机制概览',
       icon:'📖',
@@ -3787,6 +3844,7 @@ function dungeonBossRosterHtml(dg, selectedContract) {
       <div class="dungeon-boss-roster-main">
         <div class="dungeon-boss-roster-name">${tipAttrText(bossName)}${isFinal ? '<span>尾王</span>' : ''}</div>
         <div class="dungeon-boss-roster-meta">波次 ${boss.wave || '?'} · 技能 ${skillCount} · 机制 ${mechanicCount}</div>
+        ${handlingTags}
         <div class="dungeon-boss-roster-tags">${mechanicTip}${lootTip}</div>
       </div>
     </div>`;
@@ -3973,6 +4031,7 @@ function buildDungeonInfoHtml(dg) {
       metaVisible:false,
       className:'dungeon-boss-portrait-tip dungeon-inline-tip'
     }) : '';
+    const bossHandlingTags = dungeonBossHandlingTagsHtml(bossData, { limit:6 });
     const dropLabel = isEpicRaid
       ? `(必掉史诗紫装${isFinal ? '×2' : ''}${items.some(it => it.rarity === 'legend') ? ' · 含超低概率橙装' : ''})`
       : (isRaid ? (isFinal ? '(常规团本装备 · 低概率橙武)' : '(常规团本装备)') : '(必掉1件)');
@@ -3999,6 +4058,7 @@ function buildDungeonInfoHtml(dg) {
             <div class="muted">波次 ${bossData.wave || '?'} · ${dropLabel}</div>
           </div>
         </div>`;
+    if (bossHandlingTags) html += bossHandlingTags;
     if (councilPreview.length > 1) {
       html += `<div class="dungeon-council-preview">
         ${councilPreview.map(m => inlineTipSpanHtml({ name:m.name, icon:m.icon || bossData.emoji || '👹', desc:m.role ? `该成员负责 ${m.role}。` : '多目标首领成员。', meta:m.role || '' }, { fallbackIcon:'achievement_boss_illidan', color:'#fcd34d', metaVisible:true })).join('')}
