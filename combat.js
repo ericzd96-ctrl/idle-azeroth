@@ -3087,6 +3087,19 @@ function applyDungeonEnvironmentEffects(ds, mon, now){
   }
   if((ds.environmentHits || 0) !== beforeHits && typeof markDirty === 'function') markDirty('hero', 'stage');
 }
+
+function recordDungeonTimeMark(ds, key, edict) {
+  if (!ds) return;
+  const markKey = key || 'unknown';
+  ds.timeMarks = (ds.timeMarks || 0) + 1;
+  ds.timeMarkBreakdown = ds.timeMarkBreakdown || {};
+  ds.timeMarkBreakdown[markKey] = (ds.timeMarkBreakdown[markKey] || 0) + 1;
+  if (edict?.name) {
+    ds.timeMarkSources = ds.timeMarkSources || {};
+    ds.timeMarkSources[edict.key || markKey] = edict.name;
+  }
+}
+
 function applyDungeonEdictEffects(ds, mon, now){
   if(state.mode !== 'dungeon' || !ds?.edicts?.length || !mon) return;
   const beforeHits = ds.edictHits || 0;
@@ -3100,6 +3113,7 @@ function applyDungeonEdictEffects(ds, mon, now){
         state.resource = Math.max(0, state.resource - drain);
         showFloat($('hero-emoji'), `${edict.icon || '📜'}-${drain}`, '#93c5fd', { variant:'status', scale:1.04 });
         ds.edictHits = (ds.edictHits || 0) + 1;
+        recordDungeonTimeMark(ds, 'resource', edict);
       }
     }
     if(mod.poisonTickMs && now - (ds[`${prefix}:poison`] || 0) > mod.poisonTickMs){
@@ -3108,12 +3122,14 @@ function applyDungeonEdictEffects(ds, mon, now){
       applyHeroDebuff('burn', 4200, { dps });
       showFloat($('hero-emoji'), `${edict.icon || '📜'}腐蚀`, '#a3e635', { variant:'status', scale:1.04 });
       ds.edictHits = (ds.edictHits || 0) + 1;
+      recordDungeonTimeMark(ds, 'healing', edict);
     }
     if(mod.ceilingTickMs && now - (ds[`${prefix}:ceiling`] || 0) > mod.ceilingTickMs){
       ds[`${prefix}:ceiling`] = now;
       const dmg = Math.max(1, Math.floor((state.hero.hpMax || 1) * (mod.ceilingDamagePct || 0.04)));
       applyHeroDamage(dmg, mon, { label:t=>(edict.icon || '📜') + '-' + t, color:'#f59e0b', now });
       ds.edictHits = (ds.edictHits || 0) + 1;
+      recordDungeonTimeMark(ds, 'mobility', edict);
     }
     if(mod.shieldTickMs && now - (ds[`${prefix}:shield`] || 0) > mod.shieldTickMs){
       ds[`${prefix}:shield`] = now;
@@ -3131,12 +3147,14 @@ function applyDungeonEdictEffects(ds, mon, now){
       applyHeroDebuff('weaken', mod.weakenMs || 4500);
       showFloat($('hero-emoji'), `${edict.icon || '📜'}虚弱`, '#fca5a5', { variant:'status', scale:1.04 });
       ds.edictHits = (ds.edictHits || 0) + 1;
+      recordDungeonTimeMark(ds, 'pressure', edict);
     }
     if(mod.executePulsePct && mon.isBoss && mon.hpMax > 0 && mon.hp / mon.hpMax <= (mod.executeBelow || 0.35) && now - (ds[`${prefix}:execute`] || 0) > 9000){
       ds[`${prefix}:execute`] = now;
       const dmg = Math.max(1, Math.floor((state.hero.hpMax || 1) * mod.executePulsePct));
       applyHeroDamage(dmg, mon, { label:t=>(edict.icon || '⏱️') + '-' + t, color:'#fb7185', now });
       ds.edictHits = (ds.edictHits || 0) + 1;
+      recordDungeonTimeMark(ds, 'execution', edict);
     }
   }
   if((ds.edictHits || 0) !== beforeHits && typeof markDirty === 'function') markDirty('hero', 'stage');

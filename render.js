@@ -740,6 +740,15 @@ function dungeonProgressMechanicTags(ds, contract, alert, timerStatus) {
       meta:timerStatus.text || ''
     }, { fallbackIcon:'inv_misc_pocketwatch_01', color:timerStatus.expired ? '#fb7185' : '#67e8f9' }));
   }
+  const timeMarkSummary = (typeof dungeonTimeMarkSummary === 'function') ? dungeonTimeMarkSummary(ds.edicts, ds.timeMarks || 0) : null;
+  if (timeMarkSummary) {
+    tags.push(inlineTipSpanHtml(timeMarkSummary, {
+      fallbackIcon:'achievement_bg_kill_flag_carrier',
+      color:'#fca5a5',
+      meta:timeMarkSummary.meta,
+      metaVisible:true
+    }));
+  }
   const themeAffixes = Array.isArray(ds.themeAffixes) ? ds.themeAffixes : [];
   for (const affix of themeAffixes.slice(0, 2)) {
     tags.push(inlineTipSpanHtml({
@@ -3595,6 +3604,7 @@ function dungeonRouteBriefHtml(dg, selectedContract) {
   const environments = contractLevel > 0 && typeof getDungeonEnvironments === 'function' ? getDungeonEnvironments(dg, contractLevel) : [];
   const trials = contractLevel > 0 && typeof getDungeonContractTrials === 'function' ? getDungeonContractTrials(dg, contractLevel) : [];
   const timer = contractLevel > 0 && typeof createDungeonTimer === 'function' ? createDungeonTimer(dg, contractLevel) : null;
+  const timeMarkSummary = contractLevel > 0 && typeof dungeonTimeMarkSummary === 'function' ? dungeonTimeMarkSummary(edicts, 0) : null;
   const traitPreview = (typeof dungeonTraitPreviewForDungeon === 'function') ? dungeonTraitPreviewForDungeon(dg.key, 3) : null;
   const lastBoss = (dg.bosses || [])[(dg.bosses || []).length - 1];
   const challengePreview = lastBoss && typeof getDungeonBossChallengeSeals === 'function' ? getDungeonBossChallengeSeals(lastBoss).slice(0, 3) : [];
@@ -3610,6 +3620,7 @@ function dungeonRouteBriefHtml(dg, selectedContract) {
     .concat(rooms.slice(0, 2).map(r => ({ item:r, fallback:'inv_misc_dice_02', color:'#f9a8d4', meta:r.routeMatched ? '路线匹配' : '房间' })))
     .concat(environments.slice(0, 1).map(e => ({ item:e, fallback:'spell_frost_arcticwinds', color:'#67e8f9', meta:'环境' })))
     .concat(edicts.slice(0, 2).map(e => ({ item:e, fallback:'inv_scroll_03', color:'#fde68a', meta:'禁令' })))
+    .concat(timeMarkSummary ? [{ item:timeMarkSummary, fallback:'achievement_bg_kill_flag_carrier', color:'#fca5a5', meta:timeMarkSummary.meta }] : [])
     .concat(trials.slice(0, 1).map(t => ({ item:t, fallback:'ability_warrior_battleshout', color:'#fb7185', meta:'试炼' })));
   if (timer) pressureItems.push({ item:{ name:'限时挑战', icon:'⏳', desc:'在限定时间内通关可获得额外奖励;超时后进入时序脉冲。' }, fallback:'inv_misc_pocketwatch_01', color:'#fde68a', meta:timer.label });
   const pressureHtml = pressureItems.length ? pressureItems.slice(0, 7).map(x => inlineTipSpanHtml(x.item, {
@@ -3819,17 +3830,28 @@ function buildDungeonInfoHtml(dg) {
     const environmentPreview = (typeof getDungeonEnvironments === 'function') ? getDungeonEnvironments(dg, selectedContract.level) : [];
     const edictPreview = (typeof getDungeonTacticalEdicts === 'function') ? getDungeonTacticalEdicts(dg, selectedContract.level) : [];
     const timerPreview = (typeof createDungeonTimer === 'function') ? createDungeonTimer(dg, selectedContract.level) : null;
+    const timeMarkPreview = (typeof dungeonTimeMarkSummary === 'function') ? dungeonTimeMarkSummary(edictPreview, 0) : null;
     const alertLabelTip = inlineTipSpanHtml({ name:'警戒', icon:'🚨', desc:'契约副本每清一波 +1 级，击败首领 +2 级；警戒越高，后续敌人越强，也更容易出现戒备队长。' }, { fallbackIcon:'achievement_bg_returnxflags_def_wsg', color:'#fb7185' });
     const edictLabelTip = inlineTipSpanHtml({ name:'战术禁令库', icon:'📜', desc:'每次契约会从禁令库随机抽取额外限制；禁令会提高战斗压力，并小幅提高通关奖励。', meta:`当前抽取 ${edictPreview.length} 条` }, { fallbackIcon:'inv_scroll_03', color:'#fcd34d' });
     const timerLabelTip = timerPreview ? inlineTipSpanHtml({ name:'限时挑战', icon:'⏳', desc:'在限定时间内通关可获得额外奖励；超时后每 15 秒叠加一次压迫。', meta:timerPreview.label }, { fallbackIcon:'inv_misc_pocketwatch_01', color:'#fde68a' }) : '';
+    const timeMarkLabelTip = timeMarkPreview ? inlineTipSpanHtml(timeMarkPreview, { fallbackIcon:'achievement_bg_kill_flag_carrier', color:'#fca5a5', meta:timeMarkPreview.meta, metaVisible:true }) : '';
     html += `<div class="dungeon-contract-info">
       <b>${selectedContract.icon} 当前契约: ${selectedContract.name}</b>
       <div class="muted">${selectedContract.desc}</div>
       <div>怪物生命 ×${selectedContract.hp.toFixed(2)} · 攻击 ×${selectedContract.atk.toFixed(2)} · 防御 ×${selectedContract.def.toFixed(2)} · 通关奖励 ×${selectedContract.reward.toFixed(2)}</div>
       <div class="dungeon-alert-rule">${alertLabelTip}: 契约副本每清一波+1级,击败首领+2级;高警戒会强化后续敌人并派出戒备队长。</div>
       <div class="dungeon-edict-rule">${edictLabelTip}: 100条,当前契约抽取 ${edictPreview.length} 条;禁令会提高难度并小幅提高通关奖励。</div>
+      ${timeMarkPreview ? `<div class="dungeon-edict-rule">${timeMarkLabelTip}: ${timeMarkPreview.types.map(t => t.name).join(' · ')}</div>` : ''}
       ${timerPreview ? `<div class="dungeon-timer-rule">${timerLabelTip}: ${timerPreview.label} 内通关奖励 ×${timerPreview.rewardMult.toFixed(2)},超时后每15秒叠加压迫。</div>` : ''}
     </div>`;
+    if (timeMarkPreview?.types?.length) {
+      html += `<div class="dungeon-edict-info">
+        <b>🎯 时序点名</b>
+        <div style="display:flex;flex-direction:column;gap:5px;margin-top:5px">
+          ${timeMarkPreview.types.map(t => `<div><span style="color:#fca5a5">${symbolIconHtml(t.icon, 14, t.name, t.fallbackIcon || 'achievement_bg_kill_flag_carrier')} ${t.name}</span><div class="muted">${t.desc}${t.source ? ` 来源: ${tipAttrText(t.source)}` : ''}</div></div>`).join('')}
+        </div>
+      </div>`;
+    }
     if (edictPreview.length) {
       html += `<div class="dungeon-edict-info">
         <b>📜 战术禁令</b>
@@ -4122,6 +4144,8 @@ function renderDungeon() {
     }).join(' · ')}</div>` : '';
     const edictPreview = (selectedContractLevel > 0 && typeof getDungeonTacticalEdicts === 'function') ? getDungeonTacticalEdicts(dg, selectedContractLevel) : [];
     const edictLine = edictPreview.length ? `<div class="dungeon-edict-line">📜 禁令: ${edictPreview.map(e => inlineTipSpanHtml(e, { fallbackIcon:'inv_scroll_03', color:'#fcd34d' })).join(' · ')}</div>` : '';
+    const timeMarkPreview = (selectedContractLevel > 0 && typeof dungeonTimeMarkSummary === 'function') ? dungeonTimeMarkSummary(edictPreview, 0) : null;
+    const timeMarkLine = timeMarkPreview ? `<div class="dungeon-edict-line">🎯 点名: ${inlineTipSpanHtml(timeMarkPreview, { fallbackIcon:'achievement_bg_kill_flag_carrier', color:'#fca5a5', meta:timeMarkPreview.meta, metaVisible:true })}</div>` : '';
     const timerPreview = (selectedContractLevel > 0 && typeof createDungeonTimer === 'function') ? createDungeonTimer(dg, selectedContractLevel) : null;
     const timerLabelTip = timerPreview ? inlineTipSpanHtml({ name:'限时挑战', icon:'⏳', desc:'在限定时间内通关可获得额外奖励；超时后每 15 秒叠加一次压迫。', meta:timerPreview.label }, { fallbackIcon:'inv_misc_pocketwatch_01', color:'#fde68a' }) : '';
     const alertLabelTip = inlineTipSpanHtml({ name:'契约警戒', icon:'🚨', desc:'警戒值会随着波次和首领击杀上升，后续敌人会同步强化，并可能出现戒备队长。' }, { fallbackIcon:'achievement_bg_returnxflags_def_wsg', color:'#fb7185' });
@@ -4185,6 +4209,7 @@ function renderDungeon() {
       ${timerLine}
       ${roomLine}
       ${edictLine}
+      ${timeMarkLine}
       ${environmentLine}
       ${trialLine}
       ${alertLine}

@@ -423,6 +423,43 @@ function dungeonMechanicCodex() {
   return DUNGEON_MECHANIC_CODEX.map(x => ({ ...x, dungeonCodex:true }));
 }
 
+const DUNGEON_TIME_MARK_TYPES = [
+  { key:'resource', name:'资源点名', icon:'💧', fallbackIcon:'spell_shadow_manaburn', desc:'禁令周期性点名玩家并燃烧资源,会压缩自动施法、爆发和治疗窗口。', match:mod => !!mod.drainTickMs },
+  { key:'healing', name:'腐蚀点名', icon:'💀', fallbackIcon:'ability_creature_disease_02', desc:'禁令周期性施加腐蚀或毒性持续伤害,通常需要治疗、护盾或更快击杀来覆盖。', match:mod => !!mod.poisonTickMs },
+  { key:'mobility', name:'塌方点名', icon:'🪨', fallbackIcon:'spell_nature_earthquake', desc:'禁令周期性制造塌方落石,直接造成生命压力并惩罚拖长战斗。', match:mod => !!mod.ceilingTickMs },
+  { key:'pressure', name:'虚弱点名', icon:'🌫️', fallbackIcon:'spell_shadow_mindrot', desc:'禁令周期性让玩家虚弱,在后续承伤窗口里更容易被首领或小怪击穿。', match:mod => !!mod.weakenTickMs },
+  { key:'execution', name:'处刑点名', icon:'⏱️', fallbackIcon:'ability_rogue_eviscerate', desc:'首领低血量后周期性触发处刑压力,要求更稳的收尾、防御覆盖或爆发斩杀。', match:mod => !!mod.executePulsePct },
+];
+
+function dungeonTimeMarkTypes(edicts) {
+  const picked = [];
+  const seen = new Set();
+  for (const edict of Array.isArray(edicts) ? edicts : []) {
+    const mod = edict?.mod || {};
+    for (const type of DUNGEON_TIME_MARK_TYPES) {
+      if (!seen.has(type.key) && type.match(mod)) {
+        picked.push({ ...type, source:edict.name || '战术禁令', timeMark:true });
+        seen.add(type.key);
+      }
+    }
+  }
+  return picked;
+}
+
+function dungeonTimeMarkSummary(edicts, count) {
+  const types = dungeonTimeMarkTypes(edicts);
+  if (!types.length && !count) return null;
+  const codex = dungeonCodexEntry('timeMark') || { name:'时序点名', icon:'🎯', desc:'高压时间线上的定向机制。' };
+  const typeText = types.length ? types.map(t => t.name).join(' / ') : '战斗中触发的定向压力';
+  return {
+    ...codex,
+    desc:`${codex.desc || '高压时间线上的定向机制。'} 本次契约包含: ${typeText}。`,
+    meta:count ? `${count}次触发` : `${types.length}类`,
+    types,
+    timeMarkSummary:true,
+  };
+}
+
 function getDungeonCombatRooms(dg, contractLevel) {
   if (!dg) return [];
   const level = Math.max(0, Math.min(3, Math.floor(contractLevel || 0)));
@@ -1116,6 +1153,14 @@ function onDungeonClear(dg) {
   const roomHtml = dungeonStateSnapshot?.combatRooms?.length
     ? `<div class="muted" style="font-size:12px">${dungeonClearCodexTip('combatRoom', `${dungeonStateSnapshot.roomEvents || 0}次`)}: ${dungeonStateSnapshot.combatRooms.map(r => dungeonClearInlineTip(r, { fallbackIcon:'inv_misc_dice_02', color:'#f9a8d4' })).join(' · ')} · 击破目标 ${dungeonStateSnapshot.roomObjectivesBroken || 0}${dungeonStateSnapshot.roomBonusGold ? ` · 额外金币 +${dungeonStateSnapshot.roomBonusGold}` : ''}</div>`
     : '';
+  const timeMarkClearSummary = dungeonTimeMarkSummary(dungeonStateSnapshot?.edicts, dungeonStateSnapshot?.timeMarks || 0);
+  const timeMarkClearTip = timeMarkClearSummary
+    ? dungeonClearInlineTip(timeMarkClearSummary, {
+        fallbackIcon:'achievement_bg_kill_flag_carrier',
+        color:'#fca5a5',
+        metaVisible:true,
+      })
+    : '';
   const contractSummaryTags = dungeonStateSnapshot?.contractLevel > 0
     ? [
         dungeonClearMetricTip(`契约:${contractInfo.name}`, contractInfo.icon, contractInfo.desc || '副本契约会提高怪物强度并同步提高通关奖励。', `奖励 ×${contractMult.toFixed(2)}`, 'inv_scroll_03', '#f6c453'),
@@ -1132,8 +1177,9 @@ function onDungeonClear(dg) {
         dungeonClearCodexTip('combatRoom', `${dungeonStateSnapshot.roomEvents || 0}次`),
         dungeonClearMetricTip('环境触发', '🧭', '契约环境危害在本次副本中的触发次数。', `${dungeonStateSnapshot.environmentHits || 0}次`, 'spell_frost_arcticwinds', '#67e8f9'),
         dungeonClearCodexTip('timeEdict', `${dungeonStateSnapshot.edictHits || 0}次`),
+        timeMarkClearTip,
         dungeonClearMetricTip('禁令增援', '👥', '战术禁令额外召唤或派出的增援数量。', `${dungeonStateSnapshot.edictAdds || 0}`, 'achievement_bg_killxenemies_generalsroom', '#fcd34d'),
-      ].join(' · ')
+      ].filter(Boolean).join(' · ')
     : '';
   const contractHtml = dungeonStateSnapshot?.contractLevel > 0
     ? `<div class="muted dungeon-clear-mechanics">${contractSummaryTags}</div>`
