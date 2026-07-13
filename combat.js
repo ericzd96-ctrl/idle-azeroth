@@ -318,6 +318,9 @@ function addSkillAura(key, cfg){
   if(nextStacks <= 0){ delete rt.auras[key]; return 0; }
   rt.auras[key] = {
     key,
+    icon: cfg?.icon || prev.icon || '',
+    name: cfg?.name || prev.name || '',
+    desc: cfg?.desc || prev.desc || '',
     stacks: nextStacks,
     max,
     duration,
@@ -544,6 +547,204 @@ function activeHeroSpecKey(){ return state.specialization || ''; }
 function activeAllySummonCount(now){
   return (typeof livingAllySummons === 'function') ? livingAllySummons(now || Date.now()).length : 0;
 }
+function currentSpecTacticForCombat(){
+  if(typeof currentSpecTacticalWindow === 'function') return currentSpecTacticalWindow();
+  if(typeof globalThis?.currentSpecTacticalWindow === 'function') return globalThis.currentSpecTacticalWindow();
+  return null;
+}
+function grantSpecTacticBuff(buffKey, durMs, now){
+  if(!buffKey) return;
+  if(!state.buffs) state.buffs = {};
+  state.buffs[buffKey] = Math.max(state.buffs[buffKey] || 0, (now || Date.now()) + (durMs || 4500));
+  recomputeStats();
+}
+function specTacticCompanionSupport(kind, now){
+  if(typeof companionTargetable !== 'function' || !companionTargetable() || typeof computeCompanionStats !== 'function') return;
+  const st = computeCompanionStats();
+  if(!st || (typeof compDowned === 'function' && compDowned())) return;
+  if(kind === 'heal'){
+    healCompanionAmount(Math.floor(st.hpMax * 0.11), '🌟', '#fde68a', 'hero', '专精战术');
+    addCompanionBarrier(Math.floor(st.hpMax * 0.06), '🛡️', '#93c5fd');
+  }else{
+    addCompanionBarrier(Math.floor(st.hpMax * 0.045), '🛡️', '#93c5fd');
+  }
+  markDirty('companion');
+}
+function specTacticSummon(kind, now){
+  if(typeof summonAlliedUnits !== 'function') return false;
+  const demon = kind === 'demon';
+  const beast = kind === 'beast';
+  if(!demon && !beast) return false;
+  return summonAlliedUnits({
+    name:demon ? '恶魔传送门' : '兽群围猎',
+    icon:demon ? '😈' : '🐾',
+    type:'summon',
+    summonCount:1,
+    summonCap:demon ? 2 : 2,
+    summonTheme:demon ? 'demon' : 'beast',
+    summonDuration:demon ? 18000 : 16000,
+    summonPower:demon ? 0.58 : 0.50,
+    summonSkillSlots:2,
+    summonSplashPct:demon ? 0.12 : 0.08,
+    summonBonusVsBoss:0.16
+  }, now, { id:'spec-tactic:' + kind, source:'hero', name:'专精战术', icon:demon ? '😈' : '🐾', lvl:state.hero.lvl, atk:state.hero.atk, def:state.hero.def, hpMax:state.hero.hpMax, crit:state.hero.crit, critd:state.hero.critd });
+}
+function applySpecTacticEffect(def, mon, value, now){
+  const base = Math.max(1, Math.floor(value || state.hero.atk || 1));
+  const heroMax = Math.max(1, state.hero.hpMax || 1);
+  const kind = def?.kind || '';
+  let fired = false;
+  const hit = (pct, icon, color) => {
+    if(!mon || mon.hp <= 0) return 0;
+    const dealt = applySkillFollowupDamage(mon, base * pct, icon || def.icon || '✦', color || '#fbbf24', now);
+    fired = fired || dealt > 0;
+    return dealt;
+  };
+  if(kind === 'breaker'){
+    if(mon){ applyMonsterState(mon, 'sunder', 9000); applyMonsterState(mon, 'exposed', 7000); }
+    hit(0.34, def.icon, '#fbbf24');
+  }else if(kind === 'berserk'){
+    grantSpecTacticBuff('s_frenzy', 5200, now);
+    healHeroAmount(Math.floor(heroMax * 0.045), '😡', '#fda4af', 'hero', def.name);
+    hit(0.24, def.icon, '#fb7185');
+    fired = true;
+  }else if(kind === 'bulwark'){
+    addTalentShield(Math.floor(heroMax * 0.065 + (state.hero.def || 0) * 0.9), false, 9000);
+    hit(0.18 + Math.min(0.22, (state.hero.def || 0) / Math.max(1, state.hero.atk || 1) * 0.08), def.icon, '#93c5fd');
+    fired = true;
+  }else if(kind === 'arcane'){
+    hit(0.38, def.icon, '#c4b5fd');
+    state.resource = Math.min(state.resourceMax || state.resource || 0, (state.resource || 0) + 12);
+    fired = true;
+  }else if(kind === 'fire'){
+    if(mon) applyMonsterDot(mon, 'specTactic:fire', Math.max(1, Math.floor(state.hero.atk * 0.22)), 8000, { icon:def.icon, name:def.name, source:'spec' });
+    const dealt = hit(0.20, def.icon, '#fb923c');
+    if(dealt > 0) splashSkillDamage(mon, dealt, 0.35, def.icon, now);
+    fired = true;
+  }else if(kind === 'frost'){
+    if(mon) applyMonsterState(mon, 'frozen', 3600);
+    addTalentShield(Math.floor(heroMax * 0.04), true, 8000);
+    hit(0.26, def.icon, '#93c5fd');
+    fired = true;
+  }else if(kind === 'atonement'){
+    addTalentShield(Math.floor(heroMax * 0.052), true, 9000);
+    specTacticCompanionSupport('shield', now);
+    hit(0.18, def.icon, '#fef3c7');
+    fired = true;
+  }else if(kind === 'holyEcho'){
+    healHeroAmount(Math.floor(heroMax * 0.09), def.icon, '#fde68a', 'hero', def.name);
+    addTalentShield(Math.floor(heroMax * 0.035), true, 9000);
+    specTacticCompanionSupport('heal', now);
+    fired = true;
+  }else if(kind === 'void'){
+    if(mon) applyMonsterDot(mon, 'specTactic:void', Math.max(1, Math.floor(state.hero.atk * 0.20)), 9000, { icon:def.icon, name:def.name, source:'spec' });
+    hit(0.30 + Math.min(0.24, getMonsterDotCount(mon, now) * 0.05), def.icon, '#c084fc');
+    if(mon) spreadDotFromMonster(mon, 0.45, 8500);
+    fired = true;
+  }else if(kind === 'poison'){
+    if(mon) applyMonsterDot(mon, 'specTactic:poison', Math.max(1, Math.floor(state.hero.atk * 0.18)), 9000, { icon:def.icon, name:def.name, source:'spec' });
+    hit(0.22 + Math.min(0.28, getMonsterDotCount(mon, now) * 0.07), def.icon, '#bef264');
+    fired = true;
+  }else if(kind === 'flurry'){
+    grantSpecTacticBuff('s_haste', 4800, now);
+    const dealt = hit(0.28, def.icon, '#fbbf24');
+    if(dealt > 0) splashSkillDamage(mon, dealt, 0.40, def.icon, now);
+    fired = true;
+  }else if(kind === 'shadow'){
+    if(mon) applyMonsterState(mon, 'exposed', 9000);
+    grantSpecTacticBuff('r_dance', 4200, now);
+    hit(0.26, def.icon, '#a78bfa');
+    fired = true;
+  }else if(kind === 'beast'){
+    specTacticSummon('beast', now);
+    addSkillAura('h_beastBond', { add:1, max:5, duration:15000 });
+    hit(0.24 + Math.min(0.16, activeAllySummonCount(now) * 0.04), def.icon, '#86efac');
+    fired = true;
+  }else if(kind === 'marks'){
+    if(mon) applyMonsterState(mon, 'marked', 11000);
+    hit(mon?.isBoss ? 0.36 : 0.42, def.icon, '#facc15');
+    fired = true;
+  }else if(kind === 'survival'){
+    if(mon){ applyMonsterState(mon, 'rooted', 5000); applyMonsterDot(mon, 'specTactic:wildfire', Math.max(1, Math.floor(state.hero.atk * 0.19)), 8000, { icon:def.icon, name:def.name, source:'spec' }); }
+    hit(0.21 + Math.min(0.20, getMonsterDotCount(mon, now) * 0.05), def.icon, '#fb923c');
+    fired = true;
+  }else if(kind === 'element'){
+    const dealt = hit(0.32, def.icon, '#67e8f9');
+    if(mon) mon.slowUntil = Math.max(mon.slowUntil || 0, now + 4500);
+    if(dealt > 0) splashSkillDamage(mon, dealt, 0.30, def.icon, now);
+    fired = true;
+  }else if(kind === 'enhance'){
+    grantSpecTacticBuff('windfury', 4200, now);
+    hit(0.30, def.icon, '#5eead4');
+    fired = true;
+  }else if(kind === 'tide'){
+    healHeroAmount(Math.floor(heroMax * 0.075), def.icon, '#67e8f9', 'hero', def.name);
+    addTalentShield(Math.floor(heroMax * 0.032), true, 9000);
+    specTacticCompanionSupport('heal', now);
+    fired = true;
+  }else if(kind === 'beacon'){
+    healHeroAmount(Math.floor(heroMax * 0.082), def.icon, '#fde68a', 'hero', def.name);
+    specTacticCompanionSupport('heal', now);
+    fired = true;
+  }else if(kind === 'divineBulwark'){
+    grantSpecTacticBuff('pa_devotion', 5200, now);
+    addTalentShield(Math.floor(heroMax * 0.055), true, 9000);
+    hit(0.24, def.icon, '#fde68a');
+    fired = true;
+  }else if(kind === 'verdict'){
+    if(mon) applyMonsterState(mon, 'judged', 9000);
+    hit(0.40, def.icon, '#fde68a');
+    fired = true;
+  }else if(kind === 'affliction'){
+    if(mon) applyMonsterDot(mon, 'specTactic:agony', Math.max(1, Math.floor(state.hero.atk * 0.21)), 10000, { icon:def.icon, name:def.name, source:'spec' });
+    if(mon) spreadDotFromMonster(mon, 0.50, 9000);
+    hit(0.22 + Math.min(0.28, getMonsterDotCount(mon, now) * 0.06), def.icon, '#c084fc');
+    fired = true;
+  }else if(kind === 'demon'){
+    specTacticSummon('demon', now);
+    hit(0.26 + Math.min(0.18, activeAllySummonCount(now) * 0.04), def.icon, '#f0abfc');
+    fired = true;
+  }else if(kind === 'chaos'){
+    const dealt = hit(0.44, def.icon, '#fb7185');
+    if(dealt > 0) splashSkillDamage(mon, dealt, 0.32, def.icon, now);
+    if(mon) applyMonsterDot(mon, 'specTactic:chaos', Math.max(1, Math.floor(state.hero.atk * 0.14)), 7500, { icon:def.icon, name:def.name, source:'spec' });
+    fired = true;
+  }else if(kind === 'eclipse'){
+    const dealt = hit(0.34, def.icon, '#c4b5fd');
+    if(dealt > 0) splashSkillDamage(mon, dealt, 0.28, '🌠', now);
+    fired = true;
+  }else if(kind === 'feral'){
+    if(mon) applyMonsterDot(mon, 'specTactic:rip', Math.max(1, Math.floor(state.hero.atk * 0.20)), 9000, { icon:def.icon, name:def.name, source:'spec' });
+    hit(0.25 + Math.min(0.25, getMonsterDotCount(mon, now) * 0.06), def.icon, '#fb923c');
+    fired = true;
+  }else if(kind === 'bloom'){
+    healHeroAmount(Math.floor(heroMax * 0.075), def.icon, '#86efac', 'hero', def.name);
+    addTalentShield(Math.floor(heroMax * 0.042), true, 9500);
+    specTacticCompanionSupport('heal', now);
+    fired = true;
+  }
+  return fired;
+}
+function maybeTriggerSpecTacticalWindow(skillKey, sk, mon, value, ctx, now, phase){
+  const def = currentSpecTacticForCombat();
+  if(!def || !sk) return false;
+  const auraKey = def.meterKey;
+  const max = def.meterMax || 5;
+  const stacks = skillAuraStacks(auraKey);
+  const activeSkill = sk.type === 'dmg' || sk.type === 'heal' || isDefensiveSkill(skillKey, sk) || sk.type === 'summon' || ctx?.summoned;
+  if(!activeSkill) return false;
+  const enough = stacks >= Math.max(1, max - 1);
+  const spender = (sk.name || '').match(/斩杀|致死|巨人|弹幕|涌动|炎爆|流星|冰枪|彗星|虚空|疫病|奉毒|君王|杀戮|瞄准|元素冲击|裂地|裁决|混乱|星涌|凶猛|治疗|圣光|潮汐|道标|盾|壁垒/);
+  if(!enough && !(phase === 'pre' && spender && stacks >= Math.max(2, max - 2))) return false;
+  const key = `spec-tactic:${activeHeroClassKey()}:${activeHeroSpecKey()}`;
+  if(!classRuntimeReady(key, def.cdMs || (mon?.isBoss ? 9000 : 12000), now)) return false;
+  addSkillAura('spec_tactic', { add:1, max:1, duration:def.duration || 5200, icon:def.icon, name:def.name, desc:def.desc });
+  const fired = applySpecTacticEffect(def, mon, value, now);
+  showFloat($('hero-emoji'), `${def.icon || '✦'}${def.name}`, '#facc15', { variant:'buff', scale:1.05 });
+  log(`${def.icon || '✦'} 专精战术「${def.name}」触发: ${def.desc}`, fired ? 'good' : 'info');
+  markDirty('skills','hero','companion');
+  return true;
+}
 function applyCompanionClassSupport(fx, sk, amount, now){
   if(!fx || typeof companionTargetable !== 'function' || !companionTargetable() || typeof computeCompanionStats !== 'function') return;
   const st = computeCompanionStats();
@@ -572,6 +773,7 @@ function applySpecIdentityMechanicAfterSkill(skillKey, sk, mon, value, ctx){
   const defensiveSkill = isDefensiveSkill(skillKey, sk);
   const dots = dmgSkill ? getMonsterDotCount(mon, now) : 0;
 
+  maybeTriggerSpecTacticalWindow(skillKey, sk, mon, value, ctx, now, 'pre');
   if(cls === 'warrior' && spec === 'arms' && dmgSkill){
     if(/破甲|压制|碎颅|灭战者|致死/.test(name)) addSkillAura('w_sunder', { add:/灭战者|碎颅/.test(name)?2:1, max:5, duration:15000 });
     if(/致死|巨人|斩杀|灭战者/.test(name) && skillAuraStacks('w_sunder') >= 5 && classRuntimeReady('spec-arms-exec', 1600, now)){
@@ -732,6 +934,7 @@ function applySpecIdentityMechanicAfterSkill(skillKey, sk, mon, value, ctx){
       consumeSkillAura('d_harmony', { all:true });
     }
   }
+  maybeTriggerSpecTacticalWindow(skillKey, sk, mon, value, ctx, now, 'post');
   if(dmgSkill) triggerMonsterSpecAdaptationPressure(mon, now);
 }
 function applyClassMechanicAfterSkill(skillKey, sk, mon, value, ctx){

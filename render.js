@@ -397,12 +397,12 @@ function renderBuffBar() {
   if (typeof SKILL_AURA_LIBRARY === 'object' && state.skillRuntime && state.skillRuntime.auras) {
     for (const [k, aura] of Object.entries(state.skillRuntime.auras)) {
       if (!aura) continue;
-      const m = SKILL_AURA_LIBRARY[k];
+      const m = SKILL_AURA_LIBRARY[k] || (k === 'spec_tactic' ? aura : null);
       if (!m) continue;
       const left = aura.expire ? Math.ceil((aura.expire - now) / 1000) : 0;
       if (aura.expire && aura.expire <= now) continue;
       const stacks = aura.stacks > 1 ? ` · ${aura.stacks}层` : '';
-      buffs.push({ kind: 'buff', icon: m.icon || '✨', name: (m.name || k) + stacks, base: (m.name || k), stacks: aura.stacks > 1 ? aura.stacks : 0, desc: m.desc || '', left });
+      buffs.push({ kind: 'buff', icon: aura.icon || m.icon || '✨', name: (aura.name || m.name || k) + stacks, base: (aura.name || m.name || k), stacks: aura.stacks > 1 ? aura.stacks : 0, desc: aura.desc || m.desc || '', left });
     }
   }
   buffs.sort((a, b) => a.left - b.left);
@@ -434,12 +434,13 @@ function renderBuffBar() {
   const selfStates = buffs.concat(heroDe);
   const specMeter = (typeof currentSpecCombatMeter === 'function') ? currentSpecCombatMeter() : null;
   if (specMeter) {
+    const tactic = (typeof currentSpecTacticalWindow === 'function') ? currentSpecTacticalWindow() : null;
     selfStates.unshift({
       kind: 'spec-meter',
       icon: specMeter.icon || '✦',
       name: specMeter.name,
       base: '专精机制:' + specMeter.key,
-      desc: (specMeter.hint || '') + ` · 当前 ${specMeter.stacks || 0}/${specMeter.max || 0}`,
+      desc: (specMeter.hint || '') + ` · 当前 ${specMeter.stacks || 0}/${specMeter.max || 0}` + (tactic ? ` · 战术窗口: ${tactic.name}: ${tactic.desc}` : ''),
       valText: `${specMeter.stacks || 0}/${specMeter.max || 0}`,
       stacks: specMeter.stacks || 0,
       left: 0
@@ -2556,16 +2557,18 @@ function renderSkills() {
     const rule = (typeof currentSpecCombatRule === 'function') ? currentSpecCombatRule() : null;
     if (rule) {
       const meter = (typeof currentSpecCombatMeter === 'function') ? currentSpecCombatMeter() : null;
+      const tactic = (typeof currentSpecTacticalWindow === 'function') ? currentSpecTacticalWindow() : null;
       const meterHtml = meter ? `
         <div class="bar xp" style="height:14px;margin:7px 0 4px"><i style="width:${meter.pct || 0}%;background:linear-gradient(90deg,#f472b6,#facc15)"></i><span>${meter.icon || '✦'} ${meter.name}: ${meter.stacks || 0}/${meter.max || 0}</span></div>
         <div class="muted" style="font-size:10px;line-height:1.35">${meter.hint || ''} · 高等级怪物、首领和副本敌人会获得“专精适应”,在你接近满层爆发时触发反制护盾/急速。</div>` : '';
+      const tacticHtml = tactic ? `<div class="muted" style="font-size:10px;line-height:1.45;margin-top:5px;color:#fde68a">${tactic.icon || '✦'} 战术窗口: ${tactic.name} · ${tactic.desc}</div>` : '';
       const ruleDiv = document.createElement('div');
       ruleDiv.className = 'skill-item';
       ruleDiv.style.borderColor = 'rgba(244,114,182,.55)';
       ruleDiv.innerHTML = `
         <div class="row"><b style="color:#fbcfe8">${rule.icon || '✦'} 专精特色: ${rule.name}</b><span class="pill">实战规则</span></div>
         <div class="muted" style="font-size:11px;line-height:1.45">${rule.desc}</div>
-        ${meterHtml}`;
+        ${meterHtml}${tacticHtml}`;
       skl.appendChild(ruleDiv);
     }
   } else {

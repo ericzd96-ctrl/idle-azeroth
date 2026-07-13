@@ -802,6 +802,54 @@ const SPEC_COMBAT_METERS = {
   },
 };
 
+const SPEC_TACTICAL_WINDOWS = {
+  warrior:{
+    arms:{ icon:'🪓', name:'巨人压迫', kind:'breaker', desc:'破甲印记接近满层时进入处决窗口: 目标被破甲/破绽压住,并追加一次斩杀伤害。' },
+    fury:{ icon:'😡', name:'怒火脱缰', kind:'berserk', desc:'暴怒接近满层时进入狂乱窗口: 获得短暂急速,追击目标并回复生命。' },
+    prot:{ icon:'🛡️', name:'盾墙反攻', kind:'bulwark', desc:'盾牌格挡接近满层时进入反攻窗口: 获得吸收盾,按防御反震敌人。' },
+  },
+  mage:{
+    arcane:{ icon:'🔷', name:'法力虹吸', kind:'arcane', desc:'奥术充能接近满层时进入倾泻窗口: 追加奥术伤害并返还资源。' },
+    fire:{ icon:'🔥', name:'活动燃线', kind:'fire', desc:'炽热接近满层时进入点燃窗口: 给目标挂上高额燃烧并向周围扩散火焰。' },
+    frost:{ icon:'❄️', name:'碎冰护体', kind:'frost', desc:'指尖寒冰接近满层时进入碎裂窗口: 冻结目标,追加冰霜伤害并获得护盾。' },
+  },
+  priest:{
+    discipline:{ icon:'⚖️', name:'赎罪棱镜', kind:'atonement', desc:'恩典接近满层时进入赎罪窗口: 伤害转化为主角与随从护盾。' },
+    holy:{ icon:'✨', name:'圣言合唱', kind:'holyEcho', desc:'圣言恩典接近满层时进入合唱窗口: 治疗主角和随从,并留下圣光护盾。' },
+    shadow:{ icon:'🌑', name:'虚空裂隙', kind:'void', desc:'疯狂接近满层时进入虚空窗口: 追加暗影爆发,强化并扩散持续伤害。' },
+  },
+  rogue:{
+    assassination:{ icon:'🐍', name:'毒刃入骨', kind:'poison', desc:'毒锋接近满层时进入处刑窗口: 给目标补强毒伤并按持续伤害数量追加毒爆。' },
+    combat:{ icon:'⚔️', name:'乱舞节拍', kind:'flurry', desc:'连击点接近满层时进入乱舞窗口: 获得急速,并把一次打击溅射到其他敌人。' },
+    subtlety:{ icon:'🌑', name:'暗影伏击', kind:'shadow', desc:'暗影连击接近满层时进入伏击窗口: 制造破绽,下一轮敏锐技能更容易爆发。' },
+  },
+  hunter:{
+    bm:{ icon:'🐾', name:'兽群围猎', kind:'beast', desc:'兽群羁绊接近满层时进入围猎窗口: 召唤/强化野兽协击,并追加追咬伤害。' },
+    marks:{ icon:'🎯', name:'弱点瞄准', kind:'marks', desc:'狙击窗口接近满层时进入瞄准窗口: 标记目标并追加穿透伤害。' },
+    survival:{ icon:'💣', name:'野火陷阱链', kind:'survival', desc:'野火节奏接近满层时进入陷阱窗口: 束缚目标,叠加爆炸持续伤害。' },
+  },
+  shaman:{
+    element:{ icon:'⛈️', name:'风暴过载', kind:'element', desc:'雷霆充能接近满层时进入过载窗口: 追加闪电链式伤害并短暂减速。' },
+    enhancement:{ icon:'🌀', name:'双狼漩涡', kind:'enhance', desc:'漩涡之力接近满层时进入风怒窗口: 获得风怒急速并追加近战追击。' },
+    restoration:{ icon:'🌊', name:'灵魂潮汐', kind:'tide', desc:'图腾共鸣接近满层时进入潮汐窗口: 治疗主角和随从,并制造图腾护盾。' },
+  },
+  paladin:{
+    holy:{ icon:'🌟', name:'双道标圣光', kind:'beacon', desc:'圣光道标接近满层时进入双道标窗口: 主角与随从同时获得治疗和护盾。' },
+    prot:{ icon:'🛡️', name:'奉献壁垒', kind:'divineBulwark', desc:'圣光壁垒接近满层时进入奉献窗口: 获得减伤护盾,并以圣光反击。' },
+    ret:{ icon:'⚜️', name:'最终裁决', kind:'verdict', desc:'圣能接近满层时进入裁决窗口: 标记审判目标并追加圣能爆发。' },
+  },
+  warlock:{
+    affliction:{ icon:'💜', name:'灵魂收割', kind:'affliction', desc:'灵魂碎片接近满层时进入收割窗口: 强化痛苦持续伤害并扩散。' },
+    demonology:{ icon:'😈', name:'恶魔传送门', kind:'demon', desc:'恶魔碎片接近满层时进入军团窗口: 召唤恶魔协战并追加恶魔协击。' },
+    destruction:{ icon:'🔥', name:'混乱裂变', kind:'chaos', desc:'余烬接近满层时进入裂变窗口: 追加混乱伤害并点燃其他敌人。' },
+  },
+  druid:{
+    balance:{ icon:'🌗', name:'星穹校准', kind:'eclipse', desc:'星界能量接近满层时进入星穹窗口: 追加星界伤害,多目标时落下星雨。' },
+    feral:{ icon:'🐾', name:'血爪撕咬', kind:'feral', desc:'撕咬连击接近满层时进入血爪窗口: 给目标撕裂伤口并追加凶猛撕咬。' },
+    resto:{ icon:'🌿', name:'生命林地', kind:'bloom', desc:'自然调和接近满层时进入林地窗口: 主角和随从获得持续治疗、护盾与自然调和。' },
+  },
+};
+
 function currentSpecCombatRule() {
   if (typeof state === 'undefined' || !state) return null;
   return SPEC_COMBAT_RULES[state.cls]?.[state.specialization] || null;
@@ -818,11 +866,21 @@ function currentSpecCombatMeter() {
   return Object.assign({}, cfg, { stacks, max, pct: max ? Math.min(100, Math.round(stacks / max * 100)) : 0 });
 }
 
+function currentSpecTacticalWindow() {
+  if (typeof state === 'undefined' || !state) return null;
+  const def = SPEC_TACTICAL_WINDOWS[state.cls]?.[state.specialization];
+  const meter = SPEC_COMBAT_METERS[state.cls]?.[state.specialization];
+  if (!def || !meter) return null;
+  return Object.assign({ meterKey:meter.key, meterName:meter.name, meterMax:meter.max || 5 }, def);
+}
+
 if (typeof window !== 'undefined') {
   window.SPEC_COMBAT_RULES = SPEC_COMBAT_RULES;
   window.SPEC_COMBAT_METERS = SPEC_COMBAT_METERS;
+  window.SPEC_TACTICAL_WINDOWS = SPEC_TACTICAL_WINDOWS;
   window.currentSpecCombatRule = currentSpecCombatRule;
   window.currentSpecCombatMeter = currentSpecCombatMeter;
+  window.currentSpecTacticalWindow = currentSpecTacticalWindow;
 }
 
 const SPEC_STARTER_UNLOCKS = {
