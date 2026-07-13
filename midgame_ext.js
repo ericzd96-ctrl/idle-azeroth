@@ -893,7 +893,10 @@
       dps:{ mode:'passive', name:'猎杀本色', icon:'⚔️', desc:'对Boss额外造成伤害并强化收割', bonusVsBoss:0.10, executeBonus:0.16, executeThreshold:0.35 },
     };
     for (const tpl of COMPANIONS) {
-      tpl.skills = Array.isArray(tpl.skills) ? tpl.skills.slice(0, 5) : [];
+      const rawSkills = Array.isArray(tpl.skills) ? tpl.skills.filter(Boolean) : [];
+      const isSpecialSkill = sk => sk && (sk._roleKit || sk._extraSkill || sk._legendSkill);
+      const specialSkills = rawSkills.filter(isSpecialSkill);
+      tpl.skills = rawSkills.filter(sk => !isSpecialSkill(sk)).slice(0, 5);
       const pool = (genericByRole[tpl.role] || genericByRole.dps).map(x => Object.assign({}, x));
       const names = new Set(tpl.skills.map(x => x.name));
       while (tpl.skills.length < 5 && pool.length) {
@@ -901,6 +904,11 @@
         if (names.has(pick.name)) continue;
         names.add(pick.name);
         tpl.skills.push(pick);
+      }
+      for (const sk of specialSkills) {
+        if (names.has(sk.name)) continue;
+        names.add(sk.name);
+        tpl.skills.push(sk);
       }
       if (!tpl.signature) tpl.signature = Object.assign({}, defaultSig[tpl.role] || defaultSig.dps);
       const amp = qualitySkillAmp[tpl.quality] || 1;
