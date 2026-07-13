@@ -3058,6 +3058,40 @@ function companionFilterPanelHtml(entries){
     ])}
   </div>`;
 }
+function companionDrawGuideHtml(entries) {
+  if (typeof COMPANION_QUALITY === 'undefined') return '';
+  const ownedMap = new Map((state.companions || []).map(comp => [comp.key, comp]));
+  const dupShard = { white:1, green:2, blue:3, purple:5, orange:8 };
+  const qRows = COMPANION_QUALITY.map(q => {
+    const ofQ = (COMPANIONS || []).filter(tpl => compQuality(tpl).key === q.key);
+    const owned = ofQ.filter(tpl => ownedMap.has(tpl.key)).length;
+    const full = ofQ.length && ofQ.every(tpl => {
+      const comp = ownedMap.get(tpl.key);
+      return comp && (comp.stars || 1) >= 5;
+    });
+    const univ = state.compUniversalShards?.[q.key] || 0;
+    return `<div class="comp-draw-q ${full ? 'closed' : ''}">
+      <span class="${q.cls}">${q.name}</span>
+      <b>${owned}/${ofQ.length}</b>
+      <em>${full ? '已跳过' : `权重${q.weight}`}</em>
+      <small>重复+${dupShard[q.key] || 1} · 通用${univ}</small>
+    </div>`;
+  }).join('');
+  const nextCosts = (state.companions || []).filter(comp => (comp.stars || 1) < 5).map(comp => (comp.stars || 1) * 8);
+  const minCost = nextCosts.length ? Math.min(...nextCosts) : 0;
+  return `<div class="comp-draw-guide">
+    <div class="comp-draw-guide-head">
+      <div><b>🎲 抽取与碎片规则</b><div class="muted" style="font-size:10px">每次消耗1张随从券；重复随从会转为同品质通用碎片。</div></div>
+      <span>${state.compTickets || 0} 张券</span>
+    </div>
+    <div class="comp-draw-qgrid">${qRows}</div>
+    <div class="comp-draw-rules">
+      <span>升星先消耗专属碎片,不足再消耗同品质通用碎片。</span>
+      <span>${minCost ? `当前最低升星门槛: ${minCost}碎片` : '已拥有随从均满星'}</span>
+      <span>某品质全员5星后,该品质会自动移出抽取奖池。</span>
+    </div>
+  </div>`;
+}
 function companionAdvisorScore(entry, wantedRole) {
   if (!entry?.isOwned || !entry.tpl || !entry.owned) return 0;
   const q = compQuality(entry.tpl);
@@ -3519,6 +3553,7 @@ function renderCompanion() {
   if(fullQ.length) html += `<div class="muted" style="font-size:10px;margin-top:2px;color:var(--accent)">✅ 已满星品质: ${fullQ.map(k=>qLabel[k]).join(' ')} (不再抽到)</div>`;
   html += `</div>`;
 
+  html += companionDrawGuideHtml(entries);
   html += companionFilterPanelHtml(entries);
   html += companionBondRoadmapHtml(entries);
   html += companionAdvisorPanelHtml(entries);
