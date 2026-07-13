@@ -369,6 +369,11 @@ h1 {
   padding: 1px 5px 1px 4px; font-size: 10px; color: var(--muted); max-width: 100%;
 }
 .comp-skill .cs-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 64px; }
+.comp-skill.extra {
+  border-color: rgba(125, 211, 252, .28);
+  background: rgba(8, 47, 73, .22);
+  color: #bae6fd;
+}
 .comp-skill:hover { border-color: var(--accent); color: var(--text); }
 .comp-upgrade-preview {
   margin: 6px 0;

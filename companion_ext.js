@@ -434,4 +434,62 @@
       if (!dup) c.skills.push(Object.assign({ _roleKit:true }, ks));
     }
   }
+
+  /* ====== 第二特色技能包(2026-07-13)======
+     每个随从再获得 1 个独有主动技能,让同定位随从不再只靠数值区分。
+     这些技能只使用现有战斗执行器支持的字段:伤害/治疗/增益/召唤、DOT、破甲、印记、溅射、减速、击晕、净化、护盾。 */
+  const EXTRA_SKILLS = {
+    fordring:{ name:'灰烬裁决', icon:'⚖️', type:'dmg', mul:4.6, debuff:'sunder', alwaysCrit:true, cd:21, desc:'高额审判并施加破甲,必定暴击' },
+    varian:{ name:'乌瑞恩反击', icon:'🦁', type:'dmg', mul:4.2, bonusVsSunder:0.35, stun:true, stunMs:900, cd:18, desc:'对破甲目标更强,并短暂击晕' },
+    thrall:{ name:'元素会盟', icon:'🌩️', type:'dmg', mul:3.8, slow:true, stun:true, stateKey:'shocked', stateMs:9000, splashPct:0.35, cd:19, desc:'震击目标,留下感电并溅射附近敌人' },
+    illidan:{ name:'恶魔突进', icon:'🪽', type:'dmg', mul:4.8, bonusVsState:'opened', bonusStatePct:0.45, executeBonus:0.30, executeThreshold:0.38, cd:17, desc:'对破绽和残血目标造成更高伤害' },
+    arthas:{ name:'寒冬裁决', icon:'❄️', type:'dmg', mul:4.3, dotPct:0.16, dotMs:8000, slow:true, bonusVsDot:0.28, cd:18, desc:'寒疫侵蚀目标,对已有持续伤害目标更强' },
+    jaina:{ name:'冰枪连射', icon:'🧊', type:'dmg', mul:4.0, alwaysCrit:true, bonusVsState:'frozenMark', bonusStatePct:0.50, cd:15, desc:'必定暴击,对冰寒印记目标额外增伤' },
+    sylvanas:{ name:'女妖黑箭', icon:'🏹', type:'dmg', mul:4.1, dotPct:0.14, dotMs:9000, stateKey:'marked', stateMs:9000, executeBonus:0.26, cd:17, desc:'施加黑暗标记与持续伤害,残血更痛' },
+    anduin:{ name:'圣言术:慰', icon:'✨', type:'heal', heal:0.26, healTarget:'hero', shieldPct:0.10, cleanse:true, cd:20, desc:'治疗主角,附带护盾并净化1个减益' },
+    tyrande:{ name:'艾露恩之箭', icon:'🌙', type:'dmg', mul:3.6, dotPct:0.12, stateKey:'moonMark', stateMs:10000, heal:0.10, healTarget:'hero', cd:16, desc:'月火标记目标,并为主角回复生命' },
+    malfurion:{ name:'生命种子', icon:'🌱', type:'heal', heal:0.22, healTarget:'smart', shieldPct:0.08, cleanse:true, cd:18, desc:'自动治疗更危险的一方,附带护盾和净化' },
+    sw_guard:{ name:'盾牌猛推', icon:'🛡️', type:'dmg', mul:2.8, stun:true, stunMs:1200, debuff:'sunder', cd:12, desc:'低阶护卫打断目标并施加破甲' },
+    horde_grunt:{ name:'鲁莽劈裂', icon:'🪓', type:'dmg', mul:3.1, splashPct:0.45, executeBonus:0.22, cd:13, desc:'顺劈附近敌人,对残血目标更强' },
+    apprentice:{ name:'奥术失衡', icon:'✨', type:'dmg', mul:3.0, stateKey:'arcaneMark', stateMs:9000, bonusVsState:'arcaneMark', bonusStatePct:0.25, cd:12, desc:'留下奥术印记,并能引爆印记增伤' },
+    acolyte:{ name:'祛病祷言', icon:'🙏', type:'heal', heal:0.16, healTarget:'hero', shieldPct:0.06, cleanse:true, cd:16, desc:'低阶净化技能,治疗主角并清除减益' },
+    scout:{ name:'标记射击', icon:'🎯', type:'dmg', mul:2.9, stateKey:'marked', stateMs:9000, bonusVsBoss:0.18, cd:11, desc:'标记目标,对首领更有效' },
+    guard_cap:{ name:'盾阵冲撞', icon:'🪖', type:'dmg', mul:3.4, stun:true, debuff:'sunder', splashPct:0.25, cd:15, desc:'带队冲撞,击晕并破甲目标' },
+    al_ranger:{ name:'穿林齐射', icon:'🍃', type:'dmg', mul:3.2, splashPct:0.55, stateKey:'marked', stateMs:9000, cd:14, desc:'标记主目标并溅射附近敌人' },
+    field_medic:{ name:'止血针剂', icon:'🩹', type:'heal', heal:0.20, healTarget:'smart', shieldPct:0.08, cleanse:true, cd:17, desc:'急救濒危目标,附带护盾和净化' },
+    shaman_app:{ name:'灼地图腾', icon:'🔥', type:'summon', summonCount:1, summonCap:2, summonTheme:'totem', summonDuration:20000, summonPower:0.78, summonSkillName:'灼热震击', summonSkillIcon:'🔥', summonSkillStateKey:'shocked', summonSkillStateMs:8000, cd:18, desc:'召唤灼地图腾协助攻击并留下感电' },
+    berserker:{ name:'血怒旋风', icon:'🩸', type:'dmg', mul:3.7, splashPct:0.45, lifeSteal:0.18, executeBonus:0.24, cd:15, desc:'旋风斩吸血,对残血目标更强' },
+    saurfang:{ name:'老兵压制', icon:'🩸', type:'dmg', mul:4.0, debuff:'sunder', dotPct:0.12, bonusVsSunder:0.30, cd:16, desc:'压制并撕裂目标,对破甲目标更强' },
+    muradin:{ name:'风暴之锤', icon:'🔨', type:'dmg', mul:3.9, stun:true, stunMs:1500, bonusVsBoss:0.15, cd:17, desc:'投掷风暴之锤,击晕目标' },
+    maraad:{ name:'圣光棱镜', icon:'🌟', type:'heal', heal:0.20, healTarget:'hero', shieldPct:0.10, cleanse:true, cd:18, desc:'圣光治疗主角,附带护盾和净化' },
+    rexxar:{ name:'野兽夹击', icon:'🐻', type:'dmg', mul:3.7, bonusVsBoss:0.20, slow:true, lifeSteal:0.12, cd:15, desc:'兽王夹击首领目标,附带减速和吸血' },
+    valeera:{ name:'割裂伏击', icon:'☠️', type:'dmg', mul:3.8, alwaysCrit:true, dotPct:0.16, dotMs:8000, stateKey:'marked', stateMs:9000, cd:15, desc:'必暴伏击并施加流血标记' },
+    kael:{ name:'炎爆术', icon:'☄️', type:'dmg', mul:4.7, dotPct:0.18, dotMs:9000, splashPct:0.30, cd:18, desc:'高额火焰伤害,附带灼烧和溅射' },
+    medivh:{ name:'守护者折跃', icon:'🔮', type:'dmg', mul:4.2, stateKey:'arcaneMark', stateMs:10000, bonusVsBoss:0.22, cd:18, desc:'奥术折跃标记目标,对首领更强' },
+    azshara:{ name:'潮汐敕令', icon:'👑', type:'dmg', mul:4.3, slow:true, stateKey:'charmed', stateMs:9000, bonusVsState:'charmed', bonusStatePct:0.35, cd:18, desc:'魅惑并减速目标,对魅惑目标增伤' },
+    ragnaros:{ name:'萨弗隆烈焰', icon:'🔥', type:'dmg', mul:5.0, dotPct:0.20, dotMs:9000, splashPct:0.50, cd:20, desc:'烈焰轰击并大范围灼烧' },
+    kelthuzad:{ name:'冰霜新墓', icon:'⚰️', type:'dmg', mul:4.4, slow:true, stun:true, stunMs:900, dotPct:0.14, cd:19, desc:'冻结目标并施加寒霜侵蚀' },
+    lichking:{ name:'灵魂收割', icon:'👑', type:'dmg', mul:4.8, lifeSteal:0.25, executeBonus:0.35, executeThreshold:0.35, cd:20, desc:'吸取生命,对残血目标极强' },
+    kiljaeden:{ name:'邪能裂隙', icon:'🌌', type:'dmg', mul:4.8, dotPct:0.18, stateKey:'felMark', stateMs:10000, splashPct:0.35, cd:19, desc:'撕开邪能裂隙,标记并灼烧敌人' },
+    garrosh:{ name:'钢铁星陨', icon:'🛡️', type:'dmg', mul:4.1, stun:true, debuff:'sunder', splashPct:0.35, cd:18, desc:'钢铁之星砸击目标,击晕并破甲' },
+    cairne:{ name:'大地裂蹄', icon:'🐂', type:'dmg', mul:3.8, stun:true, slow:true, splashPct:0.30, cd:17, desc:'战争践踏扩散冲击,减速并击晕' },
+    bolvar:{ name:'灰烬审判', icon:'🔥', type:'dmg', mul:3.9, dotPct:0.14, debuff:'sunder', heal:0.08, healTarget:'companion', cd:17, desc:'灰烬审判破甲并回复随从生命' },
+    chen:{ name:'迷踪酒桶', icon:'🍺', type:'dmg', mul:3.5, slow:true, splashPct:0.45, heal:0.07, healTarget:'companion', cd:15, desc:'酒桶溅射并减速目标,回复自身' },
+    rehgar:{ name:'激流链涌', icon:'🌊', type:'heal', heal:0.22, healTarget:'smart', shieldPct:0.08, cleanse:true, cd:17, desc:'治疗更危险的一方,附带护盾和净化' },
+    velen:{ name:'命运预兆', icon:'🔮', type:'heal', heal:0.28, healTarget:'hero', shieldPct:0.14, cleanse:true, cd:22, desc:'强治疗主角,附带大护盾和净化' },
+    liadrin:{ name:'复仇圣印', icon:'🌞', type:'dmg', mul:3.7, debuff:'sunder', heal:0.10, healTarget:'hero', cd:16, desc:'圣印审判破甲目标并治疗主角' },
+    alexstrasza:{ name:'红龙吐息', icon:'🐉', type:'dmg', mul:4.0, dotPct:0.16, splashPct:0.40, heal:0.12, healTarget:'hero', cd:18, desc:'龙息灼烧敌人并治疗主角' },
+    cenarius:{ name:'荆棘缠根', icon:'🌳', type:'dmg', mul:3.5, slow:true, stateKey:'rooted', stateMs:9000, splashPct:0.30, cd:16, desc:'根须缠绕目标并波及附近敌人' },
+    khadgar:{ name:'时间回环', icon:'⏱️', type:'dmg', mul:3.9, slow:true, stateKey:'timeMarked', stateMs:9000, bonusVsState:'timeMarked', bonusStatePct:0.40, cd:16, desc:'施加时序标记,再次命中会放大伤害' },
+    maiev:{ name:'月刃牢笼', icon:'🗡️', type:'dmg', mul:3.9, stun:true, stateKey:'marked', stateMs:9000, executeBonus:0.28, cd:16, desc:'囚禁并标记目标,对残血更强' },
+    grommash:{ name:'血吼斩首', icon:'🪓', type:'dmg', mul:5.2, alwaysCrit:true, executeBonus:0.35, executeThreshold:0.40, cd:20, desc:'必暴重击,对残血目标极强' },
+    voljin:{ name:'洛阿暗矛', icon:'🧿', type:'dmg', mul:3.8, dotPct:0.15, stateKey:'voodooHex', stateMs:9000, lifeSteal:0.12, cd:16, desc:'洛阿诅咒目标并吸取生命' },
+    akama:{ name:'灰舌影袭', icon:'🌫️', type:'dmg', mul:3.7, stateKey:'marked', stateMs:9000, alwaysCrit:true, slow:true, cd:15, desc:'暗影伏击必暴,标记并减速目标' },
+  };
+  for (const c of COMPANIONS) {
+    const sk = EXTRA_SKILLS[c.key];
+    if (!sk) continue;
+    if (!Array.isArray(c.skills)) c.skills = [];
+    if (!c.skills.some(s => s.name === sk.name)) c.skills.push(Object.assign({ _extraSkill:true }, sk));
+  }
 })();
