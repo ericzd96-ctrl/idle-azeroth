@@ -886,15 +886,36 @@
         { name:'终结追击', icon:'☠️', desc:'4倍伤害,对残血目标更强', type:'dmg', mul:4, executeBonus:0.25, executeThreshold:0.35, cd:14 },
       ],
     };
+    const coverageByRole = {
+      tank: [
+        { name:'符文护壁', icon:'🛡️', desc:'短时间强化自身护盾与减伤,稳住承压窗口', type:'buff', buff:'sacredShield', buffTarget:'companion', shieldPct:0.12, duration:8000, cd:19 },
+        { name:'破阵震击', icon:'🔨', desc:'震击目标造成伤害,附带破甲和减速', type:'dmg', mul:3.6, debuff:'sunder', slow:true, slowMs:3500, cd:13 },
+        { name:'守护反击', icon:'⚔️', desc:'反击破甲目标时更强,并按伤害回复自身生命', type:'dmg', mul:3.8, bonusVsSunder:0.25, lifeSteal:0.12, cd:15 },
+        { name:'阵线回稳', icon:'💚', desc:'回复自身生命并为主角补少量护盾', type:'heal', heal:0.15, healTarget:'companion', shieldPctHero:0.04, cd:20 },
+      ],
+      heal: [
+        { name:'清辉结界', icon:'✨', desc:'净化减益并为主角和随从施加护盾', type:'buff', buff:'sacredShield', buffTarget:'both', shieldPct:0.08, cleanse:true, duration:8000, cd:19 },
+        { name:'回春祷言', icon:'🌿', desc:'自动治疗更危险的一方,并补上一层护盾', type:'heal', heal:0.16, healTarget:'smart', shieldPct:0.05, cd:14 },
+        { name:'鼓舞圣言', icon:'📯', desc:'强化主角攻防,适合配合爆发窗口', type:'buff', buff:'kings', buffTarget:'hero', duration:9000, cd:22 },
+        { name:'惩戒微光', icon:'💫', desc:'造成神圣伤害并小幅治疗主角', type:'dmg', mul:3.4, heal:0.08, healTarget:'hero', cd:11 },
+      ],
+      dps: [
+        { name:'穿甲连击', icon:'🗡️', desc:'连续攻击并施加破甲,为后续爆发铺路', type:'dmg', mul:3.6, debuff:'sunder', cd:11 },
+        { name:'追猎爆发', icon:'🎯', desc:'对残血目标更强,适合快速收尾', type:'dmg', mul:3.8, executeBonus:0.28, executeThreshold:0.35, cd:14 },
+        { name:'裂隙余烬', icon:'🔥', desc:'造成伤害并附加持续灼烧', type:'dmg', mul:3.4, dotPct:0.12, dotMs:6500, cd:12 },
+        { name:'战意高涨', icon:'📯', desc:'短时间提升自身攻击,强化连续输出', type:'buff', buff:'battleShout', buffTarget:'companion', duration:9000, cd:20 },
+      ],
+    };
+    const targetActiveSkills = 9;
     const qualitySkillAmp = { white:0.92, green:0.98, blue:1.05, purple:1.12, orange:1.2 };
     const defaultSig = {
       tank:{ mode:'passive', name:'守护本能', icon:'🛡️', desc:'持续强化自身生存并为主角补少量护盾', hpMul:1.04, defMul:1.04, shieldPctHero:0.02 },
       heal:{ mode:'passive', name:'援护回响', icon:'✨', desc:'持续为主角与随从提供微弱治疗', healPctHero:0.02, healPctComp:0.02 },
-      dps:{ mode:'passive', name:'猎杀本色', icon:'⚔️', desc:'对Boss额外造成伤害并强化收割', bonusVsBoss:0.10, executeBonus:0.16, executeThreshold:0.35 },
+      dps:{ mode:'passive', name:'猎杀本色', icon:'⚔️', desc:'对首领额外造成伤害并强化收割', bonusVsBoss:0.10, executeBonus:0.16, executeThreshold:0.35 },
     };
     for (const tpl of COMPANIONS) {
       const rawSkills = Array.isArray(tpl.skills) ? tpl.skills.filter(Boolean) : [];
-      const isSpecialSkill = sk => sk && (sk._roleKit || sk._extraSkill || sk._legendSkill || sk._awakenSkill);
+      const isSpecialSkill = sk => sk && (sk._roleKit || sk._extraSkill || sk._legendSkill || sk._awakenSkill || sk._coverageSkill);
       const specialSkills = rawSkills.filter(isSpecialSkill);
       tpl.skills = rawSkills.filter(sk => !isSpecialSkill(sk)).slice(0, 5);
       const pool = (genericByRole[tpl.role] || genericByRole.dps).map(x => Object.assign({}, x));
@@ -909,6 +930,13 @@
         if (names.has(sk.name)) continue;
         names.add(sk.name);
         tpl.skills.push(sk);
+      }
+      const coveragePool = (coverageByRole[tpl.role] || coverageByRole.dps).map(x => Object.assign({ _coverageSkill:true }, x));
+      while (tpl.skills.length < targetActiveSkills && coveragePool.length) {
+        const pick = coveragePool.shift();
+        if (names.has(pick.name)) continue;
+        names.add(pick.name);
+        tpl.skills.push(pick);
       }
       if (!tpl.signature) tpl.signature = Object.assign({}, defaultSig[tpl.role] || defaultSig.dps);
       const amp = qualitySkillAmp[tpl.quality] || 1;

@@ -374,6 +374,11 @@ h1 {
   background: rgba(8, 47, 73, .22);
   color: #bae6fd;
 }
+.comp-skill.coverage {
+  border-color: rgba(167, 139, 250, .30);
+  background: rgba(49, 46, 129, .24);
+  color: #ddd6fe;
+}
 .comp-skill.legend {
   border-color: rgba(251, 191, 36, .72);
   background: linear-gradient(180deg, rgba(180, 83, 9, .54), rgba(63, 43, 18, .38));

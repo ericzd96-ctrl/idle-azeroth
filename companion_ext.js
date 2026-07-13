@@ -170,7 +170,7 @@
   setSig('horde_grunt', { type:'dmg', name:'血吼猛冲', icon:'🪓', desc:'猛冲斩击,击晕目标并对残血敌人额外增伤', mul:2.8, stun:true, stunMs:1200, executeBonus:0.25, executeThreshold:0.35, cd:16 });
   setSig('apprentice',  { mode:'passive', name:'奥术余烬', icon:'✨', desc:'攻击附带奥术灼痕,持续灼烧并留下奥术印记', dotPct:0.08, dotMs:6000, stateKey:'arcaneMark', stateMs:7000 });
   setSig('acolyte',     { type:'heal', name:'虔诚祷言', icon:'🙏', desc:'同时抚慰战友并净化减益,附带护盾', heal:0.12, healTarget:'smart', shieldPct:0.08, cleanse:true, cd:18 });
-  setSig('scout',       { mode:'passive', name:'弱点观察', icon:'👁️', desc:'攻击对Boss更痛,并擅长收割残血目标', bonusVsBoss:0.15, executeBonus:0.30, executeThreshold:0.40 });
+  setSig('scout',       { mode:'passive', name:'弱点观察', icon:'👁️', desc:'攻击对首领更痛,并擅长收割残血目标', bonusVsBoss:0.15, executeBonus:0.30, executeThreshold:0.40 });
 
   setSig('guard_cap',   { type:'summon', name:'列阵坚守', icon:'🪖', desc:'召来1名卫队成员持续22秒列阵,并强化自身攻防与护盾', summonCount:1, summonCap:2, summonTheme:'soldier', summonDuration:22000, summonPower:0.82, buff:'kings', buffTarget:'companion', duration:8000, shieldPct:0.06, cd:22 });
   setSig('al_ranger',   { type:'summon', name:'鹰群哨戒', icon:'🍃', desc:'召来1只林地战兽持续22秒协同射击,并短暂提升自身攻速', summonCount:1, summonCap:1, summonTheme:'beast', summonDuration:22000, summonPower:0.80, buff:'rapidFire', buffTarget:'companion', duration:7000, cd:20 });
@@ -185,17 +185,17 @@
   setSig('valeera',     { mode:'passive', name:'无影毒刃', icon:'☠️', desc:'攻击附带毒伤并留下更深的刺客标记', dotPct:0.10, dotMs:7000, stateKey:'marked', stateMs:9000 });
   setSig('kael',        { type:'buff', name:'凤凰降临', icon:'🦜', desc:'唤来凤凰之力,强化双方并小幅回复生命', buff:'bestial', buffTarget:'both', duration:9000, healPct:0.04, shieldPct:0.06, cd:22 });
 
-  setSig('medivh',      { mode:'passive', name:'守护者密令', icon:'📜', desc:'对Boss造成额外伤害,并持续为主角补护盾', bonusVsBoss:0.18, shieldPctHero:0.04 });
+  setSig('medivh',      { mode:'passive', name:'守护者密令', icon:'📜', desc:'对首领造成额外伤害,并持续为主角补护盾', bonusVsBoss:0.18, shieldPctHero:0.04 });
   setSig('azshara',     { mode:'passive', name:'女王威仪', icon:'👑', desc:'攻击会撕裂心智,并强化自身输出', stateKey:'charmed', stateMs:7000, atkMul:1.06 });
   setSig('ragnaros',    { type:'dmg', name:'萨弗拉斯之槌', icon:'🔨', desc:'炎魔之槌轰击全场,附带强烈灼烧与击晕', mul:6.4, aoePct:0.55, dotPct:0.20, dotMs:8000, stun:true, stunMs:1200, cd:24 });
   setSig('kelthuzad',   { mode:'passive', name:'霜墓契约', icon:'⚰️', desc:'攻击附带寒霜侵蚀,并为自身积累冰甲', dotPct:0.12, slow:true, slowMs:4000, shieldPctComp:0.04 });
-  setSig('lichking',    { mode:'passive', name:'天灾君临', icon:'👑', desc:'Boss战中更加凶悍,并持续强化自身生存', bonusVsBoss:0.15, hpMul:1.06, shieldPctComp:0.05, healPctComp:0.03 });
+  setSig('lichking',    { mode:'passive', name:'天灾君临', icon:'👑', desc:'首领战中更加凶悍,并持续强化自身生存', bonusVsBoss:0.15, hpMul:1.06, shieldPctComp:0.05, healPctComp:0.03 });
   setSig('kiljaeden',   { type:'dmg', name:'欺诈者诡计', icon:'🌌', desc:'虚空爆裂卷过战场,对痛苦印记者额外增伤', mul:5.8, aoePct:0.45, stateKey:'torment', stateMs:9000, bonusVsDot:0.35, cd:24 });
 
   setSig('fordring',    { type:'buff', name:'提尔之手', icon:'✋', desc:'圣光庇护全队,大幅净化并施加厚护盾', buff:'sacredShield', buffTarget:'both', duration:8000, shieldPct:0.12, cleanse:true, cd:24 });
-  setSig('varian',      { mode:'passive', name:'王者决意', icon:'🦁', desc:'愈战愈勇,对Boss和残血目标都更有压迫感', atkMul:1.05, defMul:1.05, bonusVsBoss:0.10, executeBonus:0.20, executeThreshold:0.35 });
+  setSig('varian',      { mode:'passive', name:'王者决意', icon:'🦁', desc:'愈战愈勇,对首领和残血目标都更有压迫感', atkMul:1.05, defMul:1.05, bonusVsBoss:0.10, executeBonus:0.20, executeThreshold:0.35 });
   setSig('thrall',      { type:'summon', name:'灵狼呼唤', icon:'🔨', desc:'一次召来2只灵狼持续24秒扑杀目标,并带动双方攻速', summonCount:2, summonCap:2, summonTheme:'beast', summonDuration:24000, summonPower:0.96, buff:'rapidFire', buffTarget:'both', duration:7000, cd:22 });
-  setSig('illidan',     { mode:'passive', name:'背叛者之怒', icon:'🪽', desc:'攻势更凌厉,尤其擅长斩杀Boss', spdMul:1.06, bonusVsBoss:0.15, executeBonus:0.25, executeThreshold:0.35 });
+  setSig('illidan',     { mode:'passive', name:'背叛者之怒', icon:'🪽', desc:'攻势更凌厉,尤其擅长斩杀首领', spdMul:1.06, bonusVsBoss:0.15, executeBonus:0.25, executeThreshold:0.35 });
   setSig('arthas',      { type:'dmg', name:'冰封命令', icon:'🧊', desc:'寒霜命令侵袭目标,冻结并附加更深瘟疫', mul:4.8, slow:true, slowMs:5000, stun:true, stunMs:1200, stateKey:'blighted', stateMs:9000, cd:20 });
   setSig('jaina',       { mode:'passive', name:'冰冷智慧', icon:'📘', desc:'寒冰魔法留下更久印记,并让攻击附带减速', critAdd:4, slow:true, slowMs:2500, stateKey:'frozenMark', stateMs:8000 });
   setSig('sylvanas',    { type:'summon', name:'黑暗游魂', icon:'👻', desc:'召来1名黑暗游魂持续24秒追猎目标,游魂会为敌人挂上追猎印记', summonCount:1, summonCap:2, summonTheme:'undead', summonDuration:24000, summonPower:0.98, summonSkillName:'游魂追猎', summonSkillIcon:'🏹', summonSkillStateKey:'hunted', summonSkillStateMs:9000, summonSkillDotPct:0.12, summonSkillDotMs:7000, cd:20 });
@@ -212,7 +212,7 @@
   setSig('alexstrasza', { type:'heal', name:'生命缚誓', icon:'🐉', desc:'龙眠之息笼罩战场,重治疗并强化全队', heal:0.22, healTarget:'both', shieldPct:0.10, buff:'kings', buffTarget:'both', duration:9000, cd:22 });
   setSig('cenarius',    { type:'summon', name:'林地苏醒', icon:'🌲', desc:'召来2名林地守卫持续26秒助战,并为双方引来一轮自然回春', summonCount:2, summonCap:2, summonTheme:'nature', summonDuration:26000, summonPower:0.96, healPct:0.06, healTarget:'both', cd:22 });
   setSig('khadgar',     { type:'buff', name:'守护者时序', icon:'⌛', desc:'扭转时流,强化双方攻速并让敌人进入奥术破绽', buff:'rapidFire', buffTarget:'both', duration:9000, stateKey:'arcaneMark', stateMs:9000, cd:20 });
-  setSig('maiev',       { mode:'passive', name:'守望绝罚', icon:'🦉', desc:'对被标记目标更凶狠,并在Boss战中持续追猎', bonusVsState:0.40, bonusVsBoss:0.12, stateKey:'hunted', stateMs:9000 });
+  setSig('maiev',       { mode:'passive', name:'守望绝罚', icon:'🦉', desc:'对被标记目标更凶狠,并在首领战中持续追猎', bonusVsState:0.40, bonusVsBoss:0.12, stateKey:'hunted', stateMs:9000 });
   setSig('grommash',    { mode:'passive', name:'战歌狂潮', icon:'🩸', desc:'越战越凶,对残血和Boss都更暴烈,并持续吸血', bonusVsBoss:0.12, executeBonus:0.28, executeThreshold:0.35, healPctComp:0.04 });
   setSig('voljin',      { type:'summon', name:'洛阿灵侍', icon:'🪶', desc:'召来1名洛阿灵侍持续24秒施压敌人,灵侍会不断施加猎杀咒印', summonCount:1, summonCap:2, summonTheme:'void', summonDuration:24000, summonPower:0.94, summonSkillName:'洛阿咒狩', summonSkillIcon:'🪶', summonSkillStateKey:'hunted', summonSkillStateMs:9000, summonSkillDotPct:0.16, summonSkillDotMs:7000, cd:20 });
   setSig('akama',       { mode:'passive', name:'灰舌伏击', icon:'🌑', desc:'攻击附带暗影斩痕,对被标记者追加更高伤害', dotPct:0.10, dotMs:7000, stateKey:'marked', stateMs:8000, bonusVsBoss:0.10 });
@@ -337,7 +337,7 @@
   setSkill('maiev','禁锢匕雨',{ aoePct:0.40, cripple:true, desc:'匕雨横扫并使敌人残废' });
   setSkill('grommash','血吼横扫',{ splashPct:0.45, desc:'横扫溅射45%伤害' });
   setSkill('grommash','玛诺洛斯之血',{ buffTarget:'companion', duration:10000, healPct:0.05, desc:'狂暴强化自身并回复少量生命' });
-  setSkill('grommash','地狱咆哮',{ alwaysCrit:true, bonusVsBoss:0.20, desc:'更适合在Boss战中打出高爆发' });
+  setSkill('grommash','地狱咆哮',{ alwaysCrit:true, bonusVsBoss:0.20, desc:'更适合在首领战中打出高爆发' });
   setSkill('grommash','斩首',{ executeBonus:0.45, executeThreshold:0.35, desc:'对残血目标额外提高45%' });
   setSkill('grommash','狂战愈合',{ healTarget:'companion', desc:'硬扛之后快速回一口血' });
   setSkill('voljin','暗影猎箭',{ stateKey:'hunted', stateMs:9000, desc:'暗影猎箭标记目标9秒' });
@@ -389,7 +389,7 @@
   setSkill('lichking','不羁亡魂',{ buffTarget:'both', duration:10000, shieldPct:0.08, desc:'亡魂之力加持双方,附带护盾' });
   setSkill('lichking','冰封王座',{ shieldPct:0.18, cleanse:true, desc:'冰封王座庇护自身,获得厚护盾并净化减益' });
 
-  setSkill('kiljaeden','毁灭',{ bonusVsBoss:0.20, bonusVsDot:0.30, desc:'大毁灭对Boss和持续伤害目标更痛' });
+  setSkill('kiljaeden','毁灭',{ bonusVsBoss:0.20, bonusVsDot:0.30, desc:'大毁灭对首领和持续伤害目标更痛' });
   setSkill('kiljaeden','黑暗之球',{ dotPct:0.18, slow:true, slowMs:3500, desc:'黑暗之球持续侵蚀并减速' });
   setSkill('kiljaeden','痛苦',{ stateKey:'torment', stateMs:9000, desc:'施加9秒痛苦印记' });
   setSkill('kiljaeden','燃烧军团',{ buffTarget:'both', duration:10000, shieldPct:0.08, desc:'燃烧军团之力强化双方并附带护盾' });

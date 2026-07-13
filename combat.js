@@ -7100,7 +7100,7 @@ function applyCompanionSignatureHit(sig, st, mon, dmgDone, now){
   if(sig.bonusVsBoss && mon.isBoss){
     const extra = absorbMonsterBarrier(mon, Math.max(1, Math.floor(dmgDone * sig.bonusVsBoss)), sig.icon || '👑').remaining;
     if(extra > 0){ mon.hp -= extra; trackDmg('comp', extra); showMonsterFloat(mon, (sig.icon || '👑') + '-' + extra, '#fbbf24', allySideFloatOpts({ variant:'crit' })); }
-    note = note || 'Boss压制';
+    note = note || '首领压制';
   }
   if(sig.healPctHero){
     const amt = Math.floor(state.hero.hpMax * sig.healPctHero);
@@ -7204,13 +7204,14 @@ function companionCombatPressureMult(){
   const unique = tpl && companionUniqueTrait(tpl) ? 1 : 0;
   const extraSkills = tpl && Array.isArray(tpl.skills) ? tpl.skills.filter(s => s && s._extraSkill).length : 0;
   const legendSkills = tpl && Array.isArray(tpl.skills) ? tpl.skills.filter(s => s && s._legendSkill).length : 0;
+  const coverageSkills = tpl && Array.isArray(tpl.skills) ? tpl.skills.filter(s => s && s._coverageSkill).length : 0;
   const awaken = companionIsAwakened(comp) ? 1 : 0;
   const awakenedSupport = companionSupportEntries().filter(entry => companionIsAwakened(entry.comp)).length;
   const supportPressure = supportCount * 0.004;
   return {
     rank,
-    hp:1.012 + rank * 0.015 + special * 0.006 + unique * 0.004 + extraSkills * 0.006 + legendSkills * 0.012 + awaken * 0.022 + awakenedSupport * 0.008 + supportPressure,
-    atk:1.010 + rank * 0.012 + special * 0.005 + unique * 0.003 + extraSkills * 0.004 + legendSkills * 0.008 + awaken * 0.016 + awakenedSupport * 0.006 + supportPressure * 0.8,
+    hp:1.012 + rank * 0.015 + special * 0.006 + unique * 0.004 + extraSkills * 0.006 + legendSkills * 0.012 + coverageSkills * 0.004 + awaken * 0.022 + awakenedSupport * 0.008 + supportPressure,
+    atk:1.010 + rank * 0.012 + special * 0.005 + unique * 0.003 + extraSkills * 0.004 + legendSkills * 0.008 + coverageSkills * 0.003 + awaken * 0.016 + awakenedSupport * 0.006 + supportPressure * 0.8,
     name:rank > 0 ? '羁绊警觉' : (supportCount ? '战团压迫' : '战友压迫')
   };
 }

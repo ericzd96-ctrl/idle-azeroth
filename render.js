@@ -2894,15 +2894,30 @@ function compSecs(ms){
 }
 function compBuffName(buff){
   if (!buff) return '';
+  const fallback = {
+    shield:'盾墙', divine:'神圣守护', bark:'树皮术', iceBarrier:'寒冰屏障', earthShield:'大地之盾',
+    bestial:'野兽狂怒', shadowstep:'暗影步', battleShout:'战斗怒吼', kings:'王者祝福',
+    berserk:'狂暴', windfury:'风怒', rapidFire:'急速射击', timeWarp:'时间扭曲',
+    sacredShield:'圣盾'
+  };
   if (typeof BUFF_LABELS === 'object' && BUFF_LABELS[buff]?.name) return BUFF_LABELS[buff].name;
+  if (typeof BUFF_NAMES === 'object' && BUFF_NAMES[buff]?.name) return BUFF_NAMES[buff].name;
   if (typeof BUFF_FX === 'object' && BUFF_FX[buff]?.name) return BUFF_FX[buff].name;
-  return buff;
+  return fallback[buff] || buff;
 }
 function compBuffDesc(buff){
   if (!buff) return '';
+  const fallback = {
+    shield:'受到伤害降低33%', divine:'受到伤害降低45%', bark:'受到伤害降低40%', iceBarrier:'受到伤害降低40%',
+    earthShield:'受到伤害降低33%', bestial:'攻击提高27%', shadowstep:'攻击提高33%',
+    battleShout:'攻击提高20%', kings:'攻击和防御提高13%', berserk:'攻击提高27%,攻速提高20%',
+    windfury:'攻速提高40%', rapidFire:'攻速提高40%', timeWarp:'攻速提高53%',
+    sacredShield:'防御提高27%,每秒回复提高'
+  };
   if (typeof BUFF_LABELS === 'object' && BUFF_LABELS[buff]?.desc) return BUFF_LABELS[buff].desc;
+  if (typeof BUFF_NAMES === 'object' && BUFF_NAMES[buff]?.desc) return BUFF_NAMES[buff].desc;
   if (typeof BUFF_FX === 'object' && BUFF_FX[buff]?.desc) return BUFF_FX[buff].desc;
-  return '';
+  return fallback[buff] || '';
 }
 function compStateName(stateKey){
   const map = {
@@ -2922,6 +2937,8 @@ function companionSkillTipHtml(sk){
   const lines = [];
   if (sk.type === 'dmg' && sk.mul) { const effMul = sk.mul * ((typeof COMPANION_SKILL_DMG_BONUS === 'number') ? COMPANION_SKILL_DMG_BONUS : 1); lines.push(`${effMul.toFixed(1).replace(/\.0$/,'')}倍伤害`); }
   if (sk.summonCount) lines.push(`召唤 ${sk.summonCount} 个单位助战`);
+  if (sk.summonCap) lines.push(`同类召唤物最多保留 ${sk.summonCap} 个`);
+  if (sk.summonPower) lines.push(`召唤物强度为随从属性的 ${compPct(sk.summonPower)}%`);
   if (sk.summonDuration) lines.push(`召唤物持续 ${compSecs(sk.summonDuration)}秒`);
   if (sk.alwaysCrit) lines.push('本次必定暴击');
   if (sk.dot || sk.dotPct) lines.push(`每秒造成本次伤害的${compPct(sk.dotPct || 0.12)}%，持续${compSecs(sk.dotMs || 6000)}秒`);
@@ -2959,7 +2976,7 @@ function companionSkillTipHtml(sk){
   else if (sk.healTarget === 'companion') lines.push('治疗目标：随从');
   else if (sk.healTarget === 'both') lines.push('治疗目标：主角和随从');
   else if (sk.healTarget === 'smart') lines.push('治疗目标：自动选择血量更危险的一方');
-  const mode = sk._awakenSkill ? '觉醒专属技' : sk._signature ? (sk.mode === 'passive' ? '专属被动' : '专属主动') : sk._legendSkill ? '传说技能' : sk._extraSkill ? '特色技能' : (sk.type === 'summon' ? '召唤技能' : sk.type === 'buff' ? '辅助技能' : sk.type === 'heal' ? '治疗技能' : '伤害技能');
+  const mode = sk._awakenSkill ? '觉醒专属技' : sk._signature ? (sk.mode === 'passive' ? '专属被动' : '专属主动') : sk._legendSkill ? '传说技能' : sk._extraSkill ? '特色技能' : sk._coverageSkill ? '战术补强技能' : (sk.type === 'summon' ? '召唤技能' : sk.type === 'buff' ? '辅助技能' : sk.type === 'heal' ? '治疗技能' : '伤害技能');
   const cdSec = (typeof companionEffectiveSkillCdSec === 'function') ? companionEffectiveSkillCdSec(sk) : (sk.cd || 8);
   const cdText = sk.mode === 'passive' ? mode : `${mode} · 冷却 ${String(cdSec).replace(/\.0$/,'')}秒`;
   return `<b>${skillIconHtml} ${sk.name}</b><div>${sk.desc || ''}</div>${lines.map(x=>`<div class="muted">${x}</div>`).join('')}<div class="muted">${cdText}</div>`;
@@ -2971,9 +2988,9 @@ function compSkillChips(tpl, comp){
   const awakenSkill = (typeof companionAwakenSkill === 'function') ? companionAwakenSkill(tpl, comp) : null;
   if (awakenSkill) skills.push(awakenSkill);
   return skills.map(s=>{
-    const tip = companionSkillTipHtml(s).replace(/"/g,'&quot;');
+    const tip = companionTipAttr(companionSkillTipHtml(s));
     const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(s.name, 16, s.icon) : s.icon;
-    return `<span class="comp-skill${s._signature?' sig':''}${s._extraSkill?' extra':''}${s._legendSkill?' legend':''}${s._awakenSkill?' awaken':''}" data-tip="${tip}">${skillIconHtml}<span class="cs-name">${s.name}</span></span>`;
+    return `<span class="comp-skill${s._signature?' sig':''}${s._extraSkill?' extra':''}${s._coverageSkill?' coverage':''}${s._legendSkill?' legend':''}${s._awakenSkill?' awaken':''}" data-tip="${tip}">${skillIconHtml}<span class="cs-name">${s.name}</span></span>`;
   }).join('');
 }
 const COMPANION_FILTER_DEFAULTS = { ownership:'all', target:'all', quality:'all', role:'all', trait:'all', bond:'all', query:'', sort:'quality' };
@@ -3082,7 +3099,7 @@ function companionEntryCompare(a, b, sortValue){
   return companionQualityCompare(a, b);
 }
 function companionTipAttr(html){
-  return String(html || '').replace(/"/g, '&quot;');
+  return tipAttrText(html);
 }
 function companionRoleTipHtml(role){
   const meta = COMPANION_ROLE_META[role] || COMPANION_ROLE_META.dps;
@@ -3586,7 +3603,7 @@ function companionUpgradePreviewHtml(tpl, comp, options) {
   return `<div class="comp-upgrade-preview ${canUp ? 'ready' : ''}">
     <div class="comp-upgrade-head">
       <b>${cost.maxed ? '⭐ 培养完成' : `⭐ 培养预览 ${stars}→${stars + 1}`}</b>
-      <span>${cost.maxed ? 'MAX' : `${cost.have}/${cost.need}`}</span>
+      <span>${cost.maxed ? '满星' : `${cost.have}/${cost.need}`}</span>
     </div>
     <div class="comp-upgrade-bar"><i style="width:${pct}%"></i></div>
     <div class="comp-upgrade-note">${tipAttrText(note)}</div>
@@ -3611,7 +3628,7 @@ function companionAwakenPreviewHtml(tpl, comp, options) {
   return `<div class="comp-awaken-preview ${active ? 'active' : cost.ready ? 'ready' : cost.locked ? 'locked' : ''}">
     <div class="comp-awaken-head">
       <b>${active ? '🌟 已觉醒' : cost.locked ? '🌟 觉醒未开放' : '🌟 觉醒'}</b>
-      <span>${active ? 'AWAKE' : cost.locked ? `${comp.stars || 1}/5星` : `${cost.haveShards}/${cost.needShards}`}</span>
+      <span>${active ? '已觉醒' : cost.locked ? `${comp.stars || 1}/5星` : `${cost.haveShards}/${cost.needShards}`}</span>
     </div>
     <div class="comp-awaken-bar"><i style="width:${pct}%"></i></div>
     <div class="comp-awaken-note">${tipAttrText(note)}</div>
@@ -3652,7 +3669,7 @@ function companionBondChipsHtml(tpl, entries) {
 function companionDetailSkillListHtml(tpl, comp) {
   const skills = companionSkillPool(tpl, comp);
   if (!skills.length) return '<div class="muted">暂无随从技能</div>';
-  return `<div class="comp-detail-skill-grid">${skills.map(sk => `<div class="comp-detail-skill${sk._signature ? ' sig' : ''}${sk._legendSkill ? ' legend' : ''}${sk._extraSkill ? ' extra' : ''}${sk._awakenSkill ? ' awaken' : ''}">${companionSkillTipHtml(sk)}${companionSkillEffectTagsHtml(sk)}</div>`).join('')}</div>`;
+  return `<div class="comp-detail-skill-grid">${skills.map(sk => `<div class="comp-detail-skill${sk._signature ? ' sig' : ''}${sk._legendSkill ? ' legend' : ''}${sk._extraSkill ? ' extra' : ''}${sk._coverageSkill ? ' coverage' : ''}${sk._awakenSkill ? ' awaken' : ''}">${companionSkillTipHtml(sk)}${companionSkillEffectTagsHtml(sk)}</div>`).join('')}</div>`;
 }
 function companionLegendSkill(tpl) {
   return (tpl?.skills || []).find(sk => sk && sk._legendSkill) || null;
@@ -3660,10 +3677,10 @@ function companionLegendSkill(tpl) {
 function companionLegendSkillHtml(tpl, compact) {
   const sk = companionLegendSkill(tpl);
   if (!sk) return '';
-  const tip = companionSkillTipHtml(sk).replace(/"/g, '&quot;');
+  const tip = companionTipAttr(companionSkillTipHtml(sk));
   const icon = (typeof skillIcon === 'function') ? skillIcon(sk.name, compact ? 15 : 17, sk.icon || '🌟') : (sk.icon || '🌟');
-  if (compact) return `<div class="comp-legend-skill-line" data-tip="${tip}">橙色传说技能: ${icon} <b>${tipAttrText(sk.name)}</b></div>`;
-  return `<div class="comp-legend-skill-note" data-tip="${tip}">
+  if (compact) return `<div class="comp-legend-skill-line comp-tip" data-tip="${tip}">橙色传说技能: ${icon} <b>${tipAttrText(sk.name)}</b></div>`;
+  return `<div class="comp-legend-skill-note comp-tip" data-tip="${tip}">
     <b>橙色传说技能</b><span>${icon} ${tipAttrText(sk.name)}</span>
     <div>${tipAttrText(sk.desc || '')}</div>
   </div>`;
@@ -3673,14 +3690,14 @@ function companionAwakenSkillHtml(tpl, comp, compact) {
   const active = typeof companionIsAwakened === 'function' && companionIsAwakened(comp);
   const sk = companionAwakenSkillDef(tpl);
   if (!sk) return '';
-  const tip = companionSkillTipHtml(sk).replace(/"/g, '&quot;');
+  const tip = companionTipAttr(companionSkillTipHtml(sk));
   const icon = (typeof skillIcon === 'function') ? skillIcon(sk.name, compact ? 15 : 17, sk.icon || '🌟') : (sk.icon || '🌟');
   if (compact) {
-    return `<div class="comp-awaken-skill-line ${active ? 'active' : 'locked'}" data-tip="${tip}">${active ? '已觉醒' : '5星可觉醒'}: ${icon} <b>${tipAttrText(sk.name)}</b></div>`;
+    return `<div class="comp-awaken-skill-line comp-tip ${active ? 'active' : 'locked'}" data-tip="${tip}">${active ? '已觉醒' : '5星可觉醒'}: ${icon} <b>${tipAttrText(sk.name)}</b></div>`;
   }
   const cost = (typeof getCompanionAwakenCost === 'function') ? getCompanionAwakenCost(comp, tpl) : null;
   const costText = (typeof companionAwakenCostText === 'function') ? companionAwakenCostText(cost) : '';
-  return `<div class="comp-awaken-skill-note ${active ? 'active' : 'locked'}" data-tip="${tip}">
+  return `<div class="comp-awaken-skill-note comp-tip ${active ? 'active' : 'locked'}" data-tip="${tip}">
     <b>${active ? '觉醒专属技已解锁' : '觉醒专属技预览'}</b><span>${icon} ${tipAttrText(sk.name)}</span>
     <div>${tipAttrText(sk.desc || '')}</div>
     ${active ? `<small>熟悉度 ${comp.familiarity || 100} · 觉醒属性 +${Math.round((cost?.statPct || 0.1) * 100)}%</small>` : `<small>${(comp.stars || 1) >= 5 ? tipAttrText(costText) : '升到5星后可消耗同品质通用碎片和资源觉醒。'}</small>`}
