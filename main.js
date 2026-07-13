@@ -650,7 +650,7 @@ function setupDelegation() {
     const tip = $('compare-tip');
     root.addEventListener('mouseover', e => {
       if (!hoverTipsEnabled()) return;
-      const sk = e.target.closest('.comp-skill,.comp-bond-member[data-tip],.comp-bond-chip[data-tip],.comp-mission-send[data-tip],.comp-mission-score[data-tip]'); if (!sk) return;
+      const sk = e.target.closest('.comp-skill,.comp-bond-member[data-tip],.comp-bond-chip[data-tip],.comp-mission-best[data-tip],.comp-mission-send[data-tip],.comp-mission-score[data-tip]'); if (!sk) return;
       tip.querySelector('.compare-head').innerHTML = sk.dataset.tip || '';
       tip.querySelector('.compare-body').innerHTML = '';
       tip.style.display = 'block';

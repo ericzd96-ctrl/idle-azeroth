@@ -3333,6 +3333,17 @@ function companionMissionPanelHtml(entries){
       entry,
       score: typeof companionMissionScore === 'function' ? companionMissionScore(entry.tpl, entry.comp, mission) : 50,
     })).sort((a,b)=>b.score-a.score).slice(0, 3);
+    const best = ranked[0];
+    const bestAction = best ? (() => {
+      const q = compQuality(best.entry.tpl);
+      const preview = typeof companionMissionReward === 'function' ? companionMissionReward(mission, best.entry.tpl, best.entry.comp, best.score, best.score >= 75) : {};
+      const reward = typeof companionMissionRewardText === 'function' ? companionMissionRewardText(preview, q.name) : '';
+      const scoreTip = companionMissionScoreTipHtml(best.entry.tpl, best.entry.comp, mission, best.score, reward).replace(/"/g, '&quot;');
+      const compIconHtml = companionIconHtml(best.entry.tpl, 18);
+      return `<button class="comp-mission-best" data-action="startcompmission" data-mission="${mission.key}" data-comp="${best.entry.comp.key}" data-tip="${scoreTip}" ${active.length >= slots ? 'disabled' : ''}>
+        <span>${compIconHtml} 最佳派遣: ${tipAttrText(best.entry.tpl.name)}</span><b>${Math.round(best.score)}%</b>
+      </button>`;
+    })() : `<button class="comp-mission-best" disabled><span>没有空闲随从</span><b>--</b></button>`;
     const candidateButtons = ranked.length ? ranked.map(({entry, score}) => {
       const q = compQuality(entry.tpl);
       const preview = typeof companionMissionReward === 'function' ? companionMissionReward(mission, entry.tpl, entry.comp, score, score >= 75) : {};
@@ -3351,6 +3362,7 @@ function companionMissionPanelHtml(entries){
       </div>
       <div class="muted" style="font-size:10px;line-height:1.45">${mission.desc}</div>
       <div class="comp-mission-match">推荐: ${tipAttrText(matchText)}</div>
+      ${bestAction}
       <div class="comp-mission-candidates">${candidateButtons}</div>
     </div>`;
   }).join('');
