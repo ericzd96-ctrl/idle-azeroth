@@ -3934,7 +3934,7 @@ const DUNGEON_ART_BACKFILL = {
   shadowpoint_breach:'assets/wow/art/shadow-point.png',
   primeus_repository:'assets/wow/art/primeus-repository.png',
   nerubar:'assets/wow/art/warwithin-nerubar-palace.jpg',
-  manaforge_omega:'assets/wow/art/karesh-map.png',
+  manaforge_omega:'assets/wow/art/karesh-invasion-banner.png',
   shandorah_conclave:'assets/wow/art/shandorah.png',
   voidrazor_sanctum:'assets/wow/art/voidrazor-sanctum.png',
   murder_row:'assets/wow/art/tbc-magisters-terrace.jpg',
@@ -5866,7 +5866,7 @@ function extendDungeonCatalog(){
       ]
     },
     {
-      key:'manaforge_omega', name:'法力熔炉欧米伽', icon:'🌌', type:'raid', reqLvl:100, waves:16, art:'assets/wow/art/karesh-map.png', desc:'卡雷什的巨型宇宙能量设施,影卫虚灵试图在熔炉核心复活诸界吞噬者',
+      key:'manaforge_omega', name:'法力熔炉欧米伽', icon:'🌌', type:'raid', reqLvl:100, waves:16, art:'assets/wow/art/karesh-invasion-banner.png', desc:'卡雷什的巨型宇宙能量设施,影卫虚灵试图在熔炉核心复活诸界吞噬者',
       bosses:[
         { name:'枢纽哨兵', emoji:'💠', skills:[dmg('枢纽切割','💠',13.5,{ sunder:true, brittle:true }), dmgP('哨兵矩阵','⚙️',6.8,0.45,{ aoe:true, silence:2000, cd:12 })] },
         { name:"卢米萨尔", emoji:'🧵', skills:[dmg('星丝缠缚','🧵',13.8,{ cripple:true, soulLink:true }), summonP('织星虫群','🕸️',0.5,'召唤织星虫群并获得护盾',{ summonCount:2, summonTheme:'spider', shieldPct:0.2 })] },
