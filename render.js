@@ -3230,27 +3230,69 @@ function companionGlossaryPanelHtml(){
 function companionWishlistPanelHtml(entries){
   const list = companionWishlistKeys();
   const entryMap = new Map((entries || buildCompanionEntries()).map(entry => [entry.tpl.key, entry]));
+  const wishlistEntries = list.map(key => entryMap.get(key)).filter(Boolean);
+  const ready = wishlistEntries.filter(entry => entry.isOwned && (() => {
+    const cost = getUpgradeCost(entry.owned);
+    return !cost.maxed && cost.have >= cost.need;
+  })()).length;
   const cards = list.slice(0, 8).map(key => {
     const entry = entryMap.get(key);
     const tpl = entry?.tpl || COMPANIONS.find(c => c.key === key);
     if (!tpl) return '';
     const q = compQuality(tpl);
-    const stateText = entry?.isOwned ? `${entry.owned?.stars || 1}星` : '未获得';
-    return `<span class="comp-wishlist-chip ${entry?.isOwned ? 'owned' : 'missing'}">
-      ${companionIconHtml(tpl, 14)} <b class="${q.cls}">${tipAttrText(tpl.name)}</b><em>${stateText}</em>
-      <button data-action="compdetail" data-key="${tpl.key}">查看</button>
-      <button data-action="compwish" data-key="${tpl.key}">×</button>
-    </span>`;
+    const plan = companionWishlistPlan(entry, entries);
+    return `<div class="comp-wishlist-chip ${plan.tone}">
+      <div class="comp-wishlist-main">
+        ${companionIconHtml(tpl, 14)} <b class="${q.cls}">${tipAttrText(tpl.name)}</b><em>${tipAttrText(plan.status)}</em>
+      </div>
+      <div class="comp-wishlist-progress"><i style="width:${plan.pct}%"></i></div>
+      <div class="comp-wishlist-note">${tipAttrText(plan.note)}</div>
+      <div class="comp-wishlist-note">${tipAttrText(plan.bondText)}</div>
+      <div class="comp-wishlist-actions">
+        <button data-action="compdetail" data-key="${tpl.key}">查看</button>
+        <button data-action="compwish" data-key="${tpl.key}">×</button>
+      </div>
+    </div>`;
   }).join('');
   const missing = list.filter(key => !entryMap.get(key)?.isOwned).length;
+  const owned = list.length - missing;
   const overflow = list.length > 8 ? `<span class="comp-wishlist-more">+${list.length - 8}</span>` : '';
   return `<div class="comp-wishlist-panel">
     <div class="comp-wishlist-head">
-      <div><b>收藏目标</b><span>${list.length ? `${list.length} 个目标 · ${missing} 个未获得` : '用于追踪想抽取或想培养的随从'}</span></div>
+      <div><b>收藏目标</b><span>${list.length ? `${list.length} 个目标 · ${owned} 已拥有 · ${missing} 未获得 · ${ready} 可升星` : '用于追踪想抽取或想培养的随从'}</span></div>
       ${list.length ? '<button data-action="compclearwish">清空目标</button>' : ''}
     </div>
     ${list.length ? `<div class="comp-wishlist-list">${cards}${overflow}</div>` : '<div class="muted">在随从卡片或详情里点“加入目标”，再用筛选里的“收藏目标”查看。</div>'}
   </div>`;
+}
+function companionWishlistBondText(tpl, entries){
+  if (!tpl || typeof COMPANION_BONDS === 'undefined') return '暂无相关羁绊';
+  const bonds = COMPANION_BONDS.filter(bond => bond.keys.includes(tpl.key));
+  if (!bonds.length) return '暂无相关羁绊';
+  const active = bonds.filter(bond => companionBondMissingKeys(bond, entries).length === 0).length;
+  const nearest = bonds
+    .map(bond => ({ bond, missing: companionBondMissingKeys(bond, entries) }))
+    .filter(item => item.missing.length)
+    .sort((a, b) => a.missing.length - b.missing.length)[0];
+  if (!nearest) return `羁绊 ${active}/${bonds.length} 已激活`;
+  const names = nearest.missing.slice(0, 2).map(key => COMPANIONS.find(c => c.key === key)?.name || key).join('、');
+  return `羁绊 ${active}/${bonds.length} · 最近缺 ${names}${nearest.missing.length > 2 ? ` 等${nearest.missing.length}名` : ''}`;
+}
+function companionWishlistPlan(entry, entries){
+  const tpl = entry?.tpl;
+  if (!tpl) return { tone:'missing', pct:0, status:'目标异常', note:'该目标已不在随从表中', bondText:'暂无相关羁绊' };
+  const q = compQuality(tpl);
+  const bondText = companionWishlistBondText(tpl, entries);
+  if (!entry.isOwned) {
+    const shards = (state.companionShards && state.companionShards[tpl.key]) || 0;
+    const note = shards ? `未获得 · 已有同名碎片 ${shards}，继续抽取${q.name}池` : `未获得 · 继续抽取${q.name}池`;
+    return { tone:'missing', pct:shards ? 18 : 8, status:'未获得', note, bondText };
+  }
+  const cost = getUpgradeCost(entry.owned);
+  if (cost.maxed) return { tone:'done', pct:100, status:`${entry.owned.stars || 5}星满星`, note:'培养完成，可保留为出战或派遣核心', bondText };
+  const pct = Math.max(8, Math.min(100, Math.round((cost.have / Math.max(1, cost.need)) * 100)));
+  if (cost.have >= cost.need) return { tone:'ready', pct, status:`${entry.owned.stars || 1}星可升`, note:`可升星 · ${cost.have}/${cost.need} 碎片已备齐`, bondText };
+  return { tone:'owned', pct, status:`${entry.owned.stars || 1}星培养中`, note:`还差 ${cost.need - cost.have} 碎片 · 当前 ${cost.have}/${cost.need}`, bondText };
 }
 function companionDrawGuideHtml(entries) {
   if (typeof COMPANION_QUALITY === 'undefined') return '';
