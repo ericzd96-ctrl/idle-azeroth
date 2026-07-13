@@ -942,6 +942,117 @@ h1 {
   flex-wrap: wrap;
   margin-top: 7px;
 }
+.comp-power-panel {
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid rgba(125, 211, 252, .24);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(8, 47, 73, .20), rgba(15, 23, 42, .30));
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .16);
+}
+.comp-power-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.comp-power-head > div {
+  display: grid;
+  gap: 2px;
+}
+.comp-power-head span {
+  color: #bae6fd;
+  font-size: 10px;
+}
+.comp-power-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+  gap: 8px;
+}
+.comp-power-card {
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid rgba(148, 163, 184, .18);
+  border-radius: 7px;
+  background: rgba(15, 23, 42, .42);
+}
+.comp-power-card.active {
+  border-color: rgba(250, 204, 21, .40);
+  box-shadow: inset 0 0 0 1px rgba(250, 204, 21, .12);
+}
+.comp-power-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.comp-power-card-head span {
+  color: #fde68a;
+  font-size: 10px;
+}
+.comp-power-bars {
+  display: grid;
+  gap: 4px;
+  margin-top: 7px;
+}
+.comp-power-bars span {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 5px;
+  align-items: center;
+  color: #94a3b8;
+  font-size: 10px;
+}
+.comp-power-bars i {
+  display: block;
+  height: 5px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(56, 189, 248, .9) var(--v), rgba(30, 41, 59, .85) var(--v));
+}
+.comp-coverage-row {
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  gap: 8px;
+  align-items: start;
+  margin-top: 9px;
+  color: #cbd5e1;
+  font-size: 10px;
+}
+.comp-coverage-row > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.comp-coverage-chip {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  border: 1px solid rgba(148, 163, 184, .20);
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: rgba(15, 23, 42, .52);
+}
+.comp-coverage-chip.covered {
+  border-color: rgba(52, 211, 153, .30);
+  color: #bbf7d0;
+}
+.comp-coverage-chip.missing {
+  border-color: rgba(251, 146, 60, .32);
+  color: #fed7aa;
+}
+.comp-coverage-chip b {
+  color: #fde68a;
+}
+.comp-power-note {
+  margin-top: 7px;
+  color: #94a3b8;
+  font-size: 10px;
+  line-height: 1.4;
+}
 .comp-advisor-panel {
   margin: 10px 0;
   padding: 10px;

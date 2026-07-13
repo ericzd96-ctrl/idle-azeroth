@@ -3353,6 +3353,104 @@ function companionAdvisorReason(entry, wantedRole) {
   if (traits.control) bits.push('控制');
   return bits.slice(0, 4).join(' · ');
 }
+function companionEstimatedBattleStats(entry) {
+  if (!entry?.tpl) return null;
+  const tpl = entry.tpl;
+  const stars = Math.max(1, entry.owned?.stars || 1);
+  const q = compQuality(tpl);
+  const qm = (typeof COMPANION_COMBAT_QUALITY === 'object' && COMPANION_COMBAT_QUALITY[q.key]) || Math.max(0.55, q.mult || 1);
+  const sm = 1 + ((typeof COMPANION_STAR_GROWTH === 'number' ? COMPANION_STAR_GROWTH : 0.15) * (stars - 1));
+  const role = (typeof COMPANION_ROLE_PROFILE === 'object' && COMPANION_ROLE_PROFILE[tpl.role]) || { atk:0.8, def:0.9, hp:0.58, spd:0.74, reg:0.5, critd:0.85 };
+  const hero = state.hero || {};
+  const stats = {
+    atk: Math.floor((hero.atk || 1) * qm * sm * role.atk * (tpl.atkMul || 1)),
+    def: Math.floor((hero.def || 1) * qm * sm * 0.72 * role.def * (tpl.defMul || 1)),
+    hpMax: Math.floor((hero.hpMax || 1) * qm * sm * role.hp * (tpl.hpMul || 1)),
+    crit: Math.floor((hero.crit || 0) * qm * 0.40 * (tpl.critMul || 1)),
+    critd: Math.floor((hero.critd || 150) * role.critd * (tpl.critdMul || 1)),
+    spd: +(Math.max(0.35, (hero.spd || 1) * role.spd * (tpl.spdMul || 1))).toFixed(2),
+    reg: Math.max(1, Math.floor((hero.reg || 0) * role.reg * (tpl.regMul || 1))),
+  };
+  if (typeof applyCompanionSignatureStats === 'function') applyCompanionSignatureStats(stats, tpl);
+  return stats;
+}
+function companionCoverageLabels(tpl) {
+  const labels = new Set();
+  for (const sk of companionSkillPool(tpl)) for (const tag of companionSkillEffectTags(sk)) labels.add(tag.label);
+  return labels;
+}
+function companionBattleScore(entry) {
+  if (!entry?.tpl) return 0;
+  const st = companionEstimatedBattleStats(entry);
+  if (!st) return 0;
+  const hero = state.hero || {};
+  const traits = entry.traits || companionTraitFlags(entry.tpl);
+  const q = compQuality(entry.tpl);
+  const stars = Math.max(1, entry.owned?.stars || 1);
+  const skillLabels = companionCoverageLabels(entry.tpl);
+  const offense = (st.atk / Math.max(1, hero.atk || 1)) * 34 + Math.min(10, st.spd * 3) + Math.min(12, skillLabels.has('伤害') ? 8 : 0) + (skillLabels.has('持续伤害') ? 4 : 0);
+  const survival = (st.hpMax / Math.max(1, hero.hpMax || 1)) * 18 + (st.def / Math.max(1, hero.def || 1)) * 16;
+  const utility = (traits.control ? 9 : 0) + (traits.heal ? 9 : 0) + (traits.support ? 7 : 0) + (traits.summon ? 7 : 0);
+  const quality = ({white:0, green:4, blue:8, purple:13, orange:18})[q.key] || 0;
+  return Math.max(1, Math.round(offense + survival + utility + quality + stars * 5));
+}
+function companionScoreRank(score) {
+  return score >= 115 ? 'S' : score >= 92 ? 'A' : score >= 72 ? 'B' : score >= 52 ? 'C' : 'D';
+}
+function companionPowerPanelHtml(entries) {
+  const owned = entries.filter(entry => entry.isOwned);
+  if (!owned.length) {
+    return `<div class="comp-power-panel">
+      <div class="comp-power-head"><div><b>⚔️ 随从战力与技能覆盖</b><span>抽到随从后解锁强度评估</span></div></div>
+      <div class="muted">这里会按当前角色属性、随从品质、星级、定位和技能类型估算作战价值。</div>
+    </div>`;
+  }
+  const scored = owned.map(entry => ({ entry, score: companionBattleScore(entry), stats: companionEstimatedBattleStats(entry) })).sort((a, b) => b.score - a.score);
+  const activeKey = getActiveCompanion()?.key;
+  const active = scored.find(item => item.entry.tpl.key === activeKey) || scored[0];
+  const topCards = scored.slice(0, 3).map(item => {
+    const tpl = item.entry.tpl;
+    const q = compQuality(tpl);
+    const rank = companionScoreRank(item.score);
+    return `<div class="comp-power-card ${tpl.key === activeKey ? 'active' : ''}">
+      <div class="comp-power-card-head"><b>${companionIconHtml(tpl, 18)} ${tipAttrText(tpl.name)}</b><span>${rank} · ${item.score}</span></div>
+      <div class="muted">${q.name}${item.entry.owned?.stars || 1}星 · ${roleTag(tpl.role)} · ${companionAdvisorReason(item.entry, tpl.role)}</div>
+      <div class="comp-power-bars">
+        <span style="--v:${Math.min(100, Math.round((item.stats.atk / Math.max(1, state.hero?.atk || 1)) * 100))}%">攻<i></i></span>
+        <span style="--v:${Math.min(100, Math.round((item.stats.hpMax / Math.max(1, state.hero?.hpMax || 1)) * 100))}%">生<i></i></span>
+        <span style="--v:${Math.min(100, Math.round((item.stats.def / Math.max(1, state.hero?.def || 1)) * 100))}%">防<i></i></span>
+      </div>
+    </div>`;
+  }).join('');
+  const wanted = ['伤害','控制','治疗','辅助','召唤','持续伤害'];
+  const coverage = new Map(wanted.map(label => [label, 0]));
+  for (const entry of owned) for (const label of companionCoverageLabels(entry.tpl)) if (coverage.has(label)) coverage.set(label, coverage.get(label) + 1);
+  const coverageHtml = wanted.map(label => {
+    const count = coverage.get(label) || 0;
+    return `<span class="comp-coverage-chip ${count ? 'covered' : 'missing'}">${label}<b>${count}</b></span>`;
+  }).join('');
+  const gaps = wanted.filter(label => !(coverage.get(label) || 0));
+  const candidates = gaps.slice(0, 2).map(label => {
+    const candidate = entries.filter(entry => !entry.isOwned && companionCoverageLabels(entry.tpl).has(label)).sort((a, b) => companionBattleScore(b) - companionBattleScore(a))[0];
+    return candidate ? `${label}: ${candidate.tpl.name}` : `${label}: 暂无候选`;
+  }).join(' · ');
+  const activeStats = active?.stats;
+  const activeText = activeStats
+    ? `当前出战基准: 攻${fmt(activeStats.atk)} 防${fmt(activeStats.def)} 血${fmt(activeStats.hpMax)} · 评分${active.score}`
+    : '尚未出战,已按最高评分随从预估。';
+  return `<div class="comp-power-panel">
+    <div class="comp-power-head">
+      <div><b>⚔️ 随从战力与技能覆盖</b><span>${activeText}</span></div>
+      <span>${owned.length}/${COMPANIONS.length} 名册</span>
+    </div>
+    <div class="comp-power-grid">${topCards}</div>
+    <div class="comp-coverage-row">
+      <span>技能覆盖</span>
+      <div>${coverageHtml}</div>
+    </div>
+    <div class="comp-power-note">${gaps.length ? `缺口建议: ${tipAttrText(candidates || '继续扩充收藏')}` : '覆盖完整: 已拥有伤害、控制、治疗、辅助、召唤和持续伤害来源。'}</div>
+  </div>`;
+}
 function companionUpgradePreviewHtml(tpl, comp, options) {
   if (!tpl || !comp) return '';
   const cfg = options || {};
@@ -3910,6 +4008,7 @@ function renderCompanion() {
   html += companionWishlistPanelHtml(entries);
   html += companionGlossaryPanelHtml();
   html += companionDetailPanelHtml(entries);
+  html += companionPowerPanelHtml(entries);
   html += companionBondRoadmapHtml(entries);
   html += companionAdvisorPanelHtml(entries);
   html += companionMissionPanelHtml(entries);
