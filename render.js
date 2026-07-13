@@ -3655,13 +3655,20 @@ function companionDetailPanelHtml(entries) {
   const ownBonus = Object.entries(tpl.bonus || {}).map(([k, v]) => (typeof fmtMod === 'function') ? fmtMod(k, +(v * starF).toFixed(1)) : `${k}+${v}`).join(' ');
   const status = entry.isActive ? '出战中' : entry.isOwned ? '已拥有' : `${q.name}池未获得`;
   const combatSpecialDesc = (typeof companionCombatSpecialDesc === 'function') ? companionCombatSpecialDesc(tpl.key) : '';
+  const combatSpecial = (typeof companionCombatSpecial === 'function') ? companionCombatSpecial(tpl.key) : null;
+  const veteran = (typeof companionVeteranInfo === 'function' && owned) ? companionVeteranInfo(tpl, owned) : null;
+  const supportActive = (typeof companionSupportIsSlotted === 'function') ? companionSupportIsSlotted(tpl.key) : false;
   const resonanceInfo = (typeof companionResonanceInfo === 'function') ? companionResonanceInfo(tpl) : null;
   const cost = entry.isOwned ? getUpgradeCost(owned) : null;
   const canUp = cost && !cost.maxed && cost.have >= cost.need;
   const wishButton = `<button data-action="compwish" data-key="${tpl.key}">${entry.isWished ? '取消目标' : '加入目标'}</button>`;
+  const supportButton = entry.isOwned && !entry.isActive
+    ? `<button class="${supportActive ? 'gold' : ''}" data-action="compsupport" data-key="${tpl.key}">${supportActive ? '取消支援' : '设为支援'}</button>`
+    : '';
   const actionHtml = entry.isOwned
     ? `<div class="comp-detail-actions">
         ${entry.isActive ? '<button class="danger" data-action="unequipcomp">休息</button>' : `<button class="primary" data-action="usecomp" data-idx="${entry.idx}">出战</button>`}
+        ${supportButton}
         <button class="gold" data-action="upgradecomp" data-idx="${entry.idx}" ${canUp ? '' : 'disabled'}>${cost.maxed ? '满星 ⭐5' : `升星 ${stars || 1}/5`}</button>
         ${wishButton}
       </div>`
@@ -3685,7 +3692,8 @@ function companionDetailPanelHtml(entries) {
       </div>
       <div class="comp-detail-block">
         <div class="comp-detail-block-title">技能说明</div>
-        ${combatSpecialDesc ? `<div class="comp-combat-special-note">🌟 专属战斗: ${tipAttrText(combatSpecialDesc)}</div>` : ''}
+        ${combatSpecialDesc ? `<div class="comp-combat-special-note">${combatSpecial?.icon || '🌟'} 专属战斗: ${tipAttrText(combatSpecialDesc)}${combatSpecial?.tags?.length ? `<br><span>定位标签: ${combatSpecial.tags.map(companionDungeonTagLabel).join(' / ')}</span>` : ''}</div>` : ''}
+        ${veteran ? `<div class="comp-veteran-note">${veteran.icon} ${veteran.name}: ${tipAttrText(veteran.desc)}</div>` : ''}
         ${companionDetailSkillListHtml(tpl)}
       </div>
     </div>
@@ -3757,6 +3765,46 @@ function companionBondRoadmapHtml(entries) {
       <span>${activeCnt}/${COMPANION_BONDS.length} 激活</span>
     </div>
     <div class="comp-bond-grid">${cards}</div>
+  </div>`;
+}
+function companionSupportPanelHtml(entries) {
+  const maxSlots = (typeof companionSupportMaxSlots === 'function') ? companionSupportMaxSlots() : 2;
+  const supportEntries = (typeof companionSupportEntries === 'function') ? companionSupportEntries() : [];
+  const used = new Set(supportEntries.map(e => e.key));
+  const activeKey = getActiveCompanion()?.key;
+  const candidates = (entries || []).filter(e => e.isOwned && e.tpl.key !== activeKey && !used.has(e.tpl.key)).slice().sort((a, b) => {
+    const av = (typeof companionVeteranInfo === 'function') ? companionVeteranInfo(a.tpl, a.owned) : null;
+    const bv = (typeof companionVeteranInfo === 'function') ? companionVeteranInfo(b.tpl, b.owned) : null;
+    const aq = compQuality(a.tpl), bq = compQuality(b.tpl);
+    return (bv ? 1 : 0) - (av ? 1 : 0) || ((a.tpl.quality === 'white' || a.tpl.quality === 'green') ? -1 : 0) - ((b.tpl.quality === 'white' || b.tpl.quality === 'green') ? -1 : 0) || companionQualityCompare(a, b);
+  }).slice(0, 8);
+  const slotCards = Array.from({ length:maxSlots }, (_, i) => {
+    const entry = supportEntries[i];
+    if (!entry) return `<div class="comp-support-slot empty"><b>支援位 ${i + 1}</b><span>空</span></div>`;
+    const q = compQuality(entry.tpl);
+    const spec = (typeof companionCombatSpecial === 'function') ? companionCombatSpecial(entry.tpl.key) : null;
+    const veteran = (typeof companionVeteranInfo === 'function') ? companionVeteranInfo(entry.tpl, entry.comp) : null;
+    return `<div class="comp-support-slot filled">
+      <div class="comp-support-head"><b>${companionIconHtml(entry.tpl, 18)} ${tipAttrText(entry.tpl.name)}</b><span class="${q.cls}">${q.name}</span></div>
+      <div class="muted">${spec?.icon || '🌟'} ${tipAttrText(spec?.name || '专属支援')} · ${(entry.comp.stars || 1)}星${veteran ? ` · ${veteran.icon}${veteran.name}` : ''}</div>
+      <button data-action="compsupport" data-key="${entry.tpl.key}">移出支援</button>
+    </div>`;
+  }).join('');
+  const candidateHtml = candidates.map(entry => {
+    const q = compQuality(entry.tpl);
+    const spec = (typeof companionCombatSpecial === 'function') ? companionCombatSpecial(entry.tpl.key) : null;
+    const veteran = (typeof companionVeteranInfo === 'function') ? companionVeteranInfo(entry.tpl, entry.owned) : null;
+    return `<button class="comp-support-candidate" data-action="compsupport" data-key="${entry.tpl.key}">
+      ${companionIconHtml(entry.tpl, 16)}<span>${tipAttrText(entry.tpl.name)}</span><b class="${q.cls}">${q.name}</b><em>${spec?.icon || '🌟'}${tipAttrText(spec?.name || '专属')}</em>${veteran ? `<i>${veteran.icon}</i>` : ''}
+    </button>`;
+  }).join('');
+  return `<div class="comp-support-panel">
+    <div class="comp-support-title">
+      <div><b>🛡️ 支援随从</b><div class="muted">支援位不普攻,但会以较低强度触发专属战斗机制；低品质满星随从会获得老兵加成。</div></div>
+      <span>${supportEntries.length}/${maxSlots}</span>
+    </div>
+    <div class="comp-support-slots">${slotCards}</div>
+    ${candidateHtml ? `<div class="comp-support-candidates">${candidateHtml}</div>` : '<div class="muted" style="font-size:10px">暂无可加入支援位的空闲随从。</div>'}
   </div>`;
 }
 function companionAdvisorPanelHtml(entries) {
@@ -4066,6 +4114,7 @@ function companionPanelRenderSig(){
     ? Object.entries(state.compUniversalShards).sort((a,b)=>a[0].localeCompare(b[0])).map(([k,v])=>`${k}:${v||0}`).join('|')
     : '';
   const active = `${state.activeCompanion}|${getActiveCompanion()?.key || ''}`;
+  const support = Array.isArray(state.companionSupport) ? state.companionSupport.join('|') : '';
   const bonds = (typeof activeCompanionBonds==='function' ? activeCompanionBonds() : []).map(b=>b.name).join('|');
   const filters = `${Object.values(companionFilters).join('|')}#${companionDetailKey || ''}`;
   const wishlist = companionWishlistKeys().join('|');
@@ -4073,7 +4122,7 @@ function companionPanelRenderSig(){
   const missions = state.companionMissions?.active
     ? state.companionMissions.active.map(m => `${m.id}:${m.endAt}:${m.compKey}`).join('|') + `#${state.companionMissions.totalCompleted || 0}#${Math.floor(Date.now()/30000)}`
     : '';
-  return [state.cls||'', state.hero?.lvl||0, state.compTickets||0, active, compList, shards, bonds, filters, wishlist, tactic, missions].join('||');
+  return [state.cls||'', state.hero?.lvl||0, state.compTickets||0, active, support, compList, shards, bonds, filters, wishlist, tactic, missions].join('||');
 }
 function renderCompanion() {
   $('gem-cost').textContent = '(消耗1🐾随从券 · 技能含定位招牌技+专属技，品质/星级决定强度)';
@@ -4109,6 +4158,7 @@ function renderCompanion() {
   html += companionWishlistPanelHtml(entries);
   html += companionGlossaryPanelHtml();
   html += companionDetailPanelHtml(entries);
+  html += companionSupportPanelHtml(entries);
   html += companionTacticPanelHtml();
   html += companionPowerPanelHtml(entries);
   html += companionBondRoadmapHtml(entries);
@@ -4126,6 +4176,8 @@ function renderCompanion() {
     const ownTxt = Object.entries(tpl?.bonus||{}).map(([k,v])=>(typeof fmtMod==='function')?fmtMod(k,+(v*starF).toFixed(1)):k+'+'+v).join(' ');
     const roleTxt = Object.entries(role).map(([k,v])=>(typeof fmtMod==='function')?fmtMod(k,v):k+'+'+v).join(' ');
     const compIconHtml = companionIconHtml(tpl, 18);
+    const spec = (typeof companionCombatSpecial === 'function') ? companionCombatSpecial(tpl.key) : null;
+    const fit = (typeof companionDungeonFitInfo === 'function') ? companionDungeonFitInfo(tpl, (typeof companionCurrentDungeon === 'function' ? companionCurrentDungeon() : null)) : null;
     html += `<div class="shop-item${companionCardTrackClass(tpl)}" style="border-color:var(--${q.cls==='r-legend'?'legend':q.cls==='r-epic'?'epic':'border'})">
       <div class="row"><b>${compIconHtml} ${tpl?.name}</b><span class="pill" style="background:var(--accent);color:#000">出战中</span></div>
       <div class="muted"><span class="${q.cls}">${q.name}</span> · ${'⭐'.repeat(act.stars||1)} · ${roleTag(tpl?.role)} · ${(tpl?.skills?.length||0)}主动${tpl?.signature?'+1专属':''}</div>
@@ -4135,6 +4187,7 @@ function renderCompanion() {
       <div class="muted" style="font-size:10px;color:#6ee7b7">专属加成: ${ownTxt||'无'}</div>
       <div class="muted" style="font-size:10px;color:#93c5fd">定位加成: ${roleTxt||'无'}</div>
       ${tpl?.signature?`<div class="muted" style="font-size:10px;color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')} ${tpl.signature.name}${tpl.signature.mode==='passive'?' [被动]':''}</div>`:''}
+      ${spec ? `<div class="muted" style="font-size:10px;color:#fde68a">专属战斗: ${spec.icon || '🌟'} ${spec.name}${fit?.score ? ` · 当前副本匹配 ${fit.label}` : ''}</div>` : ''}
       ${companionUpgradePreviewHtml(tpl, act, { compact:true })}
       <div class="comp-skills">${compSkillChips(tpl)}</div>
       <div class="comp-card-actions">
@@ -4158,12 +4211,16 @@ function renderCompanion() {
     const cost = getUpgradeCost(c);
     const canUp = !cost.maxed && cost.have>=cost.need;
     const compIconHtml = companionIconHtml(tpl, 18);
+    const supportActive = (typeof companionSupportIsSlotted === 'function') ? companionSupportIsSlotted(tpl.key) : false;
+    const spec = (typeof companionCombatSpecial === 'function') ? companionCombatSpecial(tpl.key) : null;
+    const veteran = (typeof companionVeteranInfo === 'function') ? companionVeteranInfo(tpl, c) : null;
     html += `<div class="shop-item${companionCardTrackClass(tpl)}">
       <div class="row"><b>${compIconHtml} ${tpl.name}</b><span class="${q.cls}">${q.name} · ${(tpl.skills?.length||0)}主动${tpl.signature?'+1专属':''}</span></div>
       <div class="muted" style="font-size:10px">${'⭐'.repeat(c.stars||1)} · ${roleTag(tpl.role)} · ${tpl.desc}</div>
       ${companionMetaBadges(tpl)}
       ${companionBondChipsHtml(tpl, entries)}
       ${tpl.signature?`<div class="muted" style="font-size:10px;color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')} ${tpl.signature.name}${tpl.signature.mode==='passive'?' [被动]':''}</div>`:''}
+      ${spec ? `<div class="muted" style="font-size:10px;color:#fde68a">专属战斗: ${spec.icon || '🌟'} ${spec.name}${veteran ? ` · ${veteran.icon}${veteran.name}` : ''}</div>` : ''}
       ${companionUpgradePreviewHtml(tpl, c)}
       <div class="comp-skills">${compSkillChips(tpl)}</div>
       <div class="row">
@@ -4171,6 +4228,7 @@ function renderCompanion() {
         <div style="display:flex;flex-wrap:wrap;gap:3px">
           <button data-action="compdetail" data-key="${tpl.key}">详情</button>
           <button data-action="compwish" data-key="${tpl.key}">${entry.isWished ? '取消目标' : '加入目标'}</button>
+          <button class="${supportActive ? 'gold' : ''}" data-action="compsupport" data-key="${tpl.key}">${supportActive ? '取消支援' : '支援'}</button>
           <button class="primary" data-action="usecomp" data-idx="${i}">出战</button>
           <button class="gold" data-action="upgradecomp" data-idx="${i}" ${canUp?'':'disabled'}>${cost.maxed?'满星 ⭐5':'升星 '+(c.stars||1)+'/5'}</button>
         </div>
@@ -4576,6 +4634,32 @@ function dungeonThemeAffixHtml(dg, compact) {
     <b>🧭 主题压力</b>
     <div class="muted" style="font-size:11px;margin:3px 0 6px">每座副本会按地图/Boss/资料片主题固定获得一条常驻战斗规则；它会提高对应怪物压力，并计入通关词缀奖励。</div>
     <div class="dungeon-mechanic-codex-grid">${chips}</div>
+  </div>`;
+}
+function dungeonCompanionRecommendationHtml(dg, compact) {
+  if (!dg || typeof companionDungeonNeedTags !== 'function' || typeof companionDungeonFitInfo !== 'function') return '';
+  const needs = companionDungeonNeedTags(dg);
+  const ownedEntries = (state.companions || []).map(comp => {
+    const tpl = COMPANIONS.find(c => c.key === comp.key);
+    if (!tpl) return null;
+    const fit = companionDungeonFitInfo(tpl, dg);
+    const q = compQuality(tpl);
+    const veteran = (typeof companionVeteranInfo === 'function') ? companionVeteranInfo(tpl, comp) : null;
+    return { comp, tpl, fit, q, veteran, score:fit.score * 100 + (veteran ? 18 : 0) + (comp.stars || 1) * 3 + ({white:14,green:12,blue:8,purple:4,orange:0}[q.key] || 0) };
+  }).filter(x => x && x.fit.score > 0).sort((a,b) => b.score - a.score).slice(0, compact ? 3 : 5);
+  const needText = needs.map(tag => `<span>${companionDungeonTagLabel(tag)}</span>`).join('');
+  const recText = ownedEntries.map(entry => {
+    const spec = (typeof companionCombatSpecial === 'function') ? companionCombatSpecial(entry.tpl.key) : null;
+    const tip = `<b>${tipAttrText(entry.tpl.name)}</b><br>${entry.q.name} · ${entry.comp.stars || 1}星 · ${tipAttrText(spec?.name || '专属战斗')}<br>匹配: ${tipAttrText(entry.fit.matched.map(companionDungeonTagLabel).join(' / '))}${entry.veteran ? `<br>${tipAttrText(entry.veteran.desc)}` : ''}`.replace(/"/g, '&quot;');
+    return `<span class="dungeon-comp-rec" data-tip="${tip}">${companionIconHtml(entry.tpl, compact ? 14 : 16)} ${tipAttrText(entry.tpl.name)}<b>${entry.fit.matched.map(companionDungeonTagLabel).join('/')}</b></span>`;
+  }).join('');
+  if (compact) {
+    return `<div class="dungeon-companion-line">🐾 推荐随从: ${recText || '<span class="muted">暂无已拥有匹配随从</span>'}<em>${needText}</em></div>`;
+  }
+  return `<div class="dungeon-companion-panel">
+    <div class="dungeon-companion-head"><b>🐾 随从推荐</b><span>${needText}</span></div>
+    <div class="muted" style="font-size:11px;margin:3px 0 6px">推荐按副本主题压力匹配专属战斗标签；低品质满星随从会因为老兵特性更适合作为机制支援位。</div>
+    <div class="dungeon-companion-grid">${recText || '<span class="muted">暂无已拥有匹配随从，可以用支援位补机制短板。</span>'}</div>
   </div>`;
 }
 function bossChallengeMetaText(challenge) {
@@ -5092,6 +5176,7 @@ function buildDungeonInfoHtml(dg) {
   html += dungeonRouteBriefHtml(dg, selectedContract);
   html += dungeonHandlingCodexHtml(dg, selectedContract);
   html += dungeonThemeAffixHtml(dg, false);
+  html += dungeonCompanionRecommendationHtml(dg, false);
   html += dungeonTraitPreviewHtml(dg);
   html += dungeonFirstClearPreviewHtml(dg);
   if (dgAffixes.length) {
@@ -5433,6 +5518,7 @@ function renderDungeon() {
     const dungeonIconHtml = (typeof dungeonIcon === 'function') ? dungeonIcon(dg.key, dg.name, 18, dg.icon) : dg.icon;
     const dgAffixes = (typeof getDungeonAffixes === 'function') ? getDungeonAffixes(dg) : [];
     const themeLine = dungeonThemeAffixHtml(dg, true);
+    const companionLine = dungeonCompanionRecommendationHtml(dg, true);
     const affixLine = dgAffixes.length ? `<div class="muted" style="font-size:11px">⚙️ 词缀: ${dgAffixes.map(a => inlineTipSpanHtml(a, { fallbackIcon:'spell_holy_powerinfusion', color:'#67e8f9' })).join(' · ')}</div>` : '';
     const selectedContractLevel = (typeof dungeonContractLevel === 'function') ? dungeonContractLevel() : 0;
     const trialPreview = (selectedContractLevel > 0 && typeof getDungeonContractTrials === 'function') ? getDungeonContractTrials(dg, selectedContractLevel) : [];
@@ -5511,6 +5597,7 @@ function renderDungeon() {
       ${dungeonProgressLine}
       ${ilvlLine}
       ${themeLine}
+      ${companionLine}
       ${affixLine}
       ${timerLine}
       ${roomLine}

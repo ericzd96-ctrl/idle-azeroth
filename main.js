@@ -143,6 +143,7 @@ function loop() {
 
       tickBattle(now);
       tickCompanion(now);
+      if (typeof tickCompanionSupport === 'function') tickCompanionSupport(now, state.currentMonsters && state.currentMonsters[0]);
       if (typeof tickCompanionMissions === 'function') tickCompanionMissions(now);
       if (typeof tickAllySummons === 'function') tickAllySummons(now);
       tickTravel(now);
@@ -647,8 +648,9 @@ function setupDelegation() {
     if(act==='startcompmission'){ startCompanionMission(btn.dataset.comp, btn.dataset.mission); return; }
     if(act==='claimcompmission'){ claimCompanionMission(btn.dataset.id); return; }
     if(act==='claimallcompmissions'){ claimAllCompanionMissions(); return; }
+    if(act==='compsupport'){ companionSupportSet(btn.dataset.key); return; }
     const idx=parseInt(btn.dataset.idx, 10);
-    if(act==='usecomp'){state.activeCompanion=idx;initCompanionHp();recomputeStats();markDirty('companion','hero');log('🐾 随从出战!','good')}
+    if(act==='usecomp'){state.activeCompanion=idx;if(typeof ensureCompanionSupportState==='function')ensureCompanionSupportState();initCompanionHp();recomputeStats();markDirty('companion','hero');log('🐾 随从出战!','good')}
     else if(act==='upgradecomp')upgradeCompanion(idx);
     else if(act==='unequipcomp'){state.activeCompanion=-1;state._compHp=0;recomputeStats();markDirty('companion','hero')}
   });
