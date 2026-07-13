@@ -476,6 +476,12 @@ function renderDungeonTraitHtml(item) {
   const t = item.dungeonTrait;
   const modText = Object.entries(t.mod || {}).map(([k, v]) => fmtMod(k, v)).join(' · ');
   const type = t.type || '副本印记';
+  const tagLabel = (typeof dungeonTraitTagLabel === 'function') ? dungeonTraitTagLabel : (tag => tag);
+  const sourceText = t.sourceDungeonName ? `来源: ${t.sourceDungeonName}` : '';
+  const matchedTags = (t.matchedTags || []).map(tag => `<span class="dungeon-trait-tag">${tagLabel(tag)}</span>`).join('');
+  const sourceTags = !matchedTags && (t.sourceTags || []).length
+    ? (t.sourceTags || []).slice(0, 6).map(tag => `<span class="dungeon-trait-tag muted-tag">${tagLabel(tag)}</span>`).join('')
+    : '';
   return `
     <div class="detail-section dungeon-trait-section">
       <div class="detail-label">副本印记</div>
@@ -484,6 +490,7 @@ function renderDungeonTraitHtml(item) {
         <span><b>${t.name || '未知印记'}</b> <span class="muted" style="font-size:11px">[${type}]</span></span>
       </div>
       <div class="dungeon-trait-mod">${modText || '无额外效果'}</div>
+      ${(sourceText || matchedTags || sourceTags) ? `<div class="dungeon-trait-source">${sourceText}${t.chance ? ` · 触发率约${t.chance}%` : ''}${matchedTags ? `<div class="dungeon-trait-tags">${matchedTags}</div>` : (sourceTags ? `<div class="dungeon-trait-tags">${sourceTags}</div>` : '')}</div>` : ''}
       ${t.desc ? `<div class="muted" style="font-size:11px;margin-top:4px">${t.desc}</div>` : ''}
     </div>`;
 }

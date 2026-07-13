@@ -3416,15 +3416,43 @@ function dungeonArtBadgeHtml(dg) {
   });
   return `<div class="dungeon-art-badge ${info.cls}">${tip}</div>`;
 }
+function dungeonTraitTagLabel(tag) {
+  return ({
+    fire:'火焰', dragon:'巨龙', forge:'铸造', void:'虚空', shadow:'暗影', precision:'精准',
+    storm:'风暴', speed:'机动', air:'天空', fortress:'壁垒', holy:'圣光', tank:'坚守',
+    nature:'自然', beast:'野兽', blood:'鲜血', undead:'亡灵', naga:'娜迦', arcane:'奥术',
+    titan:'泰坦', mech:'机械', time:'时序', ritual:'仪式', dot:'持续', execute:'斩杀',
+    heal:'治疗', water:'水域', caster:'施法', burst:'爆发', giant:'巨型', pirate:'海盗',
+    noble:'王庭', raid:'团本', oldgod:'古神', elf:'精灵', agility:'敏捷', troll:'巨魔',
+    spider:'蛛魔', poison:'毒性', ethereal:'虚灵', delve:'地下堡', mythic:'秘境',
+    plague:'瘟疫', martial:'武备', orc:'兽人'
+  })[tag] || tag;
+}
+function dungeonTraitChanceText(preview) {
+  const c = preview?.chance || {};
+  const pct = v => typeof v === 'number' ? `${Math.round(v * 100)}%` : '?';
+  return `蓝${pct(c.rare)} / 紫${pct(c.epic)} / 橙${pct(c.legend)}`;
+}
 function dungeonTraitPreviewHtml(dg) {
   if (!dg || typeof dungeonTraitPreviewForDungeon !== 'function') return '';
   const preview = dungeonTraitPreviewForDungeon(dg.key, 5);
   if (!preview?.traits?.length) return '';
+  const tagChips = (preview.tags || []).slice(0, 8).map(tag => `<span class="dungeon-trait-tag">${dungeonTraitTagLabel(tag)}</span>`).join('');
+  const chanceTip = inlineTipSpanHtml({
+    name:preview.tierName || '副本印记',
+    icon:'🎲',
+    desc:'精良以上副本装备有概率获得副本印记。高难度来源概率更高;触发后会优先从本副本主题标签匹配的印记中抽取。',
+    meta:dungeonTraitChanceText(preview),
+  }, {
+    fallbackIcon:'inv_misc_dice_02',
+    color:'#f6c453',
+    metaVisible:true,
+  });
   const chips = preview.traits.map(t => inlineTipSpanHtml({
     name: t.name,
     icon: t.icon || '✦',
-    desc: t.desc || '该副本更容易掉落的装备印记。',
-    meta: '倾向印记',
+    desc: `${t.desc || '该副本更容易掉落的装备印记。'}${t.tags?.length ? ` 匹配标签: ${t.tags.map(dungeonTraitTagLabel).join('、')}` : ''}`,
+    meta: preview.tierName || '倾向印记',
   }, {
     fallbackIcon:'inv_misc_gem_diamond_02',
     color:'#fde68a',
@@ -3432,7 +3460,8 @@ function dungeonTraitPreviewHtml(dg) {
   })).join('');
   return `<div class="dungeon-mechanic-codex">
     <b>💎 掉落倾向</b>
-    <div class="muted" style="font-size:11px;margin:3px 0 6px">精良以上装备触发副本印记时，会优先从这些主题印记中抽取；少量掉落仍可能出现通用印记。</div>
+    <div class="muted" style="font-size:11px;margin:3px 0 6px">${chanceTip} · 触发后优先抽取这些主题印记；少量掉落仍可能出现通用印记。</div>
+    ${tagChips ? `<div class="dungeon-trait-tags">${tagChips}</div>` : ''}
     <div class="dungeon-mechanic-codex-grid">${chips}</div>
   </div>`;
 }

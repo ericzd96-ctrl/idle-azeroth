@@ -5701,6 +5701,27 @@ const DUNGEON_TRAIT_TAG_RULES = [
   { re:/圣光|圣焰|十字军|银色|隐修院|骑士|冠军|试炼|王庭|国王|王座|要塞|城堡|庄园/i, tags:['holy','fortress','noble'] },
   { re:/战争|围攻|奥格瑞玛|兽人|督军|破碎大厅|钢铁部落|黑暗神殿|武器|军团/i, tags:['martial','orc'] },
 ];
+const DUNGEON_TRAIT_TAG_OVERRIDES = {
+  ragefire:['fire','forge'],
+  deadmines:['pirate','martial','speed'],
+  wailing:['nature','beast'],
+  bfd:['water','shadow','naga'],
+  shadowfang:['undead','shadow','noble'],
+  gnomeregan:['mech','titan'],
+  razorfen:['beast','nature','poison'],
+  razorfend:['undead','beast','poison'],
+  scarlet:['holy','fortress','noble'],
+  uldaman:['titan','forge'],
+  maraudon:['nature','beast'],
+  zulfarrak:['troll','blood','nature'],
+  sunktemple:['dragon','nature','shadow'],
+  scholomance:['undead','shadow'],
+  brd:['fire','forge','martial'],
+  stratholme:['undead','holy','fire'],
+  diremaul:['nature','arcane','noble'],
+  lbrs:['dragon','fire','orc'],
+  ubrs:['dragon','fire','orc'],
+};
 
 function dungeonGearRarityRank(rarityKey){
   if(typeof lootRarityRank==='function') return lootRarityRank(rarityKey);
@@ -5740,6 +5761,8 @@ function dungeonTraitTagsForDungeon(dungeonKey){
   const bossText=(dg.bosses||[]).map(b=>`${b.name||''} ${b.emoji||''}`).join(' ');
   const text=[dg.key,dg.name,dg.desc,dg.raidExpansion,dg.raidTier,bossText].filter(Boolean).join(' ');
   const tags=[];
+  const overrides=DUNGEON_TRAIT_TAG_OVERRIDES[baseKey]||DUNGEON_TRAIT_TAG_OVERRIDES[dg.key]||[];
+  for(const tag of overrides) if(!tags.includes(tag)) tags.push(tag);
   for(const rule of DUNGEON_TRAIT_TAG_RULES){
     if(rule.re.test(text)) for(const tag of rule.tags) if(!tags.includes(tag)) tags.push(tag);
   }
@@ -5771,8 +5794,21 @@ function dungeonTraitPreviewForDungeon(dungeonKey, limit){
   const preferred=(tags.length?pool.filter(t=>(t.tags||[]).some(tag=>tags.includes(tag))):pool).sort((a,b)=>score(b)-score(a));
   return {
     tags,
+    gearTier,
+    tierName:dungeonTraitTierName(gearTier),
+    chance:{
+      rare:dungeonTraitChance('rare',gearTier,false),
+      epic:dungeonTraitChance('epic',gearTier,false),
+      legend:dungeonTraitChance('legend',gearTier,false),
+    },
     traits:(preferred.length?preferred:pool).slice(0,limit||5).map(t=>({ key:t.key,name:t.name,icon:t.icon,desc:t.desc,tags:t.tags||[] })),
   };
+}
+
+function dungeonTraitChance(rarityKey, gearTier, hasSetKey){
+  const chanceBase={rare:0.28,epic:0.58,legend:0.92}[rarityKey]||0.25;
+  const chanceTier={0:0.04,1:0.12,2:0.20,3:0.30,4:0.17}[gearTier]||0;
+  return Math.min(0.98,chanceBase+chanceTier+(hasSetKey?0.06:0));
 }
 
 function scaleDungeonTraitMod(baseMod, rarityKey, gearTier){
@@ -5796,13 +5832,14 @@ function applyDungeonGearTrait(item,dungeonKey,rarity,opts){
   const rarityKey=rarity?.key||item.rarity||'common';
   const rRank=dungeonGearRarityRank(rarityKey);
   if(rRank<2) return item;
-  const chanceBase={rare:0.28,epic:0.58,legend:0.92}[rarityKey]||0.25;
-  const chanceTier={0:0,1:0.10,2:0.18,3:0.28,4:0.15}[gearTier]||0;
-  const chance=Math.min(0.98,chanceBase+chanceTier+(item.setKey?0.06:0));
+  const chance=dungeonTraitChance(rarityKey,gearTier,!!item.setKey);
   if(Math.random()>chance) return item;
   const pool=dungeonTraitBasePool(gearTier,rRank,item.slot);
   const affinity=dungeonTraitAffinityPool(sourceKey,gearTier,rRank,item.slot);
-  const picked=affinity.length&&Math.random()<0.82?choice(affinity):(pool.length?choice(pool):choice(DUNGEON_GEAR_TRAITS));
+  const picked=affinity.length&&Math.random()<0.88?choice(affinity):(pool.length?choice(pool):choice(DUNGEON_GEAR_TRAITS));
+  const sourceDg=(typeof DUNGEONS!=='undefined')?DUNGEONS.find(d=>d.key===sourceKey):null;
+  const sourceTags=dungeonTraitTagsForDungeon(sourceKey);
+  const matchedTags=(picked.tags||[]).filter(tag=>sourceTags.includes(tag));
   item.sourceDungeonKey=sourceKey;
   item.dungeonTrait={
     key:picked.key,
@@ -5810,6 +5847,11 @@ function applyDungeonGearTrait(item,dungeonKey,rarity,opts){
     icon:picked.icon,
     type:dungeonTraitTierName(gearTier),
     desc:picked.desc,
+    sourceDungeonKey:sourceKey,
+    sourceDungeonName:sourceDg?.name||sourceKey,
+    sourceTags,
+    matchedTags,
+    chance:+(chance*100).toFixed(0),
     mod:scaleDungeonTraitMod(picked.mod,rarityKey,gearTier),
   };
   return item;
