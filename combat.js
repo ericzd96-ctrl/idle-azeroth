@@ -3930,13 +3930,13 @@ function applyDungeonBossWeakpointMechanics(now){
   }
 }
 const DUNGEON_BOSS_CHALLENGE_SEALS = [
-  { key:'cleanInterrupts', icon:'🦶', name:'精准打断', event:'interrupt', target:1, match:/奥术|法师|魔法|古神|低语|邪能|恶魔|巫妖|符文|议会/, desc:'成功打断首领读条。' },
-  { key:'weakpointHunter', icon:'💠', name:'弱点猎手', event:'weakpoint', target:1, match:/龙|古神|鲜血|机械|巫妖|恶魔|风暴|奥术|王|影/, desc:'击破首领暴露的弱点。' },
-  { key:'addControl', icon:'👥', name:'控场清理', event:'addKill', target:2, match:/召唤|亡|恶魔|虫|瘟疫|议会|军团|血/, desc:'击杀首领召唤的援军。' },
-  { key:'shieldBreaker', icon:'💥', name:'破盾专家', event:'shieldBreak', target:1, match:/护盾|奥术|机械|钢铁|泰坦|魔法|符文/, desc:'打破首领机制护盾并制造破绽。' },
-  { key:'ritualDenied', icon:'🕯️', name:'仪式否决', event:'objective', target:1, match:/仪式|古神|邪能|奥术|符文|低语|恶魔/, desc:'摧毁首领机制目标或符文核心。' },
-  { key:'swiftKill', icon:'⏱️', name:'速战速决', event:'killFast', target:1, seconds:55, match:/./, desc:'在55秒内击败首领。' },
-  { key:'healthyFinish', icon:'❤️', name:'稳健收尾', event:'killHealthy', target:1, hpPct:0.35, match:/./, desc:'击败首领时自身生命不低于35%。' },
+  { key:'cleanInterrupts', icon:'🦶', name:'精准打断', event:'interrupt', target:1, match:/奥术|法师|魔法|古神|低语|邪能|恶魔|巫妖|符文|议会/, desc:'在本场首领战中成功打断1次可打断读条;高危读条被打断时还会制造短暂破绽。' },
+  { key:'weakpointHunter', icon:'💠', name:'弱点猎手', event:'weakpoint', target:1, match:/龙|古神|鲜血|机械|巫妖|恶魔|风暴|奥术|王|影/, desc:'击破1个首领暴露的弱点;弱点通常在血线变化或机制窗口出现。' },
+  { key:'addControl', icon:'👥', name:'控场清理', event:'addKill', target:2, match:/召唤|亡|恶魔|虫|瘟疫|议会|军团|血/, desc:'击杀2个首领召唤物或机制援军;优先转火小怪可以阻止献祭、护盾或额外读条。' },
+  { key:'shieldBreaker', icon:'💥', name:'破盾专家', event:'shieldBreak', target:1, match:/护盾|奥术|机械|钢铁|泰坦|魔法|符文/, desc:'打破1次首领机制护盾;破盾会返还资源并让首领短暂易伤。' },
+  { key:'ritualDenied', icon:'🕯️', name:'仪式否决', event:'objective', target:1, match:/仪式|古神|邪能|奥术|符文|低语|恶魔/, desc:'摧毁1个仪式锚点、符文核心或限时机制目标;未处理通常会强化首领下一次读条。' },
+  { key:'swiftKill', icon:'⏱️', name:'速战速决', event:'killFast', target:1, seconds:55, match:/./, desc:'从首领出现开始55秒内击败它;适合爆发、斩杀和资源规划构筑。' },
+  { key:'healthyFinish', icon:'❤️', name:'稳健收尾', event:'killHealthy', target:1, hpPct:0.35, match:/./, desc:'击败首领时自身生命不低于35%;需要防御技能、治疗窗口或更干净的机制处理。' },
 ];
 function getDungeonBossChallengeSeals(bossData){
   const text = dungeonBossSpectacleText(bossData);

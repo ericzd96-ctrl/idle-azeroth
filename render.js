@@ -530,36 +530,43 @@ function scaledBossDesc(desc, s) {
   }
   return text;
 }
+function effectDurationText(value, fallbackMs) {
+  const raw = (value === true || value == null) ? fallbackMs : value;
+  const ms = raw > 100 ? raw : raw * 1000;
+  const sec = Math.max(0, ms / 1000);
+  return `${Number.isInteger(sec) ? sec.toFixed(0) : sec.toFixed(1)}秒`;
+}
 function effectTags(s, opts) {
   const cfg = opts || {};
+  if (!s) return [];
   const heal = cfg.bossScaledHeal ? scaledBossHealPortion(s.heal || 0) : (s.heal || 0);
   const healPct = cfg.bossScaledHeal ? scaledBossHealPortion(s.healPct || 0) : (s.healPct || 0);
   const t = [];
   if (s.aoe) t.push(`${statusIconHtml('易爆', '💥', 13)}范围伤害`);
-  if (s.stun) t.push(`${statusIconHtml('眩晕', '💫', 13)}眩晕${s.stun===true?'2秒':(s.stun/1000)+'秒'}`);
-  if (s.slow) t.push(`${statusIconHtml('减速', '❄️', 13)}减速5秒`);
-  if (s.dot) t.push(`${statusIconHtml('灼烧/中毒', '☠️', 13)}灼烧6秒`);
-  if (s.weaken) t.push(`${statusIconHtml('虚弱', '💔', 13)}削弱5秒`);
-  if (s.sunder) t.push(`${statusIconHtml('易伤', '🩸', 13)}易伤5秒`);
-  if (s.spdBuff) t.push(`${statusIconHtml('急速', '⚡', 13)}自加速8秒`);
+  if (s.stun) t.push(`${statusIconHtml('眩晕', '💫', 13)}眩晕${effectDurationText(s.stun, s.stunMs || 2000)}`);
+  if (s.slow) t.push(`${statusIconHtml('减速', '❄️', 13)}减速${effectDurationText(s.slowMs || true, 5000)}`);
+  if (s.dot || s.dotSkill) t.push(`${statusIconHtml('灼烧/中毒', '☠️', 13)}持续伤害${effectDurationText(s.dotSecs || s.dotMs || true, (s.dotSecs || 6) * 1000)}`);
+  if (s.weaken) t.push(`${statusIconHtml('虚弱', '💔', 13)}削弱${effectDurationText(s.weakenMs || true, 5000)}`);
+  if (s.sunder) t.push(`${statusIconHtml('易伤', '🩸', 13)}易伤${effectDurationText(s.sunderMs || true, 5000)}`);
+  if (s.spdBuff) t.push(`${statusIconHtml('急速', '⚡', 13)}自加速${effectDurationText(s.spdBuffSecs || true, 8000)}`);
   if (heal) t.push(`${statusIconHtml('治疗', '💚', 13)}恢复${Math.round(heal*100)}%生命`);
   if (healPct) t.push(`${statusIconHtml('治疗', '💚', 13)}恢复${Math.round(healPct*100)}%生命`);
-  if (s.atkBuffSecs) t.push(`${statusIconHtml('战斗怒吼', '📯', 13)}攻击提高${Math.round(s.atkBuffPct||30)}%`);
-  if (s.defBuffSecs) t.push(`${statusIconHtml('护盾', '🪨', 13)}防御提高${Math.round(s.defBuffPct||35)}%`);
-  if (s.drBuffSecs) t.push(`${statusIconHtml('减伤', '🛡️', 13)}减伤提高${Math.round((s.drBuffPct||0.25)*100)}%`);
+  if (s.atkBuffSecs) t.push(`${statusIconHtml('战斗怒吼', '📯', 13)}攻击提高${Math.round(s.atkBuffPct||30)}% · ${effectDurationText(s.atkBuffSecs, 8000)}`);
+  if (s.defBuffSecs) t.push(`${statusIconHtml('护盾', '🪨', 13)}防御提高${Math.round(s.defBuffPct||35)}% · ${effectDurationText(s.defBuffSecs, 8000)}`);
+  if (s.drBuffSecs) t.push(`${statusIconHtml('减伤', '🛡️', 13)}减伤提高${Math.round((s.drBuffPct||0.25)*100)}% · ${effectDurationText(s.drBuffSecs, 8000)}`);
   if (s.shieldPct) t.push(`${statusIconHtml('护体屏障', '🔮', 13)}护盾${Math.round((s.shieldPct||0)*100)}%生命`);
-  if (s.critBuffSecs) t.push(`${statusIconHtml('致命专注', '👁️', 13)}暴击提高${Math.round(s.critBuffPct||35)}%`);
-  if (s.leechBuffSecs) t.push(`${statusIconHtml('生命洪流', '🩸', 13)}吸血${Math.round(s.leechBuffPct||18)}%`);
+  if (s.critBuffSecs) t.push(`${statusIconHtml('致命专注', '👁️', 13)}暴击提高${Math.round(s.critBuffPct||35)}% · ${effectDurationText(s.critBuffSecs, 6000)}`);
+  if (s.leechBuffSecs) t.push(`${statusIconHtml('生命洪流', '🩸', 13)}吸血${Math.round(s.leechBuffPct||18)}% · ${effectDurationText(s.leechBuffSecs, 8000)}`);
   if (s.summonCount) t.push(`${statusIconHtml('召唤援军', '👥', 13)}召唤${s.summonCount}个援军`);
   if (s.lifeSteal) t.push(`${statusIconHtml('生命洪流', '🩸', 13)}吸血${Math.round(s.lifeSteal*100)}%`);
-  if (s.silence) t.push(`${statusIconHtml('沉默', '🔇', 13)}沉默`);
-  if (s.disarm) t.push(`${statusIconHtml('缴械', '⚔️', 13)}缴械`);
-  if (s.fear) t.push(`${statusIconHtml('恐惧', '👻', 13)}恐惧`);
-  if (s.freeze) t.push(`${statusIconHtml('冻结', '🧊', 13)}冰冻`);
+  if (s.silence) t.push(`${statusIconHtml('沉默', '🔇', 13)}沉默${effectDurationText(s.silence, 1800)}`);
+  if (s.disarm) t.push(`${statusIconHtml('缴械', '⚔️', 13)}缴械${effectDurationText(s.disarm, 1800)}`);
+  if (s.fear) t.push(`${statusIconHtml('恐惧', '👻', 13)}恐惧${effectDurationText(s.fear, 1800)}`);
+  if (s.freeze) t.push(`${statusIconHtml('冻结', '🧊', 13)}冰冻${effectDurationText(s.freeze, 1600)}`);
   if (s.cripple) t.push(`${statusIconHtml('残废', '🦿', 13)}残废`);
   if (s.decay) t.push(`${statusIconHtml('衰老', '👴', 13)}衰老`);
   if (s.wither) t.push(`${statusIconHtml('凋零', '🥀', 13)}生命枯萎`);
-  if (s.manaDrain) t.push(`${statusIconHtml('奥术护壁', '💧', 13)}魔力流失`);
+  if (s.manaDrain) t.push(`${statusIconHtml('奥术护壁', '💧', 13)}资源流失${typeof s.manaDrain === 'number' ? ` ${s.manaDrain}` : ''}`);
   if (s.bomb) t.push(`${statusIconHtml('易爆', '💣', 13)}自爆印记`);
   if (s.plague) t.push(`${statusIconHtml('凋零', '🦠', 13)}暗影瘟疫`);
   if (s.bleed) t.push(`${statusIconHtml('流血', '🩸', 13)}流血`);
@@ -571,6 +578,25 @@ function effectTags(s, opts) {
   if (s.decay2) t.push(`${statusIconHtml('凋零', '🌑', 13)}凋零`);
   if (s.mirror) t.push(`${statusIconHtml('奥术护壁', '🪞', 13)}镜像`);
   return t;
+}
+function bossSkillBreakdownHtml(s, cfg) {
+  if (!s) return '';
+  const rows = [];
+  if (typeof s.mul === 'number' && s.mul > 0 && s.type !== 'heal' && s.type !== 'buff' && s.type !== 'support') {
+    rows.push(`${s.aoe ? '范围' : '单体'}伤害 ×${Number(s.mul).toFixed(s.mul % 1 ? 1 : 0)}`);
+  }
+  if (s.type === 'heal' || s.heal || s.healPct) rows.push('治疗/恢复技能');
+  if (s.type === 'buff' || s.type === 'support') rows.push('首领强化技能');
+  if (s.summonCount) rows.push(`召唤 ${s.summonCount} 个${s.summonTheme ? ` ${s.summonTheme}` : ''}援军`);
+  if (typeof s.hpBelow === 'number') rows.push(`血量低于 ${Math.round(s.hpBelow * 100)}% 后启用`);
+  if (typeof s.hpAbove === 'number') rows.push(`血量高于 ${Math.round(s.hpAbove * 100)}% 时启用`);
+  if (typeof s.cd === 'number') rows.push(`冷却 ${s.cd}秒`);
+  if (cfg?.showCast !== false) rows.push((s.castTime || 0) > 0 ? `读条 ${(s.castTime || 0).toFixed(1)}秒` : '瞬发');
+  if (s.interruptPolicy === 'hard') rows.push('优先打断:可避免高危效果');
+  else if (s.interruptPolicy === 'soft') rows.push('可打断:降低压力或减少余波');
+  else if (s.interruptPolicy === 'none') rows.push('不可打断:用防御/治疗覆盖');
+  if (!rows.length) return '';
+  return `<div class="boss-skill-breakdown">${rows.map(tipAttrText).join(' · ')}</div>`;
 }
 function bossSkillLineHtml(s, opts) {
   const cfg = opts || {};
@@ -599,9 +625,11 @@ function bossSkillLineHtml(s, opts) {
   const tagHtml = tags.length
     ? `<div style="margin-top:2px;color:${tagColor};font-size:10px;line-height:1.45;word-break:break-word">${tags.join(' · ')}</div>`
     : '';
+  const breakdownHtml = bossSkillBreakdownHtml(s, cfg);
   return `<div style="margin:3px 0 6px;padding-bottom:5px;border-bottom:1px dashed rgba(148,163,184,.18)">
     <div style="color:${leadColor};line-height:1.5;word-break:break-word">${title}</div>
     <div style="font-size:10px;color:var(--muted);line-height:1.45;word-break:break-word">${desc}${castText}</div>
+    ${breakdownHtml}
     ${tagHtml}
   </div>`;
 }
@@ -3375,6 +3403,13 @@ function dungeonThemeAffixHtml(dg, compact) {
     <div class="dungeon-mechanic-codex-grid">${chips}</div>
   </div>`;
 }
+function bossChallengeMetaText(challenge) {
+  if (!challenge) return '';
+  if (challenge.key === 'swiftKill' || challenge.seconds) return `${challenge.seconds || 55}秒内击杀`;
+  if (challenge.key === 'healthyFinish' || challenge.hpPct) return `收尾生命≥${Math.round((challenge.hpPct || 0.35) * 100)}%`;
+  if (challenge.target) return `${challenge.target}次`;
+  return '挑战目标';
+}
 function dungeonFirstClearPreviewHtml(dg) {
   if (!dg) return '';
   const cleared = !!(state.dungeonFirstClear && state.dungeonFirstClear[dg.key]);
@@ -3661,10 +3696,10 @@ function buildDungeonInfoHtml(dg) {
     }
     if (challengePreview.length) {
       html += `<div class="dungeon-boss-challenge-preview">
-        ${challengePreview.map(m => inlineTipSpanHtml(m, { fallbackIcon:'achievement_bg_killxenemies_generalsroom', color:'#fde68a' })).join('')}
+        ${challengePreview.map(m => inlineTipSpanHtml({ ...m, meta:bossChallengeMetaText(m) }, { fallbackIcon:'achievement_bg_killxenemies_generalsroom', color:'#fde68a', metaVisible:true })).join('')}
       </div>`;
       html += `<div style="display:flex;flex-direction:column;gap:4px;margin:6px 0 8px 8px">
-        ${challengePreview.map(m => `<div style="font-size:11px;line-height:1.5"><span style="color:#fde68a">${symbolIconHtml(m.icon, 13, m.name, 'achievement_bg_killxenemies_generalsroom')} ${m.name}</span><span class="muted"> - ${m.desc || 'Boss 挑战目标'}</span></div>`).join('')}
+        ${challengePreview.map(m => `<div style="font-size:11px;line-height:1.5"><span style="color:#fde68a">${symbolIconHtml(m.icon, 13, m.name, 'achievement_bg_killxenemies_generalsroom')} ${m.name}</span><span class="muted"> (${bossChallengeMetaText(m)}) - ${m.desc || 'Boss 挑战目标'}</span></div>`).join('')}
       </div>`;
     }
     if (grandPreview.length) {

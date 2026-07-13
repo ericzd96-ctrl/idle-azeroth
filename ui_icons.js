@@ -1214,7 +1214,24 @@
     '圣盾':'spell_holy_blessingofprotection',
     '法力梭镖':'spell_arcane_arcane01',
     '蛊惑':'spell_shadow_possession',
-    '毁灭':'spell_fire_selfdestruct'
+    '毁灭':'spell_fire_selfdestruct',
+    '精准打断':'ability_kick',
+    '弱点猎手':'inv_misc_gem_diamond_02',
+    '控场清理':'ability_warrior_battleshout',
+    '破盾专家':'spell_holy_powerwordshield',
+    '仪式否决':'inv_scroll_03',
+    '速战速决':'inv_misc_pocketwatch_01',
+    '稳健收尾':'spell_holy_heal',
+    '湮灭仪式':'spell_shadow_shadowbolt',
+    '暮光审判':'spell_fire_meteorstorm',
+    '奥术封锁':'spell_arcane_starfire',
+    '鲜血收割':'spell_shadow_lifedrain',
+    '瘟疫绽放':'ability_creature_disease_02',
+    '雷狱锁链':'spell_nature_lightningoverload',
+    '熔炉重铸':'spell_holy_powerwordshield',
+    '凋零判决':'spell_frost_freezingbreath',
+    '邪能灾变':'spell_fire_selfdestruct',
+    '处刑指令':'ability_hunter_focusedaim'
   });
 
   // 英雄技能精确图标覆盖: 优先使用原版 WoW 技能图标名, 避免落入 emoji/关键词兜底。
