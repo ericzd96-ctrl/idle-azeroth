@@ -3361,15 +3361,16 @@ function companionEstimatedBattleStats(entry) {
   const qm = (typeof COMPANION_COMBAT_QUALITY === 'object' && COMPANION_COMBAT_QUALITY[q.key]) || Math.max(0.55, q.mult || 1);
   const sm = 1 + ((typeof COMPANION_STAR_GROWTH === 'number' ? COMPANION_STAR_GROWTH : 0.15) * (stars - 1));
   const role = (typeof COMPANION_ROLE_PROFILE === 'object' && COMPANION_ROLE_PROFILE[tpl.role]) || { atk:0.8, def:0.9, hp:0.58, spd:0.74, reg:0.5, critd:0.85 };
+  const tactic = typeof companionTacticMeta === 'function' ? companionTacticMeta() : { atk:1, def:1, hp:1, spd:1, heal:1 };
   const hero = state.hero || {};
   const stats = {
-    atk: Math.floor((hero.atk || 1) * qm * sm * role.atk * (tpl.atkMul || 1)),
-    def: Math.floor((hero.def || 1) * qm * sm * 0.72 * role.def * (tpl.defMul || 1)),
-    hpMax: Math.floor((hero.hpMax || 1) * qm * sm * role.hp * (tpl.hpMul || 1)),
+    atk: Math.floor((hero.atk || 1) * qm * sm * role.atk * (tpl.atkMul || 1) * (tactic.atk || 1)),
+    def: Math.floor((hero.def || 1) * qm * sm * 0.72 * role.def * (tpl.defMul || 1) * (tactic.def || 1)),
+    hpMax: Math.floor((hero.hpMax || 1) * qm * sm * role.hp * (tpl.hpMul || 1) * (tactic.hp || 1)),
     crit: Math.floor((hero.crit || 0) * qm * 0.40 * (tpl.critMul || 1)),
     critd: Math.floor((hero.critd || 150) * role.critd * (tpl.critdMul || 1)),
-    spd: +(Math.max(0.35, (hero.spd || 1) * role.spd * (tpl.spdMul || 1))).toFixed(2),
-    reg: Math.max(1, Math.floor((hero.reg || 0) * role.reg * (tpl.regMul || 1))),
+    spd: +(Math.max(0.35, (hero.spd || 1) * role.spd * (tpl.spdMul || 1) * (tactic.spd || 1))).toFixed(2),
+    reg: Math.max(1, Math.floor((hero.reg || 0) * role.reg * (tpl.regMul || 1) * (tactic.heal || 1))),
   };
   if (typeof applyCompanionSignatureStats === 'function') applyCompanionSignatureStats(stats, tpl);
   return stats;
@@ -3396,6 +3397,28 @@ function companionBattleScore(entry) {
 }
 function companionScoreRank(score) {
   return score >= 115 ? 'S' : score >= 92 ? 'A' : score >= 72 ? 'B' : score >= 52 ? 'C' : 'D';
+}
+function companionTacticPanelHtml() {
+  if (typeof COMPANION_TACTICS !== 'object') return '';
+  const key = typeof companionTacticKey === 'function' ? companionTacticKey() : (state.companionTactic || 'balanced');
+  const buttons = Object.entries(COMPANION_TACTICS).map(([id, meta]) => {
+    const active = key === id;
+    const parts = [];
+    if (meta.atk && meta.atk !== 1) parts.push(`攻击 ${Math.round((meta.atk - 1) * 100)}%`);
+    if (meta.def && meta.def !== 1) parts.push(`防御 ${Math.round((meta.def - 1) * 100)}%`);
+    if (meta.hp && meta.hp !== 1) parts.push(`生命 ${Math.round((meta.hp - 1) * 100)}%`);
+    if (meta.heal && meta.heal !== 1) parts.push(`治疗 ${Math.round((meta.heal - 1) * 100)}%`);
+    const tip = `<b>${meta.icon} ${tipAttrText(meta.label)}</b><br>${tipAttrText(meta.desc)}${parts.length ? `<br><span class="muted">${tipAttrText(parts.join(' · '))}</span>` : ''}`;
+    return `<button class="comp-tactic-btn comp-tip ${active ? 'active' : ''}" data-action="comptactic" data-value="${id}" data-tip="${companionTipAttr(tip)}">${meta.icon} ${meta.label}</button>`;
+  }).join('');
+  const activeMeta = typeof companionTacticMeta === 'function' ? companionTacticMeta(key) : COMPANION_TACTICS[key];
+  return `<div class="comp-tactic-panel">
+    <div class="comp-tactic-head">
+      <div><b>⚔️ 战术指令</b><span>当前: ${activeMeta.icon} ${activeMeta.label}</span></div>
+      <span>${tipAttrText(activeMeta.desc)}</span>
+    </div>
+    <div class="comp-tactic-list">${buttons}</div>
+  </div>`;
 }
 function companionPowerPanelHtml(entries) {
   const owned = entries.filter(entry => entry.isOwned);
@@ -3969,10 +3992,11 @@ function companionPanelRenderSig(){
   const bonds = (typeof activeCompanionBonds==='function' ? activeCompanionBonds() : []).map(b=>b.name).join('|');
   const filters = `${Object.values(companionFilters).join('|')}#${companionDetailKey || ''}`;
   const wishlist = companionWishlistKeys().join('|');
+  const tactic = typeof companionTacticKey === 'function' ? companionTacticKey() : (state.companionTactic || 'balanced');
   const missions = state.companionMissions?.active
     ? state.companionMissions.active.map(m => `${m.id}:${m.endAt}:${m.compKey}`).join('|') + `#${state.companionMissions.totalCompleted || 0}#${Math.floor(Date.now()/30000)}`
     : '';
-  return [state.cls||'', state.hero?.lvl||0, state.compTickets||0, active, compList, shards, bonds, filters, wishlist, missions].join('||');
+  return [state.cls||'', state.hero?.lvl||0, state.compTickets||0, active, compList, shards, bonds, filters, wishlist, tactic, missions].join('||');
 }
 function renderCompanion() {
   $('gem-cost').textContent = '(消耗1🐾随从券 · 技能含定位招牌技+专属技，品质/星级决定强度)';
@@ -4008,6 +4032,7 @@ function renderCompanion() {
   html += companionWishlistPanelHtml(entries);
   html += companionGlossaryPanelHtml();
   html += companionDetailPanelHtml(entries);
+  html += companionTacticPanelHtml();
   html += companionPowerPanelHtml(entries);
   html += companionBondRoadmapHtml(entries);
   html += companionAdvisorPanelHtml(entries);

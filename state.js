@@ -45,6 +45,7 @@ const defaultState = () => ({
   companions: [],          // [{key,quality,stars,shards}]
   companionWishlist: [],   // 账号共享:随从收藏目标 key[]
   activeCompanion: -1,     // 当前出战随从索引, -1=无
+  companionTactic: 'balanced', // 当前角色:出战随从战术指令
   companionShards: {},     // {key: count} 碎片
   compUniversalShards: {white:0,green:0,blue:0,purple:0,orange:0}, // 品质通用碎片
   companionMissions: { active:[], totalCompleted:0, history:[] }, // 随从派遣任务

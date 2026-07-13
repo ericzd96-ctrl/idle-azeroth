@@ -4693,6 +4693,9 @@ function companionHealTarget(){
   const st = computeCompanionStats();
   const heroFrac = state.hp / Math.max(1, state.hero.hpMax || 1);
   const compFrac = (!st || compDowned()) ? 1 : ((state._compHp || 0) / Math.max(1, st.hpMax || 1));
+  const tactic = companionTacticKey();
+  if(tactic === 'guard' && st && !compDowned() && compFrac < 0.95) return 'companion';
+  if(tactic === 'support' && heroFrac < 0.92) return 'hero';
   if(st && !compDowned() && compFrac <= heroFrac && compFrac < 0.88) return 'companion';
   return 'hero';
 }
@@ -4764,6 +4767,7 @@ function companionSkillDamageMult(sk, mon, now){
   if(sk.bonusVsState && monsterStateActive(mon, sk.bonusVsState)) mult *= 1 + (sk.bonusStatePct || 0.3);
   if(sk.executeBonus && mon.hp > 0 && mon.hp <= mon.hpMax * (sk.executeThreshold || 0.35)) mult *= 1 + sk.executeBonus;
   if(sk.buffAmp && sk.buffAmp.key && companionBuffActive(sk.buffAmp.key, now)) mult *= 1 + (sk.buffAmp.pct || 0);
+  mult *= companionTacticDmgMult();
   return mult;
 }
 function applyCompanionSplash(mon, dmg, pct, icon, color){
@@ -4801,8 +4805,11 @@ function applyCompanionBuffAura(sk, now){
 }
 function applyCompanionSupportSkill(sk, st, now){
   const targetMode = companionSkillTarget(sk);
+  const healMult = companionTacticHealMult();
+  const shieldMult = companionTacticShieldMult();
   const applyHealPct = pct => {
     if(!(pct > 0)) return;
+    pct *= healMult;
     if(targetMode === 'companion') healCompanionAmount(Math.floor(st.hpMax * pct), st.emoji, '#6ee7b7', 'comp', sk.name || '支援治疗');
     else if(targetMode === 'hero') {
       const amt = Math.floor(state.hero.hpMax * pct);
@@ -4822,6 +4829,7 @@ function applyCompanionSupportSkill(sk, st, now){
   };
   const applyShieldPct = pct => {
     if(!(pct > 0)) return;
+    pct *= shieldMult;
     if(targetMode === 'companion') addCompanionBarrier(Math.floor(st.hpMax * pct), sk.icon || '🛡️', '#93c5fd');
     else if(targetMode === 'hero') addTalentShield(Math.floor(state.hero.hpMax * pct), true);
     else if(targetMode === 'both') {
@@ -6643,9 +6651,32 @@ const COMPANION_ROLE_PROFILE = {
   dps:  { atk:0.90, def:0.80, hp:0.52, spd:0.75, reg:0.42, critd:0.92 },
   heal: { atk:0.65, def:0.90, hp:0.58, spd:0.74, reg:0.58, critd:0.82 },
 };
+const COMPANION_TACTICS = {
+  balanced: { label:'均衡', icon:'⚖️', desc:'保持当前战斗节奏，不改变随从强度。', atk:1, def:1, hp:1, spd:1, heal:1, shield:1, dmg:1, aggro:0 },
+  assault: { label:'猛攻', icon:'⚔️', desc:'随从更主动打伤害，技能伤害和攻速提高，但更脆且治疗效率下降。', atk:1.14, def:0.92, hp:0.90, spd:1.08, heal:0.90, shield:0.92, dmg:1.08, aggro:-0.04 },
+  guard: { label:'守护', icon:'🛡️', desc:'随从更愿意挡刀和放防护技能，生命防御提高，但输出降低。', atk:0.88, def:1.18, hp:1.16, spd:0.96, heal:1.06, shield:1.16, dmg:0.90, aggro:0.18 },
+  support: { label:'支援', icon:'💚', desc:'随从优先治疗、护盾和净化，支援效果提高，但直接输出下降。', atk:0.90, def:0.96, hp:0.94, spd:1.02, heal:1.18, shield:1.18, dmg:0.92, aggro:-0.06 },
+};
 const COMPANION_STAR_GROWTH = 0.15;   // 每星成长
 const COMPANION_SKILL_DMG_BONUS = 1.43;  // 随从技能伤害全局加成
 const COMPANION_HEAL_SCALE = 1.25;        // 随从治疗统一收口
+function companionTacticKey(){
+  const key = state?.companionTactic || 'balanced';
+  return COMPANION_TACTICS[key] ? key : 'balanced';
+}
+function companionTacticMeta(key){ return COMPANION_TACTICS[key || companionTacticKey()] || COMPANION_TACTICS.balanced; }
+function companionSetTactic(key){
+  if(!COMPANION_TACTICS[key]) return;
+  state.companionTactic = key;
+  initCompanionHp();
+  markDirty('companion');
+  if(typeof saveState === 'function') saveState();
+  if(typeof renderCompanion === 'function') renderCompanion();
+  log(`${COMPANION_TACTICS[key].icon} 随从战术切换为「${COMPANION_TACTICS[key].label}」`,'good');
+}
+function companionTacticHealMult(){ return companionTacticMeta().heal || 1; }
+function companionTacticShieldMult(){ return companionTacticMeta().shield || 1; }
+function companionTacticDmgMult(){ return companionTacticMeta().dmg || 1; }
 function companionSkillCdLeft(i){ return Math.max(0, ((compSkillCd&&compSkillCd[i])||0) - Date.now()); }   // 供 UI 显示剩余CD(毫秒)
 function companionEffectiveSkillCdMs(sk){
   const base = Math.max(0.5, (sk?.cd || COMP_SKILL_DEFAULT_CD)) * 1000;
@@ -6724,7 +6755,8 @@ function computeCompanionStats(){const comp=getActiveCompanion();if(!comp)return
   const skills=(tpl.skills||[]).slice();
   const sigSkill = companionSignatureSkill(tpl);
   if(sigSkill) skills.push(sigSkill);
-  const stats={name:tpl.name,emoji:tpl.emoji,role:tpl.role,skills,signature:companionSignature(tpl),atk:Math.floor(state.hero.atk*qm*sm*role.atk*(tpl.atkMul||1)),def:Math.floor(state.hero.def*qm*sm*0.72*role.def*(tpl.defMul||1)),hpMax:Math.floor(state.hero.hpMax*qm*sm*role.hp*(tpl.hpMul||1)),crit:Math.floor(state.hero.crit*qm*0.40*(tpl.critMul||1)),critd:Math.floor(state.hero.critd*role.critd*(tpl.critdMul||1)),spd:state.hero.spd*role.spd*(tpl.spdMul||1),reg:Math.max(1, Math.floor((state.hero.reg||0)*role.reg*(tpl.regMul||1)))};
+  const tactic = companionTacticMeta();
+  const stats={name:tpl.name,emoji:tpl.emoji,role:tpl.role,skills,signature:companionSignature(tpl),atk:Math.floor(state.hero.atk*qm*sm*role.atk*(tpl.atkMul||1)*(tactic.atk||1)),def:Math.floor(state.hero.def*qm*sm*0.72*role.def*(tpl.defMul||1)*(tactic.def||1)),hpMax:Math.floor(state.hero.hpMax*qm*sm*role.hp*(tpl.hpMul||1)*(tactic.hp||1)),crit:Math.floor(state.hero.crit*qm*0.40*(tpl.critMul||1)),critd:Math.floor(state.hero.critd*role.critd*(tpl.critdMul||1)),spd:state.hero.spd*role.spd*(tpl.spdMul||1)*(tactic.spd||1),reg:Math.max(1, Math.floor((state.hero.reg||0)*role.reg*(tpl.regMul||1)*(tactic.heal||1)))};
   applyCompanionSignatureStats(stats, tpl);
   applyCompanionBuffEffects(stats);
   const dm = companionDebuffStatMults();
@@ -6944,6 +6976,8 @@ function companionSkillPriority(sk, st, mon, now){
     if(st.role === 'dps') score += 8;
     if(st.role === 'tank') score += 12;
     if(sk.healPct || sk.shieldPct || sk.buff) score += 20;
+    if(companionTacticKey() === 'assault') score += 12;
+    if(companionTacticKey() === 'support' && (sk.healPct || sk.shieldPct || sk.buff)) score += 18;
     return score;
   }
   if(sk.type === 'heal'){
@@ -6951,6 +6985,9 @@ function companionSkillPriority(sk, st, mon, now){
     score = 180 + (1 - targetFrac) * 200 + ((sk.heal || 0) + (sk.healPct || 0)) * 120 + (sk.cleanse ? 26 : 0) + (sk.shieldPct ? 18 : 0);
     if(targetFrac > 0.92) score -= 90;
     if(st.role === 'heal') score += 25;
+    if(companionTacticKey() === 'support') score += 42;
+    if(companionTacticKey() === 'guard' && targetMode !== 'hero') score += 20;
+    if(companionTacticKey() === 'assault' && targetFrac > 0.55) score -= 36;
     return score;
   }
   if(sk.type === 'buff'){
@@ -6963,6 +7000,9 @@ function companionSkillPriority(sk, st, mon, now){
     if(st.role === 'heal' && targetHero && heroFrac < 0.8) score += 25;
     if(st.role === 'dps' && !targetHero && mon?.isBoss) score += 18;
     if(targetMode === 'both') score += 14;
+    if(companionTacticKey() === 'support') score += 34;
+    if(companionTacticKey() === 'guard' && !targetHero) score += 24;
+    if(companionTacticKey() === 'assault' && !(sk.buff && (sk.buff === 'battleShout' || sk.buff === 'bestial' || sk.buff === 'shadowstep'))) score -= 20;
     return score;
   }
   score = (sk.mul || 1) * 18 + (sk.alwaysCrit ? 18 : 0);
@@ -6980,10 +7020,13 @@ function companionSkillPriority(sk, st, mon, now){
   if(sk.splashPct || sk.aoePct) score += state.currentMonsters.filter(x=>x.hp>0).length >= 3 ? 18 : -6;
   if(mon?.isBoss) score += 10;
   if(mon && mon.hp > 0 && mon.hp <= mon.hpMax * (sk.executeThreshold || 0.35)) score += (sk.executeBonus ? 22 : (sk.alwaysCrit ? 12 : 6));
+  if(companionTacticKey() === 'assault') score += 36;
+  if(companionTacticKey() === 'guard' && (sk.stun || sk.slow || sk.debuff === 'sunder' || /破甲/.test(sk.name || ''))) score += 12;
+  if(companionTacticKey() === 'support') score -= 18;
   return score;
 }
 /* 按定位的吸引仇恨概率:坦克多、治疗少、输出居中 */
-function compAggroChance(){const comp=getActiveCompanion();if(!comp)return 0;const tpl=COMPANIONS.find(c=>c.key===comp.key);const role=tpl&&tpl.role;const base=role==='tank'?0.88:role==='heal'?0.15:0.20;return Math.max(0.05,Math.min(0.95,base+(tpl?.aggroBonus||0))); }
+function compAggroChance(){const comp=getActiveCompanion();if(!comp)return 0;const tpl=COMPANIONS.find(c=>c.key===comp.key);const role=tpl&&tpl.role;const base=role==='tank'?0.88:role==='heal'?0.15:0.20;return Math.max(0.05,Math.min(0.95,base+(tpl?.aggroBonus||0)+(companionTacticMeta().aggro||0))); }
 /* 随从倒下:清血、进入10秒复活计时(2026-06-27:15→10,缩短无奶职业的暴露窗口) */
 function downCompanion(now){
   state._compHp=0;state._compDownUntil=now+10000;
@@ -7028,10 +7071,10 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
           if(sk.heal){
             const healTarget = companionSkillTarget(sk) === 'hero' ? 'hero' : companionSkillTarget(sk) === 'companion' ? 'companion' : companionHealTarget();
             if(healTarget==='companion'){
-              const healAmt=Math.floor(st.hpMax*sk.heal*COMPANION_HEAL_SCALE);
+              const healAmt=Math.floor(st.hpMax*sk.heal*COMPANION_HEAL_SCALE*companionTacticHealMult());
               healCompanionAmount(healAmt,st.emoji,'#6ee7b7','comp',sk.name);
             } else {
-              const healAmt=Math.floor(state.hero.hpMax*sk.heal*COMPANION_HEAL_SCALE);
+              const healAmt=Math.floor(state.hero.hpMax*sk.heal*COMPANION_HEAL_SCALE*companionTacticHealMult());
               healHeroAmount(healAmt, st.emoji, '#6ee7b7', 'comp', sk.name);
             }
           }
@@ -7040,11 +7083,11 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
         else if(sk.type==='heal'){
           const healTarget = companionSkillTarget(sk) === 'hero' ? 'hero' : companionSkillTarget(sk) === 'companion' ? 'companion' : companionHealTarget();
           if(healTarget==='companion'){
-            const h=Math.floor(st.hpMax*sk.heal*COMPANION_HEAL_SCALE);
+            const h=Math.floor(st.hpMax*sk.heal*COMPANION_HEAL_SCALE*companionTacticHealMult());
             const hr=healCompanionAmount(h, st.emoji, '#6ee7b7', 'comp', sk.name); log(sk.name+'! 为随从恢复 '+hr.applied+' 生命','good');
           }
           else {
-            const h=Math.floor(state.hero.hpMax*sk.heal*COMPANION_HEAL_SCALE);
+            const h=Math.floor(state.hero.hpMax*sk.heal*COMPANION_HEAL_SCALE*companionTacticHealMult());
             const hr=healHeroAmount(h, st.emoji, '#6ee7b7', 'comp', sk.name);log(sk.name+'! +'+hr.applied+' 生命','good');
           }
           applyCompanionSupportSkill(sk, st, now);

@@ -639,6 +639,7 @@ function setupDelegation() {
     if(act==='compclosedetail'){ companionCloseDetail(); return; }
     if(act==='compwish'){ companionToggleWishlist(btn.dataset.key); return; }
     if(act==='compclearwish'){ companionClearWishlist(); return; }
+    if(act==='comptactic'){ companionSetTactic(btn.dataset.value); return; }
     if(act==='compresetfilter'){ companionResetFilters(); return; }
     if(act==='clearcompsearch'){ companionClearSearch(); return; }
     if(act==='trackcompbond'){ companionTrackBond(btn.dataset.bond); return; }
