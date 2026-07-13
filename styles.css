@@ -359,6 +359,53 @@ h1 {
 }
 .comp-skill .cs-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 64px; }
 .comp-skill:hover { border-color: var(--accent); color: var(--text); }
+.comp-upgrade-preview {
+  margin: 6px 0;
+  padding: 7px;
+  border: 1px solid rgba(148, 163, 184, .16);
+  border-radius: 7px;
+  background: rgba(15, 23, 42, .34);
+}
+.comp-upgrade-preview.ready {
+  border-color: rgba(250, 204, 21, .42);
+  background: rgba(120, 53, 15, .18);
+}
+.comp-upgrade-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #fde68a;
+  font-size: 10px;
+}
+.comp-upgrade-head span {
+  flex: 0 0 auto;
+  color: #cbd5e1;
+}
+.comp-upgrade-bar {
+  height: 5px;
+  margin: 5px 0;
+  border: 1px solid rgba(148, 163, 184, .16);
+  border-radius: 999px;
+  background: rgba(2, 6, 23, .56);
+  overflow: hidden;
+}
+.comp-upgrade-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(250, 204, 21, .92), rgba(96, 165, 250, .92));
+}
+.comp-upgrade-note,
+.comp-upgrade-meta {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+.comp-upgrade-meta {
+  margin-top: 3px;
+}
 .comp-filter-panel {
   margin: 10px 0;
   padding: 10px;

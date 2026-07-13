@@ -3051,6 +3051,38 @@ function companionAdvisorReason(entry, wantedRole) {
   if (traits.control) bits.push('控制');
   return bits.slice(0, 4).join(' · ');
 }
+function companionUpgradePreviewHtml(tpl, comp, options) {
+  if (!tpl || !comp) return '';
+  const cfg = options || {};
+  const stars = Math.max(1, comp.stars || 1);
+  const cost = getUpgradeCost(comp);
+  const q = compQuality(tpl);
+  const canUp = !cost.maxed && cost.have >= cost.need;
+  const pct = cost.maxed ? 100 : Math.max(6, Math.min(100, Math.round((cost.have / Math.max(1, cost.need)) * 100)));
+  const starGrowth = typeof COMPANION_STAR_GROWTH === 'number' ? Math.round(COMPANION_STAR_GROWTH * 100) : 15;
+  const ownBonusPreview = Object.entries(tpl.bonus || {}).slice(0, 3).map(([k, v]) => {
+    const cur = +(v * (1 + 0.2 * (stars - 1))).toFixed(1);
+    const next = +(v * (1 + 0.2 * stars)).toFixed(1);
+    const label = typeof fmtStatName === 'function' ? fmtStatName(k) : k;
+    return `${label} ${cur}→${next}`;
+  }).join(' · ');
+  const traits = companionTraitFlags(tpl);
+  const capstone = stars === 4
+    ? (traits.summon ? '5星:召唤技能槽+1' : '5星:派遣碎片更容易+1')
+    : '';
+  const note = cost.maxed
+    ? '已满星:出战与派遣均按最高星级计算'
+    : `下一星:参战属性约+${starGrowth}%${ownBonusPreview ? ` · 专属 ${ownBonusPreview}` : ''}${capstone ? ` · ${capstone}` : ''}`;
+  return `<div class="comp-upgrade-preview ${canUp ? 'ready' : ''}">
+    <div class="comp-upgrade-head">
+      <b>${cost.maxed ? '⭐ 培养完成' : `⭐ 培养预览 ${stars}→${stars + 1}`}</b>
+      <span>${cost.maxed ? 'MAX' : `${cost.have}/${cost.need}`}</span>
+    </div>
+    <div class="comp-upgrade-bar"><i style="width:${pct}%"></i></div>
+    <div class="comp-upgrade-note">${tipAttrText(note)}</div>
+    ${cfg.compact ? '' : `<div class="comp-upgrade-meta"><span class="${q.cls}">${q.name}</span> · ${roleTag(tpl.role)} · ${canUp ? '可以升星' : '继续收集碎片'}</div>`}
+  </div>`;
+}
 function companionAdvisorPanelHtml(entries) {
   const owned = entries.filter(e => e.isOwned);
   if (!owned.length) {
@@ -3088,7 +3120,7 @@ function companionAdvisorPanelHtml(entries) {
     return `<div class="comp-advisor-upgrade">
       <div>${compIconHtml} <b>${tipAttrText(x.entry.tpl.name)}</b> <span class="${x.q.cls}">${x.q.name}</span></div>
       <div class="comp-advisor-progress"><i style="width:${pct}%"></i></div>
-      <div class="muted">${x.cost.have}/${x.cost.need} 碎片 · ${x.entry.owned.stars || 1}→${(x.entry.owned.stars || 1) + 1}星</div>
+      <div class="muted">${x.cost.have}/${x.cost.need} 碎片 · ${x.entry.owned.stars || 1}→${(x.entry.owned.stars || 1) + 1}星 · ${companionAdvisorReason(x.entry, x.entry.tpl.role)}</div>
     </div>`;
   }).join('');
   const ownedMap = new Map(owned.map(e => [e.tpl.key, e]));
@@ -3275,6 +3307,7 @@ function renderCompanion() {
       <div class="muted" style="font-size:10px;color:#6ee7b7">专属加成: ${ownTxt||'无'}</div>
       <div class="muted" style="font-size:10px;color:#93c5fd">定位加成: ${roleTxt||'无'}</div>
       ${tpl?.signature?`<div class="muted" style="font-size:10px;color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')} ${tpl.signature.name}${tpl.signature.mode==='passive'?' [被动]':''}</div>`:''}
+      ${companionUpgradePreviewHtml(tpl, act, { compact:true })}
       <div class="comp-skills">${compSkillChips(tpl)}</div>
       <button class="danger" data-action="unequipcomp" style="margin-top:4px">休息</button>
     </div>`;
@@ -3299,6 +3332,7 @@ function renderCompanion() {
       <div class="muted" style="font-size:10px">${'⭐'.repeat(c.stars||1)} · ${roleTag(tpl.role)} · ${tpl.desc}</div>
       ${companionMetaBadges(tpl)}
       ${tpl.signature?`<div class="muted" style="font-size:10px;color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')} ${tpl.signature.name}${tpl.signature.mode==='passive'?' [被动]':''}</div>`:''}
+      ${companionUpgradePreviewHtml(tpl, c)}
       <div class="comp-skills">${compSkillChips(tpl)}</div>
       <div class="row">
         <span class="muted" style="font-size:10px">可用碎片 ${cost.have}${cost.maxed?'':' / 升星需'+cost.need}${(state.compUniversalShards[q.key]||0)>0?' (含通用×'+state.compUniversalShards[q.key]+')':''}</span>
