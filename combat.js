@@ -181,6 +181,15 @@ function monsterStateActive(mon, stateKey){
   if(mon._skillStates && mon._skillStates[stateKey] > now) return true;
   return false;
 }
+function monsterStateCount(mon, now){
+  if(!mon) return 0;
+  const ts = now || Date.now();
+  let count = 0;
+  if(mon.slowUntil > ts) count++;
+  if(mon.sunderUntil > ts) count++;
+  if(mon._skillStates) for(const until of Object.values(mon._skillStates)) if(until > ts) count++;
+  return count;
+}
 function ensureMonsterDots(mon, now){
   if(!mon) return {};
   now = now || Date.now();
@@ -1883,9 +1892,13 @@ function activeCompanionIsTank(){
   return !!(tpl&&tpl.role==='tank');
 }
 function pickMonsterAttackTarget(now){
-  // 坦克随从在场且存活时,90% 的火力被它吸走(纯坦克高可靠吸仇恨)
+  // 坦克随从在场且存活时,会主动护卫并高可靠吸仇恨
   const tankPresent = companionTargetable() && activeCompanionIsTank();
-  if(tankPresent && Math.random()<0.90) return { kind:'companion' };
+  const guardActive = tankPresent && ((state._compGuardUntil || 0) > now || companionTacticKey() === 'guard');
+  if(tankPresent && (guardActive ? Math.random()<0.96 : Math.random()<0.88)){
+    state._compGuardUntil = Math.max(state._compGuardUntil || 0, now + (guardActive ? 3200 : 1800));
+    return { kind:'companion', guard:guardActive };
+  }
   const choices = [{ kind:'hero', weight:1.05 }];
   // 坦克随从已由上面的 90% 短路处理,剩余 10% 只在 英雄/召唤物 间分配;非坦克随从仍按仇恨权重参与
   if(companionTargetable() && !tankPresent) choices.push({ kind:'companion', weight:Math.max(0.18, compAggroChance() * 1.7) });
@@ -5130,7 +5143,8 @@ function tickBattle(now){
     if (!dodged) actualDmg = absorbMonsterBarrier(mon, actualDmg, d.crit ? '💥' : '⚔️').remaining;
     {const dr=monsterDamageReduction(mon, now);if(dr&&actualDmg>0)actualDmg=Math.max(1,Math.floor(actualDmg*(1-dr)));}   // 怪物减伤
     mon.hp-=actualDmg;trackDmg('hero',actualDmg,d.crit&&!dodged,'⚔️普攻');
-    if(!dodged&&state.hero.extraAtk>0&&Math.random()*100<state.hero.extraAtk){const d2=calcDmg(ap,heroTargetDef(mon),state.hero.crit,state.hero.critd,false,mon.lvl,state.hero.lvl);let dd2=absorbMonsterBarrier(mon, d2.dmg, '🎯').remaining;const dr=monsterDamageReduction(mon, now);if(dr&&dd2>0)dd2=Math.max(1,Math.floor(dd2*(1-dr)));mon.hp-=dd2;trackDmg('hero',dd2,d2.crit);showMonsterFloat(mon,'🎯+'+dd2,'#fbbf24',{variant:d2.crit?'crit':'hit',scale:d2.crit?1.18:1.02});}
+    if(!dodged && actualDmg > 0) companionCoordinateTrigger(mon, actualDmg, { now, crit:d.crit, skill:false });
+    if(!dodged&&state.hero.extraAtk>0&&Math.random()*100<state.hero.extraAtk){const d2=calcDmg(ap,heroTargetDef(mon),state.hero.crit,state.hero.critd,false,mon.lvl,state.hero.lvl);let dd2=absorbMonsterBarrier(mon, d2.dmg, '🎯').remaining;const dr=monsterDamageReduction(mon, now);if(dr&&dd2>0)dd2=Math.max(1,Math.floor(dd2*(1-dr)));mon.hp-=dd2;trackDmg('hero',dd2,d2.crit);companionCoordinateTrigger(mon, dd2, { now, crit:d2.crit, skill:false });showMonsterFloat(mon,'🎯+'+dd2,'#fbbf24',{variant:d2.crit?'crit':'hit',scale:d2.crit?1.18:1.02});}
     showMonsterFloat(mon,dodged?'闪避':('-'+actualDmg),dodged?'#9ca3af':(d.crit?'#fbbf24':'#fff'),{variant:dodged?'avoid':(d.crit?'crit':'hit'),scale:d.crit?1.22:1});
     pulseMonsterEl(mon, d.crit ? 'crit' : 'hit', d.crit ? 280 : 220);
     if(!dodged&&d.crit&&masteryFor('bleedOnCrit')>0){const bleed=Math.floor(actualDmg*masteryFor('bleedOnCrit')*MASTERY_TYPE.bleedOnCrit.per/100);if(bleed>0){applyMonsterDot(mon,'mastery:bleed',bleed,5000,{icon:'🩸',name:'流血',source:'mastery'});showMonsterFloat(mon,'🩸流血','#dc2626');}}   // 精通:暴击流血
@@ -5227,6 +5241,9 @@ function tickBattle(now){
     m.threat=(m.threat||0)+matk*0.6;
     // —— 仇恨分配:英雄 / 随从 / 我方召唤物 共同分担敌方火力——
     const target = pickMonsterAttackTarget(now);
+    m._lastTargetKind = target.kind;
+    m._lastTargetName = target.kind==='companion' ? '随从' : (target.kind==='summon' ? (target.unit?.baseName || target.unit?.name || '召唤物') : '主角');
+    m._lastTargetAt = now;
     if(target.kind==='companion'){
       const cst=computeCompanionStats();
       const cd=calcDmg(matk,cst?cst.def:0,critRate,(m.critMult?m.critMult*100:150),false,state.hero.lvl,m.lvl);
@@ -6511,6 +6528,7 @@ function castSkill(skillKey,manual){
         {const dr=monsterDamageReduction(target, now);if(dr)dd=Math.max(1,Math.floor(dd*(1-dr)));}
         dd=absorbMonsterBarrier(target,dd,sk.icon||'✨').remaining;   // 技能也被敌方护盾吸收(不再穿盾)
         target.hp-=dd;dmgDone+=dd;trackDmg('hero',dd,d.crit,sk.name);showMonsterFloat(target,(sk.icon||'✨')+'-'+dd,d.crit?'#fbbf24':'#a335ee',{variant:d.crit?'crit':'hit',scale:d.crit?1.14:1,important:true});
+        companionCoordinateTrigger(target, dd, { now, crit:d.crit, skill:true, state:!!(sk.stateKey || sk.debuff), control:!!(sk.slow || sk.debuff === 'sunder') });
         if(d.crit||forceCrit)processTalentOnCrit(target,dd,{skillKey});
         if(sk.lifeSteal){const heal=Math.floor(dd*sk.lifeSteal);healHeroAmount(heal,'🩸','#6ee7b7');}
         if(sk.slow)target.slowUntil=Date.now()+4000;
@@ -6532,6 +6550,7 @@ function castSkill(skillKey,manual){
       {const dr=monsterDamageReduction(mon, now);if(dr)dd=Math.max(1,Math.floor(dd*(1-dr)));}
       dd=absorbMonsterBarrier(mon,dd,sk.icon||'✨').remaining;   // 技能也被敌方护盾吸收(不再穿盾)
       mon.hp-=dd;dmgDone=dd;trackDmg('hero',dd,d.crit,sk.name);
+      companionCoordinateTrigger(mon, dd, { now, crit:d.crit || forceCrit, skill:true, state:!!(sk.stateKey || sk.debuff), control:!!(sk.slow || sk.debuff === 'sunder') });
       showMonsterFloat(mon,(sk.icon||'✨')+'-'+dd,(d.crit||forceCrit)?'#fbbf24':'#a335ee',{variant:(d.crit||forceCrit)?'crit':'hit',scale:(d.crit||forceCrit)?1.16:1,important:true});
       log(sk.name+'! '+dd+' 伤害'+(forceCrit?' (必暴)':''),'good');
       if(d.crit||forceCrit)processTalentOnCrit(mon,dd,{skillKey});
@@ -6648,6 +6667,8 @@ let compSkillCd={};   // 随从每个技能的独立冷却就绪时间戳(键=�
 const COMP_SKILL_DEFAULT_CD=8;   // 随从技能默认CD(秒,技能未写 cd 时)
 const COMPANION_SKILL_CD_MULT=0.75;   // 随从技能冷却缩短:实际CD=配置CD×75%
 const COMPANION_SKILL_GCD_MS=900;     // 随从技能公共间隔,避免同一帧把所有技能打空
+const COMPANION_COORDINATE_CD_MS = 9000;  // 主角命中后随从协同追击
+const COMPANION_GUARD_CD_MS = 14000;      // 坦克随从主动护卫
 const COMPANION_COMBAT_QUALITY = { white:0.74, green:0.96, blue:1.18, purple:1.37, orange:1.51 };
 const COMPANION_ROLE_PROFILE = {
   tank: { atk:0.65, def:1.30, hp:0.68, spd:0.72, reg:0.60, critd:0.78 },
@@ -6847,15 +6868,29 @@ function companionResonanceChallengeMult(){
   const rank = companionResonanceInfo(tpl).rank || 0;
   return rank > 0 ? { rank, hp:1 + rank * 0.015, atk:1 + rank * 0.012 } : { rank:0, hp:1, atk:1 };
 }
+function companionCombatPressureMult(){
+  const comp = getActiveCompanion();
+  const tpl = comp && COMPANIONS.find(c=>c.key===comp.key);
+  if(!tpl) return { rank:0, hp:1, atk:1, name:'' };
+  const rank = companionResonanceInfo(tpl).rank || 0;
+  const special = companionCombatSpecialDesc(tpl.key) ? 1 : 0;
+  return {
+    rank,
+    hp:1.012 + rank * 0.015 + special * 0.006,
+    atk:1.010 + rank * 0.012 + special * 0.005,
+    name:rank > 0 ? '羁绊警觉' : '战友压迫'
+  };
+}
 function applyCompanionChallengeScaling(mon){
-  if(!mon || mon._companionChallengeRank) return;
-  const ch = companionResonanceChallengeMult();
-  if(!ch.rank) return;
+  if(!mon || mon._companionChallengeApplied) return;
+  const ch = companionCombatPressureMult();
+  if(ch.hp === 1 && ch.atk === 1) return;
   mon.hpMax = Math.max(1, Math.floor(mon.hpMax * ch.hp));
   mon.hp = Math.max(1, Math.floor((mon.hp || mon.hpMax) * ch.hp));
   mon.atk = Math.max(1, Math.floor(mon.atk * ch.atk));
+  mon._companionChallengeApplied = true;
   mon._companionChallengeRank = ch.rank;
-  mon._companionChallengeName = '羁绊警觉';
+  mon._companionChallengeName = ch.name;
 }
 function applyCompanionChallengeScalingToCurrent(){
   if(!Array.isArray(state.currentMonsters)) return;
@@ -7040,6 +7075,67 @@ function companionSkillTarget(sk){
   if(sk?.buffTarget) return sk.buffTarget;
   return 'smart';
 }
+function companionIntentState(st, tpl, mon, now){
+  if(!st || !tpl) return { key:'idle', label:'待命', icon:'…', desc:'暂无出战随从' };
+  const heroFrac = state.hp / Math.max(1, state.hero.hpMax || 1);
+  const compFrac = (state._compHp || 0) / Math.max(1, st.hpMax || 1);
+  if(compDowned()) return { key:'down', label:'倒下', icon:'💫', desc:'等待复活后继续参战' };
+  if(tpl.role === 'heal' && (heroFrac < 0.62 || compFrac < 0.55)) return { key:'rescue', label:'救场', icon:'💚', desc:'优先治疗、护盾或净化' };
+  if(tpl.role === 'tank' && (heroFrac < 0.70 || compFrac < 0.72 || companionTacticKey() === 'guard')) return { key:'guard', label:'护卫', icon:'🛡️', desc:'提高吸仇恨并准备替主角承伤' };
+  if(mon && mon.hp > 0 && mon.hp <= mon.hpMax * 0.35) return { key:'execute', label:'终结', icon:'⚔️', desc:'优先斩杀与爆发技能' };
+  if(mon && ((mon.slowUntil||0)>now || (mon.sunderUntil||0)>now || getMonsterDotCount(mon, now)>0 || monsterStateCount(mon, now)>0)) return { key:'exploit', label:'追击', icon:'🎯', desc:'利用减速、破甲、持续伤害或标记追击' };
+  const ready = (st.skills || []).filter((sk, i) => (compSkillCd[i] || 0) <= now).sort((a,b)=>companionSkillPriority(b,st,mon,now)-companionSkillPriority(a,st,mon,now))[0];
+  if(ready) return { key:'ready', label:ready.name || '技能', icon:ready.icon || '✨', desc:companionSkillTarget(ready)==='hero'?'准备支援主角':'准备释放随从技能' };
+  return { key:'attack', label:'压制', icon:tpl.emoji || '🐾', desc:'普攻压制当前目标' };
+}
+function companionIntentUiState(now){
+  const comp = getActiveCompanion();
+  const tpl = comp && COMPANIONS.find(c=>c.key===comp.key);
+  const st = computeCompanionStats();
+  const mon = state.currentMonsters && state.currentMonsters[0];
+  const intent = companionIntentState(st, tpl, mon, now || Date.now());
+  return Object.assign({}, intent, { target:mon?.name || '', tactic:companionTacticMeta().label || '均衡' });
+}
+function companionCoordinateLeftMs(now){ return Math.max(0, (state._compCoordinateUntil || 0) - (now || Date.now())); }
+function companionCoordinateUiState(now){
+  const left = companionCoordinateLeftMs(now || Date.now());
+  return { icon:'🤝', name:'协同追击', leftMs:left, ready:left<=0, cdMs:COMPANION_COORDINATE_CD_MS, desc:'主角造成关键命中、暴击、控制或标记时，随从按定位追加一次追击、护盾或治疗。' };
+}
+function companionCoordinateTrigger(mon, dmgDone, opts){
+  const now = opts?.now || Date.now();
+  if(!mon || mon.hp <= 0 || !(dmgDone > 0) || companionCoordinateLeftMs(now) > 0 || !companionTargetable()) return false;
+  const comp = getActiveCompanion(); const tpl = comp && COMPANIONS.find(c=>c.key===comp.key); const st = computeCompanionStats();
+  if(!tpl || !st) return false;
+  const meaningful = !!(opts?.crit || opts?.skill || opts?.state || opts?.control || mon.hp <= mon.hpMax * 0.38 || getMonsterDotCount(mon, now)>0 || (mon.sunderUntil||0)>now || (mon.slowUntil||0)>now || monsterStateCount(mon, now)>0);
+  if(!meaningful && Math.random() > 0.32) return false;
+  let fired = false;
+  let label = '协同追击';
+  if(tpl.role === 'heal'){
+    const danger = state.hp < state.hero.hpMax * 0.82;
+    const heal = Math.floor(state.hero.hpMax * (danger ? 0.045 : 0.026) * companionTacticHealMult());
+    const hr = healHeroAmount(heal, '🤝', '#6ee7b7', 'comp', label);
+    if(danger) addTalentShield(Math.floor(state.hero.hpMax * 0.024 * companionTacticShieldMult()), true, 9000);
+    fired = hr.applied > 0 || danger;
+  }else if(tpl.role === 'tank'){
+    const shield = Math.floor(state.hero.hpMax * 0.032 * companionTacticShieldMult());
+    addTalentShield(shield, false, 9000);
+    state._compGuardUntil = Math.max(state._compGuardUntil || 0, now + 4500);
+    fired = shield > 0;
+  }else{
+    const bonus = (opts?.crit ? 0.34 : 0.22) + (mon.hp <= mon.hpMax * 0.35 ? 0.16 : 0);
+    const raw = st.atk * (1.00 + bonus) * companionTacticDmgMult();
+    const dd = calcDmg(raw, monArmor(mon), st.crit + (opts?.crit ? 8 : 0), st.critd + 12, false, mon.lvl, state.hero.lvl, { tightVar:true });
+    const cap = Math.max(1, Math.floor(mon.hpMax * (mon.isBoss ? 0.045 : 0.075)));
+    const dealt = absorbMonsterBarrier(mon, Math.min(dd.dmg, cap), '🤝').remaining;
+    if(dealt > 0){ mon.hp -= dealt; trackDmg('comp', dealt, dd.crit, label); showMonsterFloat(mon, '🤝-' + dealt, '#7dd3fc', allySideFloatOpts({ variant:dd.crit?'crit':'comp', scale:dd.crit?1.12:1.05, important:true })); fired = true; }
+  }
+  if(!fired) return false;
+  state._compCoordinateUntil = now + COMPANION_COORDINATE_CD_MS;
+  state._compCoordinateLastAt = now;
+  log(`${tpl.emoji || '🐾'} ${tpl.name} 响应你的攻击，触发${label}`,'good');
+  markDirty('stage','companion','hero');
+  return true;
+}
 function companionSkillPriority(sk, st, mon, now){
   const heroFrac = state.hp / Math.max(1, state.hero.hpMax || 1);
   const compFrac = (state._compHp || 0) / Math.max(1, st.hpMax || 1);
@@ -7102,6 +7198,9 @@ function companionSkillPriority(sk, st, mon, now){
   if(companionTacticKey() === 'assault') score += 36;
   if(companionTacticKey() === 'guard' && (sk.stun || sk.slow || sk.debuff === 'sunder' || /破甲/.test(sk.name || ''))) score += 12;
   if(companionTacticKey() === 'support') score -= 18;
+  if(st.role === 'tank' && (sk.stun || sk.slow || sk.debuff === 'sunder')) score += 18;
+  if(st.role === 'dps' && mon && mon.hp > 0 && mon.hp <= mon.hpMax * 0.38) score += 22;
+  if(st.role === 'heal' && (sk.heal || sk.healPct || sk.shieldPct)) score += 10;
   return score;
 }
 function companionReactionDesc(key){
@@ -7213,6 +7312,82 @@ function companionResonanceTrigger(now, st, tpl, mon){
   markDirty('stage','companion','hero');
   return true;
 }
+function companionCombatSpecialDesc(key){
+  const map = {
+    varian:'王者挑战:主角承压或首领战中主动护卫，短时间吸引火力并为双方加盾。',
+    anduin:'守护圣光:主角濒危时触发一次强治疗、护盾和净化。',
+    jaina:'寒冰碎枪:目标被减速、冻结标记或处于首领战时追加冰枪，并短暂冻结。',
+    illidan:'恶魔追猎:首领或残血目标前进入追猎节奏，短时提高随从攻势并追加伤害。',
+    lichking:'天灾压迫:首领或残血目标前施加寒疫、减速并为自身补盾。'
+  };
+  return map[key] || '';
+}
+function companionCombatSpecialUiState(now){
+  const comp = getActiveCompanion();
+  const tpl = comp && COMPANIONS.find(c=>c.key===comp.key);
+  if(!tpl) return null;
+  const desc = companionCombatSpecialDesc(tpl.key);
+  if(!desc) return null;
+  const until = (state._compSpecialCd && state._compSpecialCd[tpl.key]) || 0;
+  return { icon:'🌟', name:'专属战斗', desc, leftMs:Math.max(0, until - (now || Date.now())), ready:until <= (now || Date.now()), recent:(state._compSpecialLastAt || 0) > (now || Date.now()) - 1800 };
+}
+function companionSpecialReady(key, now, cdMs){
+  if(!state._compSpecialCd) state._compSpecialCd = {};
+  if((state._compSpecialCd[key] || 0) > now) return false;
+  state._compSpecialCd[key] = now + cdMs;
+  state._compSpecialLastAt = now;
+  return true;
+}
+function companionCombatSpecialTick(now, st, tpl, mon){
+  if(!st || !tpl || !mon || mon.hp <= 0 || compDowned()) return false;
+  const heroFrac = state.hp / Math.max(1, state.hero.hpMax || 1);
+  const targetLow = mon.hp <= mon.hpMax * 0.35;
+  if(tpl.key === 'varian' && (heroFrac < 0.72 || mon.isBoss || companionTacticKey() === 'guard') && companionSpecialReady(tpl.key, now, Math.max(18000, COMPANION_GUARD_CD_MS))){
+    state._compGuardUntil = Math.max(state._compGuardUntil || 0, now + 6500);
+    addTalentShield(Math.floor(state.hero.hpMax * 0.050 * companionTacticShieldMult()), false, 12000);
+    addCompanionBarrier(Math.floor(st.hpMax * 0.080 * companionTacticShieldMult()), '🦁', '#fcd34d');
+    log('🦁 瓦里安触发王者挑战，接管仇恨并展开护卫','good');
+    markDirty('stage','companion','hero');
+    return true;
+  }
+  if(tpl.key === 'anduin' && heroFrac < 0.34 && companionSpecialReady(tpl.key, now, 90000)){
+    const hr = healHeroAmount(Math.floor(state.hero.hpMax * 0.22 * companionTacticHealMult()), '✨', '#6ee7b7', 'comp', '守护圣光');
+    addTalentShield(Math.floor(state.hero.hpMax * 0.12 * companionTacticShieldMult()), false, 14000);
+    clearDebuffGroup('hero');
+    log('✨ 安度因触发守护圣光，强行稳住战线 +' + hr.applied,'good');
+    markDirty('stage','companion','hero');
+    return true;
+  }
+  if(tpl.key === 'jaina' && (mon.isBoss || targetLow || (mon.slowUntil||0)>now || monsterStateActive(mon, 'frozenMark')) && companionSpecialReady(tpl.key, now, 16000)){
+    const dd = calcDmg(st.atk * 1.85 * companionTacticDmgMult(), monArmor(mon), st.crit + 12, st.critd + 20, monsterStateActive(mon, 'frozenMark'), mon.lvl, state.hero.lvl, { tightVar:true });
+    const cap = Math.max(1, Math.floor(mon.hpMax * (mon.isBoss ? 0.060 : 0.095)));
+    const dealt = absorbMonsterBarrier(mon, Math.min(dd.dmg, cap), '🧊').remaining;
+    if(dealt > 0){ mon.hp -= dealt; trackDmg('comp', dealt, dd.crit, '寒冰碎枪'); showMonsterFloat(mon, '🧊-' + dealt, '#93c5fd', allySideFloatOpts({ variant:dd.crit?'crit':'comp', important:true })); }
+    mon.slowUntil = Math.max(mon.slowUntil || 0, now + 4500);
+    mon.stunUntil = Math.max(mon.stunUntil || 0, now + (mon.isBoss ? 700 : 1300));
+    log('🧊 吉安娜触发寒冰碎枪，冻结战斗节奏','good');
+    markDirty('stage');
+    return true;
+  }
+  if(tpl.key === 'illidan' && (mon.isBoss || targetLow) && companionSpecialReady(tpl.key, now, 24000)){
+    state._compFrenzyUntil = Math.max(state._compFrenzyUntil || 0, now + 8000);
+    const dd = calcDmg(st.atk * 1.65 * companionTacticDmgMult(), monArmor(mon), st.crit + 10, st.critd + 25, targetLow, mon.lvl, state.hero.lvl, { tightVar:true });
+    const dealt = absorbMonsterBarrier(mon, Math.min(dd.dmg, Math.max(1, Math.floor(mon.hpMax * (mon.isBoss ? 0.055 : 0.090)))), '🪽').remaining;
+    if(dealt > 0){ mon.hp -= dealt; trackDmg('comp', dealt, dd.crit, '恶魔追猎'); showMonsterFloat(mon, '🪽-' + dealt, '#fbbf24', allySideFloatOpts({ variant:dd.crit?'crit':'comp', important:true })); }
+    log('🪽 伊利丹触发恶魔追猎，攻势进入爆发窗口','good');
+    markDirty('stage','companion');
+    return true;
+  }
+  if(tpl.key === 'lichking' && (mon.isBoss || targetLow) && companionSpecialReady(tpl.key, now, 26000)){
+    applyMonsterDot(mon, 'comp-special:lichking', Math.max(1, Math.floor(st.atk * 0.22)), 7000, { icon:'❄️', name:'寒疫压迫', source:tpl.name });
+    mon.slowUntil = Math.max(mon.slowUntil || 0, now + 5000);
+    addCompanionBarrier(Math.floor(st.hpMax * 0.070 * companionTacticShieldMult()), '👑', '#93c5fd');
+    log('👑 巫妖王触发天灾压迫，寒疫笼罩目标','good');
+    markDirty('stage','companion');
+    return true;
+  }
+  return false;
+}
 /* 按定位的吸引仇恨概率:坦克多、治疗少、输出居中 */
 function compAggroChance(){const comp=getActiveCompanion();if(!comp)return 0;const tpl=COMPANIONS.find(c=>c.key===comp.key);const role=tpl&&tpl.role;const base=role==='tank'?0.88:role==='heal'?0.15:0.20;return Math.max(0.05,Math.min(0.95,base+(tpl?.aggroBonus||0)+(companionTacticMeta().aggro||0))); }
 /* 随从倒下:清血、进入10秒复活计时(2026-06-27:15→10,缩短无奶职业的暴露窗口) */
@@ -7237,6 +7412,7 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
   if((state._compStunUntil||0)>now) return;
   const mon=state.currentMonsters[0];if(!mon)return;
   companionReactionTrigger(now, st, tpl, mon);
+  companionCombatSpecialTick(now, st, tpl, mon);
   companionResonanceTrigger(now, st, tpl, mon);
   if(compSkillCd._owner!==comp.key)compSkillCd={_owner:comp.key};   // 换随从:重置技能冷却
   const interval=1000/(st.spd||0.5);if((state._compDisarmUntil||0)<=now&&(now-lastCompAtk>interval||now-lastCompAtk>5000)){let cm=state.currentMonsters[0];if(cm&&cm.hp>0){const cd=calcDmg(st.atk,monArmor(cm),st.crit,st.critd,false,cm.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(cm, cd.dmg, st.emoji).remaining;cm.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,cd.crit,'普攻');showMonsterFloat(cm,st.emoji+'-'+dealt,'#a0d0ff',allySideFloatOpts({variant:cd.crit?'crit':'comp',scale:cd.crit?1.12:1}));}applyCompanionSignatureHit(companionSignature(tpl), st, cm, dealt, now);}lastCompAtk=now;

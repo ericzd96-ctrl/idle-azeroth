@@ -1293,6 +1293,7 @@ function renderMonList() {
         <div class="m-mid">
           <div class="m-name"${isFocus?' id="mon-name"':''}>${nm}<span class="m-lvl">等级${m.lvl}</span><span class="m-debuffs"></span></div>
           ${summonLine}
+          <div class="m-target"></div>
           <div class="bar hp"><i${isFocus?' id="b-mhp"':''}></i><span${isFocus?' id="t-mhp"':''}></span></div>
         </div>
       </div>`;
@@ -1340,6 +1341,14 @@ function renderMonList() {
     if (txt) {
       const hpText = isDead ? '已击败' : hpWithShieldText(m.hp, m.hpMax, Math.max(0, m._arcaneShield || 0));
       if (txt.textContent !== hpText) txt.textContent = hpText;
+    }
+    const targetEl = row.querySelector('.m-target');
+    if(targetEl){
+      const recentTarget = (m._lastTargetAt || 0) > now - 3500;
+      const targetText = recentTarget ? `目标: ${m._lastTargetName || '主角'}` : (m._companionChallengeName ? `${m._companionChallengeName} ${m._companionChallengeRank || ''}` : '');
+      targetEl.classList.toggle('is-companion', recentTarget && m._lastTargetKind === 'companion');
+      targetEl.classList.toggle('is-summon', recentTarget && m._lastTargetKind === 'summon');
+      if(targetEl.textContent !== targetText) targetEl.textContent = targetText;
     }
 
     const de = row.querySelector('.m-debuffs');
@@ -1836,6 +1845,28 @@ function updateBattleVisuals() {
       compMiniName.innerHTML=`${compIconHtml} ${tpl?.name} · <span class="${q.cls||''}">${q.name}</span> ${'⭐'.repeat(comp.stars||1)}${sigBadge} · 攻${fmt(st.atk)} 防${fmt(st.def)}${statusTag}`;
     }
     setBar($('b-comp-hp'),Math.max(0,compHp)/st.hpMax*100,compDown?`倒下 ${reviveLeft}秒`:hpWithShieldText(compHp, st.hpMax, Math.max(0, state._compBarrier || 0)));
+    const intentEl = $('comp-intent-line');
+    if(intentEl){
+      const it = (typeof companionIntentUiState === 'function') ? companionIntentUiState(now) : null;
+      const txt = it ? `${it.icon} ${it.label} · ${it.desc}` : '';
+      intentEl.style.display = txt ? '' : 'none';
+      if(intentEl.textContent !== txt) intentEl.textContent = txt;
+    }
+    const coordinateEl = $('comp-coordinate-line');
+    if(coordinateEl){
+      const co = (typeof companionCoordinateUiState === 'function') ? companionCoordinateUiState(now) : null;
+      if(co){
+        const leftTxt = co.ready ? '就绪' : Math.ceil(co.leftMs / 1000) + '秒';
+        const pct = co.ready ? 100 : Math.max(0, Math.min(100, Math.round((1 - co.leftMs / Math.max(1, co.cdMs || 1)) * 100)));
+        coordinateEl.classList.toggle('ready', !!co.ready);
+        coordinateEl.classList.toggle('pulse', !!((state._compCoordinateLastAt || 0) > now - 1800));
+        const coordinateSig = [co.name, leftTxt, pct, co.ready ? 1 : 0].join('|');
+        if(coordinateEl._sig !== coordinateSig){
+          coordinateEl._sig = coordinateSig;
+          coordinateEl.innerHTML = `<span>${co.icon} ${tipAttrText(co.name)}</span><b>${leftTxt}</b><i style="width:${pct}%"></i>`;
+        }
+      }else coordinateEl.innerHTML = '';
+    }
     const reactionEl = $('comp-reaction-line');
     if(reactionEl){
       const rx = (typeof companionReactionUiState === 'function') ? companionReactionUiState(now) : null;
@@ -1926,6 +1957,9 @@ function updateBattleVisuals() {
       }
       const compBarrier = state._compBarrier || 0;
       const sig = tpl?.signature;
+      const intent = (typeof companionIntentUiState === 'function') ? companionIntentUiState(nowTs) : null;
+      const coordinate = (typeof companionCoordinateUiState === 'function') ? companionCoordinateUiState(nowTs) : null;
+      const special = (typeof companionCombatSpecialUiState === 'function') ? companionCombatSpecialUiState(nowTs) : null;
       const reaction = (typeof companionReactionUiState === 'function') ? companionReactionUiState(nowTs) : null;
       const resonance = (typeof companionResonanceUiState === 'function') ? companionResonanceUiState(nowTs) : null;
       const compIconHtml = companionIconHtml(tpl, 18);
@@ -1933,6 +1967,9 @@ function updateBattleVisuals() {
         <div>攻击${fmt(st.atk)} 防御${fmt(st.def)} 生命${fmt(st.hpMax)} 攻速${st.spd?.toFixed(2)}/秒</div>
         <div class="muted">参战强度已按品质、星级与定位折算</div>
         <div class="muted">定位:${tpl?.role==='tank'?'🛡️纯坦克 扛压吸仇恨/减伤结界/自疗':tpl?.role==='dps'?'⚔️纯输出 自带攻击攻速狂热/技能爆发':'💚辅助 加速+增伤+续航(助毕业DPS提速过本)'}</div>
+        ${intent?`<div style="color:#bae6fd">当前意图: ${intent.icon} ${intent.label} · ${tipAttrText(intent.desc)}</div>`:''}
+        ${coordinate?`<div style="color:#7dd3fc">协同追击: ${coordinate.ready?'就绪':'冷却 '+Math.ceil(coordinate.leftMs/1000)+'秒'}</div><div class="muted">${tipAttrText(coordinate.desc)}</div>`:''}
+        ${special?`<div style="color:#fcd34d">专属战斗: ${special.ready?'就绪':'冷却 '+Math.ceil(special.leftMs/1000)+'秒'}</div><div class="muted">${tipAttrText(special.desc)}</div>`:''}
         ${reaction?`<div style="color:#fcd34d">战友反应: ${reaction.icon} ${reaction.name} · ${reaction.ready?'就绪':'冷却 '+Math.ceil(reaction.leftMs/1000)+'秒'}</div><div class="muted">${reaction.desc}</div>`:''}
         ${resonance?`<div style="color:#fcd34d">羁绊共鸣: ${resonance.icon} ${resonance.name} ${resonance.rank} · ${resonance.ready?'就绪':'冷却 '+Math.ceil(resonance.leftMs/1000)+'秒'}</div><div class="muted">${tipAttrText(resonance.desc)} 来源:${tipAttrText(resonance.bondNames)}</div>`:''}
         ${sig?`<div style="color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(sig.name, 14, sig.icon||'✨') : (sig.icon||'✨')} ${sig.name} · ${sig.desc||''}${sig.mode==='passive'?' (被动)':''}</div>`:''}
@@ -3617,6 +3654,7 @@ function companionDetailPanelHtml(entries) {
   const starF = entry.isOwned ? 1 + 0.2 * ((stars || 1) - 1) : 1;
   const ownBonus = Object.entries(tpl.bonus || {}).map(([k, v]) => (typeof fmtMod === 'function') ? fmtMod(k, +(v * starF).toFixed(1)) : `${k}+${v}`).join(' ');
   const status = entry.isActive ? '出战中' : entry.isOwned ? '已拥有' : `${q.name}池未获得`;
+  const combatSpecialDesc = (typeof companionCombatSpecialDesc === 'function') ? companionCombatSpecialDesc(tpl.key) : '';
   const resonanceInfo = (typeof companionResonanceInfo === 'function') ? companionResonanceInfo(tpl) : null;
   const cost = entry.isOwned ? getUpgradeCost(owned) : null;
   const canUp = cost && !cost.maxed && cost.have >= cost.need;
@@ -3647,6 +3685,7 @@ function companionDetailPanelHtml(entries) {
       </div>
       <div class="comp-detail-block">
         <div class="comp-detail-block-title">技能说明</div>
+        ${combatSpecialDesc ? `<div class="comp-combat-special-note">🌟 专属战斗: ${tipAttrText(combatSpecialDesc)}</div>` : ''}
         ${companionDetailSkillListHtml(tpl)}
       </div>
     </div>
