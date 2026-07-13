@@ -3871,6 +3871,7 @@ const DUNGEON_ART_BACKFILL = {
   naxx:'assets/wow/art/classic-naxxramas.jpg',
   ruby:'assets/wow/art/wrath-ruby-sanctum.jpg',
   icc:'assets/wow/art/wrath-icecrown-citadel.jpg',
+  ulduar:'assets/wow/art/wrath-halls-lightning.jpg',
   vortex:'assets/wow/art/cataclysm-vortex-pinnacle.jpg',
   firelands:'assets/wow/art/cataclysm-firelands.jpg',
   dragonsoul:'assets/wow/art/cataclysm-dragon-soul.jpg',
@@ -3899,7 +3900,25 @@ const DUNGEON_ART_BACKFILL = {
   eternalpalace:'assets/wow/art/bfa-eternal-palace.jpg',
   nyalotha:'assets/wow/art/bfa-nyalotha.jpg',
   necrotic:'assets/wow/art/shadowlands-necrotic-wake.jpg',
-  nathria:'assets/wow/art/shadowlands-castle-nathria.jpg'
+  nathria:'assets/wow/art/shadowlands-castle-nathria.jpg',
+  sethekk:'assets/wow/art/tbc-auchindoun.jpg',
+  atonement:'assets/wow/art/shadowlands-castle-nathria.jpg',
+  plaguefall:'assets/wow/art/shadowlands-necrotic-wake.jpg',
+  mists:'assets/wow/art/shadowlands-necrotic-wake.jpg',
+  theater:'assets/wow/art/shadowlands-necrotic-wake.jpg',
+  azurevault:'assets/wow/art/wrath-nexus.jpg',
+  hallsinfusion:'assets/wow/art/wrath-nexus.jpg',
+  brackenhide:'assets/wow/art/classic-wailing.jpg',
+  nightfall_sanctum:'assets/wow/art/warwithin-prioryflame.png',
+  earthcrawl_mines:'assets/wow/art/warwithin-stonevault.png',
+  fungal_folly:'assets/wow/art/warwithin-arakara.png',
+  archival_assault:'assets/wow/art/primeus-repository.png',
+  murder_row:'assets/wow/art/tbc-magisters-terrace.jpg',
+  silvermoon_voidspire:'assets/wow/art/tbc-magisters-terrace.jpg',
+  den_nalorakk:'assets/wow/art/classic-zulfarrak.jpg',
+  maisara_caverns:'assets/wow/art/classic-zulfarrak.jpg',
+  sporefall:'assets/wow/art/ecodome-rhovan.png',
+  curse_ulatek:'assets/wow/art/voidrazor-sanctum.png'
 };
 function applyDungeonArtBackfill(){
   for (const dg of DUNGEONS) {

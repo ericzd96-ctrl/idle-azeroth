@@ -3299,6 +3299,41 @@ function dungeonProgressionPillsHtml(dg) {
   const loot = dungeonLootIlvlText(dg);
   return `${power ? `<div class="pill">${power}</div>` : ''}${loot ? `<div class="pill">${loot}</div>` : ''}`;
 }
+function dungeonArtInfo(dg) {
+  if (!dg?.art) return null;
+  const baseKey = (typeof baseDungeonKey === 'function') ? baseDungeonKey(dg.key) : dg.key;
+  const backfill = (typeof DUNGEON_ART_BACKFILL !== 'undefined') ? DUNGEON_ART_BACKFILL[baseKey] : '';
+  const art = String(dg.art || '');
+  const isBackfilled = !!backfill && art === backfill;
+  const generic = /timewalking-|warwithin-dungeon-banner|dungeon-banner/i.test(art);
+  const shared = /ecodome-rhovan|tazavesh-banner|karesh-map|shadow-point|shandorah|primeus-repository|voidrazor-sanctum|aberrus-banner|amirdrassil-banner/i.test(art);
+  if (isBackfilled && !generic) {
+    return { label:'副本图', cls:'specific', icon:'🗺️', desc:'使用本地 WoW 风格副本/入口/区域图片。克隆难度会继承基础副本图片。' };
+  }
+  if (shared) {
+    return { label:'区域图', cls:'shared', icon:'🌐', desc:'使用同区域或同战役的共享图片，优先保证视觉主题贴近该副本。' };
+  }
+  if (generic) {
+    return { label:'横幅图', cls:'generic', icon:'📜', desc:'当前仍使用资料片或时空漫游横幅，后续可继续替换为更精确的原版副本图。' };
+  }
+  return { label:'副本图', cls:'specific', icon:'🗺️', desc:'副本列表与详情页使用这张图片作为地图视觉。' };
+}
+function dungeonArtBadgeHtml(dg) {
+  const info = dungeonArtInfo(dg);
+  if (!info) return '';
+  const tip = inlineTipSpanHtml({
+    name:info.label,
+    icon:info.icon,
+    desc:info.desc,
+    meta:dg.art || '',
+  }, {
+    fallbackIcon:'inv_misc_map_01',
+    color:info.cls === 'generic' ? '#c4b5fd' : (info.cls === 'shared' ? '#67e8f9' : '#f6c453'),
+    metaVisible:false,
+    className:'dungeon-art-tip dungeon-inline-tip',
+  });
+  return `<div class="dungeon-art-badge ${info.cls}">${tip}</div>`;
+}
 function dungeonTraitPreviewHtml(dg) {
   if (!dg || typeof dungeonTraitPreviewForDungeon !== 'function') return '';
   const preview = dungeonTraitPreviewForDungeon(dg.key, 5);
@@ -3471,7 +3506,7 @@ function buildDungeonInfoHtml(dg) {
       ${dg.raidExpansion ? `<div class="pill">${dg.raidExpansion}</div>` : ''}
       ${progressionPills}
     </div>
-    ${dg.art ? `<div class="dungeon-info-art" style="background-image:linear-gradient(180deg, rgba(11,15,25,.12), rgba(11,15,25,.78)), url('${dg.art}')"></div>` : ''}
+    ${dg.art ? `<div class="dungeon-info-art" style="background-image:linear-gradient(180deg, rgba(11,15,25,.12), rgba(11,15,25,.78)), url('${dg.art}')">${dungeonArtBadgeHtml(dg)}</div>` : ''}
     ${dungeonAtlasHtml(dg, false)}
     <div class="muted" style="margin-bottom:10px;line-height:1.6">
       ${isEpicRaid?'<span style="color:#fb7185">[史诗团本]</span> ':(isRaid?'<span style="color:#fbbf24">[团本]</span> ':'<span style="color:#6ee7b7">[5人本]</span> ')}
@@ -3807,7 +3842,7 @@ function renderDungeon() {
     const alertLine = selectedContractLevel > 0 ? `<div class="dungeon-alert-line">${alertLabelTip}: 波次推进会逐步强化敌人,高警戒可能出现戒备队长</div>` : '';
     const bossPhaseLine = selectedContractLevel > 0 ? `<div class="dungeon-boss-phase-line">${bossPhaseLabelTip}: Boss 血量下降时会触发额外阶段事件</div>` : '';
     const firstClearBadge = (!state.dungeonFirstClear || !state.dungeonFirstClear[dg.key]) ? '<span class="pill" style="background:rgba(246,196,83,.18);color:#f6c453">🎁首通</span>' : '';
-    const artBanner = dg.art ? `<div class="dungeon-art-banner" style="background-image:linear-gradient(180deg, rgba(11,15,25,.16), rgba(11,15,25,.78)), url('${dg.art}')"></div>` : '';
+    const artBanner = dg.art ? `<div class="dungeon-art-banner" style="background-image:linear-gradient(180deg, rgba(11,15,25,.16), rgba(11,15,25,.78)), url('${dg.art}')">${dungeonArtBadgeHtml(dg)}</div>` : '';
     const atlasLine = dungeonAtlasHtml(dg, true);
     // 必刷专属坐骑提示(读 DUNGEON_MOUNT_DROPS,按基础本key)
     let chaseLine = '';
