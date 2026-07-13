@@ -3299,6 +3299,20 @@ function companionMissionScoreTipHtml(tpl, comp, mission, score, rewardText) {
   const result = total >= 75 ? '高完成度:奖励预览按大成功估算' : '普通完成度:仍可完成,但额外奖励较少';
   return `<b>${tipAttrText(tpl.name)} · ${tipAttrText(mission.name)}</b><br>${rows}<br><b>完成度 ${total}%</b><br>${tipAttrText(result)}${rewardText ? `<br>预览: ${tipAttrText(rewardText)}` : ''}`;
 }
+function companionMissionRewardPreviewHtml(mission) {
+  const r = mission?.reward || {};
+  const bits = [];
+  if (r.gold) bits.push({ icon:'🪙', text:`金币 ${r.gold}+等级`, tone:'gold' });
+  if (r.essence) bits.push({ icon:'✨', text:`精华 ${r.essence}+等级`, tone:'essence' });
+  if (r.honor) bits.push({ icon:'⚔️', text:`荣誉 ${r.honor}+等级`, tone:'honor' });
+  if (r.shards) bits.push({ icon:'🧩', text:`通用碎片×${r.shards}+`, tone:'shard' });
+  if (r.ticketChance) bits.push({ icon:'🎟️', text:`随从券 ${Math.round(r.ticketChance * 100)}%+`, tone:'ticket' });
+  if (!bits.length) return '';
+  const tip = `<b>${tipAttrText(mission.name)}奖励</b><br>${bits.map(b => tipAttrText(`${b.icon} ${b.text}`)).join('<br>')}<br>${tipAttrText('品质、完成度和星级会放大奖励；大成功与5星随从会提高碎片收益。')}`.replace(/"/g, '&quot;');
+  return `<div class="comp-mission-reward-preview" data-tip="${tip}">
+    ${bits.map(b => `<span class="is-${b.tone}">${b.icon} ${tipAttrText(b.text)}</span>`).join('')}
+  </div>`;
+}
 function companionMissionRosterHtml(activeRuns, slots) {
   const comps = (state.companions || []).map(comp => {
     const tpl = COMPANIONS.find(t => t.key === comp.key);
@@ -3400,6 +3414,7 @@ function companionMissionPanelHtml(entries){
       </div>
       <div class="muted" style="font-size:10px;line-height:1.45">${mission.desc}</div>
       <div class="comp-mission-match">推荐: ${tipAttrText(matchText)}</div>
+      ${companionMissionRewardPreviewHtml(mission)}
       ${bestAction}
       <div class="comp-mission-candidates">${candidateButtons}</div>
     </div>`;
