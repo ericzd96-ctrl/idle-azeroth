@@ -3276,6 +3276,29 @@ function companionMissionTimeText(ms){
   if (ms <= 0) return '可领取';
   return fmtCd(Math.ceil(ms / 1000));
 }
+function companionMissionScoreTipHtml(tpl, comp, mission, score, rewardText) {
+  if (!tpl || !comp || !mission) return '';
+  const q = compQuality(tpl);
+  const stars = Math.max(1, comp.stars || 1);
+  const traits = companionTraitFlags(tpl);
+  const qScore = ({white:4, green:10, blue:18, purple:28, orange:40})[q.key] || 4;
+  const roleScore = tpl.role === mission.role ? 18 : 0;
+  const traitScore = traits[mission.trait] ? 14 : 0;
+  const skillCount = (tpl.skills || []).length + (tpl.signature ? 1 : 0);
+  const skillScore = Math.min(16, skillCount * 3);
+  const total = Math.round(score || (typeof companionMissionScore === 'function' ? companionMissionScore(tpl, comp, mission) : 0));
+  const traitLabel = COMPANION_TRAIT_META[mission.trait]?.label || mission.trait;
+  const rows = [
+    `基础指挥桌 +28`,
+    `品质 ${q.name} +${qScore}`,
+    `星级 ${stars}星 +${stars * 7}`,
+    `定位 ${companionRoleLabel(tpl.role)}${roleScore ? ` 匹配 +${roleScore}` : ` / 需要${companionRoleLabel(mission.role)} +0`}`,
+    `特性 ${traitLabel}${traitScore ? ` 匹配 +${traitScore}` : ' 未命中 +0'}`,
+    `技能槽 ${skillCount}个 +${skillScore}`,
+  ].map(x => tipAttrText(x)).join('<br>');
+  const result = total >= 75 ? '高完成度:奖励预览按大成功估算' : '普通完成度:仍可完成,但额外奖励较少';
+  return `<b>${tipAttrText(tpl.name)} · ${tipAttrText(mission.name)}</b><br>${rows}<br><b>完成度 ${total}%</b><br>${tipAttrText(result)}${rewardText ? `<br>预览: ${tipAttrText(rewardText)}` : ''}`;
+}
 function companionMissionPanelHtml(entries){
   if (typeof COMPANION_MISSION_TYPES === 'undefined' || typeof ensureCompanionMissionState !== 'function') return '';
   const ms = ensureCompanionMissionState();
@@ -3293,12 +3316,14 @@ function companionMissionPanelHtml(entries){
     const q = tpl ? compQuality(tpl) : null;
     const claim = remain <= 0;
     const compIconHtml = tpl ? companionIconHtml(tpl, 18) : '🐾';
+    const score = Math.round(run.score || 0);
+    const scoreTip = tpl && mission ? companionMissionScoreTipHtml(tpl, entry.comp, mission, score).replace(/"/g, '&quot;') : '';
     return `<div class="comp-mission-active-card ${claim ? 'ready' : ''}">
       <div class="comp-mission-card-head">
         <b>${mission?.icon || '📜'} ${tipAttrText(mission?.name || '派遣任务')}</b>
         <span>${claim ? '完成' : companionMissionTimeText(remain)}</span>
       </div>
-      <div class="muted" style="font-size:10px">${compIconHtml} ${tipAttrText(tpl?.name || run.compKey)}${q ? ` · <span class="${q.cls}">${q.name}</span>` : ''} · 完成度 ${Math.round(run.score || 0)}%</div>
+      <div class="muted" style="font-size:10px">${compIconHtml} ${tipAttrText(tpl?.name || run.compKey)}${q ? ` · <span class="${q.cls}">${q.name}</span>` : ''} · <span class="comp-mission-score" data-tip="${scoreTip}">完成度 ${score}%</span></div>
       <div class="comp-mission-bar"><i style="width:${progress}%"></i></div>
       <button class="gold" data-action="claimcompmission" data-id="${tipAttrText(run.id)}" ${claim ? '' : 'disabled'}>${claim ? '领取战报' : '执行中'}</button>
     </div>`;
@@ -3313,7 +3338,8 @@ function companionMissionPanelHtml(entries){
       const preview = typeof companionMissionReward === 'function' ? companionMissionReward(mission, entry.tpl, entry.comp, score, score >= 75) : {};
       const reward = typeof companionMissionRewardText === 'function' ? companionMissionRewardText(preview, q.name) : '';
       const compIconHtml = companionIconHtml(entry.tpl, 16);
-      return `<button class="comp-mission-send" data-action="startcompmission" data-mission="${mission.key}" data-comp="${entry.comp.key}" title="${tipAttrText(reward)}" ${active.length >= slots ? 'disabled' : ''}>
+      const scoreTip = companionMissionScoreTipHtml(entry.tpl, entry.comp, mission, score, reward).replace(/"/g, '&quot;');
+      return `<button class="comp-mission-send" data-action="startcompmission" data-mission="${mission.key}" data-comp="${entry.comp.key}" data-tip="${scoreTip}" title="${tipAttrText(reward)}" ${active.length >= slots ? 'disabled' : ''}>
         ${compIconHtml}<span>${tipAttrText(entry.tpl.name)}</span><b>${Math.round(score)}%</b>
       </button>`;
     }).join('') : '<div class="muted" style="font-size:10px">没有空闲随从。出战随从和执行任务中的随从不能派遣。</div>';

@@ -888,6 +888,13 @@ h1 {
   border-color: rgba(250, 204, 21, .6);
   background: rgba(51, 65, 85, .82);
 }
+.comp-mission-score {
+  color: #fde68a;
+  cursor: help;
+  text-decoration: underline;
+  text-decoration-color: rgba(250, 204, 21, .35);
+  text-underline-offset: 2px;
+}
 .comp-mission-bar {
   height: 5px;
   margin: 6px 0;
