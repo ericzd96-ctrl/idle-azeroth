@@ -637,6 +637,8 @@ function setupDelegation() {
     if(act==='compsort'){ companionSetSort(btn.dataset.value); return; }
     if(act==='compdetail'){ companionShowDetail(btn.dataset.key); return; }
     if(act==='compclosedetail'){ companionCloseDetail(); return; }
+    if(act==='compwish'){ companionToggleWishlist(btn.dataset.key); return; }
+    if(act==='compclearwish'){ companionClearWishlist(); return; }
     if(act==='compresetfilter'){ companionResetFilters(); return; }
     if(act==='clearcompsearch'){ companionClearSearch(); return; }
     if(act==='trackcompbond'){ companionTrackBond(btn.dataset.bond); return; }

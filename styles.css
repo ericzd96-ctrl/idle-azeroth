@@ -723,11 +723,87 @@ h1 {
   border-color: rgba(250, 204, 21, .42);
   box-shadow: inset 0 0 0 1px rgba(250, 204, 21, .10);
 }
+.shop-item.comp-card-wished,
+.comp-missing-card.comp-card-wished {
+  border-color: rgba(251, 191, 36, .46);
+  box-shadow: inset 0 0 0 1px rgba(251, 191, 36, .16);
+}
+.comp-wish-badge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(251, 191, 36, .42);
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: rgba(113, 63, 18, .30);
+  color: #fde68a;
+  font-size: 10px;
+  line-height: 1.2;
+}
 .comp-card-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
   margin-top: 6px;
+}
+.comp-wishlist-panel {
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid rgba(251, 191, 36, .26);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(113, 63, 18, .18), rgba(15, 23, 42, .25));
+}
+.comp-wishlist-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+.comp-wishlist-head > div {
+  display: grid;
+  gap: 2px;
+}
+.comp-wishlist-head span {
+  color: #94a3b8;
+  font-size: 10px;
+}
+.comp-wishlist-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.comp-wishlist-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  border: 1px solid rgba(148, 163, 184, .20);
+  border-radius: 7px;
+  padding: 4px 5px 4px 7px;
+  background: rgba(2, 6, 23, .34);
+  color: #cbd5e1;
+  font-size: 10px;
+  line-height: 1.25;
+}
+.comp-wishlist-chip.missing {
+  border-color: rgba(251, 191, 36, .30);
+}
+.comp-wishlist-chip.owned {
+  border-color: rgba(74, 222, 128, .28);
+}
+.comp-wishlist-chip em {
+  color: #94a3b8;
+  font-style: normal;
+}
+.comp-wishlist-chip button {
+  min-height: 22px;
+  padding: 2px 6px;
+}
+.comp-wishlist-more {
+  align-self: center;
+  color: #94a3b8;
+  font-size: 10px;
 }
 .comp-detail-panel {
   margin: 10px 0;

@@ -2902,7 +2902,7 @@ function compSkillChips(tpl){
     return `<span class="comp-skill${s._signature?' sig':''}" data-tip="${tip}">${skillIconHtml}<span class="cs-name">${s.name}</span></span>`;
   }).join('');
 }
-const COMPANION_FILTER_DEFAULTS = { ownership:'all', quality:'all', role:'all', trait:'all', bond:'all', query:'', sort:'quality' };
+const COMPANION_FILTER_DEFAULTS = { ownership:'all', target:'all', quality:'all', role:'all', trait:'all', bond:'all', query:'', sort:'quality' };
 let companionFilters = Object.assign({}, COMPANION_FILTER_DEFAULTS);
 let companionDetailKey = '';
 const COMPANION_SORT_OPTIONS = [
@@ -3034,6 +3034,7 @@ function companionMetaBadges(tpl){
 }
 function buildCompanionEntries(){
   const ownedMap = new Map();
+  const wished = new Set(companionWishlistKeys());
   (state.companions || []).forEach((comp, idx) => ownedMap.set(comp.key, { comp, idx }));
   return (COMPANIONS || []).map(tpl => {
     const owned = ownedMap.get(tpl.key);
@@ -3043,10 +3044,38 @@ function buildCompanionEntries(){
       idx: owned?.idx ?? -1,
       isOwned: !!owned,
       isActive: !!owned && owned.idx === state.activeCompanion,
+      isWished: wished.has(tpl.key),
       quality: compQuality(tpl).key,
       traits: companionTraitFlags(tpl),
     };
   });
+}
+function companionWishlistKeys(){
+  if (!Array.isArray(state.companionWishlist)) state.companionWishlist = [];
+  const valid = new Set((COMPANIONS || []).map(tpl => tpl.key));
+  state.companionWishlist = Array.from(new Set(state.companionWishlist.filter(key => valid.has(key))));
+  return state.companionWishlist;
+}
+function companionIsWishlisted(key){
+  return companionWishlistKeys().includes(key);
+}
+function companionWishlistMarkDirty(){
+  if (typeof markDirty === 'function') markDirty('companion');
+  if (typeof saveState === 'function') saveState();
+}
+function companionToggleWishlist(key){
+  if (!key || !(COMPANIONS || []).some(tpl => tpl.key === key)) return;
+  const list = companionWishlistKeys();
+  if (list.includes(key)) state.companionWishlist = list.filter(item => item !== key);
+  else state.companionWishlist = list.concat(key);
+  companionWishlistMarkDirty();
+  renderCompanion();
+}
+function companionClearWishlist(){
+  state.companionWishlist = [];
+  if (companionFilters.target === 'wished') companionFilters.target = 'all';
+  companionWishlistMarkDirty();
+  renderCompanion();
 }
 function companionBondId(bond) {
   if (typeof COMPANION_BONDS === 'undefined') return 'all';
@@ -3071,11 +3100,13 @@ function companionSearchText(entry) {
   const traitText = Object.entries(COMPANION_TRAIT_META).filter(([key]) => traits[key]).map(([, meta]) => meta.label).join(' ');
   const skills = companionSkillPool(tpl).map(sk => `${sk.name || ''} ${sk.desc || ''}`).join(' ');
   const bonds = (typeof COMPANION_BONDS !== 'undefined' ? COMPANION_BONDS : []).filter(bond => bond.keys.includes(tpl.key)).map(bond => `${bond.name} ${bond.desc || ''}`).join(' ');
-  return `${tpl.name || ''} ${tpl.key || ''} ${tpl.desc || ''} ${q.name || ''} ${companionRoleLabel(tpl.role)} ${traitText} ${skills} ${bonds}`.toLowerCase();
+  const targetText = entry?.isWished ? '收藏目标 愿望单 追踪目标' : '';
+  return `${tpl.name || ''} ${tpl.key || ''} ${tpl.desc || ''} ${q.name || ''} ${companionRoleLabel(tpl.role)} ${traitText} ${skills} ${bonds} ${targetText}`.toLowerCase();
 }
 function companionMatchesFilters(entry, filters){
   if (filters.ownership === 'owned' && !entry.isOwned) return false;
   if (filters.ownership === 'missing' && entry.isOwned) return false;
+  if (filters.target === 'wished' && !entry.isWished) return false;
   if (filters.quality !== 'all' && entry.quality !== filters.quality) return false;
   if (filters.role !== 'all' && entry.tpl.role !== filters.role) return false;
   if (filters.trait !== 'all' && !entry.traits[filters.trait]) return false;
@@ -3106,6 +3137,7 @@ function companionFilterSummaryText(){
   const labels = [];
   if (companionFilters.ownership === 'owned') labels.push('已拥有');
   else if (companionFilters.ownership === 'missing') labels.push('未获得');
+  if (companionFilters.target === 'wished') labels.push('收藏目标');
   if (companionFilters.quality !== 'all') labels.push({ white:'白色', green:'绿色', blue:'蓝色', purple:'紫色', orange:'橙色' }[companionFilters.quality] || companionFilters.quality);
   if (companionFilters.role !== 'all') labels.push(companionRoleLabel(companionFilters.role));
   if (companionFilters.trait !== 'all') labels.push(COMPANION_TRAIT_META[companionFilters.trait]?.label || companionFilters.trait);
@@ -3149,6 +3181,10 @@ function companionFilterPanelHtml(entries){
       { value:'owned', label:'已拥有' },
       { value:'missing', label:'未获得' },
     ])}
+    ${companionFilterRow(entries, 'target', '目标', [
+      { value:'all', label:'全部' },
+      { value:'wished', label:'收藏目标' },
+    ])}
     ${companionFilterRow(entries, 'quality', '品质', [
       { value:'all', label:'全部' },
       { value:'orange', label:'橙' },
@@ -3189,6 +3225,31 @@ function companionGlossaryPanelHtml(){
     <div class="comp-glossary-row"><span>定位</span><div>${roleCards}</div></div>
     <div class="comp-glossary-row"><span>特性</span><div>${traitCards}</div></div>
     <div class="comp-glossary-note">详情面板会把技能拆成伤害、控制、治疗、辅助等效果标签；升星只提高随从成长与专属加成，不改变这里的规则文字。</div>
+  </div>`;
+}
+function companionWishlistPanelHtml(entries){
+  const list = companionWishlistKeys();
+  const entryMap = new Map((entries || buildCompanionEntries()).map(entry => [entry.tpl.key, entry]));
+  const cards = list.slice(0, 8).map(key => {
+    const entry = entryMap.get(key);
+    const tpl = entry?.tpl || COMPANIONS.find(c => c.key === key);
+    if (!tpl) return '';
+    const q = compQuality(tpl);
+    const stateText = entry?.isOwned ? `${entry.owned?.stars || 1}星` : '未获得';
+    return `<span class="comp-wishlist-chip ${entry?.isOwned ? 'owned' : 'missing'}">
+      ${companionIconHtml(tpl, 14)} <b class="${q.cls}">${tipAttrText(tpl.name)}</b><em>${stateText}</em>
+      <button data-action="compdetail" data-key="${tpl.key}">查看</button>
+      <button data-action="compwish" data-key="${tpl.key}">×</button>
+    </span>`;
+  }).join('');
+  const missing = list.filter(key => !entryMap.get(key)?.isOwned).length;
+  const overflow = list.length > 8 ? `<span class="comp-wishlist-more">+${list.length - 8}</span>` : '';
+  return `<div class="comp-wishlist-panel">
+    <div class="comp-wishlist-head">
+      <div><b>收藏目标</b><span>${list.length ? `${list.length} 个目标 · ${missing} 个未获得` : '用于追踪想抽取或想培养的随从'}</span></div>
+      ${list.length ? '<button data-action="compclearwish">清空目标</button>' : ''}
+    </div>
+    ${list.length ? `<div class="comp-wishlist-list">${cards}${overflow}</div>` : '<div class="muted">在随从卡片或详情里点“加入目标”，再用筛选里的“收藏目标”查看。</div>'}
   </div>`;
 }
 function companionDrawGuideHtml(entries) {
@@ -3359,16 +3420,18 @@ function companionDetailPanelHtml(entries) {
   const status = entry.isActive ? '出战中' : entry.isOwned ? '已拥有' : `${q.name}池未获得`;
   const cost = entry.isOwned ? getUpgradeCost(owned) : null;
   const canUp = cost && !cost.maxed && cost.have >= cost.need;
+  const wishButton = `<button data-action="compwish" data-key="${tpl.key}">${entry.isWished ? '取消目标' : '加入目标'}</button>`;
   const actionHtml = entry.isOwned
     ? `<div class="comp-detail-actions">
         ${entry.isActive ? '<button class="danger" data-action="unequipcomp">休息</button>' : `<button class="primary" data-action="usecomp" data-idx="${entry.idx}">出战</button>`}
         <button class="gold" data-action="upgradecomp" data-idx="${entry.idx}" ${canUp ? '' : 'disabled'}>${cost.maxed ? '满星 ⭐5' : `升星 ${stars || 1}/5`}</button>
+        ${wishButton}
       </div>`
-    : '<div class="comp-detail-actions muted">抽取到该随从后可出战、派遣，并参与对应羁绊。</div>';
+    : `<div class="comp-detail-actions">${wishButton}<span class="muted">抽取到该随从后可出战、派遣，并参与对应羁绊。</span></div>`;
   return `<div class="comp-detail-panel">
     <div class="comp-detail-head">
       <div>
-        <div class="comp-detail-title">${companionIconHtml(tpl, 22)} <b>${tipAttrText(tpl.name)}</b><span class="${q.cls}">${q.name}</span></div>
+        <div class="comp-detail-title">${companionIconHtml(tpl, 22)} <b>${tipAttrText(tpl.name)}</b><span class="${q.cls}">${q.name}</span>${entry.isWished ? '<span class="comp-wish-badge">收藏目标</span>' : ''}</div>
         <div class="muted">${status} · ${starText} · ${roleTag(tpl.role)} · ${traitText}</div>
       </div>
       <button class="comp-detail-close" data-action="compclosedetail">关闭</button>
@@ -3394,9 +3457,11 @@ function companionDetailPanelHtml(entries) {
   </div>`;
 }
 function companionCardTrackClass(tpl) {
-  if (!tpl || companionFilters.bond === 'all') return '';
+  if (!tpl) return '';
+  let cls = companionIsWishlisted(tpl.key) ? ' comp-card-wished' : '';
+  if (companionFilters.bond === 'all') return cls;
   const bond = companionBondById(companionFilters.bond);
-  return bond?.keys.includes(tpl.key) ? ' comp-card-tracked' : '';
+  return cls + (bond?.keys.includes(tpl.key) ? ' comp-card-tracked' : '');
 }
 function companionBondMemberTipHtml(tpl, entry) {
   if (!tpl) return '';
@@ -3763,10 +3828,11 @@ function companionPanelRenderSig(){
   const active = `${state.activeCompanion}|${getActiveCompanion()?.key || ''}`;
   const bonds = (typeof activeCompanionBonds==='function' ? activeCompanionBonds() : []).map(b=>b.name).join('|');
   const filters = `${Object.values(companionFilters).join('|')}#${companionDetailKey || ''}`;
+  const wishlist = companionWishlistKeys().join('|');
   const missions = state.companionMissions?.active
     ? state.companionMissions.active.map(m => `${m.id}:${m.endAt}:${m.compKey}`).join('|') + `#${state.companionMissions.totalCompleted || 0}#${Math.floor(Date.now()/30000)}`
     : '';
-  return [state.cls||'', state.hero?.lvl||0, state.compTickets||0, active, compList, shards, bonds, filters, missions].join('||');
+  return [state.cls||'', state.hero?.lvl||0, state.compTickets||0, active, compList, shards, bonds, filters, wishlist, missions].join('||');
 }
 function renderCompanion() {
   $('gem-cost').textContent = '(消耗1🐾随从券 · 技能含定位招牌技+专属技，品质/星级决定强度)';
@@ -3799,6 +3865,7 @@ function renderCompanion() {
 
   html += companionDrawGuideHtml(entries);
   html += companionFilterPanelHtml(entries);
+  html += companionWishlistPanelHtml(entries);
   html += companionGlossaryPanelHtml();
   html += companionDetailPanelHtml(entries);
   html += companionBondRoadmapHtml(entries);
@@ -3829,6 +3896,7 @@ function renderCompanion() {
       <div class="comp-skills">${compSkillChips(tpl)}</div>
       <div class="comp-card-actions">
         <button data-action="compdetail" data-key="${tpl.key}">详情</button>
+        <button data-action="compwish" data-key="${tpl.key}">${companionIsWishlisted(tpl.key) ? '取消目标' : '加入目标'}</button>
         <button class="danger" data-action="unequipcomp">休息</button>
       </div>
     </div>`;
@@ -3859,6 +3927,7 @@ function renderCompanion() {
         <span class="muted" style="font-size:10px">可用碎片 ${cost.have}${cost.maxed?'':' / 升星需'+cost.need}${(state.compUniversalShards[q.key]||0)>0?' (含通用×'+state.compUniversalShards[q.key]+')':''}</span>
         <div style="display:flex;flex-wrap:wrap;gap:3px">
           <button data-action="compdetail" data-key="${tpl.key}">详情</button>
+          <button data-action="compwish" data-key="${tpl.key}">${entry.isWished ? '取消目标' : '加入目标'}</button>
           <button class="primary" data-action="usecomp" data-idx="${i}">出战</button>
           <button class="gold" data-action="upgradecomp" data-idx="${i}" ${canUp?'':'disabled'}>${cost.maxed?'满星 ⭐5':'升星 '+(c.stars||1)+'/5'}</button>
         </div>
@@ -3881,6 +3950,7 @@ function renderCompanion() {
         ${companionBondChipsHtml(t, entries)}
         <div class="muted" style="font-size:10px">${t.desc}</div>
         <button class="comp-missing-detail" data-action="compdetail" data-key="${t.key}">详情</button>
+        <button class="comp-missing-detail" data-action="compwish" data-key="${t.key}">${companionIsWishlisted(t.key) ? '取消目标' : '加入目标'}</button>
       </div>`;
     }
     html += `</div>`;
