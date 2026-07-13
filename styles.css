@@ -3650,6 +3650,50 @@ button,
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
+.comp-reaction-line {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  min-height: 18px;
+  margin-top: 3px;
+  padding: 1px 5px;
+  overflow: hidden;
+  border: 1px solid rgba(250, 204, 21, .22);
+  border-radius: 5px;
+  background: rgba(63, 43, 18, .24);
+  color: #d6d3d1;
+}
+.comp-reaction-line span,
+.comp-reaction-line b {
+  position: relative;
+  z-index: 1;
+  white-space: nowrap;
+}
+.comp-reaction-line span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.comp-reaction-line b {
+  color: #fbbf24;
+  font-size: 10px;
+}
+.comp-reaction-line i {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 2px;
+  background: linear-gradient(90deg, #b45309, #facc15);
+  opacity: .82;
+}
+.comp-reaction-line.ready {
+  color: #fde68a;
+  border-color: rgba(250, 204, 21, .52);
+  background: rgba(113, 63, 18, .28);
+}
+.comp-reaction-line.pulse {
+  box-shadow: 0 0 12px rgba(250, 204, 21, .24), inset 0 0 0 1px rgba(250, 204, 21, .14);
+}
 button:hover:not(:disabled) { background: #2d345a; border-color: #3a4170; }
 button:active:not(:disabled) { transform: translateY(1px); }
 button:disabled { opacity: .4; cursor: not-allowed; }

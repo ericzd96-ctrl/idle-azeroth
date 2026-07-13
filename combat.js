@@ -6651,11 +6651,12 @@ const COMPANION_ROLE_PROFILE = {
   dps:  { atk:0.90, def:0.80, hp:0.52, spd:0.75, reg:0.42, critd:0.92 },
   heal: { atk:0.65, def:0.90, hp:0.58, spd:0.74, reg:0.58, critd:0.82 },
 };
+const COMPANION_REACTION_CD_MS = 45000;
 const COMPANION_TACTICS = {
-  balanced: { label:'均衡', icon:'⚖️', desc:'保持当前战斗节奏，不改变随从强度。', atk:1, def:1, hp:1, spd:1, heal:1, shield:1, dmg:1, aggro:0 },
-  assault: { label:'猛攻', icon:'⚔️', desc:'随从更主动打伤害，技能伤害和攻速提高，但更脆且治疗效率下降。', atk:1.14, def:0.92, hp:0.90, spd:1.08, heal:0.90, shield:0.92, dmg:1.08, aggro:-0.04 },
-  guard: { label:'守护', icon:'🛡️', desc:'随从更愿意挡刀和放防护技能，生命防御提高，但输出降低。', atk:0.88, def:1.18, hp:1.16, spd:0.96, heal:1.06, shield:1.16, dmg:0.90, aggro:0.18 },
-  support: { label:'支援', icon:'💚', desc:'随从优先治疗、护盾和净化，支援效果提高，但直接输出下降。', atk:0.90, def:0.96, hp:0.94, spd:1.02, heal:1.18, shield:1.18, dmg:0.92, aggro:-0.06 },
+  balanced: { label:'均衡', icon:'⚖️', desc:'保持当前战斗节奏，不改变随从强度；低血量时触发一次小额协助。', reaction:'均衡协助', atk:1, def:1, hp:1, spd:1, heal:1, shield:1, dmg:1, aggro:0 },
+  assault: { label:'猛攻', icon:'⚔️', desc:'随从更主动打伤害，技能伤害和攻速提高，但更脆且治疗效率下降；敌人低血量时触发压制斩击。', reaction:'压制斩击', atk:1.14, def:0.92, hp:0.90, spd:1.08, heal:0.90, shield:0.92, dmg:1.08, aggro:-0.04 },
+  guard: { label:'守护', icon:'🛡️', desc:'随从更愿意挡刀和放防护技能，生命防御提高，但输出降低；主角危险时触发护卫壁垒。', reaction:'护卫壁垒', atk:0.88, def:1.18, hp:1.16, spd:0.96, heal:1.06, shield:1.16, dmg:0.90, aggro:0.18 },
+  support: { label:'支援', icon:'💚', desc:'随从优先治疗、护盾和净化，支援效果提高，但直接输出下降；主角危险时触发紧急救护。', reaction:'紧急救护', atk:0.90, def:0.96, hp:0.94, spd:1.02, heal:1.18, shield:1.18, dmg:0.92, aggro:-0.06 },
 };
 const COMPANION_STAR_GROWTH = 0.15;   // 每星成长
 const COMPANION_SKILL_DMG_BONUS = 1.43;  // 随从技能伤害全局加成
@@ -6678,6 +6679,22 @@ function companionTacticHealMult(){ return companionTacticMeta().heal || 1; }
 function companionTacticShieldMult(){ return companionTacticMeta().shield || 1; }
 function companionTacticDmgMult(){ return companionTacticMeta().dmg || 1; }
 function companionSkillCdLeft(i){ return Math.max(0, ((compSkillCd&&compSkillCd[i])||0) - Date.now()); }   // 供 UI 显示剩余CD(毫秒)
+function companionReactionLeftMs(now){ return Math.max(0, (state._compReactionUntil || 0) - (now || Date.now())); }
+function companionReactionUiState(now){
+  const ts = now || Date.now();
+  const meta = companionTacticMeta();
+  const left = companionReactionLeftMs(ts);
+  return {
+    icon:meta.icon || '🐾',
+    name:meta.reaction || '战友反应',
+    tactic:meta.label || '均衡',
+    desc:companionReactionDesc(companionTacticKey()),
+    cdMs:COMPANION_REACTION_CD_MS,
+    leftMs:left,
+    ready:left <= 0,
+    recent:(state._compReactionLastAt || 0) > ts - 1800
+  };
+}
 function companionEffectiveSkillCdMs(sk){
   const base = Math.max(0.5, (sk?.cd || COMP_SKILL_DEFAULT_CD)) * 1000;
   const floor = sk?._signature ? 3000 : 1500;
@@ -7025,6 +7042,75 @@ function companionSkillPriority(sk, st, mon, now){
   if(companionTacticKey() === 'support') score -= 18;
   return score;
 }
+function companionReactionDesc(key){
+  const k = key || companionTacticKey();
+  if(k === 'assault') return '敌人生命低于40%或首领生命低于55%时，随从追加一次高倍率压制伤害。';
+  if(k === 'guard') return '主角或随从生命危险时，随从为双方施加护盾，主角护盾持续12秒。';
+  if(k === 'support') return '主角生命低于60%或有减益时，随从立即治疗主角并优先净化1个减益。';
+  return '主角或随从低血量时，随从进行一次小额治疗和护盾支援。';
+}
+function companionReactionTrigger(now, st, tpl, mon){
+  if(!st || !tpl || !mon || mon.hp <= 0 || companionReactionLeftMs(now) > 0) return false;
+  const key = companionTacticKey();
+  const meta = companionTacticMeta(key);
+  const heroMax = Math.max(1, state.hero.hpMax || 1);
+  const heroFrac = state.hp / heroMax;
+  const compMax = Math.max(1, st.hpMax || 1);
+  const compFrac = (state._compHp || 0) / compMax;
+  let fired = false;
+  const name = meta.reaction || '战友反应';
+  const icon = meta.icon || tpl.emoji || '🐾';
+  if(key === 'assault'){
+    const executeLine = mon.isBoss ? 0.55 : 0.40;
+    if(mon.hp <= mon.hpMax * executeLine){
+      const raw = st.atk * (mon.isBoss ? 2.2 : 2.55) * companionTacticDmgMult();
+      const dd = calcDmg(raw, monArmor(mon), st.crit + 10, st.critd + 20, mon.hp <= mon.hpMax * 0.22, mon.lvl, state.hero.lvl, { tightVar:true });
+      const capPct = mon.hp <= mon.hpMax * 0.22 ? (mon.isBoss ? 0.12 : 0.20) : (mon.isBoss ? 0.08 : 0.14);
+      const capped = Math.min(dd.dmg, Math.max(1, Math.floor(mon.hpMax * capPct)));
+      const dealt = absorbMonsterBarrier(mon, capped, icon).remaining;
+      if(dealt > 0){
+        mon.hp -= dealt;
+        trackDmg('comp', dealt, dd.crit, name);
+        showMonsterFloat(mon, icon + '-' + dealt, '#fbbf24', allySideFloatOpts({ variant:dd.crit ? 'crit' : 'comp', scale:dd.crit ? 1.16 : 1.08, important:true }));
+        fired = true;
+      }
+    }
+  }else if(key === 'guard'){
+    if(heroFrac <= 0.50 || compFrac <= 0.46){
+      const heroShield = Math.floor(heroMax * 0.065 * companionTacticShieldMult());
+      const compShield = Math.floor(compMax * 0.10 * companionTacticShieldMult());
+      if(heroShield > 0) addTalentShield(heroShield, false, 12000);
+      if(compShield > 0) addCompanionBarrier(compShield, icon, '#93c5fd');
+      fired = heroShield > 0 || compShield > 0;
+    }
+  }else if(key === 'support'){
+    const hasDebuff = !!(state.heroDebuffs && Object.values(state.heroDebuffs).some(d => d && d.expire > now));
+    if(heroFrac <= 0.60 || hasDebuff){
+      const amount = Math.floor(heroMax * 0.075 * companionTacticHealMult());
+      const hr = healHeroAmount(amount, icon, '#6ee7b7', 'comp', name);
+      const cleansed = hasDebuff && clearDebuffGroup('hero');
+      fired = (hr.applied > 0) || cleansed;
+      if(cleansed) showFloat($('hero-emoji'), icon + '净化', '#93c5fd', { variant:'heal', scale:1.04 });
+    }
+  }else if(heroFrac <= 0.42 || compFrac <= 0.42){
+    let applied = 0;
+    if(heroFrac <= compFrac){
+      applied += healHeroAmount(Math.floor(heroMax * 0.035), icon, '#6ee7b7', 'comp', name).applied;
+      applied += addTalentShield(Math.floor(heroMax * 0.035), false, 10000);
+    }else{
+      applied += healCompanionAmount(Math.floor(compMax * 0.045), icon, '#6ee7b7', 'comp', name).applied;
+      applied += addCompanionBarrier(Math.floor(compMax * 0.045), icon, '#93c5fd');
+    }
+    fired = applied > 0;
+  }
+  if(!fired) return false;
+  state._compReactionUntil = now + COMPANION_REACTION_CD_MS;
+  state._compReactionLastAt = now;
+  state._compReactionName = name;
+  log(`${tpl.emoji || icon} ${tpl.name} 触发战友反应「${name}」`,'good');
+  markDirty('stage','companion','hero');
+  return true;
+}
 /* 按定位的吸引仇恨概率:坦克多、治疗少、输出居中 */
 function compAggroChance(){const comp=getActiveCompanion();if(!comp)return 0;const tpl=COMPANIONS.find(c=>c.key===comp.key);const role=tpl&&tpl.role;const base=role==='tank'?0.88:role==='heal'?0.15:0.20;return Math.max(0.05,Math.min(0.95,base+(tpl?.aggroBonus||0)+(companionTacticMeta().aggro||0))); }
 /* 随从倒下:清血、进入10秒复活计时(2026-06-27:15→10,缩短无奶职业的暴露窗口) */
@@ -7048,6 +7134,7 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
   if(compDowned())return;   // 阵亡期间不攻击/不施法/不奶
   if((state._compStunUntil||0)>now) return;
   const mon=state.currentMonsters[0];if(!mon)return;
+  companionReactionTrigger(now, st, tpl, mon);
   if(compSkillCd._owner!==comp.key)compSkillCd={_owner:comp.key};   // 换随从:重置技能冷却
   const interval=1000/(st.spd||0.5);if((state._compDisarmUntil||0)<=now&&(now-lastCompAtk>interval||now-lastCompAtk>5000)){let cm=state.currentMonsters[0];if(cm&&cm.hp>0){const cd=calcDmg(st.atk,monArmor(cm),st.crit,st.critd,false,cm.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(cm, cd.dmg, st.emoji).remaining;cm.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,cd.crit,'普攻');showMonsterFloat(cm,st.emoji+'-'+dealt,'#a0d0ff',allySideFloatOpts({variant:cd.crit?'crit':'comp',scale:cd.crit?1.12:1}));}applyCompanionSignatureHit(companionSignature(tpl), st, cm, dealt, now);}lastCompAtk=now;
     // 技能:每个技能按自己的 cd 独立冷却,就绪即放(GCD 0.9秒,避免一次性全放;优先治疗>buff>伤害)

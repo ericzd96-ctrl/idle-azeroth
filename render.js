@@ -1836,6 +1836,21 @@ function updateBattleVisuals() {
       compMiniName.innerHTML=`${compIconHtml} ${tpl?.name} · <span class="${q.cls||''}">${q.name}</span> ${'⭐'.repeat(comp.stars||1)}${sigBadge} · 攻${fmt(st.atk)} 防${fmt(st.def)}${statusTag}`;
     }
     setBar($('b-comp-hp'),Math.max(0,compHp)/st.hpMax*100,compDown?`倒下 ${reviveLeft}秒`:hpWithShieldText(compHp, st.hpMax, Math.max(0, state._compBarrier || 0)));
+    const reactionEl = $('comp-reaction-line');
+    if(reactionEl){
+      const rx = (typeof companionReactionUiState === 'function') ? companionReactionUiState(now) : null;
+      if(rx){
+        const leftTxt = rx.ready ? '就绪' : Math.ceil(rx.leftMs / 1000) + '秒';
+        const pct = rx.ready ? 100 : Math.max(0, Math.min(100, Math.round((1 - rx.leftMs / Math.max(1, rx.cdMs || 1)) * 100)));
+        reactionEl.classList.toggle('ready', !!rx.ready);
+        reactionEl.classList.toggle('pulse', !!rx.recent);
+        const reactionSig = [rx.name, rx.icon, leftTxt, pct, rx.ready ? 1 : 0, rx.recent ? 1 : 0].join('|');
+        if(reactionEl._sig !== reactionSig){
+          reactionEl._sig = reactionSig;
+          reactionEl.innerHTML = `<span>${rx.icon} ${tipAttrText(rx.name)}</span><b>${leftTxt}</b><i style="width:${pct}%"></i>`;
+        }
+      }else reactionEl.innerHTML = '';
+    }
     // 随从技能 冷却 展示:仅在随从/技能数变化时重建(避免每帧churn打断 title 悬浮),每帧只刷新剩余CD
     const csEl=$('comp-skills');
     if(csEl){
@@ -1895,11 +1910,13 @@ function updateBattleVisuals() {
       }
       const compBarrier = state._compBarrier || 0;
       const sig = tpl?.signature;
+      const reaction = (typeof companionReactionUiState === 'function') ? companionReactionUiState(nowTs) : null;
       const compIconHtml = companionIconHtml(tpl, 18);
       const html=`<b>${compIconHtml} ${tpl?.name}</b><div>${q.name} ${'⭐'.repeat(comp.stars||1)} · ${tpl?.role==='tank'?'🛡️坦克':tpl?.role==='heal'?'💚辅助':'⚔️输出'}</div>
         <div>攻击${fmt(st.atk)} 防御${fmt(st.def)} 生命${fmt(st.hpMax)} 攻速${st.spd?.toFixed(2)}/秒</div>
         <div class="muted">参战强度已按品质、星级与定位折算</div>
         <div class="muted">定位:${tpl?.role==='tank'?'🛡️纯坦克 扛压吸仇恨/减伤结界/自疗':tpl?.role==='dps'?'⚔️纯输出 自带攻击攻速狂热/技能爆发':'💚辅助 加速+增伤+续航(助毕业DPS提速过本)'}</div>
+        ${reaction?`<div style="color:#fcd34d">战友反应: ${reaction.icon} ${reaction.name} · ${reaction.ready?'就绪':'冷却 '+Math.ceil(reaction.leftMs/1000)+'秒'}</div><div class="muted">${reaction.desc}</div>`:''}
         ${sig?`<div style="color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(sig.name, 14, sig.icon||'✨') : (sig.icon||'✨')} ${sig.name} · ${sig.desc||''}${sig.mode==='passive'?' (被动)':''}</div>`:''}
         ${compBarrier>0?`<div style="color:#93c5fd">护盾: ${fmt(compBarrier)}</div>`:''}
         ${compBuffs.length?`<div>增益: ${compBuffs.join(' · ')}</div>`:''}
@@ -3408,14 +3425,15 @@ function companionTacticPanelHtml() {
     if (meta.def && meta.def !== 1) parts.push(`防御 ${Math.round((meta.def - 1) * 100)}%`);
     if (meta.hp && meta.hp !== 1) parts.push(`生命 ${Math.round((meta.hp - 1) * 100)}%`);
     if (meta.heal && meta.heal !== 1) parts.push(`治疗 ${Math.round((meta.heal - 1) * 100)}%`);
-    const tip = `<b>${meta.icon} ${tipAttrText(meta.label)}</b><br>${tipAttrText(meta.desc)}${parts.length ? `<br><span class="muted">${tipAttrText(parts.join(' · '))}</span>` : ''}`;
+    const reactionDesc = (typeof companionReactionDesc === 'function') ? companionReactionDesc(id) : '';
+    const tip = `<b>${meta.icon} ${tipAttrText(meta.label)}</b><br>${tipAttrText(meta.desc)}${parts.length ? `<br><span class="muted">${tipAttrText(parts.join(' · '))}</span>` : ''}${reactionDesc ? `<br><span class="muted">战友反应: ${tipAttrText(meta.reaction || '战友反应')} · ${tipAttrText(reactionDesc)} · 冷却45秒</span>` : ''}`;
     return `<button class="comp-tactic-btn comp-tip ${active ? 'active' : ''}" data-action="comptactic" data-value="${id}" data-tip="${companionTipAttr(tip)}">${meta.icon} ${meta.label}</button>`;
   }).join('');
   const activeMeta = typeof companionTacticMeta === 'function' ? companionTacticMeta(key) : COMPANION_TACTICS[key];
   return `<div class="comp-tactic-panel">
     <div class="comp-tactic-head">
       <div><b>⚔️ 战术指令</b><span>当前: ${activeMeta.icon} ${activeMeta.label}</span></div>
-      <span>${tipAttrText(activeMeta.desc)}</span>
+      <span>${tipAttrText(activeMeta.desc)} · 战友反应: ${tipAttrText(activeMeta.reaction || '战友反应')} / 45秒</span>
     </div>
     <div class="comp-tactic-list">${buttons}</div>
   </div>`;
