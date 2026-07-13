@@ -3313,8 +3313,32 @@ function dungeonPowerText(dg) {
   const power = (typeof dg.powerLvl === 'number' && dg.powerLvl > 0) ? dg.powerLvl : (dg.reqLvl || 1);
   return `战斗强度 ${Math.round(power)}`;
 }
+function dungeonEstimatedDropPower(dg) {
+  if (!dg) return 1;
+  const power = (typeof dg.powerLvl === 'number' && dg.powerLvl > 0) ? dg.powerLvl : (dg.reqLvl || 1);
+  const spawnLvl = dg.epicRaid ? 80 : Math.max(1, Math.floor(power * 1.05));
+  return Math.max(1, spawnLvl + 2);
+}
+function dungeonEstimatedItemLevel(dg, rarityKey) {
+  if (!dg || typeof computeItemLevel !== 'function') return 0;
+  const gearTier = (typeof gearTierForDungeon === 'function') ? gearTierForDungeon(dg.key) : (dg.epic5 ? 4 : (dg.heroic ? 1 : 0));
+  return computeItemLevel({
+    rarity: rarityKey || 'epic',
+    gearTier,
+    epicRaid: !!dg.epicRaid,
+    _rollPower: dungeonEstimatedDropPower(dg),
+  });
+}
 function dungeonLootIlvlText(dg) {
-  if (!dg || dg.type !== 'raid' || typeof raidDropIlvl !== 'function') return '';
+  if (!dg) return '';
+  if (dg.type !== 'raid') {
+    const minRarity = (dg.heroic || dg.epic5) ? 'epic' : 'rare';
+    const min = dungeonEstimatedItemLevel(dg, minRarity);
+    const max = dungeonEstimatedItemLevel(dg, 'legend');
+    if (!min || !max) return '';
+    return `${dg.epic5 ? '史诗5人' : (dg.heroic ? '英雄首领' : '首领')}掉落装等 ${min}-${max}`;
+  }
+  if (typeof raidDropIlvl !== 'function') return '';
   const baseKey = (typeof baseDungeonKey === 'function') ? baseDungeonKey(dg.key) : (dg.baseKey || dg.key);
   const bossCount = Math.max(1, (dg.bosses || []).length);
   const epicMode = !!dg.epicRaid;
@@ -4047,6 +4071,9 @@ function renderDungeon() {
       : '<span style="color:#6ee7b7">[5人本]</span> ';
     const powerText = dungeonPowerText(dg);
     const lootIlvlText = dungeonLootIlvlText(dg);
+    const dungeonProgressLine = dg.type !== 'raid' && (powerText || lootIlvlText)
+      ? `<div class="muted" style="font-size:11px;color:#f6c453">🎚️ ${[powerText, lootIlvlText].filter(Boolean).join(' · ')}</div>`
+      : '';
     const recIlvl = (typeof dungeonRecommendedItemLevel === 'function') ? dungeonRecommendedItemLevel(dg) : 0;
     const reqIlvl = (typeof dungeonRequiredItemLevel === 'function') ? dungeonRequiredItemLevel(dg) : 0;
     const avgIlvl = (typeof averageEquippedItemLevel === 'function') ? Math.floor(averageEquippedItemLevel()) : 0;
@@ -4068,6 +4095,7 @@ function renderDungeon() {
       ${bountyLine}
       ${delveLine}
       ${chaseLine}
+      ${dungeonProgressLine}
       ${ilvlLine}
       ${themeLine}
       ${affixLine}
