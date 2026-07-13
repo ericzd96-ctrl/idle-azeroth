@@ -2205,7 +2205,7 @@ function spawnDungeonMonster(){
   };
   const atkTempo = 1 + curveLow * 0.04 + curveMid * 0.08 + curveHigh * 0.12;
   state.currentMonsters.push({name,isBoss,bossName:isBoss?boss.name:null,
-    lvl:isEpicRaid ? 80 : Math.max(1,Math.floor(power*1.05)),
+    lvl:Math.max(1,Math.floor(power*1.05)),
     hpMax:Math.floor((100+power*power*8.6)*(isBoss?29.5:4.8)*scale*curve.hp),hp:Math.floor((100+power*power*8.6)*(isBoss?29.5:4.8)*scale*curve.hp),
     atk:Math.floor((12+power*3.7+Math.pow(power,1.18)*1.45)*(isBoss?2.35:1.85)*scale*curve.atk),def:Math.floor((4+power*1.7)*(isBoss?1.62:1.72)*scale*curve.def),
     baseGold:Math.floor(10+power*3),baseXp:Math.floor(35+power*5),

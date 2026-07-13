@@ -6863,6 +6863,11 @@ function raidDropIlvl(baseKey, rarityKey, epicMode, bossIndex, bossCount) {
 function raidDropPowerFromIlvl(ilvl) {
   return Math.max(1, Math.round(ilvl / 3));
 }
+function raidEntryLevelForMode(baseKey, epicMode) {
+  const base = getDungeonDef(baseKey);
+  const baseReq = Math.max(1, Math.floor(base?.reqLvl || (epicMode ? 80 : 60)));
+  return epicMode ? Math.max(80, baseReq) : baseReq;
+}
 function applyRaidLootProgression(item, baseKey, bossName, epicMode, bossIndex, bossCount) {
   if (!item) return item;
   const info = raidBossIndexInfo(baseKey, bossName, bossIndex, bossCount);
@@ -6878,7 +6883,7 @@ function applyRaidLootProgression(item, baseKey, bossName, epicMode, bossIndex, 
   item.raidIlvl = ilvl;
   item.rollPower = raidDropPowerFromIlvl(ilvl);
   const dg = getDungeonDef(epicMode ? epicRaidKey(baseKey) : baseKey) || getDungeonDef(baseKey);
-  item.reqLvlOverride = Math.max(1, Math.min(80, dg?.reqLvl || (epicMode ? 80 : 60)));
+  item.reqLvlOverride = Math.max(1, Math.floor(dg?.reqLvl || raidEntryLevelForMode(baseKey, epicMode)));
   return item;
 }
 function applyRaidProgressionToDungeon(dg) {
@@ -7127,8 +7132,8 @@ function createEpicRaidCatalog() {
     clone.key = key;
     clone.baseKey = base.key;
     clone.name = `${base.name}·史诗`;
-    clone.desc = `${prog.expansion} · 史诗团本 · 推荐装等 ${prog.epicIlvl} · ${base.name} 的极限难度版本`;
-    clone.reqLvl = 80;
+    clone.reqLvl = raidEntryLevelForMode(base.key, true);
+    clone.desc = `${prog.expansion} · 史诗团本 · 开放等级 ${clone.reqLvl} · 推荐装等 ${prog.epicIlvl} · ${base.name} 的极限难度版本`;
     clone.raidExpansion = prog.expansion;
     clone.raidOrder = prog.order;
     clone.raidTier = prog.tier;
