@@ -3833,6 +3833,99 @@ function dungeonRoutePrepChecklistHtml(dg) {
   </div>`;
 }
 
+function dungeonHandlingCodexHtml(dg, selectedContract) {
+  if (typeof dungeonMechanicCodex !== 'function') return '';
+  const codex = dungeonMechanicCodex();
+  if (!codex.length) return '';
+  const byKey = Object.fromEntries(codex.map(entry => [entry.key, entry]));
+  const bosses = Array.isArray(dg?.bosses) ? dg.bosses : [];
+  const handlingCounts = new Map();
+  for (const boss of bosses) {
+    for (const tag of dungeonBossHandlingTags(boss)) {
+      handlingCounts.set(tag.key, (handlingCounts.get(tag.key) || 0) + 1);
+    }
+  }
+  const contractLevel = Math.max(0, Math.floor(selectedContract?.level || 0));
+  const themeAffixes = (typeof getDungeonThemeAffixes === 'function') ? getDungeonThemeAffixes(dg) : [];
+  const rooms = (typeof getDungeonCombatRooms === 'function') ? getDungeonCombatRooms(dg, contractLevel) : [];
+  const edicts = contractLevel > 0 && typeof getDungeonTacticalEdicts === 'function' ? getDungeonTacticalEdicts(dg, contractLevel) : [];
+  const timer = contractLevel > 0 && typeof createDungeonTimer === 'function' ? createDungeonTimer(dg, contractLevel) : null;
+  const timeMarks = contractLevel > 0 && typeof dungeonTimeMarkSummary === 'function' ? dungeonTimeMarkSummary(edicts, 0) : null;
+  const fallbackIcons = {
+    interrupt:'ability_kick', adds:'ability_warrior_battleshout', defensive:'ability_warrior_shieldwall',
+    resource:'spell_shadow_manaburn', purge:'spell_holy_powerwordshield', execute:'inv_misc_pocketwatch_01',
+    clean:'spell_holy_heal', bossChallenge:'achievement_general', addControl:'ability_warrior_battleshout',
+    swiftKill:'inv_misc_pocketwatch_01', healthyFinish:'spell_holy_heal', timePulse:'inv_misc_pocketwatch_01',
+    timeEdict:'inv_scroll_03', timeMark:'achievement_bg_kill_flag_carrier', alert:'achievement_bg_returnxflags_def_wsg',
+    combatRoom:'inv_misc_dice_02', themeAffix:'spell_arcane_starfire', dungeonTrait:'inv_misc_gem_diamond_02',
+    firstClear:'inv_misc_gem_topaz_02',
+  };
+  const colors = {
+    interrupt:'#fca5a5', adds:'#f9a8d4', defensive:'#93c5fd', resource:'#67e8f9',
+    purge:'#c4b5fd', execute:'#fde68a', clean:'#86efac', bossChallenge:'#f6c453',
+    addControl:'#f9a8d4', swiftKill:'#fde68a', healthyFinish:'#86efac', timePulse:'#fb7185',
+    timeEdict:'#fcd34d', timeMark:'#fca5a5', alert:'#fb7185', combatRoom:'#f9a8d4',
+    themeAffix:'#67e8f9', dungeonTrait:'#fde68a', firstClear:'#f6c453',
+  };
+  const metaFor = key => {
+    if (handlingCounts.has(key)) return `${handlingCounts.get(key)}/${Math.max(1, bosses.length)}名首领`;
+    if (key === 'themeAffix') return themeAffixes.length ? `${themeAffixes.length}条主题` : '常驻规则';
+    if (key === 'combatRoom') return rooms.length ? `${rooms.length}个房间` : '路线规则';
+    if (key === 'timeEdict') return edicts.length ? `${edicts.length}条禁令` : '契约开启';
+    if (key === 'timePulse') return timer ? timer.label : '超时触发';
+    if (key === 'timeMark') return timeMarks?.meta || '点名压力';
+    if (key === 'alert') return contractLevel > 0 ? `${selectedContract?.name || '契约'}生效` : '契约开启';
+    return '说明';
+  };
+  const isActive = key => handlingCounts.has(key)
+    || (key === 'themeAffix' && themeAffixes.length)
+    || (key === 'combatRoom' && rooms.length)
+    || (key === 'timeEdict' && edicts.length)
+    || (key === 'timePulse' && !!timer)
+    || (key === 'timeMark' && !!timeMarks)
+    || (key === 'alert' && contractLevel > 0);
+  const cell = key => {
+    const entry = byKey[key];
+    if (!entry) return '';
+    const desc = entry.desc || '副本机制说明。';
+    const tip = inlineTipSpanHtml({
+      ...entry,
+      desc,
+      meta:metaFor(key),
+    }, {
+      fallbackIcon:fallbackIcons[key] || 'inv_misc_book_11',
+      color:colors[key] || '#fde68a',
+      metaVisible:true,
+    });
+    return `<div class="dungeon-handbook-entry ${isActive(key) ? 'active' : ''}">
+      <div class="dungeon-handbook-entry-title">${tip}</div>
+      <div class="dungeon-handbook-entry-desc">${tipAttrText(desc)}</div>
+    </div>`;
+  };
+  const groups = [
+    { title:'首领处理', note:'这些标签来自当前副本所有 Boss 技能,命中越多代表越需要准备对应解法。', keys:['interrupt','adds','defensive','resource','purge','execute','clean'] },
+    { title:'挑战目标', note:'首领详情中的挑战目标会影响通关结算奖励和长期完成记录。', keys:['bossChallenge','addControl','swiftKill','healthyFinish'] },
+    { title:'契约时间线', note:'契约、禁令、房间和限时挑战会让同一个副本每天出现不同节奏。', keys:['timePulse','timeEdict','timeMark','alert','combatRoom','themeAffix'] },
+    { title:'奖励规则', note:'副本装备会同时受首通、掉落池、装等阶梯和副本印记影响。', keys:['dungeonTrait','firstClear'] },
+  ];
+  const sections = groups.map(group => {
+    const cells = group.keys.map(cell).filter(Boolean).join('');
+    if (!cells) return '';
+    return `<div class="dungeon-handbook-section">
+      <div class="dungeon-handbook-section-head"><b>${tipAttrText(group.title)}</b><span>${tipAttrText(group.note)}</span></div>
+      <div class="dungeon-handbook-grid">${cells}</div>
+    </div>`;
+  }).filter(Boolean).join('');
+  if (!sections) return '';
+  return `<div class="dungeon-handbook">
+    <div class="dungeon-handbook-head">
+      <b>📘 副本处理手册</b>
+      <span>点亮的条目表示当前副本或契约正在命中</span>
+    </div>
+    ${sections}
+  </div>`;
+}
+
 function dungeonBossRosterHtml(dg, selectedContract) {
   const bosses = Array.isArray(dg?.bosses) ? dg.bosses : [];
   if (!bosses.length) return '';
@@ -3958,6 +4051,7 @@ function buildDungeonInfoHtml(dg) {
       ${dg.type==='raid'?(isEpicRaid?' · 掉落: 史诗级紫装 / 全部首领超低概率橙装':' · 掉落: 常规团本装备 / 关底低概率橙武'):''}
     </div>`;
   html += dungeonRouteBriefHtml(dg, selectedContract);
+  html += dungeonHandlingCodexHtml(dg, selectedContract);
   html += dungeonThemeAffixHtml(dg, false);
   html += dungeonTraitPreviewHtml(dg);
   html += dungeonFirstClearPreviewHtml(dg);
