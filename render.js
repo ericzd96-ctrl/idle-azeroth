@@ -3696,6 +3696,20 @@ function buildDungeonInfoHtml(dg) {
     const items = (typeof getDungeonBossLoot === 'function') ? getDungeonBossLoot(dg.key, bossName, state.cls) : [];
     const isFinal = bossName === lastBossName;
     const bossIconHtml = (typeof entityIcon === 'function') ? entityIcon(bossName, 38, bossData.emoji || '👹') : (bossData.emoji || '👹');
+    const bossIconInfo = (typeof entityIconInfo === 'function') ? entityIconInfo(bossName, bossData.emoji || '👹') : null;
+    const bossPortraitTip = bossIconInfo ? inlineTipSpanHtml({
+      name:bossIconInfo.label || 'Boss头像',
+      icon:'🖼️',
+      desc:bossIconInfo.source === 'exact'
+        ? '该首领已接入专属 WoW 图标映射，副本手册和战斗提示会优先使用这张头像。'
+        : (bossIconInfo.source === 'theme' ? '该首领使用符合怪物类型或资料片主题的 WoW 图标，后续可继续替换为更精确头像。' : '该首领暂时使用表情或通用主题回退头像。'),
+      meta:bossIconInfo.iconName || ''
+    }, {
+      fallbackIcon:'inv_misc_head_undead_01',
+      color:bossIconInfo.source === 'exact' ? '#f6c453' : '#93c5fd',
+      metaVisible:false,
+      className:'dungeon-boss-portrait-tip dungeon-inline-tip'
+    }) : '';
     const dropLabel = isEpicRaid
       ? `(必掉史诗紫装${isFinal ? '×2' : ''}${items.some(it => it.rarity === 'legend') ? ' · 含超低概率橙装' : ''})`
       : (isRaid ? (isFinal ? '(常规团本装备 · 低概率橙武)' : '(常规团本装备)') : '(必掉1件)');
@@ -3713,7 +3727,10 @@ function buildDungeonInfoHtml(dg) {
     html += `
       <div class="dungeon-boss-card">
         <div class="dungeon-boss-head">
-          <div class="dungeon-boss-avatar">${bossIconHtml}</div>
+          <div class="dungeon-boss-avatar-wrap">
+            <div class="dungeon-boss-avatar">${bossIconHtml}</div>
+            ${bossPortraitTip ? `<div class="dungeon-boss-portrait-tag">${bossPortraitTip}</div>` : ''}
+          </div>
           <div class="dungeon-boss-title">
             <div>${bossName} ${isFinal ? '<span class="pill boss-final-pill">尾王</span>' : ''}</div>
             <div class="muted">波次 ${bossData.wave || '?'} · ${dropLabel}</div>

@@ -1190,7 +1190,30 @@
   Object.assign(ENTITY_EXACT, {
     '萨鲁法尔大王':'classicon_warrior',
     '萨鲁法尔':'classicon_warrior',
-    '死亡使者萨鲁法尔':'ability_warrior_savageblow'
+    '死亡使者萨鲁法尔':'ability_warrior_savageblow',
+    '迦顿男爵':'spell_fire_selfdestruct',
+    '帕奇维克':'ability_warrior_savageblow',
+    '萨菲隆':'spell_frost_freezingbreath',
+    '猎手阿图门':'ability_mount_ridinghorse',
+    '巴尔萨鲁斯':'inv_misc_head_dragon_black',
+    '扎里斯利安将军':'ability_warrior_battleshout',
+    '沙斯拉尔':'spell_arcane_blink',
+    '萨弗隆先驱者':'spell_fire_flameshock',
+    '焚化者古雷曼格':'spell_fire_volcano',
+    '埃博诺克':'inv_misc_head_dragon_black',
+    '弗莱格尔':'inv_misc_head_dragon_black',
+    '费尔默':'inv_misc_head_dragon_black',
+    '哈霍兰公主':'ability_creature_poison_05',
+    '奥罗':'spell_nature_earthquake',
+    '迈克斯纳':'ability_creature_poison_05',
+    '格罗布鲁斯':'ability_creature_disease_02',
+    '格拉斯':'spell_shadow_raisedead',
+    '教官拉苏维奥斯':'ability_warrior_shieldwall',
+    '收割者戈提克':'spell_shadow_raisedead',
+    '天启四骑士':'spell_shadow_deathcoil',
+    '布鲁塔卢斯':'spell_fire_volcano',
+    '菲米丝':'ability_creature_disease_02',
+    '艾瑞达双子':'spell_shadow_summonfelhunter'
   });
 
   Object.assign(SKILL_EXACT, {
@@ -1388,6 +1411,13 @@
     return isIconName(value) ? '' : (value || '');
   }
 
+  function normalizedIconLabel(value) {
+    return String(value || '')
+      .replace(/<[^>]+>/g, '')
+      .replace(/^[^A-Za-z0-9\u4e00-\u9fa5]+/u, '')
+      .trim();
+  }
+
   function resolveSymbolIconName(symbol) {
     if (!symbol) return '';
     if (SYMBOL_ICON[symbol]) return SYMBOL_ICON[symbol];
@@ -1401,6 +1431,21 @@
     const entityIconName = resolveByPattern(label, ENTITY_EXACT, ENTITY_PATTERNS, '');
     if (entityIconName && entityIconName !== 'inv_misc_questionmark') return entityIconName;
     return defaultName || '';
+  }
+
+  function resolveEntityIconInfo(entityName, fallback) {
+    const raw = String(entityName || '');
+    const normalized = normalizedIconLabel(raw);
+    let iconName = ENTITY_EXACT[raw] || ENTITY_EXACT[normalized] || '';
+    if (iconName) return { iconName, source:'exact', label:'专属头像' };
+    for (const [re, icon] of ENTITY_PATTERNS) {
+      if (re.test(normalized || raw)) return { iconName:icon, source:'theme', label:'主题头像' };
+    }
+    iconName = resolveSymbolIconName(fallback);
+    if (iconName) return { iconName, source:'emoji', label:'表情头像' };
+    iconName = resolveLabelIconName(fallback, '');
+    if (iconName) return { iconName, source:'fallback', label:'回退头像' };
+    return { iconName:'inv_misc_head_dragon_01', source:'generic', label:'通用头像' };
   }
 
   window.uiIcon = function (name, size, label) {
@@ -1424,13 +1469,13 @@
   };
 
   window.entityIcon = function (entityName, size, fallback) {
-    const iconName =
-      resolveByPattern(entityName, ENTITY_EXACT, ENTITY_PATTERNS, '') ||
-      resolveSymbolIconName(fallback) ||
-      resolveLabelIconName(entityName, '') ||
-      resolveLabelIconName(fallback, '') ||
-      'inv_misc_head_dragon_01';
+    const iconName = resolveEntityIconInfo(entityName, fallback).iconName;
     return imgHtml(wowIconName(iconName), size, entityName, '', 'wow-inline-icon');
+  };
+
+  window.entityIconInfo = function (entityName, fallback) {
+    const info = resolveEntityIconInfo(entityName, fallback);
+    return Object.assign({}, info, { src:BASE + info.iconName + '.jpg' });
   };
 
   window.dungeonIcon = function (key, name, size, fallback) {

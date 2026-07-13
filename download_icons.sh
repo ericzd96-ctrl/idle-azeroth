@@ -36,6 +36,7 @@ ICONS=(
   achievement_bg_kill_flag_carrier achievement_bg_returnxflags_def_wsg
   achievement_boss_cthun achievement_boss_illidan achievement_boss_ladyvashj
   achievement_boss_lichking achievement_boss_sartharion_01 achievement_boss_yoggsaron_01
+  achievement_boss_kelthuzad_01
   achievement_character_bloodelf_male achievement_character_draenei_male
   achievement_character_dwarf_male achievement_character_gnome_male
   achievement_character_human_male achievement_character_nightelf_male
@@ -48,18 +49,20 @@ ICONS=(
   achievement_arena_5v5_7 achievement_pvp_a_16 achievement_reputation_08
   achievement_zone_sholazar_01 achievement_zone_silithus_01 achievement_zone_stonetalon_01
   # 物品图标
+  classicon_warrior
   inv_axe_01 inv_belt_27 inv_boots_plate_04 inv_chest_plate04 inv_crate_04
   inv_gauntlets_04 inv_hammer_04 inv_helmet_03 inv_jewelry_ring_62 inv_jewelry_talisman_08
   inv_jewelry_talisman_11 inv_misc_bag_08 inv_misc_book_09 inv_misc_book_11 inv_misc_coin_01
   inv_misc_coin_02 inv_misc_coin_18 inv_misc_enggizmos_21 inv_misc_fish_18 inv_misc_gem_amethyst_02
   inv_misc_gem_bloodstone_02 inv_misc_gem_crystal_02 inv_misc_gem_diamond_02 inv_misc_gem_ebondraenite_02
   inv_misc_gem_sapphire_02 inv_misc_gem_topaz_02 inv_misc_gem_variety_01 inv_misc_head_dragon_01
-  inv_misc_head_dragon_black inv_misc_head_orc_01 inv_misc_head_undead_01 inv_misc_hook_01
+  inv_misc_head_dragon_black inv_misc_head_dragon_blue inv_misc_head_dragon_green
+  inv_misc_head_orc_01 inv_misc_head_undead_01 inv_misc_hook_01
   inv_misc_key_14 inv_misc_map_01 inv_misc_monstertentacle_01 inv_misc_note_01
   inv_misc_pocketwatch_01 inv_misc_questionmark inv_misc_spyglass_03
   inv_misc_ticket_tarot_portal_01 inv_ore_saronite_01 inv_pants_plate_17 inv_potion_51
   inv_potion_155 inv_scroll_03 inv_scroll_05 inv_shoulder_29 inv_staff_13
-  inv_sword_27 inv_sword_39 inv_sword_48
+  inv_sword_27 inv_sword_39 inv_sword_48 inv_weapon_shortblade_62
   # 法术图标
   spell_arcane_arcanepotency spell_arcane_arcaneresilience spell_arcane_blast
   spell_arcane_blink spell_arcane_mirrorimage spell_arcane_portaldarnassus
@@ -100,6 +103,7 @@ ICONS=(
   # 种族/职业头像
   ability_creature_cursed_04 ability_creature_disease_02 ability_creature_poison_05
   ability_creature_poison_06 ability_hunter_bestialdiscipline ability_hunter_camouflage
+  ability_hunter_pet_bear ability_hunter_pet_rhino ability_hunter_pet_scorpid
   ability_mount_gryphon_01 ability_paladin_shieldofthetemplar ability_rogue_deadlybrew
   ability_rogue_waylay ability_stealth ability_warrior_innerrage
   inv_inscription_inkblack01 inv_misc_gem_pearl_01 inv_sword_39
