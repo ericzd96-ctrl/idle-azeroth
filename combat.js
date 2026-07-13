@@ -7135,11 +7135,12 @@ function companionCombatPressureMult(){
   const special = tpl && companionCombatSpecialDesc(tpl.key) ? 1 : 0;
   const unique = tpl && companionUniqueTrait(tpl) ? 1 : 0;
   const extraSkills = tpl && Array.isArray(tpl.skills) ? tpl.skills.filter(s => s && s._extraSkill).length : 0;
+  const legendSkills = tpl && Array.isArray(tpl.skills) ? tpl.skills.filter(s => s && s._legendSkill).length : 0;
   const supportPressure = supportCount * 0.004;
   return {
     rank,
-    hp:1.012 + rank * 0.015 + special * 0.006 + unique * 0.004 + extraSkills * 0.006 + supportPressure,
-    atk:1.010 + rank * 0.012 + special * 0.005 + unique * 0.003 + extraSkills * 0.004 + supportPressure * 0.8,
+    hp:1.012 + rank * 0.015 + special * 0.006 + unique * 0.004 + extraSkills * 0.006 + legendSkills * 0.012 + supportPressure,
+    atk:1.010 + rank * 0.012 + special * 0.005 + unique * 0.003 + extraSkills * 0.004 + legendSkills * 0.008 + supportPressure * 0.8,
     name:rank > 0 ? '羁绊警觉' : (supportCount ? '战团压迫' : '战友压迫')
   };
 }

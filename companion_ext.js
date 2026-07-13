@@ -492,4 +492,26 @@
     if (!Array.isArray(c.skills)) c.skills = [];
     if (!c.skills.some(s => s.name === sk.name)) c.skills.push(Object.assign({ _extraSkill:true }, sk));
   }
+
+  /* ====== 橙色随从传说技能(2026-07-13)======
+     橙色随从额外获得 1 个醒目的传说级技能,和蓝紫/低级随从拉开辨识度。 */
+  const LEGENDARY_SKILLS = {
+    medivh:{ name:'卡拉赞裂门', icon:'🚪', type:'summon', summonCount:2, summonCap:3, summonTheme:'arcane', summonDuration:26000, summonPower:1.10, buff:'timeWarp', buffTarget:'hero', duration:9000, cd:30, desc:'打开卡拉赞裂门召来奥术回响,并短暂加速主角' },
+    azshara:{ name:'永恒王令', icon:'👑', type:'dmg', mul:5.4, stateKey:'charmed', stateMs:12000, slow:true, splashPct:0.45, bonusVsState:'charmed', bonusStatePct:0.45, cd:28, desc:'女王敕令魅惑目标并波及周围敌人' },
+    ragnaros:{ name:'熔火审判', icon:'🌋', type:'dmg', mul:6.0, dotPct:0.24, dotMs:10000, splashPct:0.65, stun:true, stunMs:1000, cd:30, desc:'熔火审判轰击全场,灼烧并短暂震慑敌人' },
+    kelthuzad:{ name:'纳克萨玛斯敕令', icon:'⚰️', type:'summon', summonCount:2, summonCap:4, summonTheme:'undead', summonDuration:30000, summonPower:1.08, shieldPct:0.08, cd:30, desc:'召来纳克萨玛斯亡者仆从,并为自身补上冰墓护盾' },
+    lichking:{ name:'冰封末日', icon:'❄️', type:'dmg', mul:5.6, slow:true, stun:true, stunMs:900, dotPct:0.20, dotMs:10000, lifeSteal:0.22, cd:30, desc:'冰封当前目标,附加寒疫并按伤害吸取生命' },
+    kiljaeden:{ name:'阿古斯毁灭', icon:'🌌', type:'dmg', mul:6.2, dotPct:0.22, dotMs:10000, splashPct:0.50, stateKey:'felMark', stateMs:12000, cd:30, desc:'欺诈者引爆邪能裂隙,灼烧并标记敌人' },
+    velen:{ name:'预见终局', icon:'🔮', type:'heal', heal:0.36, healTarget:'hero', shieldPct:0.18, cleanse:true, cd:34, desc:'预见致命结局,强治疗主角并施加厚盾' },
+    alexstrasza:{ name:'生命烈焰', icon:'🐉', type:'heal', heal:0.30, healTarget:'smart', shieldPct:0.12, cleanse:true, cd:32, desc:'生命女王释放烈焰,治疗危险目标并净化减益' },
+    cenarius:{ name:'世界树赐福', icon:'🌳', type:'summon', summonCount:2, summonCap:3, summonTheme:'nature', summonDuration:30000, summonPower:0.95, healPct:0.12, shieldPct:0.10, cd:32, desc:'召来林地守护并引动世界树赐福' },
+    grommash:{ name:'玛诺洛斯终斩', icon:'🪓', type:'dmg', mul:6.4, alwaysCrit:true, executeBonus:0.45, executeThreshold:0.45, lifeSteal:0.16, cd:28, desc:'必定暴击的终局斩击,对半血以下目标极其凶狠' },
+  };
+  for (const c of COMPANIONS) {
+    const q = c.quality || (c.key === 'lichking' || c.key === 'velen' || c.key === 'alexstrasza' || c.key === 'cenarius' || c.key === 'grommash' ? 'orange' : '');
+    const sk = LEGENDARY_SKILLS[c.key];
+    if (q !== 'orange' || !sk) continue;
+    if (!Array.isArray(c.skills)) c.skills = [];
+    if (!c.skills.some(s => s.name === sk.name)) c.skills.push(Object.assign({ _legendSkill:true }, sk));
+  }
 })();

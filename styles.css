@@ -374,6 +374,12 @@ h1 {
   background: rgba(8, 47, 73, .22);
   color: #bae6fd;
 }
+.comp-skill.legend {
+  border-color: rgba(251, 191, 36, .42);
+  background: linear-gradient(180deg, rgba(146, 64, 14, .34), rgba(63, 43, 18, .26));
+  color: #fde68a;
+  box-shadow: inset 0 0 0 1px rgba(250, 204, 21, .08);
+}
 .comp-skill:hover { border-color: var(--accent); color: var(--text); }
 .comp-upgrade-preview {
   margin: 6px 0;

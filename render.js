@@ -2959,7 +2959,7 @@ function companionSkillTipHtml(sk){
   else if (sk.healTarget === 'companion') lines.push('治疗目标：随从');
   else if (sk.healTarget === 'both') lines.push('治疗目标：主角和随从');
   else if (sk.healTarget === 'smart') lines.push('治疗目标：自动选择血量更危险的一方');
-  const mode = sk._signature ? (sk.mode === 'passive' ? '专属被动' : '专属主动') : sk._extraSkill ? '特色技能' : (sk.type === 'summon' ? '召唤技能' : sk.type === 'buff' ? '辅助技能' : sk.type === 'heal' ? '治疗技能' : '伤害技能');
+  const mode = sk._signature ? (sk.mode === 'passive' ? '专属被动' : '专属主动') : sk._legendSkill ? '传说技能' : sk._extraSkill ? '特色技能' : (sk.type === 'summon' ? '召唤技能' : sk.type === 'buff' ? '辅助技能' : sk.type === 'heal' ? '治疗技能' : '伤害技能');
   const cdSec = (typeof companionEffectiveSkillCdSec === 'function') ? companionEffectiveSkillCdSec(sk) : (sk.cd || 8);
   const cdText = sk.mode === 'passive' ? mode : `${mode} · 冷却 ${String(cdSec).replace(/\.0$/,'')}秒`;
   return `<b>${skillIconHtml} ${sk.name}</b><div>${sk.desc || ''}</div>${lines.map(x=>`<div class="muted">${x}</div>`).join('')}<div class="muted">${cdText}</div>`;
@@ -2971,7 +2971,7 @@ function compSkillChips(tpl){
   return skills.map(s=>{
     const tip = companionSkillTipHtml(s).replace(/"/g,'&quot;');
     const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(s.name, 16, s.icon) : s.icon;
-    return `<span class="comp-skill${s._signature?' sig':''}${s._extraSkill?' extra':''}" data-tip="${tip}">${skillIconHtml}<span class="cs-name">${s.name}</span></span>`;
+    return `<span class="comp-skill${s._signature?' sig':''}${s._extraSkill?' extra':''}${s._legendSkill?' legend':''}" data-tip="${tip}">${skillIconHtml}<span class="cs-name">${s.name}</span></span>`;
   }).join('');
 }
 const COMPANION_FILTER_DEFAULTS = { ownership:'all', target:'all', quality:'all', role:'all', trait:'all', bond:'all', query:'', sort:'quality' };
