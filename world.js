@@ -234,14 +234,16 @@ function enterDungeon(key) {
   const baseAffixes = getDungeonAffixes(dg);
   const trials = (typeof getDungeonContractTrials === 'function') ? getDungeonContractTrials(dg, contractLevel) : [];
   const environments = (typeof getDungeonEnvironments === 'function') ? getDungeonEnvironments(dg, contractLevel) : [];
+  const cataclysms = (typeof getDungeonCataclysms === 'function') ? getDungeonCataclysms(dg, contractLevel) : [];
   const edicts = (typeof getDungeonTacticalEdicts === 'function') ? getDungeonTacticalEdicts(dg, contractLevel) : [];
   const combatRooms = (typeof getDungeonCombatRooms === 'function') ? getDungeonCombatRooms(dg, contractLevel) : [];
   const timer = (typeof createDungeonTimer === 'function') ? createDungeonTimer(dg, contractLevel) : null;
-  state.dungeonState = { key, wave: 1, loot: [], affixes: themeAffixes.concat(baseAffixes, trials), themeAffixes, trials, environments, edicts, combatRooms, timer, contractLevel, contract, alertLevel: 0, maxAlert: 0 };
+  state.dungeonState = { key, wave: 1, loot: [], affixes: themeAffixes.concat(baseAffixes, trials), themeAffixes, trials, environments, cataclysms, edicts, combatRooms, timer, contractLevel, contract, alertLevel: 0, maxAlert: 0 };
   if (contractLevel > 0 && contract) log(`${contract.icon || '📜'} 已启用 ${contract.name}: ${contract.desc}`, 'legend');
   if (themeAffixes.length) log(`🧭 副本主题: ${themeAffixes.map(a => `${a.icon || '🧭'}${a.name}`).join(' · ')}`, 'bad');
   if (trials.length) log(`🔥 契约试炼: ${trials.map(t => `${t.icon || '🔥'}${t.name}`).join(' · ')}`, 'legend');
   if (environments.length) log(`🧭 副本环境: ${environments.map(e => `${e.icon || '🧭'}${e.name}`).join(' · ')}`, 'bad');
+  if (cataclysms.length) log(`🌪️ 环境灾变: ${cataclysms.map(e => `${e.icon || '🌪️'}${e.name}`).join(' · ')}`, 'bad');
   if (edicts.length) log(`📜 战术禁令: ${edicts.map(e => `${e.icon || '📜'}${e.name}`).join(' · ')}`, 'bad');
   if (combatRooms.length) log(`🎲 战斗房间: ${combatRooms.map(r => `${r.icon || '🎲'}${r.name}`).join(' · ')}`, 'bad');
   if (timer) log(`⏳ 限时挑战: ${timer.label} 内通关奖励+${Math.round((timer.rewardMult - 1) * 100)}%,超时后每15秒叠加压迫`, 'legend');
@@ -384,6 +386,59 @@ function getDungeonEnvironments(dg, contractLevel) {
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
   return pool.slice(0, Math.min(count, pool.length)).map(e => ({ ...e, dungeonEnvironment:true }));
+}
+
+const DUNGEON_CATACLYSMS = [
+  { key:'moltenFront', name:'熔火前线', icon:'🌋', tags:['fire','forge','dragon','orc'], cdMs:18500, desc:'周期爆发熔火脉冲,造成伤害和灼烧;火焰/熔炉主题敌人更厚。', mod:{ dmgPct:0.052, burnDpsPct:0.012, burnMs:5200, trashHp:0.035, bossDmg:0.030 } },
+  { key:'voidCollapse', name:'虚空坍缩', icon:'🌌', tags:['void','oldgod','shadow','ethereal'], cdMs:20500, desc:'虚空周期压缩战场,施加易伤/虚弱并为敌人套相位护盾。', mod:{ dmgPct:0.040, debuff:'vulnerable', debuffMs:5200, shieldPct:0.030, bossHp:0.035 } },
+  { key:'stormLattice', name:'风暴矩阵', icon:'⚡', tags:['storm','air','titan','mech'], cdMs:17000, desc:'雷霆链击玩家并燃烧资源;机械/泰坦敌人攻势更快。', mod:{ dmgPct:0.043, drainPct:0.13, silenceMs:1100, trashDmg:0.035, bossDmg:0.025 } },
+  { key:'necroticWake', name:'死寒复苏', icon:'💀', tags:['undead','plague','shadow','blood'], cdMs:22000, desc:'死寒压低治疗并周期召来亡者残片;亡灵主题首领生命更高。', mod:{ dmgPct:0.035, debuff:'decay2', debuffMs:5600, summonTheme:'undead', summonHpPct:0.13, bossHp:0.045, trashHp:0.030 } },
+  { key:'tidalLock', name:'深潮封锁', icon:'🌊', tags:['water','naga','nature'], cdMs:19000, desc:'潮汐封锁降低攻速并制造寒意护盾,适合拖慢爆发节奏。', mod:{ dmgPct:0.038, debuff:'chill', debuffMs:6200, shieldPct:0.022, trashDef:0.035, bossDef:0.030 } },
+  { key:'royalSiege', name:'王庭攻城', icon:'🏹', tags:['fortress','martial','noble','pirate'], cdMs:18000, desc:'箭雨与号令轮流压场,小怪获得攻城协同,首领周期护盾。', mod:{ dmgPct:0.042, shieldPct:0.025, trashDmg:0.040, bossDef:0.025 } },
+  { key:'wildBloom', name:'野性疯长', icon:'🌿', tags:['nature','beast','spider','heal'], cdMs:21000, desc:'野性藤蔓持续滋生,治疗敌人并束缚玩家节奏。', mod:{ healPct:0.026, debuff:'root', debuffMs:1700, trashHp:0.045, bossHp:0.030 } },
+  { key:'timeFracture', name:'时序裂口', icon:'⏳', tags:['time','arcane','ethereal','mythic'], cdMs:20000, desc:'时间线周期错位,加速敌人并压缩玩家资源窗口。', mod:{ dmgPct:0.034, drainPct:0.11, hastePct:0.18, trashDmg:0.030, bossDmg:0.030 } },
+];
+
+function dungeonCataclysmScore(def, tags, text) {
+  let score = 0;
+  for (const tag of def.tags || []) if (tags.includes(tag)) score += tag === 'mythic' ? 2 : 5;
+  if (def.key === 'timeFracture' && tags.includes('time')) score += 4;
+  if (def.key === 'moltenFront' && /火|炎|熔|龙|黑石|凤凰/.test(text)) score += 4;
+  if (def.key === 'voidCollapse' && /虚空|古神|低语|暗影|梦魇|镜/.test(text)) score += 4;
+  if (def.key === 'stormLattice' && /雷|风暴|泰坦|机械|奥丁|电/.test(text)) score += 4;
+  if (def.key === 'necroticWake' && /亡|天灾|巫妖|瘟疫|血|墓|骨/.test(text)) score += 4;
+  if (def.key === 'tidalLock' && /潮|海|水|娜迦|深渊/.test(text)) score += 4;
+  if (def.key === 'royalSiege' && /王|城|要塞|军|港|海盗|攻城/.test(text)) score += 4;
+  if (def.key === 'wildBloom' && /兽|蛛|自然|梦境|生命|森林/.test(text)) score += 4;
+  return score;
+}
+
+function getDungeonCataclysms(dg, contractLevel, opts) {
+  if (!dg) return [];
+  const mythicLevel = Math.max(0, opts?.mythicLevel || 0);
+  const level = Math.max(0, Math.floor(contractLevel || 0));
+  if (level <= 0 && mythicLevel <= 0) return [];
+  const tags = (typeof dungeonTraitTagsForDungeon === 'function') ? dungeonTraitTagsForDungeon(dg.key) : [];
+  if (dg.epic5 && !tags.includes('mythic')) tags.push('mythic');
+  const affixes = Array.isArray(opts?.affixes) ? opts.affixes : (typeof getDungeonThemeAffixes === 'function' ? getDungeonThemeAffixes(dg) : []);
+  for (const af of affixes) for (const tag of (af.tags || [])) if (!tags.includes(tag)) tags.push(tag);
+  const text = [
+    dg.name || '', dg.key || '', ...(dg.bosses || []).flatMap(b => [b.name || '', b.emoji || '', ...((b.skills || []).map(s => `${s.name || ''} ${s.desc || ''}`))]),
+    ...affixes.map(a => `${a.name || ''} ${a.desc || ''}`)
+  ].join(' ');
+  const count = mythicLevel >= 15 ? 3 : mythicLevel >= 7 ? 2 : level >= 3 ? 2 : 1;
+  const pressure = Math.min(2.6, 1 + level * 0.10 + mythicLevel * 0.045);
+  const scored = DUNGEON_CATACLYSMS
+    .map(def => ({ def, score:dungeonCataclysmScore(def, tags, text) }))
+    .sort((a, b) => b.score - a.score || a.def.key.localeCompare(b.def.key));
+  const picked = scored.filter(x => x.score > 0).concat(scored.filter(x => x.score <= 0)).slice(0, Math.min(count, DUNGEON_CATACLYSMS.length));
+  return picked.map((x, i) => ({
+    ...x.def,
+    cataclysm:true,
+    pressure:+(pressure + i * 0.08).toFixed(2),
+    meta:`灾变×${(pressure + i * 0.08).toFixed(2)}`,
+    mod:{ ...(x.def.mod || {}) }
+  }));
 }
 
 const DUNGEON_COMBAT_ROOMS = [
@@ -1132,6 +1187,9 @@ function onDungeonClear(dg) {
   const affixHitHtml = dungeonStateSnapshot?.affixHits
     ? `<div class="muted" style="font-size:12px">${dungeonClearMetricTip('词缀触发', '🧭', '主题压力与副本词缀在本次战斗中实际触发的次数,例如毒雾、护盾、陷阱、资源燃烧或斩杀脉冲。', `${dungeonStateSnapshot.affixHits || 0}次`, 'spell_arcane_starfire', '#67e8f9')} 触发</div>`
     : '';
+  const cataclysmHtml = dungeonStateSnapshot?.cataclysms?.length
+    ? `<div class="muted" style="font-size:12px">${dungeonClearMetricTip('环境灾变', '🌪️', '副本环境周期性爆发的高压机制,会造成伤害、资源压力、护盾、召唤或治疗。', `${dungeonStateSnapshot.cataclysmHits || 0}次`, 'spell_nature_earthquake', '#fb7185')}: ${dungeonStateSnapshot.cataclysms.map(c => dungeonClearInlineTip(c, { fallbackIcon:'spell_nature_earthquake', color:'#fb7185' })).join(' · ')}</div>`
+    : '';
   const contractInfo = dungeonContractInfo(dungeonStateSnapshot?.contractLevel || 0);
   const timerStatus = dungeonStateSnapshot?.timer ? dungeonTimerStatus(dungeonStateSnapshot, dungeonStateSnapshot.timer.clearedAt || Date.now()) : null;
   const timerTip = timerStatus
@@ -1186,6 +1244,7 @@ function onDungeonClear(dg) {
           : dungeonClearCodexTip('bossChallenge', `${dungeonStateSnapshot.bossChallengesCompleted || 0}/${dungeonStateSnapshot.bossChallengesStarted || 0}`),
         dungeonClearCodexTip('combatRoom', `${dungeonStateSnapshot.roomEvents || 0}次`),
         dungeonClearMetricTip('环境触发', '🧭', '契约环境危害在本次副本中的触发次数。', `${dungeonStateSnapshot.environmentHits || 0}次`, 'spell_frost_arcticwinds', '#67e8f9'),
+        dungeonClearMetricTip('灾变触发', '🌪️', '环境灾变在本次副本中的爆发次数。', `${dungeonStateSnapshot.cataclysmHits || 0}次`, 'spell_nature_earthquake', '#fb7185'),
         dungeonClearCodexTip('timeEdict', `${dungeonStateSnapshot.edictHits || 0}次`),
         timeMarkClearTip,
         dungeonClearMetricTip('禁令增援', '👥', '战术禁令额外召唤或派出的增援数量。', `${dungeonStateSnapshot.edictAdds || 0}`, 'achievement_bg_killxenemies_generalsroom', '#fcd34d'),
@@ -1201,6 +1260,7 @@ function onDungeonClear(dg) {
     <div class="muted">击败了 ${finalBossName} 等 ${(dg.bosses||[]).length} 名首领</div>
     ${affixHtml}
     ${affixHitHtml}
+    ${cataclysmHtml}
     ${contractHtml}
     ${timerHtml}
     ${bossMechanicHtml}
@@ -1584,8 +1644,9 @@ function enterMythic() {
   const selLvl = state.mythicSelectLevel || 1;
   const scale = Math.pow(1.2, selLvl);
   const affixes = getMythicAffixes(selLvl);
+  const cataclysms = (typeof getDungeonCataclysms === 'function') ? getDungeonCataclysms(dg, 3, { mythicLevel: selLvl, affixes }) : [];
   state.mode = 'mythic';
-  state.mythicState = { key: dg.key, wave: 1, loot: [], scale, level: selLvl, affixes,
+  state.mythicState = { key: dg.key, wave: 1, loot: [], scale, level: selLvl, affixes, cataclysms,
     lastVolcanic: 0, lastAfflicted: 0, lastArcane: 0 };
   state.hp = state.hero.hpMax;
   state.resource = state.resourceMax;
@@ -1593,7 +1654,9 @@ function enterMythic() {
   if (typeof clearAllBuffs === 'function') clearAllBuffs();
   spawnDungeonMonster();
   const affixStr = affixes.map(a => a.icon + a.name).join(' ');
+  const cataclysmStr = cataclysms.length ? ` 灾变: ${cataclysms.map(c => c.icon + c.name).join(' ')}` : '';
   log(`🌟 进入大秘境 +${selLvl} [${dg.name}] (×${scale.toFixed(1)}) 词缀: ${affixStr}`, 'legend');
+  if(cataclysmStr) log(`🌪️ 大秘境环境${cataclysmStr}`, 'bad');
   markDirty('ascend', 'stage');
 }
 
@@ -1692,12 +1755,16 @@ function onMythicClear() {
   const lootHtml = uniqueLoot.length > 0
     ? uniqueLoot.map(it => `<div style="font-size:11px">　<span class="${it.cls}">${it.name}${typeof itemEpicRaidBadge==='function'?itemEpicRaidBadge(it,true):''}${it.mythicUnique?' 🌟':''}</span></div>`).join('')
     : '<div class="muted">　无</div>';
+  const cataclysmHtml = ms.cataclysms?.length
+    ? `<div class="muted" style="font-size:12px">${dungeonClearMetricTip('环境灾变', '🌪️', '大秘境环境周期性爆发的高压机制,会造成伤害、资源压力、护盾、召唤或治疗。', `${ms.cataclysmHits || 0}次`, 'spell_nature_earthquake', '#fb7185')}: ${ms.cataclysms.map(c => dungeonClearInlineTip(c, { fallbackIcon:'spell_nature_earthquake', color:'#fb7185' })).join(' · ')}</div>`
+    : '';
 
   const gemReward = rng(10, 25);
   const bountyHtml = grantDungeonBountyReward(dg, { mythicLevel:clearedLevel, loot:uniqueLoot });
   $('dungeon-clear-text').innerHTML = `
     <div style="font-size:18px;margin:8px 0">🌟 大秘境 +${clearedLevel} 通关!</div>
     <div class="muted">随机副本: ${dg.name} · 怪物属性 ×${ms.scale.toFixed(1)}</div>
+    ${cataclysmHtml}
     <div style="margin:10px 0;text-align:left;font-size:13px">
       <div>🌟 大秘境光辉 +1 (觉醒时获得, 当前累积: ${pending})</div>
       <div>💰 金币 +${dg.reqLvl*80}</div>

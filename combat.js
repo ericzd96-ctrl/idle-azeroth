@@ -3234,6 +3234,7 @@ function spawnDungeonMonster(){
     applyDungeonCombatRoomSpawn(ds, dg, mon, isBoss, Date.now());
   }
   for(const unit of (state.currentMonsters || [])){
+    if(unit && unit.hp > 0) applyDungeonCataclysmSpawnScaling(unit, ds, !!unit.isBoss);
     if(unit && unit.hp > 0) applySpecAdaptationToMonster(unit, { extra:isFinalBoss ? 1 : 0 });
   }
   applyCompanionChallengeScalingToCurrent();
@@ -3932,6 +3933,88 @@ function applyDungeonEnvironmentEffects(ds, mon, now){
     }
   }
   if((ds.environmentHits || 0) !== beforeHits && typeof markDirty === 'function') markDirty('hero', 'stage');
+}
+
+function applyDungeonCataclysmSpawnScaling(mon, ds, isBoss){
+  if(!mon || !Array.isArray(ds?.cataclysms) || !ds.cataclysms.length) return;
+  let hpPct = 0, atkPct = 0, defPct = 0;
+  for(const cat of ds.cataclysms){
+    const mod = cat.mod || {};
+    const p = Math.max(1, cat.pressure || 1);
+    hpPct += (isBoss ? (mod.bossHp || 0.025) : (mod.trashHp || 0.025)) * p;
+    atkPct += (isBoss ? (mod.bossDmg || 0.018) : (mod.trashDmg || 0.018)) * p;
+    defPct += (isBoss ? (mod.bossDef || 0.014) : (mod.trashDef || 0.014)) * p;
+  }
+  hpPct = Math.min(0.42, hpPct);
+  atkPct = Math.min(0.28, atkPct);
+  defPct = Math.min(0.24, defPct);
+  if(hpPct > 0){ mon.hpMax = Math.max(1, Math.floor(mon.hpMax * (1 + hpPct))); mon.hp = mon.hpMax; }
+  if(atkPct > 0) mon.atk = Math.max(1, Math.floor(mon.atk * (1 + atkPct)));
+  if(defPct > 0) mon.def = Math.max(0, Math.floor(mon.def * (1 + defPct)));
+  mon._cataclysms = ds.cataclysms;
+  mon._cataclysmDesc = `环境灾变强化: 生命+${Math.round(hpPct*100)}%, 攻击+${Math.round(atkPct*100)}%, 防御+${Math.round(defPct*100)}%`;
+  setMonsterTrickAura(mon, 'cataclysmScaling', { name:'环境灾变', icon:'🌪️', desc:mon._cataclysmDesc }, 0, { stacks:ds.cataclysms.length, desc:mon._cataclysmDesc });
+}
+function cataclysmDamage(cat, mon, now, fallback){
+  const p = Math.max(1, cat?.pressure || 1);
+  return Math.max(1, Math.floor((state.hero.hpMax || 1) * ((cat?.mod?.dmgPct || fallback || 0.035) * p) + (mon?.lvl || 1) * 1.4));
+}
+function applyDungeonCataclysmEffects(ds, mon, now){
+  if(!(state.mode === 'dungeon' || state.mode === 'mythic') || !Array.isArray(ds?.cataclysms) || !ds.cataclysms.length || !mon) return;
+  const beforeHits = ds.cataclysmHits || 0;
+  for(const cat of ds.cataclysms){
+    const mod = cat.mod || {};
+    const cd = Math.max(9000, Math.floor((cat.cdMs || 19000) / Math.max(0.75, Math.min(1.5, cat.pressure || 1))));
+    const key = `cat:${cat.key}`;
+    if(now - (ds[key] || 0) < cd) continue;
+    ds[key] = now;
+    ds.cataclysmHits = (ds.cataclysmHits || 0) + 1;
+    const p = Math.max(1, cat.pressure || 1);
+    const live = (state.currentMonsters || []).filter(x => x && x.hp > 0);
+    applyHeroDamage(cataclysmDamage(cat, mon, now, 0.035), mon, { label:t=>(cat.icon || '🌪️') + '-' + t, color:'#fb7185', now, variant:'boss' });
+    if(mod.burnDpsPct) applyHeroDebuff('burn', mod.burnMs || 4500, { dps:Math.max(1, Math.floor((state.hero.hpMax || 1) * mod.burnDpsPct * p)) });
+    if(mod.debuff){
+      if(mod.debuff === 'root') state.heroStunUntil = Math.max(state.heroStunUntil || 0, now + (mod.debuffMs || 1100));
+      else applyHeroDebuff(mod.debuff, mod.debuffMs || 4200);
+    }
+    if(mod.drainPct){
+      const drain = Math.min(state.resource || 0, Math.floor((state.resourceMax || 0) * mod.drainPct * Math.min(1.8, p)));
+      if(drain > 0){ state.resource = Math.max(0, state.resource - drain); showFloat($('hero-emoji'), `${cat.icon || '🌪️'}-${drain}`, '#93c5fd', { variant:'status', scale:1.04 }); }
+    }
+    if(mod.silenceMs && Math.random() < Math.min(0.85, 0.34 + p * 0.12)) applyHeroDebuff('silence', mod.silenceMs);
+    if(mod.shieldPct){
+      for(const target of live){
+        const shield = Math.max(1, Math.floor(target.hpMax * mod.shieldPct * p));
+        target._arcaneShield = (target._arcaneShield || 0) + shield;
+        syncMonsterShieldAura(target);
+        showMonsterFloat(target, `${cat.icon || '🌪️'}盾`, '#93c5fd');
+      }
+    }
+    if(mod.healPct){
+      for(const target of live){
+        const heal = Math.max(1, Math.floor(target.hpMax * mod.healPct * p));
+        target.hp = Math.min(target.hpMax, target.hp + heal);
+        showMonsterFloat(target, `${cat.icon || '🌿'}+${heal}`, '#86efac', { variant:'heal' });
+      }
+    }
+    if(mod.hastePct){
+      for(const target of live){
+        target._trickSpdBuff = Math.max(target._trickSpdBuff || 0, now + 5200);
+        target._trickSpdPct = Math.max(target._trickSpdPct || 0, Math.round(mod.hastePct * 100 * p));
+        setMonsterTrickAura(target, 'cataclysmHaste', { name:cat.name, icon:cat.icon || '🌪️', desc:'灾变加速: 攻击速度提高' }, target._trickSpdBuff);
+      }
+    }
+    if(mod.summonTheme && live.filter(x => x._summoned).length < 4){
+      const base = live.find(x => x.isBoss) || mon;
+      summonMonsterAlly(base, { summonCount:1, summonTheme:mod.summonTheme, summonHpPct:mod.summonHpPct || 0.14, summonAtkPct:0.31 + Math.min(0.15, p * 0.03), summonDefPct:0.36 }, now);
+    }
+    for(const target of live){
+      setMonsterTrickAura(target, 'cataclysmActive:' + cat.key, { name:cat.name, icon:cat.icon || '🌪️', desc:cat.desc || '环境灾变正在影响战斗' }, now + 6500, { desc:cat.desc || '环境灾变正在影响战斗' });
+    }
+    log(`${cat.icon || '🌪️'} 环境灾变「${cat.name}」爆发: ${cat.desc}`, 'bad');
+    break;
+  }
+  if((ds.cataclysmHits || 0) !== beforeHits && typeof markDirty === 'function') markDirty('hero', 'stage');
 }
 
 function recordDungeonTimeMark(ds, key, edict) {
@@ -5937,6 +6020,9 @@ function tickBattle(now){
   }
   if (state.mode === 'dungeon' && state.dungeonState?.environments?.length) {
     applyDungeonEnvironmentEffects(state.dungeonState, mon, now);
+  }
+  if ((state.mode === 'dungeon' || state.mode === 'mythic') && (state.dungeonState || state.mythicState)?.cataclysms?.length) {
+    applyDungeonCataclysmEffects(state.dungeonState || state.mythicState, mon, now);
   }
   if (state.mode === 'dungeon' && state.dungeonState?.edicts?.length) {
     applyDungeonEdictEffects(state.dungeonState, mon, now);

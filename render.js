@@ -283,6 +283,8 @@ function focusBuffs(now) {
         key === 'nextDouble' ? ((mon._nextAtkDouble || 0) > 0) :
         key === 'specAdapt' ? !!mon._specAdaptTier :
         key === 'specPressure' ? ((aura.expire || 0) > now) :
+        key === 'cataclysmScaling' ? !!mon._cataclysms?.length :
+        key.startsWith('cataclysmActive:') ? ((aura.expire || 0) > now) :
         activeKeys.includes(key);
       if (!shouldKeep) {
         delete auraMap[key];
@@ -785,6 +787,15 @@ function dungeonProgressMechanicTags(ds, contract, alert, timerStatus) {
       meta:room.routeMatched ? '路线匹配' : '房间'
     }, { fallbackIcon:'inv_misc_dice_02', color:'#f9a8d4' }));
   }
+  const cataclysms = Array.isArray(ds.cataclysms) ? ds.cataclysms : [];
+  for (const cat of cataclysms.slice(0, 3)) {
+    tags.push(inlineTipSpanHtml({
+      name:cat.name || '环境灾变',
+      icon:cat.icon || '🌪️',
+      desc:cat.desc || '副本环境周期性爆发,并强化本次敌人强度。',
+      meta:cat.meta || '灾变'
+    }, { fallbackIcon:'spell_nature_earthquake', color:'#fb7185', meta:cat.meta, metaVisible:!!cat.meta }));
+  }
   const edicts = Array.isArray(ds.edicts) ? ds.edicts : [];
   for (const edict of edicts.slice(0, 4)) {
     tags.push(inlineTipSpanHtml({
@@ -829,6 +840,15 @@ function monsterEncounterDetailHtml(mon, bossData) {
       name:mon._directorReason || '战斗导演增援',
       desc:'这是首领额外导演机制召来的单位，不尽快处理会持续抬高战斗压力。'
     }], 'achievement_boss_illidan');
+  }
+  const cataclysms = Array.isArray(mon._cataclysms) ? mon._cataclysms : [];
+  if (cataclysms.length) {
+    html += monsterMechanicSectionHtml('环境灾变', '#fb7185', cataclysms, 'spell_nature_earthquake', cat => ({
+      icon:cat.icon || '🌪️',
+      name:cat.name || '环境灾变',
+      meta:cat.meta || '',
+      desc:cat.desc || '副本环境周期性爆发,并强化本次敌人强度。'
+    }));
   }
   if (state.mode === 'worldboss' && bossData?.key) {
     html += worldBossEncounterDetailHtml(bossData, mon);
@@ -5125,6 +5145,7 @@ function dungeonRouteBriefHtml(dg, selectedContract) {
   const rooms = (typeof getDungeonCombatRooms === 'function') ? getDungeonCombatRooms(dg, contractLevel) : [];
   const edicts = contractLevel > 0 && typeof getDungeonTacticalEdicts === 'function' ? getDungeonTacticalEdicts(dg, contractLevel) : [];
   const environments = contractLevel > 0 && typeof getDungeonEnvironments === 'function' ? getDungeonEnvironments(dg, contractLevel) : [];
+  const cataclysms = contractLevel > 0 && typeof getDungeonCataclysms === 'function' ? getDungeonCataclysms(dg, contractLevel) : [];
   const trials = contractLevel > 0 && typeof getDungeonContractTrials === 'function' ? getDungeonContractTrials(dg, contractLevel) : [];
   const timer = contractLevel > 0 && typeof createDungeonTimer === 'function' ? createDungeonTimer(dg, contractLevel) : null;
   const timeMarkSummary = contractLevel > 0 && typeof dungeonTimeMarkSummary === 'function' ? dungeonTimeMarkSummary(edicts, 0) : null;
@@ -5142,6 +5163,7 @@ function dungeonRouteBriefHtml(dg, selectedContract) {
     .concat(themeAffixes.slice(0, 1).map(a => ({ item:a, fallback:'spell_arcane_starfire', color:'#67e8f9', meta:(typeof dungeonAffixMeta === 'function') ? dungeonAffixMeta(a) : '主题压力' })))
     .concat(rooms.slice(0, 2).map(r => ({ item:r, fallback:'inv_misc_dice_02', color:'#f9a8d4', meta:r.routeMatched ? '路线匹配' : '房间' })))
     .concat(environments.slice(0, 1).map(e => ({ item:e, fallback:'spell_frost_arcticwinds', color:'#67e8f9', meta:'环境' })))
+    .concat(cataclysms.slice(0, 1).map(c => ({ item:c, fallback:'spell_nature_earthquake', color:'#fb7185', meta:c.meta || '灾变' })))
     .concat(edicts.slice(0, 2).map(e => ({ item:e, fallback:'inv_scroll_03', color:'#fde68a', meta:'禁令' })))
     .concat(timeMarkSummary ? [{ item:timeMarkSummary, fallback:'achievement_bg_kill_flag_carrier', color:'#fca5a5', meta:timeMarkSummary.meta }] : [])
     .concat(trials.slice(0, 1).map(t => ({ item:t, fallback:'ability_warrior_battleshout', color:'#fb7185', meta:'试炼' })));
@@ -5615,6 +5637,7 @@ function buildDungeonInfoHtml(dg) {
   if (selectedContract && selectedContract.level > 0) {
     const trialPreview = (typeof getDungeonContractTrials === 'function') ? getDungeonContractTrials(dg, selectedContract.level) : [];
     const environmentPreview = (typeof getDungeonEnvironments === 'function') ? getDungeonEnvironments(dg, selectedContract.level) : [];
+    const cataclysmPreview = (typeof getDungeonCataclysms === 'function') ? getDungeonCataclysms(dg, selectedContract.level) : [];
     const edictPreview = (typeof getDungeonTacticalEdicts === 'function') ? getDungeonTacticalEdicts(dg, selectedContract.level) : [];
     const timerPreview = (typeof createDungeonTimer === 'function') ? createDungeonTimer(dg, selectedContract.level) : null;
     const timeMarkPreview = (typeof dungeonTimeMarkSummary === 'function') ? dungeonTimeMarkSummary(edictPreview, 0) : null;
@@ -5652,6 +5675,14 @@ function buildDungeonInfoHtml(dg) {
         <b>🧭 副本环境</b>
         <div style="display:flex;flex-direction:column;gap:5px;margin-top:5px">
           ${environmentPreview.map(e => `<div><span style="color:#67e8f9">${symbolIconHtml(e.icon, 14, e.name, 'spell_frost_arcticwinds')} ${e.name}</span><div class="muted">${e.desc || '环境危害'}</div></div>`).join('')}
+        </div>
+      </div>`;
+    }
+    if (cataclysmPreview.length) {
+      html += `<div class="dungeon-environment-info">
+        <b>🌪️ 环境灾变</b>
+        <div style="display:flex;flex-direction:column;gap:5px;margin-top:5px">
+          ${cataclysmPreview.map(e => `<div><span style="color:#fb7185">${symbolIconHtml(e.icon, 14, e.name, 'spell_nature_earthquake')} ${e.name}</span><span class="muted"> ${e.meta || ''}</span><div class="muted">${e.desc || '灾变危害'}</div></div>`).join('')}
         </div>
       </div>`;
     }
