@@ -2110,6 +2110,24 @@ function pickMonSupportSkill(name, kind, lvl, isBoss){
   return pickMonSupportSkills(name, kind, lvl, 1, isBoss)[0] || null;
 }
 
+function wildMonsterHpMultiplier(lvl){
+  const level = Math.max(1, Math.floor(lvl || 1));
+  const curveLow = Math.max(0, Math.min(1, (level - 10) / 25));
+  const curveMid = Math.max(0, Math.min(1, (level - 40) / 30));
+  const curveHigh = Math.max(0, Math.min(1, (level - 70) / 20));
+  const curveEnd = Math.max(0, Math.min(1, (level - 95) / 15));
+  return +(3.2 + curveLow * 0.55 + curveMid * 0.75 + curveHigh * 0.95 + curveEnd * 0.65).toFixed(2);
+}
+function applyWildMonsterHpScaling(mon, lvl){
+  if(!mon || mon.isBoss) return mon;
+  const mult = wildMonsterHpMultiplier(lvl || mon.lvl);
+  mon.hpMax = Math.max(1, Math.floor(mon.hpMax * mult));
+  mon.hp = mon.hpMax;
+  mon._wildMonster = true;
+  mon._wildHpMult = mult;
+  return mon;
+}
+
 function makeMonster(name,lvl,isBoss,maxRarity){
   const hp=Math.floor((100+lvl*lvl*9.0)*(isBoss?18:1));
   const kind=isBoss?null:mobKind(name);   // boss 走自己的被动,小怪用身份技能
@@ -2164,6 +2182,7 @@ function spawnMonster(){
     const rareRoll=Math.random();
     const maxR=rareRoll<0.06?'epic':rareRoll<0.20?'rare':'uncommon';   // 2026-06-16 提高小怪爆蓝/紫上限概率(epic 0.02→0.06, rare 0.08→0.20)
     const m=makeMonster(mobName,lvl,false,maxR);
+    applyWildMonsterHpScaling(m, lvl);
     if(atkDamp!==1)m.atk=Math.max(1,Math.floor(m.atk*atkDamp));
     m.threat=m.atk*(0.6+Math.random()*0.8);   // 初始仇恨(攻击越高越容易被英雄锁定)
     state.currentMonsters.push(m);

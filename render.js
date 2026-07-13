@@ -1351,7 +1351,10 @@ function renderMonList() {
     const targetEl = row.querySelector('.m-target');
     if(targetEl){
       const recentTarget = (m._lastTargetAt || 0) > now - 3500;
-      const targetText = recentTarget ? `目标: ${m._lastTargetName || '主角'}` : (m._companionChallengeName ? `${m._companionChallengeName} ${m._companionChallengeRank || ''}` : '');
+      const wildText = m._wildHpMult ? `野外耐久 ×${Number(m._wildHpMult || 1).toFixed(2)}` : '';
+      const challengeText = m._companionChallengeName ? `${m._companionChallengeName} ${m._companionChallengeRank || ''}` : '';
+      const idleText = [challengeText, wildText].filter(Boolean).join(' · ');
+      const targetText = recentTarget ? `目标: ${m._lastTargetName || '主角'}` : idleText;
       targetEl.classList.toggle('is-companion', recentTarget && m._lastTargetKind === 'companion');
       targetEl.classList.toggle('is-summon', recentTarget && m._lastTargetKind === 'summon');
       if(targetEl.textContent !== targetText) targetEl.textContent = targetText;
