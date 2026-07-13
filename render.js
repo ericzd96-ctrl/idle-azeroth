@@ -2959,19 +2959,21 @@ function companionSkillTipHtml(sk){
   else if (sk.healTarget === 'companion') lines.push('治疗目标：随从');
   else if (sk.healTarget === 'both') lines.push('治疗目标：主角和随从');
   else if (sk.healTarget === 'smart') lines.push('治疗目标：自动选择血量更危险的一方');
-  const mode = sk._signature ? (sk.mode === 'passive' ? '专属被动' : '专属主动') : sk._legendSkill ? '传说技能' : sk._extraSkill ? '特色技能' : (sk.type === 'summon' ? '召唤技能' : sk.type === 'buff' ? '辅助技能' : sk.type === 'heal' ? '治疗技能' : '伤害技能');
+  const mode = sk._awakenSkill ? '觉醒专属技' : sk._signature ? (sk.mode === 'passive' ? '专属被动' : '专属主动') : sk._legendSkill ? '传说技能' : sk._extraSkill ? '特色技能' : (sk.type === 'summon' ? '召唤技能' : sk.type === 'buff' ? '辅助技能' : sk.type === 'heal' ? '治疗技能' : '伤害技能');
   const cdSec = (typeof companionEffectiveSkillCdSec === 'function') ? companionEffectiveSkillCdSec(sk) : (sk.cd || 8);
   const cdText = sk.mode === 'passive' ? mode : `${mode} · 冷却 ${String(cdSec).replace(/\.0$/,'')}秒`;
   return `<b>${skillIconHtml} ${sk.name}</b><div>${sk.desc || ''}</div>${lines.map(x=>`<div class="muted">${x}</div>`).join('')}<div class="muted">${cdText}</div>`;
 }
 /* 随从技能 → 可悬浮小图标(指向看描述) */
-function compSkillChips(tpl){
+function compSkillChips(tpl, comp){
   const skills = ((tpl&&tpl.skills)||[]).slice();
   if (tpl?.signature) skills.push(Object.assign({_signature:true}, tpl.signature));
+  const awakenSkill = (typeof companionAwakenSkill === 'function') ? companionAwakenSkill(tpl, comp) : null;
+  if (awakenSkill) skills.push(awakenSkill);
   return skills.map(s=>{
     const tip = companionSkillTipHtml(s).replace(/"/g,'&quot;');
     const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(s.name, 16, s.icon) : s.icon;
-    return `<span class="comp-skill${s._signature?' sig':''}${s._extraSkill?' extra':''}${s._legendSkill?' legend':''}" data-tip="${tip}">${skillIconHtml}<span class="cs-name">${s.name}</span></span>`;
+    return `<span class="comp-skill${s._signature?' sig':''}${s._extraSkill?' extra':''}${s._legendSkill?' legend':''}${s._awakenSkill?' awaken':''}" data-tip="${tip}">${skillIconHtml}<span class="cs-name">${s.name}</span></span>`;
   }).join('');
 }
 const COMPANION_FILTER_DEFAULTS = { ownership:'all', target:'all', quality:'all', role:'all', trait:'all', bond:'all', query:'', sort:'quality' };
@@ -3005,9 +3007,11 @@ const COMPANION_TRAIT_META = {
   support: { label:'辅助', tone:'support', desc:'拥有护盾、增益或净化效果，用来稳定节奏、抵消减益和提高爆发窗口。' },
   control: { label:'控制', tone:'control', desc:'拥有减速、击晕、破甲、状态标记等控场效果，可延缓敌人或制造增伤条件。' },
 };
-function companionSkillPool(tpl){
+function companionSkillPool(tpl, comp){
   const skills = ((tpl&&tpl.skills)||[]).slice();
   if (tpl?.signature) skills.push(Object.assign({_signature:true}, tpl.signature));
+  const awakenSkill = (typeof companionAwakenSkill === 'function') ? companionAwakenSkill(tpl, comp) : null;
+  if (awakenSkill) skills.push(awakenSkill);
   return skills.filter(Boolean);
 }
 function companionSkillEffectTags(sk){
@@ -3589,6 +3593,31 @@ function companionUpgradePreviewHtml(tpl, comp, options) {
     ${cfg.compact ? '' : `<div class="comp-upgrade-meta"><span class="${q.cls}">${q.name}</span> · ${roleTag(tpl.role)} · ${canUp ? '可以升星' : '继续收集碎片'}</div>`}
   </div>`;
 }
+function companionAwakenPreviewHtml(tpl, comp, options) {
+  if (!tpl || !comp || typeof getCompanionAwakenCost !== 'function') return '';
+  const cfg = options || {};
+  const cost = getCompanionAwakenCost(comp, tpl);
+  if (!cost) return '';
+  const active = cost.awakened;
+  if (cfg.compact && cost.locked && !active) return '';
+  const pct = active ? 100 : cost.locked ? 0 : Math.max(5, Math.min(100, Math.round((cost.haveShards / Math.max(1, cost.needShards)) * 100)));
+  const skill = (typeof companionAwakenSkillDef === 'function') ? companionAwakenSkillDef(tpl) : null;
+  const costText = (typeof companionAwakenCostText === 'function') ? companionAwakenCostText(cost) : '';
+  const note = active
+    ? `已解锁${skill?.name ? `「${skill.name}」` : '觉醒专属技'} · 随从属性+${Math.round(cost.statPct * 100)}% · 熟悉度${comp.familiarity || 100}`
+    : cost.locked
+      ? '5星后可觉醒:消耗同品质通用碎片和大量资源,解锁觉醒专属技。'
+      : `觉醒消耗: ${costText} · 解锁${skill?.name ? `「${skill.name}」` : '觉醒专属技'}`;
+  return `<div class="comp-awaken-preview ${active ? 'active' : cost.ready ? 'ready' : cost.locked ? 'locked' : ''}">
+    <div class="comp-awaken-head">
+      <b>${active ? '🌟 已觉醒' : cost.locked ? '🌟 觉醒未开放' : '🌟 觉醒'}</b>
+      <span>${active ? 'AWAKE' : cost.locked ? `${comp.stars || 1}/5星` : `${cost.haveShards}/${cost.needShards}`}</span>
+    </div>
+    <div class="comp-awaken-bar"><i style="width:${pct}%"></i></div>
+    <div class="comp-awaken-note">${tipAttrText(note)}</div>
+    ${cfg.compact ? '' : companionAwakenSkillHtml(tpl, comp, false)}
+  </div>`;
+}
 function companionBondModText(bond) {
   return Object.entries(bond?.mod || {}).map(([k, v]) => (typeof fmtMod === 'function') ? fmtMod(k, v) : `${k}+${v}`).join(' ');
 }
@@ -3620,10 +3649,10 @@ function companionBondChipsHtml(tpl, entries) {
   if (bonds.length > chips.length) chips.push(`<span class="comp-bond-chip more">+${bonds.length - chips.length}</span>`);
   return `<div class="comp-card-bonds">${chips.join('')}</div>`;
 }
-function companionDetailSkillListHtml(tpl) {
-  const skills = companionSkillPool(tpl);
+function companionDetailSkillListHtml(tpl, comp) {
+  const skills = companionSkillPool(tpl, comp);
   if (!skills.length) return '<div class="muted">暂无随从技能</div>';
-  return `<div class="comp-detail-skill-grid">${skills.map(sk => `<div class="comp-detail-skill${sk._signature ? ' sig' : ''}${sk._legendSkill ? ' legend' : ''}${sk._extraSkill ? ' extra' : ''}">${companionSkillTipHtml(sk)}${companionSkillEffectTagsHtml(sk)}</div>`).join('')}</div>`;
+  return `<div class="comp-detail-skill-grid">${skills.map(sk => `<div class="comp-detail-skill${sk._signature ? ' sig' : ''}${sk._legendSkill ? ' legend' : ''}${sk._extraSkill ? ' extra' : ''}${sk._awakenSkill ? ' awaken' : ''}">${companionSkillTipHtml(sk)}${companionSkillEffectTagsHtml(sk)}</div>`).join('')}</div>`;
 }
 function companionLegendSkill(tpl) {
   return (tpl?.skills || []).find(sk => sk && sk._legendSkill) || null;
@@ -3637,6 +3666,24 @@ function companionLegendSkillHtml(tpl, compact) {
   return `<div class="comp-legend-skill-note" data-tip="${tip}">
     <b>橙色传说技能</b><span>${icon} ${tipAttrText(sk.name)}</span>
     <div>${tipAttrText(sk.desc || '')}</div>
+  </div>`;
+}
+function companionAwakenSkillHtml(tpl, comp, compact) {
+  if (!tpl || !comp || typeof companionAwakenSkillDef !== 'function') return '';
+  const active = typeof companionIsAwakened === 'function' && companionIsAwakened(comp);
+  const sk = companionAwakenSkillDef(tpl);
+  if (!sk) return '';
+  const tip = companionSkillTipHtml(sk).replace(/"/g, '&quot;');
+  const icon = (typeof skillIcon === 'function') ? skillIcon(sk.name, compact ? 15 : 17, sk.icon || '🌟') : (sk.icon || '🌟');
+  if (compact) {
+    return `<div class="comp-awaken-skill-line ${active ? 'active' : 'locked'}" data-tip="${tip}">${active ? '已觉醒' : '5星可觉醒'}: ${icon} <b>${tipAttrText(sk.name)}</b></div>`;
+  }
+  const cost = (typeof getCompanionAwakenCost === 'function') ? getCompanionAwakenCost(comp, tpl) : null;
+  const costText = (typeof companionAwakenCostText === 'function') ? companionAwakenCostText(cost) : '';
+  return `<div class="comp-awaken-skill-note ${active ? 'active' : 'locked'}" data-tip="${tip}">
+    <b>${active ? '觉醒专属技已解锁' : '觉醒专属技预览'}</b><span>${icon} ${tipAttrText(sk.name)}</span>
+    <div>${tipAttrText(sk.desc || '')}</div>
+    ${active ? `<small>熟悉度 ${comp.familiarity || 100} · 觉醒属性 +${Math.round((cost?.statPct || 0.1) * 100)}%</small>` : `<small>${(comp.stars || 1) >= 5 ? tipAttrText(costText) : '升到5星后可消耗同品质通用碎片和资源觉醒。'}</small>`}
   </div>`;
 }
 function companionDetailBondsHtml(tpl, entries) {
@@ -3671,7 +3718,8 @@ function companionDetailPanelHtml(entries) {
   const { tpl, owned } = entry;
   const q = compQuality(tpl);
   const stars = owned?.stars || 0;
-  const starText = entry.isOwned ? `${'⭐'.repeat(stars || 1)} ${stars || 1}星` : '未获得';
+  const awakened = entry.isOwned && typeof companionIsAwakened === 'function' && companionIsAwakened(owned);
+  const starText = entry.isOwned ? `${'⭐'.repeat(stars || 1)} ${stars || 1}星${awakened ? ' · 已觉醒' : ''}` : '未获得';
   const traits = companionTraitFlags(tpl);
   const traitText = Object.entries(COMPANION_TRAIT_META).filter(([key]) => traits[key]).map(([, meta]) => meta.label).join(' / ') || '常规';
   const roleBonus = Object.entries((typeof ROLE_BONUS === 'object' && ROLE_BONUS[tpl.role]) || {}).map(([k, v]) => (typeof fmtMod === 'function') ? fmtMod(k, v) : `${k}+${v}`).join(' ');
@@ -3687,6 +3735,10 @@ function companionDetailPanelHtml(entries) {
   const resonanceInfo = (typeof companionResonanceInfo === 'function') ? companionResonanceInfo(tpl) : null;
   const cost = entry.isOwned ? getUpgradeCost(owned) : null;
   const canUp = cost && !cost.maxed && cost.have >= cost.need;
+  const awakenCost = entry.isOwned && typeof getCompanionAwakenCost === 'function' ? getCompanionAwakenCost(owned, tpl) : null;
+  const awakenButton = entry.isOwned
+    ? `<button class="comp-awaken-btn ${awakenCost?.ready ? 'ready' : ''}" data-action="awakencomp" data-idx="${entry.idx}" ${(awakenCost?.ready && !awakenCost?.awakened) ? '' : 'disabled'}>${awakenCost?.awakened ? '已觉醒 🌟' : '觉醒'}</button>`
+    : '';
   const wishButton = `<button data-action="compwish" data-key="${tpl.key}">${entry.isWished ? '取消目标' : '加入目标'}</button>`;
   const supportButton = entry.isOwned && !entry.isActive
     ? `<button class="${supportActive ? 'gold' : ''}" data-action="compsupport" data-key="${tpl.key}">${supportActive ? '取消支援' : '设为支援'}</button>`
@@ -3696,6 +3748,7 @@ function companionDetailPanelHtml(entries) {
         ${entry.isActive ? '<button class="danger" data-action="unequipcomp">休息</button>' : `<button class="primary" data-action="usecomp" data-idx="${entry.idx}">出战</button>`}
         ${supportButton}
         <button class="gold" data-action="upgradecomp" data-idx="${entry.idx}" ${canUp ? '' : 'disabled'}>${cost.maxed ? '满星 ⭐5' : `升星 ${stars || 1}/5`}</button>
+        ${awakenButton}
         ${wishButton}
       </div>`
     : `<div class="comp-detail-actions">${wishButton}<span class="muted">抽取到该随从后可出战、派遣，并参与对应羁绊。</span></div>`;
@@ -3714,15 +3767,17 @@ function companionDetailPanelHtml(entries) {
         <div class="muted">专属: ${tipAttrText(ownBonus || '无')}</div>
         <div class="muted">定位: ${tipAttrText(roleBonus || '无')}</div>
         ${entry.isOwned ? companionUpgradePreviewHtml(tpl, owned) : `<div class="comp-upgrade-preview"><div class="comp-upgrade-head"><b>⭐ 培养预览</b><span>${q.name}</span></div><div class="comp-upgrade-note">获得后可用同名碎片与${q.name}通用碎片升星。</div></div>`}
+        ${entry.isOwned ? companionAwakenPreviewHtml(tpl, owned, { compact:true }) : ''}
         ${actionHtml}
       </div>
       <div class="comp-detail-block">
         <div class="comp-detail-block-title">技能说明</div>
         ${uniqueTrait ? `<div class="comp-unique-note">${uniqueTrait.icon || '✦'} 独有性质: ${tipAttrText(uniqueTrait.name)} · ${tipAttrText(uniqueTrait.desc || '')}${uniqueSummary ? `<br><span>${tipAttrText(uniqueSummary)}</span>` : ''}</div>` : ''}
         ${companionLegendSkillHtml(tpl, false)}
+        ${entry.isOwned ? companionAwakenSkillHtml(tpl, owned, false) : ''}
         ${combatSpecialDesc ? `<div class="comp-combat-special-note">${combatSpecial?.icon || '🌟'} 专属战斗: ${tipAttrText(combatSpecialDesc)}${combatSpecial?.tags?.length ? `<br><span>定位标签: ${combatSpecial.tags.map(companionDungeonTagLabel).join(' / ')}</span>` : ''}</div>` : ''}
         ${veteran ? `<div class="comp-veteran-note">${veteran.icon} ${veteran.name}: ${tipAttrText(veteran.desc)}</div>` : ''}
-        ${companionDetailSkillListHtml(tpl)}
+        ${companionDetailSkillListHtml(tpl, owned)}
       </div>
     </div>
     <div class="comp-detail-block">
@@ -4166,7 +4221,7 @@ function companionSheetTabsHtml(entries){
   return `<div class="comp-sheet-tabs">${buttons}</div>`;
 }
 function companionPanelRenderSig(){
-  const compList = (state.companions || []).map(c => `${c.key}:${c.stars||1}`).sort().join('|');
+  const compList = (state.companions || []).map(c => `${c.key}:${c.stars||1}:${c.awakened?1:0}:${c.awakenRank||0}:${c.familiarity||0}`).sort().join('|');
   const shards = state.compUniversalShards
     ? Object.entries(state.compUniversalShards).sort((a,b)=>a[0].localeCompare(b[0])).map(([k,v])=>`${k}:${v||0}`).join('|')
     : '';
@@ -4208,9 +4263,9 @@ function renderCompanion() {
   const ownedM = {}; for(const c of state.companions) ownedM[c.key] = c;
   const fullQ = ['white','green','blue','purple','orange'].filter(qk => {
     const ofQ = COMPANIONS.filter(t => compQuality(t).key === qk);
-    return ofQ.length && ofQ.every(t => { const c = ownedM[t.key]; return c && (c.stars||1) >= 5; });
+    return ofQ.length && ofQ.every(t => { const c = ownedM[t.key]; return c && (c.stars||1) >= 5 && (typeof companionIsAwakened !== 'function' || companionIsAwakened(c)); });
   });
-  if(fullQ.length) html += `<div class="muted" style="font-size:10px;margin-top:2px;color:var(--accent)">✅ 已满星品质: ${fullQ.map(k=>qLabel[k]).join(' ')} (不再抽到)</div>`;
+  if(fullQ.length) html += `<div class="muted" style="font-size:10px;margin-top:2px;color:var(--accent)">✅ 已完成品质: ${fullQ.map(k=>qLabel[k]).join(' ')} (全员5星且觉醒,不再抽到)</div>`;
   html += `</div>`;
 
   html += companionSheetTabsHtml(entries);
@@ -4272,12 +4327,15 @@ function renderCompanion() {
       ${unique ? `<div class="muted" style="font-size:10px;color:#bae6fd">独有性质: ${unique.icon || '✦'} ${unique.name}${uniqueSummary ? ` · ${uniqueSummary}` : ''}</div>` : ''}
       ${tpl?.signature?`<div class="muted" style="font-size:10px;color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')} ${tpl.signature.name}${tpl.signature.mode==='passive'?' [被动]':''}</div>`:''}
       ${companionLegendSkillHtml(tpl, true)}
+      ${companionAwakenSkillHtml(tpl, act, true)}
       ${spec ? `<div class="muted" style="font-size:10px;color:#fde68a">专属战斗: ${spec.icon || '🌟'} ${spec.name}${fit?.score ? ` · 当前副本匹配 ${fit.label}` : ''}</div>` : ''}
       ${companionUpgradePreviewHtml(tpl, act, { compact:true })}
-      <div class="comp-skills">${compSkillChips(tpl)}</div>
+      ${companionAwakenPreviewHtml(tpl, act, { compact:true })}
+      <div class="comp-skills">${compSkillChips(tpl, act)}</div>
       <div class="comp-card-actions">
         <button data-action="compdetail" data-key="${tpl.key}">详情</button>
         <button data-action="compwish" data-key="${tpl.key}">${companionIsWishlisted(tpl.key) ? '取消目标' : '加入目标'}</button>
+        ${(() => { const ac = typeof getCompanionAwakenCost === 'function' ? getCompanionAwakenCost(act, tpl) : null; return ac ? `<button class="comp-awaken-btn ${ac.ready ? 'ready' : ''}" data-action="awakencomp" data-idx="${state.activeCompanion}" ${(ac.ready && !ac.awakened) ? '' : 'disabled'}>${ac.awakened ? '已觉醒' : '觉醒'}</button>` : ''; })()}
         <button class="danger" data-action="unequipcomp">休息</button>
       </div>
     </div>`;
@@ -4309,9 +4367,11 @@ function renderCompanion() {
       ${unique ? `<div class="muted" style="font-size:10px;color:#bae6fd">独有性质: ${unique.icon || '✦'} ${unique.name}${uniqueSummary ? ` · ${uniqueSummary}` : ''}</div>` : ''}
       ${tpl.signature?`<div class="muted" style="font-size:10px;color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')} ${tpl.signature.name}${tpl.signature.mode==='passive'?' [被动]':''}</div>`:''}
       ${companionLegendSkillHtml(tpl, true)}
+      ${companionAwakenSkillHtml(tpl, c, true)}
       ${spec ? `<div class="muted" style="font-size:10px;color:#fde68a">专属战斗: ${spec.icon || '🌟'} ${spec.name}${veteran ? ` · ${veteran.icon}${veteran.name}` : ''}</div>` : ''}
       ${companionUpgradePreviewHtml(tpl, c)}
-      <div class="comp-skills">${compSkillChips(tpl)}</div>
+      ${companionAwakenPreviewHtml(tpl, c, { compact:true })}
+      <div class="comp-skills">${compSkillChips(tpl, c)}</div>
       <div class="row">
         <span class="muted" style="font-size:10px">可用碎片 ${cost.have}${cost.maxed?'':' / 升星需'+cost.need}${(state.compUniversalShards[q.key]||0)>0?' (含通用×'+state.compUniversalShards[q.key]+')':''}</span>
         <div style="display:flex;flex-wrap:wrap;gap:3px">
@@ -4320,6 +4380,7 @@ function renderCompanion() {
           <button class="${supportActive ? 'gold' : ''}" data-action="compsupport" data-key="${tpl.key}">${supportActive ? '取消支援' : '支援'}</button>
           <button class="primary" data-action="usecomp" data-idx="${i}">出战</button>
           <button class="gold" data-action="upgradecomp" data-idx="${i}" ${canUp?'':'disabled'}>${cost.maxed?'满星 ⭐5':'升星 '+(c.stars||1)+'/5'}</button>
+          ${(() => { const ac = typeof getCompanionAwakenCost === 'function' ? getCompanionAwakenCost(c, tpl) : null; return ac ? `<button class="comp-awaken-btn ${ac.ready ? 'ready' : ''}" data-action="awakencomp" data-idx="${i}" ${(ac.ready && !ac.awakened) ? '' : 'disabled'}>${ac.awakened ? '已觉醒' : '觉醒'}</button>` : ''; })()}
         </div>
       </div>
     </div>`;

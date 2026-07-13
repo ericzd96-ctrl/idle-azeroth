@@ -6688,6 +6688,20 @@ const COMPANION_STAR_GROWTH = 0.15;   // 每星成长
 const COMPANION_SKILL_DMG_BONUS = 1.43;  // 随从技能伤害全局加成
 const COMPANION_HEAL_SCALE = 1.25;        // 随从治疗统一收口
 const COMPANION_RESONANCE_CD_MS = 60000;  // 羁绊共鸣:收藏羁绊转为低频战斗连携
+const COMPANION_AWAKEN_COST = {
+  white:{ shards:18, gold:80000, essence:25, gem:0, honor:0, statPct:0.10 },
+  green:{ shards:28, gold:160000, essence:45, gem:0, honor:400, statPct:0.12 },
+  blue:{ shards:42, gold:360000, essence:95, gem:15, honor:1000, statPct:0.15 },
+  purple:{ shards:70, gold:900000, essence:220, gem:50, honor:3200, statPct:0.18 },
+  orange:{ shards:110, gold:2200000, essence:520, gem:120, honor:8000, statPct:0.22 },
+};
+const COMPANION_AWAKEN_HERO_MOD = {
+  white:{ atkPct:1, hpPct:1, defPct:1 },
+  green:{ atkPct:1.5, hpPct:1.5, defPct:1 },
+  blue:{ atkPct:2, hpPct:2.5, defPct:1.5, mastery:2 },
+  purple:{ atkPct:3, hpPct:3.5, defPct:2, mastery:5 },
+  orange:{ atkPct:4.5, hpPct:5, defPct:3, mastery:8 },
+};
 const COMPANION_COMBAT_SPECIALS = {
   fordring:{ name:'提尔审判', icon:'⚖️', type:'barrier', cd:28000, tags:['shield','cleanse','boss'], desc:'首领战或主角承压时审判目标,为主角补盾并净化1个减益。' },
   varian:{ name:'王者挑战', icon:'🦁', type:'guard', cd:18000, tags:['tank','shield','boss'], desc:'主角承压或首领战中主动护卫,短时间吸引火力并为双方加盾。' },
@@ -6845,6 +6859,50 @@ function companionEffectiveSkillCdMs(sk){
 }
 function companionEffectiveSkillCdSec(sk){ return +(companionEffectiveSkillCdMs(sk) / 1000).toFixed(1); }
 function getActiveCompanion(){if(state.activeCompanion<0||!state.companions[state.activeCompanion])return null;return state.companions[state.activeCompanion];}
+function companionIsAwakened(comp){ return !!(comp && (comp.awakened || (comp.awakenRank || 0) > 0)); }
+function companionAwakenCostBase(qKey){ return COMPANION_AWAKEN_COST[qKey || 'white'] || COMPANION_AWAKEN_COST.white; }
+function companionAwakenInfo(comp, tpl){
+  const q = (typeof compQuality === 'function') ? compQuality(tpl) : { key:'white', name:'普通' };
+  const base = companionAwakenCostBase(q.key);
+  return {
+    active: companionIsAwakened(comp),
+    rank: companionIsAwakened(comp) ? (comp.awakenRank || 1) : 0,
+    qKey:q.key,
+    qName:q.name,
+    statPct:base.statPct || 0.1,
+    familiarity:comp?.familiarity || 0,
+  };
+}
+function companionAwakenSkillDef(tpl){
+  if(!tpl) return null;
+  const q = (typeof compQuality === 'function') ? compQuality(tpl) : { key:'white' };
+  const pow = ({ white:1.00, green:1.10, blue:1.24, purple:1.42, orange:1.68 })[q.key] || 1;
+  const baseName = tpl.signature?.name || tpl.name || '随从';
+  if(tpl.role === 'tank'){
+    return {
+      _awakenSkill:true, name:`觉醒·${baseName}`, icon:'🌟', type:'buff',
+      buff:'sacredShield', buffTarget:'both', duration:12000, cd:26,
+      healPct:+(0.08 * pow).toFixed(3), shieldPct:+(0.18 * pow).toFixed(3), cleanse:true,
+      desc:'觉醒之力守护主角和随从,施加厚护盾、少量治疗并净化减益。'
+    };
+  }
+  if(tpl.role === 'heal'){
+    return {
+      _awakenSkill:true, name:`觉醒·${baseName}`, icon:'🌟', type:'heal',
+      heal:+(0.30 * pow).toFixed(3), healTarget:'both', healPct:+(0.06 * pow).toFixed(3),
+      shieldPct:+(0.12 * pow).toFixed(3), cleanse:true, cd:24,
+      desc:'觉醒之力同时治疗主角和随从,追加护盾并净化减益。'
+    };
+  }
+  return {
+    _awakenSkill:true, name:`觉醒·${baseName}`, icon:'🌟', type:'dmg',
+    mul:+(5.2 * pow).toFixed(1), alwaysCrit:q.key === 'orange',
+    dotPct:+(0.14 * pow).toFixed(3), dotMs:9000, splashPct:+(0.38 * pow).toFixed(2),
+    executeBonus:+(0.28 * pow).toFixed(2), executeThreshold:0.42, bonusVsBoss:+(0.18 * pow).toFixed(2),
+    cd:24, desc:'觉醒爆发技,高倍率打击并溅射,对首领和低血量目标额外提高伤害。'
+  };
+}
+function companionAwakenSkill(tpl, comp){ return companionIsAwakened(comp) ? companionAwakenSkillDef(tpl) : null; }
 function companionOwnedByKey(key){ return (state.companions || []).find(c => c && c.key === key) || null; }
 function companionSupportMaxSlots(){ return COMPANION_SUPPORT_SLOTS; }
 function ensureCompanionSupportState(){
@@ -7066,13 +7124,17 @@ function computeCompanionTemplateStats(comp, tpl, opts){
   const skills=(tpl.skills||[]).slice();
   const sigSkill = companionSignatureSkill(tpl);
   if(sigSkill) skills.push(sigSkill);
+  const awakenSkill = companionAwakenSkill(tpl, comp);
+  if(awakenSkill) skills.push(awakenSkill);
   const tactic = opts?.support ? { atk:1, def:1, hp:1, spd:1, heal:1 } : companionTacticMeta();
   const dungeonMult = opts?.ignoreDungeon ? 1 : companionDungeonFitMult(tpl);
   const supportScale = opts?.support ? (opts.supportScale || 1) : 1;
   const veteran = companionVeteranInfo(tpl, comp);
   const veteranPower = veteran ? (opts?.support ? veteran.supportMult : 1.04) : 1;
   const unique = companionUniqueTrait(tpl);
-  const stats={name:tpl.name,emoji:tpl.emoji,role:tpl.role,skills,signature:companionSignature(tpl),veteran,unique,atk:Math.floor(state.hero.atk*qm*sm*role.atk*(tpl.atkMul||1)*(tactic.atk||1)*supportScale*dungeonMult*veteranPower*(unique?.atk||1)),def:Math.floor(state.hero.def*qm*sm*0.72*role.def*(tpl.defMul||1)*(tactic.def||1)*supportScale*(unique?.def||1)),hpMax:Math.floor(state.hero.hpMax*qm*sm*role.hp*(tpl.hpMul||1)*(tactic.hp||1)*supportScale*(unique?.hp||1)),crit:Math.floor(state.hero.crit*qm*0.40*(tpl.critMul||1))+(unique?.crit||0),critd:Math.floor(state.hero.critd*role.critd*(tpl.critdMul||1))+(unique?.critd||0),spd:state.hero.spd*role.spd*(tpl.spdMul||1)*(tactic.spd||1)*(unique?.spd||1),reg:Math.max(1, Math.floor((state.hero.reg||0)*role.reg*(tpl.regMul||1)*(tactic.heal||1)*supportScale*(unique?.reg||1)))};
+  const awaken = companionAwakenInfo(comp, tpl);
+  const awakenMult = awaken.active ? 1 + awaken.statPct : 1;
+  const stats={name:tpl.name,emoji:tpl.emoji,role:tpl.role,skills,signature:companionSignature(tpl),veteran,unique,awaken,atk:Math.floor(state.hero.atk*qm*sm*role.atk*(tpl.atkMul||1)*(tactic.atk||1)*supportScale*dungeonMult*veteranPower*(unique?.atk||1)*awakenMult),def:Math.floor(state.hero.def*qm*sm*0.72*role.def*(tpl.defMul||1)*(tactic.def||1)*supportScale*(unique?.def||1)*awakenMult),hpMax:Math.floor(state.hero.hpMax*qm*sm*role.hp*(tpl.hpMul||1)*(tactic.hp||1)*supportScale*(unique?.hp||1)*awakenMult),crit:Math.floor(state.hero.crit*qm*0.40*(tpl.critMul||1))+(unique?.crit||0)+(awaken.active?2:0),critd:Math.floor(state.hero.critd*role.critd*(tpl.critdMul||1))+(unique?.critd||0)+(awaken.active?10:0),spd:state.hero.spd*role.spd*(tpl.spdMul||1)*(tactic.spd||1)*(unique?.spd||1)*(awaken.active?1.04:1),reg:Math.max(1, Math.floor((state.hero.reg||0)*role.reg*(tpl.regMul||1)*(tactic.heal||1)*supportScale*(unique?.reg||1)*awakenMult))};
   applyCompanionSignatureStats(stats, tpl);
   if(!opts?.support){
     applyCompanionBuffEffects(stats);
@@ -7091,9 +7153,15 @@ function collectCompanionMod(){
   const comp=getActiveCompanion();
   if(comp){const tpl=COMPANIONS.find(c=>c.key===comp.key);
     if(tpl){const starF=1+0.2*((comp.stars||1)-1);
-      for(const[k,v]of Object.entries(tpl.bonus||{}))out[k]=(out[k]||0)+v*starF;
+      const awaken = companionAwakenInfo(comp, tpl);
+      const awakenF = awaken.active ? 1.15 : 1;
+      for(const[k,v]of Object.entries(tpl.bonus||{}))out[k]=(out[k]||0)+v*starF*awakenF;
       const role=(typeof ROLE_BONUS==='object')&&ROLE_BONUS[tpl.role];
-      if(role)for(const[k,v]of Object.entries(role))out[k]=(out[k]||0)+v;}}
+      if(role)for(const[k,v]of Object.entries(role))out[k]=(out[k]||0)+v;
+      if(awaken.active){
+        const mod = COMPANION_AWAKEN_HERO_MOD[awaken.qKey] || COMPANION_AWAKEN_HERO_MOD.white;
+        for(const[k,v]of Object.entries(mod))out[k]=(out[k]||0)+v;
+      }}}
   const owned=state.companions.length;
   out.atkPct+=Math.min(owned*0.05,1.2);
   out.hpPct+=Math.min(owned*0.08,1.8);   // 收藏被动保留存在感,但不再把角色面板顶飞
@@ -7136,11 +7204,13 @@ function companionCombatPressureMult(){
   const unique = tpl && companionUniqueTrait(tpl) ? 1 : 0;
   const extraSkills = tpl && Array.isArray(tpl.skills) ? tpl.skills.filter(s => s && s._extraSkill).length : 0;
   const legendSkills = tpl && Array.isArray(tpl.skills) ? tpl.skills.filter(s => s && s._legendSkill).length : 0;
+  const awaken = companionIsAwakened(comp) ? 1 : 0;
+  const awakenedSupport = companionSupportEntries().filter(entry => companionIsAwakened(entry.comp)).length;
   const supportPressure = supportCount * 0.004;
   return {
     rank,
-    hp:1.012 + rank * 0.015 + special * 0.006 + unique * 0.004 + extraSkills * 0.006 + legendSkills * 0.012 + supportPressure,
-    atk:1.010 + rank * 0.012 + special * 0.005 + unique * 0.003 + extraSkills * 0.004 + legendSkills * 0.008 + supportPressure * 0.8,
+    hp:1.012 + rank * 0.015 + special * 0.006 + unique * 0.004 + extraSkills * 0.006 + legendSkills * 0.012 + awaken * 0.022 + awakenedSupport * 0.008 + supportPressure,
+    atk:1.010 + rank * 0.012 + special * 0.005 + unique * 0.003 + extraSkills * 0.004 + legendSkills * 0.008 + awaken * 0.016 + awakenedSupport * 0.006 + supportPressure * 0.8,
     name:rank > 0 ? '羁绊警觉' : (supportCount ? '战团压迫' : '战友压迫')
   };
 }
@@ -7793,8 +7863,12 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
           if(sk.aoePct) applyCompanionSplash(mon, dealt, sk.aoePct, sk.icon || '💥', '#fca5a5');
           applyCompanionSignatureHit(companionSignature(tpl), st, mon, dealt, now);
           if(sk.heal){
-            const healTarget = companionSkillTarget(sk) === 'hero' ? 'hero' : companionSkillTarget(sk) === 'companion' ? 'companion' : companionHealTarget();
-            if(healTarget==='companion'){
+            const targetMode = companionSkillTarget(sk);
+            const healTarget = targetMode === 'hero' ? 'hero' : targetMode === 'companion' ? 'companion' : targetMode === 'both' ? 'both' : companionHealTarget();
+            if(healTarget==='both'){
+              healCompanionAmount(Math.floor(st.hpMax*sk.heal*COMPANION_HEAL_SCALE*companionTacticHealMult()),st.emoji,'#6ee7b7','comp',sk.name);
+              healHeroAmount(Math.floor(state.hero.hpMax*sk.heal*COMPANION_HEAL_SCALE*companionTacticHealMult()), st.emoji, '#6ee7b7', 'comp', sk.name);
+            } else if(healTarget==='companion'){
               const healAmt=Math.floor(st.hpMax*sk.heal*COMPANION_HEAL_SCALE*companionTacticHealMult());
               healCompanionAmount(healAmt,st.emoji,'#6ee7b7','comp',sk.name);
             } else {
@@ -7805,8 +7879,16 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
           if(sk.lifeSteal) healCompanionAmount(Math.floor(dealt*sk.lifeSteal), '🩸', '#6ee7b7', 'comp', sk.name);
         }
         else if(sk.type==='heal'){
-          const healTarget = companionSkillTarget(sk) === 'hero' ? 'hero' : companionSkillTarget(sk) === 'companion' ? 'companion' : companionHealTarget();
-          if(healTarget==='companion'){
+          const targetMode = companionSkillTarget(sk);
+          const healTarget = targetMode === 'hero' ? 'hero' : targetMode === 'companion' ? 'companion' : targetMode === 'both' ? 'both' : companionHealTarget();
+          if(healTarget==='both'){
+            const ch=Math.floor(st.hpMax*sk.heal*COMPANION_HEAL_SCALE*companionTacticHealMult());
+            const hh=Math.floor(state.hero.hpMax*sk.heal*COMPANION_HEAL_SCALE*companionTacticHealMult());
+            const cr=healCompanionAmount(ch, st.emoji, '#6ee7b7', 'comp', sk.name);
+            const hr=healHeroAmount(hh, st.emoji, '#6ee7b7', 'comp', sk.name);
+            log(sk.name+'! 为主角和随从恢复 '+(hr.applied+cr.applied)+' 生命','good');
+          }
+          else if(healTarget==='companion'){
             const h=Math.floor(st.hpMax*sk.heal*COMPANION_HEAL_SCALE*companionTacticHealMult());
             const hr=healCompanionAmount(h, st.emoji, '#6ee7b7', 'comp', sk.name); log(sk.name+'! 为随从恢复 '+hr.applied+' 生命','good');
           }
@@ -7845,12 +7927,12 @@ function companionDraw(){
   const fullQuality = new Set();
   for(const qk of qualityKeys){
     const ofQ = COMPANIONS.filter(t => compQuality(t).key === qk);
-    if(ofQ.length && ofQ.every(t => { const c = ownedMap[t.key]; return c && (c.stars||1) >= 5; })){
+    if(ofQ.length && ofQ.every(t => { const c = ownedMap[t.key]; return c && (c.stars||1) >= 5 && companionIsAwakened(c); })){
       fullQuality.add(qk);
     }
   }
   const pool = COMPANIONS.filter(t => !fullQuality.has(compQuality(t).key));
-  if(!pool.length) return log('🎰 所有品质随从均已满星!','good');
+  if(!pool.length) return log('🎰 所有品质随从均已满星并觉醒!','good');
   // 加权随机
   let total=0;const w=pool.map(c=>{const x=compQuality(c).weight;total+=x;return x;});
   let r=Math.random()*total;let tpl=pool[0];
@@ -7897,6 +7979,61 @@ function getUpgradeCost(comp){
   const q = compQuality(tpl);
   if(!state.compUniversalShards) state.compUniversalShards = {white:0,green:0,blue:0,purple:0,orange:0};
   return {type:'升星',need:companionUpgradeNeed(comp, q),have:(state.companionShards[comp.key]||0)+(state.compUniversalShards[q.key]||0),maxed:false};
+}
+function getCompanionAwakenCost(comp, tpl){
+  if(!comp || !tpl) return null;
+  const q = compQuality(tpl);
+  const base = companionAwakenCostBase(q.key);
+  if(!state.compUniversalShards) state.compUniversalShards = {white:0,green:0,blue:0,purple:0,orange:0};
+  const cost = {
+    type:'觉醒',
+    quality:q,
+    awakened:companionIsAwakened(comp),
+    locked:(comp.stars || 1) < 5,
+    needShards:base.shards,
+    haveShards:state.compUniversalShards[q.key] || 0,
+    gold:base.gold || 0,
+    essence:base.essence || 0,
+    gem:base.gem || 0,
+    honor:base.honor || 0,
+    statPct:base.statPct || 0.1,
+  };
+  cost.ready = !cost.awakened && !cost.locked &&
+    cost.haveShards >= cost.needShards &&
+    (state.gold || 0) >= cost.gold &&
+    (state.essence || 0) >= cost.essence &&
+    (state.gem || 0) >= cost.gem &&
+    (state.honor || 0) >= cost.honor;
+  return cost;
+}
+function companionAwakenCostText(cost){
+  if(!cost) return '';
+  const bits = [`${cost.quality?.name || ''}通用碎片 ${cost.haveShards}/${cost.needShards}`];
+  if(cost.gold) bits.push(`金币 ${typeof fmt === 'function' ? fmt(cost.gold) : cost.gold}`);
+  if(cost.essence) bits.push(`精华 ${cost.essence}`);
+  if(cost.gem) bits.push(`钻石 ${cost.gem}`);
+  if(cost.honor) bits.push(`荣誉 ${cost.honor}`);
+  return bits.join(' · ');
+}
+function awakenCompanion(idx){
+  const comp=state.companions[idx];if(!comp)return;
+  const tpl=COMPANIONS.find(c=>c.key===comp.key);if(!tpl)return;
+  const cost = getCompanionAwakenCost(comp, tpl);
+  if(cost.awakened) return log(`${tpl.name} 已觉醒`,'bad');
+  if(cost.locked) return log(`${tpl.name} 需要先升到5星才能觉醒`,'bad');
+  if(!cost.ready) return log(`觉醒资源不足: ${companionAwakenCostText(cost)}`,'bad');
+  state.compUniversalShards[cost.quality.key] -= cost.needShards;
+  state.gold -= cost.gold;
+  state.essence = (state.essence || 0) - cost.essence;
+  state.gem = (state.gem || 0) - cost.gem;
+  state.honor = (state.honor || 0) - cost.honor;
+  comp.awakened = true;
+  comp.awakenRank = 1;
+  comp.familiarity = Math.max(comp.familiarity || 0, 100);
+  const skill = companionAwakenSkillDef(tpl);
+  log(`🌟 ${tpl.name} 完成觉醒! 熟悉度+100,属性+${Math.round(cost.statPct*100)}%,解锁「${skill?.name || '觉醒专属技'}」`,'legend');
+  if(state.activeCompanion === idx) initCompanionHp();
+  recomputeStats();markDirty('companion','hero','stage');
 }
 function companionUpgradeNeed(comp, q){
   const stars = comp?.stars || 1;

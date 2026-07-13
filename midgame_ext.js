@@ -894,7 +894,7 @@
     };
     for (const tpl of COMPANIONS) {
       const rawSkills = Array.isArray(tpl.skills) ? tpl.skills.filter(Boolean) : [];
-      const isSpecialSkill = sk => sk && (sk._roleKit || sk._extraSkill || sk._legendSkill);
+      const isSpecialSkill = sk => sk && (sk._roleKit || sk._extraSkill || sk._legendSkill || sk._awakenSkill);
       const specialSkills = rawSkills.filter(isSpecialSkill);
       tpl.skills = rawSkills.filter(sk => !isSpecialSkill(sk)).slice(0, 5);
       const pool = (genericByRole[tpl.role] || genericByRole.dps).map(x => Object.assign({}, x));

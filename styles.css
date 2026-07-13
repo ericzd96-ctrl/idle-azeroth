@@ -380,6 +380,12 @@ h1 {
   color: #fff7ed;
   box-shadow: 0 0 0 1px rgba(250, 204, 21, .18), 0 0 12px rgba(245, 158, 11, .20);
 }
+.comp-skill.awaken {
+  border-color: rgba(216, 180, 254, .72);
+  background: linear-gradient(180deg, rgba(88, 28, 135, .54), rgba(120, 53, 15, .30));
+  color: #f5d0fe;
+  box-shadow: 0 0 0 1px rgba(216, 180, 254, .16), 0 0 12px rgba(168, 85, 247, .20);
+}
 .comp-legend-skill-line {
   margin-top: 4px;
   padding: 5px 7px;
@@ -393,6 +399,23 @@ h1 {
   box-shadow: inset 0 0 0 1px rgba(250, 204, 21, .10);
 }
 .comp-legend-skill-line b { color: #fff7ed; }
+.comp-awaken-skill-line {
+  margin-top: 4px;
+  padding: 5px 7px;
+  border: 1px solid rgba(216, 180, 254, .46);
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(88, 28, 135, .34), rgba(63, 43, 18, .22));
+  color: #e9d5ff;
+  font-size: 10px;
+  line-height: 1.35;
+  cursor: help;
+}
+.comp-awaken-skill-line.active {
+  border-color: rgba(251, 191, 36, .48);
+  color: #fef3c7;
+}
+.comp-awaken-skill-line b { color: #fff7ed; }
+.comp-awaken-skill-line.locked { opacity: .82; }
 .comp-skill:hover { border-color: var(--accent); color: var(--text); }
 .comp-upgrade-preview {
   margin: 6px 0;
@@ -440,6 +463,64 @@ h1 {
 }
 .comp-upgrade-meta {
   margin-top: 3px;
+}
+.comp-awaken-preview {
+  margin: 6px 0;
+  padding: 7px;
+  border: 1px solid rgba(216, 180, 254, .22);
+  border-radius: 7px;
+  background: linear-gradient(180deg, rgba(88, 28, 135, .20), rgba(15, 23, 42, .34));
+}
+.comp-awaken-preview.ready {
+  border-color: rgba(251, 191, 36, .50);
+  background: linear-gradient(180deg, rgba(120, 53, 15, .28), rgba(88, 28, 135, .20));
+}
+.comp-awaken-preview.active {
+  border-color: rgba(250, 204, 21, .42);
+  background: linear-gradient(180deg, rgba(146, 64, 14, .30), rgba(88, 28, 135, .18));
+}
+.comp-awaken-preview.locked { opacity: .78; }
+.comp-awaken-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #f5d0fe;
+  font-size: 10px;
+}
+.comp-awaken-head span {
+  flex: 0 0 auto;
+  color: #fef3c7;
+}
+.comp-awaken-bar {
+  height: 5px;
+  margin: 5px 0;
+  border: 1px solid rgba(216, 180, 254, .14);
+  border-radius: 999px;
+  background: rgba(2, 6, 23, .56);
+  overflow: hidden;
+}
+.comp-awaken-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(168, 85, 247, .92), rgba(250, 204, 21, .92));
+}
+.comp-awaken-note {
+  color: #e9d5ff;
+  font-size: 10px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+.comp-awaken-btn {
+  border-color: rgba(216, 180, 254, .36);
+  background: linear-gradient(180deg, #6b21a8, #3b0764);
+  color: #f5d0fe;
+}
+.comp-awaken-btn.ready {
+  border-color: #f59e0b;
+  background: linear-gradient(180deg, #d97706, #7e22ce);
+  color: #fff7ed;
 }
 .comp-filter-panel {
   margin: 10px 0;
@@ -999,6 +1080,12 @@ h1 {
   background: linear-gradient(180deg, rgba(120, 53, 15, .34), rgba(15, 23, 42, .42));
   color: #fde68a;
   box-shadow: inset 0 0 0 1px rgba(250, 204, 21, .10);
+}
+.comp-detail-skill.awaken {
+  border-color: rgba(216, 180, 254, .50);
+  background: linear-gradient(180deg, rgba(88, 28, 135, .34), rgba(15, 23, 42, .42));
+  color: #f5d0fe;
+  box-shadow: inset 0 0 0 1px rgba(216, 180, 254, .10);
 }
 .comp-detail-effect-tags {
   display: flex;
@@ -3837,6 +3924,41 @@ button,
   color: #fed7aa;
   font-size: 10px;
 }
+.comp-awaken-skill-note {
+  margin: 0 0 8px;
+  padding: 7px 8px;
+  border: 1px solid rgba(216, 180, 254, .46);
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(88, 28, 135, .32), rgba(63, 43, 18, .16));
+  color: #e9d5ff;
+  font-size: 11px;
+  line-height: 1.45;
+  cursor: help;
+  box-shadow: inset 0 0 0 1px rgba(216, 180, 254, .08);
+}
+.comp-awaken-skill-note.active {
+  border-color: rgba(251, 191, 36, .44);
+  background: linear-gradient(180deg, rgba(120, 53, 15, .30), rgba(88, 28, 135, .20));
+}
+.comp-awaken-skill-note b {
+  display: block;
+  color: #f0abfc;
+  font-size: 10px;
+  margin-bottom: 2px;
+}
+.comp-awaken-skill-note span {
+  display: block;
+  color: #fff7ed;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.comp-awaken-skill-note div,
+.comp-awaken-skill-note small {
+  display: block;
+  color: #e9d5ff;
+  font-size: 10px;
+}
+.comp-awaken-skill-note.locked { opacity: .86; }
 .comp-unique-note {
   margin: 0 0 8px;
   padding: 6px 8px;

@@ -42,7 +42,7 @@ const defaultState = () => ({
   invCap: 60,              // 背包容量(可花金币扩展)
   equipped: {},
   autoSellRarity: null,
-  companions: [],          // [{key,quality,stars,shards}]
+  companions: [],          // [{key,quality,stars,shards,awakened,awakenRank,familiarity}]
   companionWishlist: [],   // 账号共享:随从收藏目标 key[]
   activeCompanion: -1,     // 当前出战随从索引, -1=无
   companionSupport: [],     // 当前角色:支援随从 key[],不直接普攻,但会低频触发支援专属

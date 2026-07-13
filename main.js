@@ -653,6 +653,7 @@ function setupDelegation() {
     const idx=parseInt(btn.dataset.idx, 10);
     if(act==='usecomp'){state.activeCompanion=idx;if(typeof ensureCompanionSupportState==='function')ensureCompanionSupportState();initCompanionHp();recomputeStats();markDirty('companion','hero');log('🐾 随从出战!','good')}
     else if(act==='upgradecomp')upgradeCompanion(idx);
+    else if(act==='awakencomp')awakenCompanion(idx);
     else if(act==='unequipcomp'){state.activeCompanion=-1;state._compHp=0;recomputeStats();markDirty('companion','hero')}
   });
   $('companion-list').addEventListener('input', e => {
@@ -664,7 +665,7 @@ function setupDelegation() {
   (() => {
     const root = $('companion-list'); if (!root) return;
     const tip = $('compare-tip');
-    const compTipSelector = '.comp-skill,.comp-tip[data-tip],.comp-bond-member[data-tip],.comp-bond-chip[data-tip],.comp-mission-reward-preview[data-tip],.comp-mission-roster-chip[data-tip],.comp-mission-best[data-tip],.comp-mission-send[data-tip],.comp-mission-score[data-tip]';
+    const compTipSelector = '.comp-skill,.comp-tip[data-tip],.comp-legend-skill-line[data-tip],.comp-legend-skill-note[data-tip],.comp-awaken-skill-line[data-tip],.comp-awaken-skill-note[data-tip],.comp-bond-member[data-tip],.comp-bond-chip[data-tip],.comp-mission-reward-preview[data-tip],.comp-mission-roster-chip[data-tip],.comp-mission-best[data-tip],.comp-mission-send[data-tip],.comp-mission-score[data-tip]';
     root.addEventListener('mouseover', e => {
       if (!hoverTipsEnabled()) return;
       const sk = e.target.closest(compTipSelector); if (!sk) return;
