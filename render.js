@@ -1116,6 +1116,12 @@ function worldBossTipHtml(wb) {
   if (!wb) return '<b>世界首领</b>';
   const mon = (typeof buildWorldBossMonsterData === 'function') ? buildWorldBossMonsterData(wb) : null;
   let html = monsterUnitTipHtml(mon, wb);
+  if (wb.nightmareTraits?.length) {
+    html += '<div style="margin-top:4px;color:#fb7185">噩梦特性:</div>';
+    wb.nightmareTraits.forEach(t => {
+      html += `<div style="font-size:11px;line-height:1.45;margin-top:2px">${t.icon || '🌌'} <b>${tipAttrText(t.name || '噩梦特性')}</b> <span class="muted">${tipAttrText(t.desc || '')}</span></div>`;
+    });
+  }
   if (wb.skills?.length) {
     html += '<div style="margin-top:4px;color:#fbbf24">技能:</div>';
     wb.skills.forEach(s => { html += bossSkillLineHtml(s, { iconSize:15, tagColor:'#fbbf24' }); });

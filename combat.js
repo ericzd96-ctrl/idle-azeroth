@@ -2958,7 +2958,7 @@ function applyWorldBossContractPhase(mon, phase, encounter, now){
 function checkWorldBossContractPhases(mon, now){
   if(state.mode !== 'worldboss' || !mon?.isWorldBoss || !state.worldBoss?.activeEncounter || !mon.bossName) return;
   const encounter = state.worldBoss.activeEncounter;
-  if(!(encounter.contractLevel > 0) || !Array.isArray(encounter.phases) || !encounter.phases.length) return;
+  if(!Array.isArray(encounter.phases) || !encounter.phases.length) return;
   const hpFrac = mon.hpMax > 0 ? mon.hp / mon.hpMax : 1;
   mon._worldBossPhaseSeen = mon._worldBossPhaseSeen || {};
   for(const phase of encounter.phases){
@@ -3017,6 +3017,17 @@ function applyWorldBossAssaultEffects(encounter, mon, now){
       showFloat($('hero-emoji'), `${assault.icon || '🌫️'}虚弱`, '#fca5a5', { variant:'status', scale:1.04 });
       encounter.assaultHits = (encounter.assaultHits || 0) + 1;
     }
+    if(mod.silenceTickMs && now - (encounter[`${prefix}:silence`] || 0) > mod.silenceTickMs){
+      encounter[`${prefix}:silence`] = now;
+      applyHeroDebuff('silence', mod.silenceMs || 1200);
+      showFloat($('hero-emoji'), `${assault.icon || '🔒'}沉默`, '#c4b5fd', { variant:'status', scale:1.04 });
+      encounter.assaultHits = (encounter.assaultHits || 0) + 1;
+    }
+    if(mod.heroDebuff && now - (encounter[`${prefix}:heroDebuff`] || 0) > (mod.heroDebuffTickMs || mod.ceilingTickMs || 13000)){
+      encounter[`${prefix}:heroDebuff`] = now;
+      applyHeroDebuff(mod.heroDebuff, mod.heroDebuffMs || 4800);
+      encounter.assaultHits = (encounter.assaultHits || 0) + 1;
+    }
     if(mod.executePulsePct && mon.isBoss && mon.hpMax > 0 && mon.hp / mon.hpMax <= (mod.executeBelow || 0.35) && now - (encounter[`${prefix}:execute`] || 0) > 9000){
       encounter[`${prefix}:execute`] = now;
       const dmg = Math.max(1, Math.floor((state.hero.hpMax || 1) * mod.executePulsePct));
@@ -3027,20 +3038,21 @@ function applyWorldBossAssaultEffects(encounter, mon, now){
   if((encounter.assaultHits || 0) !== beforeHits && typeof markDirty === 'function') markDirty('hero', 'stage');
 }
 function advanceWorldBossPressure(encounter, mon, now){
-  if(state.mode !== 'worldboss' || !encounter?.contractLevel || !mon?.isWorldBoss) return;
-  const interval = Math.max(8500, 17000 - encounter.contractLevel * 1300);
+  const nightmareLevel = Math.max(0, Math.floor(encounter?.nightmareLevel || encounter?.contractLevel || 0));
+  if(state.mode !== 'worldboss' || !nightmareLevel || !mon?.isWorldBoss) return;
+  const interval = Math.max(5600, 15500 - nightmareLevel * 1450);
   if(now - (encounter.lastPressureAt || 0) < interval) return;
   encounter.lastPressureAt = now;
-  encounter.pressure = Math.min(12, (encounter.pressure || 0) + 1);
+  encounter.pressure = Math.min(18, (encounter.pressure || 0) + 1);
   encounter.maxPressure = Math.max(encounter.maxPressure || 0, encounter.pressure);
-  mon.atk = Math.max(1, Math.floor(mon.atk * (1 + 0.025 * encounter.contractLevel)));
-  mon.def = Math.max(1, Math.floor(mon.def * (1 + 0.018 * encounter.contractLevel)));
-  const shield = Math.max(1, Math.floor(mon.hpMax * (0.025 + encounter.contractLevel * 0.01)));
+  mon.atk = Math.max(1, Math.floor(mon.atk * (1 + 0.020 * nightmareLevel)));
+  mon.def = Math.max(1, Math.floor(mon.def * (1 + 0.014 * nightmareLevel)));
+  const shield = Math.max(1, Math.floor(mon.hpMax * (0.018 + nightmareLevel * 0.008)));
   mon._arcaneShield = (mon._arcaneShield || 0) + shield;
   syncMonsterShieldAura(mon);
-  const dmg = Math.max(1, Math.floor((state.hero.hpMax || 1) * (0.018 + encounter.contractLevel * 0.008)));
+  const dmg = Math.max(1, Math.floor((state.hero.hpMax || 1) * (0.016 + nightmareLevel * 0.007)));
   applyHeroDamage(dmg, mon, { label:t=>'🔥-' + t, color:'#fb7185', now });
-  if(encounter.pressure % 2 === 0) applyHeroDebuff('weaken', 3200 + encounter.contractLevel * 700);
+  if(encounter.pressure % 2 === 0) applyHeroDebuff('weaken', 3000 + nightmareLevel * 650);
   showMonsterFloat(mon, `🔥压迫${encounter.pressure}`, '#fb7185', { variant:'boss', scale:1.08 });
   log(`🔥 世界Boss压迫升至 ${encounter.pressure}: ${mon.bossName || mon.name} 的攻击、防御与护盾进一步提升`, 'bad');
   if(typeof markDirty === 'function') markDirty('hero', 'stage');

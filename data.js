@@ -4665,7 +4665,7 @@ function moveBossSupportSkillsToPassive(boss){
 /* 各档位 boss 想要的"辅助读条技"数量(召唤/buff/治疗 的多样性) */
 function bossSupportVariety(ctx){
   if(ctx.kind === 'raid') return ctx.final ? 3 : 2;
-  if(ctx.kind === 'world') return (ctx.lvl || 1) >= 70 ? 3 : 2;
+  if(ctx.kind === 'world') return (ctx.lvl || 1) >= 80 ? 5 : ((ctx.lvl || 1) >= 70 ? 4 : 2);
   if(ctx.kind === 'dungeon') return ctx.final ? 2 : 1;
   if(ctx.kind === 'map') return (ctx.final && (ctx.lvl || 1) >= 50) ? 2 : 1;
   return 1;
@@ -4717,7 +4717,7 @@ function bossThreatTier(skill, ctx){
 function bossDamageCap(ctx, skill){
   if(!skill || isBossSupportSkill(skill)) return null;
   if(ctx.kind === 'raid') return ctx.final ? 10.5 : 8.8;
-  if(ctx.kind === 'world') return (ctx.lvl || 1) >= 80 ? 13.2 : ((ctx.lvl || 1) >= 70 ? 11.8 : ((ctx.lvl || 1) >= 55 ? 10.4 : 8.8));
+  if(ctx.kind === 'world') return (ctx.lvl || 1) >= 80 ? 18.6 : ((ctx.lvl || 1) >= 70 ? 12.6 : ((ctx.lvl || 1) >= 55 ? 10.8 : 8.8));
   if(ctx.kind === 'map') return ctx.final ? 8.8 : 7.6;
   return ctx.final ? 7.9 : 6.9;
 }
@@ -4749,13 +4749,13 @@ function ensureBossSkillDebuffs(sk, ctx){
   return skill;
 }
 function bossMinSkillCount(ctx){
-  if(ctx.kind === 'world') return (ctx.lvl || 1) >= 70 ? 6 : 5;
+  if(ctx.kind === 'world') return (ctx.lvl || 1) >= 80 ? 9 : ((ctx.lvl || 1) >= 70 ? 7 : 5);
   if(ctx.kind === 'raid') return ctx.final ? 6 : 5;
   if(ctx.kind === 'dungeon') return ctx.final ? 4 : 3;
   return (ctx.lvl||1) >= 70 ? 4 : ((ctx.lvl||1) >= 35 ? 3 : 2);
 }
 function bossSupportCount(ctx){
-  if(ctx.kind === 'world') return (ctx.lvl || 1) >= 80 ? 2 : 1;
+  if(ctx.kind === 'world') return (ctx.lvl || 1) >= 80 ? 5 : ((ctx.lvl || 1) >= 70 ? 4 : 1);
   if(ctx.kind === 'raid') return ctx.final ? 2 : 1;
   if(ctx.kind === 'dungeon') return ctx.final ? 1 : 0;
   if((ctx.lvl||1) >= 70) return 1;
@@ -4902,7 +4902,9 @@ function ensureBossSkills(boss, ctx){
   }
   ensureBossRotationMix(boss, ctx);
   const desiredSupport = bossSupportCount(ctx);
-  boss.supportCount = boss.supportCount == null ? desiredSupport : Math.min(boss.supportCount, desiredSupport);
+  boss.supportCount = ctx.kind === 'world'
+    ? Math.max(boss.supportCount || 0, desiredSupport)
+    : (boss.supportCount == null ? desiredSupport : Math.min(boss.supportCount, desiredSupport));
 }
 function enhanceBossCollection(list, ctxBase){
   for(let i=0;i<list.length;i++){
@@ -4987,6 +4989,80 @@ function normalizeBossContent(){
     }
   }
 }
+const WORLD_BOSS_NIGHTMARE_PROFILES = {
+  deathwing:{ prefix:'灭世', icon:'🐲', theme:'dragon', summon:'void' },
+  ragnaros:{ prefix:'萨弗隆', icon:'🔥', theme:'fire', summon:'elemental' },
+  cthun:{ prefix:'千眼', icon:'👁️', theme:'shadow', summon:'void' },
+  yogg_saron:{ prefix:'梦魇', icon:'🧠', theme:'shadow', summon:'void' },
+  alakir:{ prefix:'风暴', icon:'🌪️', theme:'storm', summon:'elemental' },
+  lei_shen:{ prefix:'雷霆', icon:'⚡', theme:'storm', summon:'soldier' },
+  rukhmar:{ prefix:'炽阳', icon:'🦅', theme:'fire', summon:'beast' },
+  argus_unmaker:{ prefix:'寂灭', icon:'🌌', theme:'arcane', summon:'void' },
+  queen_azshara:{ prefix:'潮汐', icon:'🔱', theme:'arcane', summon:'nature' },
+  raszageth_storm:{ prefix:'原始风暴', icon:'🌩️', theme:'storm', summon:'elemental' },
+  sire_denathrius:{ prefix:'罪碑', icon:'🩸', theme:'shadow', summon:'soldier' },
+  xal_atath:{ prefix:'黑血', icon:'🕸️', theme:'shadow', summon:'void' },
+  reshanor:{ prefix:'相位', icon:'🧿', theme:'arcane', summon:'void' },
+  shadowpoint_vexis:{ prefix:'影轨', icon:'🌑', theme:'shadow', summon:'soldier' },
+  shandorah_astromancer:{ prefix:'星幕', icon:'🌠', theme:'arcane', summon:'void' },
+};
+function worldBossNightmareSkillFlags(theme, variant){
+  const table = {
+    fire:[
+      { dot:true, brittle:true, silence:1800 },
+      { aoe:true, dot:true, burn:true, weaken:true },
+      { aoe:true, fear:1600, brittle:true, manaDrain:80 },
+    ],
+    storm:[
+      { stun:1500, manaDrain:80, sunder:true },
+      { aoe:true, silence:1800, weaken:true },
+      { aoe:true, stun:1100, brittle:true, decay:true },
+    ],
+    arcane:[
+      { silence:2100, manaDrain:95, mirror:true },
+      { aoe:true, weaken:true, shieldPct:0.08 },
+      { aoe:true, decay2:true, brittle:true, manaDrain:70 },
+    ],
+    dragon:[
+      { dot:true, bleed:true, brittle:true },
+      { aoe:true, stun:1500, decay2:true },
+      { aoe:true, fear:1800, soulDrain:true, sunder:true },
+    ],
+    shadow:[
+      { fear:1800, decay2:true, soulLink:true },
+      { aoe:true, plague:true, weaken:true },
+      { aoe:true, soulDrain:true, brittle:true, silence:1700 },
+    ],
+  };
+  return Object.assign({}, (table[theme] || table.shadow)[variant % 3]);
+}
+function addWorldBossNightmareSkill(boss, skill){
+  boss.skills = boss.skills || [];
+  if(!boss.skills.some(s => s.name === skill.name)) boss.skills.push(skill);
+}
+function enhanceWorldBossNightmareSkillset(key, boss, info){
+  if(!boss || !info?.final) return;
+  const profile = WORLD_BOSS_NIGHTMARE_PROFILES[key] || { prefix:'噩梦', icon:'🌌', theme:'shadow', summon:'void' };
+  const ctx = { kind:'world', name:info.name, lvl:info.lvl, final:true };
+  const baseMul = Math.min(18.2, 15.8 + Math.max(0, (info.lvl || 80) - 80) * 0.12);
+  const nightmares = [
+    Object.assign({ name:`${profile.prefix}裂界`, icon:profile.icon, desc:`${baseMul.toFixed(1)}倍伤害,并压缩治疗与爆发窗口。`, type:'dmg', mul:+baseMul.toFixed(1), cd:8, castTime:2.7, threat:'extreme', interruptPolicy:'hard' }, worldBossNightmareSkillFlags(profile.theme, 0)),
+    Object.assign({ name:`${profile.prefix}点名`, icon:'🎯', desc:`${(baseMul + 0.6).toFixed(1)}倍单点伤害,强迫保留防御或打断。`, type:'dmg', mul:+(baseMul + 0.6).toFixed(1), cd:9, castTime:3.1, alwaysCrit:true, threat:'extreme', interruptPolicy:'hard' }, worldBossNightmareSkillFlags(profile.theme, 1)),
+    Object.assign({ name:`${profile.prefix}终幕`, icon:'💥', desc:`${(baseMul + 1.1).toFixed(1)}倍范围灭团技,低血量阶段更危险。`, type:'dmg', mul:+(baseMul + 1.1).toFixed(1), cd:12, castTime:4.2, hpBelow:0.42, threat:'extreme', interruptPolicy:'hard' }, worldBossNightmareSkillFlags(profile.theme, 2)),
+  ];
+  for(const skill of nightmares){
+    addWorldBossNightmareSkill(boss, normalizeBossSkillProfile(ensureBossSkillDebuffs(skill, ctx), ctx, boss.skills?.length || 0, 9));
+  }
+  addBossPassiveTrick(boss, { name:`${profile.prefix}噩梦韧壳`, icon:'🛡️', type:'buff', desc:'周期获得护盾、减伤和防御强化。', cd:12, shieldPct:0.16, drBuffSecs:8, drBuffPct:0.28, defBuffSecs:8, defBuffPct:42 });
+  addBossPassiveTrick(boss, { name:`${profile.prefix}狂热`, icon:'💢', type:'buff', desc:'攻击、攻速和暴击同步提高。', cd:13, atkBuffSecs:8, atkBuffPct:38, spdBuffSecs:8, spdBuffPct:28, critBuffSecs:8, critBuffPct:40 });
+  addBossPassiveTrick(boss, { name:`${profile.prefix}裂界召援`, icon:'🚩', type:'summon', desc:'召唤噩梦援军并获得少量护盾。', cd:17, summonCount:2, summonTheme:profile.summon || 'void', shieldPct:0.08 });
+  addBossPassiveTrick(boss, { name:`${profile.prefix}处刑姿态`, icon:'⚔️', type:'buff', desc:'下一轮普攻追加多段打击并附带吸血。', cd:14, nextDouble:3, leechBuffSecs:7, leechBuffPct:26 });
+  boss.nightmareTraits = [
+    { icon:'🌌', name:'噩梦场域', desc:'无需猎令也会触发基础天幕戒律、三段血线与持续压迫。' },
+    { icon:'👑', name:'压过史诗尾王', desc:'生命、攻击、防御按终局世界首领曲线计算,高于同级史诗团本尾王。' },
+    { icon:'⚔️', name:'终幕处刑', desc:'低血量阶段会解锁额外灭团技、处刑姿态与更快被动技巧。' },
+  ];
+}
 function normalizeWorldBossSkillsets(){
   const meta = {
     hogger_king:{ name:'霍格大王', lvl:30, final:false },
@@ -5019,6 +5095,7 @@ function normalizeWorldBossSkillsets(){
       lvl:info.lvl,
       final:info.final
     });
+    enhanceWorldBossNightmareSkillset(key, boss, info);
   }
 }
 applyDungeonArtBackfill();

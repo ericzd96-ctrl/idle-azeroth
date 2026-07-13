@@ -95,10 +95,10 @@ const WBOSS_CD_HOURS = 8;
 const SHARD_EXCHANGE_COST = 50; // 50 碎片 = 1 自选橙装
 const APEX_MARK_EXCHANGE_COST = 120;
 const WORLD_BOSS_CONTRACTS = [
-  { level:0, name:'常规猎杀', icon:'📘', desc:'标准终局世界Boss难度与奖励。', hp:1, atk:1, def:1, reward:1, marks:0 },
-  { level:1, name:'裂隙猎令', icon:'📕', desc:'世界Boss生命+20%、攻击+12%、防御+8%;追加1条天幕戒律,奖励+22%。', hp:1.20, atk:1.12, def:1.08, reward:1.22, marks:10 },
-  { level:2, name:'群星军律', icon:'📙', desc:'世界Boss生命+46%、攻击+28%、防御+18%;追加2条天幕戒律与更多阶段,奖励+50%。', hp:1.46, atk:1.28, def:1.18, reward:1.50, marks:18 },
-  { level:3, name:'吞界悬令', icon:'📓', desc:'世界Boss生命+88%、攻击+46%、防御+30%;追加3条天幕戒律、更多阶段与更快压迫,奖励+92%。', hp:1.88, atk:1.46, def:1.30, reward:1.92, marks:30 },
+  { level:0, name:'常规猎杀', icon:'📘', desc:'标准终局世界Boss现在也会带基础噩梦戒律、三段血线和战斗压迫。', hp:1, atk:1, def:1, reward:1, marks:0 },
+  { level:1, name:'裂隙猎令', icon:'📕', desc:'世界Boss生命+36%、攻击+24%、防御+14%;噩梦戒律与阶段进一步加密,奖励+28%。', hp:1.36, atk:1.24, def:1.14, reward:1.28, marks:12 },
+  { level:2, name:'群星军律', icon:'📙', desc:'世界Boss生命+78%、攻击+48%、防御+28%;追加更多噩梦戒律、阶段与压迫,奖励+62%。', hp:1.78, atk:1.48, def:1.28, reward:1.62, marks:22 },
+  { level:3, name:'吞界悬令', icon:'📓', desc:'世界Boss生命+135%、攻击+76%、防御+46%;五条戒律、多段血线与极速压迫,奖励+115%。', hp:2.35, atk:1.76, def:1.46, reward:2.15, marks:36 },
 ];
 const WORLD_BOSS_ASSAULTS = [
   { key:'riftDrain', name:'裂隙抽离', icon:'🌀', desc:'每11秒燃烧 14% 最大资源。', mod:{ drainTickMs:11000, resourceDrainPct:0.14 } },
@@ -107,6 +107,8 @@ const WORLD_BOSS_ASSAULTS = [
   { key:'wardPulse', name:'棱界护壁', icon:'🔷', desc:'世界Boss每15秒获得护盾。', mod:{ shieldTickMs:15000, monsterShieldPct:0.05 } },
   { key:'dreadEdict', name:'惧意军律', icon:'🌫️', desc:'每12秒施加虚弱。', mod:{ weakenTickMs:12000, weakenMs:5000 } },
   { key:'execution', name:'终局清算', icon:'⚔️', desc:'Boss 在 35% 生命以下时会周期性施加处刑脉冲。', mod:{ executePulsePct:0.045, executeBelow:0.35 } },
+  { key:'nightmareSunder', name:'噩梦破甲', icon:'🩸', desc:'每14秒撕开防线,造成最大生命 5.5% 伤害并施加易伤。', mod:{ ceilingTickMs:14000, ceilingDamagePct:0.055, heroDebuff:'vulnerable', heroDebuffMs:5200 } },
+  { key:'commandLock', name:'统御封锁', icon:'🔒', desc:'每16秒短暂沉默并抽取资源,打断治疗与爆发节奏。', mod:{ silenceTickMs:16000, silenceMs:1300, drainTickMs:16000, resourceDrainPct:0.10 } },
 ];
 const WORLD_BOSS_PHASE_EVENTS = [
   { key:'phaseShield', name:'壁垒重构', icon:'🛡️', desc:'获得最大生命 10% 护盾并提高防御。', mod:{ shieldPct:0.10, defBuffSecs:10, defBuffPct:26 } },
@@ -115,6 +117,8 @@ const WORLD_BOSS_PHASE_EVENTS = [
   { key:'phaseDecay', name:'坍缩领域', icon:'🌑', desc:'对玩家造成一次压迫伤害并施加凋零。', mod:{ phaseDamagePct:0.05, heroDebuff:'decay2', heroDebuffMs:6500 } },
   { key:'phaseExecution', name:'终幕宣告', icon:'⚔️', desc:'使玩家短暂易伤,并强化 Boss 暴击。', mod:{ heroDebuff:'vulnerable', heroDebuffMs:7000, critBuffSecs:10, critBuffPct:42 } },
   { key:'phaseLeech', name:'暗血虹吸', icon:'🩸', desc:'Boss 获得吸血,并燃烧玩家资源。', mod:{ leechBuffSecs:10, leechBuffPct:22, manaDrainPct:0.16 } },
+  { key:'phaseDoomGuard', name:'噩梦亲卫', icon:'👁️', desc:'召唤 2 名援军,并获得护盾与减伤。', mod:{ summonCount:2, summonTheme:'void', shieldPct:0.08, drBuffSecs:9, drBuffPct:0.24 } },
+  { key:'phaseWorldbreak', name:'灭团压境', icon:'💥', desc:'造成高额压迫伤害,并短暂削弱玩家输出。', mod:{ phaseDamagePct:0.075, heroDebuff:'weaken', heroDebuffMs:7200 } },
 ];
 
 /* 世界Boss 累计击杀里程碑(per-char,达标一次性奖励) */
@@ -207,8 +211,8 @@ function setWorldBossContractLevel(level) {
 }
 function getWorldBossAssaults(wb, contractLevel) {
   const level = Math.max(0, Math.min(3, Math.floor(contractLevel || 0)));
-  if (!wb || !isApexWorldBoss(wb) || level <= 0) return [];
-  const count = level;
+  if (!wb || !isApexWorldBoss(wb)) return [];
+  const count = Math.min(WORLD_BOSS_ASSAULTS.length, 2 + level);
   const day = Math.floor(Date.now() / 86400000);
   let seed = ((wb.lvl || 1) * 613 + level * 1231 + (day % 100000) * 421) % 2147483647;
   const source = wb.key || '';
@@ -224,11 +228,12 @@ function getWorldBossAssaults(wb, contractLevel) {
 }
 function getWorldBossPhaseEvents(wb, contractLevel) {
   const level = Math.max(0, Math.min(3, Math.floor(contractLevel || 0)));
-  if (!wb || !isApexWorldBoss(wb) || level <= 0) return [];
+  if (!wb || !isApexWorldBoss(wb)) return [];
   const thresholdsByLevel = {
-    1: [0.55],
-    2: [0.72, 0.32],
-    3: [0.82, 0.54, 0.24],
+    0: [0.76, 0.48, 0.20],
+    1: [0.82, 0.56, 0.28],
+    2: [0.88, 0.68, 0.42, 0.18],
+    3: [0.90, 0.74, 0.56, 0.34, 0.14],
   };
   const thresholds = thresholdsByLevel[level] || [];
   const day = Math.floor(Date.now() / 86400000);
@@ -250,13 +255,13 @@ function getWorldBossPhaseEvents(wb, contractLevel) {
 function createWorldBossEncounter(wb) {
   if (!wb || !isApexWorldBoss(wb)) return null;
   const contractLevel = worldBossContractLevel();
-  if (contractLevel <= 0) return null;
   const contract = worldBossContractInfo(contractLevel);
   const assaults = getWorldBossAssaults(wb, contractLevel);
   const phases = getWorldBossPhaseEvents(wb, contractLevel);
   return {
     key: wb.key,
     contractLevel,
+    nightmareLevel: 1 + contractLevel,
     contract,
     assaults,
     phases,
@@ -296,9 +301,13 @@ function currentXpGate() {
   return null;
 }
 
-// 世界Boss强度系数(可调):血量是耐久战核心,大幅上调;攻击小幅上调增加威胁
-const WORLD_BOSS_HP_BUFF = 2.5;
-const WORLD_BOSS_ATK_BUFF = 1.15;
+// 世界Boss强度系数:守关Boss轻度增强;终局Boss必须高于同级史诗团本尾王。
+const WORLD_BOSS_STAGE_HP_BUFF = 2.55;
+const WORLD_BOSS_STAGE_ATK_BUFF = 1.20;
+const WORLD_BOSS_STAGE_DEF_BUFF = 1.08;
+const WORLD_BOSS_APEX_HP_BUFF = 10.2;
+const WORLD_BOSS_APEX_ATK_BUFF = 5.9;
+const WORLD_BOSS_APEX_DEF_BUFF = 2.35;
 function buildWorldBossMonsterData(wb) {
   const boss = wb || {};
   const encounter = state.worldBoss?.activeEncounter && state.worldBoss.activeEncounter.key === boss.key
@@ -306,9 +315,17 @@ function buildWorldBossMonsterData(wb) {
     : null;
   const contract = encounter?.contract || worldBossContractInfo(0);
   const rewardMult = worldBossEncounterRewardMult(encounter, false);
-  const baseHp = Math.floor((100 + boss.lvl * boss.lvl * 6.0) * (boss.hpMul || 1) * WORLD_BOSS_HP_BUFF * (contract.hp || 1));
-  const baseAtk = Math.floor((8 + boss.lvl * 3.0) * (boss.atkMul || 1) * WORLD_BOSS_ATK_BUFF * (contract.atk || 1));
-  const def = Math.floor((3 + boss.lvl * 1.3) * (boss.defMul || 1) * (contract.def || 1));
+  const apex = isApexWorldBoss(boss);
+  const hpBuff = apex ? WORLD_BOSS_APEX_HP_BUFF : WORLD_BOSS_STAGE_HP_BUFF;
+  const atkBuff = apex ? WORLD_BOSS_APEX_ATK_BUFF : WORLD_BOSS_STAGE_ATK_BUFF;
+  const defBuff = apex ? WORLD_BOSS_APEX_DEF_BUFF : WORLD_BOSS_STAGE_DEF_BUFF;
+  const levelCurve = apex ? (1 + Math.max(0, (boss.lvl || 80) - 80) * 0.018) : (1 + Math.max(0, (boss.lvl || 30) - 30) * 0.006);
+  const hpBase = apex ? (100 + boss.lvl * boss.lvl * 8.8) : (100 + boss.lvl * boss.lvl * 6.0);
+  const atkBase = apex ? (12 + boss.lvl * 3.7 + Math.pow(boss.lvl || 1, 1.16) * 1.35) : (8 + boss.lvl * 3.0);
+  const defBase = apex ? (4 + boss.lvl * 1.7) : (3 + boss.lvl * 1.3);
+  const baseHp = Math.floor(hpBase * (boss.hpMul || 1) * hpBuff * levelCurve * (contract.hp || 1));
+  const baseAtk = Math.floor(atkBase * (boss.atkMul || 1) * atkBuff * (apex ? levelCurve : 1) * (contract.atk || 1));
+  const def = Math.floor(defBase * (boss.defMul || 1) * defBuff * (contract.def || 1));
   const supportCount = (boss.supportCount || 4) + (encounter?.contractLevel || 0);
   return {
     name: boss.emoji + boss.name,
@@ -332,14 +349,14 @@ function buildWorldBossMonsterData(wb) {
     _dots: {},
     _dotLegacyImported: true,
     _lastDotTick: 0,
-    dodgeChance: boss.passive?.dodgeChance || 0.08,
-    critChance: boss.passive?.critChance || 0.18,
-    dmgReduction: boss.passive?.dmgReduction || 0.2,
+    dodgeChance: boss.passive?.dodgeChance || (apex ? 0.14 : 0.08),
+    critChance: boss.passive?.critChance || (apex ? 0.30 : 0.18),
+    dmgReduction: boss.passive?.dmgReduction || (apex ? 0.42 : 0.2),
     lifeSteal: boss.passive?.leech || 0,
     stunChance: boss.passive?.stunChance || 0,
     instantCast: boss.instantCast !== undefined ? !!boss.instantCast : true,
     instantCastChance: typeof boss.instantCastChance === 'number' ? boss.instantCastChance : undefined,
-    atkInterval: Math.max(860, (boss.atkInterval || (isApexWorldBoss(boss) ? 1125 : boss.lvl >= 70 ? 1225 : 1325)) - (encounter?.contractLevel || 0) * 35),
+    atkInterval: Math.max(apex ? 680 : 860, (boss.atkInterval || (apex ? 980 : boss.lvl >= 70 ? 1225 : 1325)) - (encounter?.nightmareLevel || encounter?.contractLevel || 0) * 45),
     _monSkills: [],
     _monSkill: null,
     _monSupportSkills: typeof buildMonsterSupportPool === 'function'
@@ -348,7 +365,7 @@ function buildWorldBossMonsterData(wb) {
     _supportSkillCooldowns: {},
     _lastSupportSkill: Date.now() - 4000,
     _lastTrick: 0,
-    _nextTrickAt: Date.now() + (isApexWorldBoss(boss) ? 6500 : 7800),
+    _nextTrickAt: Date.now() + (apex ? 4200 : 7800),
     _wbContractLevel: encounter?.contractLevel || 0,
     _wbRewardMult: rewardMult,
   };
@@ -896,6 +913,17 @@ function renderWorldBossSub() {
     }
     return parts.join(' ');
   };
+  const renderNightmareLine = wb => {
+    if (!isApexWorldBoss(wb)) return '';
+    const level = contract.level || 0;
+    const assaults = getWorldBossAssaults(wb, level);
+    const phases = getWorldBossPhaseEvents(wb, level);
+    const skillCount = (wb.skills || []).length;
+    const passiveCount = (wb.passive?.tricks || []).length;
+    const traitText = (wb.nightmareTraits || []).slice(0, 3).map(t => `${t.icon || '🌌'}${t.name}`).join(' · ');
+    return `<div class="muted wb-contract-tip" data-wb-key="${wb.key}" data-contract-level="${level}" style="font-size:10px;margin-top:3px">💀 噩梦挑战 · 强度高于同级史诗团本尾王 · 戒律 ${assaults.length} · 阶段 ${phases.length} · 技能 ${skillCount} · 被动 ${passiveCount}${traitText ? ` · ${traitText}` : ''}</div>
+      <div class="muted" style="font-size:10px;margin-top:3px">戒律: ${assaults.map(a => `<span class="wb-assault-tip" data-wb-key="${wb.key}" data-contract-level="${level}" data-wb-assault-key="${a.key}" style="cursor:help">${a.icon}${a.name}</span>`).join(' · ')} · 阶段 ${phases.map(p => `<span class="wb-phase-tip" data-wb-key="${wb.key}" data-contract-level="${level}" data-wb-phase-key="${p.phaseKey}" style="cursor:help">${Math.round(p.threshold * 100)}%${p.icon || '⚔️'}</span>`).join(' · ') || '0'}</div>`;
+  };
 
   html += `<div class="wb-list">`;
   for (const wb of trialWorldBosses()) {
@@ -925,8 +953,8 @@ function renderWorldBossSub() {
     const nextTs = worldBossAvailableAt(wb.key);
     const cd = Math.max(0, Math.ceil((nextTs - Date.now())/1000));
     const accessText = worldBossMeetsReq(wb) ? `推荐 ${worldBossReqLabel(wb)}` : `需 ${worldBossReqLabel(wb)}`;
-    const assaults = contract.level > 0 ? getWorldBossAssaults(wb, contract.level) : [];
-    const phases = contract.level > 0 ? getWorldBossPhaseEvents(wb, contract.level) : [];
+    const assaults = getWorldBossAssaults(wb, contract.level);
+    const phases = getWorldBossPhaseEvents(wb, contract.level);
     const contractLine = contract.level > 0
       ? `<div class="muted wb-contract-tip" data-wb-key="${wb.key}" data-contract-level="${contract.level}" style="font-size:10px;margin-top:3px">${contract.icon}${contract.name} · 奖励 ×${worldBossEncounterRewardMult({ contractLevel:contract.level, contract, assaults, maxPressure:0 }, false).toFixed(2)} · 戒律: ${assaults.map(a => `<span class="wb-assault-tip" data-wb-key="${wb.key}" data-contract-level="${contract.level}" data-wb-assault-key="${a.key}" style="cursor:help">${a.icon}${a.name}</span>`).join(' · ')} · 阶段 ${phases.map(p => `<span class="wb-phase-tip" data-wb-key="${wb.key}" data-contract-level="${contract.level}" data-wb-phase-key="${p.phaseKey}" style="cursor:help">${Math.round(p.threshold * 100)}%${p.icon || '⚔️'}</span>`).join(' · ') || '0'}</div>`
       : '';
@@ -935,6 +963,7 @@ function renderWorldBossSub() {
         <div class="wb-name wb-name-tip" data-wb-key="${wb.key}" style="color:${wb.color};cursor:help">${wb.emoji} ${wb.name} <span class="muted" style="font-size:10px">Lv.${wb.lvl}</span></div>
         <div class="muted" style="font-size:11px">${wb.desc}</div>
         <div class="muted" style="font-size:10px;margin-top:2px">${accessText} · 奖励: ${renderRewardLine(wb)}</div>
+        ${renderNightmareLine(wb)}
         ${contractLine}
       </div>
       <div class="wb-act">
