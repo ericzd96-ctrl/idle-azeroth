@@ -469,6 +469,92 @@ const SPEC_SIGNATURE_SKILLS = {
   }
 })();
 
+const SPEC_EXTRA_SKILLS = {
+  warrior: {
+    w_skullsplitter:{ name:'碎颅打击', icon:'🪓', desc:'武器专精:4倍攻击,获得怒气并叠2层破甲印记', mp:22, type:'dmg', mul:4, unlockLvl:28, fx:{ resourceGain:8, grantAura:{ key:'w_sunder', add:2, max:5, duration:15000 } } },
+    w_warbreaker:{ name:'灭战者', icon:'🔨', desc:'武器专精:范围破甲重击,对破甲目标更强', mp:42, type:'dmg', mul:5, aoe:true, unlockLvl:52, fx:{ applyTargetState:'sunder', stateDurationMs:15000, bonusStates:{ sunder:0.35 } } },
+    w_bloodbath:{ name:'浴血奋战', icon:'🩸', desc:'狂暴专精:4倍流血攻击,叠暴怒并吸血', mp:28, type:'dmg', mul:4, dot:true, lifeSteal:0.25, unlockLvl:30, fx:{ grantAura:{ key:'w_rage', add:2, max:5, duration:12000 } } },
+    w_odynFury:{ name:'奥丁之怒', icon:'⚡', desc:'狂暴专精:范围烈焰猛击,消耗暴怒造成爆发', mp:46, type:'dmg', mul:6, aoe:true, unlockLvl:58, fx:{ bonusPerAuraStack:{ key:'w_rage', pct:0.18 }, consumeAura:{ key:'w_rage', all:true } } },
+    w_shieldCharge:{ name:'盾牌冲锋', icon:'🛡️', desc:'防护专精:冲锋盾击,叠盾牌格挡并获得护盾', mp:26, type:'dmg', mul:4, unlockLvl:32, fx:{ grantAura:{ key:'w_block', add:2, max:5, duration:12000 }, shieldFromDamagePct:0.18 } },
+    w_lastStand:{ name:'破釜沉舟', icon:'⛰️', desc:'防护专精:立即恢复生命并强化下一轮反震', mp:24, type:'heal', heal:0.30, unlockLvl:48, fx:{ grantAura:{ key:'w_block', add:3, max:5, duration:12000 }, shieldFromHealPct:0.30 } },
+  },
+  mage: {
+    m_touchMagi:{ name:'大法师之触', icon:'🔮', desc:'奥术专精:施加奥术印记,后续奥术伤害更高', mp:30, type:'dmg', mul:3, unlockLvl:24, fx:{ applyTargetState:'exposed', stateDurationMs:9000, grantAura:{ key:'arcaneCharge', add:1, max:4, duration:12000 } } },
+    m_arcaneSurge:{ name:'奥术涌动', icon:'🌌', desc:'奥术专精:消耗奥术充能造成爆发并回复资源', mp:48, type:'dmg', mul:6, unlockLvl:56, fx:{ bonusPerAuraStack:{ key:'arcaneCharge', pct:0.32 }, consumeAura:{ key:'arcaneCharge', all:true }, resourceGain:12 } },
+    m_fireBlast:{ name:'火焰冲击', icon:'🔥', desc:'火焰专精:瞬发火焰暴击窗口,叠炽热', mp:24, type:'dmg', mul:3, alwaysCrit:true, unlockLvl:24, castTime:0, fx:{ grantAura:{ key:'m_heat', add:2, max:5, duration:12000 } } },
+    m_flamestrike:{ name:'烈焰风暴', icon:'🌋', desc:'火焰专精:范围火焰伤害,点燃所有敌人', mp:44, type:'dmg', mul:5, aoe:true, dot:true, unlockLvl:50, fx:{ applyDotKey:'skill:m_flamestrike', dotName:'烈焰风暴', dotIcon:'🌋', dotPct:0.14, dotMs:7000 } },
+    m_flurry:{ name:'冰风暴', icon:'🌨️', desc:'冰霜专精:冻结目标并叠2层指尖寒冰', mp:28, type:'dmg', mul:3, unlockLvl:24, castTime:0, fx:{ applyTargetState:{ key:'frozen', durMs:8000 }, grantAura:{ key:'m_frost', add:2, max:5, duration:12000 } } },
+    m_cometStorm:{ name:'彗星风暴', icon:'☄️', desc:'冰霜专精:范围冰霜爆发,对冻结目标额外提高', mp:46, type:'dmg', mul:5, aoe:true, unlockLvl:54, fx:{ bonusStates:{ frozen:0.55, slow:0.25 } } },
+  },
+  priest: {
+    p_schism:{ name:'教派分歧', icon:'⚖️', desc:'戒律专精:4倍神圣伤害,让后续惩罚/惩击更强', mp:28, type:'dmg', mul:4, unlockLvl:24, fx:{ applyTargetState:'exposed', stateDurationMs:8000, shieldFromDamagePct:0.12 } },
+    p_powerBarrier:{ name:'真言术·障', icon:'🛡️', desc:'戒律专精:大护盾,主角和随从一起获得恩典', mp:42, type:'buff', buff:'p_grace', duration:10000, unlockLvl:52, fx:{ companionShieldPct:0.12, companionBuff:'p_grace', companionBuffMs:10000, grantAura:{ key:'p_grace', add:2, max:5, duration:15000 } } },
+    p_serenity:{ name:'圣言术·静', icon:'🌟', desc:'神圣专精:强效单体治疗,过量治疗转护盾', mp:38, type:'heal', heal:0.45, unlockLvl:28, fx:{ shieldFromOverhealPct:0.80, companionHealPct:0.14 } },
+    p_prayerHealing:{ name:'治疗祷言', icon:'🙏', desc:'神圣专精:治疗主角并溅射治疗随从', mp:44, type:'heal', heal:0.36, unlockLvl:50, fx:{ companionHealPct:0.30, companionShieldPct:0.06, grantAura:{ key:'p_grace', add:1, max:5, duration:15000 } } },
+    p_mindFlay:{ name:'精神鞭笞', icon:'🌀', desc:'暗影专精:暗影引导伤害,叠疯狂并延长痛苦循环', mp:24, type:'dmg', mul:3, unlockLvl:24, fx:{ bonusPerDot:0.18, grantAura:{ key:'p_insanity', add:2, max:6, duration:12000 } } },
+    p_shadowCrash:{ name:'暗影冲撞', icon:'🌌', desc:'暗影专精:范围暗影爆发,对持续伤害目标更强', mp:46, type:'dmg', mul:5, aoe:true, unlockLvl:54, fx:{ bonusPerDot:0.26, grantAura:{ key:'p_insanity', add:2, max:6, duration:12000 } } },
+  },
+  rogue: {
+    r_garrote:{ name:'锁喉', icon:'🩸', desc:'刺杀专精:流血起手,叠毒锋并附加持续伤害', mp:24, type:'dmg', mul:3, dot:true, unlockLvl:24, fx:{ grantAura:{ key:'r_venom', add:1, max:5, duration:12000 } } },
+    r_kingsbane:{ name:'君王之灾', icon:'🐍', desc:'刺杀专精:毒药终结技,目标DOT越多越强', mp:42, type:'dmg', mul:5, unlockLvl:56, fx:{ bonusPerDot:0.32, bonusPerAuraStack:{ key:'r_venom', pct:0.20 }, consumeAura:{ key:'r_venom', all:true } } },
+    r_betweenEyes:{ name:'正中眉心', icon:'🎯', desc:'战斗专精:手枪终结技,消耗连击点必暴', mp:34, type:'dmg', mul:5, alwaysCrit:true, unlockLvl:34, fx:{ bonusPerAuraStack:{ key:'r_combo', pct:0.16 }, consumeAura:{ key:'r_combo', all:true } } },
+    r_rollBones:{ name:'命运骨骰', icon:'🎲', desc:'战斗专精:短爆发,提高攻速并叠连击点', mp:28, type:'buff', buff:'s_haste', duration:7000, unlockLvl:46, fx:{ grantAura:{ key:'r_combo', add:2, max:5, duration:12000 } } },
+    r_secretTechnique:{ name:'袖剑风暴', icon:'🌑', desc:'敏锐专精:范围暗影终结,破绽目标额外提高', mp:42, type:'dmg', mul:5, aoe:true, unlockLvl:50, fx:{ bonusStates:{ exposed:0.45 }, bonusPerAuraStack:{ key:'r_combo', pct:0.14 }, consumeAura:{ key:'r_combo', all:true } } },
+    r_gloomblade:{ name:'幽暗之刃', icon:'🗡️', desc:'敏锐专精:暗影背刺,叠连击并制造破绽', mp:24, type:'dmg', mul:3, unlockLvl:24, fx:{ applyTargetState:'exposed', stateDurationMs:7000, grantAura:{ key:'r_combo', add:1, max:5, duration:12000 } } },
+  },
+  hunter: {
+    h_bestialCleave:{ name:'野兽顺劈', icon:'🐾', desc:'兽王专精:宠物范围撕咬,召唤物在场时追加追击', mp:30, type:'dmg', mul:4, aoe:true, unlockLvl:28, fx:{ grantAura:{ key:'h_beastBond', add:1, max:5, duration:15000 }, extraHitPctIfSummon:0.30 } },
+    h_direBeast:{ name:'凶暴野兽', icon:'🐺', desc:'兽王专精:召唤野兽助战,大量叠兽群羁绊', mp:36, type:'summon', summonCount:1, summonPower:0.75, summonDuration:14000, unlockLvl:46, fx:{ grantAura:{ key:'h_beastBond', add:3, max:5, duration:16000 } } },
+    h_doubleTap:{ name:'二连发', icon:'🎯', desc:'射击专精:下个强力射击窗口,叠破绽并提高爆发', mp:28, type:'buff', buff:'h_burst', duration:6000, unlockLvl:36, fx:{ grantAura:{ key:'h_frenzy', add:2, max:5, duration:12000 } } },
+    h_trueshot:{ name:'百发百中', icon:'🏹', desc:'射击专精:长弓爆发,提高攻速与暴击窗口', mp:42, type:'buff', buff:'rapidFire', duration:10000, unlockLvl:54 },
+    h_butchery:{ name:'屠戮', icon:'🪓', desc:'生存专精:近战范围劈砍,对灼烧/中毒目标更强', mp:30, type:'dmg', mul:4, aoe:true, unlockLvl:32, fx:{ bonusPerDot:0.22 } },
+    h_mongooseBite:{ name:'猫鼬撕咬', icon:'🦷', desc:'生存专精:单体连击,目标DOT越多伤害越高', mp:28, type:'dmg', mul:4, unlockLvl:42, fx:{ bonusPerDot:0.26, extraHitPct:0.20 } },
+  },
+  shaman: {
+    sh_lavaBurst2:{ name:'熔岩爆裂·过载', icon:'🌋', desc:'元素专精:对烈焰震击目标必定暴击并叠雷霆', mp:34, type:'dmg', mul:4, alwaysCrit:true, unlockLvl:30, fx:{ bonusPerDot:0.22, grantAura:{ key:'stormCharge', add:1, max:4, duration:12000 } } },
+    sh_stormkeeper:{ name:'风暴守护者', icon:'⛈️', desc:'元素专精:短爆发,获得雷霆充能并提高后续闪电', mp:38, type:'buff', buff:'s_empower', duration:7000, unlockLvl:52, fx:{ grantAura:{ key:'stormCharge', add:3, max:4, duration:12000 } } },
+    sh_feralSpirit:{ name:'幽魂狼', icon:'🐺', desc:'增强专精:召唤幽魂狼助战,叠漩涡之力', mp:36, type:'summon', summonCount:2, summonPower:0.45, summonDuration:12000, unlockLvl:40, fx:{ grantAura:{ key:'sh_maelstrom', add:2, max:5, duration:12000 } } },
+    sh_sundering:{ name:'裂地术', icon:'🌎', desc:'增强专精:范围地裂,消耗漩涡造成爆发', mp:42, type:'dmg', mul:5, aoe:true, unlockLvl:58, fx:{ bonusPerAuraStack:{ key:'sh_maelstrom', pct:0.18 }, consumeAura:{ key:'sh_maelstrom', all:true } } },
+    sh_chainHeal:{ name:'治疗链', icon:'🔗', desc:'恢复专精:治疗主角和随从,叠图腾共鸣', mp:38, type:'heal', heal:0.34, unlockLvl:32, fx:{ companionHealPct:0.28, companionShieldPct:0.05, grantAura:{ key:'sh_totem', add:2, max:5, duration:15000 } } },
+    sh_cloudburst:{ name:'暴雨图腾', icon:'🌧️', desc:'恢复专精:治疗后留下护盾,图腾共鸣越高越稳', mp:42, type:'heal', heal:0.28, unlockLvl:56, fx:{ shieldFromHealPct:0.45, companionShieldPct:0.10, grantAura:{ key:'sh_totem', add:2, max:5, duration:15000 } } },
+  },
+  paladin: {
+    pa_holyShock:{ name:'神圣震击', icon:'✨', desc:'神圣专精:瞬发治疗/伤害,给随从圣光护盾', mp:26, type:'heal', heal:0.26, unlockLvl:24, fx:{ companionHealPct:0.16, companionShieldPct:0.06, companionBuff:'pa_devotion', companionBuffMs:9000 } },
+    pa_lightDawn:{ name:'黎明之光', icon:'🌅', desc:'神圣专精:群体圣光治疗,强化随从支援', mp:44, type:'heal', heal:0.38, unlockLvl:54, fx:{ companionHealPct:0.32, companionShieldPct:0.08, grantAura:{ key:'pa_bulwark', add:1, max:5, duration:15000 } } },
+    pa_avengerShield:{ name:'复仇者之盾', icon:'🛡️', desc:'防护专精:盾牌弹射,叠圣光壁垒并沉默战场', mp:30, type:'dmg', mul:4, aoe:true, unlockLvl:30, fx:{ grantAura:{ key:'pa_bulwark', add:2, max:5, duration:15000 }, shieldFromDamagePct:0.10 } },
+    pa_ardentDefender:{ name:'炽热防御者', icon:'🔥', desc:'防护专精:减伤并在危急时回血', mp:34, type:'buff', buff:'pa_devotion', duration:8000, unlockLvl:50, fx:{ companionShieldPct:0.08 } },
+    pa_wakeAshes:{ name:'灰烬觉醒', icon:'🔥', desc:'惩戒专精:范围圣焰,叠满圣能准备裁决', mp:46, type:'dmg', mul:5, aoe:true, unlockLvl:48, fx:{ grantAura:{ key:'pa_holyPower', add:3, max:5, duration:15000 }, applyTargetState:'judged', stateDurationMs:10000 } },
+    pa_finalReckoning:{ name:'最终清算', icon:'⚖️', desc:'惩戒专精:对审判目标造成巨额神圣爆发', mp:52, type:'dmg', mul:7, unlockLvl:64, fx:{ bonusStates:{ judged:0.65 }, bonusPerAuraStack:{ key:'pa_holyPower', pct:0.16 }, consumeAura:{ key:'pa_holyPower', all:true } } },
+  },
+  warlock: {
+    wl_haunt:{ name:'鬼影缠身', icon:'👻', desc:'痛苦专精:暗影缠身,提高后续DOT爆发', mp:30, type:'dmg', mul:4, dot:true, unlockLvl:28, fx:{ bonusPerDot:0.22, grantAura:{ key:'wl_shard', add:1, max:5, duration:12000 } } },
+    wl_seedCorruption:{ name:'腐蚀之种', icon:'🌱', desc:'痛苦专精:范围腐蚀,多DOT铺场', mp:46, type:'dmg', mul:5, aoe:true, dot:true, unlockLvl:54, fx:{ applyDotKey:'skill:wl_seedCorruption', dotName:'腐蚀之种', dotIcon:'🌱', dotPct:0.16, dotMs:8000, grantAura:{ key:'wl_shard', add:2, max:5, duration:12000 } } },
+    wl_callDreadstalkers:{ name:'召唤恐惧猎犬', icon:'🐺', desc:'恶魔学识专精:召唤恶魔猎犬,强化恶魔之箭', mp:38, type:'summon', summonCount:2, summonPower:0.48, summonDuration:12000, unlockLvl:34, fx:{ grantAura:{ key:'wl_shard', add:2, max:5, duration:12000 } } },
+    wl_implosion:{ name:'内爆', icon:'💥', desc:'恶魔学识专精:恶魔在场时范围爆发', mp:40, type:'dmg', mul:5, aoe:true, unlockLvl:52, fx:{ extraHitPctIfSummon:0.45, bonusPerAuraStack:{ key:'wl_shard', pct:0.12 }, consumeAura:{ key:'wl_shard', all:true } } },
+    wl_rainFire:{ name:'火焰之雨', icon:'🌧️', desc:'毁灭专精:范围火雨,叠余烬并灼烧敌人', mp:44, type:'dmg', mul:5, aoe:true, dot:true, unlockLvl:44, fx:{ grantAura:{ key:'wl_ember', add:2, max:5, duration:12000 }, applyDotKey:'skill:wl_rainFire', dotName:'火焰之雨', dotIcon:'🔥', dotPct:0.14, dotMs:7000 } },
+    wl_cataclysm:{ name:'大灾变', icon:'☄️', desc:'毁灭专精:大范围混乱爆发,对献祭目标更强', mp:56, type:'dmg', mul:7, aoe:true, unlockLvl:62, fx:{ bonusPerDot:0.30, bonusPerAuraStack:{ key:'wl_ember', pct:0.14 } } },
+  },
+  druid: {
+    d_sunfire:{ name:'阳炎术', icon:'☀️', desc:'平衡专精:范围太阳灼烧,叠星界能量', mp:28, type:'dmg', mul:3, aoe:true, dot:true, unlockLvl:24, fx:{ grantAura:{ key:'d_astral', add:1, max:5, duration:12000 }, applyDotKey:'skill:d_sunfire', dotName:'阳炎术', dotIcon:'☀️', dotPct:0.14, dotMs:7000 } },
+    d_starfall:{ name:'星辰坠落', icon:'🌠', desc:'平衡专精:范围星界爆发,星界能量越高越强', mp:46, type:'dmg', mul:5, aoe:true, unlockLvl:56, fx:{ bonusPerAuraStack:{ key:'d_astral', pct:0.18 }, consumeAura:{ key:'d_astral', add:-2 } } },
+    d_shred:{ name:'撕碎', icon:'🗡️', desc:'野性专精:高频爪击,叠撕咬连击', mp:24, type:'dmg', mul:3, unlockLvl:24, fx:{ grantAura:{ key:'d_combo', add:2, max:5, duration:12000 }, bonusPerDot:0.18 } },
+    d_rip:{ name:'割裂', icon:'🩸', desc:'野性专精:消耗连击点造成流血爆发', mp:38, type:'dmg', mul:4, dot:true, unlockLvl:44, fx:{ bonusPerAuraStack:{ key:'d_combo', pct:0.20 }, consumeAura:{ key:'d_combo', all:true }, applyDotKey:'skill:d_rip', dotName:'割裂', dotIcon:'🩸', dotPct:0.20, dotMs:8000 } },
+    d_swiftmend:{ name:'迅捷治愈', icon:'🍃', desc:'恢复专精:瞬发治疗,过量转盾并治疗随从', mp:26, type:'heal', heal:0.28, unlockLvl:24, fx:{ shieldFromOverhealPct:0.65, companionHealPct:0.16, grantAura:{ key:'d_harmony', add:1, max:5, duration:15000 } } },
+    d_efflorescence:{ name:'百花齐放', icon:'🌺', desc:'恢复专精:持续治疗场,主角和随从一起获得生命绽放', mp:44, type:'heal', heal:0.34, unlockLvl:54, fx:{ companionHealPct:0.28, companionShieldPct:0.08, companionBuff:'d_lifebloom', companionBuffMs:12000, grantAura:{ key:'d_harmony', add:2, max:5, duration:15000 } } },
+  },
+};
+
+(function injectSpecExtraSkills() {
+  if (typeof CLASSES === 'undefined') return;
+  for (const [clsKey, skills] of Object.entries(SPEC_EXTRA_SKILLS)) {
+    const cls = CLASSES[clsKey];
+    if (!cls || !cls.skills) continue;
+    for (const [skillKey, sk] of Object.entries(skills)) {
+      if (!cls.skills[skillKey]) cls.skills[skillKey] = sk;
+    }
+  }
+})();
+
 const SPEC_SKILL_LOADOUTS = {
   warrior: {
     core:['interrupt'], novice:['cleave','thunderClap'],
@@ -525,6 +611,100 @@ const SPEC_SKILL_LOADOUTS = {
     resto:{ icon:'🌿', name:'奶德', desc:'回春、生命绽放、野性成长、树皮术和宁静治疗主角与随从。', skills:['rejuvenation','d_lifebloomSpell','d_rejuv','barkskin','d_barkskin','wildGrowth','tranquility','entanglingRoots'] },
   },
 };
+
+const SPEC_EXTRA_SKILL_KEYS = {
+  warrior:{ arms:['w_skullsplitter','w_warbreaker'], fury:['w_bloodbath','w_odynFury'], prot:['w_shieldCharge','w_lastStand'] },
+  mage:{ arcane:['m_touchMagi','m_arcaneSurge'], fire:['m_fireBlast','m_flamestrike'], frost:['m_flurry','m_cometStorm'] },
+  priest:{ discipline:['p_schism','p_powerBarrier'], holy:['p_serenity','p_prayerHealing'], shadow:['p_mindFlay','p_shadowCrash'] },
+  rogue:{ assassination:['r_garrote','r_kingsbane'], combat:['r_betweenEyes','r_rollBones'], subtlety:['r_gloomblade','r_secretTechnique'] },
+  hunter:{ bm:['h_bestialCleave','h_direBeast'], marks:['h_doubleTap','h_trueshot'], survival:['h_butchery','h_mongooseBite'] },
+  shaman:{ element:['sh_lavaBurst2','sh_stormkeeper'], enhancement:['sh_feralSpirit','sh_sundering'], restoration:['sh_chainHeal','sh_cloudburst'] },
+  paladin:{ holy:['pa_holyShock','pa_lightDawn'], prot:['pa_avengerShield','pa_ardentDefender'], ret:['pa_wakeAshes','pa_finalReckoning'] },
+  warlock:{ affliction:['wl_haunt','wl_seedCorruption'], demonology:['wl_callDreadstalkers','wl_implosion'], destruction:['wl_rainFire','wl_cataclysm'] },
+  druid:{ balance:['d_sunfire','d_starfall'], feral:['d_shred','d_rip'], resto:['d_swiftmend','d_efflorescence'] },
+};
+
+(function appendSpecExtraSkillPools() {
+  for (const [clsKey, specs] of Object.entries(SPEC_EXTRA_SKILL_KEYS)) {
+    const clsProfile = SPEC_SKILL_LOADOUTS[clsKey];
+    if (!clsProfile) continue;
+    for (const [specKey, keys] of Object.entries(specs)) {
+      const profile = clsProfile[specKey];
+      if (!profile) continue;
+      if (!Array.isArray(profile.skills)) profile.skills = [];
+      for (const key of keys) {
+        if (!profile.skills.includes(key)) profile.skills.push(key);
+      }
+    }
+  }
+})();
+
+const SPEC_TALENT_THEME_PATCHES = {
+  warrior:{
+    arms:{ masteryDesc:'破甲印记、压制、灭战者与斩杀伤害 +2%/精通', unlockSkill:'w_overpower', unlockName:'压制', unlockDesc:'解锁: 压制(武器核心连击)' },
+    fury:{ masteryDesc:'暴怒层数、怒击、浴血奋战与怒火乱舞伤害 +2%/精通', unlockSkill:'w_ragingBlow', unlockName:'怒击', unlockDesc:'解锁: 怒击(狂暴核心连击)' },
+    prot:{ masteryDesc:'盾牌格挡、盾牌猛击、复仇与反震护盾 +3%/精通', unlockSkill:'w_shieldSlam', unlockName:'盾牌猛击', unlockDesc:'解锁: 盾牌猛击(防护核心)' },
+  },
+  mage:{
+    arcane:{ masteryDesc:'奥术充能、奥术冲击、奥术弹幕与奥术涌动伤害 +3%/精通', unlockSkill:'m_arcaneBlast', unlockName:'奥术冲击', unlockDesc:'解锁: 奥术冲击(奥法核心)' },
+    fire:{ masteryDesc:'点燃、活动炸弹、火焰冲击、炎爆与流星伤害 +4%/精通', unlockSkill:'m_livingBomb', unlockName:'活动炸弹', unlockDesc:'解锁: 活动炸弹(火法核心)' },
+    frost:{ masteryDesc:'冻结、指尖寒冰、冰风暴、冰枪与彗星风暴伤害 +3%/精通', unlockSkill:'m_frozenOrb', unlockName:'冰冻宝珠', unlockDesc:'解锁: 冰冻宝珠(冰法核心)' },
+  },
+  priest:{
+    discipline:{ masteryDesc:'护盾、恩典、惩罚、教派分歧与随从护盾 +4%/精通', unlockSkill:'p_schism', unlockName:'教派分歧', unlockDesc:'解锁: 教派分歧(戒律输出治疗)' },
+    holy:{ masteryDesc:'圣言术、愈合祷言、治疗祷言和随从治疗 +5%/精通', unlockSkill:'p_prayerMending', unlockName:'愈合祷言', unlockDesc:'解锁: 愈合祷言(神圣支援)' },
+    shadow:{ masteryDesc:'疯狂、噬灵疫病、精神鞭笞与虚空爆发伤害 +3%/精通', unlockSkill:'p_devouringPlague', unlockName:'噬灵疫病', unlockDesc:'解锁: 噬灵疫病(暗影核心)' },
+  },
+  rogue:{
+    assassination:{ masteryDesc:'毒锋、毁伤、锁喉、君王之灾和持续毒伤 +4%/精通', unlockSkill:'r_mutilate', unlockName:'毁伤', unlockDesc:'解锁: 毁伤(刺杀核心)' },
+    combat:{ masteryDesc:'连击点、剑刃冲刺、正中眉心和杀戮盛宴伤害 +3%/精通', unlockSkill:'r_bladeRush', unlockName:'剑刃冲刺', unlockDesc:'解锁: 剑刃冲刺(战斗核心)' },
+    subtlety:{ masteryDesc:'破绽、暗影之舞、幽暗之刃和暗袭伤害 +4%/精通', unlockSkill:'r_shadowDance', unlockName:'暗影之舞', unlockDesc:'解锁: 暗影之舞(敏锐核心)' },
+  },
+  hunter:{
+    bm:{ masteryDesc:'兽群羁绊、倒刺射击、凶暴野兽与协同猛攻伤害 +4%/精通', unlockSkill:'h_barbedShot', unlockName:'倒刺射击', unlockDesc:'解锁: 倒刺射击(兽王核心)' },
+    marks:{ masteryDesc:'猎人印记、精确射击、二连发、瞄准和杀戮射击伤害 +4%/精通', unlockSkill:'h_preciseShot', unlockName:'精确射击', unlockDesc:'解锁: 精确射击(射击核心)' },
+    survival:{ masteryDesc:'野火炸弹、猫鼬撕咬、屠戮和陷阱DOT伤害 +4%/精通', unlockSkill:'h_wildfireBomb', unlockName:'野火炸弹', unlockDesc:'解锁: 野火炸弹(生存核心)' },
+  },
+  shaman:{
+    element:{ masteryDesc:'雷霆充能、熔岩爆裂、元素冲击和风暴守护者伤害 +4%/精通', unlockSkill:'sh_elementalBlast', unlockName:'元素冲击', unlockDesc:'解锁: 元素冲击(元素核心)' },
+    enhancement:{ masteryDesc:'漩涡之力、风暴打击、毁灭闪电和幽魂狼伤害 +4%/精通', unlockSkill:'sh_crashLightning', unlockName:'毁灭闪电', unlockDesc:'解锁: 毁灭闪电(增强核心)' },
+    restoration:{ masteryDesc:'激流、治疗链、暴雨图腾和图腾共鸣治疗 +5%/精通', unlockSkill:'sh_riptide', unlockName:'激流', unlockDesc:'解锁: 激流(恢复核心)' },
+  },
+  paladin:{
+    holy:{ masteryDesc:'神圣震击、圣光道标、黎明之光和随从圣光治疗 +5%/精通', unlockSkill:'pa_holyShock', unlockName:'神圣震击', unlockDesc:'解锁: 神圣震击(奶骑核心)' },
+    prot:{ masteryDesc:'圣光壁垒、正义盾击、复仇者之盾和防骑回血护盾 +4%/精通', unlockSkill:'pa_shieldRighteous', unlockName:'正义盾击', unlockDesc:'解锁: 正义盾击(防骑核心)' },
+    ret:{ masteryDesc:'圣能、公正之剑、灰烬觉醒、圣殿裁决和最终清算伤害 +4%/精通', unlockSkill:'pa_bladeJustice', unlockName:'公正之剑', unlockDesc:'解锁: 公正之剑(惩戒核心)' },
+  },
+  warlock:{
+    affliction:{ masteryDesc:'痛楚、鬼影缠身、腐蚀之种和多DOT引爆伤害 +5%/精通', unlockSkill:'wl_agony', unlockName:'痛楚', unlockDesc:'解锁: 痛楚(痛苦核心)' },
+    demonology:{ masteryDesc:'恶魔召唤、古尔丹之手、恐惧猎犬和恶魔之箭伤害 +5%/精通', unlockSkill:'wl_handGuldan', unlockName:'古尔丹之手', unlockDesc:'解锁: 古尔丹之手(恶魔核心)' },
+    destruction:{ masteryDesc:'余烬、燃烧、火焰之雨、大灾变和混乱之箭伤害 +4%/精通', unlockSkill:'wl_conflagrate', unlockName:'燃烧', unlockDesc:'解锁: 燃烧(毁灭核心)' },
+  },
+  druid:{
+    balance:{ masteryDesc:'星界能量、阳炎、星涌、星辰坠落和新月强击伤害 +4%/精通', unlockSkill:'d_eclipse', unlockName:'星涌术', unlockDesc:'解锁: 星涌术(平衡核心)' },
+    feral:{ masteryDesc:'撕咬连击、斜掠、撕碎、割裂和凶猛撕咬伤害 +4%/精通', unlockSkill:'d_rake', unlockName:'斜掠', unlockDesc:'解锁: 斜掠(野性核心)' },
+    resto:{ masteryDesc:'生命绽放、迅捷治愈、百花齐放和随从治疗 +5%/精通', unlockSkill:'d_lifebloomSpell', unlockName:'生命绽放', unlockDesc:'解锁: 生命绽放(恢复核心)' },
+  },
+};
+
+(function patchSpecTalentThemes() {
+  if (typeof CLASSES === 'undefined') return;
+  for (const [clsKey, specs] of Object.entries(SPEC_TALENT_THEME_PATCHES)) {
+    const cls = CLASSES[clsKey];
+    if (!cls || !Array.isArray(cls.trees)) continue;
+    for (const [specKey, patch] of Object.entries(specs)) {
+      const tree = cls.trees.find(t => t.key === specKey);
+      if (!tree) continue;
+      tree.masteryDesc = patch.masteryDesc;
+      const unlockTalent = (tree.talents || []).find(t => t.unlockSkill);
+      if (unlockTalent) {
+        unlockTalent.unlockSkill = patch.unlockSkill;
+        unlockTalent.name = patch.unlockName;
+        unlockTalent.desc = patch.unlockDesc;
+      }
+    }
+  }
+})();
 
 const SPEC_STARTER_UNLOCKS = {
   mage:{ fireball:1, frostbolt:1, m_arcaneBlast:1 },

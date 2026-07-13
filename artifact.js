@@ -786,6 +786,87 @@ const ARTIFACT_SKILLS = {
   },
 };
 
+const SPEC_ARTIFACT_SKILL_RETUNE = {
+  warrior:{
+    arms:{ name:'灭战者之锋', icon:'ability_warrior_sunder', cd:16, mul:[3.5,4.8,6], aoe:true, sunder:true, desc:'释放神器之锋横扫全体,造成 ATK× 伤害并破甲;强化压制、碎颅打击与灭战者循环。' },
+    fury:{ name:'奥丁怒火·暴怒', icon:'ability_warrior_innerrage', cd:18, mul:[4,5.5,7], aoe:true, desc:'引爆暴怒烈焰,对全体敌人造成 ATK× 伤害;强化怒击、浴血奋战与奥丁之怒。' },
+    prot:{ name:'守护之鳞反震', icon:'ability_warrior_shieldwall', cd:18, mul:[2.5,3.5,4.5], selfShieldPct:0.12, desc:'以神器盾鳞反震焦点,造成 ATK× 伤害并获得护盾;强化盾牌猛击、复仇与盾牌冲锋。' },
+  },
+  mage:{
+    arcane:{ name:'阿鲁尼斯充能', icon:'spell_arcane_blast', cd:16, mul:[3.5,4.8,6], aoe:true, desc:'引爆奥术充能对全体造成 ATK× 伤害;强化奥术冲击、大法师之触与奥术涌动。' },
+    fire:{ name:'凤凰点燃', icon:'spell_fire_fireball02', cd:16, mul:[4,5.2,6.5], aoe:true, desc:'凤凰烈焰点燃全场造成 ATK× 火焰伤害;强化活动炸弹、火焰冲击与烈焰风暴。' },
+    frost:{ name:'乌玄碎裂', icon:'spell_frost_frostbolt02', cd:16, mul:[3.5,4.8,6], aoe:true, desc:'乌玄冰晶冻结战场造成 ATK× 冰霜伤害;强化冰风暴、冰枪、冰冻宝珠与彗星风暴。' },
+  },
+  priest:{
+    discipline:{ name:'光怒赎罪', icon:'spell_holy_powerwordshield', cd:18, mul:[2.5,3.5,4.5], healPct:0.08, selfShieldPct:0.08, desc:'光怒打击焦点并回复/护盾;强化教派分歧、惩罚与真言术·障。' },
+    holy:{ name:'图尔圣言', icon:'spell_holy_heal', cd:20, mul:[1.5,2,2.5], healPct:0.14, selfShieldPct:0.08, desc:'纳鲁圣光回复并护盾;强化愈合祷言、圣言术·静与治疗祷言。' },
+    shadow:{ name:'虚空疫病', icon:'spell_shadow_shadowwordpain', cd:16, mul:[4,5.2,6.5], desc:'虚空洪流腐蚀焦点造成 ATK× 暗影伤害;强化噬灵疫病、精神鞭笞与暗影冲撞。' },
+  },
+  rogue:{
+    assassination:{ name:'弑君毒令', icon:'ability_rogue_deadlybrew', cd:16, mul:[4,5.2,6.5], desc:'神器毒刃刺穿焦点;强化毁伤、锁喉、奉毒与君王之灾。' },
+    combat:{ name:'恐惧连斩', icon:'ability_rogue_dualwield', cd:14, mul:[3,4.2,5.5], aoe:true, desc:'恐惧之刃横扫全体;强化剑刃冲刺、命运骨骰与正中眉心。' },
+    subtlety:{ name:'血喉影幕', icon:'spell_shadow_deathanddecay', cd:16, mul:[4,5.2,6.5], desc:'血喉从暗影中撕咬焦点;强化幽暗之刃、暗影之舞与袖剑风暴。' },
+  },
+  hunter:{
+    bm:{ name:'泰坦兽群', icon:'ability_hunter_beastcall', cd:18, mul:[3.5,4.8,6], aoe:true, desc:'泰坦之雷驱动兽群撕咬全体;强化倒刺射击、野兽顺劈和凶暴野兽。' },
+    marks:{ name:'风行百发', icon:'ability_hunter_focusedaim', cd:14, mul:[4,5.2,6.5], desc:'风行者之箭贯穿焦点;强化精确射击、二连发和百发百中。' },
+    survival:{ name:'雄鹰野火', icon:'ability_hunter_explosiveshot', cd:16, mul:[3.5,4.8,6], aoe:true, desc:'雄鹰之怒引爆野火;强化野火炸弹、屠戮与猫鼬撕咬。' },
+  },
+  shaman:{
+    element:{ name:'拉登过载', icon:'spell_nature_lightning', cd:16, mul:[4,5.2,6.5], desc:'拉登之拳轰击焦点;强化熔岩爆裂、元素冲击与风暴守护者。' },
+    enhancement:{ name:'末日漩涡', icon:'spell_shaman_improvedstormstrike', cd:16, mul:[3.2,4.4,5.8], aoe:true, desc:'末日之风撕裂全场;强化毁灭闪电、幽魂狼、裂地术与熔岩猛击。' },
+    restoration:{ name:'潮汐暴雨', icon:'spell_nature_healingwavegreater', cd:20, mul:[1.5,2,2.5], healPct:0.14, selfShieldPct:0.08, desc:'潮汐图腾治疗并护盾;强化激流、治疗链与暴雨图腾。' },
+  },
+  paladin:{
+    holy:{ name:'白银震击', icon:'spell_holy_holybolt', cd:18, mul:[1.8,2.4,3], healPct:0.14, selfShieldPct:0.08, desc:'白银之手释放圣光震击;强化神圣震击、圣光道标与黎明之光。' },
+    prot:{ name:'真理复仇盾', icon:'ability_paladin_shieldofthetemplar', cd:16, mul:[3,4.2,5.5], aoe:true, selfShieldPct:0.10, desc:'真理之守弹射圣盾;强化正义盾击、复仇者之盾与炽热防御者。' },
+    ret:{ name:'灰烬清算', icon:'spell_holy_auraoflight', cd:16, mul:[4,5.2,6.5], aoe:true, desc:'灰烬使者唤醒圣焰;强化公正之剑、灰烬觉醒、圣殿裁决与最终清算。' },
+  },
+  warlock:{
+    affliction:{ name:'收割痛楚', icon:'spell_shadow_deathcoil', cd:18, mul:[3.5,4.8,6], aoe:true, desc:'收割灵魂扩散痛楚;强化痛楚、鬼影缠身、腐蚀之种与邪能狂涌。' },
+    demonology:{ name:'曼阿里军团', icon:'spell_shadow_metamorphosis', cd:18, mul:[4,5.2,6.5], desc:'曼阿里头骨召来恶魔吞噬焦点;强化古尔丹之手、恐惧猎犬、内爆与恶魔之箭。' },
+    destruction:{ name:'裂隙大灾变', icon:'spell_fire_fire', cd:16, mul:[4,5.2,6.5], aoe:true, desc:'次元裂隙引爆大灾变;强化燃烧、火焰之雨、大灾变与混乱之箭。' },
+  },
+  druid:{
+    balance:{ name:'艾露恩星落', icon:'spell_nature_starfall', cd:16, mul:[3.5,4.8,6], aoe:true, desc:'艾露恩之镰召下星落;强化阳炎、星涌、星辰坠落与新月强击。' },
+    feral:{ name:'阿莎曼割裂', icon:'ability_druid_catform', cd:14, mul:[4,5.2,6.5], desc:'阿莎曼之爪撕裂焦点;强化斜掠、撕碎、割裂和凶猛撕咬。' },
+    resto:{ name:'母树百花', icon:'spell_nature_healingtouch', cd:20, mul:[1.5,2,2.5], healPct:0.14, selfShieldPct:0.08, desc:'母亲之树绽放治疗并护盾;强化生命绽放、迅捷治愈与百花齐放。' },
+  },
+};
+
+const SPEC_ARTIFACT_TRAIT_RETUNE = {
+  warrior:{ arms:['w_warbreaker','灭战裂锋','灭战者与碎颅打击伤害提高 10/20/30%。'], fury:['w_odynFury','奥丁暴怒','奥丁之怒与浴血奋战伤害提高 10/20/30%。'], prot:['w_shieldCharge','盾冲壁垒','盾牌冲锋与盾牌猛击伤害提高 10/20/30%。'] },
+  mage:{ arcane:['m_arcaneSurge','奥能倾泻','奥术涌动与大法师之触伤害提高 10/20/30%。'], fire:['m_flamestrike','烈焰燎原','烈焰风暴与活动炸弹伤害提高 10/20/30%。'], frost:['m_cometStorm','彗星碎裂','彗星风暴与冰风暴伤害提高 10/20/30%。'] },
+  priest:{ discipline:['p_schism','赎罪分歧','教派分歧与惩罚伤害提高 10/20/30%。'], holy:['p_serenity','圣言静愈','圣言术·静与治疗祷言效果提高 10/20/30%。'], shadow:['p_shadowCrash','暗影坠星','暗影冲撞与噬灵疫病伤害提高 10/20/30%。'] },
+  rogue:{ assassination:['r_kingsbane','弑君毒脉','君王之灾与毁伤伤害提高 10/20/30%。'], combat:['r_betweenEyes','眉心连击','正中眉心与剑刃冲刺伤害提高 10/20/30%。'], subtlety:['r_secretTechnique','袖剑秘技','袖剑风暴与幽暗之刃伤害提高 10/20/30%。'] },
+  hunter:{ bm:['h_direBeast','凶兽泰坦','凶暴野兽与野兽顺劈伤害提高 10/20/30%。'], marks:['h_trueshot','百发风行','百发百中期间射击技能伤害提高 10/20/30%。'], survival:['h_mongooseBite','猫鼬野火','猫鼬撕咬与野火炸弹伤害提高 10/20/30%。'] },
+  shaman:{ element:['sh_stormkeeper','风暴过载','风暴守护者与元素冲击伤害提高 10/20/30%。'], enhancement:['sh_sundering','裂地漩涡','裂地术与毁灭闪电伤害提高 10/20/30%。'], restoration:['sh_chainHeal','潮汐链愈','治疗链与暴雨图腾效果提高 10/20/30%。'] },
+  paladin:{ holy:['pa_holyShock','白银震击','神圣震击与黎明之光效果提高 10/20/30%。'], prot:['pa_avengerShield','复仇壁垒','复仇者之盾与正义盾击伤害提高 10/20/30%。'], ret:['pa_finalReckoning','最终圣裁','最终清算与灰烬觉醒伤害提高 10/20/30%。'] },
+  warlock:{ affliction:['wl_seedCorruption','腐蚀收割','腐蚀之种与鬼影缠身伤害提高 10/20/30%。'], demonology:['wl_implosion','恶魔内爆','内爆与古尔丹之手伤害提高 10/20/30%。'], destruction:['wl_cataclysm','裂隙大灾','大灾变与火焰之雨伤害提高 10/20/30%。'] },
+  druid:{ balance:['d_starfall','星辰蚀刻','星辰坠落与阳炎术伤害提高 10/20/30%。'], feral:['d_rip','血爪割裂','割裂与撕碎伤害提高 10/20/30%。'], resto:['d_efflorescence','百花母树','百花齐放与迅捷治愈效果提高 10/20/30%。'] },
+};
+
+(function retuneSpecArtifacts() {
+  for (const [clsKey, specs] of Object.entries(SPEC_ARTIFACT_SKILL_RETUNE)) {
+    if (!ARTIFACT_SKILLS[clsKey]) ARTIFACT_SKILLS[clsKey] = {};
+    for (const [specKey, def] of Object.entries(specs)) {
+      ARTIFACT_SKILLS[clsKey][specKey] = def;
+    }
+  }
+  for (const [clsKey, specs] of Object.entries(SPEC_ARTIFACT_TRAIT_RETUNE)) {
+    if (!ARTIFACT_TRAITS[clsKey]) ARTIFACT_TRAITS[clsKey] = [];
+    for (const [specKey, row] of Object.entries(specs)) {
+      const [skill, name, desc] = row;
+      const key = `art_${clsKey}_${specKey}_signature_20260713`;
+      if (ARTIFACT_TRAITS[clsKey].some(t => t.key === key)) continue;
+      ARTIFACT_TRAITS[clsKey].push(skillAmpTrait({
+        key, tree:specKey, name, icon:'✦', skill, dmgPct:[10,20,30], mod:{ mastery:1 },
+        desc: desc + ' 并获得精通 +1/2/3。'
+      }));
+    }
+  }
+})();
+
 const ARTIFACT_MILESTONES = {
   warrior: milestoneList('strPct'),
   mage: milestoneList('intPct'),
