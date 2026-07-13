@@ -15,10 +15,13 @@ function calcTravelTime(fromMapKey, toMapKey) {
 }
 
 function averageEquippedItemLevel() {
-  if (typeof itemLevelOf !== 'function') return 0;
   const items = Object.values(state?.equipped || {}).filter(Boolean);
   if (!items.length) return 0;
-  const total = items.reduce((sum, it) => sum + (itemLevelOf(it) || 0), 0);
+  const total = items.reduce((sum, it) => {
+    const lv = (typeof itemLevelOf === 'function') ? itemLevelOf(it)
+      : ((typeof computeItemLevel === 'function') ? computeItemLevel(it) : (it.ilvl || 0));
+    return sum + (lv || 0);
+  }, 0);
   return total / items.length;
 }
 
@@ -46,6 +49,48 @@ function contentReqMet(req) {
 function contentReqLabel(req) {
   const n = Math.max(1, Math.floor(req || 1));
   return n > MAX_LEVEL ? `终局${n}` : `等级${n}`;
+}
+
+function dungeonRecommendedItemLevel(dg) {
+  if (!dg) return 0;
+  const power = (typeof dg.powerLvl === 'number' && dg.powerLvl > 0) ? dg.powerLvl : (dg.reqLvl || 1);
+  if (dg.epicRaid) {
+    const ilvl = (typeof dg.raidIlvl === 'number' && dg.raidIlvl > 0) ? dg.raidIlvl : 320;
+    return Math.max(285, Math.round(ilvl - 35));
+  }
+  if (dg.epic5) return Math.max(240, Math.round(power * 3 + 28));
+  if (dg.heroic) return Math.max(205, Math.round(power * 3 + 8));
+  if (dg.type === 'raid' && typeof dg.raidIlvl === 'number') return Math.max(1, Math.round(dg.raidIlvl - 8));
+  return 0;
+}
+
+function dungeonRequiredItemLevel(dg) {
+  return dg?.epicRaid ? dungeonRecommendedItemLevel(dg) : 0;
+}
+
+function dungeonAccessInfo(dg) {
+  if (!dg) return { ok:false, reason:'未找到副本', short:'未找到副本' };
+  const req = Math.max(1, Math.floor(dg.reqLvl || 1));
+  const progress = playerProgressLevel();
+  if (progress < req) {
+    return {
+      ok:false,
+      reason:`需要${contentReqLabel(req)}，当前进度${Math.floor(progress)}`,
+      short:'进度不足',
+    };
+  }
+  const reqIlvl = dungeonRequiredItemLevel(dg);
+  if (reqIlvl > 0) {
+    const avg = Math.floor(averageEquippedItemLevel());
+    if (avg < reqIlvl) {
+      return {
+        ok:false,
+        reason:`史诗团本阶梯需要平均装等 ${reqIlvl}+，当前 ${avg || 0}`,
+        short:`装等不足 ${avg || 0}/${reqIlvl}`,
+      };
+    }
+  }
+  return { ok:true, reason:'', short:'' };
 }
 
 function contentRangeLabel(min, max) {
@@ -169,7 +214,8 @@ function challengeBoss(mapKey) {
 /* ---------- 副本 ---------- */
 function enterDungeon(key) {
   const dg = DUNGEONS.find(d => d.key === key);
-  if (!contentReqMet(dg.reqLvl)) { log(`需要${contentReqLabel(dg.reqLvl)}`, 'bad'); return; }
+  const access = dungeonAccessInfo(dg);
+  if (!access.ok) { log(access.reason || `需要${contentReqLabel(dg?.reqLvl || 1)}`, 'bad'); return; }
   if (state.mode === 'travel') { log('正在旅行中', 'bad'); return; }
   if (state.mode === 'dungeon') { log('已在副本中', 'bad'); return; }
   const cdEnd = state.dungeonCd[key] || 0;

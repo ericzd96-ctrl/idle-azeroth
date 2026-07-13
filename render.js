@@ -3326,7 +3326,12 @@ function dungeonLootIlvlText(dg) {
 function dungeonProgressionPillsHtml(dg) {
   const power = dungeonPowerText(dg);
   const loot = dungeonLootIlvlText(dg);
-  return `${power ? `<div class="pill">${power}</div>` : ''}${loot ? `<div class="pill">${loot}</div>` : ''}`;
+  const recIlvl = (typeof dungeonRecommendedItemLevel === 'function') ? dungeonRecommendedItemLevel(dg) : 0;
+  const reqIlvl = (typeof dungeonRequiredItemLevel === 'function') ? dungeonRequiredItemLevel(dg) : 0;
+  const ilvlPill = reqIlvl > 0
+    ? `<div class="pill" style="color:#f6c453">准入装等 ${reqIlvl}</div>`
+    : (recIlvl > 0 ? `<div class="pill">推荐装等 ${recIlvl}</div>` : '');
+  return `${power ? `<div class="pill">${power}</div>` : ''}${loot ? `<div class="pill">${loot}</div>` : ''}${ilvlPill}`;
 }
 function dungeonRaidProgressionHtml(dg, compact) {
   if (!dg || dg.type !== 'raid' || typeof raidProgression !== 'function') return '';
@@ -3622,6 +3627,22 @@ function buildDungeonInfoHtml(dg) {
   const progressionPills = dungeonProgressionPillsHtml(dg);
   const lootIlvlText = dungeonLootIlvlText(dg);
   const powerText = dungeonPowerText(dg);
+  const recIlvl = (typeof dungeonRecommendedItemLevel === 'function') ? dungeonRecommendedItemLevel(dg) : 0;
+  const reqIlvl = (typeof dungeonRequiredItemLevel === 'function') ? dungeonRequiredItemLevel(dg) : 0;
+  const avgIlvl = (typeof averageEquippedItemLevel === 'function') ? Math.floor(averageEquippedItemLevel()) : 0;
+  const ilvlGateTip = recIlvl > 0 ? inlineTipSpanHtml({
+    name:reqIlvl > 0 ? '史诗团本准入装等' : '推荐平均装等',
+    icon:'🎚️',
+    desc:reqIlvl > 0
+      ? '史诗团本按资料片顺序设置平均装等门槛。旧团本史诗重制不会只看 Lv.80，而会要求先通过前序副本提升装备。'
+      : '推荐平均装等用于提示该副本的装备准备程度；普通、英雄和史诗5人本不会因为该推荐值被硬性拦截。',
+    meta:`需要 ${reqIlvl || recIlvl}+${avgIlvl ? ` · 当前 ${avgIlvl}` : ''}`,
+  }, {
+    fallbackIcon:'inv_misc_gem_topaz_02',
+    color:reqIlvl > 0 && avgIlvl < reqIlvl ? '#fb7185' : '#f6c453',
+    metaVisible:true,
+    className:'dungeon-raid-tip dungeon-inline-tip',
+  }) : '';
   const setTierInfo = (!isEpicRaid && typeof setBandForDungeon === 'function' && typeof setLabelForClass === 'function' && typeof setTierIndex === 'function')
     ? (function getSetInfo() {
         const band = setBandForDungeon(dg);
@@ -3646,6 +3667,7 @@ function buildDungeonInfoHtml(dg) {
       ${isEpicRaid?'<span style="color:#fb7185">[史诗团本]</span> ':(isRaid?'<span style="color:#fbbf24">[团本]</span> ':'<span style="color:#6ee7b7">[5人本]</span> ')}
       ${dg.desc}<br>
       推荐波次: ${dg.waves || '?'} · 首领数量: ${(dg.bosses || []).length}${powerText ? ` · ${powerText}` : ''}${lootIlvlText ? ` · ${lootIlvlText}` : ''} · 精良以上装备有概率携带副本印记
+      ${ilvlGateTip ? `<br>${ilvlGateTip}` : ''}
       ${dg.type==='raid'?(isEpicRaid?' · 掉落: 史诗级紫装 / 全部首领超低概率橙装':' · 掉落: 常规团本装备 / 关底低概率橙武'):''}
     </div>`;
   html += dungeonThemeAffixHtml(dg, false);
@@ -3944,7 +3966,8 @@ function renderDungeon() {
     const cdEnd = state.dungeonCd[dg.key] || 0;
     const cdLeft = Math.max(0, Math.ceil((cdEnd - Date.now()) / 1000));
     const onCd = cdLeft > 0;
-    const lvlOk = typeof contentReqMet === 'function' ? contentReqMet(dg.reqLvl) : state.hero.lvl >= dg.reqLvl;
+    const access = (typeof dungeonAccessInfo === 'function') ? dungeonAccessInfo(dg) : { ok:(state.hero.lvl >= dg.reqLvl), short:'进度不足' };
+    const lvlOk = access.ok;
     const canFree = lvlOk && !onCd && state.mode === 'world';
     const canTicket = lvlOk && onCd && state.tickets >= 1 && state.mode === 'world';
     const canEnter = canFree || canTicket;
@@ -3959,7 +3982,7 @@ function renderDungeon() {
           };
         })()
       : null;
-    const statusText = !lvlOk ? '进度不足'
+    const statusText = !lvlOk ? (access.short || '进度不足')
       : onCd ? `<span style="color:#fb923c">⏳冷却 ${fmtCd(cdLeft)}</span>${canTicket ? ' · 🎫跳过' : ''}`
       : '<span style="color:#6ee7b7">✅可挑战(免费)</span>';
     const btnText = canFree ? '免费进入' : (canTicket ? '🎫进入' : '进入');
@@ -4024,6 +4047,12 @@ function renderDungeon() {
       : '<span style="color:#6ee7b7">[5人本]</span> ';
     const powerText = dungeonPowerText(dg);
     const lootIlvlText = dungeonLootIlvlText(dg);
+    const recIlvl = (typeof dungeonRecommendedItemLevel === 'function') ? dungeonRecommendedItemLevel(dg) : 0;
+    const reqIlvl = (typeof dungeonRequiredItemLevel === 'function') ? dungeonRequiredItemLevel(dg) : 0;
+    const avgIlvl = (typeof averageEquippedItemLevel === 'function') ? Math.floor(averageEquippedItemLevel()) : 0;
+    const ilvlLine = recIlvl > 0
+      ? `<div class="muted" style="font-size:11px;color:${reqIlvl > 0 && avgIlvl < reqIlvl ? '#fb7185' : '#f6c453'}">🎚️ ${reqIlvl > 0 ? '史诗团本准入' : '推荐装备'}: 平均装等 ${reqIlvl || recIlvl}+${avgIlvl ? ` · 当前 ${avgIlvl}` : ''}</div>`
+      : '';
     const raidProgressLine = dg.type === 'raid' && (dg.raidExpansion || dg.raidIlvl || powerText || lootIlvlText)
       ? ` · ${[dg.raidExpansion, powerText, lootIlvlText].filter(Boolean).join(' · ')}`
       : '';
@@ -4039,6 +4068,7 @@ function renderDungeon() {
       ${bountyLine}
       ${delveLine}
       ${chaseLine}
+      ${ilvlLine}
       ${themeLine}
       ${affixLine}
       ${timerLine}
@@ -4107,11 +4137,12 @@ function updateCdDisplays() {
     const cdEnd = state.dungeonCd[key] || 0;
     const cdLeft = Math.max(0, Math.ceil((cdEnd - Date.now()) / 1000));
     const onCd = cdLeft > 0;
-    const lvlOk = typeof contentReqMet === 'function' ? contentReqMet(dg.reqLvl) : state.hero.lvl >= dg.reqLvl;
+    const access = (typeof dungeonAccessInfo === 'function') ? dungeonAccessInfo(dg) : { ok:(state.hero.lvl >= dg.reqLvl), short:'进度不足' };
+    const lvlOk = access.ok;
     const canFree = lvlOk && !onCd && state.mode === 'world';
     const canTicket = lvlOk && onCd && state.tickets >= 1 && state.mode === 'world';
     const canEnter = canFree || canTicket;
-    const statusText = !lvlOk ? '进度不足'
+    const statusText = !lvlOk ? (access.short || '进度不足')
       : onCd ? `<span style="color:#fb923c">⏳冷却 ${fmtCd(cdLeft)}</span>${canTicket ? ' · 🎫跳过' : ''}`
       : '<span style="color:#6ee7b7">✅可挑战(免费)</span>';
     const btnText = canFree ? '免费进入' : (canTicket ? '🎫进入' : '进入');
