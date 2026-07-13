@@ -3327,6 +3327,60 @@ function dungeonProgressionPillsHtml(dg) {
   const loot = dungeonLootIlvlText(dg);
   return `${power ? `<div class="pill">${power}</div>` : ''}${loot ? `<div class="pill">${loot}</div>` : ''}`;
 }
+function dungeonRaidProgressionHtml(dg, compact) {
+  if (!dg || dg.type !== 'raid' || typeof raidProgression !== 'function') return '';
+  const baseKey = (typeof baseDungeonKey === 'function') ? baseDungeonKey(dg.key) : (dg.baseKey || dg.key);
+  const prog = raidProgression(baseKey);
+  const trackTip = inlineTipSpanHtml({
+    name:'团本阶梯',
+    icon:'📈',
+    desc:'团本按资料片与推出顺序形成线性强度阶梯；即使入口等级相同，越靠后的团本怪物强度与掉落装等也会继续提升。',
+    meta:`第${prog.order || '?'}阶 · ${prog.tier || 'T?'}`
+  }, {
+    fallbackIcon:'achievement_dungeon_ulduar_raildriver',
+    color:'#f6c453',
+    metaVisible:true,
+    className:'dungeon-raid-tip dungeon-inline-tip'
+  });
+  const powerTip = inlineTipSpanHtml({
+    name:'推荐战力',
+    icon:'⚔️',
+    desc:'用于实际怪物等级、首领压力和战斗缩放；史诗团本和后期资料片会明显高于入口等级。',
+    meta:dungeonPowerText(dg)
+  }, {
+    fallbackIcon:'ability_warrior_savageblow',
+    color:'#fca5a5',
+    metaVisible:true,
+    className:'dungeon-raid-tip dungeon-inline-tip'
+  });
+  const lootTip = inlineTipSpanHtml({
+    name:'掉落阶梯',
+    icon:'🎁',
+    desc:'首领掉落会按团本顺序、首领位置和品质计算装等；尾王与传说品质会更高。',
+    meta:dungeonLootIlvlText(dg) || '常规团本掉落'
+  }, {
+    fallbackIcon:'inv_misc_gem_topaz_02',
+    color:'#fde68a',
+    metaVisible:true,
+    className:'dungeon-raid-tip dungeon-inline-tip'
+  });
+  const modeTip = inlineTipSpanHtml({
+    name:dg.epicRaid ? '史诗重制' : '普通进度',
+    icon:dg.epicRaid ? '🔥' : '📜',
+    desc:dg.epicRaid ? '史诗团本把旧团本提升到 80 级以上强度，并使用史诗套装、散件和全首领低概率传说掉落。' : '普通团本保留资料片进度节奏，关底首领有低概率传说武器。',
+    meta:prog.expansion || '团本'
+  }, {
+    fallbackIcon:dg.epicRaid ? 'spell_fire_selfdestruct' : 'inv_misc_book_11',
+    color:dg.epicRaid ? '#fb7185' : '#c4b5fd',
+    metaVisible:true,
+    className:'dungeon-raid-tip dungeon-inline-tip'
+  });
+  if (compact) return `<div class="dungeon-raid-track compact">${trackTip}${powerTip}${lootTip}</div>`;
+  return `<div class="dungeon-raid-track">
+    <div class="dungeon-raid-track-head"><b>团本进度阶梯</b><span>${tipAttrText(prog.expansion || '')}</span></div>
+    <div class="dungeon-raid-track-grid">${modeTip}${trackTip}${powerTip}${lootTip}</div>
+  </div>`;
+}
 function dungeonArtInfo(dg) {
   if (!dg?.art) return null;
   const baseKey = (typeof baseDungeonKey === 'function') ? baseDungeonKey(dg.key) : dg.key;
@@ -3543,6 +3597,7 @@ function buildDungeonInfoHtml(dg) {
     </div>
     ${dg.art ? `<div class="dungeon-info-art" style="background-image:linear-gradient(180deg, rgba(11,15,25,.12), rgba(11,15,25,.78)), url('${dg.art}')">${dungeonArtBadgeHtml(dg)}</div>` : ''}
     ${dungeonAtlasHtml(dg, false)}
+    ${dungeonRaidProgressionHtml(dg, false)}
     <div class="muted" style="margin-bottom:10px;line-height:1.6">
       ${isEpicRaid?'<span style="color:#fb7185">[史诗团本]</span> ':(isRaid?'<span style="color:#fbbf24">[团本]</span> ':'<span style="color:#6ee7b7">[5人本]</span> ')}
       ${dg.desc}<br>
@@ -3879,6 +3934,7 @@ function renderDungeon() {
     const firstClearBadge = (!state.dungeonFirstClear || !state.dungeonFirstClear[dg.key]) ? '<span class="pill" style="background:rgba(246,196,83,.18);color:#f6c453">🎁首通</span>' : '';
     const artBanner = dg.art ? `<div class="dungeon-art-banner" style="background-image:linear-gradient(180deg, rgba(11,15,25,.16), rgba(11,15,25,.78)), url('${dg.art}')">${dungeonArtBadgeHtml(dg)}</div>` : '';
     const atlasLine = dungeonAtlasHtml(dg, true);
+    const raidTrackLine = dungeonRaidProgressionHtml(dg, true);
     // 必刷专属坐骑提示(读 DUNGEON_MOUNT_DROPS,按基础本key)
     let chaseLine = '';
     if (typeof DUNGEON_MOUNT_DROPS !== 'undefined' && typeof MOUNTS !== 'undefined') {
@@ -3910,6 +3966,7 @@ function renderDungeon() {
       </div>
       ${artBanner}
       ${atlasLine}
+      ${raidTrackLine}
       <div class="muted">${typeLabel}${dg.desc}${raidProgressLine} · ${(dg.bosses||[]).length}名首领 · 最终: ${((dg.bosses||[])[dg.bosses.length-1]||{}).name||'??'}${dg.type==='raid'?(isEpicRaid?' · 掉落:史诗级紫装/全部首领超低概率橙装':' · 掉落:常规团本装备/关底低概率橙武'):''}</div>
       ${bountyLine}
       ${delveLine}

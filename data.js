@@ -6604,6 +6604,8 @@ const RAID_NORMAL_ILVL_BASE = 118;
 const RAID_NORMAL_ILVL_STEP = 6;
 const RAID_EPIC_ILVL_BASE = 320;
 const RAID_EPIC_ILVL_STEP = 8;
+const RAID_NORMAL_POWER_BASE = 67;
+const RAID_NORMAL_POWER_STEP = 1.8;
 const RAID_EPIC_POWER_BASE = 82;
 const RAID_EPIC_POWER_STEP = 2.15;
 function raidNormalIlvlForOrder(order) {
@@ -6611,6 +6613,9 @@ function raidNormalIlvlForOrder(order) {
 }
 function raidEpicIlvlForOrder(order) {
   return Math.round(RAID_EPIC_ILVL_BASE + Math.max(0, (order || 1) - 1) * RAID_EPIC_ILVL_STEP);
+}
+function raidNormalPowerForOrder(order) {
+  return Math.round(RAID_NORMAL_POWER_BASE + Math.max(0, (order || 1) - 1) * RAID_NORMAL_POWER_STEP);
 }
 function raidEpicPowerForOrder(order) {
   return Math.round(RAID_EPIC_POWER_BASE + Math.max(0, (order || 1) - 1) * RAID_EPIC_POWER_STEP);
@@ -6778,7 +6783,7 @@ function raidProgression(baseKey) {
     tier: theme.tier,
     normalIlvl,
     epicIlvl,
-    normalPowerLvl: raw.normalPowerLvl || Math.round(52 + raw.order * 2.05),
+    normalPowerLvl: raw.normalPowerLvl || raidNormalPowerForOrder(raw.order),
     epicPowerLvl: raw.epicPowerLvl || raidEpicPowerForOrder(raw.order),
   };
 }
