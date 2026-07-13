@@ -6750,6 +6750,148 @@ function collectCompanionMod(){
   return out;
 }
 function activeCompanionBonds(){if(typeof COMPANION_BONDS==='undefined'||!state.companions)return[];const ks=new Set(state.companions.map(c=>c.key));return COMPANION_BONDS.filter(b=>b.keys.every(k=>ks.has(k)));}
+const COMPANION_MISSION_TYPES = [
+  { key:'frontline', name:'前线护送', icon:'🛡️', role:'tank', trait:'support', minutes:18, desc:'护送补给穿过交战区。坦克和护盾型随从更容易拿到额外奖励。', reward:{ gold:220, honor:18, shards:1 } },
+  { key:'recon', name:'荒野侦察', icon:'🏹', role:'dps', trait:'control', minutes:16, desc:'侦察地图、标记稀有怪和伏击点。输出、控制和高星随从会提高完成度。', reward:{ gold:180, essence:5, shards:1 } },
+  { key:'triage', name:'战地救护', icon:'💚', role:'heal', trait:'heal', minutes:20, desc:'救治受伤冒险者并回收可用物资。辅助和治疗随从更擅长这类任务。', reward:{ essence:7, honor:12, shards:1 } },
+  { key:'artifact', name:'遗物回收', icon:'💎', role:'dps', trait:'summon', minutes:28, desc:'深入遗迹回收可用魔法残片。召唤型随从能分摊风险并提高额外随从券概率。', reward:{ gold:260, essence:8, shards:2, ticketChance:0.18 } },
+  { key:'command', name:'指挥桌战役', icon:'📜', role:'tank', trait:'control', minutes:36, desc:'模拟职业大厅指挥桌的长线任务。高品质随从会显著提高奖励倍率。', reward:{ gold:420, honor:28, essence:10, shards:2, ticketChance:0.28 } },
+];
+function ensureCompanionMissionState(){
+  if(!state.companionMissions || typeof state.companionMissions !== 'object') state.companionMissions = {active:[], totalCompleted:0, history:[]};
+  if(!Array.isArray(state.companionMissions.active)) state.companionMissions.active = [];
+  if(!Array.isArray(state.companionMissions.history)) state.companionMissions.history = [];
+  state.companionMissions.active = state.companionMissions.active.filter(m => m && m.id && m.compKey && m.key);
+  return state.companionMissions;
+}
+function companionMissionSlots(){
+  const owned = (state.companions || []).length;
+  if(owned < 2) return 1;
+  return Math.min(4, 1 + Math.floor(owned / 8));
+}
+function companionMissionType(key){
+  return COMPANION_MISSION_TYPES.find(m => m.key === key) || COMPANION_MISSION_TYPES[0];
+}
+function companionMissionTraitFlags(tpl){
+  return typeof companionTraitFlags === 'function' ? companionTraitFlags(tpl) : {summon:false, heal:false, support:false, control:false};
+}
+function companionMissionCompEntry(compKey){
+  const comp = (state.companions || []).find(c => c.key === compKey);
+  const tpl = comp && COMPANIONS.find(t => t.key === comp.key);
+  return comp && tpl ? {comp, tpl} : null;
+}
+function companionMissionBusyKeys(){
+  const ms = ensureCompanionMissionState();
+  return new Set(ms.active.map(m => m.compKey));
+}
+function companionMissionAvailableEntries(){
+  const activeKey = getActiveCompanion()?.key;
+  const busy = companionMissionBusyKeys();
+  return (state.companions || []).map(comp => {
+    const tpl = COMPANIONS.find(t => t.key === comp.key);
+    return tpl ? {comp, tpl} : null;
+  }).filter(Boolean).filter(e => e.comp.key !== activeKey && !busy.has(e.comp.key));
+}
+function companionMissionScore(tpl, comp, mission){
+  const q = compQuality(tpl);
+  const qScore = ({white:4, green:10, blue:18, purple:28, orange:40})[q.key] || 4;
+  const stars = Math.max(1, comp?.stars || 1);
+  const roleScore = tpl.role === mission.role ? 18 : 0;
+  const traits = companionMissionTraitFlags(tpl);
+  const traitScore = traits[mission.trait] ? 14 : 0;
+  const skillScore = Math.min(16, ((tpl.skills || []).length + (tpl.signature ? 1 : 0)) * 3);
+  return Math.max(15, Math.min(100, 28 + qScore + stars * 7 + roleScore + traitScore + skillScore));
+}
+function companionMissionReward(mission, tpl, comp, score, success){
+  const q = compQuality(tpl);
+  const lvl = Math.max(1, state.hero?.lvl || 1);
+  const stars = Math.max(1, comp?.stars || 1);
+  const qMult = ({white:0.85, green:1, blue:1.18, purple:1.42, orange:1.75})[q.key] || 1;
+  const scoreMult = 0.75 + Math.min(100, score) / 160 + (success ? 0.22 : 0);
+  const starMult = 1 + (stars - 1) * 0.08;
+  const mult = qMult * scoreMult * starMult;
+  const r = mission.reward || {};
+  const out = {};
+  if(r.gold) out.gold = Math.max(1, Math.floor((r.gold + lvl * 18) * mult));
+  if(r.essence) out.essence = Math.max(1, Math.floor((r.essence + lvl * 0.14) * mult));
+  if(r.honor) out.honor = Math.max(1, Math.floor((r.honor + lvl * 0.18) * mult));
+  if(r.shards) out.shards = Math.max(1, Math.floor(r.shards + (success ? 1 : 0) + (stars >= 5 ? 1 : 0)));
+  const roll = companionMissionRoll(`${mission.key}:${comp.key}:${stars}:${state.companionMissions?.totalCompleted || 0}`);
+  if(r.ticketChance && roll < r.ticketChance + (success ? 0.08 : 0) + (q.key === 'orange' ? 0.05 : 0)) out.compTickets = 1;
+  return out;
+}
+function companionMissionRoll(seedText){
+  let h = 2166136261;
+  const s = String(seedText || '');
+  for(let i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return ((h >>> 0) % 10000) / 10000;
+}
+function companionMissionRewardText(reward, qualityName){
+  const bits = [];
+  if(reward.gold) bits.push(`金币 ${reward.gold}`);
+  if(reward.essence) bits.push(`精华 ${reward.essence}`);
+  if(reward.honor) bits.push(`荣誉 ${reward.honor}`);
+  if(reward.shards) bits.push(`${qualityName || '品质'}通用碎片×${reward.shards}`);
+  if(reward.compTickets) bits.push(`随从券×${reward.compTickets}`);
+  return bits.join(' · ') || '少量资源';
+}
+function startCompanionMission(compKey, missionKey){
+  const ms = ensureCompanionMissionState();
+  if(ms.active.length >= companionMissionSlots()) return log('🐾 派遣栏位已满','bad');
+  const entry = companionMissionCompEntry(compKey);
+  if(!entry) return log('🐾 找不到这个随从','bad');
+  if(getActiveCompanion()?.key === compKey) return log('🐾 出战随从不能派遣','bad');
+  if(companionMissionBusyKeys().has(compKey)) return log('🐾 该随从已经在执行任务','bad');
+  const mission = companionMissionType(missionKey);
+  const now = Date.now();
+  const score = companionMissionScore(entry.tpl, entry.comp, mission);
+  const id = `${mission.key}:${compKey}:${now}`;
+  ms.active.push({ id, key:mission.key, compKey, startAt:now, endAt:now + mission.minutes * 60000, score });
+  markDirty('companion');
+  if(typeof saveState === 'function') saveState();
+  log(`🐾 ${entry.tpl.name} 开始执行「${mission.name}」(${mission.minutes}分钟)`,'good');
+}
+function claimCompanionMission(id){
+  const ms = ensureCompanionMissionState();
+  const idx = ms.active.findIndex(m => m.id === id);
+  if(idx < 0) return log('🐾 找不到派遣任务','bad');
+  const run = ms.active[idx];
+  const now = Date.now();
+  if((run.endAt || 0) > now) return log('🐾 派遣任务还没有完成','bad');
+  const entry = companionMissionCompEntry(run.compKey);
+  const mission = companionMissionType(run.key);
+  if(!entry){ ms.active.splice(idx, 1); markDirty('companion'); return log('🐾 派遣随从已失效,任务已清理','bad'); }
+  const score = Math.max(1, run.score || companionMissionScore(entry.tpl, entry.comp, mission));
+  const success = companionMissionRoll(run.id) <= Math.min(0.98, score / 100);
+  const reward = companionMissionReward(mission, entry.tpl, entry.comp, score, success);
+  const q = compQuality(entry.tpl);
+  state.gold = (state.gold || 0) + (reward.gold || 0);
+  state.essence = (state.essence || 0) + (reward.essence || 0);
+  state.honor = (state.honor || 0) + (reward.honor || 0);
+  state.compTickets = (state.compTickets || 0) + (reward.compTickets || 0);
+  if(reward.shards){
+    if(!state.compUniversalShards) state.compUniversalShards = {white:0,green:0,blue:0,purple:0,orange:0};
+    state.compUniversalShards[q.key] = (state.compUniversalShards[q.key] || 0) + reward.shards;
+  }
+  ms.active.splice(idx, 1);
+  ms.totalCompleted = (ms.totalCompleted || 0) + 1;
+  ms.history.unshift({ t:now, name:mission.name, comp:entry.tpl.name, success, reward });
+  ms.history = ms.history.slice(0, 8);
+  log(`🐾 ${entry.tpl.name} 完成「${mission.name}」${success?'大成功':'完成'}: ${companionMissionRewardText(reward, q.name)}`,'good');
+  recomputeStats();
+  markDirty('companion','hero','shop');
+  if(typeof saveState === 'function') saveState();
+}
+let _nextCompanionMissionDirtyAt = 0;
+function tickCompanionMissions(now){
+  const ms = ensureCompanionMissionState();
+  if(!ms.active.length) return;
+  const nextEnd = Math.min(...ms.active.map(m => m.endAt || Infinity));
+  if(nextEnd <= now && now >= _nextCompanionMissionDirtyAt){
+    _nextCompanionMissionDirtyAt = now + 30000;
+    markDirty('companion');
+  }
+}
 function initCompanionHp(){
   const st=computeCompanionStats();
   if(!st){state._compHp=null;state._compDownUntil=0;return;}   // 无随从时清空状态

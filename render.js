@@ -3026,6 +3026,79 @@ function companionFilterPanelHtml(entries){
     ])}
   </div>`;
 }
+function companionMissionTimeText(ms){
+  if (ms <= 0) return '可领取';
+  return fmtCd(Math.ceil(ms / 1000));
+}
+function companionMissionPanelHtml(entries){
+  if (typeof COMPANION_MISSION_TYPES === 'undefined' || typeof ensureCompanionMissionState !== 'function') return '';
+  const ms = ensureCompanionMissionState();
+  const slots = typeof companionMissionSlots === 'function' ? companionMissionSlots() : 1;
+  const active = Array.isArray(ms.active) ? ms.active : [];
+  const now = Date.now();
+  const available = typeof companionMissionAvailableEntries === 'function' ? companionMissionAvailableEntries() : [];
+  const activeCards = active.map(run => {
+    const mission = typeof companionMissionType === 'function' ? companionMissionType(run.key) : null;
+    const entry = typeof companionMissionCompEntry === 'function' ? companionMissionCompEntry(run.compKey) : null;
+    const tpl = entry?.tpl;
+    const remain = Math.max(0, (run.endAt || 0) - now);
+    const total = Math.max(1, (run.endAt || 0) - (run.startAt || now));
+    const progress = Math.max(4, Math.min(100, Math.round(((total - remain) / total) * 100)));
+    const q = tpl ? compQuality(tpl) : null;
+    const claim = remain <= 0;
+    const compIconHtml = tpl ? companionIconHtml(tpl, 18) : '🐾';
+    return `<div class="comp-mission-active-card ${claim ? 'ready' : ''}">
+      <div class="comp-mission-card-head">
+        <b>${mission?.icon || '📜'} ${tipAttrText(mission?.name || '派遣任务')}</b>
+        <span>${claim ? '完成' : companionMissionTimeText(remain)}</span>
+      </div>
+      <div class="muted" style="font-size:10px">${compIconHtml} ${tipAttrText(tpl?.name || run.compKey)}${q ? ` · <span class="${q.cls}">${q.name}</span>` : ''} · 完成度 ${Math.round(run.score || 0)}%</div>
+      <div class="comp-mission-bar"><i style="width:${progress}%"></i></div>
+      <button class="gold" data-action="claimcompmission" data-id="${tipAttrText(run.id)}" ${claim ? '' : 'disabled'}>${claim ? '领取战报' : '执行中'}</button>
+    </div>`;
+  }).join('');
+  const missionCards = COMPANION_MISSION_TYPES.map(mission => {
+    const ranked = available.map(entry => ({
+      entry,
+      score: typeof companionMissionScore === 'function' ? companionMissionScore(entry.tpl, entry.comp, mission) : 50,
+    })).sort((a,b)=>b.score-a.score).slice(0, 3);
+    const candidateButtons = ranked.length ? ranked.map(({entry, score}) => {
+      const q = compQuality(entry.tpl);
+      const preview = typeof companionMissionReward === 'function' ? companionMissionReward(mission, entry.tpl, entry.comp, score, score >= 75) : {};
+      const reward = typeof companionMissionRewardText === 'function' ? companionMissionRewardText(preview, q.name) : '';
+      const compIconHtml = companionIconHtml(entry.tpl, 16);
+      return `<button class="comp-mission-send" data-action="startcompmission" data-mission="${mission.key}" data-comp="${entry.comp.key}" title="${tipAttrText(reward)}" ${active.length >= slots ? 'disabled' : ''}>
+        ${compIconHtml}<span>${tipAttrText(entry.tpl.name)}</span><b>${Math.round(score)}%</b>
+      </button>`;
+    }).join('') : '<div class="muted" style="font-size:10px">没有空闲随从。出战随从和执行任务中的随从不能派遣。</div>';
+    const matchText = `${companionRoleLabel(mission.role)} / ${COMPANION_TRAIT_META[mission.trait]?.label || mission.trait}`;
+    return `<div class="comp-mission-card">
+      <div class="comp-mission-card-head">
+        <b>${mission.icon} ${mission.name}</b>
+        <span>${mission.minutes}分钟</span>
+      </div>
+      <div class="muted" style="font-size:10px;line-height:1.45">${mission.desc}</div>
+      <div class="comp-mission-match">推荐: ${tipAttrText(matchText)}</div>
+      <div class="comp-mission-candidates">${candidateButtons}</div>
+    </div>`;
+  }).join('');
+  const lastReports = (ms.history || []).slice(0, 3).map(h => {
+    const reward = typeof companionMissionRewardText === 'function' ? companionMissionRewardText(h.reward || {}) : '';
+    return `<div class="comp-mission-report">${h.success ? '✅' : '📜'} ${tipAttrText(h.comp || '随从')} · ${tipAttrText(h.name || '派遣')} <span>${tipAttrText(reward)}</span></div>`;
+  }).join('');
+  return `<div class="comp-mission-panel">
+    <div class="comp-mission-title">
+      <div>
+        <b>🗺️ 随从派遣</b>
+        <div class="muted" style="font-size:10px">空闲随从可执行离线任务；品质、星级、定位和特性匹配会提高完成度与奖励。</div>
+      </div>
+      <span>${active.length}/${slots} 栏位 · 已完成 ${ms.totalCompleted || 0}</span>
+    </div>
+    ${activeCards ? `<div class="comp-mission-active-grid">${activeCards}</div>` : ''}
+    <div class="comp-mission-grid">${missionCards}</div>
+    ${lastReports ? `<div class="comp-mission-history">${lastReports}</div>` : ''}
+  </div>`;
+}
 function companionSetFilter(group, value){
   if (!Object.prototype.hasOwnProperty.call(companionFilters, group)) return;
   companionFilters[group] = companionFilters[group] === value ? 'all' : value;
@@ -3043,7 +3116,10 @@ function companionPanelRenderSig(){
   const active = `${state.activeCompanion}|${getActiveCompanion()?.key || ''}`;
   const bonds = (typeof activeCompanionBonds==='function' ? activeCompanionBonds() : []).map(b=>b.name).join('|');
   const filters = Object.values(companionFilters).join('|');
-  return [state.cls||'', state.hero?.lvl||0, state.compTickets||0, active, compList, shards, bonds, filters].join('||');
+  const missions = state.companionMissions?.active
+    ? state.companionMissions.active.map(m => `${m.id}:${m.endAt}:${m.compKey}`).join('|') + `#${state.companionMissions.totalCompleted || 0}#${Math.floor(Date.now()/30000)}`
+    : '';
+  return [state.cls||'', state.hero?.lvl||0, state.compTickets||0, active, compList, shards, bonds, filters, missions].join('||');
 }
 function renderCompanion() {
   $('gem-cost').textContent = '(消耗1🐾随从券 · 技能含定位招牌技+专属技，品质/星级决定强度)';
@@ -3087,6 +3163,7 @@ function renderCompanion() {
   html += `</div>`;
 
   html += companionFilterPanelHtml(entries);
+  html += companionMissionPanelHtml(entries);
 
   // ---- 出战随从 ----
   const act = getActiveCompanion();

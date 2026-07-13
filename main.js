@@ -143,6 +143,7 @@ function loop() {
 
       tickBattle(now);
       tickCompanion(now);
+      if (typeof tickCompanionMissions === 'function') tickCompanionMissions(now);
       if (typeof tickAllySummons === 'function') tickAllySummons(now);
       tickTravel(now);
       if (typeof tickLife==='function') tickLife(now);
@@ -634,6 +635,8 @@ function setupDelegation() {
     const act=btn.dataset.action;
     if(act==='compfilter'){ companionSetFilter(btn.dataset.group, btn.dataset.value); return; }
     if(act==='compresetfilter'){ companionResetFilters(); return; }
+    if(act==='startcompmission'){ startCompanionMission(btn.dataset.comp, btn.dataset.mission); return; }
+    if(act==='claimcompmission'){ claimCompanionMission(btn.dataset.id); return; }
     const idx=parseInt(btn.dataset.idx, 10);
     if(act==='usecomp'){state.activeCompanion=idx;initCompanionHp();recomputeStats();markDirty('companion','hero');log('🐾 随从出战!','good')}
     else if(act==='upgradecomp')upgradeCompanion(idx);

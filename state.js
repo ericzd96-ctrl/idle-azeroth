@@ -45,6 +45,8 @@ const defaultState = () => ({
   companions: [],          // [{key,quality,stars,shards}]
   activeCompanion: -1,     // 当前出战随从索引, -1=无
   companionShards: {},     // {key: count} 碎片
+  compUniversalShards: {white:0,green:0,blue:0,purple:0,orange:0}, // 品质通用碎片
+  companionMissions: { active:[], totalCompleted:0, history:[] }, // 随从派遣任务
   mode: 'world',
   battleSpeed: 1,          // 战斗倍速(1x / 2x)
   travel: null,
@@ -123,7 +125,7 @@ let account;  // 所有角色共享的账号级数据(成就/图鉴/声望/光�
 /* 账号共享的"公共资源"字段(2026-06-15):货币/材料/票券/随从图鉴。
    这些字段在每个角色 state 上是转发到 account 的访问器(installSharedAccessors),
    所有现有 state.gold / state.companions 等读写都透明命中共享池。activeCompanion 仍按角色。 */
-const SHARED_FIELDS = ['gold','gem','honor','essence','tickets','compTickets','towerCoin','roguelikeCoin','gems','companions','companionShards','life'];
+const SHARED_FIELDS = ['gold','gem','honor','essence','tickets','compTickets','towerCoin','roguelikeCoin','gems','companions','companionShards','compUniversalShards','companionMissions','life'];
 
 function defaultAccount() {
   return {
@@ -133,8 +135,11 @@ function defaultAccount() {
     gems: {},                 // 宝石库存 {gemKey:count}
     companions: [],           // 随从图鉴 [{key,stars}]
     companionShards: {},      // 随从碎片 {key:count}
+    compUniversalShards: {white:0,green:0,blue:0,purple:0,orange:0}, // 品质通用碎片
+    companionMissions: { active:[], totalCompleted:0, history:[] }, // 账号共享随从派遣
     life: { mining:{lvl:0,xp:0}, fishing:{lvl:0,xp:0}, herb:{lvl:0,xp:0}, mats:{}, tools:{ mining:0, fishing:0, herb:0 }, orders:{ nextRefreshAt:0, slots:[] } },  // 采集/生活技能(账号共享,老存档不迁移=清零)
     _sharedMigrated: false,   // 公共资源是否已从老角色聚合(防重复)
+    _companionSharedMigrated: false, // 新增随从共享字段是否已从角色聚合
     // 坐骑(账号共享收藏)
     mounts: {},
     // 成就(账号共享)
@@ -277,6 +282,11 @@ function mergeAccount(saved) {
     gems: saved.gems || {},
     companions: saved.companions || [],
     companionShards: saved.companionShards || {},
+    compUniversalShards: Object.assign({}, d.compUniversalShards, saved.compUniversalShards || {}),
+    companionMissions: saved.companionMissions ? Object.assign({}, d.companionMissions, saved.companionMissions, {
+      active: Array.isArray(saved.companionMissions.active) ? saved.companionMissions.active : [],
+      history: Array.isArray(saved.companionMissions.history) ? saved.companionMissions.history : [],
+    }) : d.companionMissions,
     life: saved.life ? Object.assign({}, d.life, saved.life, {
       mats: saved.life.mats || {},
       tools: Object.assign({}, d.life.tools, saved.life.tools || {}),
@@ -288,6 +298,23 @@ function mergeAccount(saved) {
 /* 把"公共资源"从各角色的旧值聚合进 account(仅首次:account._sharedMigrated 为 false 时)。
    老存档里这些字段是按角色存的,这里:数值相加、库存/碎片按 key 相加、随从取并集(星级取大)。 */
 function ensureSharedFields(acc, chars) {
+  if (acc && !acc._companionSharedMigrated) {
+    const base = Object.assign({}, defaultAccount().compUniversalShards, acc.compUniversalShards || {});
+    if (chars && chars.length) {
+      for (const c of chars) {
+        const m = c.compUniversalShards || {};
+        for (const kk in m) base[kk] = (base[kk] || 0) + m[kk];
+      }
+    }
+    acc.compUniversalShards = base;
+    acc.companionMissions = acc.companionMissions && typeof acc.companionMissions === 'object'
+      ? Object.assign({ active:[], totalCompleted:0, history:[] }, acc.companionMissions, {
+          active: Array.isArray(acc.companionMissions.active) ? acc.companionMissions.active : [],
+          history: Array.isArray(acc.companionMissions.history) ? acc.companionMissions.history : [],
+        })
+      : { active:[], totalCompleted:0, history:[] };
+    acc._companionSharedMigrated = true;
+  }
   if (acc._sharedMigrated) return;
   if (chars && chars.length) {
     const sum = k => chars.reduce((s, c) => s + (typeof c[k] === 'number' ? c[k] : 0), 0);
@@ -295,7 +322,7 @@ function ensureSharedFields(acc, chars) {
     acc.essence = sum('essence'); acc.tickets = sum('tickets');
     acc.compTickets = sum('compTickets'); acc.towerCoin = sum('towerCoin'); acc.roguelikeCoin = sum('roguelikeCoin');
     const sumObj = k => { const o = {}; for (const c of chars) { const m = c[k] || {}; for (const kk in m) o[kk] = (o[kk] || 0) + m[kk]; } return o; };
-    acc.gems = sumObj('gems'); acc.companionShards = sumObj('companionShards');
+    acc.gems = sumObj('gems'); acc.companionShards = sumObj('companionShards'); acc.compUniversalShards = Object.assign({}, defaultAccount().compUniversalShards, sumObj('compUniversalShards'));
     const cm = {}; for (const c of chars) for (const comp of (c.companions || [])) { const e = cm[comp.key]; if (!e || (comp.stars || 1) > (e.stars || 1)) cm[comp.key] = { key: comp.key, stars: comp.stars || 1 }; }
     acc.companions = Object.values(cm);
   }

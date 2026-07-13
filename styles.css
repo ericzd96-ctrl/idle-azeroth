@@ -466,6 +466,118 @@ h1 {
 .comp-badge.is-summon { border-color: rgba(250, 204, 21, .4); background: rgba(113, 63, 18, .3); color: #fde68a; }
 .comp-badge.is-support { border-color: rgba(165, 180, 252, .4); background: rgba(49, 46, 129, .3); color: #c7d2fe; }
 .comp-badge.is-control { border-color: rgba(244, 114, 182, .38); background: rgba(131, 24, 67, .28); color: #f9a8d4; }
+.comp-mission-panel {
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid rgba(250, 204, 21, .26);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(88, 28, 10, .20), rgba(15, 23, 42, .28));
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .18);
+}
+.comp-mission-title,
+.comp-mission-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.comp-mission-title {
+  margin-bottom: 8px;
+}
+.comp-mission-title span,
+.comp-mission-card-head span {
+  flex: 0 0 auto;
+  color: #fde68a;
+  font-size: 10px;
+}
+.comp-mission-grid,
+.comp-mission-active-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+.comp-mission-active-grid {
+  margin-bottom: 8px;
+}
+.comp-mission-card,
+.comp-mission-active-card {
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid rgba(148, 163, 184, .18);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, .36);
+}
+.comp-mission-active-card.ready {
+  border-color: rgba(250, 204, 21, .48);
+  background: rgba(120, 53, 15, .22);
+}
+.comp-mission-match {
+  margin: 6px 0;
+  color: #93c5fd;
+  font-size: 10px;
+  line-height: 1.35;
+}
+.comp-mission-candidates {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.comp-mission-send {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  padding: 5px 7px;
+  border: 1px solid rgba(148, 163, 184, .22);
+  border-radius: 7px;
+  background: rgba(30, 41, 59, .72);
+  color: #e5e7eb;
+  font-size: 11px;
+  text-align: left;
+}
+.comp-mission-send span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.comp-mission-send b {
+  color: #fde68a;
+  font-size: 10px;
+}
+.comp-mission-send:hover:not(:disabled) {
+  border-color: rgba(250, 204, 21, .6);
+  background: rgba(51, 65, 85, .82);
+}
+.comp-mission-bar {
+  height: 5px;
+  margin: 6px 0;
+  border: 1px solid rgba(148, 163, 184, .16);
+  border-radius: 999px;
+  background: rgba(2, 6, 23, .55);
+  overflow: hidden;
+}
+.comp-mission-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(96, 165, 250, .95), rgba(250, 204, 21, .95));
+}
+.comp-mission-history {
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(148, 163, 184, .14);
+}
+.comp-mission-report {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+.comp-mission-report span {
+  color: #cbd5e1;
+}
 .comp-missing-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
