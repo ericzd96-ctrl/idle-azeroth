@@ -706,6 +706,59 @@ const SPEC_TALENT_THEME_PATCHES = {
   }
 })();
 
+const SPEC_COMBAT_RULES = {
+  warrior:{
+    arms:{ icon:'🪓', name:'破甲处决链', desc:'压制/碎颅/灭战者叠破甲印记;满层后致死打击、巨人之击或斩杀会消耗印记,追加一次处决伤害。' },
+    fury:{ icon:'😡', name:'暴怒连舞', desc:'怒击、嗜血、浴血奋战不断叠暴怒;满层会自动打出狂乱追击并小幅回血,适合高速续战。' },
+    prot:{ icon:'🛡️', name:'盾反壁垒', desc:'盾牌技能和承伤叠盾牌格挡;满层转化为护盾,受到攻击会按防御反震。' },
+  },
+  mage:{
+    arcane:{ icon:'🔷', name:'充能倾泻', desc:'奥术技能叠奥术充能;奥术弹幕/奥术涌动消耗充能造成额外爆发并返还法力。' },
+    fire:{ icon:'🔥', name:'点燃引爆', desc:'火焰技能和持续伤害叠炽热;满层后炎爆、流星或烈焰风暴会引爆点燃并扩散余焰。' },
+    frost:{ icon:'❄️', name:'冻结碎裂', desc:'冰霜技能冻结敌人并叠指尖寒冰;冰枪、彗星风暴命中冻结目标会碎裂追击并生成护盾。' },
+  },
+  priest:{
+    discipline:{ icon:'⚖️', name:'赎罪护盾', desc:'戒律伤害会给自己和随从转化护盾;真言术和障会强化下一轮惩罚/教派分歧。' },
+    holy:{ icon:'✨', name:'圣言回响', desc:'治疗技能叠恩典;满层治疗会溅射随从并留下护盾,神圣伤害会触发小治疗。' },
+    shadow:{ icon:'🌑', name:'疯狂疫病', desc:'暗影DOT叠疯狂;满层后噬灵疫病、虚空爆发或暗影冲撞会扩散痛苦并追加暗影爆发。' },
+  },
+  rogue:{
+    assassination:{ icon:'🐍', name:'毒药处刑', desc:'毒药/流血叠毒锋;奉毒或君王之灾消耗毒锋,按目标DOT数量打出毒爆。' },
+    combat:{ icon:'⚔️', name:'连击乱舞', desc:'战斗技能叠连击点;正中眉心、杀戮盛宴或切割满点时追加乱舞追击。' },
+    subtlety:{ icon:'🌑', name:'暗影破绽', desc:'敏锐技能制造破绽并叠连击;暗影之舞期间暗袭/袖剑风暴会触发暗影追击。' },
+  },
+  hunter:{
+    bm:{ icon:'🐾', name:'兽群指挥', desc:'宠物/野兽技能叠兽群羁绊;召唤物在场时杀戮命令和协同猛攻会触发宠物追咬。' },
+    marks:{ icon:'🎯', name:'狙击窗口', desc:'猎人印记与精确射击制造破绽;瞄准/杀戮射击对标记目标追加穿透伤害。' },
+    survival:{ icon:'💣', name:'陷阱野火', desc:'炸弹、陷阱和钉刺铺持续伤害;猫鼬撕咬/屠戮会按DOT数量追加爆炸。' },
+  },
+  shaman:{
+    element:{ icon:'⛈️', name:'元素过载', desc:'闪电与熔岩技能叠雷霆充能;元素冲击和风暴守护者触发过载追击。' },
+    enhancement:{ icon:'🌀', name:'漩涡风怒', desc:'近战与幽魂狼叠漩涡;裂地术/熔岩猛击消耗漩涡并在风怒期间追加打击。' },
+    restoration:{ icon:'🌊', name:'潮汐图腾', desc:'治疗技能叠图腾共鸣;治疗链和暴雨图腾会同步治疗随从并生成护盾。' },
+  },
+  paladin:{
+    holy:{ icon:'🌟', name:'道标圣光', desc:'神圣震击、道标和黎明之光会把治疗转给随从;过量治疗转化护盾。' },
+    prot:{ icon:'🛡️', name:'圣光壁垒', desc:'审判和盾击叠圣光壁垒;格挡窗口会回血、护盾并强化复仇者之盾。' },
+    ret:{ icon:'⚜️', name:'圣能裁决', desc:'审判、公正之剑和灰烬觉醒叠圣能;裁决/最终清算消耗圣能打爆发。' },
+  },
+  warlock:{
+    affliction:{ icon:'💜', name:'痛苦收割', desc:'痛楚、腐蚀和鬼影叠灵魂碎片;多DOT目标会被邪能狂涌/腐蚀之种收割扩散。' },
+    demonology:{ icon:'😈', name:'恶魔军团', desc:'召唤恶魔叠碎片;恶魔在场时古尔丹之手、内爆和恶魔之箭会追加恶魔协击。' },
+    destruction:{ icon:'🔥', name:'余烬爆燃', desc:'献祭、燃烧和火雨叠余烬;混乱之箭/大灾变消耗余烬打出混乱爆发。' },
+  },
+  druid:{
+    balance:{ icon:'🌗', name:'日月蚀循环', desc:'月火/阳炎/星火叠星界能量;星涌和星辰坠落消耗能量触发星界追击。' },
+    feral:{ icon:'🐾', name:'流血连击', desc:'斜掠、撕碎和横扫叠连击;割裂/凶猛撕咬消耗连击并按流血目标追加撕咬。' },
+    resto:{ icon:'🌿', name:'繁花滋养', desc:'回春、生命绽放和百花齐放叠自然调和;满层会给主角与随从大治疗和护盾。' },
+  },
+};
+
+function currentSpecCombatRule() {
+  if (typeof state === 'undefined' || !state) return null;
+  return SPEC_COMBAT_RULES[state.cls]?.[state.specialization] || null;
+}
+
 const SPEC_STARTER_UNLOCKS = {
   mage:{ fireball:1, frostbolt:1, m_arcaneBlast:1 },
   priest:{ shield:1, heal:1, shadowWord:1 },

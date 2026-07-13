@@ -2538,6 +2538,16 @@ function renderSkills() {
       <div class="row"><b style="color:#bfdbfe">${specProfile.icon || '🎯'} 当前专精: ${specProfile.name}</b><span class="pill">专精技能池</span></div>
       <div class="muted" style="font-size:11px;line-height:1.45">${specProfile.desc}</div>`;
     skl.appendChild(specDiv);
+    const rule = (typeof currentSpecCombatRule === 'function') ? currentSpecCombatRule() : null;
+    if (rule) {
+      const ruleDiv = document.createElement('div');
+      ruleDiv.className = 'skill-item';
+      ruleDiv.style.borderColor = 'rgba(244,114,182,.55)';
+      ruleDiv.innerHTML = `
+        <div class="row"><b style="color:#fbcfe8">${rule.icon || '✦'} 专精特色: ${rule.name}</b><span class="pill">实战规则</span></div>
+        <div class="muted" style="font-size:11px;line-height:1.45">${rule.desc}</div>`;
+      skl.appendChild(ruleDiv);
+    }
   } else {
     const hintDiv = document.createElement('div');
     hintDiv.className = 'skill-item';
