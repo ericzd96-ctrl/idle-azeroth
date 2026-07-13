@@ -411,11 +411,16 @@ function setupDelegation() {
     const modeTab = e.target.closest('.sub-tab[data-dgmode]');
     if (modeTab) {
       const key = modeTab.dataset.dgmode;
-      document.querySelectorAll('#dungeon-sub-dungeon > .sub-tabs .sub-tab').forEach(x => x.classList.toggle('active', x.dataset.dgmode === key));
+      document.querySelectorAll('#dungeon-sheet-list > .sub-tabs .sub-tab').forEach(x => x.classList.toggle('active', x.dataset.dgmode === key));
       $('dungeon-mode-normal').style.display = key === 'normal' ? '' : 'none';
       $('dungeon-mode-heroic').style.display = key === 'heroic' ? '' : 'none';
       $('dungeon-mode-epic5').style.display = key === 'epic5' ? '' : 'none';
       $('dungeon-mode-epic').style.display = key === 'epic' ? '' : 'none';
+      return;
+    }
+    const sheetBtn = e.target.closest('button[data-action="dungeonsheet"]');
+    if (sheetBtn && typeof dungeonSetSheetTab === 'function') {
+      dungeonSetSheetTab(sheetBtn.dataset.value);
       return;
     }
     const contractBtn = e.target.closest('button[data-action="setdungeoncontract"]');

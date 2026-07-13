@@ -187,7 +187,7 @@ function renderWorldInvasionSub() {
   const active = activeInvasionFronts();
   let html = `<div class="invasion-hero" style="background-image:linear-gradient(90deg, rgba(8,12,24,.92), rgba(8,12,24,.56)), url('${INVASION_KARESH_BANNER}')">
     <div class="invasion-hero-title">🛡️ 世界入侵前线</div>
-    <div class="invasion-hero-text">世界入侵轮换: <b>${fmtCd(cd)}</b> 后换线 · 已压制 <b>${wi.totalClaims || 0}</b> 条前线 · Karesh 前线现可额外产出 <b>Waystone Fragment</b> 与 <b>星痕</b>。</div>
+    <div class="invasion-hero-text">世界入侵轮换: <b>${fmtCd(cd)}</b> 后换线 · 已压制 <b>${wi.totalClaims || 0}</b> 条前线 · 卡雷什前线现可额外产出 <b>界碑碎片</b> 与 <b>星痕</b>。</div>
   </div>
   <div class="prog-summary muted">击杀、副本、稀有精英和世界Boss会自动推进当前开放的入侵前线; 若目标正好属于卡雷什、影点、普莱姆斯或虚无剃刀战区,会获得额外进度。</div>
   <div class="invasion-grid">`;

@@ -8,7 +8,7 @@ const WAYSTONE_KARESH_KEYS = new Set([
 const WAYSTONE_NODES = [
   { key:'bounty', icon:'📜', cost:4, name:'悬赏碑文', desc:'每日副本悬赏额外追加 1 个目标,并把当日悬赏奖励提高 12%。' },
   { key:'delve', icon:'🗝️', cost:5, name:'地下堡寻径', desc:'丰裕地下堡每日额外出现 1 个候选,让卡雷什地下堡轮换更密集。' },
-  { key:'echo', icon:'🌌', cost:6, name:'回响棱镜', desc:'释放世界之魂记忆后返还 1 个 Radiant Echo,加快高端循环。' },
+  { key:'echo', icon:'🌌', cost:6, name:'回响棱镜', desc:'释放世界之魂记忆后返还 1 个辉光回响,加快高端循环。' },
   { key:'phase', icon:'🧿', cost:7, name:'相位系留', desc:'每次完成相位通缉令额外返还 8 点相位稳定度。' },
   { key:'ecology', icon:'🌱', cost:7, name:'生态管路', desc:'生态圆顶防卫额外获得 6 样本,并补充 10 点周常进度。' },
   { key:'resonance', icon:'🪨', cost:10, name:'谐振节点', desc:'终局进度上限 +2,方便继续推进 100+ 的卡雷什地图与副本。' },
@@ -64,7 +64,7 @@ function grantWaystoneFragmentsRaw(gain, sourceKey, logText) {
   ws.totalEarned += amount;
   const key = `${Math.floor(Date.now() / 86400000)}:${sourceKey || 'misc'}:${Object.keys(ws.history || {}).length}`;
   ws.history[key] = (ws.history[key] || 0) + amount;
-  if (typeof log === 'function' && logText) log(`${logText} Waystone Fragment +${amount}`, 'legend');
+  if (typeof log === 'function' && logText) log(`${logText} 界碑碎片 +${amount}`, 'legend');
   if (typeof markDirty === 'function') markDirty('events', 'dungeon', 'hero');
   return amount;
 }
@@ -123,7 +123,7 @@ function renderWaystonePanel() {
     </div>
     <div class="waystone-hero" style="background-image:linear-gradient(180deg, rgba(14,18,28,.2), rgba(14,18,28,.82)), url('assets/wow/art/karesh-map.png')">
       <div class="waystone-hero-main">
-        <div><b>Waystone Fragment</b> <span class="pill">${ws.fragments || 0}</span></div>
+        <div><b>界碑碎片</b> <span class="pill">${ws.fragments || 0}</span></div>
         <div class="muted">卡雷什终局副本会持续为界碑网络供能,已累计收集 ${ws.totalEarned || 0} 个碎片。</div>
       </div>
     </div>
@@ -138,7 +138,7 @@ function unlockWaystoneNode(key) {
   const ws = ensureWaystoneState();
   if (ws.unlocked[node.key]) return false;
   if ((ws.fragments || 0) < node.cost) {
-    if (typeof log === 'function') log(`Waystone Fragment 不足,需要 ${node.cost}`, 'bad');
+    if (typeof log === 'function') log(`界碑碎片不足,需要 ${node.cost}`, 'bad');
     return false;
   }
   ws.fragments -= node.cost;
@@ -212,7 +212,7 @@ function unlockWaystoneNode(key) {
       if (waystoneNodeActive('echo')) {
         const ws = ensureWorldsoulState();
         ws.echoes += 1;
-        if (typeof log === 'function') log(`🪨 回响棱镜返还 Radiant Echo +1 (${before}→${ws.echoes})`, 'good');
+        if (typeof log === 'function') log(`🪨 回响棱镜返还辉光回响 +1 (${before}→${ws.echoes})`, 'good');
         if (typeof markDirty === 'function') markDirty('events');
       }
       return item;

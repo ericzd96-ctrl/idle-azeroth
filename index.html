@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>艾泽拉斯放置勇者</title>
-<link rel="stylesheet" href="styles.css?v=20260713ao">
+<link rel="stylesheet" href="styles.css?v=20260713ap">
 </head>
 <body>
 <div class="wrap">
@@ -267,37 +267,39 @@
         <span class="sub-tab" data-dgsub="roguelike">🌌 幻象</span>
       </div>
       <div id="dungeon-sub-dungeon">
-        <div class="muted" style="margin-bottom:6px">挑战副本首领，获取传说装备</div>
-        <div id="dungeon-bounty-panel"></div>
-        <div id="dungeon-contract-panel"></div>
-        <div id="waystone-panel"></div>
-        <div id="delve-panel"></div>
-        <div id="dungeon-mastery-panel"></div>
-        <div class="sub-tabs" style="margin-bottom:6px">
-          <span class="sub-tab active" data-dgmode="normal"><span data-ui-icon="dungeon" data-ui-size="xs"></span>普通副本</span>
-          <span class="sub-tab" data-dgmode="heroic">⭐ 英雄本</span>
-          <span class="sub-tab" data-dgmode="epic5">💠 史诗5人本</span>
-          <span class="sub-tab" data-dgmode="epic"><span data-ui-icon="raid" data-ui-size="xs"></span>史诗团本</span>
+        <div id="dungeon-sheet-tabs"></div>
+        <div id="dungeon-sheet-list">
+          <div class="muted" style="margin-bottom:6px">挑战副本首领，获取传说装备</div>
+          <div class="sub-tabs" style="margin-bottom:6px">
+            <span class="sub-tab active" data-dgmode="normal"><span data-ui-icon="dungeon" data-ui-size="xs"></span>普通副本</span>
+            <span class="sub-tab" data-dgmode="heroic">⭐ 英雄本</span>
+            <span class="sub-tab" data-dgmode="epic5">💠 史诗5人本</span>
+            <span class="sub-tab" data-dgmode="epic"><span data-ui-icon="raid" data-ui-size="xs"></span>史诗团本</span>
+          </div>
+          <div id="dungeon-mode-normal">
+          <div style="display:flex;gap:6px;margin-bottom:6px">
+            <button id="btn-dg-5man" class="active" style="flex:1;padding:4px 8px;font-size:11px"><span data-ui-icon="dungeon" data-ui-size="xs"></span>5人本</button>
+            <button id="btn-dg-raid" style="flex:1;padding:4px 8px;font-size:11px"><span data-ui-icon="raid" data-ui-size="xs"></span>团本</button>
+          </div>
+          <div id="dungeon-list"></div>
+          </div>
+          <div id="dungeon-mode-heroic" style="display:none">
+            <div class="muted" style="margin-bottom:6px">⭐ 80级英雄5人副本 · 掉落带「·英雄」后缀</div>
+            <div id="heroic-dungeon-list"></div>
+          </div>
+          <div id="dungeon-mode-epic5" style="display:none">
+            <div class="muted" style="margin-bottom:6px">💠 80级史诗5人副本 · 掉落带「·史诗」后缀 · 专属坐骑掉率最高</div>
+            <div id="epic5-dungeon-list"></div>
+          </div>
+          <div id="dungeon-mode-epic" style="display:none">
+            <div class="muted" style="margin-bottom:6px">80级史诗团本 · 必掉史诗紫装 / 全部首领超低概率橙装</div>
+            <div id="epic-dungeon-list"></div>
+          </div>
         </div>
-        <div id="dungeon-mode-normal">
-        <div style="display:flex;gap:6px;margin-bottom:6px">
-          <button id="btn-dg-5man" class="active" style="flex:1;padding:4px 8px;font-size:11px"><span data-ui-icon="dungeon" data-ui-size="xs"></span>5人本</button>
-          <button id="btn-dg-raid" style="flex:1;padding:4px 8px;font-size:11px"><span data-ui-icon="raid" data-ui-size="xs"></span>团本</button>
-        </div>
-        <div id="dungeon-list"></div>
-        </div>
-        <div id="dungeon-mode-heroic" style="display:none">
-          <div class="muted" style="margin-bottom:6px">⭐ 80级英雄5人副本 · 怪物显著强化(普通&lt;英雄&lt;团本&lt;史诗团本) · 掉落带「·英雄」后缀、属性高于普通本</div>
-          <div id="heroic-dungeon-list"></div>
-        </div>
-        <div id="dungeon-mode-epic5" style="display:none">
-          <div class="muted" style="margin-bottom:6px">💠 80级史诗5人副本 · 最强5人内容(英雄&lt;史诗5人本&lt;团本) · 掉落带「·史诗」后缀(×1.16梯队) · 专属坐骑掉率最高</div>
-          <div id="epic5-dungeon-list"></div>
-        </div>
-        <div id="dungeon-mode-epic" style="display:none">
-          <div class="muted" style="margin-bottom:6px">80级史诗团本独立列表 · 高难度 · 必掉史诗紫装 / 全部首领超低概率橙装</div>
-          <div id="epic-dungeon-list"></div>
-        </div>
+        <div id="dungeon-sheet-bounty" style="display:none"><div id="dungeon-bounty-panel"></div></div>
+        <div id="dungeon-sheet-contract" style="display:none"><div id="dungeon-contract-panel"></div></div>
+        <div id="dungeon-sheet-waystone" style="display:none"><div id="waystone-panel"></div><div id="delve-panel"></div></div>
+        <div id="dungeon-sheet-mastery" style="display:none"><div id="dungeon-mastery-panel"></div></div>
       </div>
       <div id="dungeon-sub-tower" style="display:none">
         <div id="tower-panel"></div>
@@ -531,11 +533,11 @@
 <script src="roguelike.js"></script>
 <script src="midgame_ext.js?v=20260713c"></script>
 <script src="dragon_treasures.js"></script>
-<script src="world_invasions.js"></script>
+<script src="world_invasions.js?v=20260713b"></script>
 <script src="worldsoul.js"></script>
 <script src="phase_diving.js"></script>
 <script src="karesh_ecology.js"></script>
-<script src="waystones.js"></script>
+<script src="waystones.js?v=20260713b"></script>
 <script src="karesh_expedition.js"></script>
 <script src="timewalking.js"></script>
 <script src="arena.js"></script>
@@ -553,7 +555,7 @@
 <script src="dailyhub.js"></script>
 <script src="passives.js"></script>
 <script src="spd_tuning.js"></script>
-<script src="render.js?v=20260713as"></script>
-<script src="main.js?v=20260713t"></script>
+<script src="render.js?v=20260713at"></script>
+<script src="main.js?v=20260713u"></script>
 </body>
 </html>

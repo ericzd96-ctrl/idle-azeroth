@@ -4464,6 +4464,34 @@ function renderCompanion() {
 }
 
 let dgFilter = 'all'; // 'all' | '5man' | 'raid'
+let dungeonSheetTab = 'list';
+const DUNGEON_SHEET_TABS = [
+  { key:'list', label:'列表', icon:'🏰' },
+  { key:'bounty', label:'悬赏', icon:'🎯' },
+  { key:'contract', label:'契约', icon:'📜' },
+  { key:'waystone', label:'界碑', icon:'🧭' },
+  { key:'mastery', label:'精通', icon:'🏅' },
+];
+function dungeonSheetTabsHtml(){
+  const bounty = (typeof ensureDungeonBounties === 'function') ? ensureDungeonBounties(false) : null;
+  const bountyReady = bounty?.targets?.filter(t => bounty.claimed?.[t.id]).length || '';
+  const contract = (typeof dungeonContractLevel === 'function' && dungeonContractLevel() > 0) ? dungeonContractLevel() : '';
+  const badge = { bounty:bountyReady, contract, list:'', waystone:'', mastery:'' };
+  return `<div class="dungeon-sheet-tabs">${DUNGEON_SHEET_TABS.map(tab => `<button class="dungeon-sheet-tab ${dungeonSheetTab === tab.key ? 'active' : ''}" data-action="dungeonsheet" data-value="${tab.key}">${tab.icon} ${tab.label}${badge[tab.key] !== '' ? `<span>${badge[tab.key]}</span>` : ''}</button>`).join('')}</div>`;
+}
+function dungeonSetSheetTab(key){
+  if (!DUNGEON_SHEET_TABS.some(tab => tab.key === key)) key = 'list';
+  dungeonSheetTab = key;
+  renderDungeon();
+}
+function renderDungeonSheetTabs(){
+  const el = $('dungeon-sheet-tabs');
+  if (el) el.innerHTML = dungeonSheetTabsHtml();
+  for (const tab of DUNGEON_SHEET_TABS) {
+    const panel = $(`dungeon-sheet-${tab.key}`);
+    if (panel) panel.style.display = dungeonSheetTab === tab.key ? '' : 'none';
+  }
+}
 function dungeonBountyTipHtml(target, options) {
   if (!target) return '';
   const cfg = options || {};
@@ -5643,6 +5671,7 @@ function renderDungeon() {
   if (epicDl) epicDl.innerHTML = '';
   if (heroicDl) heroicDl.innerHTML = '';
   if (epic5Dl) epic5Dl.innerHTML = '';
+  renderDungeonSheetTabs();
   renderDungeonBountyPanel();
   renderDungeonContractPanel();
   if (typeof renderWaystonePanel === 'function') renderWaystonePanel();
@@ -5712,39 +5741,12 @@ function renderDungeon() {
     if (onCd) div.style.opacity = '0.6';   // CD中副本变暗,凸显可立即挑战的副本
     div.dataset.dungeonKey = dg.key;
     const dungeonIconHtml = (typeof dungeonIcon === 'function') ? dungeonIcon(dg.key, dg.name, 18, dg.icon) : dg.icon;
-    const dgAffixes = (typeof getDungeonAffixes === 'function') ? getDungeonAffixes(dg) : [];
-    const themeLine = dungeonThemeAffixHtml(dg, true);
-    const companionLine = dungeonCompanionRecommendationHtml(dg, true);
-    const affixLine = dgAffixes.length ? `<div class="muted" style="font-size:11px">⚙️ 词缀: ${dgAffixes.map(a => inlineTipSpanHtml(a, { fallbackIcon:'spell_holy_powerinfusion', color:'#67e8f9' })).join(' · ')}</div>` : '';
     const selectedContractLevel = (typeof dungeonContractLevel === 'function') ? dungeonContractLevel() : 0;
-    const trialPreview = (selectedContractLevel > 0 && typeof getDungeonContractTrials === 'function') ? getDungeonContractTrials(dg, selectedContractLevel) : [];
-    const trialLine = trialPreview.length ? `<div class="dungeon-trial-line">🔥 试炼: ${trialPreview.map(t => inlineTipSpanHtml(t, { fallbackIcon:'ability_warrior_battleshout', color:'#fb7185' })).join(' · ')}</div>` : '';
-    const environmentPreview = (selectedContractLevel > 0 && typeof getDungeonEnvironments === 'function') ? getDungeonEnvironments(dg, selectedContractLevel) : [];
-    const environmentLine = environmentPreview.length ? `<div class="dungeon-environment-line">🧭 环境: ${environmentPreview.map(e => inlineTipSpanHtml(e, { fallbackIcon:'spell_frost_arcticwinds', color:'#67e8f9' })).join(' · ')}</div>` : '';
-    const roomPreview = (typeof getDungeonCombatRooms === 'function') ? getDungeonCombatRooms(dg, selectedContractLevel) : [];
-    const roomLine = roomPreview.length ? `<div class="dungeon-room-line">🎲 房间: ${roomPreview.map(r => {
-      const matchedTags = (r.matchedTags || []).map(dungeonTraitTagLabel).join('/');
-      return inlineTipSpanHtml({
-        ...r,
-        desc:`${r.desc || '额外遭遇规则'}${matchedTags ? ` 路线匹配: ${matchedTags}` : ''}`,
-        meta:r.routeMatched ? '路线匹配' : (r.meta || '房间'),
-      }, { fallbackIcon:'inv_misc_dice_02', color:'#f9a8d4', metaVisible:!!r.routeMatched });
-    }).join(' · ')}</div>` : '';
-    const edictPreview = (selectedContractLevel > 0 && typeof getDungeonTacticalEdicts === 'function') ? getDungeonTacticalEdicts(dg, selectedContractLevel) : [];
-    const edictLine = edictPreview.length ? `<div class="dungeon-edict-line">📜 禁令: ${edictPreview.map(e => inlineTipSpanHtml(e, { fallbackIcon:'inv_scroll_03', color:'#fcd34d' })).join(' · ')}</div>` : '';
-    const timeMarkPreview = (selectedContractLevel > 0 && typeof dungeonTimeMarkSummary === 'function') ? dungeonTimeMarkSummary(edictPreview, 0) : null;
-    const timeMarkLine = timeMarkPreview ? `<div class="dungeon-edict-line">🎯 点名: ${inlineTipSpanHtml(timeMarkPreview, { fallbackIcon:'achievement_bg_kill_flag_carrier', color:'#fca5a5', meta:timeMarkPreview.meta, metaVisible:true })}</div>` : '';
-    const timerPreview = (selectedContractLevel > 0 && typeof createDungeonTimer === 'function') ? createDungeonTimer(dg, selectedContractLevel) : null;
-    const timerLabelTip = timerPreview ? inlineTipSpanHtml({ name:'限时挑战', icon:'⏳', desc:'在限定时间内通关可获得额外奖励；超时后每 15 秒叠加一次压迫。', meta:timerPreview.label }, { fallbackIcon:'inv_misc_pocketwatch_01', color:'#fde68a' }) : '';
-    const alertLabelTip = inlineTipSpanHtml({ name:'契约警戒', icon:'🚨', desc:'警戒值会随着波次和首领击杀上升，后续敌人会同步强化，并可能出现戒备队长。' }, { fallbackIcon:'achievement_bg_returnxflags_def_wsg', color:'#fb7185' });
-    const bossPhaseLabelTip = inlineTipSpanHtml({ name:'首领阶段', icon:'⚔️', desc:'Boss 血量跌破指定阈值后，会触发阶段事件、强化读条或额外召唤。' }, { fallbackIcon:'ability_warrior_savageblow', color:'#fca5a5' });
-    const timerLine = timerPreview ? `<div class="dungeon-timer-line">${timerLabelTip} · 达成奖励 ×${timerPreview.rewardMult.toFixed(2)} · 超时叠加压迫</div>` : '';
-    const alertLine = selectedContractLevel > 0 ? `<div class="dungeon-alert-line">${alertLabelTip}: 波次推进会逐步强化敌人,高警戒可能出现戒备队长</div>` : '';
-    const bossPhaseLine = selectedContractLevel > 0 ? `<div class="dungeon-boss-phase-line">${bossPhaseLabelTip}: Boss 血量下降时会触发额外阶段事件</div>` : '';
+    const contractPill = selectedContractLevel > 0 && typeof dungeonContractInfo === 'function'
+      ? `<span class="pill dungeon-contract-compact">${dungeonContractInfo(selectedContractLevel).icon || '📜'}契约${selectedContractLevel}</span>`
+      : '';
     const firstClearBadge = (!state.dungeonFirstClear || !state.dungeonFirstClear[dg.key]) ? '<span class="pill" style="background:rgba(246,196,83,.18);color:#f6c453">🎁首通</span>' : '';
     const artBanner = dg.art ? `<div class="dungeon-art-banner" style="background-image:linear-gradient(180deg, rgba(11,15,25,.16), rgba(11,15,25,.78)), url('${dg.art}')">${dungeonArtBadgeHtml(dg)}</div>` : '';
-    const atlasLine = dungeonAtlasHtml(dg, true);
-    const raidTrackLine = dungeonRaidProgressionHtml(dg, true);
     // 必刷专属坐骑提示(读 DUNGEON_MOUNT_DROPS,按基础本key)
     let chaseLine = '';
     if (typeof DUNGEON_MOUNT_DROPS !== 'undefined' && typeof MOUNTS !== 'undefined') {
@@ -5784,25 +5786,18 @@ function renderDungeon() {
         <span>${bountyBadge}${firstClearBadge}<span class="pill">${typeof contentReqLabel === 'function' ? contentReqLabel(dg.reqLvl) : `等级${dg.reqLvl}`}</span></span>
       </div>
       ${artBanner}
-      ${atlasLine}
-      ${raidTrackLine}
-      <div class="muted">${typeLabel}${dg.desc}${raidProgressLine} · ${(dg.bosses||[]).length}名首领 · 最终: ${((dg.bosses||[])[dg.bosses.length-1]||{}).name||'??'}${dg.type==='raid'?(isEpicRaid?' · 掉落:史诗级紫装/全部首领超低概率橙装':' · 掉落:常规团本装备/关底低概率橙武'):''}</div>
+      <div class="muted">${typeLabel}${dg.desc}${raidProgressLine}</div>
+      <div class="dungeon-card-brief">
+        <span>${(dg.bosses||[]).length}名首领</span>
+        <span>最终: ${((dg.bosses||[])[dg.bosses.length-1]||{}).name||'??'}</span>
+        ${lootIlvlText ? `<span>${tipAttrText(lootIlvlText)}</span>` : ''}
+        ${contractPill}
+      </div>
       ${bountyLine}
       ${delveLine}
       ${chaseLine}
       ${dungeonProgressLine}
       ${ilvlLine}
-      ${themeLine}
-      ${companionLine}
-      ${affixLine}
-      ${timerLine}
-      ${roomLine}
-      ${edictLine}
-      ${timeMarkLine}
-      ${environmentLine}
-      ${trialLine}
-      ${alertLine}
-      ${bossPhaseLine}
       ${setTierInfo ? `<div class="dungeon-set-track compact">当前职业套装: ${setTierInfo.setName} · ${setTierInfo.bandName}</div>` : ''}
       <div class="row">
         <span class="cd-display">${statusText}</span>
