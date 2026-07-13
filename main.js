@@ -648,7 +648,7 @@ function setupDelegation() {
     const tip = $('compare-tip');
     root.addEventListener('mouseover', e => {
       if (!hoverTipsEnabled()) return;
-      const sk = e.target.closest('.comp-skill'); if (!sk) return;
+      const sk = e.target.closest('.comp-skill,.comp-bond-member[data-tip]'); if (!sk) return;
       tip.querySelector('.compare-head').innerHTML = sk.dataset.tip || '';
       tip.querySelector('.compare-body').innerHTML = '';
       tip.style.display = 'block';

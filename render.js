@@ -3083,6 +3083,59 @@ function companionUpgradePreviewHtml(tpl, comp, options) {
     ${cfg.compact ? '' : `<div class="comp-upgrade-meta"><span class="${q.cls}">${q.name}</span> · ${roleTag(tpl.role)} · ${canUp ? '可以升星' : '继续收集碎片'}</div>`}
   </div>`;
 }
+function companionBondModText(bond) {
+  return Object.entries(bond?.mod || {}).map(([k, v]) => (typeof fmtMod === 'function') ? fmtMod(k, v) : `${k}+${v}`).join(' ');
+}
+function companionBondMemberTipHtml(tpl, entry) {
+  if (!tpl) return '';
+  const q = compQuality(tpl);
+  const traits = companionTraitFlags(tpl);
+  const traitText = Object.entries(COMPANION_TRAIT_META).filter(([key]) => traits[key]).map(([, meta]) => meta.label).join(' / ') || '常规';
+  const stateText = entry?.isOwned ? `已拥有 ${entry.owned?.stars || 1}星` : `未获得 · ${q.name}池`;
+  return `<b>${tipAttrText(tpl.name)}</b><br>${q.name} · ${companionRoleLabel(tpl.role)} · ${traitText}<br>${stateText}<br>${tipAttrText(tpl.desc || '')}`;
+}
+function companionBondRoadmapHtml(entries) {
+  if (typeof COMPANION_BONDS === 'undefined' || !COMPANION_BONDS.length) return '';
+  const entryMap = new Map((entries || []).map(entry => [entry.tpl.key, entry]));
+  const activeCnt = COMPANION_BONDS.filter(bond => bond.keys.every(key => entryMap.get(key)?.isOwned)).length;
+  const cards = COMPANION_BONDS.map(bond => {
+    const members = bond.keys.map(key => {
+      const entry = entryMap.get(key);
+      const tpl = entry?.tpl || COMPANIONS.find(c => c.key === key);
+      return { key, entry, tpl, owned:!!entry?.isOwned };
+    });
+    const ownedCnt = members.filter(m => m.owned).length;
+    const pct = Math.max(6, Math.round((ownedCnt / Math.max(1, members.length)) * 100));
+    const active = ownedCnt >= members.length;
+    const missing = members.filter(m => !m.owned);
+    const nextTarget = missing[0]?.tpl;
+    const memberHtml = members.map(m => {
+      const tip = companionBondMemberTipHtml(m.tpl, m.entry).replace(/"/g, '&quot;');
+      const icon = m.tpl ? companionIconHtml(m.tpl, 22) : '🐾';
+      return `<span class="comp-bond-member ${m.owned ? 'owned' : 'missing'}" data-tip="${tip}" title="${m.tpl ? tipAttrText(m.tpl.name) : m.key}">${icon}</span>`;
+    }).join('');
+    const route = active
+      ? '全员入队,属性已计入角色面板'
+      : `下一目标: ${tipAttrText(nextTarget?.name || missing.map(m => m.key).join('、'))} · ${nextTarget ? `${compQuality(nextTarget).name}/${companionRoleLabel(nextTarget.role)}` : '继续抽取'}`;
+    return `<div class="comp-bond-card ${active ? 'active' : ''}" style="--bond-pct:${pct}%">
+      <div class="comp-bond-card-head">
+        <b>${active ? '✅' : '🔒'} ${tipAttrText(bond.name)}</b>
+        <span>${ownedCnt}/${members.length} · ${active ? '已激活' : `差 ${missing.length} 名`}</span>
+      </div>
+      <div class="comp-bond-members">${memberHtml}</div>
+      <div class="comp-bond-progress"><i></i></div>
+      <div class="comp-bond-effect">${tipAttrText(companionBondModText(bond) || bond.desc || '')}</div>
+      <div class="comp-bond-route">${tipAttrText(route)}</div>
+    </div>`;
+  }).join('');
+  return `<div class="comp-bond-roadmap">
+    <div class="comp-bond-roadmap-head">
+      <div><b>⚜️ 羁绊路线图</b><div class="muted" style="font-size:10px">集齐成员后立即生效,属性会进入角色面板。</div></div>
+      <span>${activeCnt}/${COMPANION_BONDS.length} 激活</span>
+    </div>
+    <div class="comp-bond-grid">${cards}</div>
+  </div>`;
+}
 function companionAdvisorPanelHtml(entries) {
   const owned = entries.filter(e => e.isOwned);
   if (!owned.length) {
@@ -3130,7 +3183,7 @@ function companionAdvisorPanelHtml(entries) {
     return { bond, missing, ownedCnt };
   }).filter(x => x.missing.length > 0 && x.ownedCnt > 0).sort((a,b) => a.missing.length - b.missing.length || b.ownedCnt - a.ownedCnt).slice(0, 4).map(x => {
     const missingNames = x.missing.map(k => COMPANIONS.find(c => c.key === k)?.name || k).join('、');
-    const modTxt = Object.entries(x.bond.mod || {}).map(([k,v]) => (typeof fmtMod === 'function') ? fmtMod(k, v) : `${k}+${v}`).join(' ');
+    const modTxt = companionBondModText(x.bond);
     return `<div class="comp-advisor-bond">
       <div><b>🔒 ${tipAttrText(x.bond.name)}</b> <span>${x.ownedCnt}/${x.bond.keys.length}</span></div>
       <div class="muted">缺: ${tipAttrText(missingNames)} · ${tipAttrText(modTxt)}</div>
@@ -3250,7 +3303,6 @@ function renderCompanion() {
   const renderSig = companionPanelRenderSig();
   if (cl.dataset.renderSig === renderSig && cl.dataset.rendered === '1') return;
   const owned = state.companions.length;
-  const bonds = (typeof activeCompanionBonds==='function') ? activeCompanionBonds() : [];
   const entries = buildCompanionEntries();
   const filteredEntries = entries.filter(entry => companionMatchesFilters(entry, companionFilters));
   let html = '';
@@ -3271,20 +3323,10 @@ function renderCompanion() {
     return ofQ.length && ofQ.every(t => { const c = ownedM[t.key]; return c && (c.stars||1) >= 5; });
   });
   if(fullQ.length) html += `<div class="muted" style="font-size:10px;margin-top:2px;color:var(--accent)">✅ 已满星品质: ${fullQ.map(k=>qLabel[k]).join(' ')} (不再抽到)</div>`;
-  if (typeof COMPANION_BONDS!=='undefined' && COMPANION_BONDS.length) {
-    html += `<div class="detail-label" style="margin-top:6px">⚜️ 羁绊</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:2px">`;
-    for (const b of COMPANION_BONDS) {
-      const on = bonds.includes(b);
-      const modTxt = Object.entries(b.mod).map(([k,v])=>(typeof fmtMod==='function')?fmtMod(k,v):k+'+'+v).join(' ');
-      const ownedCnt = b.keys.filter(k=>ownedM[k]).length;
-      const prog = on ? '' : ` <span style="opacity:.85">(${ownedCnt}/${b.keys.length})</span>`;
-      html += `<div class="muted" style="font-size:10px;opacity:${on?1:0.45}" title="${b.desc}">${on?'✅':'🔒'} ${b.name}${prog}: ${modTxt}</div>`;
-    }
-    html += `</div>`;
-  }
   html += `</div>`;
 
   html += companionFilterPanelHtml(entries);
+  html += companionBondRoadmapHtml(entries);
   html += companionAdvisorPanelHtml(entries);
   html += companionMissionPanelHtml(entries);
 
