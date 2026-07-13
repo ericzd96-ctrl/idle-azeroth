@@ -2155,6 +2155,7 @@ function spawnMonster(){
     m.threat=m.atk*(0.6+Math.random()*0.8);   // 初始仇恨(攻击越高越容易被英雄锁定)
     state.currentMonsters.push(m);
   }
+  applyCompanionChallengeScalingToCurrent();
 }
 function spawnZoneBoss(){
   state.currentMonsters=[];const map=getMap();if(!map)return;
@@ -2172,6 +2173,7 @@ function spawnZoneBoss(){
     if(map.boss.passive.leech)mon.lifeSteal=map.boss.passive.leech;
   }
   state.currentMonsters.push(mon);
+  applyCompanionChallengeScalingToCurrent();
 }
 function spawnDungeonMonster(){
   state.currentMonsters=[];const ds=state.dungeonState||state.mythicState;if(!ds)return;
@@ -2403,6 +2405,7 @@ function spawnDungeonMonster(){
   if (state.mode === 'dungeon' && typeof applyDungeonCombatRoomSpawn === 'function') {
     applyDungeonCombatRoomSpawn(ds, dg, mon, isBoss, Date.now());
   }
+  applyCompanionChallengeScalingToCurrent();
 }
 
 function spawnDungeonCouncilMembers(primary, bossData, dg, ds){
@@ -6661,6 +6664,7 @@ const COMPANION_TACTICS = {
 const COMPANION_STAR_GROWTH = 0.15;   // 每星成长
 const COMPANION_SKILL_DMG_BONUS = 1.43;  // 随从技能伤害全局加成
 const COMPANION_HEAL_SCALE = 1.25;        // 随从治疗统一收口
+const COMPANION_RESONANCE_CD_MS = 60000;  // 羁绊共鸣:收藏羁绊转为低频战斗连携
 function companionTacticKey(){
   const key = state?.companionTactic || 'balanced';
   return COMPANION_TACTICS[key] ? key : 'balanced';
@@ -6680,6 +6684,7 @@ function companionTacticShieldMult(){ return companionTacticMeta().shield || 1; 
 function companionTacticDmgMult(){ return companionTacticMeta().dmg || 1; }
 function companionSkillCdLeft(i){ return Math.max(0, ((compSkillCd&&compSkillCd[i])||0) - Date.now()); }   // 供 UI 显示剩余CD(毫秒)
 function companionReactionLeftMs(now){ return Math.max(0, (state._compReactionUntil || 0) - (now || Date.now())); }
+function companionResonanceLeftMs(now){ return Math.max(0, (state._compResonanceUntil || 0) - (now || Date.now())); }
 function companionReactionUiState(now){
   const ts = now || Date.now();
   const meta = companionTacticMeta();
@@ -6693,6 +6698,25 @@ function companionReactionUiState(now){
     leftMs:left,
     ready:left <= 0,
     recent:(state._compReactionLastAt || 0) > ts - 1800
+  };
+}
+function companionResonanceUiState(now){
+  const comp = getActiveCompanion();
+  const tpl = comp && COMPANIONS.find(c=>c.key===comp.key);
+  const info = companionResonanceInfo(tpl);
+  if(!info.rank) return null;
+  const ts = now || Date.now();
+  const left = companionResonanceLeftMs(ts);
+  return {
+    icon:'⚜️',
+    name:info.name,
+    desc:info.desc,
+    rank:info.rank,
+    bondNames:info.bondNames,
+    cdMs:COMPANION_RESONANCE_CD_MS,
+    leftMs:left,
+    ready:left <= 0,
+    recent:(state._compResonanceLastAt || 0) > ts - 1800
   };
 }
 function companionEffectiveSkillCdMs(sk){
@@ -6799,6 +6823,44 @@ function collectCompanionMod(){
   return out;
 }
 function activeCompanionBonds(){if(typeof COMPANION_BONDS==='undefined'||!state.companions)return[];const ks=new Set(state.companions.map(c=>c.key));return COMPANION_BONDS.filter(b=>b.keys.every(k=>ks.has(k)));}
+function companionResonanceBonds(tpl){
+  if(!tpl) return [];
+  return activeCompanionBonds().filter(b => Array.isArray(b.keys) && b.keys.includes(tpl.key));
+}
+function companionResonanceInfo(tpl){
+  const bonds = companionResonanceBonds(tpl);
+  const rank = Math.min(3, bonds.length);
+  if(!rank) return { rank:0, bonds:[], bondNames:'', name:'羁绊共鸣', desc:'出战随从参与的羁绊激活后解锁战斗共鸣。' };
+  const role = tpl?.role || 'dps';
+  const name = role === 'tank' ? '守护共鸣' : role === 'heal' ? '圣愈共鸣' : '夹击共鸣';
+  const effect = role === 'tank'
+    ? `为主角和随从施加护盾，强度按参与羁绊数提升。`
+    : role === 'heal'
+      ? `治疗主角并补上护盾，强度按参与羁绊数提升。`
+      : `对当前目标追加一次夹击伤害，伤害有最大生命上限。`;
+  const challenge = `敌方警觉:怪物生命+${Math.round(rank * 1.5)}%，攻击+${Math.round(rank * 1.2)}%。`;
+  return { rank, bonds, bondNames:bonds.map(b=>b.name).join('、'), name, desc:`${effect} 冷却60秒。${challenge}` };
+}
+function companionResonanceChallengeMult(){
+  const comp = getActiveCompanion();
+  const tpl = comp && COMPANIONS.find(c=>c.key===comp.key);
+  const rank = companionResonanceInfo(tpl).rank || 0;
+  return rank > 0 ? { rank, hp:1 + rank * 0.015, atk:1 + rank * 0.012 } : { rank:0, hp:1, atk:1 };
+}
+function applyCompanionChallengeScaling(mon){
+  if(!mon || mon._companionChallengeRank) return;
+  const ch = companionResonanceChallengeMult();
+  if(!ch.rank) return;
+  mon.hpMax = Math.max(1, Math.floor(mon.hpMax * ch.hp));
+  mon.hp = Math.max(1, Math.floor((mon.hp || mon.hpMax) * ch.hp));
+  mon.atk = Math.max(1, Math.floor(mon.atk * ch.atk));
+  mon._companionChallengeRank = ch.rank;
+  mon._companionChallengeName = '羁绊警觉';
+}
+function applyCompanionChallengeScalingToCurrent(){
+  if(!Array.isArray(state.currentMonsters)) return;
+  for(const mon of state.currentMonsters) applyCompanionChallengeScaling(mon);
+}
 const COMPANION_MISSION_TYPES = [
   { key:'frontline', name:'前线护送', icon:'🛡️', role:'tank', trait:'support', minutes:18, desc:'护送补给穿过交战区。坦克和护盾型随从更容易拿到额外奖励。', reward:{ gold:220, honor:18, shards:1 } },
   { key:'recon', name:'荒野侦察', icon:'🏹', role:'dps', trait:'control', minutes:16, desc:'侦察地图、标记稀有怪和伏击点。输出、控制和高星随从会提高完成度。', reward:{ gold:180, essence:5, shards:1 } },
@@ -7111,6 +7173,46 @@ function companionReactionTrigger(now, st, tpl, mon){
   markDirty('stage','companion','hero');
   return true;
 }
+function companionResonanceTrigger(now, st, tpl, mon){
+  if(!st || !tpl || !mon || mon.hp <= 0 || companionResonanceLeftMs(now) > 0) return false;
+  const info = companionResonanceInfo(tpl);
+  const rank = info.rank || 0;
+  if(rank <= 0) return false;
+  const role = tpl.role || 'dps';
+  let fired = false;
+  if(role === 'tank'){
+    const heroShield = Math.floor((state.hero.hpMax || 1) * (0.026 + rank * 0.012) * companionTacticShieldMult());
+    const compShield = Math.floor((st.hpMax || 1) * (0.040 + rank * 0.015) * companionTacticShieldMult());
+    if(heroShield > 0) addTalentShield(heroShield, false, 12000);
+    if(compShield > 0) addCompanionBarrier(compShield, '⚜️', '#fcd34d');
+    fired = heroShield > 0 || compShield > 0;
+  }else if(role === 'heal'){
+    const heal = Math.floor((state.hero.hpMax || 1) * (0.030 + rank * 0.012) * companionTacticHealMult());
+    const shield = Math.floor((state.hero.hpMax || 1) * (0.018 + rank * 0.008) * companionTacticShieldMult());
+    const hr = healHeroAmount(heal, '⚜️', '#6ee7b7', 'comp', info.name);
+    if(shield > 0) addTalentShield(shield, true, 10000);
+    fired = hr.applied > 0 || shield > 0;
+  }else{
+    const raw = st.atk * (1.20 + rank * 0.32) * companionTacticDmgMult();
+    const dd = calcDmg(raw, monArmor(mon), st.crit + rank * 4, st.critd + rank * 8, false, mon.lvl, state.hero.lvl, { tightVar:true });
+    const capPct = (mon.isBoss ? 0.026 : 0.040) + rank * (mon.isBoss ? 0.012 : 0.016);
+    const capped = Math.min(dd.dmg, Math.max(1, Math.floor(mon.hpMax * capPct)));
+    const dealt = absorbMonsterBarrier(mon, capped, '⚜️').remaining;
+    if(dealt > 0){
+      mon.hp -= dealt;
+      trackDmg('comp', dealt, dd.crit, info.name);
+      showMonsterFloat(mon, '⚜️-' + dealt, '#fcd34d', allySideFloatOpts({ variant:dd.crit ? 'crit' : 'comp', scale:dd.crit ? 1.14 : 1.06, important:true }));
+      fired = true;
+    }
+  }
+  if(!fired) return false;
+  state._compResonanceUntil = now + COMPANION_RESONANCE_CD_MS;
+  state._compResonanceLastAt = now;
+  state._compResonanceName = info.name;
+  log(`⚜️ ${tpl.name} 触发${info.name}: ${info.bondNames}`,'good');
+  markDirty('stage','companion','hero');
+  return true;
+}
 /* 按定位的吸引仇恨概率:坦克多、治疗少、输出居中 */
 function compAggroChance(){const comp=getActiveCompanion();if(!comp)return 0;const tpl=COMPANIONS.find(c=>c.key===comp.key);const role=tpl&&tpl.role;const base=role==='tank'?0.88:role==='heal'?0.15:0.20;return Math.max(0.05,Math.min(0.95,base+(tpl?.aggroBonus||0)+(companionTacticMeta().aggro||0))); }
 /* 随从倒下:清血、进入10秒复活计时(2026-06-27:15→10,缩短无奶职业的暴露窗口) */
@@ -7135,6 +7237,7 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
   if((state._compStunUntil||0)>now) return;
   const mon=state.currentMonsters[0];if(!mon)return;
   companionReactionTrigger(now, st, tpl, mon);
+  companionResonanceTrigger(now, st, tpl, mon);
   if(compSkillCd._owner!==comp.key)compSkillCd={_owner:comp.key};   // 换随从:重置技能冷却
   const interval=1000/(st.spd||0.5);if((state._compDisarmUntil||0)<=now&&(now-lastCompAtk>interval||now-lastCompAtk>5000)){let cm=state.currentMonsters[0];if(cm&&cm.hp>0){const cd=calcDmg(st.atk,monArmor(cm),st.crit,st.critd,false,cm.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(cm, cd.dmg, st.emoji).remaining;cm.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,cd.crit,'普攻');showMonsterFloat(cm,st.emoji+'-'+dealt,'#a0d0ff',allySideFloatOpts({variant:cd.crit?'crit':'comp',scale:cd.crit?1.12:1}));}applyCompanionSignatureHit(companionSignature(tpl), st, cm, dealt, now);}lastCompAtk=now;
     // 技能:每个技能按自己的 cd 独立冷却,就绪即放(GCD 0.9秒,避免一次性全放;优先治疗>buff>伤害)

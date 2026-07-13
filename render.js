@@ -1851,6 +1851,22 @@ function updateBattleVisuals() {
         }
       }else reactionEl.innerHTML = '';
     }
+    const resonanceEl = $('comp-resonance-line');
+    if(resonanceEl){
+      const rs = (typeof companionResonanceUiState === 'function') ? companionResonanceUiState(now) : null;
+      resonanceEl.style.display = rs ? '' : 'none';
+      if(rs){
+        const leftTxt = rs.ready ? '就绪' : Math.ceil(rs.leftMs / 1000) + '秒';
+        const pct = rs.ready ? 100 : Math.max(0, Math.min(100, Math.round((1 - rs.leftMs / Math.max(1, rs.cdMs || 1)) * 100)));
+        resonanceEl.classList.toggle('ready', !!rs.ready);
+        resonanceEl.classList.toggle('pulse', !!rs.recent);
+        const resonanceSig = [rs.name, rs.rank, leftTxt, pct, rs.ready ? 1 : 0, rs.recent ? 1 : 0].join('|');
+        if(resonanceEl._sig !== resonanceSig){
+          resonanceEl._sig = resonanceSig;
+          resonanceEl.innerHTML = `<span>${rs.icon} ${tipAttrText(rs.name)} ${rs.rank}</span><b>${leftTxt}</b><i style="width:${pct}%"></i>`;
+        }
+      }else resonanceEl.innerHTML = '';
+    }
     // 随从技能 冷却 展示:仅在随从/技能数变化时重建(避免每帧churn打断 title 悬浮),每帧只刷新剩余CD
     const csEl=$('comp-skills');
     if(csEl){
@@ -1911,12 +1927,14 @@ function updateBattleVisuals() {
       const compBarrier = state._compBarrier || 0;
       const sig = tpl?.signature;
       const reaction = (typeof companionReactionUiState === 'function') ? companionReactionUiState(nowTs) : null;
+      const resonance = (typeof companionResonanceUiState === 'function') ? companionResonanceUiState(nowTs) : null;
       const compIconHtml = companionIconHtml(tpl, 18);
       const html=`<b>${compIconHtml} ${tpl?.name}</b><div>${q.name} ${'⭐'.repeat(comp.stars||1)} · ${tpl?.role==='tank'?'🛡️坦克':tpl?.role==='heal'?'💚辅助':'⚔️输出'}</div>
         <div>攻击${fmt(st.atk)} 防御${fmt(st.def)} 生命${fmt(st.hpMax)} 攻速${st.spd?.toFixed(2)}/秒</div>
         <div class="muted">参战强度已按品质、星级与定位折算</div>
         <div class="muted">定位:${tpl?.role==='tank'?'🛡️纯坦克 扛压吸仇恨/减伤结界/自疗':tpl?.role==='dps'?'⚔️纯输出 自带攻击攻速狂热/技能爆发':'💚辅助 加速+增伤+续航(助毕业DPS提速过本)'}</div>
         ${reaction?`<div style="color:#fcd34d">战友反应: ${reaction.icon} ${reaction.name} · ${reaction.ready?'就绪':'冷却 '+Math.ceil(reaction.leftMs/1000)+'秒'}</div><div class="muted">${reaction.desc}</div>`:''}
+        ${resonance?`<div style="color:#fcd34d">羁绊共鸣: ${resonance.icon} ${resonance.name} ${resonance.rank} · ${resonance.ready?'就绪':'冷却 '+Math.ceil(resonance.leftMs/1000)+'秒'}</div><div class="muted">${tipAttrText(resonance.desc)} 来源:${tipAttrText(resonance.bondNames)}</div>`:''}
         ${sig?`<div style="color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(sig.name, 14, sig.icon||'✨') : (sig.icon||'✨')} ${sig.name} · ${sig.desc||''}${sig.mode==='passive'?' (被动)':''}</div>`:''}
         ${compBarrier>0?`<div style="color:#93c5fd">护盾: ${fmt(compBarrier)}</div>`:''}
         ${compBuffs.length?`<div>增益: ${compBuffs.join(' · ')}</div>`:''}
@@ -3599,6 +3617,7 @@ function companionDetailPanelHtml(entries) {
   const starF = entry.isOwned ? 1 + 0.2 * ((stars || 1) - 1) : 1;
   const ownBonus = Object.entries(tpl.bonus || {}).map(([k, v]) => (typeof fmtMod === 'function') ? fmtMod(k, +(v * starF).toFixed(1)) : `${k}+${v}`).join(' ');
   const status = entry.isActive ? '出战中' : entry.isOwned ? '已拥有' : `${q.name}池未获得`;
+  const resonanceInfo = (typeof companionResonanceInfo === 'function') ? companionResonanceInfo(tpl) : null;
   const cost = entry.isOwned ? getUpgradeCost(owned) : null;
   const canUp = cost && !cost.maxed && cost.have >= cost.need;
   const wishButton = `<button data-action="compwish" data-key="${tpl.key}">${entry.isWished ? '取消目标' : '加入目标'}</button>`;
@@ -3633,6 +3652,7 @@ function companionDetailPanelHtml(entries) {
     </div>
     <div class="comp-detail-block">
       <div class="comp-detail-block-title">相关羁绊</div>
+      ${resonanceInfo?.rank ? `<div class="comp-resonance-note">⚜️ 出战共鸣 ${resonanceInfo.rank}: ${tipAttrText(resonanceInfo.name)} · ${tipAttrText(resonanceInfo.desc)}<br><span>${tipAttrText(resonanceInfo.bondNames)}</span></div>` : `<div class="comp-resonance-note muted">⚜️ 出战共鸣: 激活包含该随从的羁绊后解锁战斗连携。</div>`}
       <div class="comp-detail-bond-list">${companionDetailBondsHtml(tpl, entries)}</div>
     </div>
   </div>`;
