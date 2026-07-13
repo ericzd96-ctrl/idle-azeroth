@@ -3623,7 +3623,21 @@ function companionBondChipsHtml(tpl, entries) {
 function companionDetailSkillListHtml(tpl) {
   const skills = companionSkillPool(tpl);
   if (!skills.length) return '<div class="muted">暂无随从技能</div>';
-  return `<div class="comp-detail-skill-grid">${skills.map(sk => `<div class="comp-detail-skill${sk._signature ? ' sig' : ''}">${companionSkillTipHtml(sk)}${companionSkillEffectTagsHtml(sk)}</div>`).join('')}</div>`;
+  return `<div class="comp-detail-skill-grid">${skills.map(sk => `<div class="comp-detail-skill${sk._signature ? ' sig' : ''}${sk._legendSkill ? ' legend' : ''}${sk._extraSkill ? ' extra' : ''}">${companionSkillTipHtml(sk)}${companionSkillEffectTagsHtml(sk)}</div>`).join('')}</div>`;
+}
+function companionLegendSkill(tpl) {
+  return (tpl?.skills || []).find(sk => sk && sk._legendSkill) || null;
+}
+function companionLegendSkillHtml(tpl, compact) {
+  const sk = companionLegendSkill(tpl);
+  if (!sk) return '';
+  const tip = companionSkillTipHtml(sk).replace(/"/g, '&quot;');
+  const icon = (typeof skillIcon === 'function') ? skillIcon(sk.name, compact ? 15 : 17, sk.icon || '🌟') : (sk.icon || '🌟');
+  if (compact) return `<div class="comp-legend-skill-line" data-tip="${tip}">橙色传说技能: ${icon} <b>${tipAttrText(sk.name)}</b></div>`;
+  return `<div class="comp-legend-skill-note" data-tip="${tip}">
+    <b>橙色传说技能</b><span>${icon} ${tipAttrText(sk.name)}</span>
+    <div>${tipAttrText(sk.desc || '')}</div>
+  </div>`;
 }
 function companionDetailBondsHtml(tpl, entries) {
   if (!tpl || typeof COMPANION_BONDS === 'undefined') return '';
@@ -3705,6 +3719,7 @@ function companionDetailPanelHtml(entries) {
       <div class="comp-detail-block">
         <div class="comp-detail-block-title">技能说明</div>
         ${uniqueTrait ? `<div class="comp-unique-note">${uniqueTrait.icon || '✦'} 独有性质: ${tipAttrText(uniqueTrait.name)} · ${tipAttrText(uniqueTrait.desc || '')}${uniqueSummary ? `<br><span>${tipAttrText(uniqueSummary)}</span>` : ''}</div>` : ''}
+        ${companionLegendSkillHtml(tpl, false)}
         ${combatSpecialDesc ? `<div class="comp-combat-special-note">${combatSpecial?.icon || '🌟'} 专属战斗: ${tipAttrText(combatSpecialDesc)}${combatSpecial?.tags?.length ? `<br><span>定位标签: ${combatSpecial.tags.map(companionDungeonTagLabel).join(' / ')}</span>` : ''}</div>` : ''}
         ${veteran ? `<div class="comp-veteran-note">${veteran.icon} ${veteran.name}: ${tipAttrText(veteran.desc)}</div>` : ''}
         ${companionDetailSkillListHtml(tpl)}
@@ -4161,10 +4176,13 @@ function companionPanelRenderSig(){
   const filters = `${Object.values(companionFilters).join('|')}#${companionDetailKey || ''}`;
   const wishlist = companionWishlistKeys().join('|');
   const tactic = typeof companionTacticKey === 'function' ? companionTacticKey() : (state.companionTactic || 'balanced');
+  const skillSig = (typeof COMPANIONS !== 'undefined' ? COMPANIONS : [])
+    .map(c => `${c.key}:${(c.skills || []).length}:${(c.skills || []).filter(s => s._legendSkill).map(s => s.name).join(',')}:${(c.skills || []).filter(s => s._extraSkill).length}:${c.signature?.name || ''}`)
+    .join('|');
   const missions = state.companionMissions?.active
     ? state.companionMissions.active.map(m => `${m.id}:${m.endAt}:${m.compKey}`).join('|') + `#${state.companionMissions.totalCompleted || 0}#${Math.floor(Date.now()/30000)}`
     : '';
-  return [state.cls||'', state.hero?.lvl||0, state.compTickets||0, active, support, compList, shards, bonds, filters, wishlist, tactic, missions, companionSheetTab].join('||');
+  return [state.cls||'', state.hero?.lvl||0, state.compTickets||0, active, support, compList, shards, bonds, filters, wishlist, tactic, skillSig, missions, companionSheetTab].join('||');
 }
 function renderCompanion() {
   $('gem-cost').textContent = '(消耗1🐾随从券 · 技能含定位招牌技+专属技，品质/星级决定强度)';
@@ -4253,6 +4271,7 @@ function renderCompanion() {
       <div class="muted" style="font-size:10px;color:#93c5fd">定位加成: ${roleTxt||'无'}</div>
       ${unique ? `<div class="muted" style="font-size:10px;color:#bae6fd">独有性质: ${unique.icon || '✦'} ${unique.name}${uniqueSummary ? ` · ${uniqueSummary}` : ''}</div>` : ''}
       ${tpl?.signature?`<div class="muted" style="font-size:10px;color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')} ${tpl.signature.name}${tpl.signature.mode==='passive'?' [被动]':''}</div>`:''}
+      ${companionLegendSkillHtml(tpl, true)}
       ${spec ? `<div class="muted" style="font-size:10px;color:#fde68a">专属战斗: ${spec.icon || '🌟'} ${spec.name}${fit?.score ? ` · 当前副本匹配 ${fit.label}` : ''}</div>` : ''}
       ${companionUpgradePreviewHtml(tpl, act, { compact:true })}
       <div class="comp-skills">${compSkillChips(tpl)}</div>
@@ -4289,6 +4308,7 @@ function renderCompanion() {
       ${companionBondChipsHtml(tpl, entries)}
       ${unique ? `<div class="muted" style="font-size:10px;color:#bae6fd">独有性质: ${unique.icon || '✦'} ${unique.name}${uniqueSummary ? ` · ${uniqueSummary}` : ''}</div>` : ''}
       ${tpl.signature?`<div class="muted" style="font-size:10px;color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')} ${tpl.signature.name}${tpl.signature.mode==='passive'?' [被动]':''}</div>`:''}
+      ${companionLegendSkillHtml(tpl, true)}
       ${spec ? `<div class="muted" style="font-size:10px;color:#fde68a">专属战斗: ${spec.icon || '🌟'} ${spec.name}${veteran ? ` · ${veteran.icon}${veteran.name}` : ''}</div>` : ''}
       ${companionUpgradePreviewHtml(tpl, c)}
       <div class="comp-skills">${compSkillChips(tpl)}</div>
@@ -4318,6 +4338,7 @@ function renderCompanion() {
         <div><b>${compIconHtml} <span class="${q.cls}">${t.name}</span></b></div>
         ${companionMetaBadges(t)}
         ${companionBondChipsHtml(t, entries)}
+        ${companionLegendSkillHtml(t, true)}
         <div class="muted" style="font-size:10px">${t.desc}</div>
         <button class="comp-missing-detail" data-action="compdetail" data-key="${t.key}">详情</button>
         <button class="comp-missing-detail" data-action="compwish" data-key="${t.key}">${companionIsWishlisted(t.key) ? '取消目标' : '加入目标'}</button>
