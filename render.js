@@ -3584,6 +3584,88 @@ function dungeonAtlasHtml(dg, compact) {
     <div class="dungeon-atlas-strip">${eraTip}${modeTip}${locationTip}${routeTip}${themeTip}${finalTip}</div>
   </div>`;
 }
+function dungeonRouteBriefHtml(dg, selectedContract) {
+  if (!dg) return '';
+  const contractLevel = Math.max(0, Math.floor(selectedContract?.level || 0));
+  const atlas = dungeonAtlasInfo(dg);
+  const tags = (typeof dungeonTraitTagsForDungeon === 'function') ? dungeonTraitTagsForDungeon(dg.key) : [];
+  const themeAffixes = (typeof getDungeonThemeAffixes === 'function') ? getDungeonThemeAffixes(dg) : [];
+  const rooms = (typeof getDungeonCombatRooms === 'function') ? getDungeonCombatRooms(dg, contractLevel) : [];
+  const edicts = contractLevel > 0 && typeof getDungeonTacticalEdicts === 'function' ? getDungeonTacticalEdicts(dg, contractLevel) : [];
+  const environments = contractLevel > 0 && typeof getDungeonEnvironments === 'function' ? getDungeonEnvironments(dg, contractLevel) : [];
+  const trials = contractLevel > 0 && typeof getDungeonContractTrials === 'function' ? getDungeonContractTrials(dg, contractLevel) : [];
+  const timer = contractLevel > 0 && typeof createDungeonTimer === 'function' ? createDungeonTimer(dg, contractLevel) : null;
+  const traitPreview = (typeof dungeonTraitPreviewForDungeon === 'function') ? dungeonTraitPreviewForDungeon(dg.key, 3) : null;
+  const lastBoss = (dg.bosses || [])[(dg.bosses || []).length - 1];
+  const challengePreview = lastBoss && typeof getDungeonBossChallengeSeals === 'function' ? getDungeonBossChallengeSeals(lastBoss).slice(0, 3) : [];
+  const tagChips = tags.slice(0, 7).map(tag => `<span class="dungeon-trait-tag">${dungeonTraitTagLabel(tag)}</span>`).join('');
+  const routeTip = inlineTipSpanHtml({
+    name:'路线定位',
+    icon:'🚩',
+    desc:'根据副本地图、首领主题和掉落标签汇总出的今日处理重点。它不会改变数值,只把分散在手册、词缀和契约里的信息聚合到入口处。',
+    meta:atlas?.route || '副本路线',
+  }, { fallbackIcon:'achievement_bg_returnxflags_def_wsg', color:'#f6c453', metaVisible:true });
+  const pressureItems = []
+    .concat(themeAffixes.slice(0, 1).map(a => ({ item:a, fallback:'spell_arcane_starfire', color:'#67e8f9', meta:(typeof dungeonAffixMeta === 'function') ? dungeonAffixMeta(a) : '主题压力' })))
+    .concat(rooms.slice(0, 2).map(r => ({ item:r, fallback:'inv_misc_dice_02', color:'#f9a8d4', meta:r.routeMatched ? '路线匹配' : '房间' })))
+    .concat(environments.slice(0, 1).map(e => ({ item:e, fallback:'spell_frost_arcticwinds', color:'#67e8f9', meta:'环境' })))
+    .concat(edicts.slice(0, 2).map(e => ({ item:e, fallback:'inv_scroll_03', color:'#fde68a', meta:'禁令' })))
+    .concat(trials.slice(0, 1).map(t => ({ item:t, fallback:'ability_warrior_battleshout', color:'#fb7185', meta:'试炼' })));
+  if (timer) pressureItems.push({ item:{ name:'限时挑战', icon:'⏳', desc:'在限定时间内通关可获得额外奖励;超时后进入时序脉冲。' }, fallback:'inv_misc_pocketwatch_01', color:'#fde68a', meta:timer.label });
+  const pressureHtml = pressureItems.length ? pressureItems.slice(0, 7).map(x => inlineTipSpanHtml(x.item, {
+    fallbackIcon:x.fallback,
+    color:x.color,
+    meta:x.meta,
+    metaVisible:true,
+  })).join('') : '<span class="muted">标准路线,无额外契约压力</span>';
+  const challengeHtml = challengePreview.length ? challengePreview.map(ch => inlineTipSpanHtml({
+    ...ch,
+    meta:bossChallengeMetaText(ch),
+  }, {
+    fallbackIcon:'achievement_bg_killxenemies_generalsroom',
+    color:'#fde68a',
+    metaVisible:true,
+  })).join('') : inlineTipSpanHtml({
+    name:lastBoss?.name || '最终首领',
+    icon:lastBoss?.emoji || '👑',
+    desc:'关底首领决定通关与高价值掉落。打开首领条目可查看完整技能、挑战、弱点和扩展机制。',
+    meta:'关底',
+  }, { fallbackIcon:'achievement_boss_lichking', color:'#fbbf24', metaVisible:true });
+  const traitHtml = traitPreview?.traits?.length ? traitPreview.traits.slice(0, 3).map(t => inlineTipSpanHtml({
+    name:t.name,
+    icon:t.icon || '✦',
+    desc:t.desc || '该副本更容易掉落的装备印记。',
+    meta:traitPreview.tierName || '掉落倾向',
+  }, { fallbackIcon:'inv_misc_gem_diamond_02', color:'#fde68a', metaVisible:true })).join('') : '<span class="muted">常规副本掉落</span>';
+  const contractText = selectedContract?.level ? `${selectedContract.icon || '📜'} ${selectedContract.name}` : '📘 标准路线';
+  const rewardMeta = [dungeonLootIlvlText(dg), traitPreview ? dungeonTraitChanceText(traitPreview) : ''].filter(Boolean).join(' · ');
+  return `<div class="dungeon-route-brief">
+    <div class="dungeon-route-brief-head">
+      <b>🧭 今日路线</b>
+      <span>${tipAttrText(contractText)}</span>
+    </div>
+    <div class="dungeon-route-brief-grid">
+      <div class="dungeon-route-brief-cell">
+        <span>定位</span>
+        <div>${routeTip}</div>
+        ${tagChips ? `<div class="dungeon-route-tags">${tagChips}</div>` : ''}
+      </div>
+      <div class="dungeon-route-brief-cell">
+        <span>压力</span>
+        <div class="dungeon-route-token-row">${pressureHtml}</div>
+      </div>
+      <div class="dungeon-route-brief-cell">
+        <span>首领处理</span>
+        <div class="dungeon-route-token-row">${challengeHtml}</div>
+      </div>
+      <div class="dungeon-route-brief-cell">
+        <span>战利品重点</span>
+        <div class="dungeon-route-token-row">${traitHtml}</div>
+        ${rewardMeta ? `<small>${tipAttrText(rewardMeta)}</small>` : ''}
+      </div>
+    </div>
+  </div>`;
+}
 function renderDungeonBountyPanel() {
   const el = $('dungeon-bounty-panel');
   if (!el) return;
@@ -3654,6 +3736,7 @@ function buildDungeonInfoHtml(dg) {
   const recIlvl = (typeof dungeonRecommendedItemLevel === 'function') ? dungeonRecommendedItemLevel(dg) : 0;
   const reqIlvl = (typeof dungeonRequiredItemLevel === 'function') ? dungeonRequiredItemLevel(dg) : 0;
   const avgIlvl = (typeof averageEquippedItemLevel === 'function') ? Math.floor(averageEquippedItemLevel()) : 0;
+  const selectedContract = (typeof dungeonContractLevel === 'function' && typeof dungeonContractInfo === 'function') ? dungeonContractInfo(dungeonContractLevel()) : null;
   const ilvlGateTip = recIlvl > 0 ? inlineTipSpanHtml({
     name:reqIlvl > 0 ? '史诗团本准入装等' : '推荐平均装等',
     icon:'🎚️',
@@ -3694,6 +3777,7 @@ function buildDungeonInfoHtml(dg) {
       ${ilvlGateTip ? `<br>${ilvlGateTip}` : ''}
       ${dg.type==='raid'?(isEpicRaid?' · 掉落: 史诗级紫装 / 全部首领超低概率橙装':' · 掉落: 常规团本装备 / 关底低概率橙武'):''}
     </div>`;
+  html += dungeonRouteBriefHtml(dg, selectedContract);
   html += dungeonThemeAffixHtml(dg, false);
   html += dungeonTraitPreviewHtml(dg);
   html += dungeonFirstClearPreviewHtml(dg);
@@ -3712,7 +3796,6 @@ function buildDungeonInfoHtml(dg) {
   if (setTierInfo) {
     html += `<div class="dungeon-set-track"><b>当前职业套装目标:</b> ${setTierInfo.setName} · ${setTierInfo.bandName}阶段（2件/4件激活特效）</div>`;
   }
-  const selectedContract = (typeof dungeonContractLevel === 'function' && typeof dungeonContractInfo === 'function') ? dungeonContractInfo(dungeonContractLevel()) : null;
   const roomPreview = (typeof getDungeonCombatRooms === 'function') ? getDungeonCombatRooms(dg, selectedContract?.level || 0) : [];
   const mechanicCodex = (typeof dungeonMechanicCodex === 'function') ? dungeonMechanicCodex() : [];
   if (mechanicCodex.length) {
