@@ -6736,6 +6736,54 @@ const COMPANION_COMBAT_SPECIALS = {
   voljin:{ name:'洛阿咒钉', icon:'🧿', type:'dot', cd:24000, tags:['dot','mark','sustain'], desc:'洛阿咒钉侵蚀目标,并把部分伤害转为续航。' },
   akama:{ name:'灰舌伏击', icon:'🌫️', type:'mark', cd:21000, tags:['mark','execute','control'], desc:'从阴影伏击目标,施加灰舌标记并短暂减速。' },
 };
+const COMPANION_UNIQUE_TRAITS = {
+  fordring:{ name:'灰烬守誓', icon:'⚖️', tags:['shield','cleanse','boss'], def:1.04, hp:1.03, shieldPower:1.12, cdr:0.96, desc:'首领战和高压战线更稳,护盾类专属更厚。' },
+  varian:{ name:'双持国王', icon:'🦁', tags:['tank','sunder','boss'], atk:1.03, def:1.04, specialPower:1.08, cdr:0.94, desc:'兼具护卫与压迫,首领战护卫节奏更快。' },
+  thrall:{ name:'大地回声', icon:'⛈️', tags:['control','sustain','aoe'], hp:1.03, reg:1.12, cdr:0.95, desc:'控制和治疗波更可靠,适合长线战斗。' },
+  illidan:{ name:'怒火节拍', icon:'🪽', tags:['execute','boss','tempo'], atk:1.05, spd:1.04, critd:10, specialPower:1.10, desc:'残血和首领前爆发更狠,攻速略高。' },
+  arthas:{ name:'霜之饥渴', icon:'❄️', tags:['dot','control','sustain'], atk:1.03, hp:1.02, specialPower:1.08, desc:'持续伤害和吸血节奏更强,适合磨首领。' },
+  jaina:{ name:'寒冰连锁', icon:'🧊', tags:['control','aoe','caster'], crit:4, cdr:0.93, specialPower:1.06, desc:'控场专属冷却更短,冰冻与减速窗口更密。' },
+  sylvanas:{ name:'黑暗游侠', icon:'🏹', tags:['execute','dot','mark'], atk:1.04, crit:3, specialPower:1.08, desc:'标记和斩杀型战斗更强,适合收割。' },
+  anduin:{ name:'王储慈悲', icon:'✨', tags:['heal','shield','cleanse'], hp:1.03, healPower:1.15, cdr:0.97, desc:'治疗专属更强,支援位也能稳定救场。' },
+  tyrande:{ name:'月夜指引', icon:'🌙', tags:['mark','heal','boss'], crit:5, healPower:1.06, dungeon:1.04, desc:'标记首领并提供小治疗,副本适配收益更高。' },
+  malfurion:{ name:'梦境根须', icon:'🌱', tags:['heal','cleanse','sustain'], hp:1.04, healPower:1.10, supportPower:1.08, desc:'持续治疗和净化支援更强。' },
+  sw_guard:{ name:'城墙纪律', icon:'🧱', tags:['tank','shield','veteran'], def:1.07, hp:1.04, supportPower:1.12, desc:'低级护卫的支援价值更高,满星后很适合当挡刀位。' },
+  horde_grunt:{ name:'步兵冲锋', icon:'🪓', tags:['execute','control','veteran'], atk:1.06, specialPower:1.06, desc:'低级斩杀支援,残血补刀更有存在感。' },
+  apprentice:{ name:'学徒专注', icon:'✨', tags:['mark','caster','veteran'], crit:4, cdr:0.94, supportPower:1.08, desc:'廉价施法标记位,支援触发更频繁。' },
+  acolyte:{ name:'烛火祷文', icon:'🙏', tags:['heal','cleanse','veteran'], healPower:1.12, supportPower:1.12, cdr:0.96, desc:'低级净化支援,专门克制毒和诅咒。' },
+  scout:{ name:'先手侦察', icon:'👁️', tags:['mark','execute','veteran'], crit:5, cdr:0.92, dungeon:1.05, desc:'标记弱点更勤,副本推荐权重更高。' },
+  guard_cap:{ name:'换防口令', icon:'🪖', tags:['tank','shield','summon'], def:1.06, shieldPower:1.10, supportPower:1.08, desc:'护卫和召唤列阵更稳,支援位也能补防线。' },
+  al_ranger:{ name:'鹰眼哨戒', icon:'🍃', tags:['mark','summon','aoe'], spd:1.04, crit:3, dungeon:1.05, desc:'多目标侦察和标记更强。' },
+  field_medic:{ name:'绷带条例', icon:'🩹', tags:['heal','cleanse','shield'], healPower:1.14, supportPower:1.10, desc:'急救和护盾支援更强,适合高压地图。' },
+  shaman_app:{ name:'图腾余响', icon:'⚡', tags:['summon','control','aoe'], spd:1.03, cdr:0.95, specialPower:1.06, desc:'图腾牵制更频繁,多目标更有用。' },
+  berserker:{ name:'濒血狂热', icon:'🩸', tags:['execute','sustain','veteran'], atk:1.07, critd:8, specialPower:1.08, desc:'越到残血越有威胁,低品质输出位更容易出场。' },
+  saurfang:{ name:'老兵裂口', icon:'🩸', tags:['dot','sunder','execute'], atk:1.05, hp:1.02, specialPower:1.08, desc:'流血和破甲兼具,适合打硬目标。' },
+  muradin:{ name:'铜须硬骨', icon:'⛰️', tags:['tank','control','sunder'], def:1.08, hp:1.03, cdr:0.96, desc:'控制坦更硬,震地节奏略快。' },
+  maraad:{ name:'纳鲁余辉', icon:'🌟', tags:['heal','shield','cleanse'], healPower:1.08, shieldPower:1.10, supportPower:1.06, desc:'治疗和护盾同时强化。' },
+  rexxar:{ name:'兽群默契', icon:'🐻', tags:['summon','boss','sustain'], atk:1.04, hp:1.03, specialPower:1.09, desc:'召唤和首领牵制更强。' },
+  valeera:{ name:'无声起手', icon:'☠️', tags:['dot','execute','mark'], crit:6, spd:1.03, cdr:0.95, desc:'开场标记和毒刃频率更高。' },
+  kael:{ name:'凤凰余烬', icon:'🦜', tags:['aoe','dot','caster'], atk:1.05, critd:8, specialPower:1.10, desc:'火焰溅射和灼烧更有威力。' },
+  medivh:{ name:'守护者预案', icon:'📜', tags:['boss','tempo','shield'], cdr:0.92, shieldPower:1.08, dungeon:1.05, desc:'首领战节奏支援更快,副本适配更高。' },
+  azshara:{ name:'女王仪态', icon:'👑', tags:['mark','caster','control'], atk:1.04, crit:4, specialPower:1.07, desc:'标记和控制兼具,施法目标处理更稳。' },
+  ragnaros:{ name:'熔核威压', icon:'🔨', tags:['aoe','dot','stun'], atk:1.07, specialPower:1.12, desc:'清场和灼烧爆发更强。' },
+  kelthuzad:{ name:'霜墓学识', icon:'⚰️', tags:['control','dot','shield'], cdr:0.95, shieldPower:1.10, specialPower:1.07, desc:'冰甲和寒霜控制更稳定。' },
+  lichking:{ name:'王座统御', icon:'👑', tags:['dot','control','boss'], hp:1.06, def:1.05, specialPower:1.09, desc:'首领压迫和生存能力更强。' },
+  kiljaeden:{ name:'欺诈预谋', icon:'🔥', tags:['mark','dot','boss'], atk:1.05, crit:4, dungeon:1.05, desc:'高威胁目标标记更准,副本适配更好。' },
+  garrosh:{ name:'战帅铁令', icon:'🛡️', tags:['tank','shield','sunder'], atk:1.03, def:1.07, specialPower:1.08, desc:'护卫时仍能制造进攻压力。' },
+  cairne:{ name:'血蹄沉稳', icon:'🐂', tags:['tank','sustain','shield'], hp:1.08, reg:1.15, shieldPower:1.08, desc:'持续承压能力更强。' },
+  bolvar:{ name:'灰烬不灭', icon:'🔥', tags:['tank','shield','cleanse'], def:1.08, hp:1.04, cdr:0.96, desc:'护卫净化更可靠,适合危险副本。' },
+  chen:{ name:'酒仙步法', icon:'🍺', tags:['tank','sustain','control'], spd:1.04, def:1.05, cdr:0.95, desc:'化解伤害的频率更高。' },
+  rehgar:{ name:'幽魂链路', icon:'🐺', tags:['heal','summon','cleanse'], healPower:1.12, supportPower:1.08, desc:'链疗和狼群支援更强。' },
+  velen:{ name:'先知预见', icon:'🔮', tags:['heal','shield','boss'], healPower:1.15, shieldPower:1.10, cdr:0.97, desc:'大额救场更强,尤其适合首领战。' },
+  liadrin:{ name:'血骑士誓约', icon:'🌞', tags:['heal','shield','sunder'], atk:1.02, shieldPower:1.12, healPower:1.08, desc:'圣光护盾和反击破甲兼具。' },
+  alexstrasza:{ name:'生命女王', icon:'🐉', tags:['heal','sustain','aoe'], hp:1.05, healPower:1.18, specialPower:1.06, desc:'大治疗最强,还能提供灼烧压制。' },
+  cenarius:{ name:'林地脉动', icon:'🌳', tags:['heal','summon','cleanse'], healPower:1.10, supportPower:1.10, cdr:0.96, desc:'净化和召唤牵制更常见。' },
+  khadgar:{ name:'时序校准', icon:'⏱️', tags:['tempo','caster','control'], cdr:0.90, spd:1.03, dungeon:1.06, desc:'节奏型随从,协同和专属战斗更频繁。' },
+  maiev:{ name:'守望者耐心', icon:'🗡️', tags:['execute','control','mark'], crit:5, specialPower:1.08, cdr:0.95, desc:'等待控制或标记窗口后爆发更高。' },
+  grommash:{ name:'战歌血性', icon:'🪓', tags:['execute','boss','tempo'], atk:1.08, critd:10, specialPower:1.10, desc:'高风险高爆发,首领残血阶段压制力强。' },
+  voljin:{ name:'洛阿低语', icon:'🧿', tags:['dot','mark','sustain'], crit:4, healPower:1.06, specialPower:1.07, desc:'诅咒和续航兼具,适合持续战。' },
+  akama:{ name:'灰舌暗路', icon:'🌫️', tags:['mark','execute','control'], spd:1.05, crit:4, supportPower:1.07, desc:'伏击和支援标记更灵活。' },
+};
 function companionTacticKey(){
   const key = state?.companionTactic || 'balanced';
   return COMPANION_TACTICS[key] ? key : 'balanced';
@@ -6848,10 +6896,51 @@ function companionVeteranInfo(tpl, comp){
   if(q === 'blue' && stars >= 5) return { key:'blue', name:'战场专精', icon:'🔷', desc:'蓝色随从满星后解锁:专属战斗强度提高8%,更适合作为机制位。', cdMult:0.94, supportMult:1.08, power:1 };
   return null;
 }
+function companionUniqueTrait(keyOrTpl){
+  const key = typeof keyOrTpl === 'string' ? keyOrTpl : keyOrTpl?.key;
+  return key ? (COMPANION_UNIQUE_TRAITS[key] || null) : null;
+}
+function companionUniqueTraitDesc(keyOrTpl){
+  const trait = companionUniqueTrait(keyOrTpl);
+  return trait ? `${trait.name}:${trait.desc}` : '';
+}
+function companionUniqueTraitTags(tpl){
+  const trait = companionUniqueTrait(tpl);
+  return trait?.tags || [];
+}
+function companionUniqueTraitSummary(tpl){
+  const trait = companionUniqueTrait(tpl);
+  if(!trait) return '';
+  const bits = [];
+  if(trait.atk) bits.push(`攻击×${trait.atk}`);
+  if(trait.def) bits.push(`防御×${trait.def}`);
+  if(trait.hp) bits.push(`生命×${trait.hp}`);
+  if(trait.spd) bits.push(`攻速×${trait.spd}`);
+  if(trait.crit) bits.push(`暴击+${trait.crit}`);
+  if(trait.critd) bits.push(`爆伤+${trait.critd}`);
+  if(trait.healPower) bits.push(`治疗×${trait.healPower}`);
+  if(trait.shieldPower) bits.push(`护盾×${trait.shieldPower}`);
+  if(trait.specialPower) bits.push(`专属×${trait.specialPower}`);
+  if(trait.supportPower) bits.push(`支援×${trait.supportPower}`);
+  if(trait.cdr) bits.push(`冷却×${trait.cdr}`);
+  return bits.join(' · ');
+}
+function companionUniqueHealMult(tpl){ return companionUniqueTrait(tpl)?.healPower || 1; }
+function companionUniqueShieldMult(tpl){ return companionUniqueTrait(tpl)?.shieldPower || 1; }
+function companionUniqueSpecialPower(tpl, support){
+  const trait = companionUniqueTrait(tpl);
+  if(!trait) return 1;
+  return (trait.specialPower || 1) * (support ? (trait.supportPower || 1) : 1);
+}
+function companionUniqueCooldownMult(tpl, support){
+  const trait = companionUniqueTrait(tpl);
+  if(!trait) return 1;
+  return (trait.cdr || 1) * (support && trait.supportCdr ? trait.supportCdr : 1);
+}
 function companionCombatSpecial(key){ return COMPANION_COMBAT_SPECIALS[key] || null; }
 function companionCombatSpecialTags(tpl){
   const spec = companionCombatSpecial(tpl?.key);
-  return spec?.tags || [];
+  return Array.from(new Set([...(spec?.tags || []), ...companionUniqueTraitTags(tpl)]));
 }
 function companionCurrentDungeon(){
   const key = state.dungeonState?.key || state.mythicState?.key || '';
@@ -6897,10 +6986,11 @@ function companionDungeonTagLabel(tag){
 function companionDungeonFitMult(tpl){
   const dg = companionCurrentDungeon();
   const fit = companionDungeonFitInfo(tpl, dg);
-  if(!fit.score) return 1;
+  const unique = companionUniqueTrait(tpl);
+  if(!fit.score) return unique?.dungeon || 1;
   const q = (typeof compQuality === 'function' && tpl) ? compQuality(tpl).key : 'white';
   const lowBonus = (q === 'white' || q === 'green') ? 0.012 : 0;
-  return 1 + Math.min(0.075, fit.score * (0.018 + lowBonus));
+  return (unique?.dungeon || 1) * (1 + Math.min(0.075, fit.score * (0.018 + lowBonus)));
 }
 function companionSignature(tpl){ return tpl?.signature || null; }
 function notifyCompanionSignature(sig, tpl, text, now){
@@ -6981,7 +7071,8 @@ function computeCompanionTemplateStats(comp, tpl, opts){
   const supportScale = opts?.support ? (opts.supportScale || 1) : 1;
   const veteran = companionVeteranInfo(tpl, comp);
   const veteranPower = veteran ? (opts?.support ? veteran.supportMult : 1.04) : 1;
-  const stats={name:tpl.name,emoji:tpl.emoji,role:tpl.role,skills,signature:companionSignature(tpl),veteran,atk:Math.floor(state.hero.atk*qm*sm*role.atk*(tpl.atkMul||1)*(tactic.atk||1)*supportScale*dungeonMult*veteranPower),def:Math.floor(state.hero.def*qm*sm*0.72*role.def*(tpl.defMul||1)*(tactic.def||1)*supportScale),hpMax:Math.floor(state.hero.hpMax*qm*sm*role.hp*(tpl.hpMul||1)*(tactic.hp||1)*supportScale),crit:Math.floor(state.hero.crit*qm*0.40*(tpl.critMul||1)),critd:Math.floor(state.hero.critd*role.critd*(tpl.critdMul||1)),spd:state.hero.spd*role.spd*(tpl.spdMul||1)*(tactic.spd||1),reg:Math.max(1, Math.floor((state.hero.reg||0)*role.reg*(tpl.regMul||1)*(tactic.heal||1)*supportScale))};
+  const unique = companionUniqueTrait(tpl);
+  const stats={name:tpl.name,emoji:tpl.emoji,role:tpl.role,skills,signature:companionSignature(tpl),veteran,unique,atk:Math.floor(state.hero.atk*qm*sm*role.atk*(tpl.atkMul||1)*(tactic.atk||1)*supportScale*dungeonMult*veteranPower*(unique?.atk||1)),def:Math.floor(state.hero.def*qm*sm*0.72*role.def*(tpl.defMul||1)*(tactic.def||1)*supportScale*(unique?.def||1)),hpMax:Math.floor(state.hero.hpMax*qm*sm*role.hp*(tpl.hpMul||1)*(tactic.hp||1)*supportScale*(unique?.hp||1)),crit:Math.floor(state.hero.crit*qm*0.40*(tpl.critMul||1))+(unique?.crit||0),critd:Math.floor(state.hero.critd*role.critd*(tpl.critdMul||1))+(unique?.critd||0),spd:state.hero.spd*role.spd*(tpl.spdMul||1)*(tactic.spd||1)*(unique?.spd||1),reg:Math.max(1, Math.floor((state.hero.reg||0)*role.reg*(tpl.regMul||1)*(tactic.heal||1)*supportScale*(unique?.reg||1)))};
   applyCompanionSignatureStats(stats, tpl);
   if(!opts?.support){
     applyCompanionBuffEffects(stats);
@@ -7042,11 +7133,12 @@ function companionCombatPressureMult(){
   if(!tpl && !supportCount) return { rank:0, hp:1, atk:1, name:'' };
   const rank = tpl ? (companionResonanceInfo(tpl).rank || 0) : 0;
   const special = tpl && companionCombatSpecialDesc(tpl.key) ? 1 : 0;
+  const unique = tpl && companionUniqueTrait(tpl) ? 1 : 0;
   const supportPressure = supportCount * 0.004;
   return {
     rank,
-    hp:1.012 + rank * 0.015 + special * 0.006 + supportPressure,
-    atk:1.010 + rank * 0.012 + special * 0.005 + supportPressure * 0.8,
+    hp:1.012 + rank * 0.015 + special * 0.006 + unique * 0.004 + supportPressure,
+    atk:1.010 + rank * 0.012 + special * 0.005 + unique * 0.003 + supportPressure * 0.8,
     name:rank > 0 ? '羁绊警觉' : (supportCount ? '战团压迫' : '战友压迫')
   };
 }
@@ -7505,7 +7597,7 @@ function companionSpecialCooldownMs(tpl, comp, support){
   const spec = companionCombatSpecial(tpl?.key);
   if(!spec) return 999999;
   const veteran = companionVeteranInfo(tpl, comp);
-  const mult = (veteran?.cdMult || 1) * (support ? 1.25 : 1);
+  const mult = (veteran?.cdMult || 1) * companionUniqueCooldownMult(tpl, support) * (support ? 1.25 : 1);
   return Math.max(10000, Math.floor((spec.cd || 30000) * mult));
 }
 function companionSpecialShouldTrigger(spec, tpl, mon, now, support){
@@ -7545,32 +7637,34 @@ function applyCompanionCombatSpecialEffect(now, st, tpl, comp, mon, ctx){
   const cdKey = ctx?.support ? `support:${ctx.slot}:${tpl.key}` : tpl.key;
   const cdMs = companionSpecialCooldownMs(tpl, comp, !!ctx?.support);
   if(!companionSpecialReady(cdKey, now, cdMs)) return false;
-  const power = (ctx?.power || 1) * (ctx?.support ? COMPANION_SUPPORT_POWER : 1) * (companionVeteranInfo(tpl, comp)?.supportMult && ctx?.support ? companionVeteranInfo(tpl, comp).supportMult : 1);
+  const power = (ctx?.power || 1) * companionUniqueSpecialPower(tpl, !!ctx?.support) * (ctx?.support ? COMPANION_SUPPORT_POWER : 1) * (companionVeteranInfo(tpl, comp)?.supportMult && ctx?.support ? companionVeteranInfo(tpl, comp).supportMult : 1);
+  const healPower = companionUniqueHealMult(tpl);
+  const shieldPower = companionUniqueShieldMult(tpl);
   const heroMax = Math.max(1, state.hero.hpMax || 1);
   const compMax = Math.max(1, st.hpMax || 1);
   const supportText = ctx?.support ? '支援' : '触发';
   let fired = false;
   if(spec.type === 'guard'){
     state._compGuardUntil = Math.max(state._compGuardUntil || 0, now + Math.floor(6000 * Math.max(0.65, power)));
-    addTalentShield(Math.floor(heroMax * 0.050 * companionTacticShieldMult() * power), false, 12000);
-    if(!ctx?.support) addCompanionBarrier(Math.floor(compMax * 0.080 * companionTacticShieldMult()), spec.icon, '#93c5fd');
+    addTalentShield(Math.floor(heroMax * 0.050 * companionTacticShieldMult() * power * shieldPower), false, 12000);
+    if(!ctx?.support) addCompanionBarrier(Math.floor(compMax * 0.080 * companionTacticShieldMult() * shieldPower), spec.icon, '#93c5fd');
     mon.sunderUntil = Math.max(mon.sunderUntil || 0, now + 9000);
     fired = true;
   }else if(spec.type === 'barrier'){
-    addTalentShield(Math.floor(heroMax * 0.070 * companionTacticShieldMult() * power), false, 12000);
-    if(!ctx?.support) addCompanionBarrier(Math.floor(compMax * 0.060 * companionTacticShieldMult()), spec.icon, '#93c5fd');
+    addTalentShield(Math.floor(heroMax * 0.070 * companionTacticShieldMult() * power * shieldPower), false, 12000);
+    if(!ctx?.support) addCompanionBarrier(Math.floor(compMax * 0.060 * companionTacticShieldMult() * shieldPower), spec.icon, '#93c5fd');
     if(clearDebuffGroup('hero')) showFloat($('hero-emoji'), spec.icon + '净化', '#93c5fd', { variant:'heal', scale:1.04 });
     if(spec.tags?.includes('sunder')) mon.sunderUntil = Math.max(mon.sunderUntil || 0, now + 9000);
     fired = true;
   }else if(spec.type === 'rescue'){
     const pct = tpl.key === 'anduin' ? 0.22 : tpl.key === 'velen' ? 0.18 : tpl.key === 'alexstrasza' ? 0.20 : 0.12;
-    const hr = healHeroAmount(Math.floor(heroMax * pct * companionTacticHealMult() * power), spec.icon, '#6ee7b7', 'comp', spec.name);
-    addTalentShield(Math.floor(heroMax * (pct * 0.55) * companionTacticShieldMult() * power), false, 14000);
+    const hr = healHeroAmount(Math.floor(heroMax * pct * companionTacticHealMult() * power * healPower), spec.icon, '#6ee7b7', 'comp', spec.name);
+    addTalentShield(Math.floor(heroMax * (pct * 0.55) * companionTacticShieldMult() * power * shieldPower), false, 14000);
     clearDebuffGroup('hero');
     if(tpl.key === 'alexstrasza') dealCompanionSpecialDamage(mon, st, tpl, spec, now, 1.10 * power, mon.isBoss ? 0.030 : 0.055, { color:'#fb923c' });
     fired = hr.applied > 0 || true;
   }else if(spec.type === 'cleanse'){
-    const hr = healHeroAmount(Math.floor(heroMax * 0.090 * companionTacticHealMult() * power), spec.icon, '#6ee7b7', 'comp', spec.name);
+    const hr = healHeroAmount(Math.floor(heroMax * 0.090 * companionTacticHealMult() * power * healPower), spec.icon, '#6ee7b7', 'comp', spec.name);
     const cleansed = clearDebuffGroup('hero');
     if(cleansed) showFloat($('hero-emoji'), spec.icon + '净化', '#93c5fd', { variant:'heal', scale:1.04 });
     if(spec.tags?.includes('summon') && typeof summonAlliedUnits === 'function'){
@@ -7607,7 +7701,7 @@ function applyCompanionCombatSpecialEffect(now, st, tpl, comp, mon, ctx){
     const dealt = dealCompanionSpecialDamage(mon, st, tpl, spec, now, 1.18 * power, mon.isBoss ? 0.040 : 0.065, { critAdd:4, color:'#c4b5fd' });
     applyMonsterDot(mon, `comp-special:${tpl.key}`, Math.max(1, Math.floor(st.atk * 0.22 * power)), 8000, { icon:spec.icon, name:spec.name, source:tpl.name });
     mon.slowUntil = Math.max(mon.slowUntil || 0, now + 4500);
-    if(!ctx?.support && spec.tags?.includes('shield')) addCompanionBarrier(Math.floor(compMax * 0.055), spec.icon, '#93c5fd');
+    if(!ctx?.support && spec.tags?.includes('shield')) addCompanionBarrier(Math.floor(compMax * 0.055 * shieldPower), spec.icon, '#93c5fd');
     fired = dealt > 0 || true;
   }else if(spec.type === 'summon'){
     let summoned = 0;
@@ -7620,7 +7714,7 @@ function applyCompanionCombatSpecialEffect(now, st, tpl, comp, mon, ctx){
   }else if(spec.type === 'tempo'){
     const reduce = ctx?.support ? 2500 : 6500;
     state._compCoordinateUntil = Math.max(0, (state._compCoordinateUntil || 0) - reduce);
-    addTalentShield(Math.floor(heroMax * 0.040 * companionTacticShieldMult() * power), true, 10000);
+    addTalentShield(Math.floor(heroMax * 0.040 * companionTacticShieldMult() * power * shieldPower), true, 10000);
     mon.slowUntil = Math.max(mon.slowUntil || 0, now + 3500);
     const dealt = dealCompanionSpecialDamage(mon, st, tpl, spec, now, 1.22 * power, mon.isBoss ? 0.035 : 0.055, { critAdd:8, color:'#67e8f9' });
     fired = dealt > 0 || true;

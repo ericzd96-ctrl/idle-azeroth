@@ -3095,10 +3095,12 @@ function companionMetaBadges(tpl){
   if (!tpl) return '';
   const q = compQuality(tpl);
   const traits = companionTraitFlags(tpl);
+  const unique = (typeof companionUniqueTrait === 'function') ? companionUniqueTrait(tpl) : null;
   const badges = [
     companionBadge(q.name, `quality-${q.key}`, companionQualityTipHtml(q)),
     companionBadge(companionRoleLabel(tpl.role), tpl.role || 'dps', companionRoleTipHtml(tpl.role)),
   ];
+  if (unique) badges.push(companionBadge(unique.name, 'unique', `<b>${tipAttrText(unique.icon || '✦')} ${tipAttrText(unique.name)}</b><br>${tipAttrText(unique.desc || '')}${typeof companionUniqueTraitSummary === 'function' ? `<br><span class="muted">${tipAttrText(companionUniqueTraitSummary(tpl) || '')}</span>` : ''}`));
   for (const [key, meta] of Object.entries(COMPANION_TRAIT_META)) {
     if (traits[key]) badges.push(companionBadge(meta.label, meta.tone, companionTraitTipHtml(key)));
   }
@@ -3656,6 +3658,8 @@ function companionDetailPanelHtml(entries) {
   const status = entry.isActive ? '出战中' : entry.isOwned ? '已拥有' : `${q.name}池未获得`;
   const combatSpecialDesc = (typeof companionCombatSpecialDesc === 'function') ? companionCombatSpecialDesc(tpl.key) : '';
   const combatSpecial = (typeof companionCombatSpecial === 'function') ? companionCombatSpecial(tpl.key) : null;
+  const uniqueTrait = (typeof companionUniqueTrait === 'function') ? companionUniqueTrait(tpl) : null;
+  const uniqueSummary = (typeof companionUniqueTraitSummary === 'function') ? companionUniqueTraitSummary(tpl) : '';
   const veteran = (typeof companionVeteranInfo === 'function' && owned) ? companionVeteranInfo(tpl, owned) : null;
   const supportActive = (typeof companionSupportIsSlotted === 'function') ? companionSupportIsSlotted(tpl.key) : false;
   const resonanceInfo = (typeof companionResonanceInfo === 'function') ? companionResonanceInfo(tpl) : null;
@@ -3692,6 +3696,7 @@ function companionDetailPanelHtml(entries) {
       </div>
       <div class="comp-detail-block">
         <div class="comp-detail-block-title">技能说明</div>
+        ${uniqueTrait ? `<div class="comp-unique-note">${uniqueTrait.icon || '✦'} 独有性质: ${tipAttrText(uniqueTrait.name)} · ${tipAttrText(uniqueTrait.desc || '')}${uniqueSummary ? `<br><span>${tipAttrText(uniqueSummary)}</span>` : ''}</div>` : ''}
         ${combatSpecialDesc ? `<div class="comp-combat-special-note">${combatSpecial?.icon || '🌟'} 专属战斗: ${tipAttrText(combatSpecialDesc)}${combatSpecial?.tags?.length ? `<br><span>定位标签: ${combatSpecial.tags.map(companionDungeonTagLabel).join(' / ')}</span>` : ''}</div>` : ''}
         ${veteran ? `<div class="comp-veteran-note">${veteran.icon} ${veteran.name}: ${tipAttrText(veteran.desc)}</div>` : ''}
         ${companionDetailSkillListHtml(tpl)}
@@ -3783,19 +3788,21 @@ function companionSupportPanelHtml(entries) {
     if (!entry) return `<div class="comp-support-slot empty"><b>支援位 ${i + 1}</b><span>空</span></div>`;
     const q = compQuality(entry.tpl);
     const spec = (typeof companionCombatSpecial === 'function') ? companionCombatSpecial(entry.tpl.key) : null;
+    const unique = (typeof companionUniqueTrait === 'function') ? companionUniqueTrait(entry.tpl) : null;
     const veteran = (typeof companionVeteranInfo === 'function') ? companionVeteranInfo(entry.tpl, entry.comp) : null;
     return `<div class="comp-support-slot filled">
       <div class="comp-support-head"><b>${companionIconHtml(entry.tpl, 18)} ${tipAttrText(entry.tpl.name)}</b><span class="${q.cls}">${q.name}</span></div>
-      <div class="muted">${spec?.icon || '🌟'} ${tipAttrText(spec?.name || '专属支援')} · ${(entry.comp.stars || 1)}星${veteran ? ` · ${veteran.icon}${veteran.name}` : ''}</div>
+      <div class="muted">${unique?.icon || spec?.icon || '🌟'} ${tipAttrText(unique?.name || spec?.name || '专属支援')} · ${(entry.comp.stars || 1)}星${veteran ? ` · ${veteran.icon}${veteran.name}` : ''}</div>
       <button data-action="compsupport" data-key="${entry.tpl.key}">移出支援</button>
     </div>`;
   }).join('');
   const candidateHtml = candidates.map(entry => {
     const q = compQuality(entry.tpl);
     const spec = (typeof companionCombatSpecial === 'function') ? companionCombatSpecial(entry.tpl.key) : null;
+    const unique = (typeof companionUniqueTrait === 'function') ? companionUniqueTrait(entry.tpl) : null;
     const veteran = (typeof companionVeteranInfo === 'function') ? companionVeteranInfo(entry.tpl, entry.owned) : null;
     return `<button class="comp-support-candidate" data-action="compsupport" data-key="${entry.tpl.key}">
-      ${companionIconHtml(entry.tpl, 16)}<span>${tipAttrText(entry.tpl.name)}</span><b class="${q.cls}">${q.name}</b><em>${spec?.icon || '🌟'}${tipAttrText(spec?.name || '专属')}</em>${veteran ? `<i>${veteran.icon}</i>` : ''}
+      ${companionIconHtml(entry.tpl, 16)}<span>${tipAttrText(entry.tpl.name)}</span><b class="${q.cls}">${q.name}</b><em>${unique?.icon || spec?.icon || '🌟'}${tipAttrText(unique?.name || spec?.name || '专属')}</em>${veteran ? `<i>${veteran.icon}</i>` : ''}
     </button>`;
   }).join('');
   return `<div class="comp-support-panel">
@@ -4177,6 +4184,8 @@ function renderCompanion() {
     const roleTxt = Object.entries(role).map(([k,v])=>(typeof fmtMod==='function')?fmtMod(k,v):k+'+'+v).join(' ');
     const compIconHtml = companionIconHtml(tpl, 18);
     const spec = (typeof companionCombatSpecial === 'function') ? companionCombatSpecial(tpl.key) : null;
+    const unique = (typeof companionUniqueTrait === 'function') ? companionUniqueTrait(tpl) : null;
+    const uniqueSummary = (typeof companionUniqueTraitSummary === 'function') ? companionUniqueTraitSummary(tpl) : '';
     const fit = (typeof companionDungeonFitInfo === 'function') ? companionDungeonFitInfo(tpl, (typeof companionCurrentDungeon === 'function' ? companionCurrentDungeon() : null)) : null;
     html += `<div class="shop-item${companionCardTrackClass(tpl)}" style="border-color:var(--${q.cls==='r-legend'?'legend':q.cls==='r-epic'?'epic':'border'})">
       <div class="row"><b>${compIconHtml} ${tpl?.name}</b><span class="pill" style="background:var(--accent);color:#000">出战中</span></div>
@@ -4186,6 +4195,7 @@ function renderCompanion() {
       <div class="muted" style="font-size:10px">参战属性: 攻${fmt(st?.atk||0)} 防${fmt(st?.def||0)} 血${fmt(st?.hpMax||0)}</div>
       <div class="muted" style="font-size:10px;color:#6ee7b7">专属加成: ${ownTxt||'无'}</div>
       <div class="muted" style="font-size:10px;color:#93c5fd">定位加成: ${roleTxt||'无'}</div>
+      ${unique ? `<div class="muted" style="font-size:10px;color:#bae6fd">独有性质: ${unique.icon || '✦'} ${unique.name}${uniqueSummary ? ` · ${uniqueSummary}` : ''}</div>` : ''}
       ${tpl?.signature?`<div class="muted" style="font-size:10px;color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')} ${tpl.signature.name}${tpl.signature.mode==='passive'?' [被动]':''}</div>`:''}
       ${spec ? `<div class="muted" style="font-size:10px;color:#fde68a">专属战斗: ${spec.icon || '🌟'} ${spec.name}${fit?.score ? ` · 当前副本匹配 ${fit.label}` : ''}</div>` : ''}
       ${companionUpgradePreviewHtml(tpl, act, { compact:true })}
@@ -4213,12 +4223,15 @@ function renderCompanion() {
     const compIconHtml = companionIconHtml(tpl, 18);
     const supportActive = (typeof companionSupportIsSlotted === 'function') ? companionSupportIsSlotted(tpl.key) : false;
     const spec = (typeof companionCombatSpecial === 'function') ? companionCombatSpecial(tpl.key) : null;
+    const unique = (typeof companionUniqueTrait === 'function') ? companionUniqueTrait(tpl) : null;
+    const uniqueSummary = (typeof companionUniqueTraitSummary === 'function') ? companionUniqueTraitSummary(tpl) : '';
     const veteran = (typeof companionVeteranInfo === 'function') ? companionVeteranInfo(tpl, c) : null;
     html += `<div class="shop-item${companionCardTrackClass(tpl)}">
       <div class="row"><b>${compIconHtml} ${tpl.name}</b><span class="${q.cls}">${q.name} · ${(tpl.skills?.length||0)}主动${tpl.signature?'+1专属':''}</span></div>
       <div class="muted" style="font-size:10px">${'⭐'.repeat(c.stars||1)} · ${roleTag(tpl.role)} · ${tpl.desc}</div>
       ${companionMetaBadges(tpl)}
       ${companionBondChipsHtml(tpl, entries)}
+      ${unique ? `<div class="muted" style="font-size:10px;color:#bae6fd">独有性质: ${unique.icon || '✦'} ${unique.name}${uniqueSummary ? ` · ${uniqueSummary}` : ''}</div>` : ''}
       ${tpl.signature?`<div class="muted" style="font-size:10px;color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')} ${tpl.signature.name}${tpl.signature.mode==='passive'?' [被动]':''}</div>`:''}
       ${spec ? `<div class="muted" style="font-size:10px;color:#fde68a">专属战斗: ${spec.icon || '🌟'} ${spec.name}${veteran ? ` · ${veteran.icon}${veteran.name}` : ''}</div>` : ''}
       ${companionUpgradePreviewHtml(tpl, c)}
@@ -4650,7 +4663,8 @@ function dungeonCompanionRecommendationHtml(dg, compact) {
   const needText = needs.map(tag => `<span>${companionDungeonTagLabel(tag)}</span>`).join('');
   const recText = ownedEntries.map(entry => {
     const spec = (typeof companionCombatSpecial === 'function') ? companionCombatSpecial(entry.tpl.key) : null;
-    const tip = `<b>${tipAttrText(entry.tpl.name)}</b><br>${entry.q.name} · ${entry.comp.stars || 1}星 · ${tipAttrText(spec?.name || '专属战斗')}<br>匹配: ${tipAttrText(entry.fit.matched.map(companionDungeonTagLabel).join(' / '))}${entry.veteran ? `<br>${tipAttrText(entry.veteran.desc)}` : ''}`.replace(/"/g, '&quot;');
+    const unique = (typeof companionUniqueTrait === 'function') ? companionUniqueTrait(entry.tpl) : null;
+    const tip = `<b>${tipAttrText(entry.tpl.name)}</b><br>${entry.q.name} · ${entry.comp.stars || 1}星 · ${tipAttrText(spec?.name || '专属战斗')}<br>${unique ? `${tipAttrText(unique.icon || '✦')} ${tipAttrText(unique.name)}: ${tipAttrText(unique.desc || '')}<br>` : ''}匹配: ${tipAttrText(entry.fit.matched.map(companionDungeonTagLabel).join(' / '))}${entry.veteran ? `<br>${tipAttrText(entry.veteran.desc)}` : ''}`.replace(/"/g, '&quot;');
     return `<span class="dungeon-comp-rec" data-tip="${tip}">${companionIconHtml(entry.tpl, compact ? 14 : 16)} ${tipAttrText(entry.tpl.name)}<b>${entry.fit.matched.map(companionDungeonTagLabel).join('/')}</b></span>`;
   }).join('');
   if (compact) {
