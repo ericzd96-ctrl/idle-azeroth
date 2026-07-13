@@ -3026,6 +3026,96 @@ function companionFilterPanelHtml(entries){
     ])}
   </div>`;
 }
+function companionAdvisorScore(entry, wantedRole) {
+  if (!entry?.isOwned || !entry.tpl || !entry.owned) return 0;
+  const q = compQuality(entry.tpl);
+  const qScore = ({ white:8, green:16, blue:28, purple:42, orange:58 })[q.key] || 8;
+  const stars = Math.max(1, entry.owned.stars || 1);
+  const traits = entry.traits || companionTraitFlags(entry.tpl);
+  let score = qScore + stars * 12 + Math.min(22, ((entry.tpl.skills || []).length + (entry.tpl.signature ? 1 : 0)) * 4);
+  if (entry.tpl.role === wantedRole) score += 26;
+  if (wantedRole === 'tank' && (traits.support || traits.control)) score += 8;
+  if (wantedRole === 'heal' && (traits.heal || traits.support)) score += 10;
+  if (wantedRole === 'dps' && (traits.control || traits.summon)) score += 8;
+  if (entry.isActive) score += 4;
+  return score;
+}
+function companionAdvisorReason(entry, wantedRole) {
+  const q = compQuality(entry.tpl);
+  const traits = entry.traits || companionTraitFlags(entry.tpl);
+  const bits = [`${q.name}${entry.owned?.stars || 1}星`];
+  if (entry.tpl.role === wantedRole) bits.push('定位匹配');
+  if (traits.summon) bits.push('召唤');
+  if (traits.heal) bits.push('治疗');
+  if (traits.support) bits.push('辅助');
+  if (traits.control) bits.push('控制');
+  return bits.slice(0, 4).join(' · ');
+}
+function companionAdvisorPanelHtml(entries) {
+  const owned = entries.filter(e => e.isOwned);
+  if (!owned.length) {
+    return `<div class="comp-advisor-panel">
+      <div class="comp-advisor-title"><b>🧭 随从作战顾问</b><span>先抽取随从解锁推荐</span></div>
+      <div class="muted" style="font-size:10px">获得随从后,这里会按出战定位、升星进度和羁绊缺口给出培养建议。</div>
+    </div>`;
+  }
+  const busy = typeof companionMissionBusyKeys === 'function' ? companionMissionBusyKeys() : new Set();
+  const roleCards = ['tank','dps','heal'].map(role => {
+    const best = owned.slice().sort((a,b) => companionAdvisorScore(b, role) - companionAdvisorScore(a, role))[0];
+    if (!best) return '';
+    const tpl = best.tpl;
+    const q = compQuality(tpl);
+    const score = companionAdvisorScore(best, role);
+    const compIconHtml = companionIconHtml(tpl, 18);
+    const busyText = busy.has(tpl.key) ? '<span class="comp-advisor-warn">派遣中</span>' : '';
+    const action = best.isActive
+      ? '<span class="comp-advisor-state">出战中</span>'
+      : `<button class="primary" data-action="usecomp" data-idx="${best.idx}" ${busy.has(tpl.key) ? 'disabled' : ''}>出战</button>`;
+    return `<div class="comp-advisor-card">
+      <div class="comp-advisor-card-head"><b>${roleTag(role)}</b><span>${Math.round(score)}分</span></div>
+      <div class="comp-advisor-main">${compIconHtml}<div><b>${tipAttrText(tpl.name)}</b><div class="muted">${companionAdvisorReason(best, role)} ${busyText}</div></div></div>
+      <div class="comp-advisor-actions">${action}</div>
+    </div>`;
+  }).join('');
+  const upgradeCards = owned.map(entry => {
+    const cost = getUpgradeCost(entry.owned);
+    const q = compQuality(entry.tpl);
+    const ratio = cost.maxed ? 0 : cost.have / Math.max(1, cost.need);
+    return { entry, cost, q, ratio, score:(ratio * 100) + ({orange:24,purple:18,blue:12,green:6,white:2}[q.key] || 0) };
+  }).filter(x => !x.cost.maxed).sort((a,b) => b.score - a.score).slice(0, 3).map(x => {
+    const compIconHtml = companionIconHtml(x.entry.tpl, 16);
+    const pct = Math.max(6, Math.min(100, Math.round(x.ratio * 100)));
+    return `<div class="comp-advisor-upgrade">
+      <div>${compIconHtml} <b>${tipAttrText(x.entry.tpl.name)}</b> <span class="${x.q.cls}">${x.q.name}</span></div>
+      <div class="comp-advisor-progress"><i style="width:${pct}%"></i></div>
+      <div class="muted">${x.cost.have}/${x.cost.need} 碎片 · ${x.entry.owned.stars || 1}→${(x.entry.owned.stars || 1) + 1}星</div>
+    </div>`;
+  }).join('');
+  const ownedMap = new Map(owned.map(e => [e.tpl.key, e]));
+  const bondCards = (typeof COMPANION_BONDS !== 'undefined' ? COMPANION_BONDS : []).map(bond => {
+    const missing = bond.keys.filter(k => !ownedMap.has(k));
+    const ownedCnt = bond.keys.length - missing.length;
+    return { bond, missing, ownedCnt };
+  }).filter(x => x.missing.length > 0 && x.ownedCnt > 0).sort((a,b) => a.missing.length - b.missing.length || b.ownedCnt - a.ownedCnt).slice(0, 4).map(x => {
+    const missingNames = x.missing.map(k => COMPANIONS.find(c => c.key === k)?.name || k).join('、');
+    const modTxt = Object.entries(x.bond.mod || {}).map(([k,v]) => (typeof fmtMod === 'function') ? fmtMod(k, v) : `${k}+${v}`).join(' ');
+    return `<div class="comp-advisor-bond">
+      <div><b>🔒 ${tipAttrText(x.bond.name)}</b> <span>${x.ownedCnt}/${x.bond.keys.length}</span></div>
+      <div class="muted">缺: ${tipAttrText(missingNames)} · ${tipAttrText(modTxt)}</div>
+    </div>`;
+  }).join('');
+  return `<div class="comp-advisor-panel">
+    <div class="comp-advisor-title">
+      <div><b>🧭 随从作战顾问</b><div class="muted" style="font-size:10px">按当前收藏、星级、定位、特性和派遣占用给出建议。</div></div>
+      <span>${owned.length}/${COMPANIONS.length} 已收集</span>
+    </div>
+    <div class="comp-advisor-grid">${roleCards}</div>
+    <div class="comp-advisor-subgrid">
+      <div class="comp-advisor-section"><b>⭐ 升星优先</b>${upgradeCards || '<div class="muted" style="font-size:10px">已拥有随从都已满星。</div>'}</div>
+      <div class="comp-advisor-section"><b>⚜️ 羁绊追踪</b>${bondCards || '<div class="muted" style="font-size:10px">暂无接近完成的羁绊。</div>'}</div>
+    </div>
+  </div>`;
+}
 function companionMissionTimeText(ms){
   if (ms <= 0) return '可领取';
   return fmtCd(Math.ceil(ms / 1000));
@@ -3163,6 +3253,7 @@ function renderCompanion() {
   html += `</div>`;
 
   html += companionFilterPanelHtml(entries);
+  html += companionAdvisorPanelHtml(entries);
   html += companionMissionPanelHtml(entries);
 
   // ---- 出战随从 ----

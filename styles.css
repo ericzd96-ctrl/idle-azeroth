@@ -466,6 +466,107 @@ h1 {
 .comp-badge.is-summon { border-color: rgba(250, 204, 21, .4); background: rgba(113, 63, 18, .3); color: #fde68a; }
 .comp-badge.is-support { border-color: rgba(165, 180, 252, .4); background: rgba(49, 46, 129, .3); color: #c7d2fe; }
 .comp-badge.is-control { border-color: rgba(244, 114, 182, .38); background: rgba(131, 24, 67, .28); color: #f9a8d4; }
+.comp-advisor-panel {
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid rgba(96, 165, 250, .24);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(30, 64, 175, .14), rgba(15, 23, 42, .28));
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .16);
+}
+.comp-advisor-title,
+.comp-advisor-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.comp-advisor-title {
+  margin-bottom: 8px;
+}
+.comp-advisor-title > span,
+.comp-advisor-card-head span {
+  flex: 0 0 auto;
+  color: #bfdbfe;
+  font-size: 10px;
+}
+.comp-advisor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 8px;
+}
+.comp-advisor-card,
+.comp-advisor-section {
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid rgba(148, 163, 184, .18);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, .38);
+}
+.comp-advisor-main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 7px;
+  align-items: center;
+  margin: 6px 0;
+  font-size: 11px;
+}
+.comp-advisor-main b,
+.comp-advisor-main .muted {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.comp-advisor-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.comp-advisor-state {
+  color: #fde68a;
+  font-size: 10px;
+}
+.comp-advisor-warn {
+  color: #fb923c;
+}
+.comp-advisor-subgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+.comp-advisor-upgrade,
+.comp-advisor-bond {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(148, 163, 184, .14);
+  font-size: 10px;
+  line-height: 1.45;
+}
+.comp-advisor-upgrade > div:first-child,
+.comp-advisor-bond > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.comp-advisor-bond span {
+  color: #fde68a;
+}
+.comp-advisor-progress {
+  height: 5px;
+  margin: 5px 0;
+  border: 1px solid rgba(148, 163, 184, .16);
+  border-radius: 999px;
+  background: rgba(2, 6, 23, .55);
+  overflow: hidden;
+}
+.comp-advisor-progress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(96, 165, 250, .95), rgba(167, 139, 250, .95));
+}
 .comp-mission-panel {
   margin: 10px 0;
   padding: 10px;
