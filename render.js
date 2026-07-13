@@ -718,7 +718,7 @@ function dungeonProgressMechanicTags(ds, contract, alert, timerStatus) {
       name:affix.name || '主题压力',
       icon:affix.icon || '🧭',
       desc:affix.desc || '该副本按主题固定生效的战斗规则。',
-      meta:'主题'
+      meta:(typeof dungeonAffixMeta === 'function') ? dungeonAffixMeta(affix) : '主题'
     }, { fallbackIcon:'spell_arcane_starfire', color:'#67e8f9' }));
   }
   const rooms = Array.isArray(ds.combatRooms) ? ds.combatRooms : [];
@@ -3327,7 +3327,7 @@ function dungeonThemeAffixHtml(dg, compact) {
     name:a.name || '主题压力',
     icon:a.icon || '🧭',
     desc:a.desc || '该副本按主题固定生效的战斗规则。',
-    meta:'主题压力',
+    meta:(typeof dungeonAffixMeta === 'function') ? dungeonAffixMeta(a) : '主题压力',
   }, {
     fallbackIcon:'spell_arcane_starfire',
     color:'#67e8f9',

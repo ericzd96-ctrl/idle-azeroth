@@ -2299,6 +2299,10 @@ function spawnDungeonMonster(){
       if (mod.trashDmg && !isBoss) mon.atk = Math.floor(mon.atk * (1+mod.trashDmg));
       if (mod.trashDef && !isBoss) mon.def = Math.floor(mon.def * (1+mod.trashDef));
       if (mod.bossDef && isBoss) mon.def = Math.floor(mon.def * (1+mod.bossDef));
+      if (mod.trashHaste && !isBoss) mon.atkInterval = Math.max(760, Math.floor(mon.atkInterval / (1 + mod.trashHaste)));
+      if (mod.bossHaste && isBoss) mon.atkInterval = Math.max(640, Math.floor(mon.atkInterval / (1 + mod.bossHaste)));
+      if (mod.bossLeech && isBoss) mon.lifeSteal = Math.max(mon.lifeSteal || 0, mod.bossLeech);
+      if (mod.bonusGoldPct) mon.goldReward = Math.floor(mon.goldReward * (1 + mod.bonusGoldPct));
     }
     if (state.mode === 'dungeon' && !isBoss && ds.affixes.some(a => a?.mod?.addPatrol) && Math.random() < 0.45) {
       const patrol = Object.assign({}, mon, {
@@ -4933,25 +4937,51 @@ function tickBattle(now){
   if (ms && ms.affixes && (state.mode === 'mythic' || state.mode === 'dungeon')) {
     for (const af of ms.affixes) {
       const mod = af.mod || {};
+      const prefix = `affix:${af.key || af.name || 'rule'}`;
       // 火山:每8秒
       if (mod.volcanic && now - (ms.lastVolcanic||0) > 8000) {
         ms.lastVolcanic = now;
         const vdmg = Math.max(1, Math.floor(state.hero.hpMax * 0.08 + rng(0, 50)));
         applyHeroDamage(vdmg, mon, { label:t=>'🌋-'+t, color:'#ff7a7a', now });
+        ms.affixHits = (ms.affixHits || 0) + 1;
       }
       // 折磨:每5秒
       if (mod.afflicted && now - (ms.lastAfflicted||0) > 5000) {
         ms.lastAfflicted = now;
         const admg = Math.max(1, Math.floor(state.hero.hpMax * 0.05));
         applyHeroDamage(admg, mon, { label:t=>'😈-'+t, color:'#c084fc', now });
+        ms.affixHits = (ms.affixHits || 0) + 1;
+      }
+      if (mod.trapTickMs && now - (ms[`${prefix}:trap`] || 0) > mod.trapTickMs) {
+        ms[`${prefix}:trap`] = now;
+        const dmg = Math.max(1, Math.floor((state.hero.hpMax || 1) * (mod.trapDamagePct || 0.05)));
+        applyHeroDamage(dmg, mon, { label:t=>(af.icon || '🪤') + '-' + t, color:'#fb7185', now });
+        ms.affixHits = (ms.affixHits || 0) + 1;
+      }
+      if (mod.poisonTickMs && now - (ms[`${prefix}:poison`] || 0) > mod.poisonTickMs) {
+        ms[`${prefix}:poison`] = now;
+        const dps = Math.max(1, Math.floor((state.hero.hpMax || 1) * (mod.poisonDpsPct || 0.01)));
+        applyHeroDebuff('burn', mod.poisonMs || 4200, { dps });
+        showFloat($('hero-emoji'), `${af.icon || '☣️'}毒雾`, '#a3e635', { variant:'status', scale:1.04 });
+        ms.affixHits = (ms.affixHits || 0) + 1;
+      }
+      if (mod.ceilingTickMs && now - (ms[`${prefix}:ceiling`] || 0) > mod.ceilingTickMs) {
+        ms[`${prefix}:ceiling`] = now;
+        const dmg = Math.max(1, Math.floor((state.hero.hpMax || 1) * (mod.ceilingDamagePct || 0.05)));
+        applyHeroDamage(dmg, mon, { label:t=>(af.icon || '🪨') + '-' + t, color:'#f59e0b', now });
+        if (mod.stunMs) {
+          state.heroStunUntil = Math.max(state.heroStunUntil || 0, now + mod.stunMs);
+          showFloat($('hero-emoji'), '💫震荡', '#fde047', { variant:'status', scale:1.04 });
+        }
+        ms.affixHits = (ms.affixHits || 0) + 1;
       }
       // 奥术:每15秒给BOSS盾
       if (mod.arcane && mon.isBoss && now - (ms.lastArcane||0) > 15000) {
         ms.lastArcane = now;
         mon._arcaneShield = (mon._arcaneShield||0) + Math.floor(mon.hpMax * 0.15);
         showMonsterFloat(mon, '🔮盾', '#a78bfa');
+        ms.affixHits = (ms.affixHits || 0) + 1;
       }
-      const prefix = `affix:${af.key || af.name || 'rule'}`;
       if (mod.drainTickMs && now - (ms[`${prefix}:drain`] || 0) > mod.drainTickMs) {
         ms[`${prefix}:drain`] = now;
         const drain = Math.min(state.resource || 0, Math.floor((state.resourceMax || 0) * (mod.resourceDrainPct || 0.08)));
@@ -5639,6 +5669,11 @@ const DUNGEON_GEAR_TRAITS = [
   {key:'titanclasp', name:'泰坦扣件', icon:'🔩', tags:['titan','mech','forge','raid'], minTier:2, slots:['belt','pants','boots','armor'], mod:{strPct:1.2,staPct:1.4}, desc:'力量与耐力都被抬高。'},
   {key:'moonchannel', name:'月井导流', icon:'🌙', tags:['nature','arcane','heal','elf'], minTier:1, slots:['helmet','ring','trinket'], mod:{intPct:1.3,spiPct:1.3}, desc:'适合法系和治疗向成长。'},
   {key:'wildhunt', name:'荒猎纹章', icon:'🏹', tags:['beast','nature','agility','pirate'], minTier:1, slots:['weapon','boots','ring'], mod:{agiPct:1.3,crit:0.6}, desc:'敏捷职业会更喜欢的副本纹章。'},
+  {key:'voodoohex', name:'巫毒咒符', icon:'🪬', tags:['troll','blood','shadow','execute'], minTier:1, slots:['weapon','ring','trinket'], mod:{executeBonus:2.2,dotBonus:2.0,vers:0.8}, desc:'巨魔与洛阿副本更容易掉落,强化斩杀和持续压制。'},
+  {key:'websilk', name:'蛛丝缚扣', icon:'🕸️', tags:['spider','poison','beast','speed'], minTier:1, slots:['gloves','boots','belt','ring'], mod:{spdPct:1.2,dodge:0.7,dotBonus:1.8}, desc:'蛛魔和虫巢路线的黏性战利品,兼顾机动与毒性伤害。'},
+  {key:'phasebroker', name:'相位账印', icon:'🧿', tags:['ethereal','arcane','void','precision'], minTier:1, slots:['helmet','ring','trinket'], mod:{mastery:1.2,costReduction:0.9,crit:0.5}, desc:'虚灵、掮灵和卡雷什副本的结算印记,压缩资源压力。'},
+  {key:'delversignal', name:'地下堡信标', icon:'🔦', tags:['delve','mythic','speed','fortress'], minTier:1, slots:['weapon','boots','trinket'], mod:{haste:1.0,hpPct:1.6,extraAtk:0.8}, desc:'短波次地下堡的紧急信标,适合快节奏推进。'},
+  {key:'plagueglass', name:'疫池玻片', icon:'☣️', tags:['plague','poison','undead','nature'], minTier:1, slots:['weapon','gloves','trinket'], mod:{dotBonus:2.4,leech:0.7,mastery:0.8}, desc:'瘟疫、孢子和腐化实验副本的危险样本。'},
   {key:'guardianoath', name:'守护誓印', icon:'🔰', tags:['holy','fortress','raid','tank'], minTier:3, slots:['armor','trinket'], mod:{hpPct:3.0,vers:1.6}, desc:'史诗团本装备上的重誓印。'},
   {key:'soulfurnace', name:'魂炉余温', icon:'♨️', tags:['fire','undead','shadow','forge'], minTier:3, slots:['weapon','trinket'], mod:{atkPct:3.2,leech:1.2}, desc:'高阶首领掉落才可能封住的炉温。'},
   {key:'chronolatch', name:'时序锁扣', icon:'⏱️', tags:['time','arcane','speed','raid'], minTier:3, slots:['ring','trinket','gloves'], mod:{cdReduction:1.4,haste:1.1}, desc:'压缩技能空窗,适合频繁施法。'},
@@ -5652,6 +5687,11 @@ const DUNGEON_TRAIT_TAG_RULES = [
   { re:/风暴|雷|电|闪电|旋云|英灵|奥丁|破晓|驭雷/i, tags:['storm','speed'] },
   { re:/奥术|魔网|魔枢|魔环|法力|蓝龙|群星|星|夜井|苏拉玛|法师|时光|时序|净化斯坦索姆/i, tags:['arcane','time'] },
   { re:/泰坦|奥杜尔|奥迪尔|奥达曼|矶石|宝库|机械|麦卡贡|诺莫瑞根|列车|钢铁|齿轮|矩阵/i, tags:['titan','mech'] },
+  { re:/蛛|蛛魔|虫|虫巢|尼鲁巴尔|千丝|阿拉-卡拉|孵|网|安苏雷克|阿努巴/i, tags:['spider','poison','beast'] },
+  { re:/巨魔|祖尔|祖阿曼|阿曼尼|达卡莱|赞达拉|沙怒|邪枝|洛阿|乌拉泰克|古达克|阿塔达萨/i, tags:['troll','blood','nature'] },
+  { re:/虚灵|掮灵|财团|塔扎维什|相位|圆顶|生态圆顶|卡雷什|普莱姆斯|档案|法力熔炉|影点|沙恩多拉|虚无剃刀/i, tags:['ethereal','arcane','void'] },
+  { re:/地下堡|矿洞|圣所地下堡|档案突袭|瞰台|短波次|地匍|夜落/i, tags:['delve','fortress','speed'] },
+  { re:/瘟疫|凋魂|腐|毒|疫|孢|真菌|孢落|腐沼|凋零/i, tags:['plague','poison','nature'] },
   { re:/虚空|古神|克苏恩|尤格|恩佐斯|尼奥罗萨|暗影|暮光|梦魇|萨维斯|黑心|裂隙|卡雷什|吞界/i, tags:['void','shadow'] },
   { re:/亡灵|天灾|巫妖|通灵|纳克萨玛斯|冰冠|瘟疫|凋魂|死灵|灵魂|噬魂|纳斯利亚|雷文德斯|鲜血/i, tags:['undead','shadow','blood'] },
   { re:/自然|翡翠|梦境|森林|林地|永茂|玛拉顿|塞纳里奥|生命|孢|真菌|绿洲|世界树|阿米德拉希尔/i, tags:['nature','heal'] },
