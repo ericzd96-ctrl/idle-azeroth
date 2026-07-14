@@ -78,6 +78,7 @@ const SKILL_AURA_LIBRARY = {
   skill_control:{ icon:'⛓️', name:'控场清算', desc:'减速、破甲、沉默、恐惧、冻结等控制会叠加控制压力,后续技能可清算爆发', maxStacks:4 },
   skill_weakness:{ icon:'🎯', name:'弱点洞察', desc:'暴击、斩杀、高耗能和特定元素会揭露目标弱点,后续技能可利用弱点爆发', maxStacks:4 },
   skill_prep:   { icon:'⚙️', name:'技能蓄势', desc:'低耗、控场、DOT、治疗或防御技能积累蓄势,后续大招按蓄势类型收招', maxStacks:5 },
+  skill_overload:{ icon:'⚡', name:'技能过载', desc:'连续高耗能、大招或爆发会积累过载,后续技能可导流为余震效果', maxStacks:5 },
   spec_flow:    { icon:'✦', name:'专精连段', desc:'按当前专精的技能顺序推进,完成后触发独特战斗效果', maxStacks:3 },
   spec_core:    { icon:'✦', name:'专精核心', desc:'当前专精独有的战斗引擎资源,满层后用指定技能收束触发强力效果', maxStacks:8 },
   spec_proc:    { icon:'✦', name:'临场强化', desc:'当前专精触发的下一技能变招,命中符合条件的技能后自动消费', maxStacks:1 },
@@ -205,6 +206,16 @@ const SKILL_PREP_GUIDE = [
   { icon:'🛡️', name:'壁垒收招', desc:'防御蓄势被坦克技能消耗时转为护盾、减伤窗口和反击。' },
   { icon:'✨', name:'救援收招', desc:'治疗/神圣蓄势被治疗或支援技能消耗时治疗主角和随从。' },
   { icon:'🐾', name:'协同收招', desc:'野兽、召唤和宠物蓄势会把后续大招转成协同追击。' },
+];
+
+const SKILL_OVERLOAD_GUIDE = [
+  { icon:'⚡', name:'过载', desc:'连续高耗能、高倍率、范围或爆发技能会积累技能过载。' },
+  { icon:'🔷', name:'奥能余震', desc:'法术过载导流后造成奥能坍缩和溅射,并返还资源。' },
+  { icon:'🩸', name:'血性余震', desc:'物理/野性过载导流后造成创伤追击和流血。' },
+  { icon:'☠️', name:'腐蚀余震', desc:'DOT/暗影/毒药过载导流后强化持续伤害并扩散。' },
+  { icon:'🛡️', name:'壁垒导流', desc:'防御技能导流过载会转为护盾、减伤窗口和反击。' },
+  { icon:'✨', name:'救援导流', desc:'治疗/支援技能导流过载会治疗主角和随从。' },
+  { icon:'🐾', name:'协同余震', desc:'召唤/野兽导流过载会触发协同追击。' },
 ];
 
 /* 每个职业 4 个新技能:爆发 / 减伤 / 功能性 / 职业特色 */
@@ -1386,6 +1397,7 @@ if (typeof window !== 'undefined') {
   window.SKILL_CONTROL_GUIDE = SKILL_CONTROL_GUIDE;
   window.SKILL_WEAKNESS_GUIDE = SKILL_WEAKNESS_GUIDE;
   window.SKILL_PREP_GUIDE = SKILL_PREP_GUIDE;
+  window.SKILL_OVERLOAD_GUIDE = SKILL_OVERLOAD_GUIDE;
   window.currentSpecCombatRule = currentSpecCombatRule;
   window.currentSpecCombatMeter = currentSpecCombatMeter;
   window.currentSpecTacticalWindow = currentSpecTacticalWindow;

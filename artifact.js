@@ -964,6 +964,20 @@ function skillPrepTrait(cfg){
     }
   }));
 }
+function skillOverloadTrait(cfg){
+  return trait(Object.assign({}, cfg, {
+    fx(rank){
+      return {
+        type:'skillOverload',
+        overloadDmgPct:rankValue(cfg.overloadDmgPct || [4,8,12], rank),
+        overloadDotPct:rankValue(cfg.overloadDotPct || [3,6,9], rank),
+        overloadSupportPct:rankValue(cfg.overloadSupportPct || [3,6,9], rank),
+        overloadGainPct:rankValue(cfg.overloadGainPct || [4,8,12], rank),
+        overloadResource:rankValue(cfg.overloadResource || [0,1,2], rank),
+      };
+    }
+  }));
+}
 
 (function retuneSpecArtifacts() {
   for (const [clsKey, specs] of Object.entries(SPEC_ARTIFACT_SKILL_RETUNE)) {
@@ -1097,6 +1111,21 @@ function skillPrepTrait(cfg){
           prepSupportPct:supportWeave ? [6,12,18] : [2,4,6],
           prepGainPct:[5,10,15],
           desc:'技能蓄势收招追击、持续伤害或支援效果提高,蓄势效率提高,收招时返还少量资源。并获得精通 +1/2/3。'
+        }));
+      }
+      const overloadKey = `art_${clsKey}_${specKey}_overload_20260714`;
+      if (!ARTIFACT_TRAITS[clsKey].some(t => t.key === overloadKey)) {
+        ARTIFACT_TRAITS[clsKey].push(skillOverloadTrait({
+          key:overloadKey,
+          tree:specKey,
+          name:'过载回路',
+          icon:'⚡',
+          mod:{ mastery:1 },
+          overloadDmgPct:supportWeave ? [3,6,9] : [6,12,18],
+          overloadDotPct:dotWeave ? [6,12,18] : [3,6,9],
+          overloadSupportPct:supportWeave ? [6,12,18] : [2,4,6],
+          overloadGainPct:[5,10,15],
+          desc:'技能过载余震、持续伤害或导流支援效果提高,过载积累效率提高,导流时返还少量资源。并获得精通 +1/2/3。'
         }));
       }
     }

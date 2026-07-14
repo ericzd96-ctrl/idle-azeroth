@@ -845,3 +845,47 @@ const TALENT_AURA_LIBRARY = {
     }
   }
 })();
+
+(function extendSkillOverloadTalents() {
+  if (typeof CLASSES === 'undefined') return;
+  const names = {
+    arms:'战吼过载', fury:'狂怒过载', prot:'盾墙导流',
+    arcane:'奥能过载', fire:'燃爆过载', frost:'寒冰过载',
+    discipline:'赎罪导流', holy:'圣光导流', shadow:'虚空过载',
+    assassination:'毒刃过载', combat:'剑刃过载', subtlety:'暗影过载',
+    bm:'兽群过载', marks:'弹道过载', survival:'野火过载',
+    element:'元素过载', enhancement:'风怒过载', restoration:'潮汐导流',
+    holy_paladin:'圣光过载', prot_paladin:'壁垒导流', ret:'裁决过载',
+    affliction:'痛苦过载', demonology:'恶魔过载', destruction:'混乱过载',
+    balance:'星辰过载', feral:'血爪过载', resto:'林地导流',
+  };
+  const supportSpecs = new Set(['discipline','holy','restoration','resto']);
+  const dotSpecs = new Set(['fire','shadow','assassination','survival','affliction','destruction','balance','feral']);
+  const burstSpecs = new Set(['arcane','frost','element','destruction','arms','fury','ret','marks']);
+  for (const [clsKey, cls] of Object.entries(CLASSES)) {
+    if (!cls || !Array.isArray(cls.trees)) continue;
+    for (const tree of cls.trees) {
+      if (!tree || tree._skillOverloadTalent) continue;
+      tree._skillOverloadTalent = true;
+      const keyName = clsKey === 'paladin' && tree.key === 'holy' ? 'holy_paladin' : (clsKey === 'paladin' && tree.key === 'prot' ? 'prot_paladin' : tree.key);
+      const support = supportSpecs.has(tree.key) || (clsKey === 'paladin' && tree.key === 'holy') || (tree.key === 'prot' && (clsKey === 'warrior' || clsKey === 'paladin'));
+      const dot = dotSpecs.has(tree.key);
+      const burst = burstSpecs.has(tree.key);
+      tree.talents.push({
+        key: `skill_overload_${clsKey}_${tree.key}`,
+        name: names[keyName] || '技能过载',
+        desc: `技能过载更强: ${support ? '导流治疗和护盾提高 20%' : (dot ? '腐蚀余震 DOT 提高 20%' : '过载余震追击提高 18%')}, 过载积累效率提高,导流时返还资源。`,
+        req: 124,
+        max: 1,
+        fx: {
+          type:'skillOverload',
+          overloadDmgPct:support ? 8 : (burst ? 20 : 18),
+          overloadDotPct:dot ? 20 : 8,
+          overloadSupportPct:support ? 20 : 6,
+          overloadGainPct:burst ? 22 : 16,
+          overloadResource:2
+        }
+      });
+    }
+  }
+})();

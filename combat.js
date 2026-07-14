@@ -177,6 +177,11 @@ function specMasteryEngineBonus(field){
   if(field === 'prepSupportPct') return mastery * Math.max(b.supportPct || 0, b.mechanicShieldPct || 0) * 0.46;
   if(field === 'prepGainPct') return mastery * Math.max(b.coreGainPct || 0, b.procPct || 0) * 0.36;
   if(field === 'prepResource') return mastery * (b.resource || 0);
+  if(field === 'overloadDmgPct') return mastery * Math.max(b.corePayoffPct || 0, b.chainPayoffPct || 0, b.procPct || 0) * 0.43;
+  if(field === 'overloadDotPct') return mastery * Math.max(b.dotSpreadPct || 0, b.reactionDotPct || 0, b.echoDotPct || 0) * 0.43;
+  if(field === 'overloadSupportPct') return mastery * Math.max(b.supportPct || 0, b.mechanicShieldPct || 0) * 0.43;
+  if(field === 'overloadGainPct') return mastery * Math.max(b.coreGainPct || 0, b.procPct || 0) * 0.32;
+  if(field === 'overloadResource') return mastery * (b.resource || 0);
   return 0;
 }
 function masteryTakenMult(){ return 1 - Math.min(30, masteryFor('dr')*MASTERY_TYPE.dr.per + masteryFor('guardianEcho')*0.18 + specMasteryEngineBonus('takenPct'))/100; } // 受击减伤(封顶30%)
@@ -746,7 +751,7 @@ function processSkillElementReactions(skillKey, sk, mon, dmgDone, ctx){
 function skillMechanicFxBonus(field){
   let total = specMasteryEngineBonus(field);
   for(const fx of talentFxList()){
-    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho' && fx.type !== 'skillMark' && fx.type !== 'skillWeave' && fx.type !== 'skillRhythm' && fx.type !== 'skillControl' && fx.type !== 'skillWeakness' && fx.type !== 'skillPrep')) continue;
+    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho' && fx.type !== 'skillMark' && fx.type !== 'skillWeave' && fx.type !== 'skillRhythm' && fx.type !== 'skillControl' && fx.type !== 'skillWeakness' && fx.type !== 'skillPrep' && fx.type !== 'skillOverload')) continue;
     total += +(fx[field] || 0);
   }
   return total;
@@ -1685,6 +1690,146 @@ function skillPrepTip(skillKey, sk){
   const finish = skillPrepIsFinisher(skillKey, sk, {}) ? '可消耗已有技能蓄势触发收招' : '';
   return [setup, finish].filter(Boolean).join('；');
 }
+function overloadKindName(kind){
+  const names = { arcane:'奥能', blood:'血性', decay:'腐蚀', guard:'壁垒', grace:'救援', pack:'协同' };
+  return names[kind] || kind || '过载';
+}
+function overloadKindIcon(kind){
+  return ({ arcane:'🔷', blood:'🩸', decay:'☠️', guard:'🛡️', grace:'✨', pack:'🐾' })[kind] || '⚡';
+}
+function skillOverloadKind(skillKey, sk, ctx){
+  if(!sk) return '';
+  const tags = skillElementTags(skillKey, sk);
+  const text = `${skillKey || ''} ${sk.name || ''} ${sk.desc || ''}`;
+  if(sk.type === 'heal' || ctx?.heal || tags.includes('holy') || /治疗|圣光|恢复|恩典|赎罪/.test(text)) return 'grace';
+  if(isDefensiveSkill(skillKey, sk) || /护盾|减伤|格挡|壁垒|防御|守护|盾/.test(text)) return 'guard';
+  if(sk.type === 'summon' || sk.summonCount || tags.includes('beast') || /召唤|宠物|野兽|兽群|猎人/.test(text)) return 'pack';
+  if(sk.dot || tags.some(t => ['shadow','poison'].includes(t)) || /暗影|痛苦|腐蚀|毒|流血|撕裂|割裂|献祭|月火/.test(text)) return 'decay';
+  if(tags.some(t => ['arcane','fire','frost','storm','nature'].includes(t)) || /奥术|火|炎|冰|霜|风暴|闪电|星界|元素|熔岩|自然/.test(text)) return 'arcane';
+  return 'blood';
+}
+function skillOverloadCharges(skillKey, sk, ctx){
+  if(!sk || sk.type !== 'dmg') return 0;
+  const fx = skillFxMeta(skillKey, sk);
+  const text = `${skillKey || ''} ${sk.name || ''} ${sk.desc || ''}`;
+  let charges = 0;
+  if((sk.mp || 0) >= 40 || (sk.mul || 0) >= 4) charges++;
+  if(sk.aoe || fx.splashPct || fx.spreadDotsPct) charges++;
+  if(/爆发|终结|斩杀|处决|毁灭|混乱|彗星|星涌|炎爆|巨人|大灾变|流星|天神|化身/.test(text)) charges++;
+  charges += Math.floor(skillMechanicFxBonus('overloadGainPct') / 40);
+  return Math.min(3, charges);
+}
+function skillOverloadCanVent(skillKey, sk, ctx){
+  if(!sk) return false;
+  if(ctx?.heal || sk.type === 'heal') return true;
+  if(sk.type === 'buff' || isDefensiveSkill(skillKey, sk)) return true;
+  if(sk.type !== 'dmg') return false;
+  const fx = skillFxMeta(skillKey, sk);
+  return !!(sk.dot || fx.applyTargetState || sk.slow || sk.summonCount || (sk.mp || 0) <= 28 || (sk.mul || 0) <= 3);
+}
+function ensureSkillOverloadRuntime(now){
+  const rt = ensureSkillRuntime();
+  if(!rt.overload) rt.overload = { kind:'', stacks:0, expire:0, chain:[] };
+  const ts = now || Date.now();
+  if(rt.overload.expire && rt.overload.expire <= ts) rt.overload = { kind:'', stacks:0, expire:0, chain:[] };
+  return rt.overload;
+}
+function addSkillOverload(kind, sk, now, add){
+  if(!kind || !(add > 0)) return 0;
+  const overload = ensureSkillOverloadRuntime(now);
+  const max = 5;
+  overload.kind = kind;
+  overload.stacks = Math.min(max, (overload.stacks || 0) + add);
+  overload.chain = (overload.chain || []).concat(kind).slice(-5);
+  overload.expire = (now || Date.now()) + Math.floor(12000 * (1 + skillMechanicFxBonus('overloadGainPct') / 240));
+  addSkillAura('skill_overload', {
+    add,
+    max,
+    duration:12000,
+    icon:'⚡',
+    name:'技能过载',
+    desc:`当前 ${overload.stacks}/${max} 层${overloadKindName(kind)}过载。高耗能/大招会积累过载,低耗、支援、防御或 DOT 技能会导流为余震。`
+  });
+  showFloat($('hero-emoji'), `⚡${overload.stacks}/${max}`, '#facc15', { variant:'buff', scale:1.02 });
+  markDirty('skills');
+  return overload.stacks;
+}
+function ventSkillOverload(overload, mon, value, sk, now, ctx){
+  const kind = overload?.kind || 'arcane';
+  const stacks = Math.max(1, overload?.stacks || 1);
+  const base = Math.max(1, Math.floor(value || state.hero.atk || state.hero.hpMax * 0.03 || 1));
+  const target = (mon && mon.hp > 0) ? mon : (state.currentMonsters || []).find(x => x && x.hp > 0);
+  const dmgMult = (1 + skillMechanicFxBonus('overloadDmgPct') / 100) * (0.50 + stacks * 0.13);
+  const dotMult = (1 + skillMechanicFxBonus('overloadDotPct') / 100) * (0.48 + stacks * 0.12);
+  const supportMult = masterySupportEchoMult() * (1 + skillMechanicFxBonus('overloadSupportPct') / 100) * (0.58 + stacks * 0.10);
+  let fired = false;
+  if((ctx?.heal || sk.type === 'heal' || kind === 'grace') && stacks >= 2){
+    healHeroAmount(Math.floor(state.hero.hpMax * (0.014 + stacks * 0.004) * supportMult), sk.icon || '✨', '#6ee7b7', 'hero', '救援导流');
+    addTalentShield(Math.floor(state.hero.hpMax * (0.010 + stacks * 0.003) * supportMult), true, 9000);
+    specTacticCompanionSupport('heal', now);
+    fired = true;
+  } else if(kind === 'guard'){
+    addTalentShield(Math.floor(state.hero.hpMax * (0.018 + stacks * 0.004) * supportMult), true, 10000);
+    grantSpecTacticBuff('s_barrier', 2400 + stacks * 320, now);
+    if(target) fired = applySkillFollowupDamage(target, base * 0.10 * dmgMult, '🛡️', '#93c5fd', now) > 0 || fired;
+  } else if(target){
+    if(kind === 'arcane'){
+      applyMonsterState(target, 'unstable', 7200 + stacks * 620);
+      fired = splashSkillDamage(target, base * dmgMult, 0.10 + stacks * 0.025, '⚡', now) > 0 || fired;
+    } else if(kind === 'decay'){
+      applyMonsterState(target, 'voidTorn', 7600 + stacks * 620);
+      applyMonsterDot(target, 'skillOverload:decay', Math.max(1, Math.floor(base * 0.09 * dotMult)), 9000, { icon:'☠️', name:'腐蚀余震', source:'skillOverload' });
+      if(stacks >= 4) spreadDotFromMonster(target, 0.24 + stacks * 0.025, 9000);
+      fired = true;
+    } else if(kind === 'pack'){
+      specTacticSummon(activeHeroClassKey() === 'warlock' ? 'demon' : 'beast', now);
+      fired = applySkillFollowupDamage(target, base * 0.13 * dmgMult, '🐾', '#7dd3fc', now) > 0 || fired;
+    } else {
+      applyMonsterState(target, 'trauma', 7600 + stacks * 580);
+      applyMonsterDot(target, 'skillOverload:blood', Math.max(1, Math.floor(base * 0.07 * dotMult)), 8500, { icon:'🩸', name:'血性余震', source:'skillOverload' });
+      fired = applySkillFollowupDamage(target, base * 0.11 * dmgMult, '🩸', '#fda4af', now) > 0 || fired;
+    }
+  }
+  if(fired){
+    grantTalentResource(Math.floor(1 + stacks / 2 + skillMechanicFxBonus('overloadResource')));
+    addSkillAura('skill_overload', {
+      add:1,
+      max:1,
+      duration:5200,
+      icon:'⚡',
+      name:'技能过载',
+      desc:`${overloadKindName(kind)}过载被 ${sk?.name || '技能'} 导流,转化为余震、DOT、护盾、治疗或协同。`
+    });
+    showFloat($('hero-emoji'), `⚡${overloadKindName(kind)}导流`, '#facc15', { variant:'buff', scale:1.05 });
+    log(`⚡ 技能过载导流: ${overloadKindName(kind)}过载 ${stacks} 层被 ${sk?.name || '技能'} 转化`, 'good');
+    markDirty('skills','hero','companion','stage');
+  }
+  return fired;
+}
+function processSkillOverload(skillKey, sk, mon, value, ctx){
+  if(!sk) return false;
+  const now = ctx?.now || Date.now();
+  if(ctx?.isAOE && !classRuntimeReady(`skill-overload-aoe-step:${skillKey}`, 250, now)) return false;
+  const overload = ensureSkillOverloadRuntime(now);
+  const charges = skillOverloadCharges(skillKey, sk, ctx || {});
+  if(charges > 0){
+    return addSkillOverload(skillOverloadKind(skillKey, sk, ctx || {}), sk, now, charges) > 0;
+  }
+  if(overload.stacks >= 2 && skillOverloadCanVent(skillKey, sk, ctx || {})){
+    const snap = Object.assign({}, overload, { chain:[...(overload.chain || [])] });
+    const rt = ensureSkillRuntime();
+    rt.overload = { kind:'', stacks:0, expire:0, chain:[] };
+    if(rt.auras) delete rt.auras.skill_overload;
+    return ventSkillOverload(snap, mon, value, sk, now, ctx || {});
+  }
+  return false;
+}
+function skillOverloadTip(skillKey, sk){
+  const charges = skillOverloadCharges(skillKey, sk, {});
+  const build = charges > 0 ? `积累${charges}层${overloadKindName(skillOverloadKind(skillKey, sk, {}))}过载` : '';
+  const vent = skillOverloadCanVent(skillKey, sk, {}) ? '可导流已有过载触发余震' : '';
+  return [build, vent].filter(Boolean).join('；');
+}
 function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
   const fx = skillFxMeta(skillKey, sk);
   const now = ctx?.now || Date.now();
@@ -1718,6 +1863,7 @@ function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
   processSkillControl(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
   processSkillWeakness(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
   processSkillPreparation(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
+  processSkillOverload(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
   if(fx.resourceGainOnKill && mon.hp <= 0) grantTalentResource(fx.resourceGainOnKill);
   applyClassMechanicAfterSkill(skillKey, sk, mon, dmgDone, Object.assign({ now, hit:true }, ctx || {}));
 }
@@ -1733,6 +1879,7 @@ function applySkillHealEffects(skillKey, sk, amount, overheal){
   processSkillControl(skillKey, sk, null, amount, { overheal, heal:true, now });
   processSkillWeakness(skillKey, sk, null, amount, { overheal, heal:true, now });
   processSkillPreparation(skillKey, sk, null, amount, { overheal, heal:true, now });
+  processSkillOverload(skillKey, sk, null, amount, { overheal, heal:true, now });
   applyClassMechanicAfterSkill(skillKey, sk, null, amount, { overheal, heal:true, now });
 }
 function ensureClassRuntime(){
