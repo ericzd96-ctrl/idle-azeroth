@@ -74,6 +74,7 @@ const SKILL_AURA_LIBRARY = {
   skill_reaction:{ icon:'✹', name:'技能反应', desc:'技能元素命中合适的目标状态后触发的额外反应', maxStacks:1 },
   skill_echo:   { icon:'✺', name:'技能余波', desc:'技能留下的短暂战场痕迹,会被后续不同类型技能引爆或转化', maxStacks:1 },
   skill_weave:  { icon:'✥', name:'技能织法', desc:'连续使用不同类型技能形成轮转织法,层数越高后续收束越强', maxStacks:5 },
+  skill_rhythm: { icon:'♬', name:'战斗律动', desc:'技能按输出、防御、持续、支援等节拍积累律动,满拍后触发终结收束', maxStacks:5 },
   spec_flow:    { icon:'✦', name:'专精连段', desc:'按当前专精的技能顺序推进,完成后触发独特战斗效果', maxStacks:3 },
   spec_core:    { icon:'✦', name:'专精核心', desc:'当前专精独有的战斗引擎资源,满层后用指定技能收束触发强力效果', maxStacks:8 },
   spec_proc:    { icon:'✦', name:'临场强化', desc:'当前专精触发的下一技能变招,命中符合条件的技能后自动消费', maxStacks:1 },
@@ -164,6 +165,15 @@ const SKILL_WEAVE_GUIDE = [
   { icon:'⛈️', name:'导流轮转', desc:'风暴、奥术、自然互相交替会返还资源并制造溅射。' },
   { icon:'✨', name:'救赎轮转', desc:'治疗/神圣与伤害技能交替会把部分伤害转为护盾和随从支援。' },
   { icon:'☠️', name:'腐蚀轮转', desc:'暗影、毒药、物理交替会强化 DOT、流血和扩散。' },
+];
+
+const SKILL_RHYTHM_GUIDE = [
+  { icon:'♬', name:'积拍', desc:'普通伤害、持续伤害、防御、治疗和召唤技能都会形成不同战斗节拍。' },
+  { icon:'💥', name:'强攻终结', desc:'爆发/高倍率伤害技能收束律动时造成额外追击并施加破绽。' },
+  { icon:'☠️', name:'痛苦终结', desc:'持续伤害节拍收束时追加 DOT,高层会扩散目标身上的持续伤害。' },
+  { icon:'🛡️', name:'壁垒终结', desc:'防御节拍收束时转化为护盾、减伤窗口和反击伤害。' },
+  { icon:'✨', name:'救援终结', desc:'治疗/支援节拍收束时治疗主角与随从,并生成额外护盾。' },
+  { icon:'🐾', name:'协同终结', desc:'召唤/宠物节拍收束时呼叫兽群或恶魔协同追击。' },
 ];
 
 /* 每个职业 4 个新技能:爆发 / 减伤 / 功能性 / 职业特色 */
@@ -1341,6 +1351,7 @@ if (typeof window !== 'undefined') {
   window.SKILL_ECHO_GUIDE = SKILL_ECHO_GUIDE;
   window.SKILL_MARK_GUIDE = SKILL_MARK_GUIDE;
   window.SKILL_WEAVE_GUIDE = SKILL_WEAVE_GUIDE;
+  window.SKILL_RHYTHM_GUIDE = SKILL_RHYTHM_GUIDE;
   window.currentSpecCombatRule = currentSpecCombatRule;
   window.currentSpecCombatMeter = currentSpecCombatMeter;
   window.currentSpecTacticalWindow = currentSpecTacticalWindow;

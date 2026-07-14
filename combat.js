@@ -158,6 +158,11 @@ function specMasteryEngineBonus(field){
   if(field === 'weaveDotPct') return mastery * Math.max(b.dotSpreadPct || 0, b.reactionDotPct || 0, b.echoDotPct || 0) * 0.45;
   if(field === 'weaveSupportPct') return mastery * Math.max(b.supportPct || 0, b.mechanicShieldPct || 0) * 0.45;
   if(field === 'weaveResource') return mastery * (b.resource || 0);
+  if(field === 'rhythmDmgPct') return mastery * Math.max(b.corePayoffPct || 0, b.chainPayoffPct || 0, b.procPct || 0) * 0.40;
+  if(field === 'rhythmDotPct') return mastery * Math.max(b.dotSpreadPct || 0, b.reactionDotPct || 0, b.echoDotPct || 0) * 0.40;
+  if(field === 'rhythmSupportPct') return mastery * Math.max(b.supportPct || 0, b.mechanicShieldPct || 0) * 0.40;
+  if(field === 'rhythmChargePct') return mastery * Math.max(b.coreGainPct || 0, b.procPct || 0) * 0.30;
+  if(field === 'rhythmResource') return mastery * (b.resource || 0);
   return 0;
 }
 function masteryTakenMult(){ return 1 - Math.min(30, masteryFor('dr')*MASTERY_TYPE.dr.per + masteryFor('guardianEcho')*0.18 + specMasteryEngineBonus('takenPct'))/100; } // 受击减伤(封顶30%)
@@ -727,7 +732,7 @@ function processSkillElementReactions(skillKey, sk, mon, dmgDone, ctx){
 function skillMechanicFxBonus(field){
   let total = specMasteryEngineBonus(field);
   for(const fx of talentFxList()){
-    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho' && fx.type !== 'skillMark' && fx.type !== 'skillWeave')) continue;
+    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho' && fx.type !== 'skillMark' && fx.type !== 'skillWeave' && fx.type !== 'skillRhythm')) continue;
     total += +(fx[field] || 0);
   }
   return total;
@@ -1082,6 +1087,148 @@ function processSkillWeave(skillKey, sk, mon, value, ctx){
   markDirty('skills');
   return changed;
 }
+function rhythmRoleForSkill(skillKey, sk, ctx){
+  if(!sk) return '';
+  const name = `${skillKey || ''} ${sk.name || ''} ${sk.desc || ''}`;
+  const fx = skillFxMeta(skillKey, sk);
+  const tags = skillElementTags(skillKey, sk);
+  if(sk.type === 'heal' || ctx?.heal) return 'support';
+  if(sk.type === 'summon' || sk.summonCount || ctx?.summoned) return 'summon';
+  if(sk.type === 'buff'){
+    if(isDefensiveSkill(skillKey, sk) || fx.shieldFromDamagePct || fx.shieldFromHealPct || /减伤|护盾|盾|屏障|壁垒|防御|格挡|圣盾|守护/.test(name)) return 'guard';
+    if(/爆发|攻击|暴击|暴伤|急速|强化|鲁莽|燃烧|天神|化身/.test(name)) return 'burst';
+    return 'support';
+  }
+  if(sk.dot || fx.applyDotKey || fx.spreadDotsPct || tags.some(t => ['shadow','poison'].includes(t)) || /痛苦|腐蚀|毒|流血|撕裂|月火|献祭|瘟疫|灼烧/.test(name)) return 'dot';
+  if(sk.aoe || fx.splashPct || /风暴|暴风雪|奉献|流星|刀扇|大灾变|星辰|火雨|雷暴|横扫|乱舞/.test(name)) return 'aoe';
+  if((sk.mul || 0) >= 4 || (sk.mp || 0) >= 45 || /终结|斩杀|处决|混乱之箭|炎爆|瞄准|裁决|星涌|毁灭/.test(name)) return 'burst';
+  if(tags.includes('holy') || tags.includes('nature')) return 'support';
+  if(tags.includes('beast')) return 'summon';
+  return 'strike';
+}
+function rhythmRoleName(role){
+  const names = { strike:'打击', burst:'强攻', dot:'痛苦', aoe:'横扫', guard:'壁垒', support:'救援', summon:'协同' };
+  return names[role] || role || '未知';
+}
+function ensureSkillRhythmRuntime(now){
+  const rt = ensureSkillRuntime();
+  if(!rt.rhythm) rt.rhythm = { role:'', charge:0, expire:0, beats:[] };
+  const ts = now || Date.now();
+  if(rt.rhythm.expire && rt.rhythm.expire <= ts) rt.rhythm = { role:'', charge:0, expire:0, beats:[] };
+  return rt.rhythm;
+}
+function skillRhythmFxBonus(field){
+  return skillMechanicFxBonus(field);
+}
+function skillRhythmTip(skillKey, sk){
+  const role = rhythmRoleForSkill(skillKey, sk, {});
+  if(!role) return '';
+  return `形成${rhythmRoleName(role)}节拍; 战斗律动满5拍后按当前节拍触发终结收束`;
+}
+function rhythmDominantRole(beats, fallback){
+  const score = {};
+  for(const b of beats || []) score[b] = (score[b] || 0) + 1;
+  const ordered = ['support','guard','summon','dot','aoe','burst','strike'];
+  let best = fallback || 'strike';
+  for(const role of ordered){
+    if((score[role] || 0) > (score[best] || 0)) best = role;
+  }
+  return best;
+}
+function applySkillRhythmFinisher(role, rhythm, mon, value, sk, now, ctx){
+  const stacks = Math.max(1, rhythm?.charge || 1);
+  const base = Math.max(1, Math.floor(value || state.hero.atk || state.hero.hpMax * 0.035 || 1));
+  const target = (mon && mon.hp > 0) ? mon : (state.currentMonsters || []).find(x => x && x.hp > 0);
+  const dmgMult = (1 + skillRhythmFxBonus('rhythmDmgPct') / 100) * (0.70 + stacks * 0.12);
+  const dotMult = (1 + skillRhythmFxBonus('rhythmDotPct') / 100) * (0.62 + stacks * 0.10);
+  const supportMult = masterySupportEchoMult() * (1 + skillRhythmFxBonus('rhythmSupportPct') / 100) * (0.70 + stacks * 0.10);
+  let fired = false;
+  if(role === 'support'){
+    healHeroAmount(Math.floor(state.hero.hpMax * (0.020 + stacks * 0.004) * supportMult), sk.icon || '♬', '#6ee7b7', 'hero', '救援终结');
+    addTalentShield(Math.floor(state.hero.hpMax * (0.018 + stacks * 0.003) * supportMult), true, 9500);
+    specTacticCompanionSupport('heal', now);
+    fired = true;
+  } else if(role === 'guard'){
+    addTalentShield(Math.floor(state.hero.hpMax * (0.026 + stacks * 0.004) * supportMult), true, 11000);
+    grantSpecTacticBuff('s_barrier', 3200 + stacks * 300, now);
+    if(target) fired = applySkillFollowupDamage(target, base * 0.12 * dmgMult, '🛡️', '#93c5fd', now) > 0 || fired;
+  } else if(role === 'summon'){
+    const summonKind = activeHeroClassKey() === 'warlock' ? 'demon' : 'beast';
+    specTacticSummon(summonKind, now);
+    if(target) fired = applySkillFollowupDamage(target, base * 0.18 * dmgMult, summonKind === 'demon' ? '😈' : '🐾', '#7dd3fc', now) > 0 || fired;
+  } else if(role === 'dot'){
+    if(target){
+      applyMonsterDot(target, 'skillRhythm:dot', Math.max(1, Math.floor(base * 0.14 * dotMult)), 10000, { icon:'☠️', name:'痛苦终结', source:'skillRhythm' });
+      if(stacks >= 5) spreadDotFromMonster(target, 0.35 + stacks * 0.025, 9000);
+      applyMonsterState(target, 'voidTorn', 9000);
+      fired = true;
+    }
+  } else if(role === 'aoe'){
+    if(target){
+      applyMonsterState(target, 'unstable', 8500);
+      fired = splashSkillDamage(target, base * dmgMult, 0.18 + stacks * 0.025, '♬', now) > 0 || fired;
+    }
+  } else if(role === 'burst'){
+    if(target){
+      applyMonsterState(target, 'exposed', 8500);
+      fired = applySkillFollowupDamage(target, base * 0.28 * dmgMult, sk.icon || '💥', '#facc15', now) > 0 || fired;
+    }
+  } else if(target){
+    fired = applySkillFollowupDamage(target, base * 0.16 * dmgMult, sk.icon || '♬', '#facc15', now) > 0 || fired;
+  }
+  const resource = Math.floor(2 + stacks / 2 + skillRhythmFxBonus('rhythmResource'));
+  if(resource > 0) grantTalentResource(resource);
+  if(fired){
+    addSkillAura('skill_rhythm', {
+      add:0,
+      max:5,
+      duration:5200,
+      icon:'♬',
+      name:'战斗律动',
+      desc:`${rhythmRoleName(role)}终结收束已触发。不同技能节拍会决定终结效果: 强攻、痛苦、壁垒、救援、协同或横扫。`
+    });
+    showFloat($('hero-emoji'), `♬${rhythmRoleName(role)}终结`, '#facc15', { variant:'buff', scale:1.08 });
+    log(`♬ 战斗律动触发「${rhythmRoleName(role)}终结」(${stacks}拍)`, 'good');
+    markDirty('skills','hero','companion','stage');
+  }
+  return fired;
+}
+function processSkillRhythm(skillKey, sk, mon, value, ctx){
+  if(!sk) return false;
+  const now = ctx?.now || Date.now();
+  if(ctx?.isAOE && !classRuntimeReady(`skill-rhythm-aoe-step:${skillKey}`, 250, now)) return false;
+  const role = rhythmRoleForSkill(skillKey, sk, ctx || {});
+  if(!role) return false;
+  const rhythm = ensureSkillRhythmRuntime(now);
+  const changed = rhythm.role && rhythm.role !== role;
+  const fx = skillFxMeta(skillKey, sk);
+  let gain = 1 + (changed ? 1 : 0);
+  if(sk.dot || fx.spreadDotsPct || sk.type === 'heal' || sk.type === 'summon' || isDefensiveSkill(skillKey, sk) || (sk.mul || 0) >= 4 || (sk.mp || 0) >= 45) gain += 1;
+  gain += Math.floor(skillRhythmFxBonus('rhythmChargePct') / 35);
+  rhythm.charge = Math.min(5, Math.max(1, (rhythm.charge || 0) + gain));
+  rhythm.role = role;
+  rhythm.beats = (rhythm.beats || []).concat(role).slice(-5);
+  rhythm.expire = now + 14000;
+  addSkillAura('skill_rhythm', {
+    add:gain,
+    max:5,
+    duration:14000,
+    icon:'♬',
+    name:'战斗律动',
+    desc:`当前 ${rhythm.charge}/5。最近节拍: ${(rhythm.beats || []).map(rhythmRoleName).join('、')}。满拍后按主节拍触发终结收束。`
+  });
+  if(rhythm.charge >= 5 && classRuntimeReady(`skill-rhythm:${activeHeroClassKey()}:${activeHeroSpecKey()}:${role}`, 5200, now)){
+    const finisherRole = rhythmDominantRole(rhythm.beats, role);
+    const snap = { charge:rhythm.charge, beats:[...(rhythm.beats || [])] };
+    rhythm.charge = 0;
+    rhythm.beats = [];
+    rhythm.role = '';
+    rhythm.expire = 0;
+    return applySkillRhythmFinisher(finisherRole, snap, mon, value, sk, now, ctx || {});
+  }
+  markDirty('skills');
+  return true;
+}
 function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
   const fx = skillFxMeta(skillKey, sk);
   const now = ctx?.now || Date.now();
@@ -1111,6 +1258,7 @@ function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
   processSkillEchoes(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
   processSkillMarks(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
   processSkillWeave(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
+  processSkillRhythm(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
   if(fx.resourceGainOnKill && mon.hp <= 0) grantTalentResource(fx.resourceGainOnKill);
   applyClassMechanicAfterSkill(skillKey, sk, mon, dmgDone, Object.assign({ now, hit:true }, ctx || {}));
 }
@@ -1120,8 +1268,10 @@ function applySkillHealEffects(skillKey, sk, amount, overheal){
   if(fx.shieldFromHealPct && amount > 0) addTalentShield(Math.floor(amount * fx.shieldFromHealPct), true);
   if(fx.shieldBonusIfBuff && buffActive(fx.shieldBonusIfBuff.key)) addTalentShield(Math.floor(amount * (fx.shieldBonusIfBuff.pct || 0)), true);
   if(fx.grantAura) addSkillAura(fx.grantAura.key, fx.grantAura);
-  processSkillWeave(skillKey, sk, null, amount, { overheal, heal:true, now:Date.now() });
-  applyClassMechanicAfterSkill(skillKey, sk, null, amount, { overheal, heal:true, now:Date.now() });
+  const now = Date.now();
+  processSkillWeave(skillKey, sk, null, amount, { overheal, heal:true, now });
+  processSkillRhythm(skillKey, sk, null, amount, { overheal, heal:true, now });
+  applyClassMechanicAfterSkill(skillKey, sk, null, amount, { overheal, heal:true, now });
 }
 function ensureClassRuntime(){
   if(!state.classRuntime) state.classRuntime = { cds:{} };

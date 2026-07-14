@@ -674,3 +674,45 @@ const TALENT_AURA_LIBRARY = {
     }
   }
 })();
+
+(function extendSkillRhythmTalents() {
+  if (typeof CLASSES === 'undefined') return;
+  const names = {
+    arms:'斩击律动', fury:'狂怒律动', prot:'壁垒律动',
+    arcane:'奥能律动', fire:'燃爆律动', frost:'碎冰律动',
+    discipline:'赎罪律动', holy:'圣歌律动', shadow:'虚空律动',
+    assassination:'毒脉律动', combat:'乱舞律动', subtlety:'暗影律动',
+    bm:'兽群律动', marks:'狙击律动', survival:'野火律动',
+    element:'雷霆律动', enhancement:'风怒律动', restoration:'潮汐律动',
+    holy_paladin:'圣光律动', prot_paladin:'守护律动', ret:'裁决律动',
+    affliction:'痛苦律动', demonology:'军团律动', destruction:'毁灭律动',
+    balance:'星辰律动', feral:'血爪律动', resto:'萌芽律动',
+  };
+  const supportSpecs = new Set(['discipline','holy','restoration','resto']);
+  const dotSpecs = new Set(['fire','shadow','assassination','survival','affliction','destruction','balance','feral']);
+  for (const [clsKey, cls] of Object.entries(CLASSES)) {
+    if (!cls || !Array.isArray(cls.trees)) continue;
+    for (const tree of cls.trees) {
+      if (!tree || tree._skillRhythmTalent) continue;
+      tree._skillRhythmTalent = true;
+      const keyName = clsKey === 'paladin' && tree.key === 'holy' ? 'holy_paladin' : (clsKey === 'paladin' && tree.key === 'prot' ? 'prot_paladin' : tree.key);
+      const support = supportSpecs.has(tree.key) || (clsKey === 'paladin' && tree.key === 'holy') || (tree.key === 'prot' && (clsKey === 'warrior' || clsKey === 'paladin'));
+      const dot = dotSpecs.has(tree.key);
+      tree.talents.push({
+        key: `skill_rhythm_${clsKey}_${tree.key}`,
+        name: names[keyName] || '战斗律动',
+        desc: `战斗律动终结收束更强: ${support ? '救援/壁垒终结提高 20%' : (dot ? '痛苦终结提高 20%' : '强攻/横扫终结提高 18%')}, 积拍效率提高,触发时返还资源。`,
+        req: 100,
+        max: 1,
+        fx: {
+          type:'skillRhythm',
+          rhythmDmgPct:support ? 8 : 18,
+          rhythmDotPct:dot ? 20 : 8,
+          rhythmSupportPct:support ? 20 : 6,
+          rhythmChargePct:18,
+          rhythmResource:2
+        }
+      });
+    }
+  }
+})();

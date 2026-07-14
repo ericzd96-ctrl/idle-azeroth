@@ -909,6 +909,20 @@ function skillWeaveTrait(cfg){
     }
   }));
 }
+function skillRhythmTrait(cfg){
+  return trait(Object.assign({}, cfg, {
+    fx(rank){
+      return {
+        type:'skillRhythm',
+        rhythmDmgPct:rankValue(cfg.rhythmDmgPct || [4,8,12], rank),
+        rhythmDotPct:rankValue(cfg.rhythmDotPct || [3,6,9], rank),
+        rhythmSupportPct:rankValue(cfg.rhythmSupportPct || [3,6,9], rank),
+        rhythmChargePct:rankValue(cfg.rhythmChargePct || [4,8,12], rank),
+        rhythmResource:rankValue(cfg.rhythmResource || [0,1,2], rank),
+      };
+    }
+  }));
+}
 
 (function retuneSpecArtifacts() {
   for (const [clsKey, specs] of Object.entries(SPEC_ARTIFACT_SKILL_RETUNE)) {
@@ -970,20 +984,36 @@ function skillWeaveTrait(cfg){
         }));
       }
       const weaveKey = `art_${clsKey}_${specKey}_weave_20260714`;
-      if (ARTIFACT_TRAITS[clsKey].some(t => t.key === weaveKey)) continue;
       const supportWeave = ['discipline','holy','restoration','resto'].includes(specKey) || (clsKey === 'paladin' && specKey === 'holy') || (specKey === 'prot' && (clsKey === 'warrior' || clsKey === 'paladin'));
       const dotWeave = ['fire','shadow','assassination','survival','affliction','destruction','balance','feral'].includes(specKey);
-      ARTIFACT_TRAITS[clsKey].push(skillWeaveTrait({
-        key:weaveKey,
-        tree:specKey,
-        name:'织法回路',
-        icon:'✥',
-        mod:{ mastery:1 },
-        weaveDmgPct:supportWeave ? [3,6,9] : [5,10,15],
-        weaveDotPct:dotWeave ? [5,10,15] : [3,6,9],
-        weaveSupportPct:supportWeave ? [5,10,15] : [2,4,6],
-        desc:'技能织法追击、持续伤害或支援效果提高,织法持续时间提高,触发时返还少量资源。并获得精通 +1/2/3。'
-      }));
+      if (!ARTIFACT_TRAITS[clsKey].some(t => t.key === weaveKey)) {
+        ARTIFACT_TRAITS[clsKey].push(skillWeaveTrait({
+          key:weaveKey,
+          tree:specKey,
+          name:'织法回路',
+          icon:'✥',
+          mod:{ mastery:1 },
+          weaveDmgPct:supportWeave ? [3,6,9] : [5,10,15],
+          weaveDotPct:dotWeave ? [5,10,15] : [3,6,9],
+          weaveSupportPct:supportWeave ? [5,10,15] : [2,4,6],
+          desc:'技能织法追击、持续伤害或支援效果提高,织法持续时间提高,触发时返还少量资源。并获得精通 +1/2/3。'
+        }));
+      }
+      const rhythmKey = `art_${clsKey}_${specKey}_rhythm_20260714`;
+      if (!ARTIFACT_TRAITS[clsKey].some(t => t.key === rhythmKey)) {
+        ARTIFACT_TRAITS[clsKey].push(skillRhythmTrait({
+          key:rhythmKey,
+          tree:specKey,
+          name:'律动回路',
+          icon:'♬',
+          mod:{ mastery:1 },
+          rhythmDmgPct:supportWeave ? [3,6,9] : [6,12,18],
+          rhythmDotPct:dotWeave ? [6,12,18] : [3,6,9],
+          rhythmSupportPct:supportWeave ? [6,12,18] : [2,4,6],
+          rhythmChargePct:[4,8,12],
+          desc:'战斗律动终结收束提高,积拍效率提高,触发时返还少量资源。并获得精通 +1/2/3。'
+        }));
+      }
     }
   }
 })();
