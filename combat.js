@@ -10766,17 +10766,17 @@ function trackKill(){const now=Date.now();if(dmgStats.killTs){const dt=(now-dmgS
 function resetDmgStats(){dmgStats={hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,heroHeal:0,compHeal:0,heroHealMax:0,compHealMax:0,heroHealSkills:{},compHealSkills:{},kills:0,heroSkills:{},compSkills:{},taken:0,takenMax:0,takenHits:0,killTs:0,killFast:0,killSlow:0,peakDps:0};if(typeof markDirty==='function')markDirty('stage');}
 let compSkillCd={};   // 随从每个技能的独立冷却就绪时间戳(键=技能下标;_owner 记录当前随从,换随从自动重置)
 const COMP_SKILL_DEFAULT_CD=8;   // 随从技能默认CD(秒,技能未写 cd 时)
-const COMPANION_SKILL_CD_MULT=0.75;   // 随从技能冷却缩短:实际CD=配置CD×75%
-const COMPANION_SKILL_GCD_MS=900;     // 随从技能公共间隔,避免同一帧把所有技能打空
+const COMPANION_SKILL_CD_MULT=0.62;   // 随从技能冷却缩短:实际CD=配置CD×62%
+const COMPANION_SKILL_GCD_MS=750;     // 随从技能公共间隔,避免同一帧把所有技能打空
 const COMPANION_COORDINATE_CD_MS = 9000;  // 主角命中后随从协同追击
 const COMPANION_GUARD_CD_MS = 14000;      // 坦克随从主动护卫
 const COMPANION_SUPPORT_SLOTS = 2;        // 支援随从栏位:不上场普攻,低频触发弱化专属
-const COMPANION_SUPPORT_POWER = 0.42;     // 支援位强度折算,保留功能价值但不替代主战
-const COMPANION_COMBAT_QUALITY = { white:0.74, green:0.96, blue:1.18, purple:1.37, orange:1.51 };
+const COMPANION_SUPPORT_POWER = 0.55;     // 支援位强度折算,保留功能价值但不替代主战
+const COMPANION_COMBAT_QUALITY = { white:0.82, green:1.12, blue:1.42, purple:1.72, orange:2.18 };
 const COMPANION_ROLE_PROFILE = {
-  tank: { atk:0.65, def:1.30, hp:0.68, spd:0.72, reg:0.60, critd:0.78 },
-  dps:  { atk:0.90, def:0.80, hp:0.52, spd:0.75, reg:0.42, critd:0.92 },
-  heal: { atk:0.65, def:0.90, hp:0.58, spd:0.74, reg:0.58, critd:0.82 },
+  tank: { atk:0.78, def:1.34, hp:0.74, spd:0.78, reg:0.66, critd:0.86 },
+  dps:  { atk:1.12, def:0.82, hp:0.56, spd:0.92, reg:0.46, critd:1.05 },
+  heal: { atk:0.72, def:0.94, hp:0.62, spd:0.82, reg:0.66, critd:0.88 },
 };
 const COMPANION_REACTION_CD_MS = 45000;
 const COMPANION_TACTICS = {
@@ -10785,16 +10785,16 @@ const COMPANION_TACTICS = {
   guard: { label:'守护', icon:'🛡️', desc:'随从更愿意挡刀和放防护技能，生命防御提高，但输出降低；主角危险时触发护卫壁垒。', reaction:'护卫壁垒', atk:0.88, def:1.18, hp:1.16, spd:0.96, heal:1.06, shield:1.16, dmg:0.90, aggro:0.18 },
   support: { label:'支援', icon:'💚', desc:'随从优先治疗、护盾和净化，支援效果提高，但直接输出下降；主角危险时触发紧急救护。', reaction:'紧急救护', atk:0.90, def:0.96, hp:0.94, spd:1.02, heal:1.18, shield:1.18, dmg:0.92, aggro:-0.06 },
 };
-const COMPANION_STAR_GROWTH = 0.15;   // 每星成长
-const COMPANION_SKILL_DMG_BONUS = 1.43;  // 随从技能伤害全局加成
+const COMPANION_STAR_GROWTH = 0.22;   // 每星成长
+const COMPANION_SKILL_DMG_BONUS = 2.05;  // 随从技能伤害全局加成
 const COMPANION_HEAL_SCALE = 1.25;        // 随从治疗统一收口
 const COMPANION_RESONANCE_CD_MS = 60000;  // 羁绊共鸣:收藏羁绊转为低频战斗连携
 const COMPANION_AWAKEN_COST = {
-  white:{ shards:18, gold:80000, essence:25, gem:0, honor:0, statPct:0.10 },
-  green:{ shards:28, gold:160000, essence:45, gem:0, honor:400, statPct:0.12 },
-  blue:{ shards:42, gold:360000, essence:95, gem:15, honor:1000, statPct:0.15 },
-  purple:{ shards:70, gold:900000, essence:220, gem:50, honor:3200, statPct:0.18 },
-  orange:{ shards:110, gold:2200000, essence:520, gem:120, honor:8000, statPct:0.22 },
+  white:{ shards:18, gold:80000, essence:25, gem:0, honor:0, statPct:0.15 },
+  green:{ shards:28, gold:160000, essence:45, gem:0, honor:400, statPct:0.20 },
+  blue:{ shards:42, gold:360000, essence:95, gem:15, honor:1000, statPct:0.26 },
+  purple:{ shards:70, gold:900000, essence:220, gem:50, honor:3200, statPct:0.34 },
+  orange:{ shards:110, gold:2200000, essence:520, gem:120, honor:8000, statPct:0.48 },
 };
 const COMPANION_AWAKEN_HERO_MOD = {
   white:{ atkPct:1, hpPct:1, defPct:1 },
@@ -11056,30 +11056,31 @@ function companionAwakenInfo(comp, tpl){
 function companionAwakenSkillDef(tpl){
   if(!tpl) return null;
   const q = (typeof compQuality === 'function') ? compQuality(tpl) : { key:'white' };
-  const pow = ({ white:1.00, green:1.10, blue:1.24, purple:1.42, orange:1.68 })[q.key] || 1;
+  const pow = ({ white:1.30, green:1.65, blue:2.05, purple:2.60, orange:3.30 })[q.key] || 1.3;
   const baseName = tpl.signature?.name || tpl.name || '随从';
   if(tpl.role === 'tank'){
     return {
       _awakenSkill:true, name:`觉醒·${baseName}`, icon:'🌟', type:'buff',
-      buff:'sacredShield', buffTarget:'both', duration:12000, cd:26,
-      healPct:+(0.08 * pow).toFixed(3), shieldPct:+(0.18 * pow).toFixed(3), cleanse:true,
-      desc:'觉醒之力守护主角和随从,施加厚护盾、少量治疗并净化减益。'
+      buff:'sacredShield', buffTarget:'both', duration:14000, cd:20,
+      healPct:+(0.10 * pow).toFixed(3), shieldPct:+(0.24 * pow).toFixed(3), cleanse:true,
+      desc:'觉醒守护技:为主角和随从施加巨额护盾、治疗并净化减益。'
     };
   }
   if(tpl.role === 'heal'){
     return {
       _awakenSkill:true, name:`觉醒·${baseName}`, icon:'🌟', type:'heal',
-      heal:+(0.30 * pow).toFixed(3), healTarget:'both', healPct:+(0.06 * pow).toFixed(3),
-      shieldPct:+(0.12 * pow).toFixed(3), cleanse:true, cd:24,
-      desc:'觉醒之力同时治疗主角和随从,追加护盾并净化减益。'
+      heal:+(0.36 * pow).toFixed(3), healTarget:'both', healPct:+(0.10 * pow).toFixed(3),
+      shieldPct:+(0.18 * pow).toFixed(3), cleanse:true, cd:20,
+      desc:'觉醒救场技:同时大治疗主角和随从,追加护盾并净化减益。'
     };
   }
   return {
     _awakenSkill:true, name:`觉醒·${baseName}`, icon:'🌟', type:'dmg',
-    mul:+(5.2 * pow).toFixed(1), alwaysCrit:q.key === 'orange',
-    dotPct:+(0.14 * pow).toFixed(3), dotMs:9000, splashPct:+(0.38 * pow).toFixed(2),
-    executeBonus:+(0.28 * pow).toFixed(2), executeThreshold:0.42, bonusVsBoss:+(0.18 * pow).toFixed(2),
-    cd:24, desc:'觉醒爆发技,高倍率打击并溅射,对首领和低血量目标额外提高伤害。'
+    mul:+(7.0 * pow).toFixed(1), alwaysCrit:q.key === 'purple' || q.key === 'orange',
+    heroAtkPct:+(0.10 * pow).toFixed(2), extraHitPct:+(0.22 * pow).toFixed(2),
+    dotPct:+(0.18 * pow).toFixed(3), dotMs:10000, splashPct:+(0.42 * pow).toFixed(2),
+    executeBonus:+(0.34 * pow).toFixed(2), executeThreshold:0.45, bonusVsBoss:+(0.26 * pow).toFixed(2),
+    cd:18, desc:'觉醒爆发技:超高倍率打击,吃主角攻击协同,追加追击段,对首领和残血目标极强。'
   };
 }
 function companionAwakenSkill(tpl, comp){ return companionIsAwakened(comp) ? companionAwakenSkillDef(tpl) : null; }
@@ -11384,18 +11385,25 @@ function companionCombatPressureMult(){
   const supportCount = companionSupportEntries().length;
   if(!tpl && !supportCount) return { rank:0, hp:1, atk:1, name:'' };
   const rank = tpl ? (companionResonanceInfo(tpl).rank || 0) : 0;
+  const qKey = tpl && typeof compQuality === 'function' ? compQuality(tpl).key : (tpl?.quality || 'white');
+  const qPressure = ({ white:0.020, green:0.040, blue:0.070, purple:0.105, orange:0.155 })[qKey] || 0.02;
+  const stars = comp ? Math.max(1, comp.stars || 1) : 1;
   const special = tpl && companionCombatSpecialDesc(tpl.key) ? 1 : 0;
   const unique = tpl && companionUniqueTrait(tpl) ? 1 : 0;
   const extraSkills = tpl && Array.isArray(tpl.skills) ? tpl.skills.filter(s => s && s._extraSkill).length : 0;
   const legendSkills = tpl && Array.isArray(tpl.skills) ? tpl.skills.filter(s => s && s._legendSkill).length : 0;
   const coverageSkills = tpl && Array.isArray(tpl.skills) ? tpl.skills.filter(s => s && s._coverageSkill).length : 0;
+  const qualitySkills = tpl && Array.isArray(tpl.skills) ? tpl.skills.filter(s => s && s._qualitySkill).length : 0;
+  const totalSkills = tpl && Array.isArray(tpl.skills) ? tpl.skills.length : 0;
   const awaken = companionIsAwakened(comp) ? 1 : 0;
   const awakenedSupport = companionSupportEntries().filter(entry => companionIsAwakened(entry.comp)).length;
-  const supportPressure = supportCount * 0.004;
+  const supportPressure = supportCount * 0.012;
+  const starPressure = Math.max(0, stars - 1) * 0.018;
+  const skillPressure = Math.min(0.18, totalSkills * 0.010 + qualitySkills * 0.012);
   return {
     rank,
-    hp:1.012 + rank * 0.015 + special * 0.006 + unique * 0.004 + extraSkills * 0.006 + legendSkills * 0.012 + coverageSkills * 0.004 + awaken * 0.022 + awakenedSupport * 0.008 + supportPressure,
-    atk:1.010 + rank * 0.012 + special * 0.005 + unique * 0.003 + extraSkills * 0.004 + legendSkills * 0.008 + coverageSkills * 0.003 + awaken * 0.016 + awakenedSupport * 0.006 + supportPressure * 0.8,
+    hp:1.025 + qPressure + starPressure + skillPressure + rank * 0.026 + special * 0.014 + unique * 0.010 + extraSkills * 0.010 + legendSkills * 0.020 + coverageSkills * 0.006 + awaken * 0.120 + awakenedSupport * 0.030 + supportPressure,
+    atk:1.018 + qPressure * 0.62 + starPressure * 0.65 + skillPressure * 0.45 + rank * 0.018 + special * 0.010 + unique * 0.006 + extraSkills * 0.006 + legendSkills * 0.012 + coverageSkills * 0.004 + awaken * 0.070 + awakenedSupport * 0.018 + supportPressure * 0.75,
     name:rank > 0 ? '羁绊警觉' : (supportCount ? '战团压迫' : '战友压迫')
   };
 }
@@ -12037,7 +12045,17 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
       if(i!==undefined){const sk=st.skills[i];
         if(sk.type==='dmg'){
           const dmgMult = companionSkillDamageMult(sk, mon, now);
-          const sd=calcDmg(st.atk*sk.mul*dmgMult*COMPANION_SKILL_DMG_BONUS,monArmor(mon),st.crit,st.critd,sk.alwaysCrit,mon.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(mon, sd.dmg, sk.icon || st.emoji).remaining;mon.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,sd.crit,sk.name);showMonsterFloat(mon,st.emoji+sk.icon+'-'+dealt,'#c0a0ff',allySideFloatOpts({variant:sd.crit?'crit':'comp',scale:sd.crit?1.12:1,important:true}));}
+          const compSkillAtk = st.atk + Math.max(0, Math.floor((state.hero.atk || 0) * (sk.heroAtkPct || 0)));
+          const sd=calcDmg(compSkillAtk*sk.mul*dmgMult*COMPANION_SKILL_DMG_BONUS,monArmor(mon),st.crit,st.critd,sk.alwaysCrit,mon.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(mon, sd.dmg, sk.icon || st.emoji).remaining;mon.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,sd.crit,sk.name);showMonsterFloat(mon,st.emoji+sk.icon+'-'+dealt,'#c0a0ff',allySideFloatOpts({variant:sd.crit?'crit':'comp',scale:sd.crit?1.12:1,important:true}));}
+          if(dealt > 0 && sk.extraHitPct){
+            let extra = Math.max(1, Math.floor(dealt * sk.extraHitPct));
+            extra = absorbMonsterBarrier(mon, extra, sk.icon || st.emoji).remaining;
+            if(extra > 0){
+              mon.hp -= extra;
+              trackDmg('comp', extra, false, (sk.name || '随从技能') + '追击');
+              showMonsterFloat(mon, (sk.icon || st.emoji) + '追击-' + extra, '#fcd34d', allySideFloatOpts({ variant:'comp', scale:1.08, important:true }));
+            }
+          }
           const dotPct = sk.dotPct || (sk.dot ? 0.12 : 0);
           if(dotPct > 0) applyMonsterDot(mon,`comp:${comp.key}:${i}`,Math.max(1,Math.floor(dealt*dotPct)),sk.dotMs||6000,{icon:sk.icon,name:sk.name,source:st.name});
           if(sk.slow) mon.slowUntil=Math.max(mon.slowUntil||0,Date.now()+(sk.slowMs||4000));

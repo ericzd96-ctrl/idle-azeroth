@@ -514,4 +514,47 @@
     if (!Array.isArray(c.skills)) c.skills = [];
     if (!c.skills.some(s => s.name === sk.name)) c.skills.push(Object.assign({ _legendSkill:true }, sk));
   }
+
+  /* ====== 品质追加技能(2026-07-14)======
+     用户目标:普通+1,优秀+2,精良+3,史诗+4,传说+5。
+     这些不是展示用技能,会进入随从独立技能循环,让高品质/觉醒随从成为真正主战力。 */
+  const QUALITY_EXTRA_SKILL_COUNT = { white:1, green:2, blue:3, purple:4, orange:5 };
+  const QD = (name, icon, desc, mul, extra) => Object.assign({ name, icon, desc, type:'dmg', mul, cd:10 }, extra || {});
+  const QH = (name, icon, heal, desc, extra) => Object.assign({ name, icon, desc, type:'heal', heal, healTarget:'smart', cd:14 }, extra || {});
+  const QB = (name, icon, buff, desc, extra) => Object.assign({ name, icon, desc, type:'buff', buff, duration:9000, cd:18 }, extra || {});
+  const QUALITY_ROLE_SKILLS = {
+    dps: [
+      QD('压制连击','⚔️','4倍伤害,对首领额外提高20%',4.0,{ bonusVsBoss:0.20, cd:10 }),
+      QD('破绽追击','🎯','4.6倍伤害,标记目标并追加追击',4.6,{ stateKey:'marked', stateMs:10000, extraHitPct:0.32, cd:13 }),
+      QB('杀意沸腾','💢','berserk','10秒强化自身攻击攻速,并获得小护盾',{ buffTarget:'companion', duration:10000, shieldPct:0.08, cd:18 }),
+      QD('首领处刑','💀','5.4倍伤害,对残血和首领极强',5.4,{ executeBonus:0.45, executeThreshold:0.45, bonusVsBoss:0.28, cd:16 }),
+      QD('战友协同','🌟','6倍伤害,吃主角攻击协同并溅射',6.0,{ heroAtkPct:0.18, extraHitPct:0.45, splashPct:0.35, cd:18 }),
+    ],
+    tank: [
+      QD('盾墙反击','🛡️','3.2倍伤害,破甲并击晕目标',3.2,{ debuff:'sunder', stun:true, stunMs:1000, cd:12 }),
+      QB('不动壁垒','🧱','sacredShield','10秒强化自身防御,并获得厚护盾',{ buffTarget:'companion', duration:10000, shieldPct:0.16, cd:18 }),
+      QH('坚守回血','❤️‍🩹',0.20,'恢复自身生命并净化减益',{ healTarget:'companion', cleanse:true, shieldPct:0.08, cd:16 }),
+      QD('嘲讽猛击','📣','4倍伤害,降低目标护甲并减速',4.0,{ debuff:'sunder', slow:true, slowMs:5000, cd:15 }),
+      QB('战线重整','⚜️','kings','强化双方并给主角和随从护盾',{ buffTarget:'both', duration:10000, shieldPct:0.10, cd:22 }),
+    ],
+    heal: [
+      QH('快速救护','💚',0.22,'治疗危险目标并附带护盾',{ shieldPct:0.08, cd:12 }),
+      QB('战地鼓舞','📯','battleShout','10秒提升主角攻击,并补小护盾',{ buffTarget:'hero', duration:10000, shieldPct:0.07, cd:18 }),
+      QH('净化祷言','✨',0.20,'治疗并净化减益,同时给双方小护盾',{ healTarget:'both', cleanse:true, shieldPct:0.06, cd:16 }),
+      QB('迅捷庇护','💨','rapidFire','9秒提升主角攻速,并治疗主角',{ buffTarget:'hero', duration:9000, healPct:0.08, cd:20 }),
+      QD('圣辉反击','🌟','4.8倍伤害,同时治疗主角',4.8,{ heal:0.12, healTarget:'hero', bonusVsBoss:0.18, cd:16 }),
+    ],
+  };
+  for (const c of COMPANIONS) {
+    const q = (typeof compQuality === 'function') ? compQuality(c).key : (c.quality || 'white');
+    const count = QUALITY_EXTRA_SKILL_COUNT[q] || 1;
+    const pack = QUALITY_ROLE_SKILLS[c.role] || QUALITY_ROLE_SKILLS.dps;
+    if (!Array.isArray(c.skills)) c.skills = [];
+    for (let i = 0; i < count && i < pack.length; i++) {
+      const src = pack[i];
+      const name = `${src.name}`;
+      if (c.skills.some(s => s.name === name)) continue;
+      c.skills.push(Object.assign({ _qualitySkill:true }, src, { name }));
+    }
+  }
 })();

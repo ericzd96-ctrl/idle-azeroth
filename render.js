@@ -3249,6 +3249,8 @@ function companionSkillTipHtml(sk){
   if (sk.stateKey) lines.push(`施加 ${compStateName(sk.stateKey)} ${compSecs(sk.stateMs || 9000)}秒`);
   if (sk.splashPct) lines.push(`对其他敌人溅射 ${compPct(sk.splashPct)}% 伤害`);
   if (sk.aoePct) lines.push(`额外波及其他敌人 ${compPct(sk.aoePct)}% 伤害`);
+  if (sk.heroAtkPct) lines.push(`额外计入主角攻击的 ${compPct(sk.heroAtkPct)}%`);
+  if (sk.extraHitPct) lines.push(`命中后追加 ${compPct(sk.extraHitPct)}% 追击伤害`);
   if (sk.executeBonus) lines.push(`对 ${compPct(sk.executeThreshold || 0.35)}% 以下目标额外 +${compPct(sk.executeBonus)}% 伤害`);
   if (sk.bonusVsBoss) lines.push(`对首领额外 +${compPct(sk.bonusVsBoss)}% 伤害`);
   if (sk.bonusVsDot) lines.push(`对持续伤害目标额外 +${compPct(sk.bonusVsDot)}% 伤害`);
@@ -3277,7 +3279,7 @@ function companionSkillTipHtml(sk){
   else if (sk.healTarget === 'companion') lines.push('治疗目标：随从');
   else if (sk.healTarget === 'both') lines.push('治疗目标：主角和随从');
   else if (sk.healTarget === 'smart') lines.push('治疗目标：自动选择血量更危险的一方');
-  const mode = sk._awakenSkill ? '觉醒专属技' : sk._signature ? (sk.mode === 'passive' ? '专属被动' : '专属主动') : sk._legendSkill ? '传说技能' : sk._extraSkill ? '特色技能' : sk._coverageSkill ? '战术补强技能' : (sk.type === 'summon' ? '召唤技能' : sk.type === 'buff' ? '辅助技能' : sk.type === 'heal' ? '治疗技能' : '伤害技能');
+  const mode = sk._awakenSkill ? '觉醒专属技' : sk._signature ? (sk.mode === 'passive' ? '专属被动' : '专属主动') : sk._legendSkill ? '传说技能' : sk._qualitySkill ? '品质战技' : sk._extraSkill ? '特色技能' : sk._coverageSkill ? '战术补强技能' : (sk.type === 'summon' ? '召唤技能' : sk.type === 'buff' ? '辅助技能' : sk.type === 'heal' ? '治疗技能' : '伤害技能');
   const cdSec = (typeof companionEffectiveSkillCdSec === 'function') ? companionEffectiveSkillCdSec(sk) : (sk.cd || 8);
   const cdText = sk.mode === 'passive' ? mode : `${mode} · 冷却 ${String(cdSec).replace(/\.0$/,'')}秒`;
   return `<b>${skillIconHtml} ${sk.name}</b><div>${sk.desc || ''}</div>${lines.map(x=>`<div class="muted">${x}</div>`).join('')}<div class="muted">${cdText}</div>`;
@@ -3390,7 +3392,7 @@ function compSkillChips(tpl, comp){
   return skills.map(s=>{
     const tip = companionTipAttr(companionSkillTipHtml(s));
     const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(s.name, 16, s.icon) : s.icon;
-    return `<span class="comp-skill${s._signature?' sig':''}${s._extraSkill?' extra':''}${s._coverageSkill?' coverage':''}${s._legendSkill?' legend':''}${s._awakenSkill?' awaken':''}" data-tip="${tip}">${skillIconHtml}<span class="cs-name">${s.name}</span></span>`;
+    return `<span class="comp-skill${s._signature?' sig':''}${s._extraSkill?' extra':''}${s._coverageSkill?' coverage':''}${s._qualitySkill?' quality':''}${s._legendSkill?' legend':''}${s._awakenSkill?' awaken':''}" data-tip="${tip}">${skillIconHtml}<span class="cs-name">${s.name}</span></span>`;
   }).join('');
 }
 const COMPANION_FILTER_DEFAULTS = { ownership:'all', target:'all', quality:'all', role:'all', trait:'all', bond:'all', query:'', sort:'quality' };
@@ -4085,7 +4087,7 @@ function companionBondChipsHtml(tpl, entries) {
 function companionDetailSkillListHtml(tpl, comp) {
   const skills = companionSkillPool(tpl, comp);
   if (!skills.length) return '<div class="muted">暂无随从技能</div>';
-  return `<div class="comp-detail-skill-grid">${skills.map(sk => `<div class="comp-detail-skill${sk._signature ? ' sig' : ''}${sk._legendSkill ? ' legend' : ''}${sk._extraSkill ? ' extra' : ''}${sk._coverageSkill ? ' coverage' : ''}${sk._awakenSkill ? ' awaken' : ''}">${companionSkillTipHtml(sk)}${companionSkillEffectTagsHtml(sk)}</div>`).join('')}</div>`;
+  return `<div class="comp-detail-skill-grid">${skills.map(sk => `<div class="comp-detail-skill${sk._signature ? ' sig' : ''}${sk._legendSkill ? ' legend' : ''}${sk._extraSkill ? ' extra' : ''}${sk._coverageSkill ? ' coverage' : ''}${sk._qualitySkill ? ' quality' : ''}${sk._awakenSkill ? ' awaken' : ''}">${companionSkillTipHtml(sk)}${companionSkillEffectTagsHtml(sk)}</div>`).join('')}</div>`;
 }
 function companionLegendSkill(tpl) {
   return (tpl?.skills || []).find(sk => sk && sk._legendSkill) || null;
