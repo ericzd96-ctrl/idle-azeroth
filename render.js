@@ -1443,6 +1443,10 @@ function attachFocusBossHover(focus) {
 function renderMonList() {
   const wrap = $('mon-list'); if (!wrap) return;
   const all = state.currentMonsters || [];
+  const now = Date.now();
+  const searching = state.mode === 'world' && state.worldSearch && (state.worldSearch.until || 0) > now && all.length === 0;
+  const searchRemain = searching ? Math.max(1, Math.ceil(((state.worldSearch.until || 0) - now) / 1000)) : 0;
+  const searchPct = searching ? Math.max(0, Math.min(100, ((now - (state.worldSearch.start || now)) / Math.max(1, state.worldSearch.duration || ((state.worldSearch.until || now) - (state.worldSearch.start || now)))) * 100)) : 0;
   const displayName = (raw) => {
     const s = String(raw || '');
     if (!s) return '敌人';
@@ -1461,11 +1465,17 @@ function renderMonList() {
   const focus = all.find(m => m.hp > 0) || all[0] || null;
 
   // 签名: 槽位内容(含空槽)
-  const sig = slots.map((m, i) => m ? m._uid + (m === focus ? 'F' : '') + (m.hp > 0 ? 'A' : 'D') : 'E' + i).join('|');
+  const sig = (searching ? `S${searchRemain}|` : '') + slots.map((m, i) => m ? m._uid + (m === focus ? 'F' : '') + (m.hp > 0 ? 'A' : 'D') : 'E' + i).join('|');
   if (sig !== _monListSig) {
     _monListSig = sig;
     wrap.innerHTML = slots.map((m, i) => {
       if (!m) {
+        if (searching && i === 0) {
+          return `<div class="mon-row mon-placeholder" data-slot="${i}">
+            <div class="m-emoji">🔎</div>
+            <div class="m-mid"><div class="m-name">寻找目标<span class="m-lvl">${searchRemain}秒</span></div><div class="bar hp"><i style="width:${searchPct}%"></i><span>${state.worldSearch.text || '正在寻找下一批敌人'}</span></div></div>
+          </div>`;
+        }
         return `<div class="mon-row mon-placeholder" data-slot="${i}">
           <div class="m-emoji">—</div>
           <div class="m-mid"><div class="m-name">—</div><div class="bar hp"><i style="width:0%"></i><span>—</span></div></div>
@@ -1513,7 +1523,6 @@ function renderMonList() {
   }
 
   // 每帧更新血条 + 存活状态 + 减益(仅真实怪物槽位)
-  const now = Date.now();
   const skipNonFocus = isMobileLayout() && (now - _lastNonFocusMonPaint < 220);
   for (const m of all) {
     const row = wrap.querySelector(`[data-uid="${m._uid}"]`); if (!row) continue;
@@ -1894,7 +1903,8 @@ function updateBattleVisuals() {
     const base = `${state.mode}|${state.currentMap}|${state.currentSubzone}`;
     if (state.mode === 'world') {
       const sk = `${state.currentMap}-${state.currentSubzone}`;
-      return base + `|${state.subzoneKills[sk]||0}|${state.subzoneCleared[sk]||''}`;
+      const searchLeft = state.worldSearch?.until ? Math.max(0, Math.ceil((state.worldSearch.until - Date.now()) / 1000)) : 0;
+      return base + `|${state.subzoneKills[sk]||0}|${state.subzoneCleared[sk]||''}|search:${searchLeft}`;
     }
     if (state.mode === 'dungeon') {
       const ds = state.dungeonState || {};
@@ -1931,9 +1941,11 @@ function updateBattleVisuals() {
       const threatTags = worldZoneThreatTagsHtml(map, sub);
       const fieldOpTag = worldFieldOperationTagHtml(map, state.currentSubzone, { metaVisible:true });
       const renownTag = worldRenownTagHtml(map, { metaVisible:true });
+      const searchLeft = state.worldSearch?.until ? Math.max(0, Math.ceil((state.worldSearch.until - Date.now()) / 1000)) : 0;
+      const searchTag = searchLeft > 0 ? ` · 🔎 寻找目标 <b>${searchLeft}</b>秒` : '';
       $('h-zone').innerHTML = `${mapIconHtml} ${map.name} · ${sub.name}`;
       $('zone-name').innerHTML = `${mapIconHtml} ${map.name} · ${sub.name} (等级${sub.lvl[0]}-${sub.lvl[1]})`;
-      $('progress-text').innerHTML = `探索进度 <b>${Math.min(subKills,50)}</b> / 50 ${cleared?'✅':''}${renownTag ? ` · ${renownTag}` : ''}${fieldOpTag ? ` · ${fieldOpTag}` : ''}${threatTags ? ` · ${threatTags}` : ''}`;
+      $('progress-text').innerHTML = `探索进度 <b>${Math.min(subKills,50)}</b> / 50 ${cleared?'✅':''}${searchTag}${renownTag ? ` · ${renownTag}` : ''}${fieldOpTag ? ` · ${fieldOpTag}` : ''}${threatTags ? ` · ${threatTags}` : ''}`;
       bindInlineTipElements($('progress-text'));
     }
   } else if (state.mode === 'boss') {

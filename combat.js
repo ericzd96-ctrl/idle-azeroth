@@ -6020,6 +6020,7 @@ function overLevelPenalty(mon){
 }
 function spawnMonster(){
   initCompanionHp();state.currentMonsters=[];
+  state.worldSearch = null;
   state._currentRareElite = null;
   // 新战斗清除随从护盾;英雄护盾改为按持续时间到期(不再每波清盾,否则秒杀刷怪时护盾瞬间消失)
   state._compBarrier = 0;
@@ -6373,6 +6374,54 @@ function calcDmg(atk,def,crit,critd,forceCrit,defLvl,atkLvl,opts){
 }
 function getPrimaryMonster(){return state.currentMonsters[0];}
 function getAliveMonsters(){return state.currentMonsters.filter(m=>m.hp>0);}
+function worldSearchRemainingMs(now){
+  if(state.mode !== 'world' || !state.worldSearch) return 0;
+  return Math.max(0, (state.worldSearch.until || 0) - (now || Date.now()));
+}
+function worldMonsterSearchDelayMs(){
+  const map = typeof getMap === 'function' ? getMap() : null;
+  const sub = map?.sub?.[state.currentSubzone] || map?.sub?.[0] || null;
+  const high = Math.max(map?.lvlRange?.[1] || 1, sub?.lvl?.[1] || 1);
+  const endgame = Math.max(0, high - 70);
+  const base = 1350 + Math.min(950, endgame * 18);
+  const variance = rng(0, 650);
+  const speed = Math.max(1, state.battleSpeed || 1);
+  return Math.max(700, Math.floor((base + variance) / speed));
+}
+function startWorldMonsterSearch(reason){
+  if(!state || state.mode !== 'world') return false;
+  if(getAliveMonsters().length > 0) return false;
+  const now = Date.now();
+  const delay = worldMonsterSearchDelayMs();
+  const map = typeof getMap === 'function' ? getMap() : null;
+  const sub = map?.sub?.[state.currentSubzone] || null;
+  state.worldSearch = {
+    start: now,
+    until: now + delay,
+    duration: delay,
+    reason: reason || 'clear',
+    text: sub ? `在${sub.name}寻找下一批敌人` : '寻找下一批敌人'
+  };
+  if(typeof markDirty === 'function') markDirty('stage', 'map');
+  return true;
+}
+function waitOrResolveWorldMonsterSearch(now){
+  if(!state?.worldSearch) return false;
+  if(state.mode !== 'world'){
+    state.worldSearch = null;
+    return false;
+  }
+  if(worldSearchRemainingMs(now) > 0){
+    if(typeof markDirty === 'function') markDirty('stage');
+    return true;
+  }
+  state.worldSearch = null;
+  spawnMonster();
+  lastHeroAtk = now;
+  lastMonAtk = now;
+  if(typeof markDirty === 'function') markDirty('stage', 'map');
+  return true;
+}
 function bossTrickList(bossData){
   if(!bossData) return [];
   if(Array.isArray(bossData.tricks) && bossData.tricks.length) return bossData.tricks;
@@ -8951,7 +9000,15 @@ function tickBattle(now){
   if(state.talentState && state.talentState.shield > 0 && state.talentState.shieldExpire && now > state.talentState.shieldExpire){ state.talentState.shield = 0; state.talentState.shieldExpire = 0; markDirty('hero'); }   // 护盾到期消失
   pruneAllySummons(now);
   reapDeadMonsters();                                   // 先结算上一拍可能死亡的敌人(含 AOE 群杀)
-  if(getAliveMonsters().length===0){spawnMonster();lastHeroAtk=now;lastMonAtk=now;return;}
+  if(getAliveMonsters().length===0){
+    if(state.mode === 'world'){
+      if(waitOrResolveWorldMonsterSearch(now)) return;
+      startWorldMonsterSearch('empty');
+      lastHeroAtk=now;lastMonAtk=now;
+      return;
+    }
+    spawnMonster();lastHeroAtk=now;lastMonAtk=now;return;
+  }
   focusHighestThreat();                                 // 锁定仇恨最高的敌人为焦点([0])
   let mon=state.currentMonsters[0];
   applyCouncilBossMechanics(now);
@@ -9565,7 +9622,7 @@ function onMonsterDeath(mon){
   else{const subKey=state.currentMap+'-'+state.currentSubzone;state.subzoneKills[subKey]=(state.subzoneKills[subKey]||0)+1;if(typeof recordWorldFieldOperationKill==='function') recordWorldFieldOperationKill(mon);if(state.subzoneKills[subKey]===50&&!state.subzoneCleared[subKey]){state.subzoneCleared[subKey]=true;const map=getMap();const sub=map.sub[state.currentSubzone];state.gold+=sub.lvl[1]*30;log('🌟 ['+sub.name+'] 探索完成! +'+sub.lvl[1]*30+'💰','epic');const it3=rollItem('rare',sub.lvl[1],state.currentMap);addToInventory(it3);if(typeof eventsOnItemGet==='function') eventsOnItemGet(it3);if(typeof eventsOnSubzoneClear==='function') eventsOnSubzoneClear();if(typeof progressionOnSubzoneClear==='function') progressionOnSubzoneClear(state.currentMap,state.currentSubzone);markDirty('map');}
     // 多敌:仅移除这一只,整波清空后才刷新下一波
     const di=state.currentMonsters.indexOf(mon);if(di>=0)state.currentMonsters.splice(di,1);
-    if(state.currentMonsters.length===0)spawnMonster();}
+    if(state.currentMonsters.length===0)startWorldMonsterSearch('clear');}
   // 注:不再每次击杀都 markDirty('inventory') —— 否则背包每杀一只就整体重建,
   // 导致鼠标悬停装备时按钮闪烁、点击落空。掉落时 addToInventory 已各自 markDirty。
 }
@@ -10248,6 +10305,7 @@ function resetCombatState(){
   if(state){
     clearAllBuffs();
     state.heroStunUntil=0;state.heroSilenceUntil=0;state.heroDisarmUntil=0;
+    state.worldSearch=null;
     state._compBarrier=0;state._compStunUntil=0;state._compSilenceUntil=0;state._compDisarmUntil=0;state._compSoulLinkUntil=0;state._compFrenzyUntil=0;state._compDecayUntil=0;state._compLastDotTick=0;
     state._brittleUntil=0;state._soulLinkUntil=0;state._decayUntil=0;
     state._allySummons=[];
