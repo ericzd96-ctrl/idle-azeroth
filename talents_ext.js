@@ -592,3 +592,45 @@ const TALENT_AURA_LIBRARY = {
     }
   }
 })();
+
+(function extendSkillMarkTalents() {
+  if (typeof CLASSES === 'undefined') return;
+  const names = {
+    arms:'裂骨判读', fury:'怒火判读', prot:'盾令判读',
+    arcane:'奥纹判读', fire:'燃烬判读', frost:'寒狱判读',
+    discipline:'赎罪判读', holy:'圣约判读', shadow:'虚债判读',
+    assassination:'毒契判读', combat:'乱舞判读', subtlety:'暗幕判读',
+    bm:'猎命判读', marks:'弱点判读', survival:'野火判读',
+    element:'雷导判读', enhancement:'风怒判读', restoration:'潮汐判读',
+    ret:'裁决判读', affliction:'痛苦判读', demonology:'军团判读', destruction:'混乱判读',
+    balance:'星轨判读', feral:'血爪判读', resto:'林地判读',
+  };
+  const dotSpecs = new Set(['fire','shadow','assassination','survival','affliction','destruction','balance','feral']);
+  const supportSpecs = new Set(['discipline','holy','restoration','resto']);
+  for (const [clsKey, cls] of Object.entries(CLASSES)) {
+    if (!cls || !Array.isArray(cls.trees)) continue;
+    for (const tree of cls.trees) {
+      if (!tree || tree._skillMarkTalent) continue;
+      tree._skillMarkTalent = true;
+      const support = supportSpecs.has(tree.key) || (clsKey === 'paladin' && tree.key === 'holy') || (tree.key === 'prot' && (clsKey === 'warrior' || clsKey === 'paladin'));
+      const dot = dotSpecs.has(tree.key);
+      tree.talents.push({
+        key: `skill_mark_${clsKey}_${tree.key}`,
+        name: names[tree.key] || '技能判读',
+        desc: `技能判词伤害提高 ${support ? 10 : 14}%, 判词持续时间提高 18%, ${support ? '判词治疗和护盾提高 18%' : (dot ? '判词 DOT 与扩散提高 16%' : '判词溅射提高 10%, 收束返还资源 +2')}。`,
+        req: 88,
+        max: 1,
+        fx: {
+          type:'skillMark',
+          markDmgPct:support ? 10 : 14,
+          markDurationPct:18,
+          markDotPct:dot ? 16 : 8,
+          markSpreadPct:dot ? 16 : 6,
+          markSupportPct:support ? 18 : 6,
+          markSplashPct:support ? 4 : 10,
+          markResource:2
+        }
+      });
+    }
+  }
+})();

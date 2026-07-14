@@ -144,6 +144,19 @@ const SKILL_ECHO_GUIDE = [
   { icon:'🩸', name:'裂伤轨迹', desc:'物理技能留下裂伤,毒/暗影/火焰技能可扩大出血。' },
 ];
 
+const SKILL_MARK_GUIDE = [
+  { icon:'🔥', name:'燃烬判词', desc:'火焰技能叠加燃烬判词,满层或被冰霜/物理收束时造成点燃爆发。' },
+  { icon:'❄️', name:'寒狱判词', desc:'冰霜技能叠加寒狱判词,满层或被火焰/物理收束时冻结并碎裂。' },
+  { icon:'⛈️', name:'雷导判词', desc:'风暴技能叠加雷导判词,满层或被奥术/自然收束时弹射并返还资源。' },
+  { icon:'🌑', name:'虚债判词', desc:'暗影技能叠加虚债判词,满层或被神圣/火焰收束时扩散痛苦。' },
+  { icon:'✨', name:'圣约判词', desc:'神圣技能叠加圣约判词,满层或被物理/自然收束时转化护盾和治疗。' },
+  { icon:'🐍', name:'毒契判词', desc:'毒药技能叠加毒契判词,满层或被火焰/物理收束时触发毒爆。' },
+  { icon:'🔷', name:'奥纹判词', desc:'奥术技能叠加奥纹判词,满层或被非奥术技能收束时坍缩返还资源。' },
+  { icon:'🌿', name:'生息判词', desc:'自然技能叠加生息判词,满层或被神圣/火焰收束时绽放治疗护盾。' },
+  { icon:'🐾', name:'猎命判词', desc:'野兽/射击技能叠加猎命判词,满层或被物理/野兽收束时追加追咬。' },
+  { icon:'🩸', name:'裂骨判词', desc:'物理技能叠加裂骨判词,满层或被毒/暗影/火焰收束时造成深层流血。' },
+];
+
 /* 每个职业 4 个新技能:爆发 / 减伤 / 功能性 / 职业特色 */
 const NEW_SKILLS = {
   warrior: {
@@ -1317,6 +1330,7 @@ if (typeof window !== 'undefined') {
   window.SPEC_STANCE_SYSTEMS = SPEC_STANCE_SYSTEMS;
   window.SKILL_ELEMENT_REACTION_GUIDE = SKILL_ELEMENT_REACTION_GUIDE;
   window.SKILL_ECHO_GUIDE = SKILL_ECHO_GUIDE;
+  window.SKILL_MARK_GUIDE = SKILL_MARK_GUIDE;
   window.currentSpecCombatRule = currentSpecCombatRule;
   window.currentSpecCombatMeter = currentSpecCombatMeter;
   window.currentSpecTacticalWindow = currentSpecTacticalWindow;

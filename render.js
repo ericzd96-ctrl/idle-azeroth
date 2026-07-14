@@ -269,6 +269,18 @@ function focusDebuffs(now) {
       });
     }
   }
+  if (mon._skillMarks) {
+    for (const mark of Object.values(mon._skillMarks)) {
+      if (!mark || !(mark.expire > now) || !(mark.stacks > 0)) continue;
+      const max = mark.max || 4;
+      out.push({
+        icon: mark.icon || '✦',
+        name: `${mark.name || '技能判词'} ${mark.stacks}/${max}`,
+        desc: mark.desc || '技能留下的可叠层目标判词,满层或被相克技能命中时会收束爆发',
+        left: Math.ceil((mark.expire - now) / 1000)
+      });
+    }
+  }
   return out;
 }
 function focusBuffs(now) {
@@ -473,6 +485,7 @@ function renderBuffBar() {
     const stance = (typeof currentSpecStanceSystem === 'function') ? currentSpecStanceSystem() : null;
     const elementGuide = (typeof SKILL_ELEMENT_REACTION_GUIDE === 'object' && Array.isArray(SKILL_ELEMENT_REACTION_GUIDE)) ? SKILL_ELEMENT_REACTION_GUIDE : [];
     const echoGuide = (typeof SKILL_ECHO_GUIDE === 'object' && Array.isArray(SKILL_ECHO_GUIDE)) ? SKILL_ECHO_GUIDE : [];
+    const markGuide = (typeof SKILL_MARK_GUIDE === 'object' && Array.isArray(SKILL_MARK_GUIDE)) ? SKILL_MARK_GUIDE : [];
     const chainDesc = chain ? ` · 专精连段: ${chain.name}: ${chain.steps.map(x => x.label).join(' → ')}。完成: ${chain.finish}` : '';
     const reactionDesc = reaction ? ` · 状态反应: ${reaction.name}: ${reaction.desc}` : '';
     const procDesc = proc ? ` · 临场强化: ${proc.name}: ${proc.desc}` : '';
@@ -482,12 +495,13 @@ function renderBuffBar() {
     const engineDesc = engineText ? ` · 专精引擎强化: ${engineText}` : '';
     const elementDesc = elementGuide.length ? ` · 技能元素反应: ${elementGuide.map(x => `${x.icon || '✹'}${x.name}: ${x.desc}`).join('；')}` : '';
     const echoDesc = echoGuide.length ? ` · 技能余波: ${echoGuide.map(x => `${x.icon || '✺'}${x.name}: ${x.desc}`).join('；')}` : '';
+    const markDesc = markGuide.length ? ` · 技能判词: ${markGuide.map(x => `${x.icon || '✦'}${x.name}: ${x.desc}`).join('；')}` : '';
     selfStates.unshift({
       kind: 'spec-meter',
       icon: specMeter.icon || '✦',
       name: specMeter.name,
       base: '专精机制:' + specMeter.key,
-      desc: (specMeter.hint || '') + ` · 当前 ${specMeter.stacks || 0}/${specMeter.max || 0}` + (tactic ? ` · 战术窗口: ${tactic.name}: ${tactic.desc}` : '') + chainDesc + reactionDesc + procDesc + coreDesc + stanceDesc + engineDesc + elementDesc + echoDesc,
+      desc: (specMeter.hint || '') + ` · 当前 ${specMeter.stacks || 0}/${specMeter.max || 0}` + (tactic ? ` · 战术窗口: ${tactic.name}: ${tactic.desc}` : '') + chainDesc + reactionDesc + procDesc + coreDesc + stanceDesc + engineDesc + elementDesc + echoDesc + markDesc,
       valText: `${specMeter.stacks || 0}/${specMeter.max || 0}`,
       stacks: specMeter.stacks || 0,
       left: 0
@@ -2930,7 +2944,9 @@ function renderSkillBar() {
     const elementDesc = elementTip ? `\n状态反应: ${elementTip}` : '';
     const echoTip = (typeof skillEchoTip === 'function') ? skillEchoTip(key, sk) : '';
     const echoDesc = echoTip ? `\n技能余波: ${echoTip}` : '';
-    const tip = `${sk.name} · ${baseDesc}${detailDesc}${procDesc}${coreDesc}${engineDesc}${elementDesc}${echoDesc}\n${c.resource} ${sk.mp} · 冷却 ${getSkillCd(sk)}秒`.replace(/"/g, '&quot;');
+    const markTip = (typeof skillMarkTip === 'function') ? skillMarkTip(key, sk) : '';
+    const markDesc = markTip ? `\n技能判词: ${markTip}` : '';
+    const tip = `${sk.name} · ${baseDesc}${detailDesc}${procDesc}${coreDesc}${engineDesc}${elementDesc}${echoDesc}${markDesc}\n${c.resource} ${sk.mp} · 冷却 ${getSkillCd(sk)}秒`.replace(/"/g, '&quot;');
     const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, sk.icon) : sk.icon;
     return `<button class="skill-btn ${onCd?'on-cd':''}" data-skill="${key}" draggable="true" title="${tip}"
       style="${coreMatch&&!onCd?'border-color:#38bdf8;box-shadow:0 0 0 1px rgba(56,189,248,.50),0 0 14px rgba(56,189,248,.18)':(procMatch&&!onCd?'border-color:#facc15;box-shadow:0 0 0 1px rgba(250,204,21,.45)':(!onCd&&hasMp?'border-color:var(--accent)':''))}">

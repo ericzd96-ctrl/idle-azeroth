@@ -144,7 +144,17 @@ function currentSpecMasteryEngine(){
 function specMasteryEngineBonus(field){
   const p = currentSpecMasteryEngine();
   const mastery = state?.hero?.mastery || 0;
-  return p && p.bonus && p.bonus[field] ? mastery * p.bonus[field] : 0;
+  if(!p || !p.bonus) return 0;
+  if(p.bonus[field]) return mastery * p.bonus[field];
+  const b = p.bonus;
+  if(field === 'markDmgPct') return mastery * Math.max(b.corePayoffPct || 0, b.specReactionPct || 0, b.echoDmgPct || 0, b.procPct || 0) * 0.55;
+  if(field === 'markDotPct') return mastery * Math.max(b.reactionDotPct || 0, b.echoDotPct || 0, b.dotSpreadPct || 0) * 0.55;
+  if(field === 'markSupportPct') return mastery * Math.max(b.supportPct || 0, b.mechanicShieldPct || 0) * 0.55;
+  if(field === 'markDurationPct') return mastery * Math.max(b.coreGainPct || 0, b.echoDurationPct || 0) * 0.45;
+  if(field === 'markSpreadPct') return mastery * (b.dotSpreadPct || 0) * 0.45;
+  if(field === 'markSplashPct') return mastery * Math.max(b.chainPayoffPct || 0, b.specReactionPct || 0) * 0.35;
+  if(field === 'markResource') return mastery * (b.resource || 0);
+  return 0;
 }
 function masteryTakenMult(){ return 1 - Math.min(30, masteryFor('dr')*MASTERY_TYPE.dr.per + masteryFor('guardianEcho')*0.18 + specMasteryEngineBonus('takenPct'))/100; } // 受击减伤(封顶30%)
 function masteryDescText(){
@@ -713,7 +723,7 @@ function processSkillElementReactions(skillKey, sk, mon, dmgDone, ctx){
 function skillMechanicFxBonus(field){
   let total = specMasteryEngineBonus(field);
   for(const fx of talentFxList()){
-    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho')) continue;
+    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho' && fx.type !== 'skillMark')) continue;
     total += +(fx[field] || 0);
   }
   return total;
@@ -842,6 +852,122 @@ function processSkillEchoes(skillKey, sk, mon, dmgDone, ctx){
   if(leaveTag) addMonsterSkillEcho(mon, leaveTag, sk, now);
   return triggered;
 }
+const SKILL_MARK_RULES = {
+  fire:{ icon:'🔥', name:'燃烬判词', desc:'火焰判词在护甲下燃烧,满层或被冰霜/物理技能收束时点燃爆发。', detonators:['frost','physical'], damagePct:0.13, dotPct:0.16, state:'fever', color:'#fb923c' },
+  frost:{ icon:'❄️', name:'寒狱判词', desc:'冰霜判词让目标脆化,满层或被火焰/物理技能收束时冻结碎裂。', detonators:['fire','physical'], damagePct:0.18, shieldPct:0.018, state:'frozen', color:'#93c5fd' },
+  storm:{ icon:'⛈️', name:'雷导判词', desc:'风暴判词把目标变成导体,满层或被奥术/自然技能收束时弹射过载。', detonators:['arcane','nature'], damagePct:0.14, splashPct:0.24, resource:5, state:'stormBrand', color:'#67e8f9' },
+  shadow:{ icon:'🌑', name:'虚债判词', desc:'暗影判词记录痛苦债务,满层或被神圣/火焰技能收束时扩散虚空。', detonators:['holy','fire'], dotPct:0.18, spreadDotPct:0.45, state:'voidTorn', color:'#c084fc' },
+  holy:{ icon:'✨', name:'圣约判词', desc:'神圣判词把审判转为守护,满层或被物理/自然技能收束时治疗并生成护盾。', detonators:['physical','nature'], damagePct:0.10, healPct:0.022, shieldPct:0.026, state:'holyBrand', color:'#fde68a' },
+  poison:{ icon:'🐍', name:'毒契判词', desc:'毒药判词在体内增殖,满层或被火焰/物理技能收束时按 DOT 数量毒爆。', detonators:['fire','physical'], damagePerDotPct:0.065, dotPct:0.14, state:'venomBloom', color:'#bef264' },
+  arcane:{ icon:'🔷', name:'奥纹判词', desc:'奥术判词扭曲空间,满层或被非奥术伤害收束时坍缩并返还资源。', detonators:['fire','frost','storm','holy','shadow','nature','poison','physical','beast'], damagePct:0.12, splashPct:0.14, resource:6, state:'unstable', color:'#c4b5fd' },
+  nature:{ icon:'🌿', name:'生息判词', desc:'自然判词扎根生命,满层或被神圣/火焰技能收束时绽放治疗护盾。', detonators:['holy','fire','physical'], dotPct:0.10, healPct:0.026, shieldPct:0.022, state:'lifeSeed', color:'#86efac' },
+  beast:{ icon:'🐾', name:'猎命判词', desc:'猎群判词锁定弱点,满层或被物理/野兽技能收束时召来追咬。', detonators:['physical','beast'], damagePct:0.15, summon:'beast', state:'huntWound', color:'#7dd3fc' },
+  physical:{ icon:'🩸', name:'裂骨判词', desc:'物理判词沿伤口加深,满层或被毒/暗影/火焰技能收束时造成深层流血。', detonators:['poison','shadow','fire'], damagePct:0.10, dotPct:0.17, state:'trauma', color:'#fda4af' },
+};
+function ensureMonsterSkillMarks(mon, now){
+  if(!mon) return {};
+  now = now || Date.now();
+  if(!mon._skillMarks) mon._skillMarks = {};
+  for(const [key, mark] of Object.entries(mon._skillMarks)){
+    if(!mark || !(mark.expire > now) || !(mark.stacks > 0)) delete mon._skillMarks[key];
+  }
+  return mon._skillMarks;
+}
+function dominantSkillMarkTag(tags){
+  const order = ['fire','frost','storm','holy','shadow','poison','arcane','nature','beast','physical'];
+  return order.find(t => tags.includes(t) && SKILL_MARK_RULES[t]) || '';
+}
+function addMonsterSkillMark(mon, tag, sk, now, add){
+  const rule = SKILL_MARK_RULES[tag];
+  if(!mon || !rule) return 0;
+  const marks = ensureMonsterSkillMarks(mon, now);
+  const prev = marks[tag] || { stacks:0 };
+  const max = 4;
+  const duration = Math.floor(13000 * (1 + skillMechanicFxBonus('markDurationPct') / 100));
+  const stacks = Math.max(0, Math.min(max, (prev.stacks || 0) + (add || 1)));
+  marks[tag] = {
+    key:tag,
+    icon:rule.icon,
+    name:rule.name,
+    desc:rule.desc,
+    stacks,
+    max,
+    source:sk?.name || '技能',
+    expire:(now || Date.now()) + duration,
+  };
+  showMonsterFloat(mon, `${rule.icon}${stacks}/${max}`, '#fde68a', { variant:'buff' });
+  return stacks;
+}
+function skillMarkTip(skillKey, sk){
+  const tags = skillElementTags(skillKey, sk);
+  const leaveTag = dominantSkillMarkTag(tags);
+  const leave = leaveTag && SKILL_MARK_RULES[leaveTag] ? `叠加${SKILL_MARK_RULES[leaveTag].name}` : '';
+  const detonate = [];
+  for(const rule of Object.values(SKILL_MARK_RULES)){
+    if(rule.detonators?.some(t => tags.includes(t))) detonate.push(rule.name);
+  }
+  const trigger = detonate.length ? `可收束: ${detonate.slice(0, 3).join('、')}` : '';
+  return [leave, trigger].filter(Boolean).join('；');
+}
+function detonateSkillMark(mon, tag, rule, stacks, dmgDone, sk, now, ctx){
+  if(!mon || mon.hp <= 0 || !rule || !(stacks > 0)) return false;
+  const base = Math.max(1, Math.floor(dmgDone || state.hero.atk || 1));
+  const markMult = 1 + skillMechanicFxBonus('markDmgPct') / 100;
+  const dotMult = 1 + skillMechanicFxBonus('markDotPct') / 100;
+  const supportMult = masterySupportEchoMult() * (1 + skillMechanicFxBonus('markSupportPct') / 100);
+  const stackMult = 0.55 + stacks * 0.18;
+  let fired = false;
+  if(rule.state) applyMonsterState(mon, rule.state, rule.stateMs || 9000);
+  if(rule.damagePct) fired = applySkillFollowupDamage(mon, base * rule.damagePct * stackMult * markMult, rule.icon || sk?.icon || '✦', rule.color || '#facc15', now) > 0 || fired;
+  if(rule.damagePerDotPct){
+    const dotCount = Math.max(1, getMonsterDotCount(mon, now));
+    fired = applySkillFollowupDamage(mon, base * dotCount * rule.damagePerDotPct * stackMult * markMult, rule.icon || sk?.icon || '✦', rule.color || '#facc15', now) > 0 || fired;
+  }
+  if(rule.dotPct) applyMonsterDot(mon, 'skillMark:' + tag, Math.max(1, Math.floor(base * rule.dotPct * stackMult * dotMult)), rule.dotMs || 8500, { icon:rule.icon, name:rule.name, source:'skillMark' });
+  if(rule.splashPct && !ctx?.isAOE) fired = splashSkillDamage(mon, base * stackMult * markMult, rule.splashPct * (1 + skillMechanicFxBonus('markSplashPct') / 100), rule.icon || sk?.icon || '✦', now) > 0 || fired;
+  if(rule.spreadDotPct) spreadDotFromMonster(mon, rule.spreadDotPct * (1 + skillMechanicFxBonus('markSpreadPct') / 100), rule.dotMs || 8500);
+  if(rule.healPct) healHeroAmount(Math.floor(state.hero.hpMax * rule.healPct * supportMult), rule.icon || sk?.icon || '✦', '#6ee7b7', 'hero', rule.name);
+  if(rule.shieldPct) addTalentShield(Math.floor(state.hero.hpMax * rule.shieldPct * supportMult), true, 9000);
+  if(rule.resource) grantTalentResource(rule.resource + skillMechanicFxBonus('markResource'));
+  if(rule.summon) specTacticSummon(rule.summon, now);
+  addSkillAura('skill_reaction', { add:1, max:1, duration:5200, icon:rule.icon || '✦', name:rule.name || '技能判词', desc:`${rule.desc} 已由 ${sk?.name || '技能'} 收束。` });
+  showMonsterFloat(mon, `${rule.icon || '✦'}判词爆`, rule.color || '#facc15', { important:true });
+  log(`${rule.icon || '✦'} 技能判词「${rule.name}」收束: ${rule.desc}`,'good');
+  markDirty('skills','hero','stage');
+  return fired || true;
+}
+function processSkillMarks(skillKey, sk, mon, dmgDone, ctx){
+  if(!mon || mon.hp <= 0 || !(dmgDone > 0) || !sk) return false;
+  const now = ctx?.now || Date.now();
+  const tags = skillElementTags(skillKey, sk);
+  if(tags.length === 0) return false;
+  const marks = ensureMonsterSkillMarks(mon, now);
+  let fired = false;
+  for(const [tag, mark] of Object.entries(marks)){
+    const rule = SKILL_MARK_RULES[tag];
+    if(!rule || !(mark.expire > now)) continue;
+    const detonates = rule.detonators?.some(t => tags.includes(t));
+    const full = (mark.stacks || 0) >= (mark.max || 4);
+    if((detonates && (mark.stacks || 0) >= 2) || full){
+      if(classRuntimeReady(`skill-mark:${skillKey}:${mon._uid || mon.name || 'target'}:${tag}`, rule.cooldownMs || 2600, now)){
+        detonateSkillMark(mon, tag, rule, mark.stacks || 1, dmgDone, sk, now, ctx || {});
+        delete marks[tag];
+        fired = true;
+      }
+    }
+  }
+  const leaveTag = dominantSkillMarkTag(tags);
+  if(leaveTag){
+    const stacks = addMonsterSkillMark(mon, leaveTag, sk, now, sk.dot ? 2 : 1);
+    const rule = SKILL_MARK_RULES[leaveTag];
+    if(rule && stacks >= 4 && classRuntimeReady(`skill-mark-full:${skillKey}:${mon._uid || mon.name || 'target'}:${leaveTag}`, rule.cooldownMs || 3000, now)){
+      detonateSkillMark(mon, leaveTag, rule, stacks, dmgDone, sk, now, ctx || {});
+      delete ensureMonsterSkillMarks(mon, now)[leaveTag];
+      fired = true;
+    }
+  }
+  return fired;
+}
 function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
   const fx = skillFxMeta(skillKey, sk);
   const now = ctx?.now || Date.now();
@@ -869,6 +995,7 @@ function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
   if(fx.spreadDotsPct) spreadDotFromMonster(mon, fx.spreadDotsPct, fx.dotMs || 5000);
   processSkillElementReactions(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
   processSkillEchoes(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
+  processSkillMarks(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
   if(fx.resourceGainOnKill && mon.hp <= 0) grantTalentResource(fx.resourceGainOnKill);
   applyClassMechanicAfterSkill(skillKey, sk, mon, dmgDone, Object.assign({ now, hit:true }, ctx || {}));
 }

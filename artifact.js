@@ -879,6 +879,22 @@ function specEngineTrait(cfg){
     }
   }));
 }
+function skillMarkTrait(cfg){
+  return trait(Object.assign({}, cfg, {
+    fx(rank){
+      return {
+        type:'skillMark',
+        markDmgPct:rankValue(cfg.markDmgPct || [4,8,12], rank),
+        markDotPct:rankValue(cfg.markDotPct || [3,6,9], rank),
+        markDurationPct:rankValue(cfg.markDurationPct || [5,10,15], rank),
+        markSupportPct:rankValue(cfg.markSupportPct || [3,6,9], rank),
+        markSpreadPct:rankValue(cfg.markSpreadPct || [2,4,6], rank),
+        markSplashPct:rankValue(cfg.markSplashPct || [2,4,6], rank),
+        markResource:rankValue(cfg.markResource || [0,1,2], rank),
+      };
+    }
+  }));
+}
 
 (function retuneSpecArtifacts() {
   for (const [clsKey, specs] of Object.entries(SPEC_ARTIFACT_SKILL_RETUNE)) {
@@ -910,17 +926,33 @@ function specEngineTrait(cfg){
         }));
       }
       const engineKey = `art_${clsKey}_${specKey}_engine_20260714`;
-      if (ARTIFACT_TRAITS[clsKey].some(t => t.key === engineKey)) continue;
       const support = ['discipline','holy','restoration','resto'].includes(specKey) || (clsKey === 'paladin' && specKey === 'holy');
       const guardian = specKey === 'prot' && (clsKey === 'warrior' || clsKey === 'paladin');
-      ARTIFACT_TRAITS[clsKey].push(specEngineTrait({
-        key:engineKey,
+      if (!ARTIFACT_TRAITS[clsKey].some(t => t.key === engineKey)) {
+        ARTIFACT_TRAITS[clsKey].push(specEngineTrait({
+          key:engineKey,
+          tree:specKey,
+          name:'专精引擎',
+          icon:'✦',
+          mod:{ mastery:1 },
+          supportPct:support || guardian ? [6,12,18] : [3,6,9],
+          desc:'专精核心叠层速度提高 4/8/12%, 核心收束提高 6/12/18%, 连段/专精反应提高 5/10/15%, 姿态和临场强化提高 4/8/12%。并获得精通 +1/2/3。'
+        }));
+      }
+      const markKey = `art_${clsKey}_${specKey}_mark_20260714`;
+      if (ARTIFACT_TRAITS[clsKey].some(t => t.key === markKey)) continue;
+      const supportMark = ['discipline','holy','restoration','resto'].includes(specKey) || (clsKey === 'paladin' && specKey === 'holy') || (specKey === 'prot' && (clsKey === 'warrior' || clsKey === 'paladin'));
+      const dotMark = ['fire','shadow','assassination','survival','affliction','destruction','balance','feral'].includes(specKey);
+      ARTIFACT_TRAITS[clsKey].push(skillMarkTrait({
+        key:markKey,
         tree:specKey,
-        name:'专精引擎',
-        icon:'✦',
+        name:'判词回路',
+        icon:'✥',
         mod:{ mastery:1 },
-        supportPct:support || guardian ? [6,12,18] : [3,6,9],
-        desc:'专精核心叠层速度提高 4/8/12%, 核心收束提高 6/12/18%, 连段/专精反应提高 5/10/15%, 姿态和临场强化提高 4/8/12%。并获得精通 +1/2/3。'
+        markDmgPct:supportMark ? [3,6,9] : [5,10,15],
+        markDotPct:dotMark ? [5,10,15] : [3,6,9],
+        markSupportPct:supportMark ? [5,10,15] : [2,4,6],
+        desc:'技能判词伤害提高,判词持续时间提高,并强化判词 DOT、护盾治疗、溅射或资源返还。并获得精通 +1/2/3。'
       }));
     }
   }
