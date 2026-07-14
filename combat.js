@@ -9666,6 +9666,7 @@ function clearAllBuffs(){
 }
 function onHeroDeath(){
   log('☠️ 你倒下了…','bad');killStreak=0;state._compHp=null;state._compDownUntil=0;   // 复活后随从满血归来
+  const failedFieldCommander = (state.currentMonsters || []).find(m => m && m._fieldCommander);
   clearAllBuffs();
   state._compBarrier = 0;
   state.heroStunUntil = 0;
@@ -9703,6 +9704,22 @@ function onHeroDeath(){
       if(typeof leaveWorldBoss==='function')leaveWorldBoss();else{state.mode='world';state.currentMonsters=[];}
     }
     markDirty('map','events');
+    return;
+  }
+  if(failedFieldCommander && state.mode==='world'){
+    const failInfo = typeof failWorldFieldCommanderEncounter === 'function' ? failWorldFieldCommanderEncounter(failedFieldCommander) : null;
+    const failName = failedFieldCommander.bossName || failInfo?.name || failedFieldCommander.name || '据点指挥官';
+    log(`💀 ${failName} 挑战失败,本次据点首领已经撤退`, 'bad');
+    bossCasting = null;
+    if(typeof hideBossCastBar === 'function') hideBossCastBar();
+    state.currentMonsters = [];
+    state.worldSearch = null;
+    markDirty('map', 'stage');
+    if(typeof startWorldMonsterSearch === 'function'){
+      startWorldMonsterSearch('fieldCommanderFail');
+    }else{
+      spawnMonster();
+    }
     return;
   }
   spawnMonster();

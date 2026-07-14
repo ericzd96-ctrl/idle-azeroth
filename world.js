@@ -333,6 +333,7 @@ function getWorldFieldOperation(map, subIdx, opts) {
 function worldFieldOperationProgressText(op) {
   if (!op) return '';
   if (op.completed) return '已完成';
+  if (op.failedAt && Date.now() - op.failedAt < 90000) return `挑战失败 ${Math.min(op.progress || 0, op.goal || 1)}/${op.goal || 1}`;
   if (op.commanderPending) return '指挥官现身';
   return `${Math.min(op.progress || 0, op.goal || 1)}/${op.goal || 1}`;
 }
@@ -375,6 +376,31 @@ function worldFieldCommanderName(op, map, sub) {
 function shouldSpawnWorldFieldCommander(map, subIdx) {
   const op = getWorldFieldOperation(map, subIdx);
   return !!(op && !op.completed && op.commanderPending && !op.commanderKilled);
+}
+
+function failWorldFieldCommanderEncounter(mon) {
+  const ops = ensureWorldFieldOps();
+  const fallbackMap = typeof getMap === 'function' ? getMap() : null;
+  const fallbackKey = fallbackMap ? worldFieldOpKey(fallbackMap, state.currentSubzone) : null;
+  const key = mon?._fieldOperationKey || fallbackKey;
+  const active = key ? ops.active[key] : null;
+  if (!active) return null;
+  const goal = Math.max(1, active.goal || 1);
+  const rule = WORLD_FIELD_OPERATION_RULES.find(r => r.key === active.ruleKey);
+  const map = typeof MAPS !== 'undefined' ? MAPS.find(m => m.key === (active.mapKey || state.currentMap)) : fallbackMap;
+  active.commanderPending = false;
+  active.commanderKilled = false;
+  active.failedAt = Date.now();
+  active.failCount = (active.failCount || 0) + 1;
+  active.progress = Math.max(0, Math.min(goal - 1, Math.floor(goal * 0.72)));
+  markDirty('map', 'stage');
+  return {
+    key,
+    active,
+    rule,
+    map,
+    name:mon?.bossName || rule?.commander || rule?.name || '据点指挥官'
+  };
 }
 
 function onWorldFieldCommanderKill(mon) {
