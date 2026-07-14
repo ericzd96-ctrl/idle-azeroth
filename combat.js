@@ -167,6 +167,11 @@ function specMasteryEngineBonus(field){
   if(field === 'controlSupportPct') return mastery * Math.max(b.supportPct || 0, b.mechanicShieldPct || 0) * 0.42;
   if(field === 'controlDurationPct') return mastery * Math.max(b.coreGainPct || 0, b.echoDurationPct || 0) * 0.38;
   if(field === 'controlResource') return mastery * (b.resource || 0);
+  if(field === 'weaknessDmgPct') return mastery * Math.max(b.corePayoffPct || 0, b.procPct || 0, b.specReactionPct || 0) * 0.44;
+  if(field === 'weaknessDotPct') return mastery * Math.max(b.dotSpreadPct || 0, b.reactionDotPct || 0, b.echoDotPct || 0) * 0.44;
+  if(field === 'weaknessSupportPct') return mastery * Math.max(b.supportPct || 0, b.mechanicShieldPct || 0) * 0.44;
+  if(field === 'weaknessRevealPct') return mastery * Math.max(b.coreGainPct || 0, b.procPct || 0) * 0.34;
+  if(field === 'weaknessResource') return mastery * (b.resource || 0);
   return 0;
 }
 function masteryTakenMult(){ return 1 - Math.min(30, masteryFor('dr')*MASTERY_TYPE.dr.per + masteryFor('guardianEcho')*0.18 + specMasteryEngineBonus('takenPct'))/100; } // 受击减伤(封顶30%)
@@ -736,7 +741,7 @@ function processSkillElementReactions(skillKey, sk, mon, dmgDone, ctx){
 function skillMechanicFxBonus(field){
   let total = specMasteryEngineBonus(field);
   for(const fx of talentFxList()){
-    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho' && fx.type !== 'skillMark' && fx.type !== 'skillWeave' && fx.type !== 'skillRhythm' && fx.type !== 'skillControl')) continue;
+    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho' && fx.type !== 'skillMark' && fx.type !== 'skillWeave' && fx.type !== 'skillRhythm' && fx.type !== 'skillControl' && fx.type !== 'skillWeakness')) continue;
     total += +(fx[field] || 0);
   }
   return total;
@@ -1394,6 +1399,150 @@ function skillControlTip(skillKey, sk){
   const consume = (sk?.type === 'heal' || sk?.dot || sk?.aoe || (sk?.mul || 0) >= 4 || isDefensiveSkill(skillKey, sk) || /斩杀|处决|终结|爆发|盾|壁垒|圣光|治疗/.test(text)) ? '可在目标有控制压力时触发控场清算' : '';
   return [setup, consume].filter(Boolean).join('；');
 }
+function weaknessKindName(kind){
+  const names = { armor:'护甲', wound:'创口', magic:'魔能', soul:'灵魂', prey:'猎物' };
+  return names[kind] || kind || '弱点';
+}
+function weaknessKindIcon(kind){
+  return ({ armor:'🔨', wound:'🩸', magic:'🔷', soul:'🌑', prey:'🐾' })[kind] || '🎯';
+}
+function skillWeaknessKind(skillKey, sk, ctx){
+  if(!sk) return '';
+  const tags = skillElementTags(skillKey, sk);
+  const text = `${skillKey || ''} ${sk.name || ''} ${sk.desc || ''}`;
+  if(sk.type === 'heal' || ctx?.heal || tags.includes('holy') || /治疗|圣光|赎罪|恩典|祝福/.test(text)) return 'soul';
+  if(tags.includes('beast') || sk.type === 'summon' || sk.summonCount || /宠物|野兽|兽群|召唤|猎人|射击|瞄准|杀戮/.test(text)) return 'prey';
+  if(tags.some(t => ['arcane','fire','frost','storm','nature'].includes(t)) || /奥术|火|炎|冰|霜|风暴|闪电|星界|元素|熔岩/.test(text)) return 'magic';
+  if(sk.dot || tags.some(t => ['poison','shadow'].includes(t)) || /毒|流血|割裂|痛苦|腐蚀|暗影|撕裂|月火|献祭/.test(text)) return 'wound';
+  if(tags.includes('physical') || sk.debuff === 'sunder' || /破甲|斩杀|处决|压制|猛击|盾|裁决|打击|挥砍|背刺/.test(text)) return 'armor';
+  return (sk.mul || 0) >= 4 ? 'armor' : '';
+}
+function ensureMonsterSkillWeakness(mon, now){
+  if(!mon) return null;
+  const ts = now || Date.now();
+  if(mon._skillWeakness && (!(mon._skillWeakness.expire > ts) || !(mon._skillWeakness.stacks > 0))) delete mon._skillWeakness;
+  return mon._skillWeakness || null;
+}
+function addMonsterSkillWeakness(mon, kind, sk, now, add){
+  if(!mon || !kind) return 0;
+  const prev = ensureMonsterSkillWeakness(mon, now) || { stacks:0, max:4, chain:[] };
+  const max = 4;
+  const duration = Math.floor(13000 * (1 + skillMechanicFxBonus('weaknessRevealPct') / 220));
+  const stacks = Math.max(0, Math.min(max, (prev.stacks || 0) + (add || 1)));
+  mon._skillWeakness = {
+    kind,
+    icon:weaknessKindIcon(kind),
+    name:`${weaknessKindName(kind)}弱点`,
+    desc:`${sk?.name || '技能'}揭露的${weaknessKindName(kind)}弱点。爆发、DOT、治疗或协同技能会按弱点类型利用它。`,
+    stacks,
+    max,
+    chain:(prev.chain || []).concat(kind).slice(-4),
+    expire:(now || Date.now()) + duration,
+  };
+  addSkillAura('skill_weakness', {
+    add:add || 1,
+    max,
+    duration,
+    icon:'🎯',
+    name:'弱点洞察',
+    desc:`目标 ${stacks}/${max} 层${weaknessKindName(kind)}弱点。后续技能可利用弱点造成独特追击。`
+  });
+  showMonsterFloat(mon, `${weaknessKindIcon(kind)}${stacks}/${max}`, '#facc15', { variant:'buff' });
+  return stacks;
+}
+function skillWeaknessCanExploit(skillKey, sk, weakness, ctx){
+  if(!sk || !weakness || !(weakness.stacks > 0)) return false;
+  if(ctx?.heal || sk.type === 'heal') return weakness.kind === 'soul' || weakness.stacks >= 3;
+  if(sk.type !== 'dmg') return false;
+  const fx = skillFxMeta(skillKey, sk);
+  const text = `${skillKey || ''} ${sk.name || ''} ${sk.desc || ''}`;
+  if(weakness.stacks >= 4) return true;
+  if(weakness.stacks >= 3 && (sk.dot || fx.spreadDotsPct || sk.aoe || fx.splashPct || (sk.mul || 0) >= 4 || /斩杀|处决|终结|爆发|毁灭|裁决|混乱|彗星|星涌|瞄准/.test(text))) return true;
+  if(weakness.stacks >= 2 && (ctx?.crit || /精准|破绽|背刺|冰枪|瞄准/.test(text))) return true;
+  return false;
+}
+function applySkillWeaknessExploit(kind, weakness, mon, value, sk, now, ctx){
+  const stacks = Math.max(1, weakness?.stacks || 1);
+  const base = Math.max(1, Math.floor(value || state.hero.atk || state.hero.hpMax * 0.035 || 1));
+  const target = (mon && mon.hp > 0) ? mon : (state.currentMonsters || []).find(x => x && x.hp > 0);
+  const dmgMult = (1 + skillMechanicFxBonus('weaknessDmgPct') / 100) * (0.58 + stacks * 0.15);
+  const dotMult = (1 + skillMechanicFxBonus('weaknessDotPct') / 100) * (0.52 + stacks * 0.13);
+  const supportMult = masterySupportEchoMult() * (1 + skillMechanicFxBonus('weaknessSupportPct') / 100) * (0.62 + stacks * 0.12);
+  let fired = false;
+  if((ctx?.heal || sk.type === 'heal') && stacks >= 2){
+    healHeroAmount(Math.floor(state.hero.hpMax * (0.014 + stacks * 0.004) * supportMult), sk.icon || '🎯', '#6ee7b7', 'hero', '灵魂弱点');
+    addTalentShield(Math.floor(state.hero.hpMax * (0.012 + stacks * 0.003) * supportMult), true, 9000);
+    specTacticCompanionSupport('heal', now);
+    fired = true;
+  } else if(target){
+    if(kind === 'armor'){
+      applyMonsterState(target, 'sunder', 9000 + stacks * 700);
+      applyMonsterState(target, 'exposed', 7200 + stacks * 600);
+      fired = applySkillFollowupDamage(target, base * 0.18 * dmgMult, '🔨', '#fbbf24', now) > 0 || fired;
+    } else if(kind === 'wound'){
+      applyMonsterState(target, 'trauma', 8200 + stacks * 650);
+      applyMonsterDot(target, 'skillWeakness:wound', Math.max(1, Math.floor(base * 0.10 * dotMult)), 9000, { icon:'🩸', name:'创口弱点', source:'skillWeakness' });
+      if(stacks >= 4) healHeroAmount(Math.floor(base * 0.05 * supportMult), '🩸', '#fda4af', 'hero', '创口弱点');
+      fired = true;
+    } else if(kind === 'magic'){
+      applyMonsterState(target, 'unstable', 8500 + stacks * 650);
+      fired = splashSkillDamage(target, base * dmgMult, 0.12 + stacks * 0.025, '🔷', now) > 0 || fired;
+      grantTalentResource(2 + Math.floor(stacks / 2) + Math.floor(skillMechanicFxBonus('weaknessResource')));
+    } else if(kind === 'soul'){
+      applyMonsterState(target, 'voidTorn', 8500 + stacks * 650);
+      fired = applySkillFollowupDamage(target, base * 0.14 * dmgMult, '🌑', '#c084fc', now) > 0 || fired;
+      addTalentShield(Math.floor(state.hero.hpMax * 0.010 * supportMult), true, 9000);
+    } else if(kind === 'prey'){
+      applyMonsterState(target, 'huntWound', 9000 + stacks * 650);
+      specTacticSummon(activeHeroClassKey() === 'warlock' ? 'demon' : 'beast', now);
+      fired = applySkillFollowupDamage(target, base * 0.15 * dmgMult, '🐾', '#7dd3fc', now) > 0 || fired;
+    }
+  }
+  if(fired){
+    grantTalentResource(Math.floor(1 + stacks / 2 + skillMechanicFxBonus('weaknessResource')));
+    addSkillAura('skill_weakness', {
+      add:0,
+      max:4,
+      duration:5200,
+      icon:'🎯',
+      name:'弱点洞察',
+      desc:`${weaknessKindName(kind)}弱点被 ${sk?.name || '技能'} 利用,转化为追击、DOT、护盾、溅射或协同。`
+    });
+    showFloat($('hero-emoji'), `🎯${weaknessKindName(kind)}利用`, '#facc15', { variant:'buff', scale:1.05 });
+    log(`🎯 弱点洞察触发: ${weaknessKindName(kind)}弱点 ${stacks} 层被 ${sk?.name || '技能'} 利用`, 'good');
+    markDirty('skills','hero','companion','stage');
+  }
+  return fired;
+}
+function processSkillWeakness(skillKey, sk, mon, value, ctx){
+  if(!sk) return false;
+  const now = ctx?.now || Date.now();
+  const target = (mon && mon.hp > 0) ? mon : (state.currentMonsters || []).find(x => x && x.hp > 0);
+  if(!target) return false;
+  if(ctx?.isAOE && !classRuntimeReady(`skill-weakness-aoe-step:${skillKey}`, 250, now)) return false;
+  const existing = ensureMonsterSkillWeakness(target, now);
+  if(existing && skillWeaknessCanExploit(skillKey, sk, existing, ctx || {})){
+    const snap = Object.assign({}, existing);
+    delete target._skillWeakness;
+    return applySkillWeaknessExploit(snap.kind || 'armor', snap, target, value, sk, now, ctx || {});
+  }
+  const kind = skillWeaknessKind(skillKey, sk, ctx || {});
+  if(!kind) return false;
+  const fx = skillFxMeta(skillKey, sk);
+  const revealBonus = Math.floor(skillMechanicFxBonus('weaknessRevealPct') / 35);
+  let gain = 1 + revealBonus;
+  if(ctx?.crit || (sk.mul || 0) >= 4 || (sk.mp || 0) >= 45 || sk.dot || fx.spreadDotsPct || monsterStateActive(target, 'exposed') || (target.hp > 0 && target.hp <= target.hpMax * 0.35)) gain += 1;
+  addMonsterSkillWeakness(target, kind, sk, now, gain);
+  markDirty('skills','stage');
+  return true;
+}
+function skillWeaknessTip(skillKey, sk){
+  const kind = skillWeaknessKind(skillKey, sk, {});
+  const reveal = kind ? `揭露${weaknessKindName(kind)}弱点` : '';
+  const text = `${skillKey || ''} ${sk?.name || ''} ${sk?.desc || ''}`;
+  const exploit = (sk?.type === 'heal' || sk?.dot || sk?.aoe || (sk?.mul || 0) >= 4 || /暴击|斩杀|处决|终结|爆发|精准|治疗|护盾/.test(text)) ? '可利用目标已有弱点触发追击/护盾/持续伤害' : '';
+  return [reveal, exploit].filter(Boolean).join('；');
+}
 function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
   const fx = skillFxMeta(skillKey, sk);
   const now = ctx?.now || Date.now();
@@ -1425,6 +1574,7 @@ function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
   processSkillWeave(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
   processSkillRhythm(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
   processSkillControl(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
+  processSkillWeakness(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
   if(fx.resourceGainOnKill && mon.hp <= 0) grantTalentResource(fx.resourceGainOnKill);
   applyClassMechanicAfterSkill(skillKey, sk, mon, dmgDone, Object.assign({ now, hit:true }, ctx || {}));
 }
@@ -1438,6 +1588,7 @@ function applySkillHealEffects(skillKey, sk, amount, overheal){
   processSkillWeave(skillKey, sk, null, amount, { overheal, heal:true, now });
   processSkillRhythm(skillKey, sk, null, amount, { overheal, heal:true, now });
   processSkillControl(skillKey, sk, null, amount, { overheal, heal:true, now });
+  processSkillWeakness(skillKey, sk, null, amount, { overheal, heal:true, now });
   applyClassMechanicAfterSkill(skillKey, sk, null, amount, { overheal, heal:true, now });
 }
 function ensureClassRuntime(){

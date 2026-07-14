@@ -757,3 +757,47 @@ const TALENT_AURA_LIBRARY = {
     }
   }
 })();
+
+(function extendSkillWeaknessTalents() {
+  if (typeof CLASSES === 'undefined') return;
+  const names = {
+    arms:'处刑洞察', fury:'血怒洞察', prot:'盾卫洞察',
+    arcane:'魔网洞察', fire:'灼痕洞察', frost:'碎冰洞察',
+    discipline:'赎罪洞察', holy:'圣光洞察', shadow:'心灵洞察',
+    assassination:'毒创洞察', combat:'破甲洞察', subtlety:'背刺洞察',
+    bm:'猎物洞察', marks:'鹰眼洞察', survival:'陷阱洞察',
+    element:'元素洞察', enhancement:'风暴洞察', restoration:'潮汐洞察',
+    holy_paladin:'圣裁洞察', prot_paladin:'壁垒洞察', ret:'灰烬洞察',
+    affliction:'痛苦洞察', demonology:'恶魔洞察', destruction:'混乱洞察',
+    balance:'星辰洞察', feral:'血爪洞察', resto:'林地洞察',
+  };
+  const supportSpecs = new Set(['discipline','holy','restoration','resto']);
+  const dotSpecs = new Set(['fire','shadow','assassination','survival','affliction','destruction','balance','feral']);
+  const precisionSpecs = new Set(['arms','fury','marks','subtlety','ret','arcane','frost','element']);
+  for (const [clsKey, cls] of Object.entries(CLASSES)) {
+    if (!cls || !Array.isArray(cls.trees)) continue;
+    for (const tree of cls.trees) {
+      if (!tree || tree._skillWeaknessTalent) continue;
+      tree._skillWeaknessTalent = true;
+      const keyName = clsKey === 'paladin' && tree.key === 'holy' ? 'holy_paladin' : (clsKey === 'paladin' && tree.key === 'prot' ? 'prot_paladin' : tree.key);
+      const support = supportSpecs.has(tree.key) || (clsKey === 'paladin' && tree.key === 'holy') || (tree.key === 'prot' && (clsKey === 'warrior' || clsKey === 'paladin'));
+      const dot = dotSpecs.has(tree.key);
+      const precision = precisionSpecs.has(tree.key);
+      tree.talents.push({
+        key: `skill_weakness_${clsKey}_${tree.key}`,
+        name: names[keyName] || '弱点洞察',
+        desc: `弱点洞察更强: ${support ? '灵魂弱点治疗和护盾提高 20%' : (dot ? '创口弱点 DOT 提高 20%' : '弱点利用追击提高 18%')}, 揭露效率提高,利用时返还资源。`,
+        req: 112,
+        max: 1,
+        fx: {
+          type:'skillWeakness',
+          weaknessDmgPct:support ? 8 : (precision ? 20 : 18),
+          weaknessDotPct:dot ? 20 : 8,
+          weaknessSupportPct:support ? 20 : 6,
+          weaknessRevealPct:precision ? 22 : 16,
+          weaknessResource:2
+        }
+      });
+    }
+  }
+})();

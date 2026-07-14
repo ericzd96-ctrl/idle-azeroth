@@ -936,6 +936,20 @@ function skillControlTrait(cfg){
     }
   }));
 }
+function skillWeaknessTrait(cfg){
+  return trait(Object.assign({}, cfg, {
+    fx(rank){
+      return {
+        type:'skillWeakness',
+        weaknessDmgPct:rankValue(cfg.weaknessDmgPct || [4,8,12], rank),
+        weaknessDotPct:rankValue(cfg.weaknessDotPct || [3,6,9], rank),
+        weaknessSupportPct:rankValue(cfg.weaknessSupportPct || [3,6,9], rank),
+        weaknessRevealPct:rankValue(cfg.weaknessRevealPct || [4,8,12], rank),
+        weaknessResource:rankValue(cfg.weaknessResource || [0,1,2], rank),
+      };
+    }
+  }));
+}
 
 (function retuneSpecArtifacts() {
   for (const [clsKey, specs] of Object.entries(SPEC_ARTIFACT_SKILL_RETUNE)) {
@@ -1039,6 +1053,21 @@ function skillControlTrait(cfg){
           controlSupportPct:supportWeave ? [6,12,18] : [2,4,6],
           controlDurationPct:[5,10,15],
           desc:'控场清算追击或救场效果提高,控制压力持续时间提高,清算时返还少量资源。并获得精通 +1/2/3。'
+        }));
+      }
+      const weaknessKey = `art_${clsKey}_${specKey}_weakness_20260714`;
+      if (!ARTIFACT_TRAITS[clsKey].some(t => t.key === weaknessKey)) {
+        ARTIFACT_TRAITS[clsKey].push(skillWeaknessTrait({
+          key:weaknessKey,
+          tree:specKey,
+          name:'洞察回路',
+          icon:'🎯',
+          mod:{ mastery:1 },
+          weaknessDmgPct:supportWeave ? [3,6,9] : [6,12,18],
+          weaknessDotPct:dotWeave ? [6,12,18] : [3,6,9],
+          weaknessSupportPct:supportWeave ? [6,12,18] : [2,4,6],
+          weaknessRevealPct:[5,10,15],
+          desc:'弱点利用追击、持续伤害或支援效果提高,弱点揭露效率提高,利用时返还少量资源。并获得精通 +1/2/3。'
         }));
       }
     }
