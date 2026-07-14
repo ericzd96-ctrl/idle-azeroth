@@ -552,6 +552,116 @@ function currentSpecTacticForCombat(){
   if(typeof globalThis?.currentSpecTacticalWindow === 'function') return globalThis.currentSpecTacticalWindow();
   return null;
 }
+function currentSpecSkillChainForCombat(){
+  if(typeof currentSpecSkillChain === 'function') return currentSpecSkillChain();
+  if(typeof globalThis?.currentSpecSkillChain === 'function') return globalThis.currentSpecSkillChain();
+  return null;
+}
+function ensureSpecSkillChainRuntime(chain, now){
+  const rt = ensureSkillRuntime();
+  if(!rt.specChain) rt.specChain = {};
+  const cls = activeHeroClassKey();
+  const spec = activeHeroSpecKey();
+  if(rt.specChain.cls !== cls || rt.specChain.spec !== spec || rt.specChain.name !== chain?.name || (rt.specChain.expire && rt.specChain.expire <= now)){
+    rt.specChain = { cls, spec, name:chain?.name || '', index:0, history:[], expire:0, lastSkill:'', lastMarker:'' };
+  }
+  return rt.specChain;
+}
+function skillChainStepMatches(step, skillKey, sk, ctx){
+  if(!step || !step.match) return false;
+  const text = [
+    skillKey || '',
+    sk?.name || '',
+    sk?.desc || '',
+    sk?.type || '',
+    ctx?.heal ? '治疗' : '',
+    ctx?.buff ? '增益' : '',
+    ctx?.summoned ? '召唤' : '',
+  ].join(' ');
+  if(step.match.global || step.match.sticky) step.match.lastIndex = 0;
+  return step.match.test(text);
+}
+function setSpecFlowAura(chain, index, done){
+  const steps = chain?.steps || [];
+  consumeSkillAura('spec_flow', { all:true });
+  if(!chain || index <= 0) return;
+  const next = done ? '连段完成,战术效果已触发' : ('下一段: ' + (steps[index]?.label || '收束'));
+  const doneText = steps.slice(0, index).map(x => x.label).join(' → ');
+  addSkillAura('spec_flow', {
+    add:index,
+    max:Math.max(1, steps.length || 3),
+    duration:done ? 5200 : (chain.durationMs || 9000),
+    icon:chain.icon || '✦',
+    name:(chain.name || '专精连段') + (done ? '·完成' : ''),
+    desc:`已完成: ${doneText || '起手'}。${next}。完成奖励: ${chain.finish || '触发专精战术效果'}。`,
+  });
+}
+function applySpecSkillChainPayoff(chain, mon, value, ctx, now){
+  const tactic = currentSpecTacticForCombat();
+  const kind = chain.kind || tactic?.kind || '';
+  const def = Object.assign({}, tactic || {}, {
+    icon:chain.icon || tactic?.icon || '✦',
+    name:chain.name || tactic?.name || '专精连段',
+    kind,
+    desc:chain.finish || tactic?.desc || '完成专精连段,触发额外战斗效果。',
+  });
+  const target = (mon && mon.hp > 0) ? mon : (state.currentMonsters || []).find(x => x && x.hp > 0);
+  const base = Math.max(1, Math.floor(value || state.hero.atk || state.hero.hpMax * 0.05 || 1));
+  const fired = applySpecTacticEffect(def, target, Math.floor(base * (chain.payoffMul || 1.18)), now);
+  if(tactic?.meterKey) addSkillAura(tactic.meterKey, { add:1, max:tactic.meterMax || 5, duration:15000, icon:tactic.icon, name:tactic.meterName || tactic.name, desc:tactic.desc });
+  if(target && target.hp > 0 && chain.extraHitPct) applySkillFollowupDamage(target, base * chain.extraHitPct, chain.icon || '✦', '#facc15', now);
+  if(ctx?.heal || (ctx?.buff && /圣言|潮汐|道标|林地|赎罪|合唱|治疗|护盾/.test(chain.name || ''))){
+    addTalentShield(Math.floor(state.hero.hpMax * 0.025), true, 8500);
+    specTacticCompanionSupport('heal', now);
+  }
+  grantTalentResource(chain.resource || 4);
+  if(target && target.hp > 0 && typeof triggerMonsterSpecAdaptationPressure === 'function') triggerMonsterSpecAdaptationPressure(target, now);
+  return fired;
+}
+function processSpecSkillChain(skillKey, sk, mon, value, ctx){
+  const chain = currentSpecSkillChainForCombat();
+  const steps = chain?.steps || [];
+  if(!sk || steps.length < 2) return false;
+  const now = ctx?.now || Date.now();
+  const rt = ensureSpecSkillChainRuntime(chain, now);
+  const marker = `${skillKey}:${now}:${ctx?.isAOE ? 'aoe' : 'one'}:${ctx?.heal ? 'heal' : ''}:${ctx?.buff ? 'buff' : ''}:${ctx?.summoned ? 'summon' : ''}`;
+  if(rt.lastMarker === marker) return false;
+  rt.lastMarker = marker;
+  const expected = Math.max(0, Math.min(rt.index || 0, steps.length - 1));
+  const expectedMatch = skillChainStepMatches(steps[expected], skillKey, sk, ctx);
+  const firstMatch = skillChainStepMatches(steps[0], skillKey, sk, ctx);
+  if(!expectedMatch && !(expected > 0 && firstMatch)) return false;
+
+  if(expected > 0 && rt.lastSkill === skillKey && expectedMatch && chain.requireDistinct !== false) return false;
+  const nextIndex = expectedMatch ? expected + 1 : 1;
+  rt.index = nextIndex;
+  rt.expire = now + (chain.durationMs || 9000);
+  rt.lastSkill = skillKey;
+  rt.history = expectedMatch ? (rt.history || []).concat(steps[expected].label) : [steps[0].label];
+
+  if(nextIndex >= steps.length){
+    if(classRuntimeReady(`spec-chain:${activeHeroClassKey()}:${activeHeroSpecKey()}:${chain.name}`, chain.cooldownMs || 6500, now)){
+      setSpecFlowAura(chain, steps.length, true);
+      const fired = applySpecSkillChainPayoff(chain, mon, value, ctx || {}, now);
+      showFloat($('hero-emoji'), `${chain.icon || '✦'}${chain.name}`, '#facc15', { variant:'buff', scale:1.08 });
+      log(`${chain.icon || '✦'} 技能连段「${chain.name}」完成: ${chain.finish || '触发专精战术效果'}`,'epic');
+      markDirty('skills','hero','companion');
+      rt.index = 0;
+      rt.history = [];
+      rt.expire = 0;
+      return fired;
+    }
+    rt.index = 0;
+    rt.history = [];
+    rt.expire = 0;
+    return false;
+  }
+
+  setSpecFlowAura(chain, nextIndex, false);
+  showFloat($('hero-emoji'), `${chain.icon || '✦'}${nextIndex}/${steps.length}`, '#fde68a', { variant:'buff', scale:1.02 });
+  markDirty('skills');
+  return true;
+}
 function grantSpecTacticBuff(buffKey, durMs, now){
   if(!buffKey) return;
   if(!state.buffs) state.buffs = {};
@@ -945,6 +1055,7 @@ function applyClassMechanicAfterSkill(skillKey, sk, mon, value, ctx){
   const fx = skillFxMeta(skillKey, sk);
   applyCompanionClassSupport(fx, sk, value, now);
   applySpecIdentityMechanicAfterSkill(skillKey, sk, mon, value, ctx);
+  processSpecSkillChain(skillKey, sk, mon, value, ctx || {});
   if(mon && mon.hp > 0 && fx.extraHitPctIfSummon && activeAllySummonCount(now) > 0){
     applySkillFollowupDamage(mon, value * fx.extraHitPctIfSummon, sk.icon || '🐾', '#7dd3fc', now);
   }

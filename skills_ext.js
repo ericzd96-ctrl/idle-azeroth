@@ -71,6 +71,7 @@ const SKILL_AURA_LIBRARY = {
   h_beastBond:  { icon:'🐾', name:'兽群羁绊', desc:'猎人与宠物/召唤物共同叠加,强化协同猛攻', maxStacks:5 },
   sh_totem:     { icon:'🪬', name:'图腾共鸣', desc:'萨满治疗、护盾与元素技能叠加,强化全队支援', maxStacks:5 },
   d_harmony:    { icon:'🌿', name:'自然调和', desc:'德鲁伊治疗、月火与野性技能叠加,在恢复/输出间转换', maxStacks:5 },
+  spec_flow:    { icon:'✦', name:'专精连段', desc:'按当前专精的技能顺序推进,完成后触发独特战斗效果', maxStacks:3 },
 };
 
 const CLASS_COMBAT_MECHANICS = {
@@ -850,6 +851,162 @@ const SPEC_TACTICAL_WINDOWS = {
   },
 };
 
+const SPEC_SKILL_CHAINS = {
+  warrior:{
+    arms:{ icon:'🪓', name:'压制破甲处决', finish:'收束时施加破甲/破绽并追加处决伤害', steps:[
+      { label:'压制或碎颅打开缺口', match:/压制|碎颅|破甲|灭战者/ },
+      { label:'致死或巨人压住护甲', match:/致死|巨人|灭战者/ },
+      { label:'斩杀或巨人之击收束', match:/斩杀|巨人|致死/ },
+    ] },
+    fury:{ icon:'😡', name:'嗜血暴怒连舞', finish:'收束时获得狂乱、回血并追加怒火追击', steps:[
+      { label:'嗜血或浴血点燃怒气', match:/嗜血|浴血|怒击/ },
+      { label:'怒火乱舞或奥丁之怒加速', match:/怒火|乱舞|奥丁|鲁莽/ },
+      { label:'斩杀或暴怒技能收束', match:/斩杀|暴怒|怒火|乱舞/ },
+    ] },
+    prot:{ icon:'🛡️', name:'盾挡复仇壁垒', finish:'收束时获得吸收盾并按防御反震', steps:[
+      { label:'盾牌或雷霆建立格挡', match:/盾|雷霆|复仇/ },
+      { label:'盾墙或壁垒稳住阵线', match:/盾墙|壁垒|格挡|钢铁/ },
+      { label:'盾击或复仇反攻', match:/盾牌猛击|盾击|复仇|盾牌冲锋/ },
+    ] },
+  },
+  mage:{
+    arcane:{ icon:'🔷', name:'奥能充能倾泻', finish:'收束时追加奥术爆发并返还法力', steps:[
+      { label:'奥术冲击叠充能', match:/奥术冲击|奥术飞弹|奥术/ },
+      { label:'大法师或强化聚焦', match:/大法师|奥术强化|阿鲁尼斯|涌动/ },
+      { label:'奥术弹幕倾泻', match:/奥术弹幕|弹幕|涌动/ },
+    ] },
+    fire:{ icon:'🔥', name:'点燃凤凰燃线', finish:'收束时点燃目标并扩散火焰', steps:[
+      { label:'火球或活动炸弹铺火', match:/火球|活动炸弹|灼烧|燃烧/ },
+      { label:'火焰冲击或凤凰升温', match:/火焰冲击|凤凰|流星|燃烧/ },
+      { label:'炎爆或烈焰风暴引爆', match:/炎爆|烈焰风暴|流星|大灾/ },
+    ] },
+    frost:{ icon:'❄️', name:'冻结碎冰循环', finish:'收束时冻结目标、碎裂追击并获得护盾', steps:[
+      { label:'寒冰箭或冰风暴挂寒意', match:/寒冰|冰风暴|暴风雪|冰霜/ },
+      { label:'冰冻宝珠或彗星压制', match:/宝珠|彗星|冻结|冰/ },
+      { label:'冰枪打碎裂', match:/冰枪|彗星|碎裂|冰风暴/ },
+    ] },
+  },
+  priest:{
+    discipline:{ icon:'⚖️', name:'真言赎罪棱镜', finish:'收束时伤害转化为主角与随从护盾', steps:[
+      { label:'真言术或护盾建立恩典', match:/真言|盾|障|恩典/ },
+      { label:'教派分歧制造破绽', match:/教派|分歧|惩罚/ },
+      { label:'惩罚或惩击完成赎罪', match:/惩罚|惩击|光明之怒/ },
+    ] },
+    holy:{ icon:'✨', name:'圣言合唱回响', finish:'收束时治疗主角与随从并留下护盾', steps:[
+      { label:'恢复或愈合祷言铺底', match:/恢复|愈合|治疗|祷言/ },
+      { label:'圣言术聚光', match:/圣言|静|神圣新星/ },
+      { label:'治疗祷言或圣光收束', match:/治疗祷言|圣言|圣光|神圣/ },
+    ] },
+    shadow:{ icon:'🌑', name:'痛苦疯狂虚空', finish:'收束时扩散暗影持续伤害并追加虚空爆发', steps:[
+      { label:'暗言术或痛苦铺暗影', match:/暗言|痛|腐蚀|暗影/ },
+      { label:'精神鞭笞堆疯狂', match:/鞭笞|心灵|疯狂|虚空/ },
+      { label:'噬灵疫病或虚空爆发收割', match:/噬灵|疫病|虚空|冲撞/ },
+    ] },
+  },
+  rogue:{
+    assassination:{ icon:'🐍', name:'锁喉毒爆处刑', finish:'收束时按持续伤害数量追加毒爆', steps:[
+      { label:'锁喉或割裂开伤口', match:/锁喉|割裂|毒|毁伤/ },
+      { label:'毁伤堆毒锋', match:/毁伤|毒刃|君王/ },
+      { label:'奉毒或君王之灾处刑', match:/奉毒|君王|毒/ },
+    ] },
+    combat:{ icon:'⚔️', name:'剑刃眉心乱舞', finish:'收束时获得急速并溅射乱舞伤害', steps:[
+      { label:'邪恶打击或剑刃冲刺起手', match:/邪恶|剑刃|冲刺|背刺/ },
+      { label:'命运骨骰加速节拍', match:/命运|骨骰|冲动|切割/ },
+      { label:'正中眉心或杀戮盛宴收束', match:/正中|眉心|杀戮|切割/ },
+    ] },
+    subtlety:{ icon:'🌑', name:'暗影伏击秘技', finish:'收束时制造破绽并触发暗影追击', steps:[
+      { label:'背刺或幽暗之刃找破绽', match:/背刺|幽暗|暗袭|绞喉/ },
+      { label:'暗影之舞进入窗口', match:/暗影之舞|暗影|袖剑/ },
+      { label:'袖剑风暴或暗袭收束', match:/袖剑|暗袭|秘技|暗影/ },
+    ] },
+  },
+  hunter:{
+    bm:{ icon:'🐾', name:'倒刺兽群围猎', finish:'收束时召唤或强化野兽并追加追咬', steps:[
+      { label:'倒刺射击激怒野兽', match:/倒刺|宠物|野兽|杀戮/ },
+      { label:'凶暴野兽或召唤物入场', match:/凶暴|野兽|召唤|宠物/ },
+      { label:'杀戮命令或协同猛攻收束', match:/杀戮|协同|猛攻|兽群/ },
+    ] },
+    marks:{ icon:'🎯', name:'印记瞄准穿透', finish:'收束时标记弱点并追加穿透伤害', steps:[
+      { label:'猎人印记标定目标', match:/印记|标记|精确/ },
+      { label:'瞄准或百发蓄势', match:/瞄准|百发|二连|急速射击/ },
+      { label:'杀戮射击或奇美拉穿透', match:/杀戮|奇美拉|瞄准|精确/ },
+    ] },
+    survival:{ icon:'💣', name:'陷阱野火屠戮', finish:'收束时束缚目标并引爆野火持续伤害', steps:[
+      { label:'钉刺或陷阱铺场', match:/钉刺|陷阱|毒蛇|野火/ },
+      { label:'野火炸弹制造爆点', match:/野火|炸弹|爆炸/ },
+      { label:'猫鼬撕咬或屠戮收束', match:/猫鼬|屠戮|猛禽|爆炸/ },
+    ] },
+  },
+  shaman:{
+    element:{ icon:'⛈️', name:'熔岩风暴过载', finish:'收束时追加链式闪电并减速', steps:[
+      { label:'闪电或震击充能', match:/闪电|震击|雷霆/ },
+      { label:'熔岩爆裂点燃过载', match:/熔岩|元素冲击|过载/ },
+      { label:'风暴守护者释放', match:/风暴守护|元素冲击|风暴|拉登/ },
+    ] },
+    enhancement:{ icon:'🌀', name:'风怒漩涡裂地', finish:'收束时获得风怒并追加近战追击', steps:[
+      { label:'风暴打击或毁灭闪电起势', match:/风暴打击|毁灭闪电|风怒/ },
+      { label:'幽魂狼或漩涡蓄力', match:/幽魂|漩涡|狼|嗜血/ },
+      { label:'裂地术或熔岩猛击收束', match:/裂地|熔岩猛击|熔岩|毁灭/ },
+    ] },
+    restoration:{ icon:'🌊', name:'激流链愈潮汐', finish:'收束时治疗主角与随从并制造图腾护盾', steps:[
+      { label:'激流或治疗波起潮', match:/激流|治疗波|治疗之泉/ },
+      { label:'治疗链连接队友', match:/治疗链|链愈|图腾/ },
+      { label:'暴雨图腾或潮汐收束', match:/暴雨|潮汐|治疗链|图腾/ },
+    ] },
+  },
+  paladin:{
+    holy:{ icon:'🌟', name:'震击道标黎明', finish:'收束时双道标治疗并护盾随从', steps:[
+      { label:'神圣震击点亮道标', match:/神圣震击|圣光|道标/ },
+      { label:'圣光闪现或祝福续航', match:/圣光闪现|祝福|圣光/ },
+      { label:'黎明之光收束', match:/黎明|圣言|圣光|震击/ },
+    ] },
+    prot:{ icon:'🛡️', name:'审判复仇壁垒', finish:'收束时获得减伤护盾并以圣光反击', steps:[
+      { label:'审判或奉献建立威胁', match:/审判|奉献|正义/ },
+      { label:'复仇者之盾弹射', match:/复仇者|盾|守护|炽热/ },
+      { label:'正义盾击收束', match:/正义盾击|盾击|复仇者|盾/ },
+    ] },
+    ret:{ icon:'⚜️', name:'审判圣能裁决', finish:'收束时标记审判目标并追加圣能爆发', steps:[
+      { label:'审判或十字军积攒圣能', match:/审判|十字军|公正/ },
+      { label:'灰烬觉醒点燃圣能', match:/灰烬|公正|复仇之怒/ },
+      { label:'圣殿裁决或最终清算收束', match:/圣殿裁决|裁决|最终清算|愤怒之锤/ },
+    ] },
+  },
+  warlock:{
+    affliction:{ icon:'💜', name:'痛楚鬼影收割', finish:'收束时强化并扩散痛苦持续伤害', steps:[
+      { label:'痛楚或腐蚀铺病', match:/痛楚|腐蚀|痛苦/ },
+      { label:'鬼影缠身压迫灵魂', match:/鬼影|缠身|痛苦无常/ },
+      { label:'邪能狂涌或腐蚀之种收割', match:/邪能狂涌|腐蚀之种|收割|狂涌/ },
+    ] },
+    demonology:{ icon:'😈', name:'恶犬古手内爆', finish:'收束时召唤恶魔协战并追加恶魔协击', steps:[
+      { label:'恐惧猎犬或恶魔召唤入场', match:/恐惧猎犬|恶魔|召唤/ },
+      { label:'古尔丹之手聚集军团', match:/古尔丹|恶魔之箭|曼阿里/ },
+      { label:'内爆或恶魔之箭收束', match:/内爆|恶魔之箭|吞噬|恶魔/ },
+    ] },
+    destruction:{ icon:'🔥', name:'献祭燃烧混乱', finish:'收束时追加混乱裂变并点燃敌人', steps:[
+      { label:'献祭或烧尽铺火', match:/献祭|烧尽|燃烧/ },
+      { label:'火焰之雨或大灾变升温', match:/火焰之雨|大灾变|余烬/ },
+      { label:'混乱之箭收束', match:/混乱之箭|混乱|灵魂之火|裂隙/ },
+    ] },
+  },
+  druid:{
+    balance:{ icon:'🌗', name:'日月星涌星落', finish:'收束时追加星界伤害并落下星雨', steps:[
+      { label:'月火或阳炎铺星痕', match:/月火|阳炎|日炎/ },
+      { label:'星火或愤怒校准日月', match:/星火|愤怒|星界/ },
+      { label:'星涌或星辰坠落收束', match:/星涌|星辰|新月|星落/ },
+    ] },
+    feral:{ icon:'🐾', name:'斜掠割裂撕咬', finish:'收束时撕裂伤口并追加凶猛撕咬', steps:[
+      { label:'斜掠或撕碎建立连击', match:/斜掠|撕碎|横扫/ },
+      { label:'割裂放血', match:/割裂|流血|野性/ },
+      { label:'凶猛撕咬收束', match:/凶猛|撕咬|野性狂怒/ },
+    ] },
+    resto:{ icon:'🌿', name:'回春绽放林地', finish:'收束时主角和随从获得大治疗与自然护盾', steps:[
+      { label:'回春术铺恢复', match:/回春|恢复|生命绽放/ },
+      { label:'迅捷治愈催生繁花', match:/迅捷|治愈|野性成长/ },
+      { label:'百花齐放或宁静收束', match:/百花|宁静|母树|绽放/ },
+    ] },
+  },
+};
+
 function currentSpecCombatRule() {
   if (typeof state === 'undefined' || !state) return null;
   return SPEC_COMBAT_RULES[state.cls]?.[state.specialization] || null;
@@ -874,13 +1031,20 @@ function currentSpecTacticalWindow() {
   return Object.assign({ meterKey:meter.key, meterName:meter.name, meterMax:meter.max || 5 }, def);
 }
 
+function currentSpecSkillChain() {
+  if (typeof state === 'undefined' || !state) return null;
+  return SPEC_SKILL_CHAINS[state.cls]?.[state.specialization] || null;
+}
+
 if (typeof window !== 'undefined') {
   window.SPEC_COMBAT_RULES = SPEC_COMBAT_RULES;
   window.SPEC_COMBAT_METERS = SPEC_COMBAT_METERS;
   window.SPEC_TACTICAL_WINDOWS = SPEC_TACTICAL_WINDOWS;
+  window.SPEC_SKILL_CHAINS = SPEC_SKILL_CHAINS;
   window.currentSpecCombatRule = currentSpecCombatRule;
   window.currentSpecCombatMeter = currentSpecCombatMeter;
   window.currentSpecTacticalWindow = currentSpecTacticalWindow;
+  window.currentSpecSkillChain = currentSpecSkillChain;
 }
 
 const SPEC_STARTER_UNLOCKS = {

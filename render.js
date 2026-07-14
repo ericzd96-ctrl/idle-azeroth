@@ -443,12 +443,14 @@ function renderBuffBar() {
   const specMeter = (typeof currentSpecCombatMeter === 'function') ? currentSpecCombatMeter() : null;
   if (specMeter) {
     const tactic = (typeof currentSpecTacticalWindow === 'function') ? currentSpecTacticalWindow() : null;
+    const chain = (typeof currentSpecSkillChain === 'function') ? currentSpecSkillChain() : null;
+    const chainDesc = chain ? ` · 专精连段: ${chain.name}: ${chain.steps.map(x => x.label).join(' → ')}。完成: ${chain.finish}` : '';
     selfStates.unshift({
       kind: 'spec-meter',
       icon: specMeter.icon || '✦',
       name: specMeter.name,
       base: '专精机制:' + specMeter.key,
-      desc: (specMeter.hint || '') + ` · 当前 ${specMeter.stacks || 0}/${specMeter.max || 0}` + (tactic ? ` · 战术窗口: ${tactic.name}: ${tactic.desc}` : ''),
+      desc: (specMeter.hint || '') + ` · 当前 ${specMeter.stacks || 0}/${specMeter.max || 0}` + (tactic ? ` · 战术窗口: ${tactic.name}: ${tactic.desc}` : '') + chainDesc,
       valText: `${specMeter.stacks || 0}/${specMeter.max || 0}`,
       stacks: specMeter.stacks || 0,
       left: 0
