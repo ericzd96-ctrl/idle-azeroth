@@ -1165,23 +1165,35 @@ const TALENT_AURA_LIBRARY = {
 (function normalizeTalentPacingAndText() {
   if (typeof CLASSES === 'undefined') return;
   const autoTalentRules = [
-    ['mechanic_', 10, '技能会留下更强的后续伤害，连招收益更高。'],
-    ['spec_engine_', 15, '专精核心更快启动，大招和爆发窗口更强。'],
-    ['skill_mark_', 20, '给敌人做标记后，后续技能伤害更高。'],
-    ['skill_weave_', 24, '交替使用不同类型技能时，追加效果更强。'],
-    ['skill_rhythm_', 28, '连续战斗形成节奏后，终结技能收益更高。'],
-    ['skill_control_', 32, '打断、减速、破甲等控场后，后续清算更强。'],
-    ['skill_weakness_', 36, '暴击和关键技能更容易抓到弱点，利用弱点时伤害更高。'],
-    ['skill_prep_', 40, '普通技能会更快蓄势，下一次收招更强。'],
-    ['skill_overload_', 44, '连续高强度输出后，会追加更强余震。'],
-    ['skill_resource_', 46, '技能循环返还更多资源，战斗断档更少。'],
-    ['skill_harvest_', 48, '敌人血量越低，收割追击越强。'],
-    ['skill_pact_', 50, '短暂投入资源后，后续爆发或支援更强。'],
-    ['skill_field_', 52, '铺场技能更强，站稳节奏后收益更高。'],
-    ['skill_charge_', 54, '技能更快充能，释放时收益更高。'],
-    ['skill_rune_', 56, '连续施法后触发更强终结效果。'],
+    ['mechanic_', 10, '后续伤害', [['echoDmgPct','余波伤害'], ['reactionDmgPct','状态反应'], ['echoDurationPct','余波持续']]],
+    ['spec_engine_', 15, '专精核心', [['coreGainPct','叠层速度'], ['corePayoffPct','核心收束'], ['chainPayoffPct','连段'], ['specReactionPct','状态反应'], ['resource','资源返还','flat']]],
+    ['skill_mark_', 20, '目标标记', [['markDmgPct','标记伤害'], ['markDurationPct','持续'], ['markDotPct','DOT'], ['markSupportPct','治疗/护盾'], ['markSplashPct','溅射'], ['markResource','资源返还','flat']]],
+    ['skill_weave_', 24, '交替连招', [['weaveDmgPct','追击伤害'], ['weaveDotPct','DOT'], ['weaveSupportPct','治疗/护盾'], ['weaveDurationPct','持续'], ['weaveResource','资源返还','flat']]],
+    ['skill_rhythm_', 28, '战斗节奏', [['rhythmDmgPct','终结伤害'], ['rhythmDotPct','DOT终结'], ['rhythmSupportPct','支援终结'], ['rhythmChargePct','积拍速度'], ['rhythmResource','资源返还','flat']]],
+    ['skill_control_', 32, '控场清算', [['controlDmgPct','清算伤害'], ['controlSupportPct','救场效果'], ['controlDurationPct','控制压力持续'], ['controlResource','资源返还','flat']]],
+    ['skill_weakness_', 36, '弱点利用', [['weaknessDmgPct','追击伤害'], ['weaknessDotPct','DOT'], ['weaknessSupportPct','治疗/护盾'], ['weaknessRevealPct','揭露速度'], ['weaknessResource','资源返还','flat']]],
+    ['skill_prep_', 40, '技能蓄势', [['prepDmgPct','收招伤害'], ['prepDotPct','DOT收招'], ['prepSupportPct','支援收招'], ['prepGainPct','蓄势速度'], ['prepResource','资源返还','flat']]],
+    ['skill_overload_', 44, '技能过载', [['overloadDmgPct','余震伤害'], ['overloadDotPct','DOT余震'], ['overloadSupportPct','导流支援'], ['overloadGainPct','过载速度'], ['overloadResource','资源返还','flat']]],
+    ['skill_resource_', 46, '资源回路', [['resourceDmgPct','回路伤害'], ['resourceDotPct','回路DOT'], ['resourceSupportPct','支援导流'], ['resourceGainPct','回路形成'], ['resourceReturn','资源返还','flat']]],
+    ['skill_harvest_', 48, '斩获连锁', [['harvestDmgPct','收割伤害'], ['harvestDotPct','收割DOT'], ['harvestSupportPct','灵魂支援'], ['harvestGainPct','战果积累'], ['harvestResource','资源返还','flat']]],
+    ['skill_pact_', 50, '契约爆发', [['pactDmgPct','赎约伤害'], ['pactDotPct','虚契DOT'], ['pactSupportPct','誓契支援'], ['pactGainPct','签约速度'], ['pactResource','资源返还','flat']]],
+    ['skill_field_', 52, '战场领域', [['fieldDmgPct','领域伤害'], ['fieldDotPct','领域DOT'], ['fieldSupportPct','圣域支援'], ['fieldGainPct','铺场速度'], ['fieldResource','资源返还','flat']]],
+    ['skill_charge_', 54, '技能充能', [['chargeDmgPct','释放伤害'], ['chargeDotPct','充能DOT'], ['chargeSupportPct','守护支援'], ['chargeGainPct','充能速度'], ['chargeResource','资源返还','flat']]],
+    ['skill_rune_', 56, '符文终结', [['runeDmgPct','终结伤害'], ['runeDotPct','符文DOT'], ['runeSupportPct','守护支援'], ['runeGainPct','铭刻速度'], ['runeResource','资源返还','flat']]],
   ];
   const flavorReq = [18, 30, 42];
+  const talentDataDesc = (talent, rule) => {
+    const fx = talent.fx || {};
+    const parts = rule[3]
+      .map(([key, label, mode]) => {
+        const value = Number(fx[key] || 0);
+        if (!value) return '';
+        if (mode !== 'flat' && value < 10) return '';
+        return mode === 'flat' ? `${label}+${value}` : `${label}+${value}%`;
+      })
+      .filter(Boolean);
+    return `${rule[2]}: ${parts.join('，')}。`;
+  };
   for (const cls of Object.values(CLASSES)) {
     if (!cls || !Array.isArray(cls.trees)) continue;
     for (const tree of cls.trees) {
@@ -1196,7 +1208,7 @@ const TALENT_AURA_LIBRARY = {
         const rule = autoTalentRules.find(([prefix]) => talent.key.startsWith(prefix));
         if (!rule) continue;
         talent.req = rule[1];
-        talent.desc = rule[2];
+        talent.desc = talentDataDesc(talent, rule);
       }
     }
   }
