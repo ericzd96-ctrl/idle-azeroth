@@ -61,14 +61,23 @@ const MASTERY_TYPE = {
   healAmp:   { per:0.8,  fmt:n=>`治疗/护盾量 +${(n*0.8).toFixed(0)}%` },
   critdAmp:  { per:1.5,  fmt:n=>`暴击伤害 +${(n*1.5).toFixed(0)}%` },
   bleedOnCrit:{ per:0.5, fmt:n=>`暴击使敌人流血:每秒造成该次伤害的 ${(n*0.5).toFixed(1)}%,持续5秒` },
+  reactionAmp:{ per:0.75, fmt:n=>`技能元素反应伤害 +${(n*0.75).toFixed(1)}%, 触发时额外返还资源` },
+  echoAmp:   { per:0.85, fmt:n=>`技能余波爆发伤害 +${(n*0.85).toFixed(1)}%, 余波持续时间更长` },
+  supportEcho:{ per:0.75, fmt:n=>`治疗/护盾与支援型余波效果 +${(n*0.75).toFixed(1)}%` },
+  guardianEcho:{ per:0.55, fmt:n=>`技能余波护盾与反击效果 +${(n*0.55).toFixed(1)}%, 受到伤害降低 ${Math.min(24,n*0.18).toFixed(1)}%` },
 };
 // 专精 → 精通效果(同名 key 的不同职业共享同一原型,如 prot=减伤 / holy=治疗,语义一致)
-const MASTERY_SPEC = { arms:'bleedOnCrit', fury:'leechAmp', prot:'dr', arcane:'dmgAmp', fire:'dotAmp', frost:'dmgAmp', discipline:'healAmp', holy:'healAmp', shadow:'dotAmp', assassination:'dotAmp', combat:'dmgAmp', subtlety:'dmgAmp', bm:'dmgAmp', marks:'critdAmp', survival:'dotAmp', element:'dmgAmp', enhancement:'dmgAmp', restoration:'healAmp', ret:'dmgAmp', affliction:'dotAmp', demonology:'leechAmp', destruction:'dmgAmp', balance:'dotAmp', feral:'bleedOnCrit', resto:'healAmp' };
+const MASTERY_SPEC = { arms:'echoAmp', fury:'echoAmp', prot:'guardianEcho', arcane:'reactionAmp', fire:'reactionAmp', frost:'echoAmp', discipline:'supportEcho', holy:'supportEcho', shadow:'reactionAmp', assassination:'echoAmp', combat:'echoAmp', subtlety:'echoAmp', bm:'echoAmp', marks:'reactionAmp', survival:'reactionAmp', element:'reactionAmp', enhancement:'echoAmp', restoration:'supportEcho', ret:'reactionAmp', affliction:'reactionAmp', demonology:'echoAmp', destruction:'reactionAmp', balance:'reactionAmp', feral:'echoAmp', resto:'supportEcho' };
 function masterySpecType(){ return MASTERY_SPEC[state.specialization] || null; }
 function masteryFor(type){ return masterySpecType()===type ? (state.hero.mastery||0) : 0; }
 function masteryDmgMult(){ return 1 + masteryFor('dmgAmp')*MASTERY_TYPE.dmgAmp.per/100; }       // 输出伤害增幅
-function masteryTakenMult(){ return 1 - Math.min(30, masteryFor('dr')*MASTERY_TYPE.dr.per)/100; } // 受击减伤(封顶30%)
+function masteryTakenMult(){ return 1 - Math.min(30, masteryFor('dr')*MASTERY_TYPE.dr.per + masteryFor('guardianEcho')*0.18)/100; } // 受击减伤(封顶30%)
 function masteryDescText(){ const t=masterySpecType(); return t ? MASTERY_TYPE[t].fmt(state.hero.mastery||0) : '未选择专精'; }
+function masteryReactionMult(){ return 1 + masteryFor('reactionAmp')*MASTERY_TYPE.reactionAmp.per/100; }
+function masteryEchoMult(){ return 1 + masteryFor('echoAmp')*MASTERY_TYPE.echoAmp.per/100 + masteryFor('guardianEcho')*MASTERY_TYPE.guardianEcho.per/100; }
+function masterySupportEchoMult(){ return 1 + masteryFor('supportEcho')*MASTERY_TYPE.supportEcho.per/100 + masteryFor('guardianEcho')*0.35/100; }
+function masteryEchoDurationMult(){ return 1 + masteryFor('echoAmp')*0.004 + masteryFor('supportEcho')*0.003; }
+function masteryMechanicResourceBonus(){ return Math.floor((masteryFor('reactionAmp') + masteryFor('echoAmp')) / 18); }
 
 function monsterFloatAnchor(mon){
   if(mon && mon._uid != null && typeof document !== 'undefined'){
@@ -549,19 +558,21 @@ function markSkillElementReaction(meta, now){
 function triggerSkillElementReaction(rule, mon, dmgDone, sk, now, ctx){
   if(!rule || !mon || mon.hp <= 0 || !(dmgDone > 0)) return false;
   const base = Math.max(1, Math.floor(dmgDone));
+  const reactionMult = masteryReactionMult() * (1 + skillMechanicFxBonus('reactionDmgPct') / 100);
+  const supportMult = masterySupportEchoMult() * (1 + skillMechanicFxBonus('mechanicShieldPct') / 100);
   let fired = false;
   if(rule.state) applyMonsterState(mon, rule.state, rule.stateMs || 8000);
-  if(rule.dotPct) applyMonsterDot(mon, 'elementReaction:' + rule.key, Math.max(1, Math.floor(base * rule.dotPct)), rule.dotMs || 7500, { icon:rule.icon, name:rule.name, source:'skillReaction' });
-  if(rule.damagePct) fired = applySkillFollowupDamage(mon, base * rule.damagePct, rule.icon || sk?.icon || '✹', rule.color || '#facc15', now) > 0 || fired;
+  if(rule.dotPct) applyMonsterDot(mon, 'elementReaction:' + rule.key, Math.max(1, Math.floor(base * rule.dotPct * reactionMult * (1 + skillMechanicFxBonus('reactionDotPct') / 100))), rule.dotMs || 7500, { icon:rule.icon, name:rule.name, source:'skillReaction' });
+  if(rule.damagePct) fired = applySkillFollowupDamage(mon, base * rule.damagePct * reactionMult, rule.icon || sk?.icon || '✹', rule.color || '#facc15', now) > 0 || fired;
   if(rule.damagePerDotPct){
     const dots = getMonsterDotCount(mon, now);
-    if(dots > 0) fired = applySkillFollowupDamage(mon, base * dots * rule.damagePerDotPct, rule.icon || sk?.icon || '✹', rule.color || '#facc15', now) > 0 || fired;
+    if(dots > 0) fired = applySkillFollowupDamage(mon, base * dots * rule.damagePerDotPct * reactionMult, rule.icon || sk?.icon || '✹', rule.color || '#facc15', now) > 0 || fired;
   }
-  if(rule.splashPct && !ctx?.isAOE) fired = splashSkillDamage(mon, base, rule.splashPct, rule.icon || sk?.icon || '✹', now) > 0 || fired;
+  if(rule.splashPct && !ctx?.isAOE) fired = splashSkillDamage(mon, base * reactionMult, rule.splashPct, rule.icon || sk?.icon || '✹', now) > 0 || fired;
   if(rule.spreadDotPct) spreadDotFromMonster(mon, rule.spreadDotPct, rule.dotMs || 8000);
-  if(rule.shieldPct) addTalentShield(Math.floor(state.hero.hpMax * rule.shieldPct), true, 8500);
-  if(rule.healPct) healHeroAmount(Math.floor(state.hero.hpMax * rule.healPct), rule.icon || sk?.icon || '✹', '#6ee7b7', 'hero', rule.name);
-  if(rule.resource) grantTalentResource(rule.resource);
+  if(rule.shieldPct) addTalentShield(Math.floor(state.hero.hpMax * rule.shieldPct * supportMult), true, 8500);
+  if(rule.healPct) healHeroAmount(Math.floor(state.hero.hpMax * rule.healPct * supportMult), rule.icon || sk?.icon || '✹', '#6ee7b7', 'hero', rule.name);
+  if(rule.resource) grantTalentResource(rule.resource + masteryMechanicResourceBonus() + skillMechanicFxBonus('reactionResource'));
   if(rule.summon) specTacticSummon(rule.summon, now);
   showMonsterFloat(mon, `${rule.icon || '✹'}${rule.name}`, rule.color || '#facc15', { variant:'buff', important:true });
   markSkillElementReaction(rule, now);
@@ -611,6 +622,110 @@ function processSkillElementReactions(skillKey, sk, mon, dmgDone, ctx){
   }
   return rules.length > 0;
 }
+function skillMechanicFxBonus(field){
+  let total = 0;
+  for(const fx of talentFxList()){
+    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho')) continue;
+    total += +(fx[field] || 0);
+  }
+  return total;
+}
+const SKILL_ECHO_RULES = {
+  fire:{ icon:'🔥', name:'火痕', desc:'火焰留下的燃烧余波,可被冰霜、风暴或物理技能引爆。', triggers:['frost','storm','physical'], dotPct:0.10, state:'fever' },
+  frost:{ icon:'❄️', name:'霜痕', desc:'冰霜留下的低温裂纹,可被火焰或物理技能碎裂。', triggers:['fire','physical'], damagePct:0.16, state:'brittle' },
+  storm:{ icon:'⛈️', name:'导电场', desc:'风暴留下的导电场,可被奥术、自然或物理技能过载。', triggers:['arcane','nature','physical'], splashPct:0.18, resource:4, state:'stormBrand' },
+  shadow:{ icon:'🌑', name:'暗影泥沼', desc:'暗影留下的侵蚀泥沼,可被神圣或火焰净化爆发。', triggers:['holy','fire'], damagePct:0.14, healPct:0.018, state:'voidTorn' },
+  holy:{ icon:'✨', name:'圣辉残响', desc:'神圣留下的圣辉残响,可被物理或自然技能转化为护盾。', triggers:['physical','nature'], shieldPct:0.028, state:'holyBrand' },
+  poison:{ icon:'🐍', name:'毒雾', desc:'毒药留下的毒雾,可被火焰、暗影或物理技能引发毒爆。', triggers:['fire','shadow','physical'], damagePerDotPct:0.055, dotPct:0.09, state:'venomBloom' },
+  arcane:{ icon:'🔷', name:'奥术裂纹', desc:'奥术留下的空间裂纹,可被任意非奥术伤害坍缩。', triggers:['fire','frost','storm','holy','shadow','nature','poison','physical','beast'], damagePct:0.12, resource:5, state:'unstable' },
+  nature:{ icon:'🌿', name:'生命芽', desc:'自然留下的生命芽,可被火焰、神圣或物理技能催化。', triggers:['fire','holy','physical'], healPct:0.022, shieldPct:0.02, state:'lifeSeed' },
+  beast:{ icon:'🐾', name:'猎群气味', desc:'猎群留下的气味,可被物理或野兽技能触发追咬。', triggers:['physical','beast'], damagePct:0.13, summon:'beast', state:'huntWound' },
+  physical:{ icon:'🩸', name:'裂伤轨迹', desc:'武器留下的裂伤轨迹,可被毒、暗影或火焰技能扩大出血。', triggers:['poison','shadow','fire'], dotPct:0.12, state:'trauma' },
+};
+function ensureMonsterSkillEchoes(mon, now){
+  if(!mon) return {};
+  now = now || Date.now();
+  if(!mon._skillEchoes) mon._skillEchoes = {};
+  for(const [key, echo] of Object.entries(mon._skillEchoes)){
+    if(!echo || !(echo.expire > now)) delete mon._skillEchoes[key];
+  }
+  return mon._skillEchoes;
+}
+function dominantSkillEchoTag(tags){
+  const order = ['fire','frost','storm','holy','shadow','poison','arcane','nature','beast','physical'];
+  return order.find(t => tags.includes(t) && SKILL_ECHO_RULES[t]) || '';
+}
+function addMonsterSkillEcho(mon, tag, sk, now){
+  const rule = SKILL_ECHO_RULES[tag];
+  if(!mon || !rule) return false;
+  const echoes = ensureMonsterSkillEchoes(mon, now);
+  const duration = Math.floor((rule.durationMs || 11000) * masteryEchoDurationMult() * (1 + skillMechanicFxBonus('echoDurationPct') / 100));
+  echoes[tag] = {
+    key:tag,
+    icon:rule.icon,
+    name:rule.name,
+    desc:rule.desc,
+    source:sk?.name || '技能',
+    expire:(now || Date.now()) + duration,
+  };
+  showMonsterFloat(mon, `${rule.icon}${rule.name}`, '#fde68a', { variant:'buff' });
+  return true;
+}
+function skillEchoTip(skillKey, sk){
+  const tags = skillElementTags(skillKey, sk);
+  const leaveTag = dominantSkillEchoTag(tags);
+  const leave = leaveTag && SKILL_ECHO_RULES[leaveTag] ? `留下${SKILL_ECHO_RULES[leaveTag].name}` : '';
+  const canTrigger = [];
+  for(const [key, rule] of Object.entries(SKILL_ECHO_RULES)){
+    if(rule.triggers?.some(t => tags.includes(t))) canTrigger.push(rule.name);
+  }
+  const trigger = canTrigger.length ? `可引爆: ${canTrigger.slice(0, 3).join('、')}` : '';
+  return [leave, trigger].filter(Boolean).join('；');
+}
+function triggerSkillEcho(rule, tag, mon, dmgDone, sk, now, ctx){
+  const base = Math.max(1, Math.floor(dmgDone || state.hero.atk || 1));
+  const echoMult = masteryEchoMult() * (1 + skillMechanicFxBonus('echoDmgPct') / 100);
+  const supportMult = masterySupportEchoMult() * (1 + skillMechanicFxBonus('mechanicShieldPct') / 100);
+  let fired = false;
+  if(rule.state) applyMonsterState(mon, rule.state, rule.stateMs || 8500);
+  if(rule.damagePct) fired = applySkillFollowupDamage(mon, base * rule.damagePct * echoMult, rule.icon || sk?.icon || '✺', '#facc15', now) > 0 || fired;
+  if(rule.damagePerDotPct){
+    const dotCount = Math.max(1, getMonsterDotCount(mon, now));
+    fired = applySkillFollowupDamage(mon, base * dotCount * rule.damagePerDotPct * echoMult, rule.icon || sk?.icon || '✺', '#facc15', now) > 0 || fired;
+  }
+  if(rule.dotPct) applyMonsterDot(mon, 'skillEcho:' + tag, Math.max(1, Math.floor(base * rule.dotPct * echoMult * (1 + skillMechanicFxBonus('echoDotPct') / 100))), rule.dotMs || 7500, { icon:rule.icon, name:rule.name, source:'skillEcho' });
+  if(rule.splashPct && !ctx?.isAOE) fired = splashSkillDamage(mon, base * echoMult, rule.splashPct, rule.icon || sk?.icon || '✺', now) > 0 || fired;
+  if(rule.healPct) healHeroAmount(Math.floor(state.hero.hpMax * rule.healPct * supportMult), rule.icon || sk?.icon || '✺', '#6ee7b7', 'hero', rule.name);
+  if(rule.shieldPct) addTalentShield(Math.floor(state.hero.hpMax * rule.shieldPct * supportMult), true, 9000);
+  if(rule.resource) grantTalentResource(rule.resource + masteryMechanicResourceBonus() + skillMechanicFxBonus('echoResource'));
+  if(rule.summon) specTacticSummon(rule.summon, now);
+  addSkillAura('skill_echo', { add:1, max:1, duration:5200, icon:rule.icon || '✺', name:rule.name || '技能余波', desc:`${rule.desc} 已被 ${sk?.name || '技能'} 引爆。` });
+  showMonsterFloat(mon, `${rule.icon || '✺'}余波爆`, '#facc15', { important:true });
+  log(`${rule.icon || '✺'} 技能余波「${rule.name}」被 ${sk?.name || '技能'} 引爆: ${rule.desc}`,'good');
+  markDirty('skills','hero','stage');
+  return fired || true;
+}
+function processSkillEchoes(skillKey, sk, mon, dmgDone, ctx){
+  if(!mon || mon.hp <= 0 || !(dmgDone > 0) || !sk) return false;
+  const now = ctx?.now || Date.now();
+  const tags = skillElementTags(skillKey, sk);
+  if(tags.length === 0) return false;
+  const echoes = ensureMonsterSkillEchoes(mon, now);
+  let triggered = false;
+  for(const [tag, echo] of Object.entries(echoes)){
+    const rule = SKILL_ECHO_RULES[tag];
+    if(!rule || !(echo.expire > now)) continue;
+    if(!rule.triggers?.some(t => tags.includes(t))) continue;
+    if(classRuntimeReady(`skill-echo:${skillKey}:${mon._uid || mon.name || 'target'}:${tag}`, rule.cooldownMs || 2200, now)){
+      triggerSkillEcho(rule, tag, mon, dmgDone, sk, now, ctx || {});
+      delete echoes[tag];
+      triggered = true;
+    }
+  }
+  const leaveTag = dominantSkillEchoTag(tags);
+  if(leaveTag) addMonsterSkillEcho(mon, leaveTag, sk, now);
+  return triggered;
+}
 function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
   const fx = skillFxMeta(skillKey, sk);
   const now = ctx?.now || Date.now();
@@ -637,6 +752,7 @@ function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
   if(fx.splashPct && !ctx?.isAOE) splashSkillDamage(mon, dmgDone, fx.splashPct, sk.icon || '💥', now);
   if(fx.spreadDotsPct) spreadDotFromMonster(mon, fx.spreadDotsPct, fx.dotMs || 5000);
   processSkillElementReactions(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
+  processSkillEchoes(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
   if(fx.resourceGainOnKill && mon.hp <= 0) grantTalentResource(fx.resourceGainOnKill);
   applyClassMechanicAfterSkill(skillKey, sk, mon, dmgDone, Object.assign({ now, hit:true }, ctx || {}));
 }
@@ -2770,6 +2886,9 @@ function recomputeStats() {
   else if (_mspec==='healAmp') healBonus += mastery*MASTERY_TYPE.healAmp.per;
   else if (_mspec==='critdAmp') critd += mastery*MASTERY_TYPE.critdAmp.per;
   else if (_mspec==='leechAmp') leech += mastery*MASTERY_TYPE.leechAmp.per;
+  else if (_mspec==='supportEcho') healBonus += mastery*0.45;
+  else if (_mspec==='guardianEcho') { def = Math.floor(def * (1 + mastery*0.18/100)); reflectDmg += mastery*0.10; }
+  else if (_mspec==='reactionAmp') dotBonus += mastery*0.20;
 
   // 保存来源汇总(供 UI 展示)— 注意:这些是 buff 前的基础百分比汇总
   state._statSources._total = {atkPct, hpPct, defPct, spdPct, critdPct, crit:critFlat, leech, vers, mastery, haste, regFlat, extraAtk};

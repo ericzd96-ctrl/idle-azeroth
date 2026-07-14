@@ -72,6 +72,7 @@ const SKILL_AURA_LIBRARY = {
   sh_totem:     { icon:'🪬', name:'图腾共鸣', desc:'萨满治疗、护盾与元素技能叠加,强化全队支援', maxStacks:5 },
   d_harmony:    { icon:'🌿', name:'自然调和', desc:'德鲁伊治疗、月火与野性技能叠加,在恢复/输出间转换', maxStacks:5 },
   skill_reaction:{ icon:'✹', name:'技能反应', desc:'技能元素命中合适的目标状态后触发的额外反应', maxStacks:1 },
+  skill_echo:   { icon:'✺', name:'技能余波', desc:'技能留下的短暂战场痕迹,会被后续不同类型技能引爆或转化', maxStacks:1 },
   spec_flow:    { icon:'✦', name:'专精连段', desc:'按当前专精的技能顺序推进,完成后触发独特战斗效果', maxStacks:3 },
   spec_core:    { icon:'✦', name:'专精核心', desc:'当前专精独有的战斗引擎资源,满层后用指定技能收束触发强力效果', maxStacks:8 },
   spec_proc:    { icon:'✦', name:'临场强化', desc:'当前专精触发的下一技能变招,命中符合条件的技能后自动消费', maxStacks:1 },
@@ -128,6 +129,19 @@ const SKILL_ELEMENT_REACTION_GUIDE = [
   { icon:'🌿', name:'荆棘绞杀', desc:'自然命中缠绕或生命种子目标会追加荆棘 DOT 并给自己护盾。' },
   { icon:'🔷', name:'奥能坍缩', desc:'奥术命中不稳定目标会坍缩爆发、溅射并返还资源。' },
   { icon:'🐾', name:'猎群追击', desc:'野兽/射击命中猎人印记或猎伤目标会触发追击和野兽协同。' },
+];
+
+const SKILL_ECHO_GUIDE = [
+  { icon:'🔥', name:'火痕', desc:'火焰技能留下火痕,冰霜/风暴/物理技能可引爆为爆裂或破甲。' },
+  { icon:'❄️', name:'霜痕', desc:'冰霜技能留下霜痕,火焰或物理技能可碎裂为额外伤害与减速。' },
+  { icon:'⛈️', name:'导电场', desc:'风暴技能留下导电场,奥术/自然/物理技能可触发过载弹射。' },
+  { icon:'🌑', name:'暗影泥沼', desc:'暗影技能留下泥沼,神圣或火焰技能可净化爆发并治疗自身。' },
+  { icon:'✨', name:'圣辉残响', desc:'神圣技能留下圣辉,物理或自然技能可转化为护盾和审判。' },
+  { icon:'🐍', name:'毒雾', desc:'毒药技能留下毒雾,火焰/暗影/物理技能可引发毒爆。' },
+  { icon:'🔷', name:'奥术裂纹', desc:'奥术技能留下裂纹,任意非奥术伤害可坍缩为资源和追击。' },
+  { icon:'🌿', name:'生命芽', desc:'自然技能留下生命芽,火焰/神圣/物理技能可催化为治疗护盾。' },
+  { icon:'🐾', name:'猎群气味', desc:'野兽/射击技能留下气味,物理或野兽技能可触发追咬。' },
+  { icon:'🩸', name:'裂伤轨迹', desc:'物理技能留下裂伤,毒/暗影/火焰技能可扩大出血。' },
 ];
 
 /* 每个职业 4 个新技能:爆发 / 减伤 / 功能性 / 职业特色 */
@@ -1302,6 +1316,7 @@ if (typeof window !== 'undefined') {
   window.SPEC_CORE_SYSTEMS = SPEC_CORE_SYSTEMS;
   window.SPEC_STANCE_SYSTEMS = SPEC_STANCE_SYSTEMS;
   window.SKILL_ELEMENT_REACTION_GUIDE = SKILL_ELEMENT_REACTION_GUIDE;
+  window.SKILL_ECHO_GUIDE = SKILL_ECHO_GUIDE;
   window.currentSpecCombatRule = currentSpecCombatRule;
   window.currentSpecCombatMeter = currentSpecCombatMeter;
   window.currentSpecTacticalWindow = currentSpecTacticalWindow;

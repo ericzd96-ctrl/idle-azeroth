@@ -514,3 +514,33 @@ const TALENT_AURA_LIBRARY = {
   applyAugments(AUGMENTS, '_augFlavor');
   applyAugments(LOW_AUGMENTS, '_augFlavor2');
 })();
+
+(function extendSkillMechanicTalents() {
+  if (typeof CLASSES === 'undefined') return;
+  const names = {
+    arms:'裂痕战术', fury:'血热余波', prot:'壁垒回声',
+    arcane:'魔网裂纹', fire:'燃痕精研', frost:'碎冰余响',
+    discipline:'赎罪残响', holy:'圣辉余音', shadow:'虚空蔓延',
+    assassination:'毒雾收束', combat:'刀锋余响', subtlety:'暗幕裂隙',
+    bm:'猎群气味', marks:'弹道残痕', survival:'陷阱余烬',
+    element:'元素余震', enhancement:'风怒回痕', restoration:'潮汐残响',
+    ret:'裁决回声', affliction:'腐蚀回音', demonology:'军团裂门', destruction:'混乱余烬',
+    balance:'星轨残响', feral:'血爪余痕', resto:'林地余芽',
+  };
+  for (const [clsKey, cls] of Object.entries(CLASSES)) {
+    if (!cls || !Array.isArray(cls.trees)) continue;
+    for (const tree of cls.trees) {
+      if (!tree || tree._skillMechanicTalent) continue;
+      tree._skillMechanicTalent = true;
+      const tName = names[tree.key] || '技能余波';
+      tree.talents.push({
+        key: `mechanic_${clsKey}_${tree.key}`,
+        name: tName,
+        desc: `你的技能余波伤害提高 16%, 状态反应伤害提高 12%, 余波持续时间提高 18%。该天赋专门强化当前技能机制的铺场与收束。`,
+        req: 76,
+        max: 1,
+        fx: { type:'skillMechanic', echoDmgPct:16, reactionDmgPct:12, echoDurationPct:18, reactionDotPct:8, echoDotPct:8 }
+      });
+    }
+  }
+})();

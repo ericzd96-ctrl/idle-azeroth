@@ -846,6 +846,21 @@ const SPEC_ARTIFACT_TRAIT_RETUNE = {
   druid:{ balance:['d_starfall','星辰蚀刻','星辰坠落与阳炎术伤害提高 10/20/30%。'], feral:['d_rip','血爪割裂','割裂与撕碎伤害提高 10/20/30%。'], resto:['d_efflorescence','百花母树','百花齐放与迅捷治愈效果提高 10/20/30%。'] },
 };
 
+function skillMechanicTrait(cfg){
+  return trait(Object.assign({}, cfg, {
+    fx(rank){
+      return {
+        type:'skillMechanic',
+        echoDmgPct:rankValue(cfg.echoDmgPct || [5,10,15], rank),
+        reactionDmgPct:rankValue(cfg.reactionDmgPct || [4,8,12], rank),
+        echoDurationPct:rankValue(cfg.echoDurationPct || [6,12,18], rank),
+        reactionResource:rankValue(cfg.reactionResource || [0,1,2], rank),
+        echoResource:rankValue(cfg.echoResource || [0,1,2], rank),
+      };
+    }
+  }));
+}
+
 (function retuneSpecArtifacts() {
   for (const [clsKey, specs] of Object.entries(SPEC_ARTIFACT_SKILL_RETUNE)) {
     if (!ARTIFACT_SKILLS[clsKey]) ARTIFACT_SKILLS[clsKey] = {};
@@ -858,10 +873,21 @@ const SPEC_ARTIFACT_TRAIT_RETUNE = {
     for (const [specKey, row] of Object.entries(specs)) {
       const [skill, name, desc] = row;
       const key = `art_${clsKey}_${specKey}_signature_20260713`;
-      if (ARTIFACT_TRAITS[clsKey].some(t => t.key === key)) continue;
-      ARTIFACT_TRAITS[clsKey].push(skillAmpTrait({
-        key, tree:specKey, name, icon:'✦', skill, dmgPct:[10,20,30], mod:{ mastery:1 },
-        desc: desc + ' 并获得精通 +1/2/3。'
+      if (!ARTIFACT_TRAITS[clsKey].some(t => t.key === key)) {
+        ARTIFACT_TRAITS[clsKey].push(skillAmpTrait({
+          key, tree:specKey, name, icon:'✦', skill, dmgPct:[10,20,30], mod:{ mastery:1 },
+          desc: desc + ' 并获得精通 +1/2/3。'
+        }));
+      }
+      const mechanicKey = `art_${clsKey}_${specKey}_mechanic_20260714`;
+      if (ARTIFACT_TRAITS[clsKey].some(t => t.key === mechanicKey)) continue;
+      ARTIFACT_TRAITS[clsKey].push(skillMechanicTrait({
+        key:mechanicKey,
+        tree:specKey,
+        name:'机制共鸣',
+        icon:'✺',
+        mod:{ mastery:1 },
+        desc:'技能余波伤害提高 5/10/15%, 状态反应伤害提高 4/8/12%, 余波持续时间提高 6/12/18%, 触发时返还少量资源。并获得精通 +1/2/3。'
       }));
     }
   }

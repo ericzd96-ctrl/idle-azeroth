@@ -258,6 +258,17 @@ function focusDebuffs(now) {
       });
     }
   }
+  if (mon._skillEchoes) {
+    for (const echo of Object.values(mon._skillEchoes)) {
+      if (!echo || !(echo.expire > now)) continue;
+      out.push({
+        icon: echo.icon || '✺',
+        name: echo.name || '技能余波',
+        desc: echo.desc || '技能留下的短暂战场痕迹,会被后续技能引爆或转化',
+        left: Math.ceil((echo.expire - now) / 1000)
+      });
+    }
+  }
   return out;
 }
 function focusBuffs(now) {
@@ -461,18 +472,20 @@ function renderBuffBar() {
     const core = (typeof currentSpecCoreSystem === 'function') ? currentSpecCoreSystem() : null;
     const stance = (typeof currentSpecStanceSystem === 'function') ? currentSpecStanceSystem() : null;
     const elementGuide = (typeof SKILL_ELEMENT_REACTION_GUIDE === 'object' && Array.isArray(SKILL_ELEMENT_REACTION_GUIDE)) ? SKILL_ELEMENT_REACTION_GUIDE : [];
+    const echoGuide = (typeof SKILL_ECHO_GUIDE === 'object' && Array.isArray(SKILL_ECHO_GUIDE)) ? SKILL_ECHO_GUIDE : [];
     const chainDesc = chain ? ` · 专精连段: ${chain.name}: ${chain.steps.map(x => x.label).join(' → ')}。完成: ${chain.finish}` : '';
     const reactionDesc = reaction ? ` · 状态反应: ${reaction.name}: ${reaction.desc}` : '';
     const procDesc = proc ? ` · 临场强化: ${proc.name}: ${proc.desc}` : '';
     const coreDesc = core ? ` · 专精核心: ${core.name}: ${core.desc}` : '';
     const stanceDesc = stance ? ` · 战斗法则: ${stance.name}: ${stance.desc}` : '';
     const elementDesc = elementGuide.length ? ` · 技能元素反应: ${elementGuide.map(x => `${x.icon || '✹'}${x.name}: ${x.desc}`).join('；')}` : '';
+    const echoDesc = echoGuide.length ? ` · 技能余波: ${echoGuide.map(x => `${x.icon || '✺'}${x.name}: ${x.desc}`).join('；')}` : '';
     selfStates.unshift({
       kind: 'spec-meter',
       icon: specMeter.icon || '✦',
       name: specMeter.name,
       base: '专精机制:' + specMeter.key,
-      desc: (specMeter.hint || '') + ` · 当前 ${specMeter.stacks || 0}/${specMeter.max || 0}` + (tactic ? ` · 战术窗口: ${tactic.name}: ${tactic.desc}` : '') + chainDesc + reactionDesc + procDesc + coreDesc + stanceDesc + elementDesc,
+      desc: (specMeter.hint || '') + ` · 当前 ${specMeter.stacks || 0}/${specMeter.max || 0}` + (tactic ? ` · 战术窗口: ${tactic.name}: ${tactic.desc}` : '') + chainDesc + reactionDesc + procDesc + coreDesc + stanceDesc + elementDesc + echoDesc,
       valText: `${specMeter.stacks || 0}/${specMeter.max || 0}`,
       stacks: specMeter.stacks || 0,
       left: 0
@@ -2911,7 +2924,9 @@ function renderSkillBar() {
     const coreDesc = coreMatch ? `\n专精核心: ${core.name} 已满层,释放该技能会收束: ${core.desc}` : '';
     const elementTip = (typeof skillElementReactionTip === 'function') ? skillElementReactionTip(key, sk) : '';
     const elementDesc = elementTip ? `\n状态反应: ${elementTip}` : '';
-    const tip = `${sk.name} · ${baseDesc}${detailDesc}${procDesc}${coreDesc}${elementDesc}\n${c.resource} ${sk.mp} · 冷却 ${getSkillCd(sk)}秒`.replace(/"/g, '&quot;');
+    const echoTip = (typeof skillEchoTip === 'function') ? skillEchoTip(key, sk) : '';
+    const echoDesc = echoTip ? `\n技能余波: ${echoTip}` : '';
+    const tip = `${sk.name} · ${baseDesc}${detailDesc}${procDesc}${coreDesc}${elementDesc}${echoDesc}\n${c.resource} ${sk.mp} · 冷却 ${getSkillCd(sk)}秒`.replace(/"/g, '&quot;');
     const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, sk.icon) : sk.icon;
     return `<button class="skill-btn ${onCd?'on-cd':''}" data-skill="${key}" draggable="true" title="${tip}"
       style="${coreMatch&&!onCd?'border-color:#38bdf8;box-shadow:0 0 0 1px rgba(56,189,248,.50),0 0 14px rgba(56,189,248,.18)':(procMatch&&!onCd?'border-color:#facc15;box-shadow:0 0 0 1px rgba(250,204,21,.45)':(!onCd&&hasMp?'border-color:var(--accent)':''))}">
