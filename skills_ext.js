@@ -82,6 +82,7 @@ const SKILL_AURA_LIBRARY = {
   skill_resource:{ icon:'💠', name:'资源回路', desc:'高耗能、低资源、节流和支援技能会形成资源回路,导流后返还能量并触发效果', maxStacks:5 },
   skill_harvest:{ icon:'🏹', name:'斩获连锁', desc:'残血、处决、击杀和过量伤害会积累战果,后续技能可消耗战果触发终局追猎', maxStacks:5 },
   skill_pact:   { icon:'📜', name:'契约代价', desc:'爆发、黑暗、召唤和强支援技能会签下契约债务,及时赎约可转化为强力收益', maxStacks:5 },
+  skill_field:  { icon:'◇', name:'战场领域', desc:'技能会在战场留下元素、圣光、暗影、毒雾或猎场领域,后续技能可转化领域效果', maxStacks:5 },
   spec_flow:    { icon:'✦', name:'专精连段', desc:'按当前专精的技能顺序推进,完成后触发独特战斗效果', maxStacks:3 },
   spec_core:    { icon:'✦', name:'专精核心', desc:'当前专精独有的战斗引擎资源,满层后用指定技能收束触发强力效果', maxStacks:8 },
   spec_proc:    { icon:'✦', name:'临场强化', desc:'当前专精触发的下一技能变招,命中符合条件的技能后自动消费', maxStacks:1 },
@@ -246,6 +247,15 @@ const SKILL_PACT_GUIDE = [
   { icon:'✨', name:'誓契', desc:'神圣、治疗、祝福和防御契约可赎为治疗、护盾和随从保护。' },
   { icon:'🐾', name:'役契', desc:'召唤、野兽和宠物契约可赎为协同追击或临时援军。' },
   { icon:'⚠️', name:'反噬', desc:'契约过期未赎会在下一次技能检查时造成轻量反噬伤害。' },
+];
+
+const SKILL_FIELD_GUIDE = [
+  { icon:'◇', name:'铺场', desc:'火焰、冰霜、风暴、奥术、自然、神圣、暗影、毒药、物理和野兽技能会留下对应战场领域。' },
+  { icon:'🔥', name:'火海', desc:'火焰领域被冰霜、风暴或物理技能转化时造成爆裂、溅射或破甲。' },
+  { icon:'❄️', name:'霜域', desc:'冰霜领域被火焰或物理技能转化时造成碎裂、减速和易碎。' },
+  { icon:'✨', name:'圣域', desc:'神圣和治疗领域被伤害或防御技能转化时生成治疗、护盾和随从支援。' },
+  { icon:'🌑', name:'暗沼', desc:'暗影、毒药和 DOT 领域被火焰、神圣或物理技能转化时扩散持续伤害并吸血。' },
+  { icon:'🐾', name:'猎场', desc:'野兽、射击和召唤领域被物理或野兽技能转化时触发协同追击。' },
 ];
 
 /* 每个职业 4 个新技能:爆发 / 减伤 / 功能性 / 职业特色 */
@@ -1431,6 +1441,7 @@ if (typeof window !== 'undefined') {
   window.SKILL_RESOURCE_GUIDE = SKILL_RESOURCE_GUIDE;
   window.SKILL_HARVEST_GUIDE = SKILL_HARVEST_GUIDE;
   window.SKILL_PACT_GUIDE = SKILL_PACT_GUIDE;
+  window.SKILL_FIELD_GUIDE = SKILL_FIELD_GUIDE;
   window.currentSpecCombatRule = currentSpecCombatRule;
   window.currentSpecCombatMeter = currentSpecCombatMeter;
   window.currentSpecTacticalWindow = currentSpecTacticalWindow;

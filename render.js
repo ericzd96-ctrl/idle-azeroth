@@ -513,6 +513,7 @@ function renderBuffBar() {
     const resourceGuide = (typeof SKILL_RESOURCE_GUIDE === 'object' && Array.isArray(SKILL_RESOURCE_GUIDE)) ? SKILL_RESOURCE_GUIDE : [];
     const harvestGuide = (typeof SKILL_HARVEST_GUIDE === 'object' && Array.isArray(SKILL_HARVEST_GUIDE)) ? SKILL_HARVEST_GUIDE : [];
     const pactGuide = (typeof SKILL_PACT_GUIDE === 'object' && Array.isArray(SKILL_PACT_GUIDE)) ? SKILL_PACT_GUIDE : [];
+    const fieldGuide = (typeof SKILL_FIELD_GUIDE === 'object' && Array.isArray(SKILL_FIELD_GUIDE)) ? SKILL_FIELD_GUIDE : [];
     const chainDesc = chain ? ` · 专精连段: ${chain.name}: ${chain.steps.map(x => x.label).join(' → ')}。完成: ${chain.finish}` : '';
     const reactionDesc = reaction ? ` · 状态反应: ${reaction.name}: ${reaction.desc}` : '';
     const procDesc = proc ? ` · 临场强化: ${proc.name}: ${proc.desc}` : '';
@@ -532,12 +533,13 @@ function renderBuffBar() {
     const resourceDesc = resourceGuide.length ? ` · 资源回路: ${resourceGuide.map(x => `${x.icon || '💠'}${x.name}: ${x.desc}`).join('；')}` : '';
     const harvestDesc = harvestGuide.length ? ` · 斩获连锁: ${harvestGuide.map(x => `${x.icon || '🏹'}${x.name}: ${x.desc}`).join('；')}` : '';
     const pactDesc = pactGuide.length ? ` · 契约代价: ${pactGuide.map(x => `${x.icon || '📜'}${x.name}: ${x.desc}`).join('；')}` : '';
+    const fieldDesc = fieldGuide.length ? ` · 战场领域: ${fieldGuide.map(x => `${x.icon || '◇'}${x.name}: ${x.desc}`).join('；')}` : '';
     selfStates.unshift({
       kind: 'spec-meter',
       icon: specMeter.icon || '✦',
       name: specMeter.name,
       base: '专精机制:' + specMeter.key,
-      desc: (specMeter.hint || '') + ` · 当前 ${specMeter.stacks || 0}/${specMeter.max || 0}` + (tactic ? ` · 战术窗口: ${tactic.name}: ${tactic.desc}` : '') + chainDesc + reactionDesc + procDesc + coreDesc + stanceDesc + engineDesc + elementDesc + echoDesc + markDesc + weaveDesc + rhythmDesc + controlDesc + weaknessDesc + prepDesc + overloadDesc + resourceDesc + harvestDesc + pactDesc,
+      desc: (specMeter.hint || '') + ` · 当前 ${specMeter.stacks || 0}/${specMeter.max || 0}` + (tactic ? ` · 战术窗口: ${tactic.name}: ${tactic.desc}` : '') + chainDesc + reactionDesc + procDesc + coreDesc + stanceDesc + engineDesc + elementDesc + echoDesc + markDesc + weaveDesc + rhythmDesc + controlDesc + weaknessDesc + prepDesc + overloadDesc + resourceDesc + harvestDesc + pactDesc + fieldDesc,
       valText: `${specMeter.stacks || 0}/${specMeter.max || 0}`,
       stacks: specMeter.stacks || 0,
       left: 0
@@ -3000,7 +3002,9 @@ function renderSkillBar() {
     const harvestDesc = harvestTip ? `\n斩获连锁: ${harvestTip}` : '';
     const pactTip = (typeof skillPactTip === 'function') ? skillPactTip(key, sk) : '';
     const pactDesc = pactTip ? `\n契约代价: ${pactTip}` : '';
-    const tip = `${sk.name} · ${baseDesc}${detailDesc}${procDesc}${coreDesc}${engineDesc}${elementDesc}${echoDesc}${markDesc}${weaveDesc}${rhythmDesc}${controlDesc}${weaknessDesc}${prepDesc}${overloadDesc}${resourceDesc}${harvestDesc}${pactDesc}\n${c.resource} ${sk.mp} · 冷却 ${getSkillCd(sk)}秒`.replace(/"/g, '&quot;');
+    const fieldTip = (typeof skillFieldTip === 'function') ? skillFieldTip(key, sk) : '';
+    const fieldDesc = fieldTip ? `\n战场领域: ${fieldTip}` : '';
+    const tip = `${sk.name} · ${baseDesc}${detailDesc}${procDesc}${coreDesc}${engineDesc}${elementDesc}${echoDesc}${markDesc}${weaveDesc}${rhythmDesc}${controlDesc}${weaknessDesc}${prepDesc}${overloadDesc}${resourceDesc}${harvestDesc}${pactDesc}${fieldDesc}\n${c.resource} ${sk.mp} · 冷却 ${getSkillCd(sk)}秒`.replace(/"/g, '&quot;');
     const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, sk.icon) : sk.icon;
     return `<button class="skill-btn ${onCd?'on-cd':''}" data-skill="${key}" draggable="true" title="${tip}"
       style="${coreMatch&&!onCd?'border-color:#38bdf8;box-shadow:0 0 0 1px rgba(56,189,248,.50),0 0 14px rgba(56,189,248,.18)':(procMatch&&!onCd?'border-color:#facc15;box-shadow:0 0 0 1px rgba(250,204,21,.45)':(!onCd&&hasMp?'border-color:var(--accent)':''))}">

@@ -197,6 +197,11 @@ function specMasteryEngineBonus(field){
   if(field === 'pactSupportPct') return mastery * Math.max(b.supportPct || 0, b.mechanicShieldPct || 0) * 0.42;
   if(field === 'pactGainPct') return mastery * Math.max(b.coreGainPct || 0, b.procPct || 0) * 0.32;
   if(field === 'pactResource') return mastery * (b.resource || 0);
+  if(field === 'fieldDmgPct') return mastery * Math.max(b.specReactionPct || 0, b.chainPayoffPct || 0, b.corePayoffPct || 0) * 0.44;
+  if(field === 'fieldDotPct') return mastery * Math.max(b.dotSpreadPct || 0, b.reactionDotPct || 0, b.echoDotPct || 0) * 0.44;
+  if(field === 'fieldSupportPct') return mastery * Math.max(b.supportPct || 0, b.mechanicShieldPct || 0) * 0.44;
+  if(field === 'fieldGainPct') return mastery * Math.max(b.coreGainPct || 0, b.echoDurationPct || 0, b.procPct || 0) * 0.34;
+  if(field === 'fieldResource') return mastery * (b.resource || 0);
   return 0;
 }
 function masteryTakenMult(){ return 1 - Math.min(30, masteryFor('dr')*MASTERY_TYPE.dr.per + masteryFor('guardianEcho')*0.18 + specMasteryEngineBonus('takenPct'))/100; } // 受击减伤(封顶30%)
@@ -766,7 +771,7 @@ function processSkillElementReactions(skillKey, sk, mon, dmgDone, ctx){
 function skillMechanicFxBonus(field){
   let total = specMasteryEngineBonus(field);
   for(const fx of talentFxList()){
-    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho' && fx.type !== 'skillMark' && fx.type !== 'skillWeave' && fx.type !== 'skillRhythm' && fx.type !== 'skillControl' && fx.type !== 'skillWeakness' && fx.type !== 'skillPrep' && fx.type !== 'skillOverload' && fx.type !== 'skillResource' && fx.type !== 'skillHarvest' && fx.type !== 'skillPact')) continue;
+    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho' && fx.type !== 'skillMark' && fx.type !== 'skillWeave' && fx.type !== 'skillRhythm' && fx.type !== 'skillControl' && fx.type !== 'skillWeakness' && fx.type !== 'skillPrep' && fx.type !== 'skillOverload' && fx.type !== 'skillResource' && fx.type !== 'skillHarvest' && fx.type !== 'skillPact' && fx.type !== 'skillField')) continue;
     total += +(fx[field] || 0);
   }
   return total;
@@ -2285,6 +2290,140 @@ function skillPactTip(skillKey, sk){
   const sign = gain > 0 ? `签下${pactKindName(skillPactKind(skillKey, sk, sample))}${gain}层契约债务` : '';
   const redeem = skillPactCanRedeem(skillKey, sk, sample) ? '可赎回已有契约,把债务转化为收益' : '';
   return [sign, redeem].filter(Boolean).join('；');
+}
+function fieldKindName(kind){
+  const names = { fire:'火海', frost:'霜域', storm:'雷场', arcane:'奥域', nature:'林域', holy:'圣域', shadow:'暗沼', poison:'毒雾', physical:'战阵', beast:'猎场' };
+  return names[kind] || kind || '领域';
+}
+function fieldKindIcon(kind){
+  return ({ fire:'🔥', frost:'❄️', storm:'⛈️', arcane:'🔷', nature:'🌿', holy:'✨', shadow:'🌑', poison:'🐍', physical:'🩸', beast:'🐾' })[kind] || '◇';
+}
+function skillFieldKind(skillKey, sk, ctx){
+  if(!sk) return '';
+  const tags = skillElementTags(skillKey, sk);
+  if(ctx?.heal || sk.type === 'heal') return tags.includes('nature') ? 'nature' : 'holy';
+  if(sk.type === 'buff' || isDefensiveSkill(skillKey, sk)) return tags.includes('holy') ? 'holy' : 'physical';
+  if(sk.type === 'summon' || ctx?.summoned || tags.includes('beast')) return 'beast';
+  const order = ['fire','frost','storm','arcane','nature','holy','shadow','poison','physical','beast'];
+  return order.find(t => tags.includes(t)) || (sk.type === 'dmg' ? 'physical' : '');
+}
+function skillFieldGain(skillKey, sk, ctx){
+  const kind = skillFieldKind(skillKey, sk, ctx || {});
+  if(!kind) return 0;
+  const cost = Math.max(0, ctx?.cost || sk?.mp || 0);
+  let gain = 1 + Math.floor(skillMechanicFxBonus('fieldGainPct') / 45);
+  if(cost >= Math.max(36, (state.resourceMax || 100) * 0.28) || (sk?.mul || 0) >= 4.5) gain += 1;
+  if(sk?.dot || sk?.type === 'heal' || sk?.type === 'summon') gain += 1;
+  return Math.max(1, Math.min(3, gain));
+}
+function ensureSkillFieldRuntime(now){
+  const rt = ensureSkillRuntime();
+  if(!rt.field) rt.field = { kind:'', stacks:0, power:0, expire:0, chain:[] };
+  const ts = now || Date.now();
+  if(rt.field.expire && rt.field.expire <= ts) rt.field = { kind:'', stacks:0, power:0, expire:0, chain:[] };
+  return rt.field;
+}
+function addSkillField(kind, gain, sk, value, ctx, now){
+  if(!kind || !(gain > 0)) return 0;
+  const field = ensureSkillFieldRuntime(now);
+  const max = 5;
+  field.kind = kind;
+  field.stacks = Math.min(max, (field.stacks || 0) + gain);
+  field.power = Math.min((state.hero?.hpMax || 1) * 0.20, (field.power || 0) + Math.max(1, (value || state.hero.atk || 1) * 0.04 + (ctx?.cost || sk?.mp || 0) * 12));
+  field.chain = (field.chain || []).concat(kind).slice(-5);
+  field.expire = (now || Date.now()) + 14500;
+  addSkillAura('skill_field', {
+    add:gain,
+    max,
+    duration:14500,
+    icon:'◇',
+    name:'战场领域',
+    desc:`当前 ${field.stacks}/${max} 层${fieldKindName(kind)},场能 ${Math.floor(field.power || 0)}。不同类型技能可转化领域。`
+  });
+  markDirty('skills','hero');
+  return field.stacks;
+}
+function skillFieldCanShift(field, nextKind){
+  return !!(field && field.stacks > 0 && nextKind && field.kind && field.kind !== nextKind);
+}
+function shiftSkillField(field, nextKind, mon, value, sk, now, ctx){
+  const kind = field?.kind || nextKind;
+  const stacks = Math.max(1, field?.stacks || 1);
+  const power = Math.max(1, field?.power || 1);
+  const base = Math.max(1, Math.floor(value || state.hero.atk || 1));
+  const target = (mon && mon.hp > 0) ? mon : (state.currentMonsters || []).find(x => x && x.hp > 0);
+  const dmgMult = (1 + skillMechanicFxBonus('fieldDmgPct') / 100) * (0.52 + stacks * 0.12);
+  const dotMult = (1 + skillMechanicFxBonus('fieldDotPct') / 100) * (0.48 + stacks * 0.12);
+  const supportMult = masterySupportEchoMult() * (1 + skillMechanicFxBonus('fieldSupportPct') / 100) * (0.58 + stacks * 0.10);
+  const resource = Math.floor(1 + stacks / 2 + skillMechanicFxBonus('fieldResource'));
+  let fired = false;
+  if(resource > 0) grantTalentResource(resource);
+  if(kind === 'holy' || kind === 'nature' || nextKind === 'holy' || ctx?.heal || sk?.type === 'heal'){
+    healHeroAmount(Math.floor((state.hero.hpMax * (0.010 + stacks * 0.003) + power * 0.22) * supportMult), sk?.icon || fieldKindIcon(kind), '#6ee7b7', 'hero', '领域转化');
+    addTalentShield(Math.floor((state.hero.hpMax * (0.010 + stacks * 0.003) + power * 0.28) * supportMult), true, 9500);
+    specTacticCompanionSupport('heal', now);
+    fired = true;
+  } else if((kind === 'shadow' || kind === 'poison') && target){
+    applyMonsterDot(target, 'skillField:' + kind, Math.max(1, Math.floor((base * 0.075 + power * 0.035) * dotMult)), 9000, { icon:fieldKindIcon(kind), name:fieldKindName(kind) + '转化', source:'skillField' });
+    if(stacks >= 3) spreadDotFromMonster(target, 0.22 + stacks * 0.025, 9000);
+    healHeroAmount(Math.floor((state.hero.hpMax * 0.005 + power * 0.10) * supportMult), fieldKindIcon(kind), '#c4b5fd', 'hero', '领域吸取');
+    fired = true;
+  } else if(kind === 'beast'){
+    if(target) fired = applySkillFollowupDamage(target, (base * 0.11 + power * 0.030) * dmgMult, '🐾', '#7dd3fc', now) > 0 || fired;
+    specTacticSummon('beast', now);
+    fired = true;
+  } else if(kind === 'physical' && target){
+    applyMonsterState(target, 'sunder', 6800 + stacks * 520);
+    fired = applySkillFollowupDamage(target, (base * 0.12 + power * 0.035) * dmgMult, '🩸', '#f87171', now) > 0 || fired;
+    addTalentShield(Math.floor((state.hero.hpMax * 0.006 + power * 0.15) * supportMult), true, 8500);
+  } else if(target){
+    if(kind === 'fire') applyMonsterState(target, 'fever', 7200 + stacks * 520);
+    if(kind === 'frost') applyMonsterState(target, 'brittle', 7200 + stacks * 520);
+    if(kind === 'storm' || kind === 'arcane') applyMonsterState(target, 'unstable', 7200 + stacks * 520);
+    if(kind === 'nature') applyMonsterState(target, 'rooted', 6200 + stacks * 450);
+    fired = applySkillFollowupDamage(target, (base * 0.10 + power * 0.032) * dmgMult, fieldKindIcon(kind), kind === 'frost' ? '#93c5fd' : '#fbbf24', now) > 0 || fired;
+    fired = splashSkillDamage(target, base + power * 0.16, 0.09 + stacks * 0.025, fieldKindIcon(kind), now) > 0 || fired;
+  }
+  if(fired || resource > 0){
+    addSkillAura('skill_field', {
+      add:1,
+      max:1,
+      duration:5600,
+      icon:'◇',
+      name:'领域转化',
+      desc:`${fieldKindName(kind)}被 ${sk?.name || '技能'} 转化为伤害、持续伤害、护盾、治疗或协同,并返还 ${resource} 资源。`
+    });
+    showFloat($('hero-emoji'), `${fieldKindIcon(kind)}转化`, '#fbbf24', { variant:'buff', scale:1.04 });
+    log(`◇ 战场领域转化: ${fieldKindName(kind)} ${stacks} 层被 ${sk?.name || '技能'} 引动`, 'good');
+    markDirty('skills','hero','companion','stage');
+  }
+  return fired || resource > 0;
+}
+function processSkillField(skillKey, sk, mon, value, ctx){
+  if(!sk) return false;
+  const now = ctx?.now || Date.now();
+  const kind = skillFieldKind(skillKey, sk, ctx || {});
+  if(!kind) return false;
+  const gain = skillFieldGain(skillKey, sk, ctx || {});
+  const field = ensureSkillFieldRuntime(now);
+  let fired = false;
+  if(skillFieldCanShift(field, kind)){
+    const snap = Object.assign({}, field, { chain:[...(field.chain || [])] });
+    const rt = ensureSkillRuntime();
+    rt.field = { kind:'', stacks:0, power:0, expire:0, chain:[] };
+    if(rt.auras) delete rt.auras.skill_field;
+    fired = shiftSkillField(snap, kind, mon, value, sk, now, ctx || {});
+  }
+  addSkillField(kind, gain, sk, value, ctx || {}, now);
+  return fired || gain > 0;
+}
+function skillFieldTip(skillKey, sk){
+  if(!sk) return '';
+  const sample = { cost:sk.mp || 0 };
+  const kind = skillFieldKind(skillKey, sk, sample);
+  if(!kind) return '';
+  const gain = skillFieldGain(skillKey, sk, sample);
+  return [`铺设${gain}层${fieldKindName(kind)}`, '可转化已有不同战场领域'].join('；');
 }
 function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
   const fx = skillFxMeta(skillKey, sk);
@@ -3938,6 +4077,7 @@ function processTalentAfterSkill(skillKey, sk, mon, value, ctx){
   const now = Date.now();
   processSkillResourceLoop(skillKey, sk, mon, value, Object.assign({ now }, ctx || {}));
   processSkillPact(skillKey, sk, mon, value, Object.assign({ now }, ctx || {}));
+  processSkillField(skillKey, sk, mon, value, Object.assign({ now }, ctx || {}));
   for(const fx of talentFxList()){
     if(fx.type !== 'afterSkill') continue;
     if(!skillMatches(fx, skillKey)) continue;

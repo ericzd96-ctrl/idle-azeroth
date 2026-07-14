@@ -1020,6 +1020,20 @@ function skillPactTrait(cfg){
     }
   }));
 }
+function skillFieldTrait(cfg){
+  return trait(Object.assign({}, cfg, {
+    fx(rank){
+      return {
+        type:'skillField',
+        fieldDmgPct:rankValue(cfg.fieldDmgPct || [4,8,12], rank),
+        fieldDotPct:rankValue(cfg.fieldDotPct || [3,6,9], rank),
+        fieldSupportPct:rankValue(cfg.fieldSupportPct || [3,6,9], rank),
+        fieldGainPct:rankValue(cfg.fieldGainPct || [4,8,12], rank),
+        fieldResource:rankValue(cfg.fieldResource || [0,1,2], rank),
+      };
+    }
+  }));
+}
 
 (function retuneSpecArtifacts() {
   for (const [clsKey, specs] of Object.entries(SPEC_ARTIFACT_SKILL_RETUNE)) {
@@ -1213,6 +1227,21 @@ function skillPactTrait(cfg){
           pactSupportPct:supportWeave ? [6,12,18] : [2,4,6],
           pactGainPct:[5,10,15],
           desc:'契约赎约追击、虚契持续伤害或誓契支援效果提高,签约效率提高,赎约时返还少量资源。并获得精通 +1/2/3。'
+        }));
+      }
+      const fieldKey = `art_${clsKey}_${specKey}_field_20260714`;
+      if (!ARTIFACT_TRAITS[clsKey].some(t => t.key === fieldKey)) {
+        ARTIFACT_TRAITS[clsKey].push(skillFieldTrait({
+          key:fieldKey,
+          tree:specKey,
+          name:'领域回路',
+          icon:'◇',
+          mod:{ mastery:1 },
+          fieldDmgPct:supportWeave ? [3,6,9] : [6,12,18],
+          fieldDotPct:dotWeave ? [6,12,18] : [3,6,9],
+          fieldSupportPct:supportWeave ? [6,12,18] : [2,4,6],
+          fieldGainPct:[5,10,15],
+          desc:'战场领域转化追击、持续伤害或圣域支援效果提高,铺场效率提高,转化时返还少量资源。并获得精通 +1/2/3。'
         }));
       }
     }

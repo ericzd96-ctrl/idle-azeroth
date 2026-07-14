@@ -1023,3 +1023,49 @@ const TALENT_AURA_LIBRARY = {
     }
   }
 })();
+
+(function extendSkillFieldTalents() {
+  if (typeof CLASSES === 'undefined') return;
+  const names = {
+    arms:'战阵掌控', fury:'血战领域', prot:'盾墙阵地',
+    arcane:'奥术领域', fire:'火海掌控', frost:'霜域掌控',
+    discipline:'赎罪圣域', holy:'圣光圣域', shadow:'虚空暗沼',
+    assassination:'毒雾领域', combat:'剑刃战阵', subtlety:'暗影领域',
+    bm:'兽群猎场', marks:'精准猎场', survival:'荒野猎场',
+    element:'风暴领域', enhancement:'风怒战阵', restoration:'潮汐圣域',
+    holy_paladin:'圣光圣域', prot_paladin:'守护阵地', ret:'裁决战阵',
+    affliction:'痛苦暗沼', demonology:'军团猎场', destruction:'燃烬领域',
+    balance:'星辰林域', feral:'野性猎场', resto:'生命林域',
+  };
+  const supportSpecs = new Set(['discipline','holy','restoration','resto']);
+  const dotSpecs = new Set(['shadow','assassination','survival','affliction','destruction','balance']);
+  const fieldSpecs = new Set(['arcane','fire','frost','element','balance','destruction']);
+  const commandSpecs = new Set(['bm','demonology','survival','feral']);
+  for (const [clsKey, cls] of Object.entries(CLASSES)) {
+    if (!cls || !Array.isArray(cls.trees)) continue;
+    for (const tree of cls.trees) {
+      if (!tree || tree._skillFieldTalent) continue;
+      tree._skillFieldTalent = true;
+      const keyName = clsKey === 'paladin' && tree.key === 'holy' ? 'holy_paladin' : (clsKey === 'paladin' && tree.key === 'prot' ? 'prot_paladin' : tree.key);
+      const support = supportSpecs.has(tree.key) || (clsKey === 'paladin' && tree.key === 'holy') || (tree.key === 'prot' && (clsKey === 'warrior' || clsKey === 'paladin'));
+      const dot = dotSpecs.has(tree.key);
+      const field = fieldSpecs.has(tree.key);
+      const command = commandSpecs.has(tree.key);
+      tree.talents.push({
+        key: `skill_field_${clsKey}_${tree.key}`,
+        name: names[keyName] || '战场领域',
+        desc: `战场领域更强: ${support ? '圣域/阵地治疗和护盾提高 20%' : (command ? '猎场协同和追击提高 20%' : (dot ? '暗沼/毒雾 DOT 与扩散提高 20%' : '领域转化追击提高 18%'))}, 铺场效率提高,领域转化时返还资源。`,
+        req: 148,
+        max: 1,
+        fx: {
+          type:'skillField',
+          fieldDmgPct:support ? 8 : (command || field ? 20 : 18),
+          fieldDotPct:dot ? 20 : 8,
+          fieldSupportPct:support ? 20 : 6,
+          fieldGainPct:field || command ? 22 : 16,
+          fieldResource:2
+        }
+      });
+    }
+  }
+})();
