@@ -5696,7 +5696,7 @@ function wildMonsterHpMultiplier(lvl){
   const curveMid = Math.max(0, Math.min(1, (level - 40) / 30));
   const curveHigh = Math.max(0, Math.min(1, (level - 70) / 20));
   const curveEnd = Math.max(0, Math.min(1, (level - 95) / 15));
-  return +(3.2 + curveLow * 0.55 + curveMid * 0.75 + curveHigh * 0.95 + curveEnd * 0.65).toFixed(2);
+  return +(5.2 + curveLow * 0.85 + curveMid * 1.05 + curveHigh * 1.25 + curveEnd * 0.95).toFixed(2);
 }
 function applyWildMonsterHpScaling(mon, lvl){
   if(!mon || mon.isBoss) return mon;
