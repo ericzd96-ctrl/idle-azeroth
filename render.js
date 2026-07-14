@@ -438,6 +438,11 @@ function renderBuffBar() {
   const bar = $('buff-bar'); if (!bar) return;
   const now = Date.now();
   const meta = buffMetaForClass();
+  const hiddenSkillAuras = new Set([
+    'skill_reaction','skill_echo','skill_weave','skill_rhythm','skill_control','skill_weakness',
+    'skill_prep','skill_overload','skill_resource','skill_harvest','skill_pact','skill_field',
+    'skill_charge','skill_rune','spec_flow','spec_core','spec_proc','spec_stance','spec_tactic'
+  ]);
   // 英雄增益
   const buffs = [];
   for (const k in (state.buffs || {})) {
@@ -458,6 +463,7 @@ function renderBuffBar() {
   if (typeof SKILL_AURA_LIBRARY === 'object' && state.skillRuntime && state.skillRuntime.auras) {
     for (const [k, aura] of Object.entries(state.skillRuntime.auras)) {
       if (!aura) continue;
+      if (hiddenSkillAuras.has(k)) continue;
       const m = SKILL_AURA_LIBRARY[k] || (k === 'spec_tactic' ? aura : null);
       if (!m) continue;
       const left = aura.expire ? Math.ceil((aura.expire - now) / 1000) : 0;
@@ -508,7 +514,7 @@ function renderBuffBar() {
     const stanceDesc = stance ? ` · 法则: ${stance.name},短时间改变技能效果` : '';
     const engineText = (typeof specEngineDescText === 'function') ? specEngineDescText() : '';
     const engineDesc = engineText ? ` · 精通强化: ${engineText}` : '';
-    const universalDesc = ' · 通用技能机制: 技能会产生反应、余波、判词、织法、律动、控场、弱点、蓄势、过载、回路、斩获、契约、领域、充能和符文。具体触发条件看技能按钮说明。';
+    const universalDesc = ' · 技能细节看技能按钮说明。';
     selfStates.unshift({
       kind: 'spec-meter',
       icon: specMeter.icon || '✦',
