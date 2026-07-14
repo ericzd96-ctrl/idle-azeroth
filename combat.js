@@ -68,11 +68,99 @@ const MASTERY_TYPE = {
 };
 // 专精 → 精通效果(同名 key 的不同职业共享同一原型,如 prot=减伤 / holy=治疗,语义一致)
 const MASTERY_SPEC = { arms:'echoAmp', fury:'echoAmp', prot:'guardianEcho', arcane:'reactionAmp', fire:'reactionAmp', frost:'echoAmp', discipline:'supportEcho', holy:'supportEcho', shadow:'reactionAmp', assassination:'echoAmp', combat:'echoAmp', subtlety:'echoAmp', bm:'echoAmp', marks:'reactionAmp', survival:'reactionAmp', element:'reactionAmp', enhancement:'echoAmp', restoration:'supportEcho', ret:'reactionAmp', affliction:'reactionAmp', demonology:'echoAmp', destruction:'reactionAmp', balance:'reactionAmp', feral:'echoAmp', resto:'supportEcho' };
+const SPEC_MASTERY_ENGINE = {
+  warrior:{
+    arms:{ icon:'🪓', name:'创伤压制', desc:'精通强化破甲处决链: 核心收束、连段奖励、裂甲反应和裂伤余波随精通提高。', bonus:{ corePayoffPct:0.42, chainPayoffPct:0.34, specReactionPct:0.28, echoDmgPct:0.22, coreGainPct:0.10 } },
+    fury:{ icon:'😡', name:'无尽狂怒', desc:'精通强化暴怒循环: 临场强化、狂乱姿态、核心收束和怒火余波随精通提高。', bonus:{ procPct:0.36, stancePct:0.28, corePayoffPct:0.34, echoDmgPct:0.28, resource:0.018 } },
+    prot:{ icon:'🛡️', name:'盾墙纪律', desc:'精通强化盾反壁垒: 护盾治疗联动、姿态、核心护盾和承伤减免随精通提高。', bonus:{ supportPct:0.38, stancePct:0.24, corePayoffPct:0.25, mechanicShieldPct:0.34, takenPct:0.10 } },
+  },
+  mage:{
+    arcane:{ icon:'🔷', name:'法网坍缩', desc:'精通强化奥术倾泻: 状态反应、核心收束、核心叠层和奥术裂纹随精通提高。', bonus:{ reactionDmgPct:0.32, specReactionPct:0.34, corePayoffPct:0.36, coreGainPct:0.14, echoResource:0.018 } },
+    fire:{ icon:'🔥', name:'点燃主宰', desc:'精通强化火焰铺场: 反应 DOT、DOT 扩散、核心爆发和火痕余波随精通提高。', bonus:{ reactionDotPct:0.40, echoDotPct:0.34, dotSpreadPct:0.34, corePayoffPct:0.30, specReactionPct:0.32 } },
+    frost:{ icon:'❄️', name:'碎冰晶核', desc:'精通强化冻结碎裂: 余波伤害、姿态护盾、核心收束和碎冰临场强化随精通提高。', bonus:{ echoDmgPct:0.34, echoDurationPct:0.22, stancePct:0.22, corePayoffPct:0.30, mechanicShieldPct:0.22 } },
+  },
+  priest:{
+    discipline:{ icon:'⚖️', name:'赎罪棱镜', desc:'精通强化戒律赎罪: 支援护盾、专精反应、核心治疗和临场护盾随精通提高。', bonus:{ supportPct:0.42, specReactionPct:0.24, corePayoffPct:0.24, procPct:0.20, mechanicShieldPct:0.36 } },
+    holy:{ icon:'✨', name:'圣言回响', desc:'精通强化神圣合唱: 治疗护盾联动、核心治疗、姿态治疗和圣辉余波随精通提高。', bonus:{ supportPct:0.46, corePayoffPct:0.22, stancePct:0.22, mechanicShieldPct:0.32, echoDurationPct:0.18 } },
+    shadow:{ icon:'🌑', name:'虚空织疫', desc:'精通强化暗影疫病: 状态反应、DOT 扩散、核心爆发和暗影余波随精通提高。', bonus:{ specReactionPct:0.36, reactionDotPct:0.34, dotSpreadPct:0.36, corePayoffPct:0.30, echoDmgPct:0.20 } },
+  },
+  rogue:{
+    assassination:{ icon:'🐍', name:'毒液定式', desc:'精通强化毒药处刑: 毒爆反应、DOT 扩散、核心收束和毒雾余波随精通提高。', bonus:{ specReactionPct:0.36, reactionDotPct:0.32, echoDotPct:0.34, dotSpreadPct:0.30, corePayoffPct:0.28 } },
+    combat:{ icon:'⚔️', name:'乱舞节拍', desc:'精通强化战斗连击: 连段奖励、临场强化、姿态和裂伤余波随精通提高。', bonus:{ chainPayoffPct:0.40, procPct:0.28, stancePct:0.24, echoDmgPct:0.24, resource:0.016 } },
+    subtlety:{ icon:'🌑', name:'暗幕穿刺', desc:'精通强化敏锐伏击: 临场强化、核心收束、破绽反应和暗影余波随精通提高。', bonus:{ procPct:0.38, corePayoffPct:0.32, specReactionPct:0.28, echoDmgPct:0.24, coreGainPct:0.10 } },
+  },
+  hunter:{
+    bm:{ icon:'🐾', name:'兽群统御', desc:'精通强化兽群指挥: 召唤协击、临场强化、核心围猎和猎群余波随精通提高。', bonus:{ procPct:0.28, corePayoffPct:0.32, chainPayoffPct:0.26, echoDmgPct:0.26, supportPct:0.18 } },
+    marks:{ icon:'🎯', name:'弱点测距', desc:'精通强化射击窗口: 标记反应、核心穿透、临场强化和奥术/物理余波随精通提高。', bonus:{ specReactionPct:0.34, corePayoffPct:0.36, procPct:0.26, reactionDmgPct:0.24, coreGainPct:0.10 } },
+    survival:{ icon:'💣', name:'野火网络', desc:'精通强化生存陷阱: DOT 扩散、状态反应、核心野火和毒/火余波随精通提高。', bonus:{ dotSpreadPct:0.36, specReactionPct:0.32, corePayoffPct:0.28, reactionDotPct:0.28, echoDotPct:0.24 } },
+  },
+  shaman:{
+    element:{ icon:'⛈️', name:'元素过载', desc:'精通强化元素导线: 过载反应、核心弹射、连段奖励和导电余波随精通提高。', bonus:{ specReactionPct:0.36, reactionDmgPct:0.30, corePayoffPct:0.32, chainPayoffPct:0.24, echoDmgPct:0.20 } },
+    enhancement:{ icon:'🌀', name:'风怒漩涡', desc:'精通强化增强节奏: 临场强化、姿态追击、核心风怒和导电余波随精通提高。', bonus:{ procPct:0.34, stancePct:0.28, corePayoffPct:0.30, echoDmgPct:0.22, resource:0.018 } },
+    restoration:{ icon:'🌊', name:'潮汐回流', desc:'精通强化恢复潮汐: 治疗护盾联动、核心治疗、姿态和生命余波随精通提高。', bonus:{ supportPct:0.46, corePayoffPct:0.22, stancePct:0.22, mechanicShieldPct:0.34, echoDurationPct:0.18 } },
+  },
+  paladin:{
+    holy:{ icon:'🌟', name:'道标折射', desc:'精通强化神圣道标: 治疗护盾联动、核心治疗、圣辉余波和临场强化随精通提高。', bonus:{ supportPct:0.44, corePayoffPct:0.24, procPct:0.18, mechanicShieldPct:0.34, echoDurationPct:0.18 } },
+    prot:{ icon:'🛡️', name:'奉献壁垒', desc:'精通强化防骑壁垒: 祝福护盾、姿态、核心反击和承伤减免随精通提高。', bonus:{ supportPct:0.38, stancePct:0.26, corePayoffPct:0.28, mechanicShieldPct:0.34, takenPct:0.10 } },
+    ret:{ icon:'⚜️', name:'圣能清算', desc:'精通强化惩戒裁决: 核心收束、审判反应、连段奖励和圣辉余波随精通提高。', bonus:{ corePayoffPct:0.38, specReactionPct:0.30, chainPayoffPct:0.28, echoDmgPct:0.22, coreGainPct:0.10 } },
+  },
+  warlock:{
+    affliction:{ icon:'💜', name:'痛苦账本', desc:'精通强化痛苦收割: DOT 扩散、持续反应、核心收割和暗影余波随精通提高。', bonus:{ dotSpreadPct:0.40, reactionDotPct:0.36, specReactionPct:0.34, corePayoffPct:0.28, echoDotPct:0.28 } },
+    demonology:{ icon:'😈', name:'军团统御', desc:'精通强化恶魔军团: 召唤协击、临场强化、核心恶魔和护盾联动随精通提高。', bonus:{ procPct:0.30, corePayoffPct:0.32, chainPayoffPct:0.24, supportPct:0.22, echoDmgPct:0.20 } },
+    destruction:{ icon:'🔥', name:'混乱余烬', desc:'精通强化毁灭裂隙: 核心混乱、DOT 扩散、火痕余波和临场强化随精通提高。', bonus:{ corePayoffPct:0.40, dotSpreadPct:0.30, echoDmgPct:0.26, procPct:0.24, reactionDmgPct:0.22 } },
+  },
+  druid:{
+    balance:{ icon:'🌗', name:'星蚀轨道', desc:'精通强化日月循环: 核心星落、连段奖励、星痕反应和自然余波随精通提高。', bonus:{ corePayoffPct:0.34, chainPayoffPct:0.30, specReactionPct:0.28, echoDmgPct:0.22, dotSpreadPct:0.22 } },
+    feral:{ icon:'🐾', name:'血爪猎杀', desc:'精通强化野性流血: 核心撕咬、DOT 扩散、临场强化和裂伤余波随精通提高。', bonus:{ corePayoffPct:0.36, dotSpreadPct:0.28, procPct:0.26, echoDotPct:0.24, specReactionPct:0.24 } },
+    resto:{ icon:'🌿', name:'生命调和', desc:'精通强化恢复林地: 治疗护盾联动、核心治疗、姿态和生命余波随精通提高。', bonus:{ supportPct:0.48, corePayoffPct:0.22, stancePct:0.22, mechanicShieldPct:0.34, echoDurationPct:0.18 } },
+  },
+};
+const SPEC_MASTERY_LABELS = {
+  coreGainPct:'核心叠层',
+  corePassivePct:'核心被动',
+  corePayoffPct:'核心收束',
+  chainPayoffPct:'连段奖励',
+  specReactionPct:'专精反应',
+  procPct:'临场强化',
+  stancePct:'战斗法则',
+  dotSpreadPct:'DOT扩散',
+  supportPct:'治疗/护盾',
+  echoDmgPct:'余波伤害',
+  echoDotPct:'余波DOT',
+  echoDurationPct:'余波持续',
+  reactionDmgPct:'元素反应',
+  reactionDotPct:'反应DOT',
+  mechanicShieldPct:'机制护盾',
+  echoResource:'余波返还',
+  reactionResource:'反应返还',
+};
 function masterySpecType(){ return MASTERY_SPEC[state.specialization] || null; }
 function masteryFor(type){ return masterySpecType()===type ? (state.hero.mastery||0) : 0; }
 function masteryDmgMult(){ return 1 + masteryFor('dmgAmp')*MASTERY_TYPE.dmgAmp.per/100; }       // 输出伤害增幅
-function masteryTakenMult(){ return 1 - Math.min(30, masteryFor('dr')*MASTERY_TYPE.dr.per + masteryFor('guardianEcho')*0.18)/100; } // 受击减伤(封顶30%)
-function masteryDescText(){ const t=masterySpecType(); return t ? MASTERY_TYPE[t].fmt(state.hero.mastery||0) : '未选择专精'; }
+function currentSpecMasteryEngine(){
+  if(typeof state === 'undefined' || !state) return null;
+  return SPEC_MASTERY_ENGINE[state.cls]?.[state.specialization] || null;
+}
+function specMasteryEngineBonus(field){
+  const p = currentSpecMasteryEngine();
+  const mastery = state?.hero?.mastery || 0;
+  return p && p.bonus && p.bonus[field] ? mastery * p.bonus[field] : 0;
+}
+function masteryTakenMult(){ return 1 - Math.min(30, masteryFor('dr')*MASTERY_TYPE.dr.per + masteryFor('guardianEcho')*0.18 + specMasteryEngineBonus('takenPct'))/100; } // 受击减伤(封顶30%)
+function masteryDescText(){
+  const p = currentSpecMasteryEngine();
+  const n = state?.hero?.mastery || 0;
+  if(p){
+    const bits = Object.entries(p.bonus || {})
+      .filter(([k, v]) => k !== 'resource' && k !== 'takenPct' && v)
+      .slice(0, 4)
+      .map(([k, v]) => `${SPEC_MASTERY_LABELS[k] || k} +${(n * v).toFixed(1)}%`);
+    const res = p.bonus?.resource ? `资源返还 +${(n * p.bonus.resource).toFixed(1)}` : '';
+    const taken = p.bonus?.takenPct ? `承伤 -${Math.min(30, n * p.bonus.takenPct).toFixed(1)}%` : '';
+    return `${p.icon || '✦'} ${p.name}: ${p.desc} 当前: ${bits.concat(res || [], taken || []).filter(Boolean).join(' · ')}`;
+  }
+  const t=masterySpecType(); return t ? MASTERY_TYPE[t].fmt(n) : '未选择专精';
+}
 function masteryReactionMult(){ return 1 + masteryFor('reactionAmp')*MASTERY_TYPE.reactionAmp.per/100; }
 function masteryEchoMult(){ return 1 + masteryFor('echoAmp')*MASTERY_TYPE.echoAmp.per/100 + masteryFor('guardianEcho')*MASTERY_TYPE.guardianEcho.per/100; }
 function masterySupportEchoMult(){ return 1 + masteryFor('supportEcho')*MASTERY_TYPE.supportEcho.per/100 + masteryFor('guardianEcho')*0.35/100; }
@@ -623,7 +711,7 @@ function processSkillElementReactions(skillKey, sk, mon, dmgDone, ctx){
   return rules.length > 0;
 }
 function skillMechanicFxBonus(field){
-  let total = 0;
+  let total = specMasteryEngineBonus(field);
   for(const fx of talentFxList()){
     if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho')) continue;
     total += +(fx[field] || 0);
@@ -631,11 +719,12 @@ function skillMechanicFxBonus(field){
   return total;
 }
 function specEngineFxBonus(field){
-  let total = 0;
+  let total = specMasteryEngineBonus(field);
   for(const fx of talentFxList()){
     if(!fx || fx.type !== 'specEngine') continue;
     total += +(fx[field] || 0);
   }
+  if(field === 'resource') return Math.floor(total);
   return total;
 }
 function specEngineFxMult(field){
