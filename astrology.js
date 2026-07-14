@@ -158,8 +158,8 @@ function renderAstrology() {
       <button class="primary" data-action="astroObserve">观测 +${available} 星尘</button>
     </div>
     <div class="astro-summary">
-      <span>产出 ${rate}/小时，最多累计 12 小时</span>
-      <span>${activeText}</span>
+      <span><b>星尘</b>${rate}/小时 · 最多累计 12 小时</span>
+      <span><b>当前加成</b>${activeText || '暂无'}</span>
     </div>
     <div class="astro-board">
   `;
@@ -180,9 +180,12 @@ function renderAstrology() {
       const check = astrologyCanUnlock(c, idx);
       html += `
         <button class="astro-node ${isOn?'is-on':''}" data-action="astroUnlock" data-constellation="${c.key}" data-idx="${idx}" ${(!check.ok && !isOn)?'disabled':''} title="${node.name} · ${astrologyModText(node.mod)}">
-          <span>${idx + 1}</span>
-          <b>${node.name}</b>
-          <em>${isOn ? '已点亮' : `${cost} 星尘 · Lv.${lvlReq}`}</em>
+          <span class="astro-node-index">${idx + 1}</span>
+          <div class="astro-node-main">
+            <b>${node.name}</b>
+            <small>${astrologyModText(node.mod)}</small>
+            <em>${isOn ? '已点亮' : `${cost} 星尘 · Lv.${lvlReq}`}</em>
+          </div>
         </button>
       `;
     });
