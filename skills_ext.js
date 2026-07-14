@@ -73,6 +73,7 @@ const SKILL_AURA_LIBRARY = {
   d_harmony:    { icon:'🌿', name:'自然调和', desc:'德鲁伊治疗、月火与野性技能叠加,在恢复/输出间转换', maxStacks:5 },
   skill_reaction:{ icon:'✹', name:'技能反应', desc:'技能元素命中合适的目标状态后触发的额外反应', maxStacks:1 },
   skill_echo:   { icon:'✺', name:'技能余波', desc:'技能留下的短暂战场痕迹,会被后续不同类型技能引爆或转化', maxStacks:1 },
+  skill_weave:  { icon:'✥', name:'技能织法', desc:'连续使用不同类型技能形成轮转织法,层数越高后续收束越强', maxStacks:5 },
   spec_flow:    { icon:'✦', name:'专精连段', desc:'按当前专精的技能顺序推进,完成后触发独特战斗效果', maxStacks:3 },
   spec_core:    { icon:'✦', name:'专精核心', desc:'当前专精独有的战斗引擎资源,满层后用指定技能收束触发强力效果', maxStacks:8 },
   spec_proc:    { icon:'✦', name:'临场强化', desc:'当前专精触发的下一技能变招,命中符合条件的技能后自动消费', maxStacks:1 },
@@ -155,6 +156,14 @@ const SKILL_MARK_GUIDE = [
   { icon:'🌿', name:'生息判词', desc:'自然技能叠加生息判词,满层或被神圣/火焰收束时绽放治疗护盾。' },
   { icon:'🐾', name:'猎命判词', desc:'野兽/射击技能叠加猎命判词,满层或被物理/野兽收束时追加追咬。' },
   { icon:'🩸', name:'裂骨判词', desc:'物理技能叠加裂骨判词,满层或被毒/暗影/火焰收束时造成深层流血。' },
+];
+
+const SKILL_WEAVE_GUIDE = [
+  { icon:'✥', name:'异法织链', desc:'连续使用不同标签的技能会叠加技能织法,同标签只刷新持续时间。' },
+  { icon:'🔥', name:'灼冻轮转', desc:'火焰接冰霜、冰霜接火焰会触发更强的爆裂/碎裂效果。' },
+  { icon:'⛈️', name:'导流轮转', desc:'风暴、奥术、自然互相交替会返还资源并制造溅射。' },
+  { icon:'✨', name:'救赎轮转', desc:'治疗/神圣与伤害技能交替会把部分伤害转为护盾和随从支援。' },
+  { icon:'☠️', name:'腐蚀轮转', desc:'暗影、毒药、物理交替会强化 DOT、流血和扩散。' },
 ];
 
 /* 每个职业 4 个新技能:爆发 / 减伤 / 功能性 / 职业特色 */
@@ -1331,6 +1340,7 @@ if (typeof window !== 'undefined') {
   window.SKILL_ELEMENT_REACTION_GUIDE = SKILL_ELEMENT_REACTION_GUIDE;
   window.SKILL_ECHO_GUIDE = SKILL_ECHO_GUIDE;
   window.SKILL_MARK_GUIDE = SKILL_MARK_GUIDE;
+  window.SKILL_WEAVE_GUIDE = SKILL_WEAVE_GUIDE;
   window.currentSpecCombatRule = currentSpecCombatRule;
   window.currentSpecCombatMeter = currentSpecCombatMeter;
   window.currentSpecTacticalWindow = currentSpecTacticalWindow;

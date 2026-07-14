@@ -486,6 +486,7 @@ function renderBuffBar() {
     const elementGuide = (typeof SKILL_ELEMENT_REACTION_GUIDE === 'object' && Array.isArray(SKILL_ELEMENT_REACTION_GUIDE)) ? SKILL_ELEMENT_REACTION_GUIDE : [];
     const echoGuide = (typeof SKILL_ECHO_GUIDE === 'object' && Array.isArray(SKILL_ECHO_GUIDE)) ? SKILL_ECHO_GUIDE : [];
     const markGuide = (typeof SKILL_MARK_GUIDE === 'object' && Array.isArray(SKILL_MARK_GUIDE)) ? SKILL_MARK_GUIDE : [];
+    const weaveGuide = (typeof SKILL_WEAVE_GUIDE === 'object' && Array.isArray(SKILL_WEAVE_GUIDE)) ? SKILL_WEAVE_GUIDE : [];
     const chainDesc = chain ? ` · 专精连段: ${chain.name}: ${chain.steps.map(x => x.label).join(' → ')}。完成: ${chain.finish}` : '';
     const reactionDesc = reaction ? ` · 状态反应: ${reaction.name}: ${reaction.desc}` : '';
     const procDesc = proc ? ` · 临场强化: ${proc.name}: ${proc.desc}` : '';
@@ -496,12 +497,13 @@ function renderBuffBar() {
     const elementDesc = elementGuide.length ? ` · 技能元素反应: ${elementGuide.map(x => `${x.icon || '✹'}${x.name}: ${x.desc}`).join('；')}` : '';
     const echoDesc = echoGuide.length ? ` · 技能余波: ${echoGuide.map(x => `${x.icon || '✺'}${x.name}: ${x.desc}`).join('；')}` : '';
     const markDesc = markGuide.length ? ` · 技能判词: ${markGuide.map(x => `${x.icon || '✦'}${x.name}: ${x.desc}`).join('；')}` : '';
+    const weaveDesc = weaveGuide.length ? ` · 技能织法: ${weaveGuide.map(x => `${x.icon || '✥'}${x.name}: ${x.desc}`).join('；')}` : '';
     selfStates.unshift({
       kind: 'spec-meter',
       icon: specMeter.icon || '✦',
       name: specMeter.name,
       base: '专精机制:' + specMeter.key,
-      desc: (specMeter.hint || '') + ` · 当前 ${specMeter.stacks || 0}/${specMeter.max || 0}` + (tactic ? ` · 战术窗口: ${tactic.name}: ${tactic.desc}` : '') + chainDesc + reactionDesc + procDesc + coreDesc + stanceDesc + engineDesc + elementDesc + echoDesc + markDesc,
+      desc: (specMeter.hint || '') + ` · 当前 ${specMeter.stacks || 0}/${specMeter.max || 0}` + (tactic ? ` · 战术窗口: ${tactic.name}: ${tactic.desc}` : '') + chainDesc + reactionDesc + procDesc + coreDesc + stanceDesc + engineDesc + elementDesc + echoDesc + markDesc + weaveDesc,
       valText: `${specMeter.stacks || 0}/${specMeter.max || 0}`,
       stacks: specMeter.stacks || 0,
       left: 0
@@ -2946,7 +2948,9 @@ function renderSkillBar() {
     const echoDesc = echoTip ? `\n技能余波: ${echoTip}` : '';
     const markTip = (typeof skillMarkTip === 'function') ? skillMarkTip(key, sk) : '';
     const markDesc = markTip ? `\n技能判词: ${markTip}` : '';
-    const tip = `${sk.name} · ${baseDesc}${detailDesc}${procDesc}${coreDesc}${engineDesc}${elementDesc}${echoDesc}${markDesc}\n${c.resource} ${sk.mp} · 冷却 ${getSkillCd(sk)}秒`.replace(/"/g, '&quot;');
+    const weaveTip = (typeof skillWeaveTip === 'function') ? skillWeaveTip(key, sk) : '';
+    const weaveDesc = weaveTip ? `\n技能织法: ${weaveTip}` : '';
+    const tip = `${sk.name} · ${baseDesc}${detailDesc}${procDesc}${coreDesc}${engineDesc}${elementDesc}${echoDesc}${markDesc}${weaveDesc}\n${c.resource} ${sk.mp} · 冷却 ${getSkillCd(sk)}秒`.replace(/"/g, '&quot;');
     const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, sk.icon) : sk.icon;
     return `<button class="skill-btn ${onCd?'on-cd':''}" data-skill="${key}" draggable="true" title="${tip}"
       style="${coreMatch&&!onCd?'border-color:#38bdf8;box-shadow:0 0 0 1px rgba(56,189,248,.50),0 0 14px rgba(56,189,248,.18)':(procMatch&&!onCd?'border-color:#facc15;box-shadow:0 0 0 1px rgba(250,204,21,.45)':(!onCd&&hasMp?'border-color:var(--accent)':''))}">

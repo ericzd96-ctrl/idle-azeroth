@@ -895,6 +895,20 @@ function skillMarkTrait(cfg){
     }
   }));
 }
+function skillWeaveTrait(cfg){
+  return trait(Object.assign({}, cfg, {
+    fx(rank){
+      return {
+        type:'skillWeave',
+        weaveDmgPct:rankValue(cfg.weaveDmgPct || [4,8,12], rank),
+        weaveDotPct:rankValue(cfg.weaveDotPct || [3,6,9], rank),
+        weaveSupportPct:rankValue(cfg.weaveSupportPct || [3,6,9], rank),
+        weaveDurationPct:rankValue(cfg.weaveDurationPct || [4,8,12], rank),
+        weaveResource:rankValue(cfg.weaveResource || [0,1,2], rank),
+      };
+    }
+  }));
+}
 
 (function retuneSpecArtifacts() {
   for (const [clsKey, specs] of Object.entries(SPEC_ARTIFACT_SKILL_RETUNE)) {
@@ -940,19 +954,35 @@ function skillMarkTrait(cfg){
         }));
       }
       const markKey = `art_${clsKey}_${specKey}_mark_20260714`;
-      if (ARTIFACT_TRAITS[clsKey].some(t => t.key === markKey)) continue;
       const supportMark = ['discipline','holy','restoration','resto'].includes(specKey) || (clsKey === 'paladin' && specKey === 'holy') || (specKey === 'prot' && (clsKey === 'warrior' || clsKey === 'paladin'));
       const dotMark = ['fire','shadow','assassination','survival','affliction','destruction','balance','feral'].includes(specKey);
-      ARTIFACT_TRAITS[clsKey].push(skillMarkTrait({
-        key:markKey,
+      if (!ARTIFACT_TRAITS[clsKey].some(t => t.key === markKey)) {
+        ARTIFACT_TRAITS[clsKey].push(skillMarkTrait({
+          key:markKey,
+          tree:specKey,
+          name:'判词回路',
+          icon:'✥',
+          mod:{ mastery:1 },
+          markDmgPct:supportMark ? [3,6,9] : [5,10,15],
+          markDotPct:dotMark ? [5,10,15] : [3,6,9],
+          markSupportPct:supportMark ? [5,10,15] : [2,4,6],
+          desc:'技能判词伤害提高,判词持续时间提高,并强化判词 DOT、护盾治疗、溅射或资源返还。并获得精通 +1/2/3。'
+        }));
+      }
+      const weaveKey = `art_${clsKey}_${specKey}_weave_20260714`;
+      if (ARTIFACT_TRAITS[clsKey].some(t => t.key === weaveKey)) continue;
+      const supportWeave = ['discipline','holy','restoration','resto'].includes(specKey) || (clsKey === 'paladin' && specKey === 'holy') || (specKey === 'prot' && (clsKey === 'warrior' || clsKey === 'paladin'));
+      const dotWeave = ['fire','shadow','assassination','survival','affliction','destruction','balance','feral'].includes(specKey);
+      ARTIFACT_TRAITS[clsKey].push(skillWeaveTrait({
+        key:weaveKey,
         tree:specKey,
-        name:'判词回路',
+        name:'织法回路',
         icon:'✥',
         mod:{ mastery:1 },
-        markDmgPct:supportMark ? [3,6,9] : [5,10,15],
-        markDotPct:dotMark ? [5,10,15] : [3,6,9],
-        markSupportPct:supportMark ? [5,10,15] : [2,4,6],
-        desc:'技能判词伤害提高,判词持续时间提高,并强化判词 DOT、护盾治疗、溅射或资源返还。并获得精通 +1/2/3。'
+        weaveDmgPct:supportWeave ? [3,6,9] : [5,10,15],
+        weaveDotPct:dotWeave ? [5,10,15] : [3,6,9],
+        weaveSupportPct:supportWeave ? [5,10,15] : [2,4,6],
+        desc:'技能织法追击、持续伤害或支援效果提高,织法持续时间提高,触发时返还少量资源。并获得精通 +1/2/3。'
       }));
     }
   }

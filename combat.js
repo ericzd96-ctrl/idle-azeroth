@@ -154,6 +154,10 @@ function specMasteryEngineBonus(field){
   if(field === 'markSpreadPct') return mastery * (b.dotSpreadPct || 0) * 0.45;
   if(field === 'markSplashPct') return mastery * Math.max(b.chainPayoffPct || 0, b.specReactionPct || 0) * 0.35;
   if(field === 'markResource') return mastery * (b.resource || 0);
+  if(field === 'weaveDmgPct') return mastery * Math.max(b.chainPayoffPct || 0, b.procPct || 0, b.corePayoffPct || 0) * 0.45;
+  if(field === 'weaveDotPct') return mastery * Math.max(b.dotSpreadPct || 0, b.reactionDotPct || 0, b.echoDotPct || 0) * 0.45;
+  if(field === 'weaveSupportPct') return mastery * Math.max(b.supportPct || 0, b.mechanicShieldPct || 0) * 0.45;
+  if(field === 'weaveResource') return mastery * (b.resource || 0);
   return 0;
 }
 function masteryTakenMult(){ return 1 - Math.min(30, masteryFor('dr')*MASTERY_TYPE.dr.per + masteryFor('guardianEcho')*0.18 + specMasteryEngineBonus('takenPct'))/100; } // 受击减伤(封顶30%)
@@ -723,7 +727,7 @@ function processSkillElementReactions(skillKey, sk, mon, dmgDone, ctx){
 function skillMechanicFxBonus(field){
   let total = specMasteryEngineBonus(field);
   for(const fx of talentFxList()){
-    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho' && fx.type !== 'skillMark')) continue;
+    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho' && fx.type !== 'skillMark' && fx.type !== 'skillWeave')) continue;
     total += +(fx[field] || 0);
   }
   return total;
@@ -968,6 +972,116 @@ function processSkillMarks(skillKey, sk, mon, dmgDone, ctx){
   }
   return fired;
 }
+function dominantSkillWeaveTag(skillKey, sk, ctx){
+  if(!sk) return '';
+  if(sk.type === 'heal' || ctx?.heal) return 'support';
+  if(sk.type === 'buff' || ctx?.buff || isDefensiveSkill(skillKey, sk)) return 'guard';
+  if(sk.type === 'summon' || sk.summonCount || ctx?.summoned) return 'summon';
+  const tags = skillElementTags(skillKey, sk);
+  return dominantSkillMarkTag(tags) || tags[0] || '';
+}
+function weaveTagName(tag){
+  const names = {
+    fire:'火焰', frost:'冰霜', storm:'风暴', holy:'神圣', shadow:'暗影',
+    poison:'毒药', arcane:'奥术', nature:'自然', beast:'野兽', physical:'物理',
+    support:'支援', guard:'防御', summon:'召唤'
+  };
+  return names[tag] || tag || '未知';
+}
+function ensureSkillWeaveRuntime(now){
+  const rt = ensureSkillRuntime();
+  if(!rt.weave) rt.weave = { lastTag:'', stacks:0, expire:0, lastSkill:'' };
+  const ts = now || Date.now();
+  if(rt.weave.expire && rt.weave.expire <= ts) rt.weave = { lastTag:'', stacks:0, expire:0, lastSkill:'' };
+  return rt.weave;
+}
+function skillWeaveFxBonus(field){
+  return skillMechanicFxBonus(field);
+}
+function skillWeaveTip(skillKey, sk){
+  const tag = dominantSkillWeaveTag(skillKey, sk, {});
+  if(!tag) return '';
+  return `织入${weaveTagName(tag)}织线; 与上一种不同类型技能交替时叠加技能织法,3层后触发轮转奖励`;
+}
+function applySkillWeavePayoff(tag, prevTag, stacks, mon, value, sk, now, ctx){
+  const base = Math.max(1, Math.floor(value || state.hero.atk || state.hero.hpMax * 0.04 || 1));
+  const dmgMult = (1 + skillWeaveFxBonus('weaveDmgPct') / 100) * (0.55 + stacks * 0.16);
+  const dotMult = (1 + skillWeaveFxBonus('weaveDotPct') / 100) * (0.45 + stacks * 0.14);
+  const supportMult = masterySupportEchoMult() * (1 + skillWeaveFxBonus('weaveSupportPct') / 100) * (0.55 + stacks * 0.12);
+  const target = (mon && mon.hp > 0) ? mon : (state.currentMonsters || []).find(x => x && x.hp > 0);
+  let fired = false;
+  if(target && target.hp > 0 && sk.type === 'dmg'){
+    const hotCold = (prevTag === 'fire' && tag === 'frost') || (prevTag === 'frost' && tag === 'fire');
+    const conduit = ['storm','arcane','nature'].includes(prevTag) && ['storm','arcane','nature'].includes(tag) && prevTag !== tag;
+    const rot = ['shadow','poison','physical'].includes(prevTag) && ['shadow','poison','physical'].includes(tag) && prevTag !== tag;
+    if(hotCold){
+      applyMonsterState(target, tag === 'frost' ? 'brittle' : 'fever', 8500);
+      fired = applySkillFollowupDamage(target, base * 0.18 * dmgMult, tag === 'frost' ? '❄️' : '🔥', tag === 'frost' ? '#93c5fd' : '#fb923c', now) > 0 || fired;
+    } else if(conduit){
+      applyMonsterState(target, 'unstable', 8500);
+      fired = splashSkillDamage(target, base * dmgMult, 0.14 + stacks * 0.025, '⛈️', now) > 0 || fired;
+      grantTalentResource(3 + Math.floor(stacks / 2) + skillWeaveFxBonus('weaveResource'));
+    } else if(rot){
+      applyMonsterDot(target, 'skillWeave:rot', Math.max(1, Math.floor(base * 0.09 * dotMult)), 8500, { icon:'☠️', name:'腐蚀织法', source:'skillWeave' });
+      if(stacks >= 4) spreadDotFromMonster(target, 0.28 + stacks * 0.03, 8500);
+      fired = true;
+    } else if(tag === 'holy' || tag === 'nature' || prevTag === 'support'){
+      healHeroAmount(Math.floor(state.hero.hpMax * 0.012 * supportMult), sk.icon || '✥', '#6ee7b7', 'hero', '技能织法');
+      addTalentShield(Math.floor(state.hero.hpMax * 0.010 * supportMult), true, 8500);
+      fired = true;
+    } else if(tag === 'beast' || tag === 'summon'){
+      specTacticSummon('beast', now);
+      fired = applySkillFollowupDamage(target, base * 0.12 * dmgMult, '🐾', '#7dd3fc', now) > 0 || fired;
+    } else {
+      fired = applySkillFollowupDamage(target, base * 0.10 * dmgMult, sk.icon || '✥', '#facc15', now) > 0 || fired;
+    }
+  }
+  if((ctx?.heal || sk.type === 'heal' || tag === 'support') && stacks >= 2){
+    healHeroAmount(Math.floor(state.hero.hpMax * 0.018 * supportMult), sk.icon || '✥', '#6ee7b7', 'hero', '支援织法');
+    addTalentShield(Math.floor(state.hero.hpMax * 0.014 * supportMult), true, 9000);
+    if(typeof companionTargetable === 'function' && companionTargetable() && typeof computeCompanionStats === 'function'){
+      const cs = computeCompanionStats();
+      if(cs){
+        healCompanionAmount(Math.floor(cs.hpMax * 0.045 * supportMult), '✥', '#6ee7b7', 'hero', '支援织法');
+        addCompanionBarrier(Math.floor(cs.hpMax * 0.025 * supportMult), '✥', '#93c5fd');
+      }
+    }
+    fired = true;
+  }
+  if(fired){
+    showFloat($('hero-emoji'), `✥${weaveTagName(prevTag)}→${weaveTagName(tag)}`, '#facc15', { variant:'buff', scale:1.05 });
+    log(`✥ 技能织法触发: ${weaveTagName(prevTag)} → ${weaveTagName(tag)} (${stacks}层)`, 'good');
+    markDirty('skills','hero','companion');
+  }
+  return fired;
+}
+function processSkillWeave(skillKey, sk, mon, value, ctx){
+  if(!sk) return false;
+  const now = ctx?.now || Date.now();
+  const tag = dominantSkillWeaveTag(skillKey, sk, ctx || {});
+  if(!tag) return false;
+  const weave = ensureSkillWeaveRuntime(now);
+  const prevTag = weave.lastTag || '';
+  const changed = !!prevTag && prevTag !== tag;
+  weave.stacks = changed ? Math.min(5, (weave.stacks || 0) + 1) : Math.max(1, weave.stacks || 1);
+  weave.lastTag = tag;
+  weave.lastSkill = skillKey;
+  weave.expire = now + Math.floor(12000 * (1 + skillWeaveFxBonus('weaveDurationPct') / 100));
+  const hasWeaveAura = !!getSkillAura('skill_weave');
+  addSkillAura('skill_weave', {
+    add: changed ? 1 : (hasWeaveAura ? 0 : 1),
+    max:5,
+    duration:12000,
+    icon:'✥',
+    name:'技能织法',
+    desc:`当前 ${weave.stacks}/5。上一织线: ${weaveTagName(prevTag)}; 当前织线: ${weaveTagName(tag)}。不同类型技能交替会触发轮转奖励。`
+  });
+  if(changed && weave.stacks >= 2 && classRuntimeReady(`skill-weave:${activeHeroClassKey()}:${activeHeroSpecKey()}:${prevTag}:${tag}`, 1800, now)){
+    return applySkillWeavePayoff(tag, prevTag, weave.stacks, mon, value, sk, now, ctx || {});
+  }
+  markDirty('skills');
+  return changed;
+}
 function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
   const fx = skillFxMeta(skillKey, sk);
   const now = ctx?.now || Date.now();
@@ -996,6 +1110,7 @@ function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
   processSkillElementReactions(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
   processSkillEchoes(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
   processSkillMarks(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
+  processSkillWeave(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
   if(fx.resourceGainOnKill && mon.hp <= 0) grantTalentResource(fx.resourceGainOnKill);
   applyClassMechanicAfterSkill(skillKey, sk, mon, dmgDone, Object.assign({ now, hit:true }, ctx || {}));
 }
@@ -1005,6 +1120,7 @@ function applySkillHealEffects(skillKey, sk, amount, overheal){
   if(fx.shieldFromHealPct && amount > 0) addTalentShield(Math.floor(amount * fx.shieldFromHealPct), true);
   if(fx.shieldBonusIfBuff && buffActive(fx.shieldBonusIfBuff.key)) addTalentShield(Math.floor(amount * (fx.shieldBonusIfBuff.pct || 0)), true);
   if(fx.grantAura) addSkillAura(fx.grantAura.key, fx.grantAura);
+  processSkillWeave(skillKey, sk, null, amount, { overheal, heal:true, now:Date.now() });
   applyClassMechanicAfterSkill(skillKey, sk, null, amount, { overheal, heal:true, now:Date.now() });
 }
 function ensureClassRuntime(){

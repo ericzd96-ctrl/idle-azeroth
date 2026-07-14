@@ -634,3 +634,43 @@ const TALENT_AURA_LIBRARY = {
     }
   }
 })();
+
+(function extendSkillWeaveTalents() {
+  if (typeof CLASSES === 'undefined') return;
+  const names = {
+    arms:'破阵织法', fury:'怒火织法', prot:'盾阵织法',
+    arcane:'魔网织法', fire:'灼冻织法', frost:'冰火织法',
+    discipline:'赎罪织法', holy:'合唱织法', shadow:'虚空织法',
+    assassination:'毒刃织法', combat:'乱舞织法', subtlety:'影幕织法',
+    bm:'兽群织法', marks:'弹道织法', survival:'野火织法',
+    element:'导流织法', enhancement:'风怒织法', restoration:'潮汐织法',
+    ret:'圣能织法', affliction:'腐蚀织法', demonology:'军团织法', destruction:'裂隙织法',
+    balance:'星轨织法', feral:'血爪织法', resto:'林地织法',
+  };
+  const supportSpecs = new Set(['discipline','holy','restoration','resto']);
+  const dotSpecs = new Set(['fire','shadow','assassination','survival','affliction','destruction','balance','feral']);
+  for (const [clsKey, cls] of Object.entries(CLASSES)) {
+    if (!cls || !Array.isArray(cls.trees)) continue;
+    for (const tree of cls.trees) {
+      if (!tree || tree._skillWeaveTalent) continue;
+      tree._skillWeaveTalent = true;
+      const support = supportSpecs.has(tree.key) || (clsKey === 'paladin' && tree.key === 'holy') || (tree.key === 'prot' && (clsKey === 'warrior' || clsKey === 'paladin'));
+      const dot = dotSpecs.has(tree.key);
+      tree.talents.push({
+        key: `skill_weave_${clsKey}_${tree.key}`,
+        name: names[tree.key] || '技能织法',
+        desc: `不同类型技能交替形成的技能织法更强: ${support ? '治疗和护盾提高 18%' : (dot ? '织法 DOT 提高 18%' : '织法追击伤害提高 16%')}, 织法持续时间提高 16%, 触发时额外返还资源。`,
+        req: 94,
+        max: 1,
+        fx: {
+          type:'skillWeave',
+          weaveDmgPct:support ? 8 : 16,
+          weaveDotPct:dot ? 18 : 8,
+          weaveSupportPct:support ? 18 : 6,
+          weaveDurationPct:16,
+          weaveResource:2
+        }
+      });
+    }
+  }
+})();
