@@ -992,6 +992,20 @@ function skillResourceTrait(cfg){
     }
   }));
 }
+function skillHarvestTrait(cfg){
+  return trait(Object.assign({}, cfg, {
+    fx(rank){
+      return {
+        type:'skillHarvest',
+        harvestDmgPct:rankValue(cfg.harvestDmgPct || [4,8,12], rank),
+        harvestDotPct:rankValue(cfg.harvestDotPct || [3,6,9], rank),
+        harvestSupportPct:rankValue(cfg.harvestSupportPct || [3,6,9], rank),
+        harvestGainPct:rankValue(cfg.harvestGainPct || [4,8,12], rank),
+        harvestResource:rankValue(cfg.harvestResource || [0,1,2], rank),
+      };
+    }
+  }));
+}
 
 (function retuneSpecArtifacts() {
   for (const [clsKey, specs] of Object.entries(SPEC_ARTIFACT_SKILL_RETUNE)) {
@@ -1155,6 +1169,21 @@ function skillResourceTrait(cfg){
           resourceSupportPct:supportWeave ? [6,12,18] : [2,4,6],
           resourceGainPct:[5,10,15],
           desc:'资源回路导流追击、持续伤害或支援效果提高,回路形成效率提高,导流时返还更多资源。并获得精通 +1/2/3。'
+        }));
+      }
+      const harvestKey = `art_${clsKey}_${specKey}_harvest_20260714`;
+      if (!ARTIFACT_TRAITS[clsKey].some(t => t.key === harvestKey)) {
+        ARTIFACT_TRAITS[clsKey].push(skillHarvestTrait({
+          key:harvestKey,
+          tree:specKey,
+          name:'斩获回路',
+          icon:'🏹',
+          mod:{ mastery:1 },
+          harvestDmgPct:supportWeave ? [3,6,9] : [6,12,18],
+          harvestDotPct:dotWeave ? [6,12,18] : [3,6,9],
+          harvestSupportPct:supportWeave ? [6,12,18] : [2,4,6],
+          harvestGainPct:[5,10,15],
+          desc:'斩获连锁终局追猎、腐蚀战果或灵魂支援效果提高,战果积累效率提高,消耗战果时返还少量资源。并获得精通 +1/2/3。'
         }));
       }
     }

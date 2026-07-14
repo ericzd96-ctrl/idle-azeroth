@@ -187,6 +187,11 @@ function specMasteryEngineBonus(field){
   if(field === 'resourceSupportPct') return mastery * Math.max(b.supportPct || 0, b.mechanicShieldPct || 0) * 0.40;
   if(field === 'resourceGainPct') return mastery * Math.max(b.coreGainPct || 0, b.procPct || 0) * 0.35;
   if(field === 'resourceReturn') return mastery * (b.resource || 0);
+  if(field === 'harvestDmgPct') return mastery * Math.max(b.corePayoffPct || 0, b.chainPayoffPct || 0, b.procPct || 0) * 0.45;
+  if(field === 'harvestDotPct') return mastery * Math.max(b.dotSpreadPct || 0, b.reactionDotPct || 0, b.echoDotPct || 0) * 0.45;
+  if(field === 'harvestSupportPct') return mastery * Math.max(b.supportPct || 0, b.mechanicShieldPct || 0) * 0.45;
+  if(field === 'harvestGainPct') return mastery * Math.max(b.coreGainPct || 0, b.procPct || 0) * 0.35;
+  if(field === 'harvestResource') return mastery * (b.resource || 0);
   return 0;
 }
 function masteryTakenMult(){ return 1 - Math.min(30, masteryFor('dr')*MASTERY_TYPE.dr.per + masteryFor('guardianEcho')*0.18 + specMasteryEngineBonus('takenPct'))/100; } // 受击减伤(封顶30%)
@@ -756,7 +761,7 @@ function processSkillElementReactions(skillKey, sk, mon, dmgDone, ctx){
 function skillMechanicFxBonus(field){
   let total = specMasteryEngineBonus(field);
   for(const fx of talentFxList()){
-    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho' && fx.type !== 'skillMark' && fx.type !== 'skillWeave' && fx.type !== 'skillRhythm' && fx.type !== 'skillControl' && fx.type !== 'skillWeakness' && fx.type !== 'skillPrep' && fx.type !== 'skillOverload' && fx.type !== 'skillResource')) continue;
+    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho' && fx.type !== 'skillMark' && fx.type !== 'skillWeave' && fx.type !== 'skillRhythm' && fx.type !== 'skillControl' && fx.type !== 'skillWeakness' && fx.type !== 'skillPrep' && fx.type !== 'skillOverload' && fx.type !== 'skillResource' && fx.type !== 'skillHarvest')) continue;
     total += +(fx[field] || 0);
   }
   return total;
@@ -1966,6 +1971,156 @@ function skillResourceTip(skillKey, sk){
   const vent = resourceLoopCanVent(skillKey, sk, sample) ? '可导流已有资源回路返还资源并触发效果' : '';
   return [build, vent].filter(Boolean).join('；');
 }
+function harvestKindName(kind){
+  const names = { execute:'处决', rot:'腐蚀', soul:'灵魂', hunt:'猎杀', surge:'奥能' };
+  return names[kind] || kind || '斩获';
+}
+function harvestKindIcon(kind){
+  return ({ execute:'🗡️', rot:'☠️', soul:'✨', hunt:'🐾', surge:'🔷' })[kind] || '🏹';
+}
+function skillHarvestKind(skillKey, sk, ctx){
+  if(!sk) return 'execute';
+  const tags = skillElementTags(skillKey, sk);
+  const text = `${skillKey || ''} ${sk.name || ''} ${sk.desc || ''} ${sk.icon || ''}`;
+  if(ctx?.heal || sk.type === 'heal' || tags.includes('holy') || /治疗|圣光|真言|赎罪|祝福|护盾|恢复/.test(text)) return 'soul';
+  if(tags.includes('beast') || /宠物|野兽|兽群|杀戮命令|召唤|随从|协同/.test(text)) return 'hunt';
+  if(sk.dot || tags.includes('shadow') || tags.includes('poison') || /痛苦|腐蚀|暗影|毒|流血|割裂|撕裂|疫|献祭/.test(text)) return 'rot';
+  if(tags.some(t => ['fire','frost','storm','arcane','nature'].includes(t))) return 'surge';
+  return 'execute';
+}
+function skillHarvestExecuteLike(skillKey, sk){
+  if(!sk) return false;
+  const text = `${skillKey || ''} ${sk.name || ''} ${sk.desc || ''}`;
+  const fx = skillFxMeta(skillKey, sk);
+  return !!(/斩杀|处决|终结|收割|杀戮|裁决|毁灭|灭杀|斩获|致死|凶猛撕咬|混乱之箭|奥术弹幕|巨人之击/.test(text) || fx.executeThreshold || (sk.mul || 0) >= 4.5);
+}
+function skillHarvestCanSpend(skillKey, sk, ctx){
+  if(!sk) return false;
+  if(ctx?.isAOE) return false;
+  if(ctx?.heal || sk.type === 'heal' || sk.type === 'buff' || sk.type === 'summon') return true;
+  if(sk.type !== 'dmg') return false;
+  const cost = Math.max(0, ctx?.cost || sk.mp || 0);
+  const fx = skillFxMeta(skillKey, sk);
+  return !!(cost <= Math.max(38, (state.resourceMax || 100) * 0.34) || sk.dot || fx.applyTargetState || fx.splashPct || (sk.mul || 0) <= 4.2);
+}
+function skillHarvestShouldGain(skillKey, sk, mon, value, ctx){
+  if(!sk || sk.type !== 'dmg' || !mon) return false;
+  const maxHp = Math.max(1, mon.hpMax || mon.maxHp || 1);
+  const hp = Math.max(0, mon.hp || 0);
+  const low = hp > 0 && hp / maxHp <= 0.35;
+  const killed = hp <= 0;
+  const overkill = killed && (value || 0) >= maxHp * 0.12;
+  const executeLike = skillHarvestExecuteLike(skillKey, sk);
+  const bigFinish = (value || 0) >= maxHp * 0.20 && hp / maxHp <= 0.50;
+  return !!(killed || low || overkill || executeLike || bigFinish || ctx?.forceHarvest);
+}
+function ensureSkillHarvestRuntime(now){
+  const rt = ensureSkillRuntime();
+  if(!rt.harvest) rt.harvest = { kind:'', stacks:0, expire:0, chain:[], kills:0 };
+  const ts = now || Date.now();
+  if(rt.harvest.expire && rt.harvest.expire <= ts) rt.harvest = { kind:'', stacks:0, expire:0, chain:[], kills:0 };
+  return rt.harvest;
+}
+function addSkillHarvest(kind, sk, mon, value, ctx, now){
+  const harvest = ensureSkillHarvestRuntime(now);
+  const killed = !!(mon && mon.hp <= 0);
+  const max = 5;
+  let gain = (killed ? 2 : 1) + Math.floor(skillMechanicFxBonus('harvestGainPct') / 40);
+  if(skillHarvestExecuteLike(ctx?.skillKey, sk)) gain += 1;
+  gain = Math.max(1, Math.min(3, gain));
+  harvest.kind = kind || harvest.kind || 'execute';
+  harvest.stacks = Math.min(max, (harvest.stacks || 0) + gain);
+  harvest.kills = Math.min(99, (harvest.kills || 0) + (killed ? 1 : 0));
+  harvest.chain = (harvest.chain || []).concat(harvest.kind).slice(-5);
+  harvest.expire = (now || Date.now()) + 16000;
+  addSkillAura('skill_harvest', {
+    add:gain,
+    max,
+    duration:16000,
+    icon:'🏹',
+    name:'斩获连锁',
+    desc:`当前 ${harvest.stacks}/${max} 层${harvestKindName(harvest.kind)}战果。下一次合适的伤害、治疗、支援或召唤技能会触发终局追猎。`
+  });
+  showFloat($('hero-emoji'), `🏹+${gain}`, '#fbbf24', { variant:'buff', scale:1.03 });
+  markDirty('skills','hero');
+  return harvest.stacks;
+}
+function spendSkillHarvest(harvest, mon, value, sk, now, ctx){
+  const kind = harvest?.kind || 'execute';
+  const stacks = Math.max(1, harvest?.stacks || 1);
+  const base = Math.max(1, Math.floor(value || state.hero.atk || state.hero.hpMax * 0.025 || 1));
+  const target = (mon && mon.hp > 0) ? mon : (state.currentMonsters || []).find(x => x && x.hp > 0);
+  const dmgMult = (1 + skillMechanicFxBonus('harvestDmgPct') / 100) * (0.50 + stacks * 0.14);
+  const dotMult = (1 + skillMechanicFxBonus('harvestDotPct') / 100) * (0.50 + stacks * 0.12);
+  const supportMult = masterySupportEchoMult() * (1 + skillMechanicFxBonus('harvestSupportPct') / 100) * (0.58 + stacks * 0.11);
+  const resource = Math.floor(1 + stacks / 2 + skillMechanicFxBonus('harvestResource'));
+  let fired = false;
+  if(resource > 0) grantTalentResource(resource);
+  if(kind === 'soul' || ctx?.heal || sk?.type === 'heal' || sk?.type === 'buff'){
+    healHeroAmount(Math.floor(state.hero.hpMax * (0.012 + stacks * 0.004) * supportMult), sk?.icon || '✨', '#fde68a', 'hero', '灵魂战果');
+    addTalentShield(Math.floor(state.hero.hpMax * (0.014 + stacks * 0.004) * supportMult), true, 9500);
+    specTacticCompanionSupport('heal', now);
+    fired = true;
+  } else if(kind === 'rot' && target){
+    applyMonsterDot(target, 'skillHarvest:rot', Math.max(1, Math.floor(base * 0.10 * dotMult)), 9000, { icon:'☠️', name:'腐蚀战果', source:'skillHarvest' });
+    if(stacks >= 4) spreadDotFromMonster(target, 0.28 + stacks * 0.02, 9000);
+    healHeroAmount(Math.floor(state.hero.hpMax * (0.006 + stacks * 0.002) * supportMult), '☠️', '#c4b5fd', 'hero', '腐蚀吸取');
+    fired = true;
+  } else if(kind === 'hunt'){
+    if(target) fired = applySkillFollowupDamage(target, base * 0.13 * dmgMult, '🐾', '#7dd3fc', now) > 0 || fired;
+    specTacticSummon('beast', now);
+    specTacticCompanionSupport('shield', now);
+    fired = true;
+  } else if(kind === 'surge' && target){
+    applyMonsterState(target, 'unstable', 7600 + stacks * 600);
+    fired = applySkillFollowupDamage(target, base * 0.12 * dmgMult, '🔷', '#a78bfa', now) > 0 || fired;
+    fired = splashSkillDamage(target, base, 0.10 + stacks * 0.035, '🔷', now) > 0 || fired;
+  } else if(target){
+    applyMonsterState(target, 'sunder', 7600 + stacks * 600);
+    applyMonsterState(target, 'exposed', 6200 + stacks * 520);
+    fired = applySkillFollowupDamage(target, base * 0.15 * dmgMult, '🗡️', '#f87171', now) > 0 || fired;
+  }
+  if(fired || resource > 0){
+    addSkillAura('skill_harvest', {
+      add:1,
+      max:1,
+      duration:5600,
+      icon:'🏹',
+      name:'终局追猎',
+      desc:`${harvestKindName(kind)}战果被 ${sk?.name || '技能'} 消耗,触发追击、扩散、支援或协同,并返还 ${resource} 资源。`
+    });
+    showFloat($('hero-emoji'), `🏹${harvestKindName(kind)}`, '#fbbf24', { variant:'buff', scale:1.05 });
+    log(`🏹 终局追猎: ${harvestKindName(kind)}战果 ${stacks} 层被 ${sk?.name || '技能'} 消耗`, 'good');
+    markDirty('skills','hero','companion','stage');
+  }
+  return fired || resource > 0;
+}
+function processSkillHarvest(skillKey, sk, mon, value, ctx){
+  if(!sk) return false;
+  const now = ctx?.now || Date.now();
+  if(ctx?.isAOE && !classRuntimeReady(`skill-harvest-aoe-step:${skillKey}`, 260, now)) return false;
+  const harvest = ensureSkillHarvestRuntime(now);
+  const shouldGain = skillHarvestShouldGain(skillKey, sk, mon, value, ctx || {});
+  if(harvest.stacks >= 2 && !shouldGain && skillHarvestCanSpend(skillKey, sk, ctx || {})){
+    const snap = Object.assign({}, harvest, { chain:[...(harvest.chain || [])] });
+    const rt = ensureSkillRuntime();
+    rt.harvest = { kind:'', stacks:0, expire:0, chain:[], kills:0 };
+    if(rt.auras) delete rt.auras.skill_harvest;
+    return spendSkillHarvest(snap, mon, value, sk, now, ctx || {});
+  }
+  if(shouldGain){
+    return addSkillHarvest(skillHarvestKind(skillKey, sk, ctx || {}), sk, mon, value, Object.assign({ skillKey }, ctx || {}), now) > 0;
+  }
+  return false;
+}
+function skillHarvestTip(skillKey, sk){
+  if(!sk) return '';
+  const sample = { cost:sk.mp || 0 };
+  const kind = skillHarvestKind(skillKey, sk, sample);
+  const build = sk.type === 'dmg' ? `命中残血、处决或击杀时积累${harvestKindName(kind)}战果` : '';
+  const spend = skillHarvestCanSpend(skillKey, sk, sample) ? '可消耗斩获连锁触发终局追猎' : '';
+  return [build, spend].filter(Boolean).join('；');
+}
 function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
   const fx = skillFxMeta(skillKey, sk);
   const now = ctx?.now || Date.now();
@@ -2000,6 +2155,7 @@ function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
   processSkillWeakness(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
   processSkillPreparation(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
   processSkillOverload(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
+  processSkillHarvest(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
   if(fx.resourceGainOnKill && mon.hp <= 0) grantTalentResource(fx.resourceGainOnKill);
   applyClassMechanicAfterSkill(skillKey, sk, mon, dmgDone, Object.assign({ now, hit:true }, ctx || {}));
 }
@@ -2016,6 +2172,7 @@ function applySkillHealEffects(skillKey, sk, amount, overheal){
   processSkillWeakness(skillKey, sk, null, amount, { overheal, heal:true, now });
   processSkillPreparation(skillKey, sk, null, amount, { overheal, heal:true, now });
   processSkillOverload(skillKey, sk, null, amount, { overheal, heal:true, now });
+  processSkillHarvest(skillKey, sk, null, amount, { overheal, heal:true, now });
   applyClassMechanicAfterSkill(skillKey, sk, null, amount, { overheal, heal:true, now });
 }
 function ensureClassRuntime(){

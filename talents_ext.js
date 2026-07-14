@@ -933,3 +933,47 @@ const TALENT_AURA_LIBRARY = {
     }
   }
 })();
+
+(function extendSkillHarvestTalents() {
+  if (typeof CLASSES === 'undefined') return;
+  const names = {
+    arms:'处决战果', fury:'屠戮战果', prot:'反击战果',
+    arcane:'坍缩战果', fire:'燃烬斩获', frost:'碎冰斩获',
+    discipline:'赎罪战果', holy:'圣光战果', shadow:'虚空收割',
+    assassination:'毒刃收割', combat:'剑舞斩获', subtlety:'暗影斩获',
+    bm:'兽群猎获', marks:'精准猎获', survival:'荒野猎获',
+    element:'风暴猎获', enhancement:'风怒猎获', restoration:'潮汐战果',
+    holy_paladin:'圣光裁决', prot_paladin:'壁垒裁决', ret:'裁决战果',
+    affliction:'痛苦收割', demonology:'恶魔战果', destruction:'混乱收割',
+    balance:'星界收割', feral:'血爪收割', resto:'林地战果',
+  };
+  const supportSpecs = new Set(['discipline','holy','restoration','resto']);
+  const dotSpecs = new Set(['fire','shadow','assassination','survival','affliction','destruction','balance','feral']);
+  const burstSpecs = new Set(['arms','fury','arcane','frost','marks','element','enhancement','ret','destruction','feral']);
+  for (const [clsKey, cls] of Object.entries(CLASSES)) {
+    if (!cls || !Array.isArray(cls.trees)) continue;
+    for (const tree of cls.trees) {
+      if (!tree || tree._skillHarvestTalent) continue;
+      tree._skillHarvestTalent = true;
+      const keyName = clsKey === 'paladin' && tree.key === 'holy' ? 'holy_paladin' : (clsKey === 'paladin' && tree.key === 'prot' ? 'prot_paladin' : tree.key);
+      const support = supportSpecs.has(tree.key) || (clsKey === 'paladin' && tree.key === 'holy') || (tree.key === 'prot' && (clsKey === 'warrior' || clsKey === 'paladin'));
+      const dot = dotSpecs.has(tree.key);
+      const burst = burstSpecs.has(tree.key);
+      tree.talents.push({
+        key: `skill_harvest_${clsKey}_${tree.key}`,
+        name: names[keyName] || '斩获连锁',
+        desc: `斩获连锁更强: ${support ? '灵魂战果治疗和护盾提高 20%' : (dot ? '腐蚀战果 DOT 与扩散提高 20%' : '终局追猎追击提高 18%')}, 战果积累效率提高,消耗战果时返还资源。`,
+        req: 136,
+        max: 1,
+        fx: {
+          type:'skillHarvest',
+          harvestDmgPct:support ? 8 : (burst ? 20 : 18),
+          harvestDotPct:dot ? 20 : 8,
+          harvestSupportPct:support ? 20 : 6,
+          harvestGainPct:burst ? 22 : 16,
+          harvestResource:2
+        }
+      });
+    }
+  }
+})();

@@ -80,6 +80,7 @@ const SKILL_AURA_LIBRARY = {
   skill_prep:   { icon:'⚙️', name:'技能蓄势', desc:'低耗、控场、DOT、治疗或防御技能积累蓄势,后续大招按蓄势类型收招', maxStacks:5 },
   skill_overload:{ icon:'⚡', name:'技能过载', desc:'连续高耗能、大招或爆发会积累过载,后续技能可导流为余震效果', maxStacks:5 },
   skill_resource:{ icon:'💠', name:'资源回路', desc:'高耗能、低资源、节流和支援技能会形成资源回路,导流后返还能量并触发效果', maxStacks:5 },
+  skill_harvest:{ icon:'🏹', name:'斩获连锁', desc:'残血、处决、击杀和过量伤害会积累战果,后续技能可消耗战果触发终局追猎', maxStacks:5 },
   spec_flow:    { icon:'✦', name:'专精连段', desc:'按当前专精的技能顺序推进,完成后触发独特战斗效果', maxStacks:3 },
   spec_core:    { icon:'✦', name:'专精核心', desc:'当前专精独有的战斗引擎资源,满层后用指定技能收束触发强力效果', maxStacks:8 },
   spec_proc:    { icon:'✦', name:'临场强化', desc:'当前专精触发的下一技能变招,命中符合条件的技能后自动消费', maxStacks:1 },
@@ -226,6 +227,15 @@ const SKILL_RESOURCE_GUIDE = [
   { icon:'🔁', name:'节流回路', desc:'低耗技能会导流已有回路,把前面的高消耗转为资源返还。' },
   { icon:'✨', name:'支援回路', desc:'治疗、防御和增益技能导流资源回路时会支援主角与随从。' },
   { icon:'☠️', name:'腐蚀回路', desc:'DOT 与持续伤害技能导流资源回路时会追加持续伤害或扩散。' },
+];
+
+const SKILL_HARVEST_GUIDE = [
+  { icon:'🏹', name:'战果积累', desc:'目标残血、被处决、被击杀或受到明显过量伤害时会积累斩获战果。' },
+  { icon:'🗡️', name:'处决战果', desc:'物理、斩杀和重击类战果会在后续技能中触发处决追击、破甲和破绽。' },
+  { icon:'☠️', name:'腐蚀战果', desc:'DOT、毒药、暗影和流血类战果会转化为持续伤害、扩散和吸血。' },
+  { icon:'✨', name:'灵魂战果', desc:'神圣、治疗和赎罪类战果会转化为治疗、护盾和随从支援。' },
+  { icon:'🐾', name:'猎杀战果', desc:'野兽、召唤和射击类战果会召来协同追击,适合宠物与随从玩法。' },
+  { icon:'🔷', name:'奥能战果', desc:'元素、奥术、火焰、冰霜和风暴类战果会造成坍缩溅射并返还资源。' },
 ];
 
 /* 每个职业 4 个新技能:爆发 / 减伤 / 功能性 / 职业特色 */
@@ -1409,6 +1419,7 @@ if (typeof window !== 'undefined') {
   window.SKILL_PREP_GUIDE = SKILL_PREP_GUIDE;
   window.SKILL_OVERLOAD_GUIDE = SKILL_OVERLOAD_GUIDE;
   window.SKILL_RESOURCE_GUIDE = SKILL_RESOURCE_GUIDE;
+  window.SKILL_HARVEST_GUIDE = SKILL_HARVEST_GUIDE;
   window.currentSpecCombatRule = currentSpecCombatRule;
   window.currentSpecCombatMeter = currentSpecCombatMeter;
   window.currentSpecTacticalWindow = currentSpecTacticalWindow;
