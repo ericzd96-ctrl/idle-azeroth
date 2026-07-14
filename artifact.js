@@ -923,6 +923,19 @@ function skillRhythmTrait(cfg){
     }
   }));
 }
+function skillControlTrait(cfg){
+  return trait(Object.assign({}, cfg, {
+    fx(rank){
+      return {
+        type:'skillControl',
+        controlDmgPct:rankValue(cfg.controlDmgPct || [4,8,12], rank),
+        controlSupportPct:rankValue(cfg.controlSupportPct || [3,6,9], rank),
+        controlDurationPct:rankValue(cfg.controlDurationPct || [4,8,12], rank),
+        controlResource:rankValue(cfg.controlResource || [0,1,2], rank),
+      };
+    }
+  }));
+}
 
 (function retuneSpecArtifacts() {
   for (const [clsKey, specs] of Object.entries(SPEC_ARTIFACT_SKILL_RETUNE)) {
@@ -1012,6 +1025,20 @@ function skillRhythmTrait(cfg){
           rhythmSupportPct:supportWeave ? [6,12,18] : [2,4,6],
           rhythmChargePct:[4,8,12],
           desc:'战斗律动终结收束提高,积拍效率提高,触发时返还少量资源。并获得精通 +1/2/3。'
+        }));
+      }
+      const controlKey = `art_${clsKey}_${specKey}_control_20260714`;
+      if (!ARTIFACT_TRAITS[clsKey].some(t => t.key === controlKey)) {
+        ARTIFACT_TRAITS[clsKey].push(skillControlTrait({
+          key:controlKey,
+          tree:specKey,
+          name:'清算回路',
+          icon:'⛓️',
+          mod:{ mastery:1 },
+          controlDmgPct:supportWeave ? [3,6,9] : [5,10,15],
+          controlSupportPct:supportWeave ? [6,12,18] : [2,4,6],
+          controlDurationPct:[5,10,15],
+          desc:'控场清算追击或救场效果提高,控制压力持续时间提高,清算时返还少量资源。并获得精通 +1/2/3。'
         }));
       }
     }

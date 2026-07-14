@@ -163,6 +163,10 @@ function specMasteryEngineBonus(field){
   if(field === 'rhythmSupportPct') return mastery * Math.max(b.supportPct || 0, b.mechanicShieldPct || 0) * 0.40;
   if(field === 'rhythmChargePct') return mastery * Math.max(b.coreGainPct || 0, b.procPct || 0) * 0.30;
   if(field === 'rhythmResource') return mastery * (b.resource || 0);
+  if(field === 'controlDmgPct') return mastery * Math.max(b.specReactionPct || 0, b.corePayoffPct || 0, b.procPct || 0) * 0.42;
+  if(field === 'controlSupportPct') return mastery * Math.max(b.supportPct || 0, b.mechanicShieldPct || 0) * 0.42;
+  if(field === 'controlDurationPct') return mastery * Math.max(b.coreGainPct || 0, b.echoDurationPct || 0) * 0.38;
+  if(field === 'controlResource') return mastery * (b.resource || 0);
   return 0;
 }
 function masteryTakenMult(){ return 1 - Math.min(30, masteryFor('dr')*MASTERY_TYPE.dr.per + masteryFor('guardianEcho')*0.18 + specMasteryEngineBonus('takenPct'))/100; } // 受击减伤(封顶30%)
@@ -732,7 +736,7 @@ function processSkillElementReactions(skillKey, sk, mon, dmgDone, ctx){
 function skillMechanicFxBonus(field){
   let total = specMasteryEngineBonus(field);
   for(const fx of talentFxList()){
-    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho' && fx.type !== 'skillMark' && fx.type !== 'skillWeave' && fx.type !== 'skillRhythm')) continue;
+    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho' && fx.type !== 'skillMark' && fx.type !== 'skillWeave' && fx.type !== 'skillRhythm' && fx.type !== 'skillControl')) continue;
     total += +(fx[field] || 0);
   }
   return total;
@@ -1229,6 +1233,167 @@ function processSkillRhythm(skillKey, sk, mon, value, ctx){
   markDirty('skills');
   return true;
 }
+function collectSkillControlStates(skillKey, sk){
+  if(!sk) return [];
+  const fx = skillFxMeta(skillKey, sk);
+  const out = [];
+  const addState = (entry) => {
+    if(!entry) return;
+    if(typeof entry === 'string') out.push(entry);
+    else if(typeof entry === 'object' && entry.key) out.push(entry.key);
+  };
+  if(sk.slow) out.push('slow');
+  if(sk.debuff === 'sunder' || sk.sunder) out.push('sunder');
+  if(sk.stun) out.push('stun');
+  if(sk.silence) out.push('silence');
+  if(sk.disarm) out.push('disarm');
+  if(sk.fear) out.push('terror');
+  if(sk.freeze) out.push('frozen');
+  const states = fx.applyTargetState ? (Array.isArray(fx.applyTargetState) ? fx.applyTargetState : [fx.applyTargetState]) : [];
+  states.forEach(addState);
+  return [...new Set(out)];
+}
+function skillControlKindFromStates(states, skillKey, sk){
+  const text = `${skillKey || ''} ${sk?.name || ''} ${sk?.desc || ''}`;
+  if(states.some(x => x === 'sunder' || x === 'exposed') || /破甲|破绽|压制|盾|格挡/.test(text)) return 'sunder';
+  if(states.some(x => ['frozen','brittle','slow'].includes(x)) || /冰|霜|寒|冻结|减速/.test(text)) return 'frost';
+  if(states.some(x => ['terror','silence','stun','disarm','unstable'].includes(x)) || /沉默|恐惧|眩晕|缴械|打断|封锁/.test(text)) return 'lock';
+  if(states.some(x => ['rooted','lifeSeed'].includes(x)) || /缠绕|根须|陷阱|束缚|网/.test(text)) return 'bind';
+  return states.length ? 'pressure' : '';
+}
+function controlKindName(kind){
+  const names = { sunder:'破甲', frost:'冰锁', lock:'封锁', bind:'束缚', pressure:'压制' };
+  return names[kind] || kind || '控制';
+}
+function controlKindIcon(kind){
+  return ({ sunder:'🔨', frost:'❄️', lock:'🔇', bind:'🌿', pressure:'⛓️' })[kind] || '⛓️';
+}
+function ensureMonsterSkillControl(mon, now){
+  if(!mon) return null;
+  const ts = now || Date.now();
+  if(mon._skillControl && (!(mon._skillControl.expire > ts) || !(mon._skillControl.stacks > 0))) delete mon._skillControl;
+  return mon._skillControl || null;
+}
+function addMonsterSkillControl(mon, kind, sk, now, add){
+  if(!mon || !kind) return 0;
+  const prev = ensureMonsterSkillControl(mon, now) || { stacks:0, max:4, beats:[] };
+  const max = 4;
+  const duration = Math.floor(12500 * (1 + skillMechanicFxBonus('controlDurationPct') / 100));
+  const stacks = Math.max(0, Math.min(max, (prev.stacks || 0) + (add || 1)));
+  mon._skillControl = {
+    kind,
+    icon:controlKindIcon(kind),
+    name:`${controlKindName(kind)}压力`,
+    desc:`${sk?.name || '技能'}制造的控制压力。达到高层后,爆发、DOT、坦克或治疗技能会触发控场清算。`,
+    stacks,
+    max,
+    beats:(prev.beats || []).concat(kind).slice(-4),
+    expire:(now || Date.now()) + duration,
+  };
+  addSkillAura('skill_control', {
+    add:add || 1,
+    max,
+    duration,
+    icon:'⛓️',
+    name:'控场清算',
+    desc:`目标 ${stacks}/${max} 层${controlKindName(kind)}压力。爆发、持续、坦克或治疗技能可清算控制压力。`
+  });
+  showMonsterFloat(mon, `${controlKindIcon(kind)}${stacks}/${max}`, '#93c5fd', { variant:'buff' });
+  return stacks;
+}
+function skillControlCanConsume(skillKey, sk, control, ctx){
+  if(!sk || !control || !(control.stacks > 0)) return false;
+  if(ctx?.heal || sk.type === 'heal') return control.stacks >= 2;
+  if(sk.type !== 'dmg') return false;
+  const fx = skillFxMeta(skillKey, sk);
+  if(control.stacks >= 4) return true;
+  const text = `${skillKey || ''} ${sk.name || ''} ${sk.desc || ''}`;
+  if(control.stacks >= 3 && (sk.dot || fx.spreadDotsPct || sk.aoe || fx.splashPct || (sk.mul || 0) >= 4 || /斩杀|处决|终结|爆发|毁灭|裁决|彗星|混乱|星涌/.test(text))) return true;
+  if(control.stacks >= 2 && (isDefensiveSkill(skillKey, sk) || /盾|壁垒|格挡|守护|奉献|圣光/.test(text))) return true;
+  return false;
+}
+function applySkillControlPayoff(kind, control, mon, value, sk, now, ctx){
+  const stacks = Math.max(1, control?.stacks || 1);
+  const base = Math.max(1, Math.floor(value || state.hero.atk || state.hero.hpMax * 0.035 || 1));
+  const target = (mon && mon.hp > 0) ? mon : (state.currentMonsters || []).find(x => x && x.hp > 0);
+  const dmgMult = (1 + skillMechanicFxBonus('controlDmgPct') / 100) * (0.62 + stacks * 0.14);
+  const supportMult = masterySupportEchoMult() * (1 + skillMechanicFxBonus('controlSupportPct') / 100) * (0.62 + stacks * 0.12);
+  let fired = false;
+  if((ctx?.heal || sk.type === 'heal') && stacks >= 2){
+    healHeroAmount(Math.floor(state.hero.hpMax * (0.014 + stacks * 0.004) * supportMult), sk.icon || '⛓️', '#6ee7b7', 'hero', '救场清算');
+    addTalentShield(Math.floor(state.hero.hpMax * (0.012 + stacks * 0.003) * supportMult), true, 9000);
+    specTacticCompanionSupport('heal', now);
+    fired = true;
+  } else if(target){
+    if(kind === 'sunder'){
+      applyMonsterState(target, 'sunder', 8000 + stacks * 900);
+      applyMonsterState(target, 'exposed', 6500 + stacks * 700);
+      fired = applySkillFollowupDamage(target, base * 0.20 * dmgMult, '🔨', '#fbbf24', now) > 0 || fired;
+    } else if(kind === 'frost'){
+      applyMonsterState(target, 'brittle', 8000 + stacks * 700);
+      applyMonsterState(target, 'frozen', 3200 + stacks * 250);
+      fired = applySkillFollowupDamage(target, base * 0.18 * dmgMult, '❄️', '#93c5fd', now) > 0 || fired;
+    } else if(kind === 'lock'){
+      applyMonsterState(target, 'unstable', 8200 + stacks * 650);
+      fired = applySkillFollowupDamage(target, base * 0.16 * dmgMult, '🔇', '#c4b5fd', now) > 0 || fired;
+      grantTalentResource(2 + stacks + Math.floor(skillMechanicFxBonus('controlResource')));
+    } else if(kind === 'bind'){
+      applyMonsterState(target, 'rooted', 7500 + stacks * 650);
+      applyMonsterDot(target, 'skillControl:bind', Math.max(1, Math.floor(base * 0.08 * dmgMult)), 8500, { icon:'🌿', name:'束缚清算', source:'skillControl' });
+      addTalentShield(Math.floor(state.hero.hpMax * 0.009 * supportMult), true, 8500);
+      fired = true;
+    } else {
+      applyMonsterState(target, 'exposed', 6200 + stacks * 500);
+      fired = applySkillFollowupDamage(target, base * 0.14 * dmgMult, '⛓️', '#93c5fd', now) > 0 || fired;
+    }
+  }
+  if(fired){
+    grantTalentResource(Math.floor(1 + stacks / 2 + skillMechanicFxBonus('controlResource')));
+    addSkillAura('skill_control', {
+      add:0,
+      max:4,
+      duration:5200,
+      icon:'⛓️',
+      name:'控场清算',
+      desc:`${controlKindName(kind)}压力被 ${sk?.name || '技能'} 清算。控制技能不再只是减速或破甲,会转化为追击、DOT、护盾或资源。`
+    });
+    showFloat($('hero-emoji'), `⛓️${controlKindName(kind)}清算`, '#93c5fd', { variant:'buff', scale:1.05 });
+    log(`⛓️ 控场清算触发: ${controlKindName(kind)}压力 ${stacks} 层被 ${sk?.name || '技能'} 清算`, 'good');
+    markDirty('skills','hero','companion','stage');
+  }
+  return fired;
+}
+function processSkillControl(skillKey, sk, mon, value, ctx){
+  if(!sk) return false;
+  const now = ctx?.now || Date.now();
+  const target = (mon && mon.hp > 0) ? mon : (state.currentMonsters || []).find(x => x && x.hp > 0);
+  if(!target) return false;
+  if(ctx?.isAOE && !classRuntimeReady(`skill-control-aoe-step:${skillKey}`, 250, now)) return false;
+  const states = collectSkillControlStates(skillKey, sk);
+  const kind = skillControlKindFromStates(states, skillKey, sk);
+  const before = ensureMonsterSkillControl(target, now);
+  if(kind){
+    const setupGain = (sk.slow || sk.debuff === 'sunder' || states.length > 1 || (sk.mp || 0) >= 35) ? 2 : 1;
+    addMonsterSkillControl(target, kind, sk, now, setupGain);
+  }
+  const control = ensureMonsterSkillControl(target, now);
+  if(control && skillControlCanConsume(skillKey, sk, control, ctx || {})){
+    const payoffKind = control.kind || kind || 'pressure';
+    const snap = Object.assign({}, control);
+    delete target._skillControl;
+    return applySkillControlPayoff(payoffKind, snap, target, value, sk, now, ctx || {});
+  }
+  if(kind || before) markDirty('skills','stage');
+  return !!kind;
+}
+function skillControlTip(skillKey, sk){
+  const states = collectSkillControlStates(skillKey, sk);
+  const kind = skillControlKindFromStates(states, skillKey, sk);
+  const setup = kind ? `制造${controlKindName(kind)}控制压力` : '';
+  const text = `${skillKey || ''} ${sk?.name || ''} ${sk?.desc || ''}`;
+  const consume = (sk?.type === 'heal' || sk?.dot || sk?.aoe || (sk?.mul || 0) >= 4 || isDefensiveSkill(skillKey, sk) || /斩杀|处决|终结|爆发|盾|壁垒|圣光|治疗/.test(text)) ? '可在目标有控制压力时触发控场清算' : '';
+  return [setup, consume].filter(Boolean).join('；');
+}
 function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
   const fx = skillFxMeta(skillKey, sk);
   const now = ctx?.now || Date.now();
@@ -1259,6 +1424,7 @@ function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
   processSkillMarks(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
   processSkillWeave(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
   processSkillRhythm(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
+  processSkillControl(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
   if(fx.resourceGainOnKill && mon.hp <= 0) grantTalentResource(fx.resourceGainOnKill);
   applyClassMechanicAfterSkill(skillKey, sk, mon, dmgDone, Object.assign({ now, hit:true }, ctx || {}));
 }
@@ -1271,6 +1437,7 @@ function applySkillHealEffects(skillKey, sk, amount, overheal){
   const now = Date.now();
   processSkillWeave(skillKey, sk, null, amount, { overheal, heal:true, now });
   processSkillRhythm(skillKey, sk, null, amount, { overheal, heal:true, now });
+  processSkillControl(skillKey, sk, null, amount, { overheal, heal:true, now });
   applyClassMechanicAfterSkill(skillKey, sk, null, amount, { overheal, heal:true, now });
 }
 function ensureClassRuntime(){

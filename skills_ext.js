@@ -75,6 +75,7 @@ const SKILL_AURA_LIBRARY = {
   skill_echo:   { icon:'✺', name:'技能余波', desc:'技能留下的短暂战场痕迹,会被后续不同类型技能引爆或转化', maxStacks:1 },
   skill_weave:  { icon:'✥', name:'技能织法', desc:'连续使用不同类型技能形成轮转织法,层数越高后续收束越强', maxStacks:5 },
   skill_rhythm: { icon:'♬', name:'战斗律动', desc:'技能按输出、防御、持续、支援等节拍积累律动,满拍后触发终结收束', maxStacks:5 },
+  skill_control:{ icon:'⛓️', name:'控场清算', desc:'减速、破甲、沉默、恐惧、冻结等控制会叠加控制压力,后续技能可清算爆发', maxStacks:4 },
   spec_flow:    { icon:'✦', name:'专精连段', desc:'按当前专精的技能顺序推进,完成后触发独特战斗效果', maxStacks:3 },
   spec_core:    { icon:'✦', name:'专精核心', desc:'当前专精独有的战斗引擎资源,满层后用指定技能收束触发强力效果', maxStacks:8 },
   spec_proc:    { icon:'✦', name:'临场强化', desc:'当前专精触发的下一技能变招,命中符合条件的技能后自动消费', maxStacks:1 },
@@ -174,6 +175,15 @@ const SKILL_RHYTHM_GUIDE = [
   { icon:'🛡️', name:'壁垒终结', desc:'防御节拍收束时转化为护盾、减伤窗口和反击伤害。' },
   { icon:'✨', name:'救援终结', desc:'治疗/支援节拍收束时治疗主角与随从,并生成额外护盾。' },
   { icon:'🐾', name:'协同终结', desc:'召唤/宠物节拍收束时呼叫兽群或恶魔协同追击。' },
+];
+
+const SKILL_CONTROL_GUIDE = [
+  { icon:'⛓️', name:'控制压力', desc:'减速、破甲、冻结、沉默、恐惧、缠绕等效果会在目标身上叠加控制压力。' },
+  { icon:'🔨', name:'破甲清算', desc:'破甲类控制被清算时造成压制伤害,延长破甲并施加破绽。' },
+  { icon:'❄️', name:'冰锁清算', desc:'冰霜/减速/冻结被清算时造成碎裂伤害,并让目标保持易碎。' },
+  { icon:'🔇', name:'封锁清算', desc:'沉默、恐惧、打断类控制被清算时返还资源并制造不稳定窗口。' },
+  { icon:'🧱', name:'压阵清算', desc:'坦克或防御技能清算控制压力时会获得护盾,并把压制转为反击。' },
+  { icon:'✨', name:'救场清算', desc:'治疗/支援技能清算控制压力时会治疗主角和随从,把控场转为保护。' },
 ];
 
 /* 每个职业 4 个新技能:爆发 / 减伤 / 功能性 / 职业特色 */
@@ -1352,6 +1362,7 @@ if (typeof window !== 'undefined') {
   window.SKILL_MARK_GUIDE = SKILL_MARK_GUIDE;
   window.SKILL_WEAVE_GUIDE = SKILL_WEAVE_GUIDE;
   window.SKILL_RHYTHM_GUIDE = SKILL_RHYTHM_GUIDE;
+  window.SKILL_CONTROL_GUIDE = SKILL_CONTROL_GUIDE;
   window.currentSpecCombatRule = currentSpecCombatRule;
   window.currentSpecCombatMeter = currentSpecCombatMeter;
   window.currentSpecTacticalWindow = currentSpecTacticalWindow;

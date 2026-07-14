@@ -716,3 +716,44 @@ const TALENT_AURA_LIBRARY = {
     }
   }
 })();
+
+(function extendSkillControlTalents() {
+  if (typeof CLASSES === 'undefined') return;
+  const names = {
+    arms:'破势清算', fury:'压阵清算', prot:'盾墙清算',
+    arcane:'魔网封锁', fire:'灼链清算', frost:'冰锁清算',
+    discipline:'赎罪制衡', holy:'圣光救场', shadow:'恐惧清算',
+    assassination:'毒刃封喉', combat:'缴械乱舞', subtlety:'暗幕破绽',
+    bm:'兽群压制', marks:'狙击破绽', survival:'陷阱清算',
+    element:'雷狱清算', enhancement:'裂地压制', restoration:'潮汐救场',
+    holy_paladin:'圣裁清算', prot_paladin:'壁垒压阵', ret:'裁决破势',
+    affliction:'痛苦封锁', demonology:'恶魔压阵', destruction:'混乱清算',
+    balance:'星界束缚', feral:'血爪压制', resto:'林地救场',
+  };
+  const supportSpecs = new Set(['discipline','holy','restoration','resto']);
+  const controlSpecs = new Set(['frost','subtlety','survival','element','enhancement','prot']);
+  for (const [clsKey, cls] of Object.entries(CLASSES)) {
+    if (!cls || !Array.isArray(cls.trees)) continue;
+    for (const tree of cls.trees) {
+      if (!tree || tree._skillControlTalent) continue;
+      tree._skillControlTalent = true;
+      const keyName = clsKey === 'paladin' && tree.key === 'holy' ? 'holy_paladin' : (clsKey === 'paladin' && tree.key === 'prot' ? 'prot_paladin' : tree.key);
+      const support = supportSpecs.has(tree.key) || (clsKey === 'paladin' && tree.key === 'holy') || (tree.key === 'prot' && (clsKey === 'warrior' || clsKey === 'paladin'));
+      const control = controlSpecs.has(tree.key) || tree.key === 'marks' || tree.key === 'arms';
+      tree.talents.push({
+        key: `skill_control_${clsKey}_${tree.key}`,
+        name: names[keyName] || '控场清算',
+        desc: `控场清算更强: ${support ? '救场护盾和治疗提高 20%' : (control ? '控制压力持续和清算伤害提高' : '清算追击伤害提高 16%')}, 控制压力持续时间提高,清算时返还资源。`,
+        req: 106,
+        max: 1,
+        fx: {
+          type:'skillControl',
+          controlDmgPct:support ? 8 : (control ? 18 : 16),
+          controlSupportPct:support ? 20 : 6,
+          controlDurationPct:control ? 22 : 16,
+          controlResource:2
+        }
+      });
+    }
+  }
+})();
