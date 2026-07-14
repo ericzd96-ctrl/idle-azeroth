@@ -3254,6 +3254,7 @@ function companionSkillTipHtml(sk){
   if (sk.dot || sk.dotPct) lines.push(`每秒造成本次伤害的${compPct(sk.dotPct || 0.12)}%，持续${compSecs(sk.dotMs || 6000)}秒`);
   if (sk.slow) lines.push(`减速 ${compSecs(sk.slowMs || 4000)}秒`);
   if (sk.stun) lines.push(`击晕 ${compSecs(sk.stunMs || 1500)}秒`);
+  if (sk.interruptCast) lines.push('命中时可顺带打断读条');
   if (sk.debuff === 'sunder' || /破甲/.test(sk.name || '')) lines.push(`破甲 ${compSecs(sk.sunderMs || 15000)}秒（目标防御降低30%）`);
   if (sk.stateKey) lines.push(`施加 ${compStateName(sk.stateKey)} ${compSecs(sk.stateMs || 9000)}秒`);
   if (sk.splashPct) lines.push(`对其他敌人溅射 ${compPct(sk.splashPct)}% 伤害`);
@@ -3447,7 +3448,7 @@ function companionSkillEffectTags(sk){
   if (sk.type === 'summon' || sk.summonCount) add('召唤', '制造额外助战单位，适合补输出窗口和拉长战斗。');
   if (sk.type === 'dmg' || sk.mul || sk.alwaysCrit || sk.executeBonus || sk.bonusVsBoss) add('伤害', '直接造成伤害；倍率、暴击、处决和首领增伤会写在技能说明中。');
   if (sk.dot || sk.dotPct) add('持续伤害', '给目标挂持续伤害，后续每秒造成额外伤害。');
-  if (sk.stun || sk.slow || sk.silence || sk.cripple || sk.weaken || sk.sunder || sk.debuff === 'sunder' || sk.stateKey) add('控制', '减速、击晕、破甲或状态标记等效果，可拖慢敌人或制造后续增伤条件。');
+  if (sk.stun || sk.slow || sk.interruptCast || sk.silence || sk.cripple || sk.weaken || sk.sunder || sk.debuff === 'sunder' || sk.stateKey) add('控制', '减速、击晕、打断读条或状态标记等效果，可拖慢敌人或制造后续增伤条件。');
   if (sk.type === 'heal' || sk.heal || sk.healPct || sk.healPctHero || sk.healPctComp) add('治疗', '回复主角、随从或自动选择更危险的一方。');
   if (sk.type === 'buff' || sk.buff || sk.shieldPct || sk.shieldPctHero || sk.shieldPctComp || sk.cleanse) add('辅助', '提供护盾、增益或净化，偏向稳定节奏与爆发窗口。');
   if (sk.mode === 'passive') add('被动', '无需主动释放，满足条件后按规则持续生效。');
@@ -3465,7 +3466,7 @@ function companionTraitFlags(tpl){
     if (sk.type === 'summon' || sk.summonCount) flags.summon = true;
     if (sk.type === 'heal' || sk.heal || sk.healPct || sk.healPctHero || sk.healPctComp) flags.heal = true;
     if (sk.type === 'buff' || sk.buff || sk.shieldPct || sk.shieldPctHero || sk.shieldPctComp || sk.cleanse) flags.support = true;
-    if (sk.stun || sk.slow || sk.silence || sk.cripple || sk.weaken || sk.sunder || sk.debuff === 'sunder' || sk.stateKey) flags.control = true;
+    if (sk.stun || sk.slow || sk.interruptCast || sk.silence || sk.cripple || sk.weaken || sk.sunder || sk.debuff === 'sunder' || sk.stateKey) flags.control = true;
   }
   return flags;
 }

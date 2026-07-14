@@ -429,7 +429,7 @@ const SKILL_REWORKS = {
     backstab:{ desc:'3倍伤害,叠加2点连击,对减速/破绽目标额外造成伤害', cd:5, fx:{ bonusStates:{ slow:0.6, exposed:0.5 }, grantAura:{ key:'r_combo', add:2, max:5, duration:12000 } } },
     poison:{ desc:'3倍伤害并施加致命毒药与8秒衰老,叠加毒锋,为终结技提供收益', cd:6, fx:{ applyTargetState:'decay', stateDurationMs:8000, applyDotKey:'skill:poison', dotName:'致命毒药', dotIcon:'🐍', dotPct:0.17, dotMs:7000, grantAura:{ key:'r_venom', add:1, max:5, duration:12000 } } },
     evasion:{ desc:'15秒受到伤害降低34%,帮助你撑过危险窗口' },
-    kidneyShot:{ desc:'4倍伤害并让目标进入破绽状态,便于背刺', cd:10, fx:{ applyTargetState:'exposed', stateDurationMs:7000 } },
+    kidneyShot:{ desc:'4倍伤害,击晕并顺带打断读条,同时让目标进入破绽状态', cd:18, fx:{ applyTargetState:'exposed', stateDurationMs:7000 } },
     killingSpree:{ desc:'7倍必暴,对中毒目标追加连击', cd:16, fx:{ bonusPerDot:0.22, extraHitPct:0.45 } },
     shadow:{ desc:'15秒攻击+50%,且下一个终结技必定暴击' },
     r_bladeflurry:{ desc:'6秒攻速与攻击提升,盗贼进入连打窗口' },
@@ -736,10 +736,10 @@ const SPEC_EXTRA_SKILLS = {
 
 const SPEC_SKILL_LOADOUTS = {
   warrior: {
-    core:['interrupt'], novice:['cleave','thunderClap'],
-    arms:{ icon:'⚔️', name:'武器战', desc:'围绕破甲印记、压制、致死打击与斩杀构建节奏,偏单体斩杀。', skills:['cleave','sunderArmor','w_overpower','mortalStrike','shatteringThrow','execute','sweepingStrikes','w_recklessness','w_avatar','w_colossus','bladestorm'] },
-    fury:{ icon:'😡', name:'狂暴战', desc:'用怒击、嗜血和怒火乱舞叠暴怒,靠多段追击与吸血续战。', skills:['cleave','w_ragingBlow','bloodthirst','battleShout','w_recklessness','w_enrageRegen','execute','w_rampage','bladestorm'] },
-    prot:{ icon:'🛡️', name:'防护战', desc:'盾牌猛击、雷霆一击和盾牌格挡叠防线,承伤反震并把满层转护盾。', skills:['thunderClap','w_shieldSlam','shieldWall','w_ironwall','w_revenge','challengingShout','w_enrageRegen'] },
+    core:['interrupt','shockwave'], novice:['cleave','thunderClap'],
+    arms:{ icon:'⚔️', name:'武器战', desc:'围绕破甲印记、压制、致死打击与斩杀构建节奏,偏单体斩杀。', skills:['cleave','sunderArmor','w_overpower','mortalStrike','shockwave','shatteringThrow','execute','sweepingStrikes','w_recklessness','w_avatar','w_colossus','bladestorm'] },
+    fury:{ icon:'😡', name:'狂暴战', desc:'用怒击、嗜血和怒火乱舞叠暴怒,靠多段追击与吸血续战。', skills:['cleave','w_ragingBlow','bloodthirst','battleShout','shockwave','w_recklessness','w_enrageRegen','execute','w_rampage','bladestorm'] },
+    prot:{ icon:'🛡️', name:'防护战', desc:'盾牌猛击、雷霆一击和盾牌格挡叠防线,承伤反震并把满层转护盾。', skills:['thunderClap','w_shieldSlam','shieldWall','shockwave','w_ironwall','w_revenge','challengingShout','w_enrageRegen'] },
   },
   mage: {
     core:['interrupt','polymorph'], novice:['arcane','fireball','frostbolt'],
@@ -748,43 +748,43 @@ const SPEC_SKILL_LOADOUTS = {
     frost:{ icon:'❄️', name:'冰法', desc:'只使用冰霜控制与碎裂技能,冻结后用冰枪、暴风雪、冰冻宝珠打爆发。', skills:['frostbolt','iceBarrier','m_iceBlock','slow','blizzard','m_frozenOrb','m_iceLance'] },
   },
   priest: {
-    core:['interrupt','smite'], novice:['smite','shield','heal','shadowWord'],
-    discipline:{ icon:'🛡️', name:'戒律牧', desc:'真言术盾、惩罚和能量灌注把伤害转成治疗与随从护盾。', skills:['smite','shield','p_pwShield','p_penance','powerInfusion','p_holyNova'] },
-    holy:{ icon:'✨', name:'神牧', desc:'治疗术、恢复、愈合祷言、神圣新星和赞美诗专注群体回复。', skills:['smite','heal','renew','p_prayerMending','holyNova','holyFire','p_holyNova','divineHymn'] },
-    shadow:{ icon:'🌑', name:'暗牧', desc:'暗言术、心灵震爆、噬灵疫病、暗影形态和虚空爆发组成持续伤害循环。', skills:['shadowWord','mindBlast','p_devouringPlague','p_shadowform','p_mindBlast','shadowDeath','p_voidEruption'] },
+    core:['interrupt','smite','shackleUndead'], novice:['smite','shield','heal','shadowWord'],
+    discipline:{ icon:'🛡️', name:'戒律牧', desc:'真言术盾、惩罚和能量灌注把伤害转成治疗与随从护盾。', skills:['smite','shield','p_pwShield','p_penance','shackleUndead','powerInfusion','p_holyNova'] },
+    holy:{ icon:'✨', name:'神牧', desc:'治疗术、恢复、愈合祷言、神圣新星和赞美诗专注群体回复。', skills:['smite','heal','renew','p_prayerMending','holyNova','shackleUndead','holyFire','p_holyNova','divineHymn'] },
+    shadow:{ icon:'🌑', name:'暗牧', desc:'暗言术、心灵震爆、噬灵疫病、暗影形态和虚空爆发组成持续伤害循环。', skills:['shadowWord','mindBlast','p_devouringPlague','shackleUndead','p_shadowform','p_mindBlast','shadowDeath','p_voidEruption'] },
   },
   rogue: {
-    core:['interrupt','evasion'], novice:['sinister','poison','backstab'],
+    core:['interrupt','evasion','kidneyShot'], novice:['sinister','poison','backstab'],
     assassination:{ icon:'🐍', name:'刺杀贼', desc:'只围绕毒药、毁伤、割裂、奉毒和死亡标记打持续毒伤。', skills:['poison','r_mutilate','garrote','rupture','r_envenom','deathMark','r_evasion'] },
     combat:{ icon:'⚔️', name:'战斗贼', desc:'邪恶打击、背刺、剑刃乱舞、冲动和杀戮盛宴走正面连击。', skills:['sinister','backstab','r_bladeRush','r_bladeflurry','r_adrenaline','killingSpree','throw','evasion'] },
     subtlety:{ icon:'🌑', name:'敏锐贼', desc:'背刺、暗影之舞、暗袭、绞喉和暗影斗篷围绕破绽爆发。', skills:['backstab','kidneyShot','r_shadowDance','r_shadowstrike','garrote','shadow','cloakOfShadows','r_evasion'] },
   },
   hunter: {
-    core:['interrupt'], novice:['arcaneShot','serpentSting','summonPet'],
-    bm:{ icon:'🐾', name:'兽王猎', desc:'召唤宠物、倒刺射击、狂野怒火和协同猛攻强化宠物追击。', skills:['summonPet','h_barbedShot','bestialWrath','h_killCommand','h_coordinatedAssault','stampede','h_feignDeath'] },
-    marks:{ icon:'🎯', name:'射击猎', desc:'猎人印记、精确射击、瞄准射击、急速射击和杀戮射击组成远程狙击。', skills:['arcaneShot','huntersMark','h_preciseShot','aimed','rapidFire','h_rapidFire','killShot','barrage','h_chimaera'] },
-    survival:{ icon:'💣', name:'生存猎', desc:'毒蛇钉刺、野火炸弹、爆炸射击、冰冻陷阱和奇美拉打陷阱DOT。', skills:['serpentSting','h_wildfireBomb','explosiveShot','h_explosiveShot','freezingTrap','multi','h_chimaera','h_feignDeath'] },
+    core:['interrupt','concussiveShot'], novice:['arcaneShot','serpentSting','summonPet'],
+    bm:{ icon:'🐾', name:'兽王猎', desc:'召唤宠物、倒刺射击、狂野怒火和协同猛攻强化宠物追击。', skills:['summonPet','h_barbedShot','concussiveShot','bestialWrath','h_killCommand','h_coordinatedAssault','stampede','h_feignDeath'] },
+    marks:{ icon:'🎯', name:'射击猎', desc:'猎人印记、精确射击、瞄准射击、急速射击和杀戮射击组成远程狙击。', skills:['arcaneShot','huntersMark','h_preciseShot','aimed','concussiveShot','rapidFire','h_rapidFire','killShot','barrage','h_chimaera'] },
+    survival:{ icon:'💣', name:'生存猎', desc:'毒蛇钉刺、野火炸弹、爆炸射击、冰冻陷阱和奇美拉打陷阱DOT。', skills:['serpentSting','h_wildfireBomb','explosiveShot','h_explosiveShot','freezingTrap','concussiveShot','multi','h_chimaera','h_feignDeath'] },
   },
   shaman: {
-    core:['interrupt'], novice:['lightning','healingWave'],
-    element:{ icon:'🌋', name:'元素萨', desc:'闪电箭、烈焰震击、熔岩爆裂、闪电链和元素冲击走法术爆发。', skills:['lightning','flameShock','lavaBurst','chainLightning','sh_earthShock','sh_elementalBlast','earthquake','thunderstorm'] },
-    enhancement:{ icon:'⚡', name:'增强萨', desc:'风怒武器、风暴打击、毁灭闪电、熔岩猛击和嗜血走近战漩涡。', skills:['windfury','s_stormstrike','sh_crashLightning','sh_lavaLash','s_bloodlust','bloodlust','s_earthShield'] },
-    restoration:{ icon:'🌊', name:'恢复萨', desc:'治疗波、激流、大地之盾、治疗之泉和灵魂链接支援主角与随从。', skills:['healingWave','sh_riptide','earthShield','s_earthShield','s_healingTide','spiritLink','bloodlust'] },
+    core:['interrupt','hex'], novice:['lightning','healingWave'],
+    element:{ icon:'🌋', name:'元素萨', desc:'闪电箭、烈焰震击、熔岩爆裂、闪电链和元素冲击走法术爆发。', skills:['lightning','flameShock','lavaBurst','chainLightning','hex','sh_earthShock','sh_elementalBlast','earthquake','thunderstorm'] },
+    enhancement:{ icon:'⚡', name:'增强萨', desc:'风怒武器、风暴打击、毁灭闪电、熔岩猛击和嗜血走近战漩涡。', skills:['windfury','s_stormstrike','sh_crashLightning','hex','sh_lavaLash','s_bloodlust','bloodlust','s_earthShield'] },
+    restoration:{ icon:'🌊', name:'恢复萨', desc:'治疗波、激流、大地之盾、治疗之泉和灵魂链接支援主角与随从。', skills:['healingWave','sh_riptide','earthShield','hex','s_earthShield','s_healingTide','spiritLink','bloodlust'] },
   },
   paladin: {
-    core:['interrupt','judgement'], novice:['judgement','holyLight','crusader'],
-    holy:{ icon:'✨', name:'奶骑', desc:'圣光术、圣光闪现、道标、王者祝福和神圣愤怒专注治疗支援。', skills:['holyLight','flashOfLight','pa_flashLight','pa_beacon','blessingKings','sacredShield','holyWrath'] },
-    prot:{ icon:'🛡️', name:'防骑', desc:'审判、正义盾击、圣盾、奉献和圣洁护盾滚圣光壁垒。', skills:['judgement','pa_shieldRighteous','divineShield','consecration','hammerOfRighteous','sacredShield','pa_guardian','blessingKings'] },
-    ret:{ icon:'⚔️', name:'惩戒骑', desc:'十字军打击、公正之剑、审判、复仇之怒、圣殿裁决和愤怒之锤打圣能爆发。', skills:['judgement','crusader','pa_bladeJustice','avengingWrath','pa_avengingWrath','pa_templarVerdict','pa_hammerWrath','pa_holyWrath','seraphim'] },
+    core:['interrupt','judgement','hammerOfJustice'], novice:['judgement','holyLight','crusader'],
+    holy:{ icon:'✨', name:'奶骑', desc:'圣光术、圣光闪现、道标、王者祝福和神圣愤怒专注治疗支援。', skills:['holyLight','flashOfLight','pa_flashLight','pa_beacon','hammerOfJustice','blessingKings','sacredShield','holyWrath'] },
+    prot:{ icon:'🛡️', name:'防骑', desc:'审判、正义盾击、圣盾、奉献和圣洁护盾滚圣光壁垒。', skills:['judgement','pa_shieldRighteous','divineShield','hammerOfJustice','consecration','hammerOfRighteous','sacredShield','pa_guardian','blessingKings'] },
+    ret:{ icon:'⚔️', name:'惩戒骑', desc:'十字军打击、公正之剑、审判、复仇之怒、圣殿裁决和愤怒之锤打圣能爆发。', skills:['judgement','crusader','pa_bladeJustice','hammerOfJustice','avengingWrath','pa_avengingWrath','pa_templarVerdict','pa_hammerWrath','pa_holyWrath','seraphim'] },
   },
   warlock: {
-    core:['interrupt','fear'], novice:['shadowBolt','corruption','incinerate'],
-    affliction:{ icon:'💜', name:'痛苦术', desc:'痛楚、腐蚀术、痛苦无常和邪能狂涌堆多DOT后引爆。', skills:['wl_agony','corruption','unstableAffliction','drainLife','wl_maleficRapture','wl_darkSoul','fear'] },
-    demonology:{ icon:'😈', name:'恶魔术', desc:'暗影箭、古尔丹之手、地狱火、恶魔变身和恶魔之箭围绕召唤物。', skills:['shadowBolt','drainLife','wl_handGuldan','inferno','metamorphosis','wl_demonbolt','wl_demonSkin','wl_lifeTap'] },
-    destruction:{ icon:'🔥', name:'毁灭术', desc:'献祭、烧尽、燃烧、灵魂之火和混乱之箭堆余烬爆发。', skills:['immolate','incinerate','wl_conflagrate','soulFire','chaosBolt','wl_chaosBolt','wl_darkSoul','wl_demonSkin'] },
+    core:['interrupt','fear','shadowFury'], novice:['shadowBolt','corruption','incinerate'],
+    affliction:{ icon:'💜', name:'痛苦术', desc:'痛楚、腐蚀术、痛苦无常和邪能狂涌堆多DOT后引爆。', skills:['wl_agony','corruption','unstableAffliction','drainLife','shadowFury','wl_maleficRapture','wl_darkSoul','fear'] },
+    demonology:{ icon:'😈', name:'恶魔术', desc:'暗影箭、古尔丹之手、地狱火、恶魔变身和恶魔之箭围绕召唤物。', skills:['shadowBolt','drainLife','wl_handGuldan','shadowFury','inferno','metamorphosis','wl_demonbolt','wl_demonSkin','wl_lifeTap'] },
+    destruction:{ icon:'🔥', name:'毁灭术', desc:'献祭、烧尽、燃烧、灵魂之火和混乱之箭堆余烬爆发。', skills:['immolate','incinerate','wl_conflagrate','shadowFury','soulFire','chaosBolt','wl_chaosBolt','wl_darkSoul','wl_demonSkin'] },
   },
   druid: {
-    core:['interrupt'], novice:['wrath','moonfire','d_rake','rejuvenation'],
+    core:['interrupt','entanglingRoots'], novice:['wrath','moonfire','d_rake','rejuvenation'],
     balance:{ icon:'🌗', name:'平衡德', desc:'月火、愤怒、星火、星涌、新月强击和飓风走星界能量循环。', skills:['moonfire','wrath','starfire','d_eclipse','d_starsurge','hurricane','entanglingRoots'] },
     feral:{ icon:'🐾', name:'野德', desc:'斜掠、横扫、凶猛撕咬、狂暴和野性狂怒围绕连击点/流血。', skills:['d_rake','swipe','bite','berserk','d_berserk','d_ferociousBite','d_primalWrath'] },
     resto:{ icon:'🌿', name:'奶德', desc:'回春、生命绽放、野性成长、树皮术和宁静治疗主角与随从。', skills:['rejuvenation','d_lifebloomSpell','d_rejuv','barkskin','d_barkskin','wildGrowth','tranquility','entanglingRoots'] },
@@ -1638,6 +1638,8 @@ function buildSkillDetailParts(clsKey, sk, baseDesc) {
   if (sk && sk.type === 'buff' && sk.buff && !/%/.test(baseDesc || '')) {
     parts.push(...buildBuffEffectParts(sk.buff));
   }
+  if (sk && sk.interruptCast) parts.push('命中时可顺带打断读条');
+  if (sk && sk.stun && !/击晕|眩晕/.test(baseDesc || '')) parts.push(`击晕${skillSecText(sk.stunMs || 1500)}`);
 
   if (!fx) return parts;
 

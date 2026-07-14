@@ -10536,13 +10536,14 @@ function castSkill(skillKey,manual){
         {const dr=monsterDamageReduction(target, now);if(dr)dd=Math.max(1,Math.floor(dd*(1-dr)));}
         dd=absorbMonsterBarrier(target,dd,sk.icon||'✨').remaining;   // 技能也被敌方护盾吸收(不再穿盾)
         target.hp-=dd;dmgDone+=dd;trackDmg('hero',dd,d.crit,sk.name);showMonsterFloat(target,(sk.icon||'✨')+'-'+dd,d.crit?'#fbbf24':'#a335ee',{variant:d.crit?'crit':'hit',scale:d.crit?1.14:1,important:true});
-        companionCoordinateTrigger(target, dd, { now, crit:d.crit, skill:true, state:!!(sk.stateKey || sk.debuff), control:!!(sk.slow || sk.debuff === 'sunder') });
+        companionCoordinateTrigger(target, dd, { now, crit:d.crit, skill:true, state:!!(sk.stateKey || sk.debuff), control:!!(sk.slow || sk.stun || sk.interruptCast || sk.debuff === 'sunder') });
         if(d.crit||forceCrit)processTalentOnCrit(target,dd,{skillKey});
         if(sk.lifeSteal){const heal=Math.floor(dd*sk.lifeSteal);healHeroAmount(heal,'🩸','#6ee7b7');}
         if(sk.slow)target.slowUntil=Date.now()+4000;
         if(sk.debuff==='sunder'){target.sunderUntil=Date.now()+15000;}
         const applyState=(!skillFxMeta(skillKey, sk).applyTargetState && ai.applyTargetState && !['dot','slow','sunder'].includes(ai.applyTargetState)) ? ai.applyTargetState : null;
         if(applyState) applyMonsterState(target, applyState, ai.stateDurationMs || 10000);
+        applyHeroSkillControlInterrupt(sk, target, now);
         applySkillHitEffects(skillKey, sk, target, dd, { now, isAOE:true });
         applySpecProcHitEffects(specProc, target, dd, sk, skillKey, now, { isAOE:true });
       }
@@ -10559,7 +10560,7 @@ function castSkill(skillKey,manual){
       {const dr=monsterDamageReduction(mon, now);if(dr)dd=Math.max(1,Math.floor(dd*(1-dr)));}
       dd=absorbMonsterBarrier(mon,dd,sk.icon||'✨').remaining;   // 技能也被敌方护盾吸收(不再穿盾)
       mon.hp-=dd;dmgDone=dd;trackDmg('hero',dd,d.crit,sk.name);
-      companionCoordinateTrigger(mon, dd, { now, crit:d.crit || forceCrit, skill:true, state:!!(sk.stateKey || sk.debuff), control:!!(sk.slow || sk.debuff === 'sunder') });
+      companionCoordinateTrigger(mon, dd, { now, crit:d.crit || forceCrit, skill:true, state:!!(sk.stateKey || sk.debuff), control:!!(sk.slow || sk.stun || sk.interruptCast || sk.debuff === 'sunder') });
       showMonsterFloat(mon,(sk.icon||'✨')+'-'+dd,(d.crit||forceCrit)?'#fbbf24':'#a335ee',{variant:(d.crit||forceCrit)?'crit':'hit',scale:(d.crit||forceCrit)?1.16:1,important:true});
       log(sk.name+'! '+dd+' 伤害'+(forceCrit?' (必暴)':''),'good');
       if(d.crit||forceCrit)processTalentOnCrit(mon,dd,{skillKey});
@@ -10568,6 +10569,7 @@ function castSkill(skillKey,manual){
       if(sk.debuff==='sunder'){mon.sunderUntil=Date.now()+15000;}   // 破甲:15秒防御-30%
       const applyState=(!skillFxMeta(skillKey, sk).applyTargetState && ai.applyTargetState && !['dot','slow','sunder'].includes(ai.applyTargetState)) ? ai.applyTargetState : null;
       if(applyState) applyMonsterState(mon, applyState, ai.stateDurationMs || 10000);
+      applyHeroSkillControlInterrupt(sk, mon, now);
       applySkillHitEffects(skillKey, sk, mon, dmgDone, { now, isAOE:false });
       applySpecProcHitEffects(specProc, mon, dmgDone, sk, skillKey, now, { isAOE:false });
     }
@@ -10618,6 +10620,21 @@ function isEmpoweredBossCast(sk){
   if(sk.aoe && mul>=2.2) return true;
   if(mul>=3) return true;
   return false;
+}
+function applyHeroSkillControlInterrupt(sk, mon, now){
+  if(!sk) return;
+  const castMon = sk.interruptCast && bossCasting ? bossCastingMonster(bossCasting) : null;
+  if(sk.interruptCast && bossCasting){
+    const ok = doInterrupt();
+    if(ok && castMon && castMon.hp > 0 && typeof showMonsterFloat === 'function'){
+      showMonsterFloat(castMon, '顺带打断', '#bfdbfe', { variant:'control', scale:1.04 });
+    }
+  }
+  if(!sk.stun || !mon || mon.hp <= 0) return;
+  const baseDur = sk.stunMs || 1500;
+  const dur = mon.isBoss ? Math.min(baseDur, 900) : baseDur;
+  mon.stunUntil = Math.max(mon.stunUntil || 0, now + dur);
+  if(typeof showMonsterFloat === 'function') showMonsterFloat(mon, '击晕', '#fde047', { variant:'control', scale:1.02 });
 }
 function doInterrupt(){
   if(!bossCasting){log('没有正在施放的法术','info');return false;}
