@@ -501,49 +501,20 @@ function renderBuffBar() {
     const proc = (typeof currentSpecProcSystem === 'function') ? currentSpecProcSystem() : null;
     const core = (typeof currentSpecCoreSystem === 'function') ? currentSpecCoreSystem() : null;
     const stance = (typeof currentSpecStanceSystem === 'function') ? currentSpecStanceSystem() : null;
-    const elementGuide = (typeof SKILL_ELEMENT_REACTION_GUIDE === 'object' && Array.isArray(SKILL_ELEMENT_REACTION_GUIDE)) ? SKILL_ELEMENT_REACTION_GUIDE : [];
-    const echoGuide = (typeof SKILL_ECHO_GUIDE === 'object' && Array.isArray(SKILL_ECHO_GUIDE)) ? SKILL_ECHO_GUIDE : [];
-    const markGuide = (typeof SKILL_MARK_GUIDE === 'object' && Array.isArray(SKILL_MARK_GUIDE)) ? SKILL_MARK_GUIDE : [];
-    const weaveGuide = (typeof SKILL_WEAVE_GUIDE === 'object' && Array.isArray(SKILL_WEAVE_GUIDE)) ? SKILL_WEAVE_GUIDE : [];
-    const rhythmGuide = (typeof SKILL_RHYTHM_GUIDE === 'object' && Array.isArray(SKILL_RHYTHM_GUIDE)) ? SKILL_RHYTHM_GUIDE : [];
-    const controlGuide = (typeof SKILL_CONTROL_GUIDE === 'object' && Array.isArray(SKILL_CONTROL_GUIDE)) ? SKILL_CONTROL_GUIDE : [];
-    const weaknessGuide = (typeof SKILL_WEAKNESS_GUIDE === 'object' && Array.isArray(SKILL_WEAKNESS_GUIDE)) ? SKILL_WEAKNESS_GUIDE : [];
-    const prepGuide = (typeof SKILL_PREP_GUIDE === 'object' && Array.isArray(SKILL_PREP_GUIDE)) ? SKILL_PREP_GUIDE : [];
-    const overloadGuide = (typeof SKILL_OVERLOAD_GUIDE === 'object' && Array.isArray(SKILL_OVERLOAD_GUIDE)) ? SKILL_OVERLOAD_GUIDE : [];
-    const resourceGuide = (typeof SKILL_RESOURCE_GUIDE === 'object' && Array.isArray(SKILL_RESOURCE_GUIDE)) ? SKILL_RESOURCE_GUIDE : [];
-    const harvestGuide = (typeof SKILL_HARVEST_GUIDE === 'object' && Array.isArray(SKILL_HARVEST_GUIDE)) ? SKILL_HARVEST_GUIDE : [];
-    const pactGuide = (typeof SKILL_PACT_GUIDE === 'object' && Array.isArray(SKILL_PACT_GUIDE)) ? SKILL_PACT_GUIDE : [];
-    const fieldGuide = (typeof SKILL_FIELD_GUIDE === 'object' && Array.isArray(SKILL_FIELD_GUIDE)) ? SKILL_FIELD_GUIDE : [];
-    const chargeGuide = (typeof SKILL_CHARGE_GUIDE === 'object' && Array.isArray(SKILL_CHARGE_GUIDE)) ? SKILL_CHARGE_GUIDE : [];
-    const runeGuide = (typeof SKILL_RUNE_GUIDE === 'object' && Array.isArray(SKILL_RUNE_GUIDE)) ? SKILL_RUNE_GUIDE : [];
-    const chainDesc = chain ? ` · 专精连段: ${chain.name}: ${chain.steps.map(x => x.label).join(' → ')}。完成: ${chain.finish}` : '';
-    const reactionDesc = reaction ? ` · 状态反应: ${reaction.name}: ${reaction.desc}` : '';
-    const procDesc = proc ? ` · 临场强化: ${proc.name}: ${proc.desc}` : '';
-    const coreDesc = core ? ` · 专精核心: ${core.name}: ${core.desc}` : '';
-    const stanceDesc = stance ? ` · 战斗法则: ${stance.name}: ${stance.desc}` : '';
+    const chainDesc = chain ? ` · 连段: ${chain.name},按顺序放技能可获得奖励` : '';
+    const reactionDesc = reaction ? ` · 状态反应: ${reaction.name},打对应状态会追加效果` : '';
+    const procDesc = proc ? ` · 临场强化: ${proc.name},下一次合适技能会变强` : '';
+    const coreDesc = core ? ` · 核心: ${core.name},满层后用指定技能收束` : '';
+    const stanceDesc = stance ? ` · 法则: ${stance.name},短时间改变技能效果` : '';
     const engineText = (typeof specEngineDescText === 'function') ? specEngineDescText() : '';
-    const engineDesc = engineText ? ` · 专精引擎强化: ${engineText}` : '';
-    const elementDesc = elementGuide.length ? ` · 技能元素反应: ${elementGuide.map(x => `${x.icon || '✹'}${x.name}: ${x.desc}`).join('；')}` : '';
-    const echoDesc = echoGuide.length ? ` · 技能余波: ${echoGuide.map(x => `${x.icon || '✺'}${x.name}: ${x.desc}`).join('；')}` : '';
-    const markDesc = markGuide.length ? ` · 技能判词: ${markGuide.map(x => `${x.icon || '✦'}${x.name}: ${x.desc}`).join('；')}` : '';
-    const weaveDesc = weaveGuide.length ? ` · 技能织法: ${weaveGuide.map(x => `${x.icon || '✥'}${x.name}: ${x.desc}`).join('；')}` : '';
-    const rhythmDesc = rhythmGuide.length ? ` · 战斗律动: ${rhythmGuide.map(x => `${x.icon || '♬'}${x.name}: ${x.desc}`).join('；')}` : '';
-    const controlDesc = controlGuide.length ? ` · 控场清算: ${controlGuide.map(x => `${x.icon || '⛓️'}${x.name}: ${x.desc}`).join('；')}` : '';
-    const weaknessDesc = weaknessGuide.length ? ` · 弱点洞察: ${weaknessGuide.map(x => `${x.icon || '🎯'}${x.name}: ${x.desc}`).join('；')}` : '';
-    const prepDesc = prepGuide.length ? ` · 技能蓄势: ${prepGuide.map(x => `${x.icon || '⚙️'}${x.name}: ${x.desc}`).join('；')}` : '';
-    const overloadDesc = overloadGuide.length ? ` · 技能过载: ${overloadGuide.map(x => `${x.icon || '⚡'}${x.name}: ${x.desc}`).join('；')}` : '';
-    const resourceDesc = resourceGuide.length ? ` · 资源回路: ${resourceGuide.map(x => `${x.icon || '💠'}${x.name}: ${x.desc}`).join('；')}` : '';
-    const harvestDesc = harvestGuide.length ? ` · 斩获连锁: ${harvestGuide.map(x => `${x.icon || '🏹'}${x.name}: ${x.desc}`).join('；')}` : '';
-    const pactDesc = pactGuide.length ? ` · 契约代价: ${pactGuide.map(x => `${x.icon || '📜'}${x.name}: ${x.desc}`).join('；')}` : '';
-    const fieldDesc = fieldGuide.length ? ` · 战场领域: ${fieldGuide.map(x => `${x.icon || '◇'}${x.name}: ${x.desc}`).join('；')}` : '';
-    const chargeDesc = chargeGuide.length ? ` · 技能充能: ${chargeGuide.map(x => `${x.icon || '✦'}${x.name}: ${x.desc}`).join('；')}` : '';
-    const runeDesc = runeGuide.length ? ` · 符文铭刻: ${runeGuide.map(x => `${x.icon || 'ᚱ'}${x.name}: ${x.desc}`).join('；')}` : '';
+    const engineDesc = engineText ? ` · 精通强化: ${engineText}` : '';
+    const universalDesc = ' · 通用技能机制: 技能会产生反应、余波、判词、织法、律动、控场、弱点、蓄势、过载、回路、斩获、契约、领域、充能和符文。具体触发条件看技能按钮说明。';
     selfStates.unshift({
       kind: 'spec-meter',
       icon: specMeter.icon || '✦',
       name: specMeter.name,
       base: '专精机制:' + specMeter.key,
-      desc: (specMeter.hint || '') + ` · 当前 ${specMeter.stacks || 0}/${specMeter.max || 0}` + (tactic ? ` · 战术窗口: ${tactic.name}: ${tactic.desc}` : '') + chainDesc + reactionDesc + procDesc + coreDesc + stanceDesc + engineDesc + elementDesc + echoDesc + markDesc + weaveDesc + rhythmDesc + controlDesc + weaknessDesc + prepDesc + overloadDesc + resourceDesc + harvestDesc + pactDesc + fieldDesc + chargeDesc + runeDesc,
+      desc: (specMeter.hint || '') + ` · 当前 ${specMeter.stacks || 0}/${specMeter.max || 0}` + (tactic ? ` · 战术窗口: ${tactic.name},短时间强化对应玩法` : '') + chainDesc + reactionDesc + procDesc + coreDesc + stanceDesc + engineDesc + universalDesc,
       valText: `${specMeter.stacks || 0}/${specMeter.max || 0}`,
       stacks: specMeter.stacks || 0,
       left: 0
