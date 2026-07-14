@@ -977,3 +977,49 @@ const TALENT_AURA_LIBRARY = {
     }
   }
 })();
+
+(function extendSkillPactTalents() {
+  if (typeof CLASSES === 'undefined') return;
+  const names = {
+    arms:'血战契约', fury:'狂怒血契', prot:'壁垒誓契',
+    arcane:'奥能契约', fire:'燃烬契约', frost:'寒霜契约',
+    discipline:'赎罪誓契', holy:'圣光誓契', shadow:'虚空契约',
+    assassination:'毒刃虚契', combat:'剑刃血契', subtlety:'暗影虚契',
+    bm:'兽群役契', marks:'猎命契约', survival:'荒野役契',
+    element:'风暴契约', enhancement:'风怒血契', restoration:'潮汐誓契',
+    holy_paladin:'圣光誓契', prot_paladin:'守护誓契', ret:'裁决血契',
+    affliction:'痛苦虚契', demonology:'军团役契', destruction:'混乱契约',
+    balance:'星界契约', feral:'血爪血契', resto:'林地誓契',
+  };
+  const supportSpecs = new Set(['discipline','holy','restoration','resto']);
+  const dotSpecs = new Set(['fire','shadow','assassination','survival','affliction','destruction','balance']);
+  const commandSpecs = new Set(['bm','demonology','survival']);
+  const burstSpecs = new Set(['arms','fury','arcane','frost','marks','element','enhancement','ret','destruction','feral']);
+  for (const [clsKey, cls] of Object.entries(CLASSES)) {
+    if (!cls || !Array.isArray(cls.trees)) continue;
+    for (const tree of cls.trees) {
+      if (!tree || tree._skillPactTalent) continue;
+      tree._skillPactTalent = true;
+      const keyName = clsKey === 'paladin' && tree.key === 'holy' ? 'holy_paladin' : (clsKey === 'paladin' && tree.key === 'prot' ? 'prot_paladin' : tree.key);
+      const support = supportSpecs.has(tree.key) || (clsKey === 'paladin' && tree.key === 'holy') || (tree.key === 'prot' && (clsKey === 'warrior' || clsKey === 'paladin'));
+      const dot = dotSpecs.has(tree.key);
+      const command = commandSpecs.has(tree.key);
+      const burst = burstSpecs.has(tree.key);
+      tree.talents.push({
+        key: `skill_pact_${clsKey}_${tree.key}`,
+        name: names[keyName] || '契约代价',
+        desc: `契约代价更强: ${support ? '誓契赎约治疗和护盾提高 20%' : (command ? '役契协同和追击提高 20%' : (dot ? '虚契 DOT 与扩散提高 20%' : '赎约追击提高 18%'))}, 签约层数提高,赎约时返还资源。`,
+        req: 142,
+        max: 1,
+        fx: {
+          type:'skillPact',
+          pactDmgPct:support ? 8 : (command || burst ? 20 : 18),
+          pactDotPct:dot ? 20 : 8,
+          pactSupportPct:support ? 20 : 6,
+          pactGainPct:burst || command ? 22 : 16,
+          pactResource:2
+        }
+      });
+    }
+  }
+})();

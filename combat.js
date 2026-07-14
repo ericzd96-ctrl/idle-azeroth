@@ -192,6 +192,11 @@ function specMasteryEngineBonus(field){
   if(field === 'harvestSupportPct') return mastery * Math.max(b.supportPct || 0, b.mechanicShieldPct || 0) * 0.45;
   if(field === 'harvestGainPct') return mastery * Math.max(b.coreGainPct || 0, b.procPct || 0) * 0.35;
   if(field === 'harvestResource') return mastery * (b.resource || 0);
+  if(field === 'pactDmgPct') return mastery * Math.max(b.corePayoffPct || 0, b.chainPayoffPct || 0, b.procPct || 0) * 0.42;
+  if(field === 'pactDotPct') return mastery * Math.max(b.dotSpreadPct || 0, b.reactionDotPct || 0, b.echoDotPct || 0) * 0.42;
+  if(field === 'pactSupportPct') return mastery * Math.max(b.supportPct || 0, b.mechanicShieldPct || 0) * 0.42;
+  if(field === 'pactGainPct') return mastery * Math.max(b.coreGainPct || 0, b.procPct || 0) * 0.32;
+  if(field === 'pactResource') return mastery * (b.resource || 0);
   return 0;
 }
 function masteryTakenMult(){ return 1 - Math.min(30, masteryFor('dr')*MASTERY_TYPE.dr.per + masteryFor('guardianEcho')*0.18 + specMasteryEngineBonus('takenPct'))/100; } // 受击减伤(封顶30%)
@@ -761,7 +766,7 @@ function processSkillElementReactions(skillKey, sk, mon, dmgDone, ctx){
 function skillMechanicFxBonus(field){
   let total = specMasteryEngineBonus(field);
   for(const fx of talentFxList()){
-    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho' && fx.type !== 'skillMark' && fx.type !== 'skillWeave' && fx.type !== 'skillRhythm' && fx.type !== 'skillControl' && fx.type !== 'skillWeakness' && fx.type !== 'skillPrep' && fx.type !== 'skillOverload' && fx.type !== 'skillResource' && fx.type !== 'skillHarvest')) continue;
+    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho' && fx.type !== 'skillMark' && fx.type !== 'skillWeave' && fx.type !== 'skillRhythm' && fx.type !== 'skillControl' && fx.type !== 'skillWeakness' && fx.type !== 'skillPrep' && fx.type !== 'skillOverload' && fx.type !== 'skillResource' && fx.type !== 'skillHarvest' && fx.type !== 'skillPact')) continue;
     total += +(fx[field] || 0);
   }
   return total;
@@ -2120,6 +2125,166 @@ function skillHarvestTip(skillKey, sk){
   const build = sk.type === 'dmg' ? `命中残血、处决或击杀时积累${harvestKindName(kind)}战果` : '';
   const spend = skillHarvestCanSpend(skillKey, sk, sample) ? '可消耗斩获连锁触发终局追猎' : '';
   return [build, spend].filter(Boolean).join('；');
+}
+function pactKindName(kind){
+  const names = { blood:'血契', void:'虚契', oath:'誓契', command:'役契', ember:'烬契' };
+  return names[kind] || kind || '契约';
+}
+function pactKindIcon(kind){
+  return ({ blood:'🩸', void:'🌑', oath:'✨', command:'🐾', ember:'🔥' })[kind] || '📜';
+}
+function skillPactKind(skillKey, sk, ctx){
+  if(!sk) return 'blood';
+  const tags = skillElementTags(skillKey, sk);
+  const text = `${skillKey || ''} ${sk.name || ''} ${sk.desc || ''} ${sk.icon || ''}`;
+  if(sk.type === 'summon' || ctx?.summoned || tags.includes('beast') || /召唤|宠物|野兽|恶魔|军团|兽群|随从/.test(text)) return 'command';
+  if(ctx?.heal || sk.type === 'heal' || sk.type === 'buff' || isDefensiveSkill(skillKey, sk) || tags.includes('holy') || /治疗|护盾|祝福|圣光|壁垒|守护|真言/.test(text)) return 'oath';
+  if(sk.dot || tags.includes('shadow') || tags.includes('poison') || /痛苦|腐蚀|暗影|毒|流血|献祭|邪能|末日|虚空/.test(text)) return 'void';
+  if(tags.some(t => ['fire','frost','storm','arcane','nature'].includes(t))) return 'ember';
+  return 'blood';
+}
+function skillPactSignStrength(skillKey, sk, ctx){
+  if(!sk) return 0;
+  const cost = Math.max(0, ctx?.cost || sk.mp || 0);
+  const max = Math.max(1, state.resourceMax || 100);
+  const tags = skillElementTags(skillKey, sk);
+  const lowCost = cost <= Math.max(28, max * 0.22);
+  const highCost = cost >= Math.max(38, max * 0.30);
+  const burst = sk.type === 'dmg' && (sk.mul || 0) >= 4.5;
+  const dark = (sk.dot || tags.includes('shadow') || tags.includes('poison')) && !lowCost;
+  const support = sk.type === 'heal' || sk.type === 'buff' || isDefensiveSkill(skillKey, sk);
+  const command = sk.type === 'summon' || ctx?.summoned || tags.includes('beast');
+  if(!(highCost || burst || dark || support || command)) return 0;
+  let gain = 1 + Math.floor(skillMechanicFxBonus('pactGainPct') / 45);
+  if(highCost || burst) gain += 1;
+  if(command || dark) gain += 1;
+  if(ctx?.overheal > 0) gain += 1;
+  return Math.max(1, Math.min(3, gain));
+}
+function skillPactCanRedeem(skillKey, sk, ctx){
+  if(!sk) return false;
+  const cost = Math.max(0, ctx?.cost || sk.mp || 0);
+  const max = Math.max(1, state.resourceMax || 100);
+  const fx = skillFxMeta(skillKey, sk);
+  if(ctx?.heal || sk.type === 'heal' || sk.type === 'buff' || sk.type === 'summon' || isDefensiveSkill(skillKey, sk)) return true;
+  if(sk.type !== 'dmg') return false;
+  const lowCost = cost <= Math.max(28, max * 0.22);
+  return !!(lowCost || fx.applyTargetState || fx.resourceGain || (sk.mul || 0) <= 3.6);
+}
+function ensureSkillPactRuntime(now, mon){
+  const rt = ensureSkillRuntime();
+  const ts = now || Date.now();
+  if(!rt.pact) rt.pact = { kind:'', stacks:0, debt:0, expire:0, chain:[] };
+  if(rt.pact.expire && rt.pact.expire <= ts && rt.pact.stacks > 0){
+    const snap = rt.pact;
+    const heroMax = Math.max(1, state.hero?.hpMax || 1);
+    const cap = Math.max(1, Math.floor(heroMax * 0.075));
+    const safeHp = Math.max(0, (state.hp || 0) - 1);
+    const backlash = Math.min(safeHp, cap, Math.max(1, Math.floor((snap.debt || heroMax * 0.015) * (0.45 + (snap.stacks || 1) * 0.08))));
+    if(backlash > 0) applyHeroDamage(backlash, mon || (state.currentMonsters || []).find(x => x && x.hp > 0), { label:t=>'📜-' + t, color:'#c084fc', now:ts, variant:'hit' });
+    log(`⚠️ 契约反噬: ${pactKindName(snap.kind)} ${snap.stacks || 1} 层未及时赎约`, 'bad');
+    rt.pact = { kind:'', stacks:0, debt:0, expire:0, chain:[] };
+    if(rt.auras) delete rt.auras.skill_pact;
+    markDirty('skills','hero');
+  }
+  return rt.pact;
+}
+function addSkillPact(kind, gain, sk, value, ctx, now){
+  if(!(gain > 0)) return 0;
+  const pact = ensureSkillPactRuntime(now);
+  const max = 5;
+  const cost = Math.max(0, ctx?.cost || sk?.mp || 0);
+  const heroMax = Math.max(1, state.hero?.hpMax || 1);
+  pact.kind = kind || pact.kind || 'blood';
+  pact.stacks = Math.min(max, (pact.stacks || 0) + gain);
+  pact.debt = Math.min(heroMax * 0.30, (pact.debt || 0) + Math.max(heroMax * 0.006 * gain, cost * heroMax * 0.00018, (value || 0) * 0.018));
+  pact.chain = (pact.chain || []).concat(pact.kind).slice(-5);
+  pact.expire = (now || Date.now()) + 15000;
+  addSkillAura('skill_pact', {
+    add:gain,
+    max,
+    duration:15000,
+    icon:'📜',
+    name:'契约代价',
+    desc:`当前 ${pact.stacks}/${max} 层${pactKindName(pact.kind)},债务 ${Math.floor(pact.debt || 0)}。及时用低耗、治疗、防御、DOT 或召唤技能赎约可转化为收益。`
+  });
+  showFloat($('hero-emoji'), `📜+${gain}`, '#c084fc', { variant:'buff', scale:1.03 });
+  markDirty('skills','hero');
+  return pact.stacks;
+}
+function redeemSkillPact(pact, mon, value, sk, now, ctx){
+  const kind = pact?.kind || 'blood';
+  const stacks = Math.max(1, pact?.stacks || 1);
+  const debt = Math.max(1, pact?.debt || state.hero.hpMax * 0.012);
+  const base = Math.max(1, Math.floor(value || state.hero.atk || state.hero.hpMax * 0.025 || 1));
+  const target = (mon && mon.hp > 0) ? mon : (state.currentMonsters || []).find(x => x && x.hp > 0);
+  const dmgMult = (1 + skillMechanicFxBonus('pactDmgPct') / 100) * (0.52 + stacks * 0.12);
+  const dotMult = (1 + skillMechanicFxBonus('pactDotPct') / 100) * (0.50 + stacks * 0.11);
+  const supportMult = masterySupportEchoMult() * (1 + skillMechanicFxBonus('pactSupportPct') / 100) * (0.58 + stacks * 0.10);
+  const resource = Math.floor(1 + stacks / 2 + skillMechanicFxBonus('pactResource'));
+  let fired = false;
+  if(resource > 0) grantTalentResource(resource);
+  if(kind === 'oath' || ctx?.heal || sk?.type === 'heal' || sk?.type === 'buff'){
+    healHeroAmount(Math.floor((state.hero.hpMax * (0.010 + stacks * 0.003) + debt * 0.30) * supportMult), sk?.icon || '✨', '#fde68a', 'hero', '赎约');
+    addTalentShield(Math.floor((state.hero.hpMax * (0.012 + stacks * 0.003) + debt * 0.38) * supportMult), true, 10000);
+    specTacticCompanionSupport('heal', now);
+    fired = true;
+  } else if(kind === 'void' && target){
+    applyMonsterDot(target, 'skillPact:void', Math.max(1, Math.floor((base * 0.08 + debt * 0.035) * dotMult)), 9000, { icon:'🌑', name:'虚契赎约', source:'skillPact' });
+    if(stacks >= 3) spreadDotFromMonster(target, 0.24 + stacks * 0.025, 9000);
+    healHeroAmount(Math.floor((state.hero.hpMax * 0.006 + debt * 0.12) * supportMult), '🌑', '#c4b5fd', 'hero', '虚契吸取');
+    fired = true;
+  } else if(kind === 'command'){
+    if(target) fired = applySkillFollowupDamage(target, (base * 0.10 + debt * 0.030) * dmgMult, '🐾', '#7dd3fc', now) > 0 || fired;
+    specTacticSummon(skillElementTags('', sk || {}).includes('shadow') ? 'demon' : 'beast', now);
+    specTacticCompanionSupport('shield', now);
+    fired = true;
+  } else if(kind === 'ember' && target){
+    applyMonsterState(target, 'unstable', 7200 + stacks * 520);
+    fired = applySkillFollowupDamage(target, (base * 0.11 + debt * 0.032) * dmgMult, '🔥', '#fb923c', now) > 0 || fired;
+    fired = splashSkillDamage(target, base + debt * 0.12, 0.10 + stacks * 0.025, '🔥', now) > 0 || fired;
+  } else if(target){
+    applyMonsterState(target, 'sunder', 7200 + stacks * 520);
+    fired = applySkillFollowupDamage(target, (base * 0.13 + debt * 0.038) * dmgMult, '🩸', '#f87171', now) > 0 || fired;
+    addTalentShield(Math.floor((state.hero.hpMax * (0.006 + stacks * 0.002) + debt * 0.18) * supportMult), true, 9000);
+  }
+  if(fired || resource > 0){
+    addSkillAura('skill_pact', {
+      add:1,
+      max:1,
+      duration:5600,
+      icon:'📜',
+      name:'赎约',
+      desc:`${pactKindName(kind)}被 ${sk?.name || '技能'} 赎回,债务转化为追击、扩散、护盾或协同,并返还 ${resource} 资源。`
+    });
+    showFloat($('hero-emoji'), `📜${pactKindName(kind)}`, '#c084fc', { variant:'buff', scale:1.05 });
+    log(`📜 契约赎回: ${pactKindName(kind)} ${stacks} 层被 ${sk?.name || '技能'} 转化`, 'good');
+    markDirty('skills','hero','companion','stage');
+  }
+  return fired || resource > 0;
+}
+function processSkillPact(skillKey, sk, mon, value, ctx){
+  if(!sk) return false;
+  const now = ctx?.now || Date.now();
+  const pact = ensureSkillPactRuntime(now, mon);
+  const signGain = skillPactSignStrength(skillKey, sk, ctx || {});
+  if(pact.stacks >= 2 && skillPactCanRedeem(skillKey, sk, ctx || {})){
+    const snap = Object.assign({}, pact, { chain:[...(pact.chain || [])] });
+    const rt = ensureSkillRuntime();
+    rt.pact = { kind:'', stacks:0, debt:0, expire:0, chain:[] };
+    if(rt.auras) delete rt.auras.skill_pact;
+    return redeemSkillPact(snap, mon, value, sk, now, ctx || {});
+  }
+  if(signGain > 0) return addSkillPact(skillPactKind(skillKey, sk, ctx || {}), signGain, sk, value, ctx || {}, now) > 0;
+  return false;
+}
+function skillPactTip(skillKey, sk){
+  if(!sk) return '';
+  const sample = { cost:sk.mp || 0 };
+  const gain = skillPactSignStrength(skillKey, sk, sample);
+  const sign = gain > 0 ? `签下${pactKindName(skillPactKind(skillKey, sk, sample))}${gain}层契约债务` : '';
+  const redeem = skillPactCanRedeem(skillKey, sk, sample) ? '可赎回已有契约,把债务转化为收益' : '';
+  return [sign, redeem].filter(Boolean).join('；');
 }
 function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
   const fx = skillFxMeta(skillKey, sk);
@@ -3772,6 +3937,7 @@ function processTalentLowHp(mon, now){
 function processTalentAfterSkill(skillKey, sk, mon, value, ctx){
   const now = Date.now();
   processSkillResourceLoop(skillKey, sk, mon, value, Object.assign({ now }, ctx || {}));
+  processSkillPact(skillKey, sk, mon, value, Object.assign({ now }, ctx || {}));
   for(const fx of talentFxList()){
     if(fx.type !== 'afterSkill') continue;
     if(!skillMatches(fx, skillKey)) continue;

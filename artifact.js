@@ -1006,6 +1006,20 @@ function skillHarvestTrait(cfg){
     }
   }));
 }
+function skillPactTrait(cfg){
+  return trait(Object.assign({}, cfg, {
+    fx(rank){
+      return {
+        type:'skillPact',
+        pactDmgPct:rankValue(cfg.pactDmgPct || [4,8,12], rank),
+        pactDotPct:rankValue(cfg.pactDotPct || [3,6,9], rank),
+        pactSupportPct:rankValue(cfg.pactSupportPct || [3,6,9], rank),
+        pactGainPct:rankValue(cfg.pactGainPct || [4,8,12], rank),
+        pactResource:rankValue(cfg.pactResource || [0,1,2], rank),
+      };
+    }
+  }));
+}
 
 (function retuneSpecArtifacts() {
   for (const [clsKey, specs] of Object.entries(SPEC_ARTIFACT_SKILL_RETUNE)) {
@@ -1184,6 +1198,21 @@ function skillHarvestTrait(cfg){
           harvestSupportPct:supportWeave ? [6,12,18] : [2,4,6],
           harvestGainPct:[5,10,15],
           desc:'斩获连锁终局追猎、腐蚀战果或灵魂支援效果提高,战果积累效率提高,消耗战果时返还少量资源。并获得精通 +1/2/3。'
+        }));
+      }
+      const pactKey = `art_${clsKey}_${specKey}_pact_20260714`;
+      if (!ARTIFACT_TRAITS[clsKey].some(t => t.key === pactKey)) {
+        ARTIFACT_TRAITS[clsKey].push(skillPactTrait({
+          key:pactKey,
+          tree:specKey,
+          name:'契约回路',
+          icon:'📜',
+          mod:{ mastery:1 },
+          pactDmgPct:supportWeave ? [3,6,9] : [6,12,18],
+          pactDotPct:dotWeave ? [6,12,18] : [3,6,9],
+          pactSupportPct:supportWeave ? [6,12,18] : [2,4,6],
+          pactGainPct:[5,10,15],
+          desc:'契约赎约追击、虚契持续伤害或誓契支援效果提高,签约效率提高,赎约时返还少量资源。并获得精通 +1/2/3。'
         }));
       }
     }
