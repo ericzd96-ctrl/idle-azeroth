@@ -1069,3 +1069,49 @@ const TALENT_AURA_LIBRARY = {
     }
   }
 })();
+
+(function extendSkillChargeTalents() {
+  if (typeof CLASSES === 'undefined') return;
+  const names = {
+    arms:'战技充能', fury:'狂怒充能', prot:'盾卫充能',
+    arcane:'奥能充能', fire:'燃烬充能', frost:'寒冰充能',
+    discipline:'赎罪充能', holy:'圣光充能', shadow:'虚空充能',
+    assassination:'毒刃充能', combat:'剑舞充能', subtlety:'暗影充能',
+    bm:'兽群充能', marks:'弹道充能', survival:'荒野充能',
+    element:'元素充能', enhancement:'漩涡充能', restoration:'潮汐充能',
+    holy_paladin:'圣光充能', prot_paladin:'壁垒充能', ret:'裁决充能',
+    affliction:'痛苦充能', demonology:'军团充能', destruction:'混乱充能',
+    balance:'星辰充能', feral:'血爪充能', resto:'生命充能',
+  };
+  const supportSpecs = new Set(['discipline','holy','restoration','resto']);
+  const dotSpecs = new Set(['fire','shadow','assassination','survival','affliction','destruction','balance','feral']);
+  const commandSpecs = new Set(['bm','demonology','survival']);
+  const burstSpecs = new Set(['arms','fury','arcane','frost','marks','element','enhancement','ret','destruction','feral']);
+  for (const [clsKey, cls] of Object.entries(CLASSES)) {
+    if (!cls || !Array.isArray(cls.trees)) continue;
+    for (const tree of cls.trees) {
+      if (!tree || tree._skillChargeTalent) continue;
+      tree._skillChargeTalent = true;
+      const keyName = clsKey === 'paladin' && tree.key === 'holy' ? 'holy_paladin' : (clsKey === 'paladin' && tree.key === 'prot' ? 'prot_paladin' : tree.key);
+      const support = supportSpecs.has(tree.key) || (clsKey === 'paladin' && tree.key === 'holy') || (tree.key === 'prot' && (clsKey === 'warrior' || clsKey === 'paladin'));
+      const dot = dotSpecs.has(tree.key);
+      const command = commandSpecs.has(tree.key);
+      const burst = burstSpecs.has(tree.key);
+      tree.talents.push({
+        key: `skill_charge_${clsKey}_${tree.key}`,
+        name: names[keyName] || '技能充能',
+        desc: `技能充能更强: ${support ? '守护充能治疗和护盾提高 20%' : (command ? '协同充能追击和召唤提高 20%' : (dot ? '腐蚀充能 DOT 与扩散提高 20%' : '充能释放追击提高 18%'))}, 充能积累效率提高,释放时返还资源。`,
+        req: 154,
+        max: 1,
+        fx: {
+          type:'skillCharge',
+          chargeDmgPct:support ? 8 : (command || burst ? 20 : 18),
+          chargeDotPct:dot ? 20 : 8,
+          chargeSupportPct:support ? 20 : 6,
+          chargeGainPct:burst || command ? 22 : 16,
+          chargeResource:2
+        }
+      });
+    }
+  }
+})();

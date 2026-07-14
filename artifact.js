@@ -1034,6 +1034,20 @@ function skillFieldTrait(cfg){
     }
   }));
 }
+function skillChargeTrait(cfg){
+  return trait(Object.assign({}, cfg, {
+    fx(rank){
+      return {
+        type:'skillCharge',
+        chargeDmgPct:rankValue(cfg.chargeDmgPct || [4,8,12], rank),
+        chargeDotPct:rankValue(cfg.chargeDotPct || [3,6,9], rank),
+        chargeSupportPct:rankValue(cfg.chargeSupportPct || [3,6,9], rank),
+        chargeGainPct:rankValue(cfg.chargeGainPct || [4,8,12], rank),
+        chargeResource:rankValue(cfg.chargeResource || [0,1,2], rank),
+      };
+    }
+  }));
+}
 
 (function retuneSpecArtifacts() {
   for (const [clsKey, specs] of Object.entries(SPEC_ARTIFACT_SKILL_RETUNE)) {
@@ -1242,6 +1256,21 @@ function skillFieldTrait(cfg){
           fieldSupportPct:supportWeave ? [6,12,18] : [2,4,6],
           fieldGainPct:[5,10,15],
           desc:'战场领域转化追击、持续伤害或圣域支援效果提高,铺场效率提高,转化时返还少量资源。并获得精通 +1/2/3。'
+        }));
+      }
+      const chargeKey = `art_${clsKey}_${specKey}_charge_20260714`;
+      if (!ARTIFACT_TRAITS[clsKey].some(t => t.key === chargeKey)) {
+        ARTIFACT_TRAITS[clsKey].push(skillChargeTrait({
+          key:chargeKey,
+          tree:specKey,
+          name:'充能回路',
+          icon:'✦',
+          mod:{ mastery:1 },
+          chargeDmgPct:supportWeave ? [3,6,9] : [6,12,18],
+          chargeDotPct:dotWeave ? [6,12,18] : [3,6,9],
+          chargeSupportPct:supportWeave ? [6,12,18] : [2,4,6],
+          chargeGainPct:[5,10,15],
+          desc:'技能充能释放追击、持续伤害或守护支援效果提高,充能积累效率提高,释放时返还少量资源。并获得精通 +1/2/3。'
         }));
       }
     }

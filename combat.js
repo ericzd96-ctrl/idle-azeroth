@@ -202,6 +202,11 @@ function specMasteryEngineBonus(field){
   if(field === 'fieldSupportPct') return mastery * Math.max(b.supportPct || 0, b.mechanicShieldPct || 0) * 0.44;
   if(field === 'fieldGainPct') return mastery * Math.max(b.coreGainPct || 0, b.echoDurationPct || 0, b.procPct || 0) * 0.34;
   if(field === 'fieldResource') return mastery * (b.resource || 0);
+  if(field === 'chargeDmgPct') return mastery * Math.max(b.corePayoffPct || 0, b.chainPayoffPct || 0, b.procPct || 0) * 0.44;
+  if(field === 'chargeDotPct') return mastery * Math.max(b.dotSpreadPct || 0, b.reactionDotPct || 0, b.echoDotPct || 0) * 0.44;
+  if(field === 'chargeSupportPct') return mastery * Math.max(b.supportPct || 0, b.mechanicShieldPct || 0) * 0.44;
+  if(field === 'chargeGainPct') return mastery * Math.max(b.coreGainPct || 0, b.procPct || 0) * 0.34;
+  if(field === 'chargeResource') return mastery * (b.resource || 0);
   return 0;
 }
 function masteryTakenMult(){ return 1 - Math.min(30, masteryFor('dr')*MASTERY_TYPE.dr.per + masteryFor('guardianEcho')*0.18 + specMasteryEngineBonus('takenPct'))/100; } // 受击减伤(封顶30%)
@@ -771,7 +776,7 @@ function processSkillElementReactions(skillKey, sk, mon, dmgDone, ctx){
 function skillMechanicFxBonus(field){
   let total = specMasteryEngineBonus(field);
   for(const fx of talentFxList()){
-    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho' && fx.type !== 'skillMark' && fx.type !== 'skillWeave' && fx.type !== 'skillRhythm' && fx.type !== 'skillControl' && fx.type !== 'skillWeakness' && fx.type !== 'skillPrep' && fx.type !== 'skillOverload' && fx.type !== 'skillResource' && fx.type !== 'skillHarvest' && fx.type !== 'skillPact' && fx.type !== 'skillField')) continue;
+    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho' && fx.type !== 'skillMark' && fx.type !== 'skillWeave' && fx.type !== 'skillRhythm' && fx.type !== 'skillControl' && fx.type !== 'skillWeakness' && fx.type !== 'skillPrep' && fx.type !== 'skillOverload' && fx.type !== 'skillResource' && fx.type !== 'skillHarvest' && fx.type !== 'skillPact' && fx.type !== 'skillField' && fx.type !== 'skillCharge')) continue;
     total += +(fx[field] || 0);
   }
   return total;
@@ -2424,6 +2429,144 @@ function skillFieldTip(skillKey, sk){
   if(!kind) return '';
   const gain = skillFieldGain(skillKey, sk, sample);
   return [`铺设${gain}层${fieldKindName(kind)}`, '可转化已有不同战场领域'].join('；');
+}
+function chargeKindName(kind){
+  const names = { arcane:'奥能', decay:'腐蚀', ward:'守护', pack:'协同', martial:'战技' };
+  return names[kind] || kind || '技能';
+}
+function chargeKindIcon(kind){
+  return ({ arcane:'🔷', decay:'☠️', ward:'✨', pack:'🐾', martial:'🩸' })[kind] || '✦';
+}
+function skillChargeKind(skillKey, sk, ctx){
+  if(!sk) return 'martial';
+  const tags = skillElementTags(skillKey, sk);
+  const text = `${skillKey || ''} ${sk.name || ''} ${sk.desc || ''} ${sk.icon || ''}`;
+  if(ctx?.heal || sk.type === 'heal' || sk.type === 'buff' || isDefensiveSkill(skillKey, sk) || tags.includes('holy') || /治疗|护盾|祝福|圣光|壁垒|守护|真言/.test(text)) return 'ward';
+  if(sk.type === 'summon' || ctx?.summoned || tags.includes('beast') || /宠物|野兽|召唤|兽群|随从|恶魔/.test(text)) return 'pack';
+  if(sk.dot || tags.includes('shadow') || tags.includes('poison') || /毒|痛苦|腐蚀|暗影|流血|割裂|撕裂|献祭/.test(text)) return 'decay';
+  if(tags.some(t => ['fire','frost','storm','arcane','nature'].includes(t))) return 'arcane';
+  return 'martial';
+}
+function skillChargeGain(skillKey, sk, ctx){
+  if(!sk) return 0;
+  const cost = Math.max(0, ctx?.cost || sk.mp || 0);
+  const maxRes = Math.max(1, state.resourceMax || 100);
+  const fx = skillFxMeta(skillKey, sk);
+  const lowCost = cost > 0 && cost <= Math.max(26, maxRes * 0.22);
+  const setup = lowCost || sk.dot || sk.type === 'heal' || sk.type === 'buff' || sk.type === 'summon' || ctx?.summoned || isDefensiveSkill(skillKey, sk) || fx.applyTargetState || sk.slow;
+  if(!setup) return 0;
+  let gain = 1 + Math.floor(skillMechanicFxBonus('chargeGainPct') / 45);
+  if(sk.dot || sk.type === 'heal' || sk.type === 'summon') gain += 1;
+  if(fx.applyTargetState || sk.slow) gain += 1;
+  return Math.max(1, Math.min(3, gain));
+}
+function skillChargeCanRelease(skillKey, sk, ctx){
+  if(!sk) return false;
+  const cost = Math.max(0, ctx?.cost || sk.mp || 0);
+  const maxRes = Math.max(1, state.resourceMax || 100);
+  if(ctx?.heal || sk.type === 'heal') return true;
+  if(sk.type !== 'dmg') return false;
+  return !!(cost >= Math.max(32, maxRes * 0.26) || (sk.mul || 0) >= 3.8);
+}
+function ensureSkillChargeRuntime(now){
+  const rt = ensureSkillRuntime();
+  if(!rt.charge) rt.charge = { kind:'', stacks:0, power:0, expire:0, chain:[] };
+  const ts = now || Date.now();
+  if(rt.charge.expire && rt.charge.expire <= ts) rt.charge = { kind:'', stacks:0, power:0, expire:0, chain:[] };
+  return rt.charge;
+}
+function addSkillCharge(kind, gain, sk, value, ctx, now){
+  if(!kind || !(gain > 0)) return 0;
+  const charge = ensureSkillChargeRuntime(now);
+  const max = 5;
+  charge.kind = kind;
+  charge.stacks = Math.min(max, (charge.stacks || 0) + gain);
+  charge.power = Math.min((state.hero?.hpMax || 1) * 0.18, (charge.power || 0) + Math.max(1, (value || state.hero.atk || 1) * 0.035 + (ctx?.cost || sk?.mp || 0) * 10));
+  charge.chain = (charge.chain || []).concat(kind).slice(-5);
+  charge.expire = (now || Date.now()) + 15500;
+  addSkillAura('skill_charge', {
+    add:gain,
+    max,
+    duration:15500,
+    icon:'✦',
+    name:'技能充能',
+    desc:`当前 ${charge.stacks}/${max} 层${chargeKindName(kind)}充能,能量 ${Math.floor(charge.power || 0)}。高耗、爆发或治疗技能可释放充能。`
+  });
+  markDirty('skills','hero');
+  return charge.stacks;
+}
+function releaseSkillCharge(charge, mon, value, sk, now, ctx){
+  const kind = charge?.kind || 'martial';
+  const stacks = Math.max(1, charge?.stacks || 1);
+  const power = Math.max(1, charge?.power || 1);
+  const base = Math.max(1, Math.floor(value || state.hero.atk || 1));
+  const target = (mon && mon.hp > 0) ? mon : (state.currentMonsters || []).find(x => x && x.hp > 0);
+  const dmgMult = (1 + skillMechanicFxBonus('chargeDmgPct') / 100) * (0.54 + stacks * 0.13);
+  const dotMult = (1 + skillMechanicFxBonus('chargeDotPct') / 100) * (0.50 + stacks * 0.12);
+  const supportMult = masterySupportEchoMult() * (1 + skillMechanicFxBonus('chargeSupportPct') / 100) * (0.60 + stacks * 0.10);
+  const resource = Math.floor(1 + stacks / 2 + skillMechanicFxBonus('chargeResource'));
+  let fired = false;
+  if(resource > 0) grantTalentResource(resource);
+  if(kind === 'ward' || ctx?.heal || sk?.type === 'heal'){
+    healHeroAmount(Math.floor((state.hero.hpMax * (0.012 + stacks * 0.003) + power * 0.25) * supportMult), sk?.icon || '✨', '#fde68a', 'hero', '充能释放');
+    addTalentShield(Math.floor((state.hero.hpMax * (0.012 + stacks * 0.003) + power * 0.28) * supportMult), true, 10000);
+    specTacticCompanionSupport('heal', now);
+    fired = true;
+  } else if(kind === 'decay' && target){
+    applyMonsterDot(target, 'skillCharge:decay', Math.max(1, Math.floor((base * 0.08 + power * 0.035) * dotMult)), 9000, { icon:'☠️', name:'腐蚀充能', source:'skillCharge' });
+    if(stacks >= 4) spreadDotFromMonster(target, 0.25 + stacks * 0.025, 9000);
+    fired = true;
+  } else if(kind === 'pack'){
+    if(target) fired = applySkillFollowupDamage(target, (base * 0.11 + power * 0.032) * dmgMult, '🐾', '#7dd3fc', now) > 0 || fired;
+    specTacticSummon('beast', now);
+    specTacticCompanionSupport('shield', now);
+    fired = true;
+  } else if(kind === 'arcane' && target){
+    applyMonsterState(target, 'unstable', 7200 + stacks * 520);
+    fired = applySkillFollowupDamage(target, (base * 0.12 + power * 0.035) * dmgMult, '🔷', '#a78bfa', now) > 0 || fired;
+    fired = splashSkillDamage(target, base + power * 0.12, 0.10 + stacks * 0.025, '🔷', now) > 0 || fired;
+  } else if(target){
+    applyMonsterState(target, 'sunder', 7000 + stacks * 520);
+    fired = applySkillFollowupDamage(target, (base * 0.13 + power * 0.036) * dmgMult, '🩸', '#f87171', now) > 0 || fired;
+    addTalentShield(Math.floor((state.hero.hpMax * 0.006 + power * 0.16) * supportMult), true, 9000);
+  }
+  if(fired || resource > 0){
+    addSkillAura('skill_charge', {
+      add:1,
+      max:1,
+      duration:5600,
+      icon:'✦',
+      name:'充能释放',
+      desc:`${chargeKindName(kind)}充能被 ${sk?.name || '技能'} 释放,转化为追击、扩散、护盾、治疗或协同,并返还 ${resource} 资源。`
+    });
+    showFloat($('hero-emoji'), `${chargeKindIcon(kind)}释放`, '#fbbf24', { variant:'buff', scale:1.04 });
+    log(`✦ 技能充能释放: ${chargeKindName(kind)}充能 ${stacks} 层被 ${sk?.name || '技能'} 引爆`, 'good');
+    markDirty('skills','hero','companion','stage');
+  }
+  return fired || resource > 0;
+}
+function processSkillCharge(skillKey, sk, mon, value, ctx){
+  if(!sk) return false;
+  const now = ctx?.now || Date.now();
+  const charge = ensureSkillChargeRuntime(now);
+  if(charge.stacks >= 3 && skillChargeCanRelease(skillKey, sk, ctx || {})){
+    const snap = Object.assign({}, charge, { chain:[...(charge.chain || [])] });
+    const rt = ensureSkillRuntime();
+    rt.charge = { kind:'', stacks:0, power:0, expire:0, chain:[] };
+    if(rt.auras) delete rt.auras.skill_charge;
+    return releaseSkillCharge(snap, mon, value, sk, now, ctx || {});
+  }
+  const gain = skillChargeGain(skillKey, sk, ctx || {});
+  if(gain > 0) return addSkillCharge(skillChargeKind(skillKey, sk, ctx || {}), gain, sk, value, ctx || {}, now) > 0;
+  return false;
+}
+function skillChargeTip(skillKey, sk){
+  if(!sk) return '';
+  const sample = { cost:sk.mp || 0 };
+  const gain = skillChargeGain(skillKey, sk, sample);
+  const build = gain > 0 ? `积累${gain}层${chargeKindName(skillChargeKind(skillKey, sk, sample))}充能` : '';
+  const release = skillChargeCanRelease(skillKey, sk, sample) ? '可释放已有技能充能触发收束' : '';
+  return [build, release].filter(Boolean).join('；');
 }
 function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
   const fx = skillFxMeta(skillKey, sk);
@@ -4078,6 +4221,7 @@ function processTalentAfterSkill(skillKey, sk, mon, value, ctx){
   processSkillResourceLoop(skillKey, sk, mon, value, Object.assign({ now }, ctx || {}));
   processSkillPact(skillKey, sk, mon, value, Object.assign({ now }, ctx || {}));
   processSkillField(skillKey, sk, mon, value, Object.assign({ now }, ctx || {}));
+  processSkillCharge(skillKey, sk, mon, value, Object.assign({ now }, ctx || {}));
   for(const fx of talentFxList()){
     if(fx.type !== 'afterSkill') continue;
     if(!skillMatches(fx, skillKey)) continue;

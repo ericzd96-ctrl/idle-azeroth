@@ -83,6 +83,7 @@ const SKILL_AURA_LIBRARY = {
   skill_harvest:{ icon:'🏹', name:'斩获连锁', desc:'残血、处决、击杀和过量伤害会积累战果,后续技能可消耗战果触发终局追猎', maxStacks:5 },
   skill_pact:   { icon:'📜', name:'契约代价', desc:'爆发、黑暗、召唤和强支援技能会签下契约债务,及时赎约可转化为强力收益', maxStacks:5 },
   skill_field:  { icon:'◇', name:'战场领域', desc:'技能会在战场留下元素、圣光、暗影、毒雾或猎场领域,后续技能可转化领域效果', maxStacks:5 },
+  skill_charge: { icon:'✦', name:'技能充能', desc:'低耗、持续、支援和召唤技能会为后续大招充能,释放时按充能类型触发收束', maxStacks:5 },
   spec_flow:    { icon:'✦', name:'专精连段', desc:'按当前专精的技能顺序推进,完成后触发独特战斗效果', maxStacks:3 },
   spec_core:    { icon:'✦', name:'专精核心', desc:'当前专精独有的战斗引擎资源,满层后用指定技能收束触发强力效果', maxStacks:8 },
   spec_proc:    { icon:'✦', name:'临场强化', desc:'当前专精触发的下一技能变招,命中符合条件的技能后自动消费', maxStacks:1 },
@@ -256,6 +257,15 @@ const SKILL_FIELD_GUIDE = [
   { icon:'✨', name:'圣域', desc:'神圣和治疗领域被伤害或防御技能转化时生成治疗、护盾和随从支援。' },
   { icon:'🌑', name:'暗沼', desc:'暗影、毒药和 DOT 领域被火焰、神圣或物理技能转化时扩散持续伤害并吸血。' },
   { icon:'🐾', name:'猎场', desc:'野兽、射击和召唤领域被物理或野兽技能转化时触发协同追击。' },
+];
+
+const SKILL_CHARGE_GUIDE = [
+  { icon:'✦', name:'充能', desc:'低耗技能、DOT、治疗、防御、召唤和控场会积累技能充能。' },
+  { icon:'🔷', name:'奥能充能', desc:'元素、奥术、火焰、冰霜和风暴充能释放时造成坍缩、溅射并返还资源。' },
+  { icon:'☠️', name:'腐蚀充能', desc:'暗影、毒药、流血和持续伤害充能释放时追加 DOT 并扩散。' },
+  { icon:'✨', name:'守护充能', desc:'神圣、治疗、防御和祝福充能释放时治疗、护盾并支援随从。' },
+  { icon:'🐾', name:'协同充能', desc:'野兽、召唤和宠物充能释放时呼叫协同追击。' },
+  { icon:'🩸', name:'战技充能', desc:'物理、斩杀和武器充能释放时造成追击、破甲或护盾。' },
 ];
 
 /* 每个职业 4 个新技能:爆发 / 减伤 / 功能性 / 职业特色 */
@@ -1442,6 +1452,7 @@ if (typeof window !== 'undefined') {
   window.SKILL_HARVEST_GUIDE = SKILL_HARVEST_GUIDE;
   window.SKILL_PACT_GUIDE = SKILL_PACT_GUIDE;
   window.SKILL_FIELD_GUIDE = SKILL_FIELD_GUIDE;
+  window.SKILL_CHARGE_GUIDE = SKILL_CHARGE_GUIDE;
   window.currentSpecCombatRule = currentSpecCombatRule;
   window.currentSpecCombatMeter = currentSpecCombatMeter;
   window.currentSpecTacticalWindow = currentSpecTacticalWindow;
