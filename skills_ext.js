@@ -73,6 +73,7 @@ const SKILL_AURA_LIBRARY = {
   d_harmony:    { icon:'🌿', name:'自然调和', desc:'德鲁伊治疗、月火与野性技能叠加,在恢复/输出间转换', maxStacks:5 },
   spec_flow:    { icon:'✦', name:'专精连段', desc:'按当前专精的技能顺序推进,完成后触发独特战斗效果', maxStacks:3 },
   spec_proc:    { icon:'✦', name:'临场强化', desc:'当前专精触发的下一技能变招,命中符合条件的技能后自动消费', maxStacks:1 },
+  spec_stance:  { icon:'✦', name:'专精姿态', desc:'当前专精的短暂战斗法则,会改变后续技能的附加效果', maxStacks:1 },
 };
 
 const CLASS_COMBAT_MECHANICS = {
@@ -1117,6 +1118,54 @@ const SPEC_PROC_SYSTEMS = {
   },
 };
 
+const SPEC_STANCE_SYSTEMS = {
+  warrior:{
+    arms:{ key:'warriorArmsLaw', icon:'🪓', name:'武器战斗法则', desc:'破甲/压制进入破阵姿态,防御怒吼进入稳步姿态。', assault:{ icon:'🪓', name:'破阵姿态', trigger:/破甲|压制|致死|巨人|斩杀|灭战者/, damagePct:0.10, state:'trauma', extraHitPct:0.10 }, sustain:{ icon:'🛡️', name:'稳步姿态', trigger:/盾|壁垒|回复|怒吼|防御/, shieldPct:0.025, resource:4 } },
+    fury:{ key:'warriorFuryLaw', icon:'😡', name:'狂暴战斗法则', desc:'怒系技能进入狂乱姿态,回复/防御进入血性姿态。', assault:{ icon:'😡', name:'狂乱姿态', trigger:/怒|嗜血|浴血|奥丁|乱舞|鲁莽/, damagePct:0.09, extraHitPct:0.12, resource:3 }, sustain:{ icon:'🩸', name:'血性姿态', trigger:/回复|壁垒|盾|治疗/, healPct:0.025, shieldPct:0.018 } },
+    prot:{ key:'warriorProtLaw', icon:'🛡️', name:'防战战斗法则', desc:'盾牌技能进入堡垒姿态,雷霆/复仇进入反击姿态。', assault:{ icon:'🔨', name:'反击姿态', trigger:/雷霆|复仇|盾牌猛击|盾击/, damagePct:0.07, extraHitPct:0.10, state:'trauma' }, sustain:{ icon:'🛡️', name:'堡垒姿态', trigger:/盾|壁垒|格挡|盾墙|守护/, shieldPct:0.045, resource:5 } },
+  },
+  mage:{
+    arcane:{ key:'mageArcaneLaw', icon:'🔷', name:'奥术法则', desc:'奥术伤害进入充能姿态,强化技能进入节能姿态。', assault:{ icon:'🔷', name:'充能姿态', trigger:/奥术|飞弹|弹幕|涌动|阿鲁尼斯/, damagePct:0.10, resource:4, state:'unstable' }, sustain:{ icon:'✨', name:'节能姿态', trigger:/强化|护盾|屏障|法力/, costPct:0.90, shieldPct:0.018 } },
+    fire:{ key:'mageFireLaw', icon:'🔥', name:'火焰法则', desc:'火焰技能进入燃线姿态,燃烧进入焦灼姿态。', assault:{ icon:'🔥', name:'燃线姿态', trigger:/火|炎|燃|流星|凤凰|烈焰/, damagePct:0.09, dotPct:0.055, state:'fever' }, sustain:{ icon:'☄️', name:'焦灼姿态', trigger:/燃烧|屏障|护盾|冰箱/, forceCritIfDot:true, resource:3 } },
+    frost:{ key:'mageFrostLaw', icon:'❄️', name:'冰霜法则', desc:'冰霜技能进入寒流姿态,屏障技能进入冰甲姿态。', assault:{ icon:'❄️', name:'寒流姿态', trigger:/冰|霜|寒|雪|彗星|宝珠/, damagePct:0.08, state:'brittle', shieldPct:0.014 }, sustain:{ icon:'🧊', name:'冰甲姿态', trigger:/屏障|护盾|冰箱|寒冰/, shieldPct:0.035, state:'frozen' } },
+  },
+  priest:{
+    discipline:{ key:'priestDiscLaw', icon:'⚖️', name:'戒律法则', desc:'伤害进入赎罪姿态,护盾治疗进入庇护姿态。', assault:{ icon:'⚖️', name:'赎罪姿态', trigger:/惩罚|惩击|教派|分歧|光明之怒/, damagePct:0.07, shieldPct:0.025, state:'penanceMark' }, sustain:{ icon:'🛡️', name:'庇护姿态', trigger:/真言|盾|障|治疗|恩典/, shieldPct:0.038, companionShieldPct:0.04 } },
+    holy:{ key:'priestHolyLaw', icon:'✨', name:'神圣法则', desc:'治疗进入合唱姿态,神圣伤害进入圣火姿态。', assault:{ icon:'🔥', name:'圣火姿态', trigger:/神圣|惩击|新星|圣火/, damagePct:0.06, healPct:0.018, state:'holyBrand' }, sustain:{ icon:'✨', name:'合唱姿态', trigger:/治疗|祷言|恢复|圣言|静/, healPct:0.10, companionHealPct:0.05 } },
+    shadow:{ key:'priestShadowLaw', icon:'🌑', name:'暗影法则', desc:'暗影持续伤害进入虚空姿态,爆发进入疯狂姿态。', assault:{ icon:'🌑', name:'虚空姿态', trigger:/暗|虚空|鞭笞|疫病|痛/, damagePct:0.10, dotPct:0.06, state:'voidTorn' }, sustain:{ icon:'🌀', name:'疯狂姿态', trigger:/形态|爆发|心灵|暗影/, resource:5, extraHitPct:0.08 } },
+  },
+  rogue:{
+    assassination:{ key:'rogueAssnLaw', icon:'🐍', name:'刺杀法则', desc:'毒与流血进入毒刃姿态,终结技进入处刑姿态。', assault:{ icon:'🐍', name:'毒刃姿态', trigger:/毒|锁喉|割裂|毁伤|君王/, damagePct:0.09, dotPct:0.06, state:'venomBloom' }, sustain:{ icon:'🗡️', name:'处刑姿态', trigger:/奉毒|切割|终结|闪避/, costPct:0.90, extraHitPct:0.10 } },
+    combat:{ key:'rogueCombatLaw', icon:'⚔️', name:'战斗法则', desc:'连击技能进入乱舞姿态,功能技能进入节拍姿态。', assault:{ icon:'⚔️', name:'乱舞姿态', trigger:/邪恶|剑刃|正中|杀戮|冲刺/, damagePct:0.08, splashPct:0.12 }, sustain:{ icon:'🎲', name:'节拍姿态', trigger:/命运|骨骰|冲动|切割|闪避/, resource:5, cooldownPct:0.12 } },
+    subtlety:{ key:'rogueSubLaw', icon:'🌑', name:'敏锐法则', desc:'暗影技能进入潜影姿态,破绽技能进入伏击姿态。', assault:{ icon:'🌑', name:'潜影姿态', trigger:/暗|幽|袖剑|背刺|暗袭/, damagePct:0.10, state:'exposed' }, sustain:{ icon:'👤', name:'伏击姿态', trigger:/暗影之舞|闪避|破绽|绞喉/, forceCritIfState:'exposed', resource:4 } },
+  },
+  hunter:{
+    bm:{ key:'hunterBmLaw', icon:'🐾', name:'兽王法则', desc:'宠物技能进入兽群姿态,射击技能进入指挥姿态。', assault:{ icon:'🐾', name:'兽群姿态', trigger:/宠物|野兽|倒刺|杀戮|兽群|召唤/, damagePct:0.07, summon:'beast', extraHitPct:0.08 }, sustain:{ icon:'📣', name:'指挥姿态', trigger:/协同|命令|急速|假死/, companionShieldPct:0.035, resource:5 } },
+    marks:{ key:'hunterMarksLaw', icon:'🎯', name:'射击法则', desc:'标记与瞄准进入狙击姿态,急速技能进入装填姿态。', assault:{ icon:'🎯', name:'狙击姿态', trigger:/印记|瞄准|杀戮|奇美拉|精确/, damagePct:0.11, state:'marked' }, sustain:{ icon:'🏹', name:'装填姿态', trigger:/急速|二连|百发|假死/, costPct:0.88, forceCritIfState:'marked' } },
+    survival:{ key:'hunterSurvLaw', icon:'💣', name:'生存法则', desc:'陷阱炸弹进入野火姿态,近战技能进入猎手姿态。', assault:{ icon:'💣', name:'野火姿态', trigger:/陷阱|炸弹|野火|爆炸|钉刺/, damagePct:0.08, dotPct:0.06, state:'fever' }, sustain:{ icon:'🦅', name:'猎手姿态', trigger:/猫鼬|屠戮|猛禽|协同/, extraHitPct:0.10, resource:5 } },
+  },
+  shaman:{
+    element:{ key:'shamanEleLaw', icon:'⛈️', name:'元素法则', desc:'闪电熔岩进入过载姿态,震击进入调和姿态。', assault:{ icon:'⛈️', name:'过载姿态', trigger:/闪电|熔岩|元素|风暴|拉登/, damagePct:0.10, splashPct:0.12, state:'stormBrand' }, sustain:{ icon:'🌎', name:'调和姿态', trigger:/震击|大地|护盾|治疗/, shieldPct:0.02, resource:5 } },
+    enhancement:{ key:'shamanEnhLaw', icon:'🌀', name:'增强法则', desc:'近战风暴进入风怒姿态,狼与护盾进入灵魂姿态。', assault:{ icon:'🌀', name:'风怒姿态', trigger:/风暴打击|毁灭|裂地|熔岩猛击|风怒/, damagePct:0.08, extraHitPct:0.12 }, sustain:{ icon:'🐺', name:'灵魂姿态', trigger:/幽魂|狼|嗜血|护盾|治疗/, resource:5, shieldPct:0.018 } },
+    restoration:{ key:'shamanRestLaw', icon:'🌊', name:'恢复法则', desc:'治疗进入潮汐姿态,元素技能进入浪涌姿态。', assault:{ icon:'⚡', name:'浪涌姿态', trigger:/闪电|熔岩|震击|风暴/, damagePct:0.06, healPct:0.02 }, sustain:{ icon:'🌊', name:'潮汐姿态', trigger:/治疗|激流|链|暴雨|图腾|潮汐/, healPct:0.11, companionHealPct:0.05, shieldPct:0.018 } },
+  },
+  paladin:{
+    holy:{ key:'paladinHolyLaw', icon:'🌟', name:'神圣骑士法则', desc:'治疗进入道标姿态,震击进入圣击姿态。', assault:{ icon:'🌟', name:'圣击姿态', trigger:/震击|审判|神圣|圣光/, damagePct:0.06, healPct:0.025, state:'holyBrand' }, sustain:{ icon:'✨', name:'道标姿态', trigger:/圣光|道标|黎明|祝福|治疗/, healPct:0.10, companionHealPct:0.055 } },
+    prot:{ key:'paladinProtLaw', icon:'🛡️', name:'防骑法则', desc:'盾与审判进入奉献姿态,祝福进入虔诚姿态。', assault:{ icon:'🛡️', name:'奉献姿态', trigger:/审判|复仇者|盾|正义|奉献/, damagePct:0.07, state:'holyBrand', splashPct:0.10 }, sustain:{ icon:'🌟', name:'虔诚姿态', trigger:/祝福|守护|圣盾|炽热/, shieldPct:0.045, healPct:0.02 } },
+    ret:{ key:'paladinRetLaw', icon:'⚜️', name:'惩戒法则', desc:'圣能生成进入审判姿态,裁决进入清算姿态。', assault:{ icon:'⚜️', name:'清算姿态', trigger:/裁决|最终|灰烬|愤怒之锤/, damagePct:0.11, state:'judged' }, sustain:{ icon:'⚖️', name:'审判姿态', trigger:/审判|十字军|公正|复仇之怒/, resource:5, forceCritIfState:'judged' } },
+  },
+  warlock:{
+    affliction:{ key:'warlockAffLaw', icon:'💜', name:'痛苦法则', desc:'DOT 进入折磨姿态,收割技能进入灵魂姿态。', assault:{ icon:'💜', name:'折磨姿态', trigger:/痛楚|腐蚀|痛苦|鬼影|缠身/, damagePct:0.09, dotPct:0.07, state:'doomBrand' }, sustain:{ icon:'☠️', name:'灵魂姿态', trigger:/收割|狂涌|腐蚀之种|生命通道/, resource:6, shieldPct:0.015 } },
+    demonology:{ key:'warlockDemoLaw', icon:'😈', name:'恶魔法则', desc:'召唤进入统御姿态,内爆进入吞噬姿态。', assault:{ icon:'😈', name:'吞噬姿态', trigger:/内爆|恶魔之箭|吞噬|古尔丹/, damagePct:0.08, summon:'demon', extraHitPct:0.08 }, sustain:{ icon:'👿', name:'统御姿态', trigger:/召唤|恶魔|恐惧猎犬|魔壳/, companionShieldPct:0.035, resource:5 } },
+    destruction:{ key:'warlockDestLaw', icon:'🔥', name:'毁灭法则', desc:'火焰技能进入余烬姿态,混乱技能进入裂隙姿态。', assault:{ icon:'🔥', name:'裂隙姿态', trigger:/混乱|裂隙|大灾变|灵魂之火/, damagePct:0.12, splashPct:0.12, state:'fever' }, sustain:{ icon:'🔥', name:'余烬姿态', trigger:/献祭|烧尽|燃烧|火焰之雨/, dotPct:0.06, resource:5 } },
+  },
+  druid:{
+    balance:{ key:'druidBalLaw', icon:'🌗', name:'平衡法则', desc:'日月法术进入蚀变姿态,星界法术进入星穹姿态。', assault:{ icon:'🌗', name:'星穹姿态', trigger:/星涌|星辰|新月|星落|星火/, damagePct:0.10, splashPct:0.10, state:'astralBrand' }, sustain:{ icon:'🌙', name:'蚀变姿态', trigger:/月火|阳炎|愤怒|日炎/, dotPct:0.055, resource:5 } },
+    feral:{ key:'druidFeralLaw', icon:'🐾', name:'野性法则', desc:'流血技能进入血爪姿态,撕咬技能进入猎杀姿态。', assault:{ icon:'🐾', name:'猎杀姿态', trigger:/凶猛|撕咬|撕碎|野性狂怒/, damagePct:0.10, extraHitPct:0.10 }, sustain:{ icon:'🩸', name:'血爪姿态', trigger:/斜掠|割裂|流血|横扫/, dotPct:0.06, resource:5 } },
+    resto:{ key:'druidRestLaw', icon:'🌿', name:'恢复法则', desc:'治疗进入林地姿态,自然攻击进入荆棘姿态。', assault:{ icon:'🌿', name:'荆棘姿态', trigger:/月火|愤怒|根须|荆棘/, damagePct:0.05, shieldPct:0.018, state:'lifeSeed' }, sustain:{ icon:'🌿', name:'林地姿态', trigger:/回春|绽放|迅捷|百花|宁静|母树/, healPct:0.12, companionHealPct:0.055, shieldPct:0.018 } },
+  },
+};
+
 function currentSpecCombatRule() {
   if (typeof state === 'undefined' || !state) return null;
   return SPEC_COMBAT_RULES[state.cls]?.[state.specialization] || null;
@@ -1156,6 +1205,11 @@ function currentSpecProcSystem() {
   return SPEC_PROC_SYSTEMS[state.cls]?.[state.specialization] || null;
 }
 
+function currentSpecStanceSystem() {
+  if (typeof state === 'undefined' || !state) return null;
+  return SPEC_STANCE_SYSTEMS[state.cls]?.[state.specialization] || null;
+}
+
 if (typeof window !== 'undefined') {
   window.SPEC_COMBAT_RULES = SPEC_COMBAT_RULES;
   window.SPEC_COMBAT_METERS = SPEC_COMBAT_METERS;
@@ -1163,12 +1217,14 @@ if (typeof window !== 'undefined') {
   window.SPEC_SKILL_CHAINS = SPEC_SKILL_CHAINS;
   window.SPEC_REACTION_SYSTEMS = SPEC_REACTION_SYSTEMS;
   window.SPEC_PROC_SYSTEMS = SPEC_PROC_SYSTEMS;
+  window.SPEC_STANCE_SYSTEMS = SPEC_STANCE_SYSTEMS;
   window.currentSpecCombatRule = currentSpecCombatRule;
   window.currentSpecCombatMeter = currentSpecCombatMeter;
   window.currentSpecTacticalWindow = currentSpecTacticalWindow;
   window.currentSpecSkillChain = currentSpecSkillChain;
   window.currentSpecReactionSystem = currentSpecReactionSystem;
   window.currentSpecProcSystem = currentSpecProcSystem;
+  window.currentSpecStanceSystem = currentSpecStanceSystem;
 }
 
 const SPEC_STARTER_UNLOCKS = {

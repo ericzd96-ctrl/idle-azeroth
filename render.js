@@ -458,15 +458,17 @@ function renderBuffBar() {
     const chain = (typeof currentSpecSkillChain === 'function') ? currentSpecSkillChain() : null;
     const reaction = (typeof currentSpecReactionSystem === 'function') ? currentSpecReactionSystem() : null;
     const proc = (typeof currentSpecProcSystem === 'function') ? currentSpecProcSystem() : null;
+    const stance = (typeof currentSpecStanceSystem === 'function') ? currentSpecStanceSystem() : null;
     const chainDesc = chain ? ` · 专精连段: ${chain.name}: ${chain.steps.map(x => x.label).join(' → ')}。完成: ${chain.finish}` : '';
     const reactionDesc = reaction ? ` · 状态反应: ${reaction.name}: ${reaction.desc}` : '';
     const procDesc = proc ? ` · 临场强化: ${proc.name}: ${proc.desc}` : '';
+    const stanceDesc = stance ? ` · 战斗法则: ${stance.name}: ${stance.desc}` : '';
     selfStates.unshift({
       kind: 'spec-meter',
       icon: specMeter.icon || '✦',
       name: specMeter.name,
       base: '专精机制:' + specMeter.key,
-      desc: (specMeter.hint || '') + ` · 当前 ${specMeter.stacks || 0}/${specMeter.max || 0}` + (tactic ? ` · 战术窗口: ${tactic.name}: ${tactic.desc}` : '') + chainDesc + reactionDesc + procDesc,
+      desc: (specMeter.hint || '') + ` · 当前 ${specMeter.stacks || 0}/${specMeter.max || 0}` + (tactic ? ` · 战术窗口: ${tactic.name}: ${tactic.desc}` : '') + chainDesc + reactionDesc + procDesc + stanceDesc,
       valText: `${specMeter.stacks || 0}/${specMeter.max || 0}`,
       stacks: specMeter.stacks || 0,
       left: 0
