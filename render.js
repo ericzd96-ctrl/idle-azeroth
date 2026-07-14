@@ -2776,22 +2776,16 @@ function renderSkills() {
 }
 
 function getTalentRow(t, idx) {
-  if (t.req >= 66) return 10;
-  if (t.req >= 56) return 9;
-  if (t.req >= 46) return 8;
-  if (t.req >= 30) return 7;
-  if (t.req >= 28) return 6;
-  if (t.req >= 25) return 5;
-  if (t.req >= 22) return 5;
-  if (t.req >= 20) return 4;
-  if (t.req >= 18) return 4;
-  if (t.req >= 15) return 3;
-  if (t.req >= 10) return 2;
+  if (typeof t.req === 'number' && t.req > 0) {
+    for (let i = TALENT_ROW_REQ.length - 1; i >= 0; i--) {
+      if (t.req >= TALENT_ROW_REQ[i]) return i;
+    }
+  }
   if (idx >= 4) return 2;
   if (idx >= 2) return 1;
   return 0;
 }
-const ROW_REQ = [0, 5, 10, 15, 20, 25, 28, 30, 46, 56, 66];
+const TALENT_ROW_REQ = [0, 5, 10, 15, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56];
 
 function renderTalents() {
   const c = getCls(); if (!c) return;
@@ -2881,7 +2875,7 @@ function renderTalents() {
       // 行标签
       const rowLabel = document.createElement('div');
       rowLabel.className = 'wow-row-label';
-      rowLabel.textContent = `需${ROW_REQ[row]}点`;
+      rowLabel.textContent = `需${TALENT_ROW_REQ[row] || 0}点`;
       rowDiv.appendChild(rowLabel);
 
       const nodes = document.createElement('div');
@@ -2892,6 +2886,7 @@ function renderTalents() {
         const maxed = cur >= t.max;
         const reqMet = isActive && (!t.req || sumInTree >= t.req);
         const canBuy = isActive && !maxed && reqMet && state.talentPoints > 0;
+        const reqBadge = (!reqMet && isActive && t.req) ? `<span class="ranks">需${t.req}点</span>` : '';
         const node = document.createElement('div');
         node.className = 'wow-node' +
           (maxed ? ' maxed' : '') +
@@ -2902,7 +2897,7 @@ function renderTalents() {
         node.innerHTML = `
           <div class="wow-node-icon">${t.name[0]}</div>
           <div class="wow-node-info">
-            <div class="wow-node-name">${t.name} <span class="ranks">${cur}/${t.max}</span></div>
+            <div class="wow-node-name">${t.name} <span class="ranks">${cur}/${t.max}</span>${reqBadge}</div>
             <div class="wow-node-desc">${t.desc}</div>
           </div>`;
 

@@ -1161,3 +1161,43 @@ const TALENT_AURA_LIBRARY = {
     }
   }
 })();
+
+(function normalizeTalentPacingAndText() {
+  if (typeof CLASSES === 'undefined') return;
+  const autoTalentRules = [
+    ['mechanic_', 10, '技能会留下更强的后续伤害，连招收益更高。'],
+    ['spec_engine_', 15, '专精核心更快启动，大招和爆发窗口更强。'],
+    ['skill_mark_', 20, '给敌人做标记后，后续技能伤害更高。'],
+    ['skill_weave_', 24, '交替使用不同类型技能时，追加效果更强。'],
+    ['skill_rhythm_', 28, '连续战斗形成节奏后，终结技能收益更高。'],
+    ['skill_control_', 32, '打断、减速、破甲等控场后，后续清算更强。'],
+    ['skill_weakness_', 36, '暴击和关键技能更容易抓到弱点，利用弱点时伤害更高。'],
+    ['skill_prep_', 40, '普通技能会更快蓄势，下一次收招更强。'],
+    ['skill_overload_', 44, '连续高强度输出后，会追加更强余震。'],
+    ['skill_resource_', 46, '技能循环返还更多资源，战斗断档更少。'],
+    ['skill_harvest_', 48, '敌人血量越低，收割追击越强。'],
+    ['skill_pact_', 50, '短暂投入资源后，后续爆发或支援更强。'],
+    ['skill_field_', 52, '铺场技能更强，站稳节奏后收益更高。'],
+    ['skill_charge_', 54, '技能更快充能，释放时收益更高。'],
+    ['skill_rune_', 56, '连续施法后触发更强终结效果。'],
+  ];
+  const flavorReq = [18, 30, 42];
+  for (const cls of Object.values(CLASSES)) {
+    if (!cls || !Array.isArray(cls.trees)) continue;
+    for (const tree of cls.trees) {
+      if (!tree || !Array.isArray(tree.talents)) continue;
+      for (const talent of tree.talents) {
+        if (!talent || !talent.key) continue;
+        if (talent.key.startsWith('flavor_')) {
+          const idx = Number((talent.key.match(/_(\d+)$/) || [])[1] || 0);
+          talent.req = flavorReq[Math.max(0, Math.min(flavorReq.length - 1, idx))];
+          continue;
+        }
+        const rule = autoTalentRules.find(([prefix]) => talent.key.startsWith(prefix));
+        if (!rule) continue;
+        talent.req = rule[1];
+        talent.desc = rule[2];
+      }
+    }
+  }
+})();
