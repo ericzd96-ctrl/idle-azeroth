@@ -534,7 +534,7 @@
       QD('盾墙反击','🛡️','3.2倍伤害,破甲并击晕目标',3.2,{ debuff:'sunder', stun:true, stunMs:1000, cd:12 }),
       QB('不动壁垒','🧱','sacredShield','10秒强化自身防御,并获得厚护盾',{ buffTarget:'companion', duration:10000, shieldPct:0.16, cd:18 }),
       QH('坚守回血','❤️‍🩹',0.20,'恢复自身生命并净化减益',{ healTarget:'companion', cleanse:true, shieldPct:0.08, cd:16 }),
-      QD('嘲讽猛击','📣','4倍伤害,降低目标护甲并减速',4.0,{ debuff:'sunder', slow:true, slowMs:5000, cd:15 }),
+      QD('嘲讽猛击','📣','4倍伤害,施加易伤并减速',4.0,{ debuff:'sunder', slow:true, slowMs:5000, cd:15 }),
       QB('战线重整','⚜️','kings','强化双方并给主角和随从护盾',{ buffTarget:'both', duration:10000, shieldPct:0.10, cd:22 }),
     ],
     heal: [

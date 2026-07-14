@@ -105,7 +105,7 @@ const CLASS_COMBAT_MECHANICS = {
 
 const MONSTER_STATE_META = {
   slow:    { icon:'❄️', name:'减速',   desc:'攻击速度降低约33%' },
-  sunder:  { icon:'🔨', name:'破甲',   desc:'防御降低30%' },
+  sunder:  { icon:'🩸', name:'易伤',   desc:'普通目标受到伤害提高18%,Boss受到伤害提高25%' },
   decay:   { icon:'👴', name:'衰老',   desc:'受到治疗和生命回复降低30%' },
   decay2:  { icon:'🌑', name:'凋零',   desc:'受到治疗降低55%,生命回复降低65%' },
   judged:  { icon:'⚖️', name:'审判',   desc:'十字军打击额外+55%，奉献额外+35%，神圣风暴额外+45%' },

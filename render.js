@@ -268,7 +268,7 @@ function focusDebuffs(now) {
       });
     }
   } else if (mon.dot > 0 && mon.dotEnd > now) out.push({ icon: '🔥', name: '灼烧/中毒', desc: `每秒受到 ${fmt(mon.dot)} 持续伤害`, left: Math.ceil((mon.dotEnd - now) / 1000) });
-  if (mon.sunderUntil > now) out.push({ icon: '🔨', name: '破甲',   desc: '防御降低 30%', left: Math.ceil((mon.sunderUntil - now) / 1000) });
+  if (mon.sunderUntil > now) out.push({ icon: '🩸', name: '易伤',   desc: mon.isBoss ? '受到伤害提高 25%' : '受到伤害提高 18%', left: Math.ceil((mon.sunderUntil - now) / 1000) });
   if (typeof MONSTER_STATE_META === 'object' && mon._skillStates) {
     for (const [stateKey, expire] of Object.entries(mon._skillStates)) {
       if (!(expire > now)) continue;
@@ -1163,7 +1163,7 @@ function allySummonEffectTexts(skill) {
   if (skill.dotPct > 0) lines.push(`每秒造成 ${compPct(skill.dotPct)}% 本次伤害，持续 ${compSecs(skill.dotMs || 6000)} 秒`);
   if (skill.slow) lines.push(`减速 ${compSecs(skill.slowMs || 4000)} 秒`);
   if (skill.stun) lines.push(`击晕 ${compSecs(skill.stunMs || 1200)} 秒`);
-  if (skill.sunder) lines.push(`破甲 ${compSecs(skill.sunderMs || 12000)} 秒`);
+  if (skill.sunder) lines.push(`易伤 ${compSecs(skill.sunderMs || 12000)} 秒`);
   if (skill.stateKey) lines.push(`施加 ${compStateName(skill.stateKey)} ${compSecs(skill.stateMs || 7000)} 秒`);
   if (skill.splashPct > 0) lines.push(`溅射 ${compPct(skill.splashPct)}% 伤害`);
   if (skill.bonusVsBoss) lines.push(`对首领额外 +${compPct(skill.bonusVsBoss)}% 伤害`);
@@ -1554,7 +1554,7 @@ function renderMonList() {
         s += `<span title="${names}">${statusIconHtml(dots[0]?.name || '持续伤害', dots[0]?.icon || '🔥', 13)}${dots.length > 1 ? '×' + dots.length : ''}:${fmt(total)}</span>`;
       }
     } else if (m.dot > 0 && m.dotEnd > now) s += `<span title="灼烧/中毒:每秒 ${fmt(m.dot)} 伤害">${statusIconHtml('灼烧/中毒', '🔥', 13)}</span>`;
-    if (m.sunderUntil > now) s += `<span title="破甲:防御降低30%">${statusIconHtml('破甲', '🔨', 13)}</span>`;
+    if (m.sunderUntil > now) s += `<span title="${m.isBoss ? '易伤:受到伤害提高25%' : '易伤:受到伤害提高18%'}">${statusIconHtml('易伤', '🩸', 13)}</span>`;
     if (m._arcaneShield > 0) s += `<span title="法力护盾:吸收 ${fmt(m._arcaneShield)} 点任意伤害(单次最多75%)">${statusIconHtml('法力护盾', '🔮', 13)}</span>`;
     if (de.dataset.s !== s) { de.innerHTML = s; de.dataset.s = s; }
   }
@@ -3245,7 +3245,7 @@ function companionSkillTipHtml(sk){
   if (sk.slow) lines.push(`减速 ${compSecs(sk.slowMs || 4000)}秒`);
   if (sk.stun) lines.push(`击晕 ${compSecs(sk.stunMs || 1500)}秒`);
   if (sk.interruptCast) lines.push('命中时可顺带打断读条');
-  if (sk.debuff === 'sunder' || /破甲/.test(sk.name || '')) lines.push(`破甲 ${compSecs(sk.sunderMs || 15000)}秒（目标防御降低30%）`);
+  if (sk.debuff === 'sunder' || /破甲|易伤/.test(sk.name || '')) lines.push(`易伤 ${compSecs(sk.sunderMs || 15000)}秒（普通目标受到伤害+18%，Boss+25%）`);
   if (sk.stateKey) lines.push(`施加 ${compStateName(sk.stateKey)} ${compSecs(sk.stateMs || 9000)}秒`);
   if (sk.splashPct) lines.push(`对其他敌人溅射 ${compPct(sk.splashPct)}% 伤害`);
   if (sk.aoePct) lines.push(`额外波及其他敌人 ${compPct(sk.aoePct)}% 伤害`);
@@ -3255,7 +3255,7 @@ function companionSkillTipHtml(sk){
   if (sk.bonusVsBoss) lines.push(`对首领额外 +${compPct(sk.bonusVsBoss)}% 伤害`);
   if (sk.bonusVsDot) lines.push(`对持续伤害目标额外 +${compPct(sk.bonusVsDot)}% 伤害`);
   if (sk.bonusVsSlow) lines.push(`对减速目标额外 +${compPct(sk.bonusVsSlow)}% 伤害`);
-  if (sk.bonusVsSunder) lines.push(`对破甲目标额外 +${compPct(sk.bonusVsSunder)}% 伤害`);
+  if (sk.bonusVsSunder) lines.push(`对易伤目标额外 +${compPct(sk.bonusVsSunder)}% 伤害`);
   if (sk.bonusVsState) lines.push(`对${compStateName(sk.bonusVsState)}目标额外 +${compPct(sk.bonusStatePct || 0.3)}% 伤害`);
   if (sk.buffAmp?.key) lines.push(`自身处于${compBuffName(sk.buffAmp.key)}时额外 +${compPct(sk.buffAmp.pct || 0)}% 伤害`);
   if (sk.heal) lines.push(`额外回复 ${compPct(compHealScale(sk.heal))}% 最大生命`);
@@ -3289,11 +3289,11 @@ function companionCombatSpecialTypeText(spec, tpl){
   const map = {
     guard: {
       trigger:'主角生命低于 74%；支援位低于 66%；首领战；或启用守护战术时触发。',
-      effect:'进入约 6 秒护卫窗口，为主角施加约 5% 最大生命护盾；出战随从额外获得约 8% 最大生命护盾；当前目标破甲 9 秒。'
+      effect:'进入约 6 秒护卫窗口，为主角施加约 5% 最大生命护盾；出战随从额外获得约 8% 最大生命护盾；当前目标易伤 9 秒。'
     },
     barrier: {
       trigger:'主角生命低于 82%；主角带有可净化减益；或首领战时触发。',
-      effect:'为主角施加约 7% 最大生命护盾，出战随从获得约 6% 最大生命护盾，并尝试净化 1 个主角减益；部分随从还会附加破甲。'
+      effect:'为主角施加约 7% 最大生命护盾，出战随从获得约 6% 最大生命护盾，并尝试净化 1 个主角减益；部分随从还会附加易伤。'
     },
     rescue: {
       trigger:`主角生命低于 ${tpl?.key === 'anduin' ? '34%' : '54%'}，或主角带有可净化减益时触发。`,
@@ -3321,11 +3321,11 @@ function companionCombatSpecialTypeText(spec, tpl){
     },
     mark: {
       trigger:'首领战、目标低血，或目标尚未带有该随从标记时触发。',
-      effect:'施加专属标记 9 秒并破甲 9 秒，造成一次追击伤害；带持续伤害标签时会附加 DoT。'
+      effect:'施加专属标记 9 秒并易伤 9 秒，造成一次追击伤害；带持续伤害标签时会附加 DoT。'
     },
     control: {
       trigger:'首领战，或目标未被减速/击晕时触发。',
-      effect:'造成控制追击伤害，减速 5 秒，并短暂击晕目标；带破甲或持续伤害标签时附加对应效果。'
+      effect:'造成控制追击伤害，减速 5 秒，并短暂击晕目标；带易伤或持续伤害标签时附加对应效果。'
     },
     aoe: {
       trigger:'多目标战斗或首领战时触发。',
@@ -3424,7 +3424,7 @@ const COMPANION_TRAIT_META = {
   summon: { label:'召唤', tone:'summon', desc:'拥有召唤物或召唤类技能，适合拉长战斗、填补输出窗口。' },
   heal: { label:'治疗', tone:'heal', desc:'拥有回复生命的技能，能救主角、救随从，或自动选择更危险的目标。' },
   support: { label:'辅助', tone:'support', desc:'拥有护盾、增益或净化效果，用来稳定节奏、抵消减益和提高爆发窗口。' },
-  control: { label:'控制', tone:'control', desc:'拥有减速、击晕、破甲、状态标记等控场效果，可延缓敌人或制造增伤条件。' },
+  control: { label:'控制', tone:'control', desc:'拥有减速、击晕、易伤、状态标记等控场效果，可延缓敌人或制造增伤条件。' },
 };
 function companionSkillPool(tpl, comp){
   const skills = ((tpl&&tpl.skills)||[]).slice();

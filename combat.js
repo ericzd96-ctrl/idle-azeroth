@@ -418,10 +418,11 @@ function applyMonsterDot(mon, dotKey, dps, durMs, meta){
   return mon._dots[key].dps;
 }
 function tickMonsterDots(mon, now, tickInterval){
-  const total = getMonsterDotDps(mon, now);
+  let total = getMonsterDotDps(mon, now);
   if(total <= 0) return 0;
   if(now - (mon._lastDotTick || 0) <= tickInterval) return 0;
   mon._lastDotTick = now;
+  total = monsterIncomingDamage(mon, total);
   mon.hp -= total;
   trackDmg('hero', total);
   return total;
@@ -747,7 +748,7 @@ function processSkillElementReactions(skillKey, sk, mon, dmgDone, ctx){
   const dotCount = getMonsterDotCount(mon, now);
   const rules = [];
   if(tags.includes('fire') && (monsterStateActive(mon, 'frozen') || monsterStateActive(mon, 'brittle'))){
-    rules.push({ key:'meltArmor', icon:'🔥', name:'熔甲碎冰', color:'#fb923c', desc:'火焰击碎寒冰,造成爆裂伤害并施加破甲。', damagePct:0.22, state:'sunder', stateMs:12000, splashPct:0.12 });
+    rules.push({ key:'meltArmor', icon:'🔥', name:'熔甲碎冰', color:'#fb923c', desc:'火焰击碎寒冰,造成爆裂伤害并施加易伤。', damagePct:0.22, state:'sunder', stateMs:12000, splashPct:0.12 });
   }
   if(tags.includes('frost') && (monsterStateActive(mon, 'fever') || dotCount > 0)){
     rules.push({ key:'steamBurst', icon:'❄️', name:'蒸汽爆裂', color:'#93c5fd', desc:'冰霜压住灼热,制造蒸汽溅射并减速敌人。', damagePct:0.14, splashPct:0.20, state:'slow', stateMs:4500, shieldPct:0.018 });
@@ -1299,7 +1300,7 @@ function skillControlKindFromStates(states, skillKey, sk){
   return states.length ? 'pressure' : '';
 }
 function controlKindName(kind){
-  const names = { sunder:'破甲', frost:'冰锁', lock:'封锁', bind:'束缚', pressure:'压制' };
+  const names = { sunder:'易伤', frost:'冰锁', lock:'封锁', bind:'束缚', pressure:'压制' };
   return names[kind] || kind || '控制';
 }
 function controlKindIcon(kind){
@@ -1392,7 +1393,7 @@ function applySkillControlPayoff(kind, control, mon, value, sk, now, ctx){
       duration:5200,
       icon:'⛓️',
       name:'控场清算',
-      desc:`${controlKindName(kind)}压力被 ${sk?.name || '技能'} 清算。控制技能不再只是减速或破甲,会转化为追击、DOT、护盾或资源。`
+      desc:`${controlKindName(kind)}压力被 ${sk?.name || '技能'} 清算。控制技能不再只是减速或易伤,会转化为追击、DOT、护盾或资源。`
     });
     showFloat($('hero-emoji'), `⛓️${controlKindName(kind)}清算`, '#93c5fd', { variant:'buff', scale:1.05 });
     log(`⛓️ 控场清算触发: ${controlKindName(kind)}压力 ${stacks} 层被 ${sk?.name || '技能'} 清算`, 'good');
@@ -6456,6 +6457,7 @@ function syncMonsterShieldAura(mon){
 function absorbMonsterBarrier(mon, amount, icon){
   amount = Math.max(0, Math.floor(amount || 0));
   if(!mon || amount <= 0) return { remaining:0, absorbed:0 };
+  amount = monsterIncomingDamage(mon, amount);
   if(!(mon._arcaneShield > 0)) return { remaining:amount, absorbed:0 };
   const absorbed = shieldAbsorbAmount(mon._arcaneShield, amount);
   mon._arcaneShield -= absorbed;
@@ -8539,12 +8541,24 @@ function handleCouncilMemberDeath(mon, hasLivingMembers){
   log(`⚖️ ${mon._councilGroupName} 成员倒下,其余首领进入复仇状态`, 'bad');
   if(hasLivingMembers && typeof markDirty === 'function') markDirty('stage');
 }
-/* 破甲(sunder)等护甲削减后的有效防御 */
+/* 破甲(sunder)现在实际表现为易伤:护甲在当前公式里收益很低,直接增伤更清晰。 */
+const MONSTER_SUNDER_TAKEN_MULT = 1.18;
+const MONSTER_SUNDER_BOSS_TAKEN_MULT = 1.25;
+function monsterSunderTakenMult(mon, now){
+  if(!mon || !(mon.sunderUntil > (now || Date.now()))) return 1;
+  return mon.isBoss ? MONSTER_SUNDER_BOSS_TAKEN_MULT : MONSTER_SUNDER_TAKEN_MULT;
+}
+function monsterIncomingDamage(mon, amount, now){
+  let out = Math.max(0, Math.floor(amount || 0));
+  const mult = monsterSunderTakenMult(mon, now);
+  if(mult > 1) out = Math.max(1, Math.floor(out * mult));
+  return out;
+}
+/* 目标有效防御。sunder 不再削护甲,改由 monsterIncomingDamage 结算为易伤。 */
 function monArmor(mon){
   if(!mon)return 0;
   let def=mon.def;
   if(mon._trickDefBuff&&mon._trickDefBuff>Date.now())def=Math.floor(def*(1+((mon._trickDefPct||50)/100)));
-  if(mon.sunderUntil>Date.now())def=Math.floor(def*0.7);
   return def;
 }
 /* 英雄视角的目标有效护甲(含"破甲"天赋:无视部分护甲) */
@@ -8916,7 +8930,7 @@ function applyCompanionSupportSkill(sk, st, now){
 }
 function dealDmgToAll(atk,def,crit,critd,mul,forceCrit){
   let total=0;
-  for(const mon of state.currentMonsters){if(mon.hp<=0)continue;const d=calcDmg(atk*mul,heroTargetDef(mon),crit,critd,forceCrit,mon.lvl,state.hero.lvl);let dd=d.dmg;const dr=monsterDamageReduction(mon);if(dr)dd=Math.max(1,Math.floor(dd*(1-dr)));mon.hp-=dd;total+=dd;trackDmg('hero',dd);}
+  for(const mon of state.currentMonsters){if(mon.hp<=0)continue;const d=calcDmg(atk*mul,heroTargetDef(mon),crit,critd,forceCrit,mon.lvl,state.hero.lvl);let dd=d.dmg;const dr=monsterDamageReduction(mon);if(dr)dd=Math.max(1,Math.floor(dd*(1-dr)));dd=monsterIncomingDamage(mon,dd);mon.hp-=dd;total+=dd;trackDmg('hero',dd);}
   return total;
 }
 /* 仇恨锁定:把仇恨值最高的存活敌人放到 index 0(英雄/随从/单体技能都打 [0] = 当前焦点) */
@@ -8994,7 +9008,7 @@ function tickArtifactSkill(now){
     if(t.hp<=0)continue;
     const base=state.hero.atk*mul*((typeof masteryDmgMult==='function')?masteryDmgMult():1);
     const d=calcDmg(base,heroTargetDef(t),state.hero.crit,state.hero.critd,false,t.lvl,state.hero.lvl);
-    let dd=d.dmg;const dr=monsterDamageReduction(t,now);if(dr)dd=Math.max(1,Math.floor(dd*(1-dr)));
+    let dd=d.dmg;const dr=monsterDamageReduction(t,now);if(dr)dd=Math.max(1,Math.floor(dd*(1-dr)));dd=monsterIncomingDamage(t,dd,now);
     t.hp-=dd;total+=dd;anyCrit=anyCrit||d.crit;
     trackDmg('hero',dd,d.crit,def.name);
     showMonsterFloat(t,(def.icon||'✦')+'-'+dd,d.crit?'#fbbf24':'#f59e0b',{variant:d.crit?'crit':'hit',scale:d.crit?1.18:1.06,important:true});
@@ -9003,7 +9017,7 @@ function tickArtifactSkill(now){
   }
   if(def.selfShieldPct&&typeof addTalentShield==='function')addTalentShield(Math.floor(state.hero.hpMax*def.selfShieldPct*(1+tier*0.5)));
   if(def.healPct&&typeof healHeroAmount==='function'){const h=Math.floor(state.hero.hpMax*def.healPct*(1+tier*0.4));healHeroAmount(h,def.icon||'✦','#6ee7b7');}
-  log(`${def.icon||'✦'} 神器·${def.name}! ${def.aoe?('群体 '+total+' 伤害'):(total+' 伤害')}${def.sunder?' · 破甲':''}`,'epic');
+  log(`${def.icon||'✦'} 神器·${def.name}! ${def.aoe?('群体 '+total+' 伤害'):(total+' 伤害')}${def.sunder?' · 易伤':''}`,'epic');
 }
 
 function tickBattle(now){
@@ -11224,7 +11238,7 @@ function companionDungeonFitInfo(tpl, dg){
   return { score:matched.length, matched, needs, label:matched.length ? matched.map(companionDungeonTagLabel).join('/') : '常规' };
 }
 function companionDungeonTagLabel(tag){
-  return ({ cleanse:'净化', sunder:'破甲', aoe:'清场', control:'控场', shield:'护盾', boss:'首领', sustain:'续航', execute:'斩杀', mark:'标记', summon:'召唤', tempo:'节奏', tank:'护卫' })[tag] || tag;
+  return ({ cleanse:'净化', sunder:'易伤', aoe:'清场', control:'控场', shield:'护盾', boss:'首领', sustain:'续航', execute:'斩杀', mark:'标记', summon:'召唤', tempo:'节奏', tank:'护卫' })[tag] || tag;
 }
 function companionDungeonFitMult(tpl){
   const dg = companionCurrentDungeon();
