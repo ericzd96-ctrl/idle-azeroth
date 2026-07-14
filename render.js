@@ -288,6 +288,8 @@ function focusBuffs(now) {
         key === 'zoneThreatScaling' ? !!mon._zoneThreats?.length :
         key === 'rareMutation' ? !!mon._rareMutations?.length :
         key === 'fieldCommander' ? !!mon._fieldCommander :
+        key === 'worldRenownAlert' ? !!mon._worldRenownAlert :
+        key === 'worldRenownAlertPulse' ? ((aura.expire || 0) > now) :
         key.startsWith('zoneThreatActive:') ? ((aura.expire || 0) > now) :
         activeKeys.includes(key);
       if (!shouldKeep) {
@@ -760,6 +762,18 @@ function worldFieldOperationTagHtml(map, subIdx, opts) {
     metaVisible:!!opts?.metaVisible
   });
 }
+
+function worldRenownTagHtml(map, opts) {
+  if (!map || typeof worldRenownTip !== 'function') return '';
+  const tip = worldRenownTip(map.key);
+  if (!tip) return '';
+  return inlineTipSpanHtml(tip, {
+    fallbackIcon:'achievement_reputation_argentchampion',
+    color:'#86efac',
+    meta:tip.meta,
+    metaVisible:!!opts?.metaVisible
+  });
+}
 function dungeonProgressMechanicTags(ds, contract, alert, timerStatus) {
   if (!ds) return '';
   const tags = [];
@@ -902,6 +916,14 @@ function monsterEncounterDetailHtml(mon, bossData) {
       name:op.name || '野外据点',
       meta:'据点指挥官',
       desc:`${op.desc || '击败据点指挥官可完成本区域的野外事件。'} ${mon._fieldOperationDesc || ''}`.trim()
+    }));
+  }
+  if (mon._worldRenownAlert) {
+    html += monsterMechanicSectionHtml('区域警戒', '#86efac', [mon._worldRenownAlert], 'achievement_reputation_argentchampion', alert => ({
+      icon:'🏕️',
+      name:`区域警戒 ${alert.alert || 0}`,
+      meta:`声望 ${alert.rank || 0}`,
+      desc:alert.desc || '你在当地的声望越高,补给越丰厚,敌人也越警戒。'
     }));
   }
   if (state.mode === 'worldboss' && bossData?.key) {
@@ -1836,9 +1858,10 @@ function updateBattleVisuals() {
       const cleared = state.subzoneCleared[subKey];
       const threatTags = worldZoneThreatTagsHtml(map, sub);
       const fieldOpTag = worldFieldOperationTagHtml(map, state.currentSubzone, { metaVisible:true });
+      const renownTag = worldRenownTagHtml(map, { metaVisible:true });
       $('h-zone').innerHTML = `${mapIconHtml} ${map.name} · ${sub.name}`;
       $('zone-name').innerHTML = `${mapIconHtml} ${map.name} · ${sub.name} (等级${sub.lvl[0]}-${sub.lvl[1]})`;
-      $('progress-text').innerHTML = `探索进度 <b>${Math.min(subKills,50)}</b> / 50 ${cleared?'✅':''}${fieldOpTag ? ` · ${fieldOpTag}` : ''}${threatTags ? ` · ${threatTags}` : ''}`;
+      $('progress-text').innerHTML = `探索进度 <b>${Math.min(subKills,50)}</b> / 50 ${cleared?'✅':''}${renownTag ? ` · ${renownTag}` : ''}${fieldOpTag ? ` · ${fieldOpTag}` : ''}${threatTags ? ` · ${threatTags}` : ''}`;
       bindInlineTipElements($('progress-text'));
     }
   } else if (state.mode === 'boss') {
@@ -2914,6 +2937,7 @@ function renderMap() {
     const mapArt = m.art ? `<div class="map-art-banner" style="background-image:linear-gradient(180deg, rgba(11,15,25,.14), rgba(11,15,25,.72)), url('${m.art}')"></div>` : '';
     const mapThreatTags = worldZoneThreatTagsHtml(m, m.sub?.[0], { count:(m.lvlRange?.[1] || 1) >= 70 ? 2 : 1 });
     const mapFieldOpTag = worldFieldOperationTagHtml(m, 0, { metaVisible:true, previewOnly:!(m.key === state.currentMap && state.currentSubzone === 0) });
+    const renownTag = worldRenownTagHtml(m, { metaVisible:true });
     let html = `
       <div class="map-head">
         <span class="mname">${mapIconHtml} ${m.name}</span>
@@ -2921,6 +2945,7 @@ function renderMap() {
       </div>
       ${mapArt}
       <div class="map-desc">${m.desc}${tooHigh?' · ⚠️ 当前终局进度偏低,请谨慎推进':''}</div>
+      ${renownTag ? `<div class="muted" style="font-size:11px;margin:4px 0 6px">区域声望 ${renownTag}</div>` : ''}
       ${mapFieldOpTag ? `<div class="muted" style="font-size:11px;margin:4px 0 6px">野外据点 ${mapFieldOpTag}</div>` : ''}
       ${mapThreatTags ? `<div class="muted" style="font-size:11px;margin:4px 0 6px">区域威胁 ${mapThreatTags}</div>` : ''}
       <div class="sub-list">`;

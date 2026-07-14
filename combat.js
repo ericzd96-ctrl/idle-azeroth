@@ -2978,6 +2978,33 @@ function applyRareEliteMutationScaling(mon, rare, map){
   return mon;
 }
 
+function applyWorldRenownAlertScalingToMonster(mon, map, opts){
+  if(!mon || typeof worldRenownBonuses !== 'function') return mon;
+  map = map || (typeof getMap === 'function' ? getMap() : null);
+  if(!map) return mon;
+  const bonus = worldRenownBonuses(map.key);
+  const alert = Math.max(0, bonus.alert || 0);
+  if(alert <= 0) return mon;
+  const role = mon.isRareElite ? 1.18 : (mon.isBoss ? 1.05 : 0.72);
+  const hpPct = Math.min(0.42, alert * 0.026 * role);
+  const atkPct = Math.min(0.30, alert * 0.018 * role);
+  const defPct = Math.min(0.28, alert * 0.015 * role);
+  mon.hpMax = Math.max(1, Math.floor(mon.hpMax * (1 + hpPct)));
+  mon.hp = mon.hpMax;
+  mon.atk = Math.max(1, Math.floor(mon.atk * (1 + atkPct)));
+  mon.def = Math.max(0, Math.floor(mon.def * (1 + defPct)));
+  if(alert >= 4) mon.dmgReduction = Math.max(mon.dmgReduction || 0, Math.min(mon.isBoss ? 0.50 : 0.28, (mon.dmgReduction || 0) + alert * 0.004 * role));
+  if(alert >= 6) mon.critChance = Math.max(mon.critChance || 0, Math.min(0.58, (mon.critChance || 0) + alert * 0.004 * role));
+  mon._worldRenownAlert = {
+    mapKey:map.key,
+    alert,
+    rank:bonus.rank || 0,
+    desc:`区域警戒 ${alert}: 声望补给提高你的收益,敌人同步强化生命+${Math.round(hpPct*100)}%,攻击+${Math.round(atkPct*100)}%,防御+${Math.round(defPct*100)}%`
+  };
+  setMonsterTrickAura(mon, 'worldRenownAlert', { name:'区域警戒', icon:'🏕️', desc:mon._worldRenownAlert.desc }, 0, { stacks:alert, desc:mon._worldRenownAlert.desc });
+  return mon;
+}
+
 function applyWorldZoneThreatEffects(mon, now){
   if(!(state.mode === 'world' || state.mode === 'boss') || !mon || mon.hp <= 0) return;
   const threats = Array.isArray(mon._zoneThreats) ? mon._zoneThreats : [];
@@ -3046,6 +3073,35 @@ function applyWorldZoneThreatEffects(mon, now){
   }
 }
 
+function applyWorldRenownAlertEffects(mon, now){
+  if(!(state.mode === 'world' || state.mode === 'boss') || !mon || mon.hp <= 0 || !mon._worldRenownAlert) return;
+  const alert = Math.max(0, mon._worldRenownAlert.alert || 0);
+  if(alert < 3) return;
+  const cd = Math.max(9500, 23000 - alert * 900);
+  if(now - (mon._lastWorldRenownAlertPulse || 0) < cd) return;
+  mon._lastWorldRenownAlertPulse = now;
+  const dmg = Math.max(1, Math.floor((state.hero.hpMax || 1) * (0.010 + alert * 0.0025) + (mon.lvl || 1) * 0.8));
+  applyHeroDamage(dmg, mon, { label:t=>'🏕️-' + t, color:'#67e8f9', now, variant:'boss' });
+  if(alert >= 5) applyHeroDebuff(alert >= 9 ? 'vulnerable' : 'weaken', 3200 + alert * 180);
+  const live = (state.currentMonsters || []).filter(x => x && x.hp > 0);
+  for(const target of live){
+    if(alert >= 4){
+      const shield = Math.max(1, Math.floor(target.hpMax * Math.min(0.08, 0.012 + alert * 0.004)));
+      target._arcaneShield = (target._arcaneShield || 0) + shield;
+      syncMonsterShieldAura(target);
+    }
+    if(alert >= 7){
+      target._trickSpdBuff = Math.max(target._trickSpdBuff || 0, now + 4200);
+      target._trickSpdPct = Math.max(target._trickSpdPct || 0, 14 + alert * 2);
+      setMonsterTrickAura(target, 'worldAlertHaste', { name:'警戒急袭', icon:'🏕️', desc:'当地敌人因警戒升高获得短暂急速' }, target._trickSpdBuff);
+    }
+  }
+  setMonsterTrickAura(mon, 'worldRenownAlertPulse', { name:'警戒巡逻', icon:'🏕️', desc:'区域警戒触发巡逻打击、护盾和压迫' }, now + 6200, { desc:'区域警戒触发巡逻打击、护盾和压迫' });
+  showMonsterFloat(mon, `🏕️警戒${alert}`, '#67e8f9', { variant:'boss', scale:1.04 });
+  log(`🏕️ 区域警戒 ${alert} 触发巡逻压迫: 敌人获得护盾并压低你的节奏`, 'bad');
+  if(typeof markDirty === 'function') markDirty('hero', 'stage');
+}
+
 function applyWorldFieldOperationMods(mon, op){
   if(!mon || !op) return mon;
   const mod = op.mod || op.rule?.mod || {};
@@ -3076,6 +3132,7 @@ function spawnWorldFieldCommander(map, sub){
   mon.gemChance = Math.max(mon.gemChance || 0, lvl >= 55 ? 0.35 : 0.12);
   mon.dmgReduction = Math.max(mon.dmgReduction || 0, 0.12);
   applyWorldZoneThreatScalingToMonster(mon, map, sub, { boss:true, count:2 });
+  applyWorldRenownAlertScalingToMonster(mon, map, { boss:true });
   applyWorldFieldOperationMods(mon, op);
   applySpecAdaptationToMonster(mon, { extra:1 });
   state.currentMonsters = [mon];
@@ -3143,6 +3200,7 @@ function spawnMonster(){
     const m=makeMonster(mobName,lvl,false,maxR);
     applyWildMonsterHpScaling(m, lvl);
     applyWorldZoneThreatScalingToMonster(m, map, sub, { packSize:count });
+    applyWorldRenownAlertScalingToMonster(m, map);
     applySpecAdaptationToMonster(m);
     if(atkDamp!==1)m.atk=Math.max(1,Math.floor(m.atk*atkDamp));
     m.threat=m.atk*(0.6+Math.random()*0.8);   // 初始仇恨(攻击越高越容易被英雄锁定)
@@ -3166,6 +3224,7 @@ function spawnZoneBoss(){
     if(map.boss.passive.leech)mon.lifeSteal=map.boss.passive.leech;
   }
   applyWorldZoneThreatScalingToMonster(mon, map, map.sub?.[state.currentSubzone] || map.sub?.[0], { boss:true, count:2 });
+  applyWorldRenownAlertScalingToMonster(mon, map, { boss:true });
   applySpecAdaptationToMonster(mon, { extra:1 });
   state.currentMonsters.push(mon);
   applyCompanionChallengeScalingToCurrent();
@@ -6207,6 +6266,9 @@ function tickBattle(now){
   if ((state.mode === 'world' || state.mode === 'boss') && mon?._zoneThreats?.length) {
     applyWorldZoneThreatEffects(mon, now);
   }
+  if ((state.mode === 'world' || state.mode === 'boss') && mon?._worldRenownAlert) {
+    applyWorldRenownAlertEffects(mon, now);
+  }
 
   // 玩家攻击(锁定焦点 = 仇恨最高者)
   const spd=state.hero.spd||1;
@@ -6498,6 +6560,13 @@ function onMonsterDeath(mon){
   bonus.dropMult*= 1 + (astm.dropMult||0)/100;
   const olp=overLevelPenalty(mon);   // 越级惩罚(对级=1)
   let xp=calcXP(mon);xp=Math.floor(xp*bonus.xpMult);
+  const worldLocalBonus = (state.mode === 'world' || state.mode === 'boss') && typeof worldRenownBonuses === 'function'
+    ? worldRenownBonuses((typeof getMap === 'function' ? getMap()?.key : state.currentMap))
+    : null;
+  if(worldLocalBonus){
+    bonus.goldMult *= worldLocalBonus.goldMult || 1;
+    bonus.dropMult *= worldLocalBonus.dropMult || 1;
+  }
   let goldEarned=Math.floor(mon.goldReward*bonus.goldMult*olp);
   if(xp>0)log('✅ 击败 '+mon.name+',+'+goldEarned+'💰 +'+xp+'XP','good');
   else log('✅ 击败 '+mon.name+',+'+goldEarned+'💰 (灰色:无经验)','info');
@@ -6637,7 +6706,7 @@ function onMonsterDeath(mon){
   else if(state.mode==='mythic'){const ms=state.mythicState;const dg=DUNGEONS.find(d=>d.key===ms.key);const lastBoss=(dg.bosses||[])[dg.bosses.length-1];if(mon.isBoss)onMythicBossKill();ms.wave+=1;if(lastBoss&&ms.wave>lastBoss.wave){onMythicClear();return;}spawnDungeonMonster();}
   else if(state.mode==='tower'){if(typeof onTowerMonsterKill==='function') onTowerMonsterKill(mon);}
   else if(state.mode==='roguelike'){if(typeof onRoguelikeMonsterKill==='function') onRoguelikeMonsterKill(mon);}
-  else if(state.mode==='boss'){if(mon.isBoss){const map=getMap();log('👑 '+map.boss.name+' 已被击败!','legend');
+  else if(state.mode==='boss'){if(mon.isBoss){const map=getMap();log('👑 '+map.boss.name+' 已被击败!','legend');if(typeof grantWorldRenown==='function') grantWorldRenown(map.key, 35 + Math.floor((map.boss.lvl || mon.lvl || 1) / 2), '地图首领', { bossKill:true, alert:Math.max(3, Math.floor((map.boss.lvl || mon.lvl || 1) / 14)) });
     if(map.boss.lvl>=60){
       // 60+ BOSS: 必爆紫装 + 15%概率橙装
       const purple=rollItemOfRarity('epic',mon.lvl);addToInventory(purple);if(typeof eventsOnItemGet==='function')eventsOnItemGet(purple);log('🎁 必掉 '+purple.name,'epic');

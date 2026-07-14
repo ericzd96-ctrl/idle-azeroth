@@ -420,6 +420,9 @@ function buildRareEliteMonsterData(rare) {
   if (typeof applyWorldZoneThreatScalingToMonster === 'function') {
     applyWorldZoneThreatScalingToMonster(mon, map, map?.sub?.[state?.currentSubzone || 0] || map?.sub?.[0], { rare:true, boss:true, count:2 });
   }
+  if (typeof applyWorldRenownAlertScalingToMonster === 'function') {
+    applyWorldRenownAlertScalingToMonster(mon, map, { rare:true, boss:true });
+  }
   if (typeof applyRareEliteMutationScaling === 'function') {
     applyRareEliteMutationScaling(mon, rare, map);
   }

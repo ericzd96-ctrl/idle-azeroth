@@ -162,6 +162,105 @@ function ensureWorldFieldOps() {
   return state.worldFieldOps;
 }
 
+function ensureWorldRenown() {
+  if (!state.worldRenown || typeof state.worldRenown !== 'object') state.worldRenown = { maps:{} };
+  if (!state.worldRenown.maps || typeof state.worldRenown.maps !== 'object') state.worldRenown.maps = {};
+  return state.worldRenown;
+}
+
+function worldRenownState(mapKey) {
+  const wr = ensureWorldRenown();
+  const key = mapKey || state.currentMap || 'elwynn';
+  if (!wr.maps[key]) wr.maps[key] = { xp:0, rank:0, alert:0, fieldClears:0, bossKills:0 };
+  const entry = wr.maps[key];
+  entry.xp = Math.max(0, Math.floor(entry.xp || 0));
+  entry.rank = Math.max(entry.rank || 0, worldRenownRankForXp(entry.xp));
+  entry.alert = Math.max(0, Math.floor(entry.alert || 0));
+  entry.fieldClears = Math.max(0, Math.floor(entry.fieldClears || 0));
+  entry.bossKills = Math.max(0, Math.floor(entry.bossKills || 0));
+  return entry;
+}
+
+function worldRenownRankNeed(rank) {
+  const r = Math.max(0, Math.floor(rank || 0));
+  return 55 + r * 28 + Math.floor(r * r * 2.5);
+}
+
+function worldRenownRankForXp(xp) {
+  let left = Math.max(0, Math.floor(xp || 0));
+  let rank = 0;
+  while (rank < 15 && left >= worldRenownRankNeed(rank)) {
+    left -= worldRenownRankNeed(rank);
+    rank += 1;
+  }
+  return rank;
+}
+
+function worldRenownRankProgress(xp) {
+  let left = Math.max(0, Math.floor(xp || 0));
+  let rank = 0;
+  while (rank < 15 && left >= worldRenownRankNeed(rank)) {
+    left -= worldRenownRankNeed(rank);
+    rank += 1;
+  }
+  return { rank, cur:left, need:rank >= 15 ? 0 : worldRenownRankNeed(rank) };
+}
+
+function worldRenownAlertLevel(mapKey) {
+  const renown = worldRenownState(mapKey);
+  const rankAlert = Math.floor((renown.rank || 0) * 0.72);
+  const heatAlert = Math.floor((renown.alert || 0) / 35);
+  return Math.max(0, Math.min(14, rankAlert + heatAlert));
+}
+
+function worldRenownBonuses(mapKey) {
+  const renown = worldRenownState(mapKey);
+  const rank = renown.rank || 0;
+  return {
+    rank,
+    alert:worldRenownAlertLevel(mapKey),
+    goldMult:1 + Math.min(0.36, rank * 0.022),
+    dropMult:1 + Math.min(0.16, rank * 0.010),
+    fieldBonus:Math.floor(rank / 4),
+    commanderRewardMult:1 + Math.min(0.30, rank * 0.018)
+  };
+}
+
+function grantWorldRenown(mapKey, amount, reason, opts) {
+  const map = (typeof MAPS !== 'undefined') ? MAPS.find(m => m.key === mapKey) : null;
+  const renown = worldRenownState(mapKey);
+  const before = renown.rank || 0;
+  const gain = Math.max(0, Math.floor(amount || 0));
+  if (gain <= 0) return renown;
+  renown.xp += gain;
+  renown.rank = worldRenownRankForXp(renown.xp);
+  const alertGain = Math.max(0, Math.floor(opts?.alert == null ? Math.max(1, gain / 8) : opts.alert));
+  renown.alert = Math.min(9999, (renown.alert || 0) + alertGain);
+  if (opts?.fieldClear) renown.fieldClears = (renown.fieldClears || 0) + 1;
+  if (opts?.bossKill) renown.bossKills = (renown.bossKills || 0) + 1;
+  if (renown.rank > before) {
+    log(`🏕️ ${map?.name || '区域'} 声望提升至 ${renown.rank}: 补给更丰厚,敌方警戒也随之升高`, 'legend');
+  } else if (opts?.verbose) {
+    log(`🏕️ ${map?.name || '区域'} 声望 +${gain}${reason ? ` (${reason})` : ''}`, 'good');
+  }
+  markDirty('map', 'hero');
+  return renown;
+}
+
+function worldRenownTip(mapKey) {
+  const map = (typeof MAPS !== 'undefined') ? MAPS.find(m => m.key === mapKey) : null;
+  const renown = worldRenownState(mapKey);
+  const prog = worldRenownRankProgress(renown.xp || 0);
+  const bonus = worldRenownBonuses(mapKey);
+  const nextText = prog.need ? `${prog.cur}/${prog.need}` : '已满';
+  return {
+    name:`${map?.name || '区域'}声望 ${bonus.rank}`,
+    icon:'🏕️',
+    meta:`警戒 ${bonus.alert}`,
+    desc:`清理野外、完成据点和击败地图首领会提高当地声望。当前进度 ${nextText};金币 ×${bonus.goldMult.toFixed(2)},掉率 ×${bonus.dropMult.toFixed(2)},据点推进 +${bonus.fieldBonus}。敌人同步获得警戒强化。`
+  };
+}
+
 function worldFieldOpKey(map, subIdx) {
   return `${map?.key || state.currentMap}-${Math.max(0, subIdx == null ? (state.currentSubzone || 0) : subIdx)}`;
 }
@@ -253,12 +352,14 @@ function recordWorldFieldOperationKill(mon) {
   if (state.mode !== 'world' || mon?.isBoss || mon?._summoned) return null;
   const map = typeof getMap === 'function' ? getMap() : null;
   if (!map) return null;
+  const threatBonus = mon?._zoneThreats?.length ? 1 : 0;
+  grantWorldRenown(map.key, 1 + threatBonus, '野外击杀', { alert:1 });
   const op = getWorldFieldOperation(map, state.currentSubzone);
   if (!op || op.completed || op.commanderPending) return op;
   const active = ensureWorldFieldOps().active[op.key];
   if (!active) return op;
-  const threatBonus = mon?._zoneThreats?.length ? 1 : 0;
-  active.progress = Math.min(active.goal, (active.progress || 0) + 1 + threatBonus);
+  const renownBonus = worldRenownBonuses(map.key).fieldBonus || 0;
+  active.progress = Math.min(active.goal, (active.progress || 0) + 1 + threatBonus + renownBonus);
   if (active.progress >= active.goal) {
     active.commanderPending = true;
     log(`${op.icon || '🗺️'} 野外据点「${op.name}」已推进完成,据点指挥官即将现身!`, 'epic');
@@ -288,8 +389,10 @@ function onWorldFieldCommanderKill(mon) {
   const sub = map.sub?.[active.subIdx] || map.sub?.[0];
   const op = getWorldFieldOperation(map, active.subIdx, { includeCompleted:true });
   const high = sub?.lvl?.[1] || map.lvlRange?.[1] || mon?.lvl || 1;
-  const gold = Math.floor(high * 95 + (op.goal || 10) * 35);
-  const honor = Math.floor(25 + high * 2.4);
+  const renownBonus = worldRenownBonuses(map.key);
+  const rewardMult = renownBonus.commanderRewardMult || 1;
+  const gold = Math.floor((high * 95 + (op.goal || 10) * 35) * rewardMult);
+  const honor = Math.floor((25 + high * 2.4) * rewardMult);
   const essence = Math.max(1, Math.floor(high / 18));
   const gems = high >= 55 ? Math.max(1, Math.floor(high / 28)) : 0;
   state.gold += gold;
@@ -309,6 +412,7 @@ function onWorldFieldCommanderKill(mon) {
     rewardGold:gold
   };
   delete ops.active[key];
+  grantWorldRenown(map.key, 45 + high, '据点完成', { fieldClear:true, alert:Math.max(4, Math.floor(high / 12)) });
   log(`${op.icon || '🗺️'} 完成野外据点「${op.name}」: +${gold}💰 +${honor}荣誉 +${essence}精华${gems ? ` +${gems}💎` : ''} · ${item.name}`, 'legend');
   if (typeof progressionOnGoldGain === 'function') progressionOnGoldGain(gold);
   state.currentMonsters = [];

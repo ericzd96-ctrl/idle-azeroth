@@ -34,6 +34,7 @@ const defaultState = () => ({
   subzoneKills: {},
   subzoneCleared: {},
   worldFieldOps: { active:{}, completed:{} },
+  worldRenown: { maps:{} },
   bossCd: {},
   killsTotal: 0,
   gold: 0,
@@ -480,6 +481,9 @@ function mergeState(saved) {
       active: saved.worldFieldOps.active || {},
       completed: saved.worldFieldOps.completed || {},
     }) : { active:{}, completed:{} },
+    worldRenown: saved.worldRenown ? Object.assign({ maps:{} }, saved.worldRenown, {
+      maps: saved.worldRenown.maps || {},
+    }) : { maps:{} },
     travel: null,
     currentMonsters: saved.currentMon ? [saved.currentMon] : (saved.currentMonsters || []),
     // 装备深度
