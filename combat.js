@@ -182,6 +182,11 @@ function specMasteryEngineBonus(field){
   if(field === 'overloadSupportPct') return mastery * Math.max(b.supportPct || 0, b.mechanicShieldPct || 0) * 0.43;
   if(field === 'overloadGainPct') return mastery * Math.max(b.coreGainPct || 0, b.procPct || 0) * 0.32;
   if(field === 'overloadResource') return mastery * (b.resource || 0);
+  if(field === 'resourceDmgPct') return mastery * Math.max(b.corePayoffPct || 0, b.procPct || 0, b.chainPayoffPct || 0) * 0.40;
+  if(field === 'resourceDotPct') return mastery * Math.max(b.dotSpreadPct || 0, b.reactionDotPct || 0, b.echoDotPct || 0) * 0.40;
+  if(field === 'resourceSupportPct') return mastery * Math.max(b.supportPct || 0, b.mechanicShieldPct || 0) * 0.40;
+  if(field === 'resourceGainPct') return mastery * Math.max(b.coreGainPct || 0, b.procPct || 0) * 0.35;
+  if(field === 'resourceReturn') return mastery * (b.resource || 0);
   return 0;
 }
 function masteryTakenMult(){ return 1 - Math.min(30, masteryFor('dr')*MASTERY_TYPE.dr.per + masteryFor('guardianEcho')*0.18 + specMasteryEngineBonus('takenPct'))/100; } // 受击减伤(封顶30%)
@@ -751,7 +756,7 @@ function processSkillElementReactions(skillKey, sk, mon, dmgDone, ctx){
 function skillMechanicFxBonus(field){
   let total = specMasteryEngineBonus(field);
   for(const fx of talentFxList()){
-    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho' && fx.type !== 'skillMark' && fx.type !== 'skillWeave' && fx.type !== 'skillRhythm' && fx.type !== 'skillControl' && fx.type !== 'skillWeakness' && fx.type !== 'skillPrep' && fx.type !== 'skillOverload')) continue;
+    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho' && fx.type !== 'skillMark' && fx.type !== 'skillWeave' && fx.type !== 'skillRhythm' && fx.type !== 'skillControl' && fx.type !== 'skillWeakness' && fx.type !== 'skillPrep' && fx.type !== 'skillOverload' && fx.type !== 'skillResource')) continue;
     total += +(fx[field] || 0);
   }
   return total;
@@ -1828,6 +1833,137 @@ function skillOverloadTip(skillKey, sk){
   const charges = skillOverloadCharges(skillKey, sk, {});
   const build = charges > 0 ? `积累${charges}层${overloadKindName(skillOverloadKind(skillKey, sk, {}))}过载` : '';
   const vent = skillOverloadCanVent(skillKey, sk, {}) ? '可导流已有过载触发余震' : '';
+  return [build, vent].filter(Boolean).join('；');
+}
+function resourceLoopKindName(kind){
+  const names = { overflow:'满溢', famine:'枯竭', conserve:'节流', support:'支援', decay:'腐蚀' };
+  return names[kind] || kind || '资源';
+}
+function resourceLoopIcon(kind){
+  return ({ overflow:'🌊', famine:'🕯️', conserve:'🔁', support:'✨', decay:'☠️' })[kind] || '💠';
+}
+function resourceLoopKind(skillKey, sk, ctx){
+  if(!sk) return '';
+  const cost = Math.max(0, ctx?.cost || 0);
+  const max = Math.max(1, state.resourceMax || 100);
+  const after = Math.max(0, state.resource || 0);
+  const before = Math.min(max, after + cost);
+  const beforePct = before / max;
+  const afterPct = after / max;
+  const tags = skillElementTags(skillKey, sk);
+  const text = `${skillKey || ''} ${sk.name || ''} ${sk.desc || ''}`;
+  if(sk.type === 'heal' || ctx?.heal || isDefensiveSkill(skillKey, sk) || sk.type === 'buff') return 'support';
+  if(sk.dot || tags.some(t => ['shadow','poison'].includes(t)) || /毒|流血|腐蚀|痛苦|暗影|撕裂|割裂|献祭|月火/.test(text)) return 'decay';
+  if(cost >= Math.max(35, max * 0.28) || (beforePct >= 0.72 && cost >= 25)) return 'overflow';
+  if(afterPct <= 0.28 && cost > 0) return 'famine';
+  if(cost > 0 && cost <= Math.max(22, max * 0.18)) return 'conserve';
+  return '';
+}
+function resourceLoopCanVent(skillKey, sk, ctx){
+  if(!sk) return false;
+  const cost = Math.max(0, ctx?.cost || 0);
+  const max = Math.max(1, state.resourceMax || 100);
+  if(sk.type === 'heal' || sk.type === 'buff' || ctx?.heal || isDefensiveSkill(skillKey, sk)) return true;
+  if(sk.type !== 'dmg') return false;
+  const fx = skillFxMeta(skillKey, sk);
+  return !!(cost <= Math.max(22, max * 0.18) || sk.dot || fx.applyTargetState || fx.resourceGain || sk.slow);
+}
+function ensureSkillResourceLoop(now){
+  const rt = ensureSkillRuntime();
+  if(!rt.resourceLoop) rt.resourceLoop = { kind:'', stacks:0, spent:0, expire:0, chain:[] };
+  const ts = now || Date.now();
+  if(rt.resourceLoop.expire && rt.resourceLoop.expire <= ts) rt.resourceLoop = { kind:'', stacks:0, spent:0, expire:0, chain:[] };
+  return rt.resourceLoop;
+}
+function addSkillResourceLoop(kind, sk, now, ctx){
+  if(!kind) return 0;
+  const loop = ensureSkillResourceLoop(now);
+  const cost = Math.max(0, ctx?.cost || 0);
+  const max = 5;
+  const gainBonus = Math.floor(skillMechanicFxBonus('resourceGainPct') / 40);
+  const gain = Math.max(1, (cost >= Math.max(35, (state.resourceMax || 100) * 0.28) ? 2 : 1) + gainBonus);
+  loop.kind = kind;
+  loop.stacks = Math.min(max, (loop.stacks || 0) + gain);
+  loop.spent = Math.min((state.resourceMax || 100) * 2, (loop.spent || 0) + cost);
+  loop.chain = (loop.chain || []).concat(kind).slice(-5);
+  loop.expire = (now || Date.now()) + 14000;
+  addSkillAura('skill_resource', {
+    add:gain,
+    max,
+    duration:14000,
+    icon:'💠',
+    name:'资源回路',
+    desc:`当前 ${loop.stacks}/${max} 层${resourceLoopKindName(kind)}回路,记录消耗 ${Math.floor(loop.spent || 0)}。低耗、治疗、防御或 DOT 技能可导流回路。`
+  });
+  markDirty('skills','hero');
+  return loop.stacks;
+}
+function ventSkillResourceLoop(loop, mon, value, sk, now, ctx){
+  const kind = loop?.kind || 'conserve';
+  const stacks = Math.max(1, loop?.stacks || 1);
+  const spent = Math.max(ctx?.cost || 0, loop?.spent || 0);
+  const base = Math.max(1, Math.floor(value || state.hero.atk || state.hero.hpMax * 0.03 || 1));
+  const target = (mon && mon.hp > 0) ? mon : (state.currentMonsters || []).find(x => x && x.hp > 0);
+  const returnAmt = Math.floor(Math.max(2, spent * (0.12 + stacks * 0.025)) + skillMechanicFxBonus('resourceReturn'));
+  const dmgMult = (1 + skillMechanicFxBonus('resourceDmgPct') / 100) * (0.48 + stacks * 0.12);
+  const dotMult = (1 + skillMechanicFxBonus('resourceDotPct') / 100) * (0.45 + stacks * 0.11);
+  const supportMult = masterySupportEchoMult() * (1 + skillMechanicFxBonus('resourceSupportPct') / 100) * (0.55 + stacks * 0.10);
+  let fired = false;
+  if(returnAmt > 0) grantTalentResource(returnAmt);
+  if(kind === 'support' || sk.type === 'heal' || sk.type === 'buff' || ctx?.heal){
+    healHeroAmount(Math.floor(state.hero.hpMax * (0.010 + stacks * 0.003) * supportMult), sk.icon || '💠', '#6ee7b7', 'hero', '支援回路');
+    addTalentShield(Math.floor(state.hero.hpMax * (0.010 + stacks * 0.003) * supportMult), true, 9000);
+    specTacticCompanionSupport('heal', now);
+    fired = true;
+  } else if(kind === 'famine'){
+    addTalentShield(Math.floor(state.hero.hpMax * (0.014 + stacks * 0.004) * supportMult), true, 9500);
+    if(target) fired = applySkillFollowupDamage(target, base * 0.08 * dmgMult, '🕯️', '#fde68a', now) > 0 || fired;
+  } else if(kind === 'decay' && target){
+    applyMonsterDot(target, 'skillResource:decay', Math.max(1, Math.floor(base * 0.08 * dotMult)), 8500, { icon:'☠️', name:'腐蚀回路', source:'skillResource' });
+    if(stacks >= 4) spreadDotFromMonster(target, 0.22 + stacks * 0.02, 8500);
+    fired = true;
+  } else if(target){
+    if(kind === 'overflow') applyMonsterState(target, 'unstable', 7200 + stacks * 520);
+    fired = applySkillFollowupDamage(target, base * (kind === 'overflow' ? 0.13 : 0.10) * dmgMult, resourceLoopIcon(kind), kind === 'overflow' ? '#67e8f9' : '#facc15', now) > 0 || fired;
+  }
+  if(fired || returnAmt > 0){
+    addSkillAura('skill_resource', {
+      add:1,
+      max:1,
+      duration:5200,
+      icon:'💠',
+      name:'资源回路',
+      desc:`${resourceLoopKindName(kind)}回路被 ${sk?.name || '技能'} 导流,返还 ${returnAmt} 资源并触发额外效果。`
+    });
+    showFloat($('hero-emoji'), `💠+${returnAmt}`, '#67e8f9', { variant:'buff', scale:1.04 });
+    log(`💠 资源回路导流: ${resourceLoopKindName(kind)}回路 ${stacks} 层,返还 ${returnAmt} 资源`, 'good');
+    markDirty('skills','hero','companion','stage');
+  }
+  return fired || returnAmt > 0;
+}
+function processSkillResourceLoop(skillKey, sk, mon, value, ctx){
+  if(!sk) return false;
+  const now = ctx?.now || Date.now();
+  const loop = ensureSkillResourceLoop(now);
+  if(loop.stacks >= 3 && skillResourceCanVentSafe(skillKey, sk, ctx || {})){
+    const snap = Object.assign({}, loop, { chain:[...(loop.chain || [])] });
+    const rt = ensureSkillRuntime();
+    rt.resourceLoop = { kind:'', stacks:0, spent:0, expire:0, chain:[] };
+    if(rt.auras) delete rt.auras.skill_resource;
+    return ventSkillResourceLoop(snap, mon, value, sk, now, ctx || {});
+  }
+  const kind = resourceLoopKind(skillKey, sk, ctx || {});
+  if(!kind) return false;
+  return addSkillResourceLoop(kind, sk, now, ctx || {}) > 0;
+}
+function skillResourceCanVentSafe(skillKey, sk, ctx){
+  return resourceLoopCanVent(skillKey, sk, ctx || {});
+}
+function skillResourceTip(skillKey, sk){
+  const sample = { cost:sk?.mp || 0 };
+  const kind = resourceLoopKind(skillKey, sk, sample);
+  const build = kind ? `形成${resourceLoopKindName(kind)}资源回路` : '';
+  const vent = resourceLoopCanVent(skillKey, sk, sample) ? '可导流已有资源回路返还资源并触发效果' : '';
   return [build, vent].filter(Boolean).join('；');
 }
 function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
@@ -3478,6 +3614,7 @@ function processTalentLowHp(mon, now){
 }
 function processTalentAfterSkill(skillKey, sk, mon, value, ctx){
   const now = Date.now();
+  processSkillResourceLoop(skillKey, sk, mon, value, Object.assign({ now }, ctx || {}));
   for(const fx of talentFxList()){
     if(fx.type !== 'afterSkill') continue;
     if(!skillMatches(fx, skillKey)) continue;

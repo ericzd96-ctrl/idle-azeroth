@@ -79,6 +79,7 @@ const SKILL_AURA_LIBRARY = {
   skill_weakness:{ icon:'🎯', name:'弱点洞察', desc:'暴击、斩杀、高耗能和特定元素会揭露目标弱点,后续技能可利用弱点爆发', maxStacks:4 },
   skill_prep:   { icon:'⚙️', name:'技能蓄势', desc:'低耗、控场、DOT、治疗或防御技能积累蓄势,后续大招按蓄势类型收招', maxStacks:5 },
   skill_overload:{ icon:'⚡', name:'技能过载', desc:'连续高耗能、大招或爆发会积累过载,后续技能可导流为余震效果', maxStacks:5 },
+  skill_resource:{ icon:'💠', name:'资源回路', desc:'高耗能、低资源、节流和支援技能会形成资源回路,导流后返还能量并触发效果', maxStacks:5 },
   spec_flow:    { icon:'✦', name:'专精连段', desc:'按当前专精的技能顺序推进,完成后触发独特战斗效果', maxStacks:3 },
   spec_core:    { icon:'✦', name:'专精核心', desc:'当前专精独有的战斗引擎资源,满层后用指定技能收束触发强力效果', maxStacks:8 },
   spec_proc:    { icon:'✦', name:'临场强化', desc:'当前专精触发的下一技能变招,命中符合条件的技能后自动消费', maxStacks:1 },
@@ -216,6 +217,15 @@ const SKILL_OVERLOAD_GUIDE = [
   { icon:'🛡️', name:'壁垒导流', desc:'防御技能导流过载会转为护盾、减伤窗口和反击。' },
   { icon:'✨', name:'救援导流', desc:'治疗/支援技能导流过载会治疗主角和随从。' },
   { icon:'🐾', name:'协同余震', desc:'召唤/野兽导流过载会触发协同追击。' },
+];
+
+const SKILL_RESOURCE_GUIDE = [
+  { icon:'💠', name:'资源回路', desc:'技能施放后会按消耗和剩余资源形成满溢、枯竭、节流、支援等回路。' },
+  { icon:'🌊', name:'满溢回流', desc:'高资源释放大招会压入满溢回路,导流后返还资源并造成追击。' },
+  { icon:'🕯️', name:'枯竭回流', desc:'低资源硬放技能会形成枯竭回路,导流后获得护盾、治疗或节能返还。' },
+  { icon:'🔁', name:'节流回路', desc:'低耗技能会导流已有回路,把前面的高消耗转为资源返还。' },
+  { icon:'✨', name:'支援回路', desc:'治疗、防御和增益技能导流资源回路时会支援主角与随从。' },
+  { icon:'☠️', name:'腐蚀回路', desc:'DOT 与持续伤害技能导流资源回路时会追加持续伤害或扩散。' },
 ];
 
 /* 每个职业 4 个新技能:爆发 / 减伤 / 功能性 / 职业特色 */
@@ -1398,6 +1408,7 @@ if (typeof window !== 'undefined') {
   window.SKILL_WEAKNESS_GUIDE = SKILL_WEAKNESS_GUIDE;
   window.SKILL_PREP_GUIDE = SKILL_PREP_GUIDE;
   window.SKILL_OVERLOAD_GUIDE = SKILL_OVERLOAD_GUIDE;
+  window.SKILL_RESOURCE_GUIDE = SKILL_RESOURCE_GUIDE;
   window.currentSpecCombatRule = currentSpecCombatRule;
   window.currentSpecCombatMeter = currentSpecCombatMeter;
   window.currentSpecTacticalWindow = currentSpecTacticalWindow;

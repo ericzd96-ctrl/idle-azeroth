@@ -978,6 +978,20 @@ function skillOverloadTrait(cfg){
     }
   }));
 }
+function skillResourceTrait(cfg){
+  return trait(Object.assign({}, cfg, {
+    fx(rank){
+      return {
+        type:'skillResource',
+        resourceDmgPct:rankValue(cfg.resourceDmgPct || [4,8,12], rank),
+        resourceDotPct:rankValue(cfg.resourceDotPct || [3,6,9], rank),
+        resourceSupportPct:rankValue(cfg.resourceSupportPct || [3,6,9], rank),
+        resourceGainPct:rankValue(cfg.resourceGainPct || [4,8,12], rank),
+        resourceReturn:rankValue(cfg.resourceReturn || [0,1,2], rank),
+      };
+    }
+  }));
+}
 
 (function retuneSpecArtifacts() {
   for (const [clsKey, specs] of Object.entries(SPEC_ARTIFACT_SKILL_RETUNE)) {
@@ -1126,6 +1140,21 @@ function skillOverloadTrait(cfg){
           overloadSupportPct:supportWeave ? [6,12,18] : [2,4,6],
           overloadGainPct:[5,10,15],
           desc:'技能过载余震、持续伤害或导流支援效果提高,过载积累效率提高,导流时返还少量资源。并获得精通 +1/2/3。'
+        }));
+      }
+      const resourceKey = `art_${clsKey}_${specKey}_resource_20260714`;
+      if (!ARTIFACT_TRAITS[clsKey].some(t => t.key === resourceKey)) {
+        ARTIFACT_TRAITS[clsKey].push(skillResourceTrait({
+          key:resourceKey,
+          tree:specKey,
+          name:'回流回路',
+          icon:'💠',
+          mod:{ mastery:1 },
+          resourceDmgPct:supportWeave ? [3,6,9] : [6,12,18],
+          resourceDotPct:dotWeave ? [6,12,18] : [3,6,9],
+          resourceSupportPct:supportWeave ? [6,12,18] : [2,4,6],
+          resourceGainPct:[5,10,15],
+          desc:'资源回路导流追击、持续伤害或支援效果提高,回路形成效率提高,导流时返还更多资源。并获得精通 +1/2/3。'
         }));
       }
     }

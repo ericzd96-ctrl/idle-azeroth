@@ -889,3 +889,47 @@ const TALENT_AURA_LIBRARY = {
     }
   }
 })();
+
+(function extendSkillResourceTalents() {
+  if (typeof CLASSES === 'undefined') return;
+  const names = {
+    arms:'怒流回路', fury:'狂怒回流', prot:'盾卫回流',
+    arcane:'魔力回路', fire:'燃烬回流', frost:'寒流回路',
+    discipline:'赎罪回路', holy:'圣光回流', shadow:'虚空回流',
+    assassination:'毒能回流', combat:'乱舞回流', subtlety:'暗影回流',
+    bm:'兽群回流', marks:'弹药回路', survival:'野火回流',
+    element:'元素回路', enhancement:'漩涡回流', restoration:'潮汐回路',
+    holy_paladin:'圣能回路', prot_paladin:'壁垒回流', ret:'裁决回流',
+    affliction:'灵魂回流', demonology:'军团回流', destruction:'余烬回路',
+    balance:'星能回路', feral:'血爪回流', resto:'林地回路',
+  };
+  const supportSpecs = new Set(['discipline','holy','restoration','resto']);
+  const dotSpecs = new Set(['fire','shadow','assassination','survival','affliction','destruction','balance','feral']);
+  const burstSpecs = new Set(['arcane','frost','element','destruction','arms','fury','ret','marks']);
+  for (const [clsKey, cls] of Object.entries(CLASSES)) {
+    if (!cls || !Array.isArray(cls.trees)) continue;
+    for (const tree of cls.trees) {
+      if (!tree || tree._skillResourceTalent) continue;
+      tree._skillResourceTalent = true;
+      const keyName = clsKey === 'paladin' && tree.key === 'holy' ? 'holy_paladin' : (clsKey === 'paladin' && tree.key === 'prot' ? 'prot_paladin' : tree.key);
+      const support = supportSpecs.has(tree.key) || (clsKey === 'paladin' && tree.key === 'holy') || (tree.key === 'prot' && (clsKey === 'warrior' || clsKey === 'paladin'));
+      const dot = dotSpecs.has(tree.key);
+      const burst = burstSpecs.has(tree.key);
+      tree.talents.push({
+        key: `skill_resource_${clsKey}_${tree.key}`,
+        name: names[keyName] || '资源回路',
+        desc: `资源回路更强: ${support ? '支援导流治疗和护盾提高 20%' : (dot ? '腐蚀回路 DOT 提高 20%' : '回路追击提高 18%')}, 回路形成效率提高,导流返还更多资源。`,
+        req: 130,
+        max: 1,
+        fx: {
+          type:'skillResource',
+          resourceDmgPct:support ? 8 : (burst ? 20 : 18),
+          resourceDotPct:dot ? 20 : 8,
+          resourceSupportPct:support ? 20 : 6,
+          resourceGainPct:burst ? 22 : 16,
+          resourceReturn:2
+        }
+      });
+    }
+  }
+})();
