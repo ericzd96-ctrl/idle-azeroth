@@ -545,16 +545,54 @@
       QD('圣辉反击','🌟','4.8倍伤害,同时治疗主角',4.8,{ heal:0.12, healTarget:'hero', bonusVsBoss:0.18, cd:16 }),
     ],
   };
+  const QUALITY_SKILL_FLAVOR = {
+    sw_guard:['城门','🧱'], horde_grunt:['狼斧','🪓'], apprentice:['学徒','✨'], acolyte:['烛光','🕯️'], scout:['哨眼','🏹'],
+    guard_cap:['卫队','🪖'], al_ranger:['游侠','🎯'], field_medic:['军医','⛑️'], shaman_app:['初雷','⚡'], berserker:['狂斧','💢'],
+    saurfang:['血吼','🩸'], muradin:['铜须','🔨'], maraad:['纳鲁','🌟'], rexxar:['米莎','🐻'], valeera:['影刃','🗡️'], kael:['逐日','☀️'],
+    fordring:['灰烬','⚖️'], varian:['雄狮','🦁'], thrall:['毁灭锤','🔨'], illidan:['埃辛诺斯','😈'], arthas:['霜疫','❄️'],
+    jaina:['海潮','🌨️'], sylvanas:['女妖','🏹'], anduin:['圣王','✨'], tyrande:['月神','🌙'], malfurion:['梦境','🌿'],
+    garrosh:['钢铁','🩸'], cairne:['血蹄','🐂'], bolvar:['王城','🔥'], chen:['酒仙','🍺'], rehgar:['幽魂','🐺'],
+    velen:['先知','🔮'], liadrin:['血骑','🌞'], alexstrasza:['红龙','🐉'], cenarius:['林地','🌳'], khadgar:['时序','⏱️'],
+    maiev:['守望','🦉'], grommash:['战歌','🪓'], voljin:['洛阿','🧿'], akama:['灰舌','🌫️'],
+    medivh:['卡拉赞','🚪'], azshara:['女王','👑'], ragnaros:['熔火','🌋'], kelthuzad:['纳克萨玛斯','⚰️'],
+    lichking:['王座','👑'], kiljaeden:['阿古斯','🌌']
+  };
+  const qualitySkillHash = key => String(key || '').split('').reduce((n, ch) => (n * 33 + ch.charCodeAt(0)) % 997, 17);
+  const qualitySkillFlavor = c => QUALITY_SKILL_FLAVOR[c.key] || [(c.name || '随从').replace(/[·\s]/g, '').slice(0, 3), c.emoji || '✦'];
+  const cloneQualitySkill = (c, src, i) => {
+    const [tag, icon] = qualitySkillFlavor(c);
+    const sk = Object.assign({}, src, { name:`${tag}${src.name}`, icon:src.icon || icon, _qualitySkill:true, _qualitySkillAdded:true });
+    const twist = (qualitySkillHash(c.key) + i) % 6;
+    sk.desc = `${tag}品质战技: ${src.desc || ''}`;
+    if (sk.type === 'dmg') {
+      if (i === 0) sk.icon = icon;
+      if (twist === 0) { sk.dotPct = Math.max(sk.dotPct || 0, 0.10); sk.dotMs = sk.dotMs || 7000; sk.desc += ',附加持续伤害'; }
+      else if (twist === 1) { sk.slow = true; sk.slowMs = sk.slowMs || 4200; sk.desc += ',附带减速'; }
+      else if (twist === 2) { sk.extraHitPct = Math.max(sk.extraHitPct || 0, 0.28); sk.desc += ',追加一次追击'; }
+      else if (twist === 3) { sk.lifeSteal = Math.max(sk.lifeSteal || 0, 0.12); sk.desc += ',造成伤害后回血'; }
+      else if (twist === 4) { sk.splashPct = Math.max(sk.splashPct || 0, 0.30); sk.desc += ',溅射附近敌人'; }
+      else { sk.bonusVsBoss = Math.max(sk.bonusVsBoss || 0, 0.22); sk.desc += ',首领战更强'; }
+    } else if (sk.type === 'heal') {
+      if (twist % 2 === 0) { sk.shieldPct = Math.max(sk.shieldPct || 0, 0.08); sk.desc += ',附带护盾'; }
+      if (twist % 3 === 0) { sk.cleanse = true; sk.desc += ',净化减益'; }
+      if (twist % 5 === 0) { sk.healTarget = 'both'; sk.desc += ',同时照顾主角和随从'; }
+    } else if (sk.type === 'buff') {
+      if (twist % 2 === 0) { sk.shieldPct = Math.max(sk.shieldPct || 0, 0.08); sk.desc += ',附带护盾'; }
+      else { sk.healPct = Math.max(sk.healPct || 0, 0.06); sk.desc += ',附带治疗'; }
+      if (!sk.buffTarget) sk.buffTarget = c.role === 'dps' ? 'companion' : 'both';
+    }
+    return sk;
+  };
   for (const c of COMPANIONS) {
-    const q = (typeof compQuality === 'function') ? compQuality(c).key : (c.quality || 'white');
+    const q = c.quality || 'white';
     const count = QUALITY_EXTRA_SKILL_COUNT[q] || 1;
     const pack = QUALITY_ROLE_SKILLS[c.role] || QUALITY_ROLE_SKILLS.dps;
     if (!Array.isArray(c.skills)) c.skills = [];
+    c.skills = c.skills.filter(s => !(s && s._qualitySkill));
     for (let i = 0; i < count && i < pack.length; i++) {
-      const src = pack[i];
-      const name = `${src.name}`;
-      if (c.skills.some(s => s.name === name)) continue;
-      c.skills.push(Object.assign({ _qualitySkill:true }, src, { name }));
+      const sk = cloneQualitySkill(c, pack[i], i);
+      if (c.skills.some(s => s.name === sk.name)) continue;
+      c.skills.push(sk);
     }
   }
 })();

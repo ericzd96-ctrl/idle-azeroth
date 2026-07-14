@@ -4796,7 +4796,7 @@ function renderCompanion() {
     const fit = (typeof companionDungeonFitInfo === 'function') ? companionDungeonFitInfo(tpl, (typeof companionCurrentDungeon === 'function' ? companionCurrentDungeon() : null)) : null;
     html += `<div class="shop-item${companionCardTrackClass(tpl)}" style="border-color:var(--${q.cls==='r-legend'?'legend':q.cls==='r-epic'?'epic':'border'})">
       <div class="row"><b>${compIconHtml} ${tpl?.name}</b><span class="pill" style="background:var(--accent);color:#000">出战中</span></div>
-      <div class="muted"><span class="${q.cls}">${q.name}</span> · ${'⭐'.repeat(act.stars||1)} · ${roleTag(tpl?.role)} · ${(tpl?.skills?.length||0)}主动${tpl?.signature?'+1专属':''}</div>
+      <div class="muted"><span class="${q.cls}">${q.name}</span> · ${'⭐'.repeat(act.stars||1)} · ${roleTag(tpl?.role)} · ${(tpl?.skills?.length||0)}主动${tpl?.signature?'+1专属':''} · 新增品质战技 +${companionQualitySkillCount(tpl)}</div>
       ${companionMetaBadges(tpl)}
       ${companionCombatSummaryHtml(tpl, act, { compact:true })}
       ${companionBondChipsHtml(tpl, entries)}
@@ -4841,7 +4841,7 @@ function renderCompanion() {
     const useGate = companionUseGateInfo(tpl);
     const useTitle = tipAttrText(companionUseTitle(tpl));
     html += `<div class="shop-item${companionCardTrackClass(tpl)}">
-      <div class="row"><b>${compIconHtml} ${tpl.name}</b><span class="${q.cls}">${q.name} · ${(tpl.skills?.length||0)}主动${tpl.signature?'+1专属':''}</span></div>
+      <div class="row"><b>${compIconHtml} ${tpl.name}</b><span class="${q.cls}">${q.name} · ${(tpl.skills?.length||0)}主动${tpl.signature?'+1专属':''} · 品质战技+${companionQualitySkillCount(tpl)}</span></div>
       <div class="muted" style="font-size:10px">${'⭐'.repeat(c.stars||1)} · ${roleTag(tpl.role)} · ${tpl.desc}</div>
       ${companionMetaBadges(tpl)}
       ${companionCombatSummaryHtml(tpl, c, { compact:true })}
