@@ -285,6 +285,9 @@ function focusBuffs(now) {
         key === 'specPressure' ? ((aura.expire || 0) > now) :
         key === 'cataclysmScaling' ? !!mon._cataclysms?.length :
         key.startsWith('cataclysmActive:') ? ((aura.expire || 0) > now) :
+        key === 'zoneThreatScaling' ? !!mon._zoneThreats?.length :
+        key === 'rareMutation' ? !!mon._rareMutations?.length :
+        key.startsWith('zoneThreatActive:') ? ((aura.expire || 0) > now) :
         activeKeys.includes(key);
       if (!shouldKeep) {
         delete auraMap[key];
@@ -732,6 +735,18 @@ function monsterMechanicSectionHtml(title, color, list, fallbackIcon, mapper) {
   if (!lines) return '';
   return `<div style="margin-top:4px;color:${color}">${tipAttrText(title)}:</div>${lines}`;
 }
+
+function worldZoneThreatTagsHtml(map, sub, opts) {
+  if (typeof getWorldZoneThreats !== 'function' || !map) return '';
+  const threats = getWorldZoneThreats(map, sub, opts || {});
+  if (!threats.length) return '';
+  return `<span class="stage-mechanic-tags">${threats.map(t => inlineTipSpanHtml({
+    name:t.name || '区域威胁',
+    icon:t.icon || '🧭',
+    desc:t.desc || '该区域正在影响野外战斗。',
+    meta:t.meta || '区域威胁'
+  }, { fallbackIcon:'achievement_zone_outland_01', color:'#fb7185', meta:t.meta, metaVisible:!!t.meta })).join('')}</span>`;
+}
 function dungeonProgressMechanicTags(ds, contract, alert, timerStatus) {
   if (!ds) return '';
   const tags = [];
@@ -848,6 +863,24 @@ function monsterEncounterDetailHtml(mon, bossData) {
       name:cat.name || '环境灾变',
       meta:cat.meta || '',
       desc:cat.desc || '副本环境周期性爆发,并强化本次敌人强度。'
+    }));
+  }
+  const zoneThreats = Array.isArray(mon._zoneThreats) ? mon._zoneThreats : [];
+  if (zoneThreats.length) {
+    html += monsterMechanicSectionHtml('区域威胁', '#fb7185', zoneThreats, 'achievement_zone_outland_01', threat => ({
+      icon:threat.icon || '🧭',
+      name:threat.name || '区域威胁',
+      meta:threat.meta || '',
+      desc:`${threat.desc || '野外环境正在影响战斗。'} ${mon._zoneThreatDesc || ''}`.trim()
+    }));
+  }
+  const rareMutations = Array.isArray(mon._rareMutations) ? mon._rareMutations : [];
+  if (rareMutations.length) {
+    html += monsterMechanicSectionHtml('稀有异变', '#fbbf24', rareMutations, 'achievement_boss_illidan', mut => ({
+      icon:mut.icon || '⭐',
+      name:mut.name || '稀有异变',
+      meta:mut.meta || '',
+      desc:`${mut.desc || '稀有精英获得额外专属性质。'} ${mon._rareMutationDesc || ''}`.trim()
     }));
   }
   if (state.mode === 'worldboss' && bossData?.key) {
@@ -1190,6 +1223,7 @@ function rareEliteTipHtml(rare) {
     html += '<div style="margin-top:4px;color:#fbbf24">技能:</div>';
     rare.skills.forEach(s => { html += bossSkillLineHtml(s, { iconSize:15, tagColor:'#fbbf24' }); });
   }
+  if (mon) html += monsterEncounterDetailHtml(mon, rare);
   return html;
 }
 function bindWorldBossTooltips(root) {
@@ -1779,17 +1813,21 @@ function updateBattleVisuals() {
       const subKey = `${state.currentMap}-${state.currentSubzone}`;
       const subKills = state.subzoneKills[subKey] || 0;
       const cleared = state.subzoneCleared[subKey];
+      const threatTags = worldZoneThreatTagsHtml(map, sub);
       $('h-zone').innerHTML = `${mapIconHtml} ${map.name} · ${sub.name}`;
       $('zone-name').innerHTML = `${mapIconHtml} ${map.name} · ${sub.name} (等级${sub.lvl[0]}-${sub.lvl[1]})`;
-      $('progress-text').innerHTML = `探索进度 <b>${Math.min(subKills,50)}</b> / 50 ${cleared?'✅':''}`;
+      $('progress-text').innerHTML = `探索进度 <b>${Math.min(subKills,50)}</b> / 50 ${cleared?'✅':''}${threatTags ? ` · ${threatTags}` : ''}`;
+      bindInlineTipElements($('progress-text'));
     }
   } else if (state.mode === 'boss') {
     const map = getMap();
     const mapIconHtml = symbolIconHtml(map.icon, 16, map.name, 'inv_misc_map_01');
     const bossBattleIconHtml = statusIconHtml('首领战', '⚔️', 16);
+    const threatTags = worldZoneThreatTagsHtml(map, map.sub?.[state.currentSubzone] || map.sub?.[0], { boss:true, count:2 });
     $('h-zone').innerHTML = `${mapIconHtml} ${map.name} · ${bossBattleIconHtml}首领战`;
     $('zone-name').innerHTML = `${bossBattleIconHtml} ${mapIconHtml} ${map.name} · 首领战`;
-    $('progress-text').innerHTML = `<b>${map.boss.name}</b>`;
+    $('progress-text').innerHTML = `<b>${map.boss.name}</b>${threatTags ? ` · ${threatTags}` : ''}`;
+    bindInlineTipElements($('progress-text'));
   } else if (state.mode === 'dungeon') {
     const dg = DUNGEONS.find(d => d.key === state.dungeonState.key);
     if (!dg) return;
@@ -2852,6 +2890,7 @@ function renderMap() {
     const bossPanelIcon = (typeof entityIcon === 'function') ? entityIcon(m.boss.name, 18, m.boss.emoji) : m.boss.emoji;
     const mapIconHtml = symbolIconHtml(m.icon, 18, m.name, 'inv_misc_map_01');
     const mapArt = m.art ? `<div class="map-art-banner" style="background-image:linear-gradient(180deg, rgba(11,15,25,.14), rgba(11,15,25,.72)), url('${m.art}')"></div>` : '';
+    const mapThreatTags = worldZoneThreatTagsHtml(m, m.sub?.[0], { count:(m.lvlRange?.[1] || 1) >= 70 ? 2 : 1 });
     let html = `
       <div class="map-head">
         <span class="mname">${mapIconHtml} ${m.name}</span>
@@ -2859,6 +2898,7 @@ function renderMap() {
       </div>
       ${mapArt}
       <div class="map-desc">${m.desc}${tooHigh?' · ⚠️ 当前终局进度偏低,请谨慎推进':''}</div>
+      ${mapThreatTags ? `<div class="muted" style="font-size:11px;margin:4px 0 6px">区域威胁 ${mapThreatTags}</div>` : ''}
       <div class="sub-list">`;
     m.sub.forEach((s, idx) => {
       const subKey = `${m.key}-${idx}`;
@@ -2904,6 +2944,7 @@ function renderMap() {
     }
     if (typeof renderZoneBounty === 'function') html += renderZoneBounty(m);
     div.innerHTML = html;
+    bindInlineTipElements(div);
     // BOSS名字hover显示技能/被动
     const nameEl = div.querySelector('.boss-name-tip');
     if (nameEl && m.boss.skills) {
@@ -2924,6 +2965,15 @@ function renderMap() {
           if (p.dmgReduction) tip += '<div>🛡️ 减伤 +'+(p.dmgReduction*100)+'%</div>';
           if (p.atkBonus) tip += '<div>⚔️ 攻击 +'+(p.atkBonus*100)+'%</div>';
           if (p.leech) tip += '<div>🩸 吸血 +'+(p.leech*100)+'%</div>';
+        }
+        const bossThreats = typeof getWorldZoneThreats === 'function' ? getWorldZoneThreats(m, m.sub?.[0], { boss:true, count:2 }) : [];
+        if (bossThreats.length) {
+          tip += monsterMechanicSectionHtml('区域威胁', '#fb7185', bossThreats, 'achievement_zone_outland_01', t => ({
+            icon:t.icon || '🧭',
+            name:t.name || '区域威胁',
+            meta:t.meta || '',
+            desc:t.desc || '该区域正在强化地图首领。'
+          }));
         }
         const tipEl = $('compare-tip');
         tipEl.querySelector('.compare-head').innerHTML = tip;

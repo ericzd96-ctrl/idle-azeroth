@@ -2922,6 +2922,126 @@ function triggerMonsterSpecAdaptationPressure(mon, now){
   if(mon.isBoss) log(`🧬 ${mon.bossName || mon.name} 适应了你的${meter.name || '专精节奏'}, 获得护盾与急速`, 'bad');
 }
 
+function applyThreatStatMods(mon, source, pressure, roleMult){
+  if(!mon || !source) return { hp:0, atk:0, def:0 };
+  const mod = source.mod || {};
+  const p = Math.max(0.75, pressure || source.pressure || 1);
+  const role = Math.max(0.5, roleMult || 1);
+  const hpPct = Math.max(0, mod.hp || 0) * p * role;
+  const atkPct = Math.max(0, mod.atk || 0) * p * role;
+  const defPct = Math.max(0, mod.def || 0) * p * role;
+  if(hpPct){ mon.hpMax = Math.max(1, Math.floor(mon.hpMax * (1 + hpPct))); mon.hp = mon.hpMax; }
+  if(atkPct) mon.atk = Math.max(1, Math.floor(mon.atk * (1 + atkPct)));
+  if(defPct) mon.def = Math.max(0, Math.floor(mon.def * (1 + defPct)));
+  if(mod.dr) mon.dmgReduction = Math.max(mon.dmgReduction || 0, Math.min(mon.isBoss ? 0.48 : 0.30, (mon.dmgReduction || 0) + mod.dr * p * role));
+  if(mod.crit) mon.critChance = Math.max(mon.critChance || 0, Math.min(0.65, (mon.critChance || 0) + mod.crit * p * role));
+  if(mod.dodge) mon.dodgeChance = Math.max(mon.dodgeChance || 0, Math.min(0.42, (mon.dodgeChance || 0) + mod.dodge * p * role));
+  if(mod.leech) mon.lifeSteal = Math.max(mon.lifeSteal || 0, Math.min(0.36, (mon.lifeSteal || 0) + mod.leech * p * role));
+  if(mod.spd) mon.atkInterval = Math.max(mon.isBoss ? 760 : 980, Math.floor((mon.atkInterval || 1600) / (1 + mod.spd * p * role)));
+  return { hp:hpPct, atk:atkPct, def:defPct };
+}
+
+function applyWorldZoneThreatScalingToMonster(mon, map, sub, opts){
+  if(!mon || typeof getWorldZoneThreats !== 'function') return mon;
+  map = map || (typeof getMap === 'function' ? getMap() : null);
+  if(!map) return mon;
+  sub = sub || map.sub?.[state?.currentSubzone || 0] || map.sub?.[0] || null;
+  const options = Object.assign({ boss:!!mon.isBoss, rare:!!mon.isRareElite }, opts || {});
+  const threats = getWorldZoneThreats(map, sub, options);
+  if(!threats.length) return mon;
+  let hp = 0, atk = 0, def = 0;
+  const roleMult = mon.isRareElite ? 1.26 : (mon.isBoss ? 1.15 : 0.74);
+  for(const threat of threats){
+    const delta = applyThreatStatMods(mon, threat, threat.pressure, roleMult);
+    hp += delta.hp; atk += delta.atk; def += delta.def;
+  }
+  mon._zoneThreats = threats;
+  mon._zoneThreatMapKey = map.key;
+  mon._zoneThreatSubName = sub?.name || '';
+  mon._zoneThreatDesc = `区域威胁强化: 生命+${Math.round(hp*100)}%, 攻击+${Math.round(atk*100)}%, 防御+${Math.round(def*100)}%`;
+  setMonsterTrickAura(mon, 'zoneThreatScaling', { name:'区域威胁', icon:threats[0].icon || '🧭', desc:mon._zoneThreatDesc }, 0, { stacks:threats.length, desc:mon._zoneThreatDesc });
+  return mon;
+}
+
+function applyRareEliteMutationScaling(mon, rare, map){
+  if(!mon || !rare || typeof getRareEliteMutations !== 'function') return mon;
+  const mutations = getRareEliteMutations(rare, map);
+  if(!mutations.length) return mon;
+  let hp = 0, atk = 0, def = 0;
+  for(const mut of mutations){
+    const delta = applyThreatStatMods(mon, mut, 1.18, 1.22);
+    hp += delta.hp; atk += delta.atk; def += delta.def;
+  }
+  mon._rareMutations = mutations;
+  mon._rareMutationDesc = `稀有异变: 生命+${Math.round(hp*100)}%, 攻击+${Math.round(atk*100)}%, 防御+${Math.round(def*100)}%`;
+  setMonsterTrickAura(mon, 'rareMutation', { name:'稀有异变', icon:mutations[0].icon || '⭐', desc:mon._rareMutationDesc }, 0, { stacks:mutations.length, desc:mon._rareMutationDesc });
+  return mon;
+}
+
+function applyWorldZoneThreatEffects(mon, now){
+  if(!(state.mode === 'world' || state.mode === 'boss') || !mon || mon.hp <= 0) return;
+  const threats = Array.isArray(mon._zoneThreats) ? mon._zoneThreats : [];
+  const mutations = Array.isArray(mon._rareMutations) ? mon._rareMutations : [];
+  if(!threats.length && !mutations.length) return;
+  const sources = threats.concat(mutations.map(m => ({ ...m, rareMutation:true, pressure:1.15 })));
+  for(const src of sources){
+    const mod = src.mod || {};
+    const cd = Math.max(8500, Math.floor((mod.tickMs || 17000) / Math.max(0.8, src.pressure || 1)));
+    const key = `zone:${src.key}`;
+    if(now - (mon[key] || 0) < cd) continue;
+    mon[key] = now;
+    mon._zoneThreatHits = (mon._zoneThreatHits || 0) + 1;
+    const p = Math.max(0.9, src.pressure || 1);
+    const live = (state.currentMonsters || []).filter(x => x && x.hp > 0);
+    if(mod.dmgPct){
+      const dmg = Math.max(1, Math.floor((state.hero.hpMax || 1) * mod.dmgPct * p + (mon.lvl || 1) * 1.2));
+      applyHeroDamage(dmg, mon, { label:t=>(src.icon || '🧭') + '-' + t, color:src.rareMutation ? '#fbbf24' : '#fb7185', now, variant:'boss' });
+    }
+    if(mod.burnDpsPct){
+      applyHeroDebuff('burn', mod.burnMs || 4200, { dps:Math.max(1, Math.floor((state.hero.hpMax || 1) * mod.burnDpsPct * p)) });
+    }
+    const debuff = mod.debuff || (mod.altDebuff && Math.random() < 0.45 ? mod.altDebuff : '');
+    if(debuff) applyHeroDebuff(debuff, mod.debuffMs || mod.altDebuffMs || 3600);
+    if(mod.drainPct){
+      const drain = Math.min(state.resource || 0, Math.floor((state.resourceMax || 0) * mod.drainPct * Math.min(1.6, p)));
+      if(drain > 0){
+        state.resource = Math.max(0, state.resource - drain);
+        showFloat($('hero-emoji'), `${src.icon || '🧭'}-${drain}`, '#93c5fd', { variant:'status', scale:1.04 });
+      }
+    }
+    if(mod.shieldPct){
+      for(const target of live){
+        const shield = Math.max(1, Math.floor(target.hpMax * mod.shieldPct * p));
+        target._arcaneShield = (target._arcaneShield || 0) + shield;
+        syncMonsterShieldAura(target);
+        showMonsterFloat(target, `${src.icon || '🛡️'}盾`, '#93c5fd');
+      }
+    }
+    if(mod.healPct){
+      for(const target of live){
+        const heal = Math.max(1, Math.floor(target.hpMax * mod.healPct * p));
+        target.hp = Math.min(target.hpMax, target.hp + heal);
+        showMonsterFloat(target, `${src.icon || '🌿'}+${heal}`, '#86efac', { variant:'heal' });
+      }
+    }
+    if(mod.hastePct){
+      for(const target of live){
+        target._trickSpdBuff = Math.max(target._trickSpdBuff || 0, now + 5200);
+        target._trickSpdPct = Math.max(target._trickSpdPct || 0, Math.round(mod.hastePct * 100 * p));
+        setMonsterTrickAura(target, 'zoneThreatHaste', { name:src.name, icon:src.icon || '🧭', desc:'区域威胁加速: 攻击速度提高' }, target._trickSpdBuff);
+      }
+    }
+    if(mod.summonTheme && (!mod.summonBossOnly || mon.isBoss) && live.length < 5){
+      summonMonsterAlly(mon, { summonCount:1, summonTheme:mod.summonTheme, summonHpPct:0.13, summonAtkPct:0.28, summonDefPct:0.32 }, now);
+    }
+    setMonsterTrickAura(mon, 'zoneThreatActive:' + src.key, { name:src.name, icon:src.icon || '🧭', desc:src.desc || '区域威胁正在影响战斗' }, now + 6500, { desc:src.desc || '区域威胁正在影响战斗' });
+    showMonsterFloat(mon, `${src.icon || '🧭'}威胁`, src.rareMutation ? '#fbbf24' : '#fb7185', { variant:'boss', scale:1.05 });
+    log(`${src.icon || '🧭'} ${src.rareMutation ? '稀有异变' : '区域威胁'}「${src.name}」触发: ${src.desc || '野外环境正在施压'}`, src.rareMutation ? 'epic' : 'bad');
+    if(typeof markDirty === 'function') markDirty('hero', 'stage');
+    break;
+  }
+}
+
 function makeMonster(name,lvl,isBoss,maxRarity){
   const hp=Math.floor((100+lvl*lvl*9.0)*(isBoss?18:1));
   const kind=isBoss?null:mobKind(name);   // boss 走自己的被动,小怪用身份技能
@@ -2977,6 +3097,7 @@ function spawnMonster(){
     const maxR=rareRoll<0.06?'epic':rareRoll<0.20?'rare':'uncommon';   // 2026-06-16 提高小怪爆蓝/紫上限概率(epic 0.02→0.06, rare 0.08→0.20)
     const m=makeMonster(mobName,lvl,false,maxR);
     applyWildMonsterHpScaling(m, lvl);
+    applyWorldZoneThreatScalingToMonster(m, map, sub, { packSize:count });
     applySpecAdaptationToMonster(m);
     if(atkDamp!==1)m.atk=Math.max(1,Math.floor(m.atk*atkDamp));
     m.threat=m.atk*(0.6+Math.random()*0.8);   // 初始仇恨(攻击越高越容易被英雄锁定)
@@ -2999,6 +3120,7 @@ function spawnZoneBoss(){
     if(map.boss.passive.atkBonus)mon.atk=Math.floor(mon.atk*(1+map.boss.passive.atkBonus));
     if(map.boss.passive.leech)mon.lifeSteal=map.boss.passive.leech;
   }
+  applyWorldZoneThreatScalingToMonster(mon, map, map.sub?.[state.currentSubzone] || map.sub?.[0], { boss:true, count:2 });
   applySpecAdaptationToMonster(mon, { extra:1 });
   state.currentMonsters.push(mon);
   applyCompanionChallengeScalingToCurrent();
@@ -6036,6 +6158,9 @@ function tickBattle(now){
   if (state.mode === 'worldboss' && mon?.isWorldBoss && state.worldBoss?.activeEncounter) {
     applyWorldBossAssaultEffects(state.worldBoss.activeEncounter, mon, now);
     advanceWorldBossPressure(state.worldBoss.activeEncounter, mon, now);
+  }
+  if ((state.mode === 'world' || state.mode === 'boss') && mon?._zoneThreats?.length) {
+    applyWorldZoneThreatEffects(mon, now);
   }
 
   // 玩家攻击(锁定焦点 = 仇恨最高者)

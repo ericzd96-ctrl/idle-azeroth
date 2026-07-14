@@ -99,6 +99,114 @@ function contentRangeLabel(min, max) {
   return hi > MAX_LEVEL ? `终局${lo}-${hi}` : `等级${lo}-${hi}`;
 }
 
+const WORLD_ZONE_THREAT_RULES = [
+  { key:'defias_ambush', icon:'🗡️', name:'伏击路障', tags:['迪菲亚','盗','刺客','劫匪','路口','哨兵','西部荒野','银月','暗巷'], meta:'野外战术', desc:'敌人会用路障和夹击压缩你的行动空间。周期造成物理伤害并可能缴械,首领和稀有精英获得额外闪避。', mod:{ hp:0.11, atk:0.07, def:0.04, dodge:0.04, tickMs:15500, dmgPct:0.030, debuff:'disarm', debuffMs:1800 } },
+  { key:'plague_miasma', icon:'☠️', name:'瘟疫弥雾', tags:['亡灵','瘟疫','提瑞斯法','腐','怨灵','食尸鬼','白骨','诅咒','凋零'], meta:'持续腐蚀', desc:'瘟疫会持续侵蚀生命与回复节奏。周期施加毒性持续伤害,并让敌人获得吸血。', mod:{ hp:0.14, atk:0.05, leech:0.035, tickMs:12500, dmgPct:0.018, burnDpsPct:0.010, burnMs:5200, debuff:'decay', debuffMs:4200 } },
+  { key:'beast_hunt', icon:'🐾', name:'兽群围猎', tags:['野兽','狼','熊','虎','豹','野猪','鳄','蝎','迅猛龙','暴龙','荆棘谷','贫瘠','杜隆塔尔'], meta:'兽群压力', desc:'野兽会在血腥气味中越战越快。周期提高敌方攻速,低血量时额外获得暴击。', mod:{ hp:0.10, atk:0.09, crit:0.035, spd:0.06, tickMs:14000, hastePct:0.20, debuff:'cripple', debuffMs:3600 } },
+  { key:'elemental_surge', icon:'🌋', name:'元素暴涌', tags:['火','熔岩','元素','灼热','燃烧','黑石','峡谷','平原','风暴','沙暴','潮汐','闪电'], meta:'环境爆发', desc:'元素能量会周期爆发。造成高额环境伤害,并给敌人套上元素护盾。', mod:{ hp:0.12, atk:0.10, def:0.05, tickMs:17500, dmgPct:0.042, shieldPct:0.045, burnDpsPct:0.006, burnMs:4200 } },
+  { key:'shadow_curse', icon:'🌑', name:'暗影诅咒', tags:['暮色','暗影','影','鬼','吸血','狼人','虚空','邪能','恶魔','卡雷什','影点','沙恩多拉'], meta:'暗影压迫', desc:'暗影会干扰施法和战斗节奏。周期造成暗影伤害,并可能沉默或虚弱玩家。', mod:{ hp:0.13, atk:0.08, dr:0.025, tickMs:16000, dmgPct:0.034, debuff:'silence', debuffMs:1800, altDebuff:'weaken', altDebuffMs:4400 } },
+  { key:'arcane_lockdown', icon:'🔮', name:'奥术封锁', tags:['法师','奥术','魔法','法力','秘库','普莱姆斯','圆顶','法力熔炉','蓝龙','守望者'], meta:'资源压制', desc:'奥术封锁会抽干资源并重组敌方护盾。周期扣除资源,同时给敌人护盾与防御。', mod:{ hp:0.10, atk:0.06, def:0.09, tickMs:15000, drainPct:0.16, shieldPct:0.055, debuff:'chill', debuffMs:3600 } },
+  { key:'titan_overwatch', icon:'🛡️', name:'泰坦监控', tags:['泰坦','守护者','傀儡','机械','机器人','奥杜尔','风暴峭壁','机甲','看守'], meta:'高护甲', desc:'古代装置会修正敌方防御矩阵。敌人更硬,周期治疗并获得减伤。', mod:{ hp:0.16, atk:0.04, def:0.12, dr:0.035, tickMs:18000, healPct:0.035, shieldPct:0.035 } },
+  { key:'fungal_bloom', icon:'🍄', name:'孢子繁盛', tags:['孢','蘑菇','沼泽','自然','德鲁伊','植物','哈兰达尔','湿地','赞加'], meta:'增殖', desc:'孢子会在战斗中繁殖。周期治疗敌人并施加衰老,首领可能呼叫孢群援军。', mod:{ hp:0.15, atk:0.04, leech:0.025, tickMs:16500, healPct:0.045, debuff:'decay', debuffMs:4200, summonTheme:'spore' } },
+  { key:'void_rupture', icon:'🪐', name:'虚空裂隙', tags:['虚空','虚无','裂隙','吞界','虚刃','卡雷什','影卫','暗影界','终域'], meta:'终局异常', desc:'虚空裂隙会吞噬节奏并制造高压窗口。周期造成虚空伤害、资源流失和易伤。', mod:{ hp:0.18, atk:0.12, def:0.06, dr:0.025, tickMs:14500, dmgPct:0.040, drainPct:0.10, debuff:'vulnerable', debuffMs:3800 } },
+  { key:'warband_rally', icon:'📯', name:'战团集结', tags:['兽人','巨魔','督军','半人马','黑铁','血色','守卫','战士','军团','舰队'], meta:'群体增援', desc:'敌方战团会共享战吼。周期提高敌方攻击,首领和稀有精英更容易召来援军。', mod:{ hp:0.12, atk:0.11, def:0.04, tickMs:17000, hastePct:0.14, summonTheme:'warband', summonBossOnly:true } }
+];
+
+const WORLD_RARE_MUTATIONS = [
+  { key:'mirrorhide', icon:'🪞', name:'镜鳞外皮', tags:['arcane','shadow','brute'], desc:'受到爆发后会短暂获得护盾。稀有精英生命和减伤提高。', mod:{ hp:0.18, def:0.08, dr:0.035, shieldPct:0.050 } },
+  { key:'blood_scent', icon:'🩸', name:'嗜血追猎', tags:['beast','brute','nature'], desc:'血量越低越凶。攻击、暴击和吸血提高,周期施加残废。', mod:{ atk:0.12, crit:0.055, leech:0.045, debuff:'cripple', debuffMs:3600 } },
+  { key:'phase_step', icon:'💫', name:'相位步', tags:['arcane','shadow'], desc:'会闪避关键攻击并扰乱施法。闪避提高,周期沉默或冰缚。', mod:{ hp:0.10, dodge:0.055, spd:0.08, debuff:'silence', debuffMs:1600 } },
+  { key:'bone_tithe', icon:'🦴', name:'白骨贡赋', tags:['undead','shadow','brute'], desc:'战斗越久越硬。防御、生命提高,周期造成凋零压力。', mod:{ hp:0.16, def:0.12, dr:0.025, debuff:'decay2', debuffMs:3000 } },
+  { key:'storm_core', icon:'⚡', name:'风暴核心', tags:['elemental','arcane'], desc:'体内元素核心会反复爆发。攻击提高,周期伤害更高并抽取资源。', mod:{ atk:0.14, def:0.05, drainPct:0.10, dmgPct:0.030 } },
+  { key:'spore_crown', icon:'🍄', name:'孢冠再生', tags:['nature','beast'], desc:'孢冠让稀有精英不断自我修复。生命、吸血提高,周期治疗。', mod:{ hp:0.20, leech:0.035, healPct:0.045 } },
+  { key:'commander_mark', icon:'🎯', name:'指挥官标记', tags:['brute','arcane'], desc:'会锁定你的弱点。攻击和暴击提高,周期施加易伤。', mod:{ atk:0.10, crit:0.045, debuff:'vulnerable', debuffMs:3600 } },
+  { key:'void_seed', icon:'🧿', name:'虚空种子', tags:['shadow','arcane','nature'], desc:'体内虚空种子不断开裂。全属性提高,周期虚弱并造成虚空伤害。', mod:{ hp:0.14, atk:0.10, def:0.06, dr:0.020, dmgPct:0.025, debuff:'weaken', debuffMs:4200 } }
+];
+
+function worldZoneThreatText(map, sub) {
+  const boss = map?.boss || {};
+  const pieces = [
+    map?.key, map?.name, map?.desc, map?.faction,
+    sub?.name, sub?.mobs,
+    boss.name, boss.desc, boss.emoji,
+    ...((boss.skills || []).map(s => `${s.name || ''} ${s.desc || ''} ${s.icon || ''}`))
+  ];
+  return pieces.filter(Boolean).join(' ');
+}
+
+function worldThreatHash(s) {
+  let h = 2166136261;
+  const text = String(s || '');
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function worldZoneThreatScore(rule, map, sub) {
+  const text = worldZoneThreatText(map, sub);
+  let score = 0;
+  for (const tag of (rule.tags || [])) {
+    if (text.includes(tag)) score += 12;
+  }
+  const high = map?.lvlRange?.[1] || sub?.lvl?.[1] || 1;
+  if (rule.key === 'void_rupture' && high >= 70) score += 4;
+  if (rule.key === 'titan_overwatch' && high >= 55) score += 2;
+  score += (worldThreatHash(`${map?.key || ''}:${sub?.name || ''}:${rule.key}`) % 7);
+  return score;
+}
+
+function worldZoneThreatPressure(map, sub, opts) {
+  const high = map?.lvlRange?.[1] || sub?.lvl?.[1] || 1;
+  const level = Math.max(1, high);
+  const curve = 1 + Math.max(0, level - 20) * 0.006 + Math.max(0, level - 60) * 0.008 + Math.max(0, level - 90) * 0.006;
+  const boss = opts?.boss ? 0.45 : 0;
+  const rare = opts?.rare ? 0.65 : 0;
+  const pack = opts?.packSize > 2 ? 0.10 : 0;
+  return Math.max(0.85, Math.min(2.35, curve + boss + rare + pack));
+}
+
+function getWorldZoneThreats(map, sub, opts) {
+  if (!map && typeof getMap === 'function') map = getMap();
+  if (!map) return [];
+  if (!sub) sub = map.sub?.[state?.currentSubzone || 0] || map.sub?.[0] || null;
+  const high = map.lvlRange?.[1] || sub?.lvl?.[1] || 1;
+  const count = Math.max(1, Math.min(3, opts?.count || (opts?.rare ? 2 : (opts?.boss || high >= 70 ? 2 : 1))));
+  return WORLD_ZONE_THREAT_RULES
+    .map(rule => ({ rule, score:worldZoneThreatScore(rule, map, sub) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, count)
+    .map(entry => {
+      const pressure = worldZoneThreatPressure(map, sub, opts);
+      return {
+        ...entry.rule,
+        pressure,
+        meta:entry.rule.meta || '区域威胁',
+        desc:entry.rule.desc || '该区域正在影响野外战斗。',
+        mod:{ ...(entry.rule.mod || {}) }
+      };
+    });
+}
+
+function getRareEliteMutations(rare, map) {
+  if (!rare) return [];
+  map = map || (typeof MAPS !== 'undefined' ? MAPS.find(m => m.key === rare.mapKey) : null);
+  const text = `${rare.theme || ''} ${rare.name || ''} ${rare.desc || ''} ${worldZoneThreatText(map, map?.sub?.[0])}`;
+  const high = rare.lvl || map?.lvlRange?.[1] || 1;
+  const count = high >= 75 ? 3 : 2;
+  return WORLD_RARE_MUTATIONS
+    .map(rule => {
+      let score = 0;
+      for (const tag of (rule.tags || [])) if (text.includes(tag)) score += 10;
+      score += worldThreatHash(`${rare.key || rare.name}:${rule.key}`) % 9;
+      return { rule, score };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, count)
+    .map(entry => ({ ...entry.rule, meta:'稀有异变', mod:{ ...(entry.rule.mod || {}) } }));
+}
+
 function switchSubzone(mapKey, subIdx) {
   const map = MAPS.find(m => m.key === mapKey);
   if (!map) return;

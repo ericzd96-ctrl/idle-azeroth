@@ -377,7 +377,7 @@ function getRareEliteForMap(mapKey) {
 function buildRareEliteMonsterData(rare) {
   const baseHp = Math.floor((100 + rare.lvl * rare.lvl * 7.5) * (rare.hpMul || 1));
   const baseAtk = Math.floor((10 + rare.lvl * 3.2) * (rare.atkMul || 1));
-  return {
+  const mon = {
     name: rare.emoji + rare.name,
     bossName: rare.name,
     isBoss: true,
@@ -416,6 +416,14 @@ function buildRareEliteMonsterData(rare) {
     _lastTrick: 0,
     _nextTrickAt: Date.now() + 9000
   };
+  const map = typeof MAPS !== 'undefined' ? MAPS.find(m => m.key === rare.mapKey) : null;
+  if (typeof applyWorldZoneThreatScalingToMonster === 'function') {
+    applyWorldZoneThreatScalingToMonster(mon, map, map?.sub?.[state?.currentSubzone || 0] || map?.sub?.[0], { rare:true, boss:true, count:2 });
+  }
+  if (typeof applyRareEliteMutationScaling === 'function') {
+    applyRareEliteMutationScaling(mon, rare, map);
+  }
+  return mon;
 }
 
 function maybeSpawnRareEliteEncounter(map) {
