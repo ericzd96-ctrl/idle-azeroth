@@ -809,6 +809,36 @@ h1 {
   background: rgba(127, 29, 29, .28);
   color: #fecaca;
 }
+.comp-combat-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  margin: 6px 0;
+  padding: 6px;
+  border: 1px solid rgba(52, 211, 153, .26);
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(6, 78, 59, .18), rgba(15, 23, 42, .32));
+  color: #bbf7d0;
+  font-size: 10px;
+  line-height: 1.35;
+}
+.comp-combat-summary.awakened {
+  border-color: rgba(216, 180, 254, .38);
+  background: linear-gradient(180deg, rgba(88, 28, 135, .22), rgba(15, 23, 42, .34));
+  color: #e9d5ff;
+}
+.comp-combat-summary span {
+  min-width: 0;
+  padding: 3px 5px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, .16);
+}
+.comp-combat-summary b { color: #fef3c7; }
+.comp-combat-summary em {
+  grid-column: 1 / -1;
+  color: #d8c7a2;
+  font-style: normal;
+}
 .comp-card-bonds {
   display: flex;
   flex-wrap: wrap;

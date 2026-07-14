@@ -3552,6 +3552,38 @@ function companionMetaBadges(tpl){
   }
   return `<div class="comp-card-tags">${badges.join('')}</div>`;
 }
+function companionQualityBattleTarget(tpl){
+  const q = compQuality(tpl);
+  const dps = { white:40, green:60, blue:80, purple:100, orange:140 };
+  const support = { white:22, green:32, blue:44, purple:58, orange:78 };
+  const tank = { white:26, green:38, blue:52, purple:68, orange:92 };
+  const table = tpl?.role === 'dps' ? dps : tpl?.role === 'tank' ? tank : support;
+  return table[q.key] || 40;
+}
+function companionQualitySkillCount(tpl){
+  return (tpl?.skills || []).filter(sk => sk && sk._qualitySkill).length;
+}
+function companionCombatSummaryHtml(tpl, comp, options){
+  if(!tpl) return '';
+  const q = compQuality(tpl);
+  const target = companionQualityBattleTarget(tpl);
+  const qSkills = companionQualitySkillCount(tpl);
+  const totalSkills = (typeof companionSkillPool === 'function') ? companionSkillPool(tpl, comp).length : ((tpl.skills || []).length + (tpl.signature ? 1 : 0));
+  const awakened = comp && typeof companionIsAwakened === 'function' && companionIsAwakened(comp);
+  let atkText = '';
+  if(comp && typeof computeCompanionTemplateStats === 'function' && state?.hero?.atk){
+    const st = computeCompanionTemplateStats(comp, tpl, { ignoreDungeon:true });
+    if(st) atkText = ` · 当前攻击 ${Math.round((st.atk / Math.max(1, state.hero.atk || 1)) * 100)}%`;
+  }
+  const roleText = tpl.role === 'dps' ? '输出目标' : tpl.role === 'tank' ? '坦克输出参考' : '辅助输出参考';
+  const compact = options?.compact;
+  return `<div class="comp-combat-summary ${awakened ? 'awakened' : ''}">
+    <span><b>${roleText}</b>${target}%${atkText}</span>
+    <span>${q.name}战技 +${qSkills} · 技能 ${totalSkills}</span>
+    <span>${awakened ? '觉醒已生效' : '5星可觉醒跃迁'}</span>
+    ${compact ? '' : `<em>${tpl.role === 'dps' ? '输出随从按品质常驻压过主角,觉醒后进入主战力档位。' : '非输出定位也会通过护盾、治疗、控制和战技补足价值。'}</em>`}
+  </div>`;
+}
 function buildCompanionEntries(){
   const ownedMap = new Map();
   const wished = new Set(companionWishlistKeys());
@@ -4200,6 +4232,7 @@ function companionDetailPanelHtml(entries) {
       <button class="comp-detail-close" data-action="compclosedetail">关闭</button>
     </div>
     <div class="comp-detail-lore">${tipAttrText(tpl.desc || '')}</div>
+    ${companionCombatSummaryHtml(tpl, owned, { compact:false })}
     <div class="comp-detail-grid">
       <div class="comp-detail-block">
         <div class="comp-detail-block-title">参战加成</div>
@@ -4765,6 +4798,7 @@ function renderCompanion() {
       <div class="row"><b>${compIconHtml} ${tpl?.name}</b><span class="pill" style="background:var(--accent);color:#000">出战中</span></div>
       <div class="muted"><span class="${q.cls}">${q.name}</span> · ${'⭐'.repeat(act.stars||1)} · ${roleTag(tpl?.role)} · ${(tpl?.skills?.length||0)}主动${tpl?.signature?'+1专属':''}</div>
       ${companionMetaBadges(tpl)}
+      ${companionCombatSummaryHtml(tpl, act, { compact:true })}
       ${companionBondChipsHtml(tpl, entries)}
       <div class="muted" style="font-size:10px">参战属性: 攻${fmt(st?.atk||0)} 防${fmt(st?.def||0)} 血${fmt(st?.hpMax||0)}</div>
       <div class="muted" style="font-size:10px;color:#6ee7b7">专属加成: ${ownTxt||'无'}</div>
@@ -4810,6 +4844,7 @@ function renderCompanion() {
       <div class="row"><b>${compIconHtml} ${tpl.name}</b><span class="${q.cls}">${q.name} · ${(tpl.skills?.length||0)}主动${tpl.signature?'+1专属':''}</span></div>
       <div class="muted" style="font-size:10px">${'⭐'.repeat(c.stars||1)} · ${roleTag(tpl.role)} · ${tpl.desc}</div>
       ${companionMetaBadges(tpl)}
+      ${companionCombatSummaryHtml(tpl, c, { compact:true })}
       ${companionBondChipsHtml(tpl, entries)}
       ${unique ? `<div class="muted" style="font-size:10px;color:#bae6fd">独有性质: ${unique.icon || '✦'} ${unique.name}${uniqueSummary ? ` · ${uniqueSummary}` : ''}</div>` : ''}
       ${tpl.signature?`<div class="muted" style="font-size:10px;color:#fcd34d">专属技: ${(typeof skillIcon === 'function') ? skillIcon(tpl.signature.name, 14, tpl.signature.icon||'✨') : (tpl.signature.icon||'✨')} ${tpl.signature.name}${tpl.signature.mode==='passive'?' [被动]':''}</div>`:''}
