@@ -287,6 +287,7 @@ function focusBuffs(now) {
         key.startsWith('cataclysmActive:') ? ((aura.expire || 0) > now) :
         key === 'zoneThreatScaling' ? !!mon._zoneThreats?.length :
         key === 'rareMutation' ? !!mon._rareMutations?.length :
+        key === 'fieldCommander' ? !!mon._fieldCommander :
         key.startsWith('zoneThreatActive:') ? ((aura.expire || 0) > now) :
         activeKeys.includes(key);
       if (!shouldKeep) {
@@ -747,6 +748,18 @@ function worldZoneThreatTagsHtml(map, sub, opts) {
     meta:t.meta || '区域威胁'
   }, { fallbackIcon:'achievement_zone_outland_01', color:'#fb7185', meta:t.meta, metaVisible:!!t.meta })).join('')}</span>`;
 }
+
+function worldFieldOperationTagHtml(map, subIdx, opts) {
+  if (typeof worldFieldOperationTip !== 'function') return '';
+  const tip = worldFieldOperationTip(map, subIdx, opts || {});
+  if (!tip) return '';
+  return inlineTipSpanHtml(tip, {
+    fallbackIcon:'achievement_zone_kalimdor_01',
+    color:tip.meta === '已完成' ? '#86efac' : (tip.meta === '首领现身' ? '#fbbf24' : '#67e8f9'),
+    meta:tip.meta,
+    metaVisible:!!opts?.metaVisible
+  });
+}
 function dungeonProgressMechanicTags(ds, contract, alert, timerStatus) {
   if (!ds) return '';
   const tags = [];
@@ -881,6 +894,14 @@ function monsterEncounterDetailHtml(mon, bossData) {
       name:mut.name || '稀有异变',
       meta:mut.meta || '',
       desc:`${mut.desc || '稀有精英获得额外专属性质。'} ${mon._rareMutationDesc || ''}`.trim()
+    }));
+  }
+  if (mon._fieldCommander && mon._fieldOperation) {
+    html += monsterMechanicSectionHtml('野外据点', '#67e8f9', [mon._fieldOperation], 'achievement_zone_kalimdor_01', op => ({
+      icon:op.icon || '🗺️',
+      name:op.name || '野外据点',
+      meta:'据点指挥官',
+      desc:`${op.desc || '击败据点指挥官可完成本区域的野外事件。'} ${mon._fieldOperationDesc || ''}`.trim()
     }));
   }
   if (state.mode === 'worldboss' && bossData?.key) {
@@ -1814,9 +1835,10 @@ function updateBattleVisuals() {
       const subKills = state.subzoneKills[subKey] || 0;
       const cleared = state.subzoneCleared[subKey];
       const threatTags = worldZoneThreatTagsHtml(map, sub);
+      const fieldOpTag = worldFieldOperationTagHtml(map, state.currentSubzone, { metaVisible:true });
       $('h-zone').innerHTML = `${mapIconHtml} ${map.name} · ${sub.name}`;
       $('zone-name').innerHTML = `${mapIconHtml} ${map.name} · ${sub.name} (等级${sub.lvl[0]}-${sub.lvl[1]})`;
-      $('progress-text').innerHTML = `探索进度 <b>${Math.min(subKills,50)}</b> / 50 ${cleared?'✅':''}${threatTags ? ` · ${threatTags}` : ''}`;
+      $('progress-text').innerHTML = `探索进度 <b>${Math.min(subKills,50)}</b> / 50 ${cleared?'✅':''}${fieldOpTag ? ` · ${fieldOpTag}` : ''}${threatTags ? ` · ${threatTags}` : ''}`;
       bindInlineTipElements($('progress-text'));
     }
   } else if (state.mode === 'boss') {
@@ -2891,6 +2913,7 @@ function renderMap() {
     const mapIconHtml = symbolIconHtml(m.icon, 18, m.name, 'inv_misc_map_01');
     const mapArt = m.art ? `<div class="map-art-banner" style="background-image:linear-gradient(180deg, rgba(11,15,25,.14), rgba(11,15,25,.72)), url('${m.art}')"></div>` : '';
     const mapThreatTags = worldZoneThreatTagsHtml(m, m.sub?.[0], { count:(m.lvlRange?.[1] || 1) >= 70 ? 2 : 1 });
+    const mapFieldOpTag = worldFieldOperationTagHtml(m, 0, { metaVisible:true, previewOnly:!(m.key === state.currentMap && state.currentSubzone === 0) });
     let html = `
       <div class="map-head">
         <span class="mname">${mapIconHtml} ${m.name}</span>
@@ -2898,14 +2921,16 @@ function renderMap() {
       </div>
       ${mapArt}
       <div class="map-desc">${m.desc}${tooHigh?' · ⚠️ 当前终局进度偏低,请谨慎推进':''}</div>
+      ${mapFieldOpTag ? `<div class="muted" style="font-size:11px;margin:4px 0 6px">野外据点 ${mapFieldOpTag}</div>` : ''}
       ${mapThreatTags ? `<div class="muted" style="font-size:11px;margin:4px 0 6px">区域威胁 ${mapThreatTags}</div>` : ''}
       <div class="sub-list">`;
     m.sub.forEach((s, idx) => {
       const subKey = `${m.key}-${idx}`;
       const active = isCurrent && state.currentSubzone === idx && state.mode === 'world';
       const cleared = state.subzoneCleared[subKey];
+      const opTag = worldFieldOperationTagHtml(m, idx, { previewOnly:!(m.key === state.currentMap && state.currentSubzone === idx) });
       html += `<button class="sub-btn ${active?'active':''}" data-action="subzone" data-map="${m.key}" data-sub="${idx}">
-        ${cleared?'<span class="sub-cleared">✅ </span>':''}${s.name}
+        ${cleared?'<span class="sub-cleared">✅ </span>':''}${s.name}${opTag ? ` · ${opTag}` : ''}
         <span class="sub-lvl">${typeof contentRangeLabel === 'function' ? contentRangeLabel(s.lvl[0], s.lvl[1]) : `等级${s.lvl[0]}-${s.lvl[1]}`}</span>
       </button>`;
     });

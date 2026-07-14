@@ -33,6 +33,7 @@ const defaultState = () => ({
   currentSubzone: 0,
   subzoneKills: {},
   subzoneCleared: {},
+  worldFieldOps: { active:{}, completed:{} },
   bossCd: {},
   killsTotal: 0,
   gold: 0,
@@ -475,6 +476,10 @@ function mergeState(saved) {
     bossCd: saved.bossCd || {},
     subzoneKills: saved.subzoneKills || {},
     subzoneCleared: saved.subzoneCleared || {},
+    worldFieldOps: saved.worldFieldOps ? Object.assign({ active:{}, completed:{} }, saved.worldFieldOps, {
+      active: saved.worldFieldOps.active || {},
+      completed: saved.worldFieldOps.completed || {},
+    }) : { active:{}, completed:{} },
     travel: null,
     currentMonsters: saved.currentMon ? [saved.currentMon] : (saved.currentMonsters || []),
     // 装备深度

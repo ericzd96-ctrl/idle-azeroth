@@ -2982,8 +2982,11 @@ function applyWorldZoneThreatEffects(mon, now){
   if(!(state.mode === 'world' || state.mode === 'boss') || !mon || mon.hp <= 0) return;
   const threats = Array.isArray(mon._zoneThreats) ? mon._zoneThreats : [];
   const mutations = Array.isArray(mon._rareMutations) ? mon._rareMutations : [];
-  if(!threats.length && !mutations.length) return;
-  const sources = threats.concat(mutations.map(m => ({ ...m, rareMutation:true, pressure:1.15 })));
+  const fieldOps = mon._fieldOperation ? [{ ...mon._fieldOperation, fieldOperation:true, pressure:1.2 }] : [];
+  if(!threats.length && !mutations.length && !fieldOps.length) return;
+  const sources = threats
+    .concat(mutations.map(m => ({ ...m, rareMutation:true, pressure:1.15 })))
+    .concat(fieldOps);
   for(const src of sources){
     const mod = src.mod || {};
     const cd = Math.max(8500, Math.floor((mod.tickMs || 17000) / Math.max(0.8, src.pressure || 1)));
@@ -3036,10 +3039,49 @@ function applyWorldZoneThreatEffects(mon, now){
     }
     setMonsterTrickAura(mon, 'zoneThreatActive:' + src.key, { name:src.name, icon:src.icon || '🧭', desc:src.desc || '区域威胁正在影响战斗' }, now + 6500, { desc:src.desc || '区域威胁正在影响战斗' });
     showMonsterFloat(mon, `${src.icon || '🧭'}威胁`, src.rareMutation ? '#fbbf24' : '#fb7185', { variant:'boss', scale:1.05 });
-    log(`${src.icon || '🧭'} ${src.rareMutation ? '稀有异变' : '区域威胁'}「${src.name}」触发: ${src.desc || '野外环境正在施压'}`, src.rareMutation ? 'epic' : 'bad');
+    const sourceName = src.fieldOperation ? '野外据点' : (src.rareMutation ? '稀有异变' : '区域威胁');
+    log(`${src.icon || '🧭'} ${sourceName}「${src.name}」触发: ${src.desc || '野外环境正在施压'}`, src.rareMutation || src.fieldOperation ? 'epic' : 'bad');
     if(typeof markDirty === 'function') markDirty('hero', 'stage');
     break;
   }
+}
+
+function applyWorldFieldOperationMods(mon, op){
+  if(!mon || !op) return mon;
+  const mod = op.mod || op.rule?.mod || {};
+  const high = Math.max(1, mon.lvl || 1);
+  const pressure = 1.12 + Math.max(0, high - 30) * 0.006;
+  const source = { mod, pressure };
+  const delta = applyThreatStatMods(mon, source, pressure, 1.2);
+  mon._fieldOperation = op;
+  mon._fieldCommander = true;
+  mon._fieldOperationKey = op.key;
+  mon._fieldOperationDesc = `据点指挥官强化: 生命+${Math.round(delta.hp*100)}%, 攻击+${Math.round(delta.atk*100)}%, 防御+${Math.round(delta.def*100)}%`;
+  setMonsterTrickAura(mon, 'fieldCommander', { name:op.name || '野外据点', icon:op.icon || '🗺️', desc:mon._fieldOperationDesc }, 0, { desc:mon._fieldOperationDesc });
+  return mon;
+}
+
+function spawnWorldFieldCommander(map, sub){
+  if(!map || !sub || typeof getWorldFieldOperation !== 'function') return false;
+  const op = getWorldFieldOperation(map, state.currentSubzone);
+  if(!op || !op.commanderPending || op.completed) return false;
+  const lvl = Math.max(sub.lvl?.[1] || map.lvlRange?.[1] || 1, (map.lvlRange?.[1] || 1) + 1);
+  const name = typeof worldFieldCommanderName === 'function' ? worldFieldCommanderName(op, map, sub) : `${op.icon || '🗺️'}据点指挥官`;
+  const mon = makeMonster(name, lvl, true, lvl >= 70 ? 'epic' : 'rare');
+  mon.bossName = op.commander || op.name || '据点指挥官';
+  mon._monSupportSkills = buildMonsterSupportPool(mon.bossName, null, lvl, true, 2);
+  mon._supportSkillCooldowns = {};
+  mon._nextTrickAt = Date.now() + 6500;
+  mon.dropRate = Math.max(mon.dropRate || 0, 0.75);
+  mon.gemChance = Math.max(mon.gemChance || 0, lvl >= 55 ? 0.35 : 0.12);
+  mon.dmgReduction = Math.max(mon.dmgReduction || 0, 0.12);
+  applyWorldZoneThreatScalingToMonster(mon, map, sub, { boss:true, count:2 });
+  applyWorldFieldOperationMods(mon, op);
+  applySpecAdaptationToMonster(mon, { extra:1 });
+  state.currentMonsters = [mon];
+  log(`${op.icon || '🗺️'} 据点指挥官「${mon.bossName}」现身!`, 'epic');
+  if(typeof markDirty === 'function') markDirty('map', 'stage');
+  return true;
 }
 
 function makeMonster(name,lvl,isBoss,maxRarity){
@@ -3086,6 +3128,9 @@ function spawnMonster(){
   if(state.mode==='boss')return spawnZoneBoss();
   const map=getMap();if(!map){state.currentMap=MAPS[0].key;state.currentSubzone=0;return spawnMonster();}
   const sub=map.sub[state.currentSubzone]||map.sub[0];
+  if(typeof shouldSpawnWorldFieldCommander==='function' && shouldSpawnWorldFieldCommander(map, state.currentSubzone)){
+    if(spawnWorldFieldCommander(map, sub)) return;
+  }
   if(typeof maybeSpawnRareEliteEncounter==='function'&&maybeSpawnRareEliteEncounter(map, sub)) return;
   // 敌群:野外可同时刷出 1~4 只敌人(怪群越大,单只攻击略降,避免瞬秒,但总收益更高)
   const packRoll=Math.random();
@@ -6520,6 +6565,7 @@ function onMonsterDeath(mon){
   // 世界Boss 击杀
   if(mon.isWorldBoss){if(typeof onWorldBossKill==='function') onWorldBossKill(mon);return;}
   if(mon.isRareElite){if(typeof onRareEliteKill==='function') onRareEliteKill(mon);return;}
+  if(mon._fieldCommander){if(typeof onWorldFieldCommanderKill==='function') onWorldFieldCommanderKill(mon);return;}
   if(mon._roomReward && !mon._roomExpired){
     const ds = state.dungeonState || state.mythicState;
     if(mon._roomReward.type === 'relic'){
@@ -6602,7 +6648,7 @@ function onMonsterDeath(mon){
       if(Math.random()<0.15){const purple=rollItemOfRarity('epic',mon.lvl);addToInventory(purple);if(typeof eventsOnItemGet==='function')eventsOnItemGet(purple);log('🎉 额外掉落 '+purple.name,'epic');}
     }
     state.mode='world';markDirty('map');}spawnMonster();}
-  else{const subKey=state.currentMap+'-'+state.currentSubzone;state.subzoneKills[subKey]=(state.subzoneKills[subKey]||0)+1;if(state.subzoneKills[subKey]===50&&!state.subzoneCleared[subKey]){state.subzoneCleared[subKey]=true;const map=getMap();const sub=map.sub[state.currentSubzone];state.gold+=sub.lvl[1]*30;log('🌟 ['+sub.name+'] 探索完成! +'+sub.lvl[1]*30+'💰','epic');const it3=rollItem('rare',sub.lvl[1],state.currentMap);addToInventory(it3);if(typeof eventsOnItemGet==='function') eventsOnItemGet(it3);if(typeof eventsOnSubzoneClear==='function') eventsOnSubzoneClear();if(typeof progressionOnSubzoneClear==='function') progressionOnSubzoneClear(state.currentMap,state.currentSubzone);markDirty('map');}
+  else{const subKey=state.currentMap+'-'+state.currentSubzone;state.subzoneKills[subKey]=(state.subzoneKills[subKey]||0)+1;if(typeof recordWorldFieldOperationKill==='function') recordWorldFieldOperationKill(mon);if(state.subzoneKills[subKey]===50&&!state.subzoneCleared[subKey]){state.subzoneCleared[subKey]=true;const map=getMap();const sub=map.sub[state.currentSubzone];state.gold+=sub.lvl[1]*30;log('🌟 ['+sub.name+'] 探索完成! +'+sub.lvl[1]*30+'💰','epic');const it3=rollItem('rare',sub.lvl[1],state.currentMap);addToInventory(it3);if(typeof eventsOnItemGet==='function') eventsOnItemGet(it3);if(typeof eventsOnSubzoneClear==='function') eventsOnSubzoneClear();if(typeof progressionOnSubzoneClear==='function') progressionOnSubzoneClear(state.currentMap,state.currentSubzone);markDirty('map');}
     // 多敌:仅移除这一只,整波清空后才刷新下一波
     const di=state.currentMonsters.indexOf(mon);if(di>=0)state.currentMonsters.splice(di,1);
     if(state.currentMonsters.length===0)spawnMonster();}

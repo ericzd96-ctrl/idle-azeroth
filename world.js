@@ -123,6 +123,17 @@ const WORLD_RARE_MUTATIONS = [
   { key:'void_seed', icon:'🧿', name:'虚空种子', tags:['shadow','arcane','nature'], desc:'体内虚空种子不断开裂。全属性提高,周期虚弱并造成虚空伤害。', mod:{ hp:0.14, atk:0.10, def:0.06, dr:0.020, dmgPct:0.025, debuff:'weaken', debuffMs:4200 } }
 ];
 
+const WORLD_FIELD_OPERATION_RULES = [
+  { key:'break_blockade', icon:'🛡️', name:'突破封锁线', tags:['守卫','军团','黑铁','兽人','迪菲亚','血色','舰队'], meta:'据点突破', desc:'敌人在此地架起封锁线。击杀野外敌人可摧毁路障,完成后会引出据点指挥官。', commander:'封锁线督军', reward:'金币、荣誉与一件区域装备', mod:{ hp:0.18, atk:0.11, def:0.10, shieldPct:0.06 } },
+  { key:'seal_rupture', icon:'🪐', name:'封印裂隙', tags:['虚空','裂隙','暗影','邪能','卡雷什','虚刃','影点','暮色'], meta:'裂隙封印', desc:'空间裂隙正在吞噬附近生物。击杀被污染的敌人可稳定裂隙,完成后会出现裂隙看守。', commander:'裂隙看守', reward:'精华、钻石与高品质装备', mod:{ hp:0.20, atk:0.13, dr:0.04, drainPct:0.08 } },
+  { key:'purge_plague', icon:'☠️', name:'净化瘟疫源', tags:['瘟疫','亡灵','腐','凋零','怨灵','食尸鬼','白骨'], meta:'净化事件', desc:'瘟疫源正在扩散。击杀感染敌人可削弱瘟疫,完成后会唤出疫源宿主。', commander:'疫源宿主', reward:'精华、金币与区域装备', mod:{ hp:0.22, atk:0.08, leech:0.05, burnDpsPct:0.012 } },
+  { key:'hunt_alpha', icon:'🐾', name:'追猎兽群首领', tags:['野兽','狼','熊','虎','豹','野猪','鳄','蝎','暴龙','迅猛龙'], meta:'狩猎事件', desc:'兽群正在围猎旅行者。击杀野兽会逼近兽群首领,完成后可挑战阿尔法猎手。', commander:'阿尔法猎手', reward:'金币、荣誉与暴击向装备', mod:{ hp:0.16, atk:0.14, crit:0.06, hastePct:0.18 } },
+  { key:'drain_arcane', icon:'🔮', name:'关闭奥术枢纽', tags:['法师','奥术','法力','秘库','圆顶','守望者','机器人','机械'], meta:'枢纽事件', desc:'奥术枢纽正在给敌人供能。击杀守卫可过载枢纽,完成后会出现枢纽监管者。', commander:'枢纽监管者', reward:'钻石、精华与法术装备', mod:{ hp:0.17, atk:0.09, def:0.14, shieldPct:0.08, drainPct:0.12 } },
+  { key:'quell_elements', icon:'🌋', name:'平息元素暴动', tags:['火','元素','熔岩','风暴','沙暴','潮汐','闪电','灼热','燃烧'], meta:'元素事件', desc:'元素暴动正在撕裂地形。击杀元素化敌人可削弱风暴,完成后会出现暴动核心。', commander:'暴动核心', reward:'金币、精华与元素装备', mod:{ hp:0.18, atk:0.15, shieldPct:0.05, dmgPct:0.030 } },
+  { key:'burn_sporebed', icon:'🍄', name:'焚毁孢床', tags:['孢','蘑菇','自然','沼泽','植物','德鲁伊','湿地','哈兰达尔'], meta:'孢群事件', desc:'失控孢床正在复制敌人。击杀孢化生物可焚毁菌丝,完成后会出现孢床母体。', commander:'孢床母体', reward:'精华、金币与恢复装备', mod:{ hp:0.24, def:0.08, leech:0.04, healPct:0.055 } },
+  { key:'ambush_ring', icon:'🎯', name:'清剿伏击圈', tags:['盗','刺客','劫匪','巨魔','半人马','暗巷','路口','哨兵'], meta:'伏击事件', desc:'伏击圈正在收紧。击杀巡逻敌人可暴露伏击首领,完成后会出现伏击队长。', commander:'伏击队长', reward:'金币、荣誉与敏捷装备', mod:{ hp:0.14, atk:0.15, dodge:0.06, crit:0.04 } }
+];
+
 function worldZoneThreatText(map, sub) {
   const boss = map?.boss || {};
   const pieces = [
@@ -142,6 +153,167 @@ function worldThreatHash(s) {
     h = Math.imul(h, 16777619);
   }
   return h >>> 0;
+}
+
+function ensureWorldFieldOps() {
+  if (!state.worldFieldOps || typeof state.worldFieldOps !== 'object') state.worldFieldOps = { active:{}, completed:{} };
+  if (!state.worldFieldOps.active || typeof state.worldFieldOps.active !== 'object') state.worldFieldOps.active = {};
+  if (!state.worldFieldOps.completed || typeof state.worldFieldOps.completed !== 'object') state.worldFieldOps.completed = {};
+  return state.worldFieldOps;
+}
+
+function worldFieldOpKey(map, subIdx) {
+  return `${map?.key || state.currentMap}-${Math.max(0, subIdx == null ? (state.currentSubzone || 0) : subIdx)}`;
+}
+
+function worldFieldOperationScore(rule, map, sub) {
+  const text = worldZoneThreatText(map, sub);
+  let score = 0;
+  for (const tag of (rule.tags || [])) if (text.includes(tag)) score += 10;
+  score += worldThreatHash(`${map?.key || ''}:${sub?.name || ''}:${rule.key}:field`) % 8;
+  return score;
+}
+
+function selectWorldFieldOperationRule(map, sub) {
+  return WORLD_FIELD_OPERATION_RULES
+    .map(rule => ({ rule, score:worldFieldOperationScore(rule, map, sub) }))
+    .sort((a, b) => b.score - a.score)[0]?.rule || WORLD_FIELD_OPERATION_RULES[0];
+}
+
+function worldFieldOperationGoal(map, sub) {
+  const high = sub?.lvl?.[1] || map?.lvlRange?.[1] || 1;
+  return Math.max(8, Math.min(18, 8 + Math.floor(high / 14)));
+}
+
+function getWorldFieldOperation(map, subIdx, opts) {
+  if (!map && typeof getMap === 'function') map = getMap();
+  if (!map) return null;
+  const idx = Math.max(0, subIdx == null ? (state?.currentSubzone || 0) : subIdx);
+  const sub = map.sub?.[idx] || map.sub?.[0];
+  if (!sub) return null;
+  const ops = ensureWorldFieldOps();
+  const key = worldFieldOpKey(map, idx);
+  const completed = ops.completed[key];
+  if (completed && !opts?.includeCompleted) return Object.assign({ key, completed:true }, completed);
+  if (!ops.active[key] && !completed && opts?.previewOnly) {
+    const rule = selectWorldFieldOperationRule(map, sub);
+    return Object.assign({}, rule, {
+      key,
+      rule,
+      mapKey:map.key,
+      subIdx:idx,
+      subName:sub.name,
+      progress:0,
+      goal:worldFieldOperationGoal(map, sub),
+      commanderPending:false,
+      commanderKilled:false,
+      preview:true,
+      completed:false
+    });
+  }
+  if (!ops.active[key] && !completed) {
+    const rule = selectWorldFieldOperationRule(map, sub);
+    ops.active[key] = {
+      key,
+      ruleKey:rule.key,
+      mapKey:map.key,
+      subIdx:idx,
+      progress:0,
+      goal:worldFieldOperationGoal(map, sub),
+      commanderPending:false,
+      commanderKilled:false,
+      startedAt:Date.now()
+    };
+  }
+  const active = ops.active[key];
+  const rule = WORLD_FIELD_OPERATION_RULES.find(r => r.key === active?.ruleKey) || selectWorldFieldOperationRule(map, sub);
+  if (!active) return completed ? Object.assign({ key, completed:true }, completed) : null;
+  return Object.assign({}, rule, active, { rule, subName:sub.name, completed:false });
+}
+
+function worldFieldOperationProgressText(op) {
+  if (!op) return '';
+  if (op.completed) return '已完成';
+  if (op.commanderPending) return '指挥官现身';
+  return `${Math.min(op.progress || 0, op.goal || 1)}/${op.goal || 1}`;
+}
+
+function worldFieldOperationTip(map, subIdx, opts) {
+  const op = getWorldFieldOperation(map, subIdx, { includeCompleted:true, previewOnly:!!opts?.previewOnly });
+  if (!op) return null;
+  return {
+    name:op.name || '野外据点',
+    icon:op.icon || '🗺️',
+    desc:`${op.desc || '完成野外事件可引出据点指挥官。'} 进度: ${worldFieldOperationProgressText(op)}。奖励: ${op.reward || '区域补给'}。`,
+    meta:op.completed ? '已完成' : (op.commanderPending ? '首领现身' : op.meta || '野外事件')
+  };
+}
+
+function recordWorldFieldOperationKill(mon) {
+  if (state.mode !== 'world' || mon?.isBoss || mon?._summoned) return null;
+  const map = typeof getMap === 'function' ? getMap() : null;
+  if (!map) return null;
+  const op = getWorldFieldOperation(map, state.currentSubzone);
+  if (!op || op.completed || op.commanderPending) return op;
+  const active = ensureWorldFieldOps().active[op.key];
+  if (!active) return op;
+  const threatBonus = mon?._zoneThreats?.length ? 1 : 0;
+  active.progress = Math.min(active.goal, (active.progress || 0) + 1 + threatBonus);
+  if (active.progress >= active.goal) {
+    active.commanderPending = true;
+    log(`${op.icon || '🗺️'} 野外据点「${op.name}」已推进完成,据点指挥官即将现身!`, 'epic');
+  }
+  markDirty('map', 'stage');
+  return getWorldFieldOperation(map, state.currentSubzone);
+}
+
+function worldFieldCommanderName(op, map, sub) {
+  return `${op.icon || '🗺️'}${sub?.name || map?.name || '据点'}·${op.commander || '据点指挥官'}`;
+}
+
+function shouldSpawnWorldFieldCommander(map, subIdx) {
+  const op = getWorldFieldOperation(map, subIdx);
+  return !!(op && !op.completed && op.commanderPending && !op.commanderKilled);
+}
+
+function onWorldFieldCommanderKill(mon) {
+  const ops = ensureWorldFieldOps();
+  const key = mon?._fieldOperationKey;
+  const active = key ? ops.active[key] : null;
+  const map = typeof MAPS !== 'undefined' ? MAPS.find(m => m.key === (active?.mapKey || state.currentMap)) : null;
+  if (!active || !map) {
+    spawnMonster();
+    return;
+  }
+  const sub = map.sub?.[active.subIdx] || map.sub?.[0];
+  const op = getWorldFieldOperation(map, active.subIdx, { includeCompleted:true });
+  const high = sub?.lvl?.[1] || map.lvlRange?.[1] || mon?.lvl || 1;
+  const gold = Math.floor(high * 95 + (op.goal || 10) * 35);
+  const honor = Math.floor(25 + high * 2.4);
+  const essence = Math.max(1, Math.floor(high / 18));
+  const gems = high >= 55 ? Math.max(1, Math.floor(high / 28)) : 0;
+  state.gold += gold;
+  state.honor += honor;
+  if (typeof ensureMats === 'function') ensureMats();
+  state.essence += essence;
+  if (gems) state.gem += gems;
+  const rarity = high >= 70 ? 'epic' : (high >= 35 ? 'rare' : 'uncommon');
+  const item = rollItem(rarity, high, map.key);
+  addToInventory(item);
+  if (typeof eventsOnItemGet === 'function') eventsOnItemGet(item);
+  ops.completed[key] = {
+    ruleKey:active.ruleKey,
+    completedAt:Date.now(),
+    progress:active.goal,
+    goal:active.goal,
+    rewardGold:gold
+  };
+  delete ops.active[key];
+  log(`${op.icon || '🗺️'} 完成野外据点「${op.name}」: +${gold}💰 +${honor}荣誉 +${essence}精华${gems ? ` +${gems}💎` : ''} · ${item.name}`, 'legend');
+  if (typeof progressionOnGoldGain === 'function') progressionOnGoldGain(gold);
+  state.currentMonsters = [];
+  spawnMonster();
+  markDirty('map', 'hero', 'inventory', 'stage');
 }
 
 function worldZoneThreatScore(rule, map, sub) {
