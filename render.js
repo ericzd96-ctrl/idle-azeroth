@@ -478,6 +478,8 @@ function renderBuffBar() {
     const procDesc = proc ? ` · 临场强化: ${proc.name}: ${proc.desc}` : '';
     const coreDesc = core ? ` · 专精核心: ${core.name}: ${core.desc}` : '';
     const stanceDesc = stance ? ` · 战斗法则: ${stance.name}: ${stance.desc}` : '';
+    const engineText = (typeof specEngineDescText === 'function') ? specEngineDescText() : '';
+    const engineDesc = engineText ? ` · 专精引擎强化: ${engineText}` : '';
     const elementDesc = elementGuide.length ? ` · 技能元素反应: ${elementGuide.map(x => `${x.icon || '✹'}${x.name}: ${x.desc}`).join('；')}` : '';
     const echoDesc = echoGuide.length ? ` · 技能余波: ${echoGuide.map(x => `${x.icon || '✺'}${x.name}: ${x.desc}`).join('；')}` : '';
     selfStates.unshift({
@@ -485,7 +487,7 @@ function renderBuffBar() {
       icon: specMeter.icon || '✦',
       name: specMeter.name,
       base: '专精机制:' + specMeter.key,
-      desc: (specMeter.hint || '') + ` · 当前 ${specMeter.stacks || 0}/${specMeter.max || 0}` + (tactic ? ` · 战术窗口: ${tactic.name}: ${tactic.desc}` : '') + chainDesc + reactionDesc + procDesc + coreDesc + stanceDesc + elementDesc + echoDesc,
+      desc: (specMeter.hint || '') + ` · 当前 ${specMeter.stacks || 0}/${specMeter.max || 0}` + (tactic ? ` · 战术窗口: ${tactic.name}: ${tactic.desc}` : '') + chainDesc + reactionDesc + procDesc + coreDesc + stanceDesc + engineDesc + elementDesc + echoDesc,
       valText: `${specMeter.stacks || 0}/${specMeter.max || 0}`,
       stacks: specMeter.stacks || 0,
       left: 0
@@ -2922,11 +2924,13 @@ function renderSkillBar() {
     const detailDesc = sk._detailDesc ? `\n联动: ${sk._detailDesc}` : '';
     const procDesc = procMatch ? `\n临场强化: ${proc.name} · ${proc.desc}` : '';
     const coreDesc = coreMatch ? `\n专精核心: ${core.name} 已满层,释放该技能会收束: ${core.desc}` : '';
+    const engineText = (typeof specEngineDescText === 'function') ? specEngineDescText() : '';
+    const engineDesc = engineText ? `\n专精引擎强化: ${engineText}` : '';
     const elementTip = (typeof skillElementReactionTip === 'function') ? skillElementReactionTip(key, sk) : '';
     const elementDesc = elementTip ? `\n状态反应: ${elementTip}` : '';
     const echoTip = (typeof skillEchoTip === 'function') ? skillEchoTip(key, sk) : '';
     const echoDesc = echoTip ? `\n技能余波: ${echoTip}` : '';
-    const tip = `${sk.name} · ${baseDesc}${detailDesc}${procDesc}${coreDesc}${elementDesc}${echoDesc}\n${c.resource} ${sk.mp} · 冷却 ${getSkillCd(sk)}秒`.replace(/"/g, '&quot;');
+    const tip = `${sk.name} · ${baseDesc}${detailDesc}${procDesc}${coreDesc}${engineDesc}${elementDesc}${echoDesc}\n${c.resource} ${sk.mp} · 冷却 ${getSkillCd(sk)}秒`.replace(/"/g, '&quot;');
     const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, sk.icon) : sk.icon;
     return `<button class="skill-btn ${onCd?'on-cd':''}" data-skill="${key}" draggable="true" title="${tip}"
       style="${coreMatch&&!onCd?'border-color:#38bdf8;box-shadow:0 0 0 1px rgba(56,189,248,.50),0 0 14px rgba(56,189,248,.18)':(procMatch&&!onCd?'border-color:#facc15;box-shadow:0 0 0 1px rgba(250,204,21,.45)':(!onCd&&hasMp?'border-color:var(--accent)':''))}">

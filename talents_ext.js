@@ -544,3 +544,51 @@ const TALENT_AURA_LIBRARY = {
     }
   }
 })();
+
+(function extendSpecEngineTalents() {
+  if (typeof CLASSES === 'undefined') return;
+  const names = {
+    arms:'处决引擎', fury:'狂怒引擎', prot:'盾墙引擎',
+    arcane:'魔网引擎', fire:'燃线引擎', frost:'碎裂引擎',
+    discipline:'赎罪引擎', holy:'圣言引擎', shadow:'虚空引擎',
+    assassination:'毒爆引擎', combat:'乱舞引擎', subtlety:'影舞引擎',
+    bm:'兽群引擎', marks:'狙击引擎', survival:'野火引擎',
+    element:'过载引擎', enhancement:'风怒引擎', restoration:'潮汐引擎',
+    ret:'裁决引擎', affliction:'痛苦引擎', demonology:'军团引擎', destruction:'混乱引擎',
+    balance:'星蚀引擎', feral:'血爪引擎', resto:'林地引擎',
+  };
+  const supportSpecs = new Set(['discipline','holy','restoration','resto']);
+  const guardianSpecs = new Set(['prot']);
+  const dotSpecs = new Set(['fire','shadow','assassination','survival','affliction','destruction','balance','feral']);
+  for (const [clsKey, cls] of Object.entries(CLASSES)) {
+    if (!cls || !Array.isArray(cls.trees)) continue;
+    for (const tree of cls.trees) {
+      if (!tree || tree._specEngineTalent) continue;
+      tree._specEngineTalent = true;
+      const support = supportSpecs.has(tree.key) || (clsKey === 'paladin' && tree.key === 'holy');
+      const guardian = guardianSpecs.has(tree.key) && (clsKey === 'warrior' || clsKey === 'paladin');
+      const dot = dotSpecs.has(tree.key);
+      const fx = {
+        type:'specEngine',
+        coreGainPct:12,
+        corePassivePct:10,
+        corePayoffPct:support ? 10 : 16,
+        chainPayoffPct:14,
+        specReactionPct:dot ? 18 : 12,
+        procPct:12,
+        stancePct:10,
+        dotSpreadPct:dot ? 14 : 6,
+        supportPct:support || guardian ? 18 : 8,
+        resource:2
+      };
+      tree.talents.push({
+        key: `spec_engine_${clsKey}_${tree.key}`,
+        name: names[tree.key] || '专精引擎',
+        desc: `你的专精核心叠层速度提高 12%, 核心收束、专精连段、状态反应、战斗法则和临场强化效果提高。该天赋会直接强化当前专精的核心循环。`,
+        req: 82,
+        max: 1,
+        fx
+      });
+    }
+  }
+})();

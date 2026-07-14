@@ -630,6 +630,33 @@ function skillMechanicFxBonus(field){
   }
   return total;
 }
+function specEngineFxBonus(field){
+  let total = 0;
+  for(const fx of talentFxList()){
+    if(!fx || fx.type !== 'specEngine') continue;
+    total += +(fx[field] || 0);
+  }
+  return total;
+}
+function specEngineFxMult(field){
+  return 1 + specEngineFxBonus(field) / 100;
+}
+function specEngineDescText(){
+  const core = specEngineFxBonus('corePayoffPct');
+  const gain = specEngineFxBonus('coreGainPct');
+  const chain = specEngineFxBonus('chainPayoffPct');
+  const reaction = specEngineFxBonus('specReactionPct');
+  const support = specEngineFxBonus('supportPct');
+  const proc = specEngineFxBonus('procPct');
+  const parts = [];
+  if(core) parts.push(`核心收束 +${core}%`);
+  if(gain) parts.push(`核心叠层 +${gain}%`);
+  if(chain) parts.push(`连段奖励 +${chain}%`);
+  if(reaction) parts.push(`专精反应 +${reaction}%`);
+  if(proc) parts.push(`临场强化 +${proc}%`);
+  if(support) parts.push(`治疗/护盾联动 +${support}%`);
+  return parts.join(' · ');
+}
 const SKILL_ECHO_RULES = {
   fire:{ icon:'🔥', name:'火痕', desc:'火焰留下的燃烧余波,可被冰霜、风暴或物理技能引爆。', triggers:['frost','storm','physical'], dotPct:0.10, state:'fever' },
   frost:{ icon:'❄️', name:'霜痕', desc:'冰霜留下的低温裂纹,可被火焰或物理技能碎裂。', triggers:['fire','physical'], damagePct:0.16, state:'brittle' },
@@ -908,10 +935,10 @@ function calcSpecCoreRuntimeBonus(skillKey, sk, mon, now, dotCount){
   const spender = coreRegexMatches(sys.spender, text);
   const passive = sys.passive || {};
   const payoff = sys.payoff || {};
-  let mult = 1 + stacks * (passive.damagePctPerStack || 0);
+  let mult = 1 + stacks * (passive.damagePctPerStack || 0) * specEngineFxMult('corePassivePct');
   let forceCrit = false;
   if(spender){
-    mult *= 1 + stacks * (payoff.damagePctPerStack || 0);
+    mult *= 1 + stacks * (payoff.damagePctPerStack || 0) * specEngineFxMult('corePayoffPct');
     if(payoff.forceCrit && stacks >= (sys.threshold || sys.max || 6)) forceCrit = true;
   }
   if(payoff.forceCritIfDot && dotCount > 0 && spender) forceCrit = true;
@@ -927,7 +954,7 @@ function calcSpecCoreHealMult(skillKey, sk, now){
   const passive = sys.passive || {};
   const payoff = sys.payoff || {};
   const spender = coreRegexMatches(sys.spender, skillTextForReaction(skillKey, sk, { heal:true }));
-  return 1 + stacks * (passive.healPctPerStack || 0) + (spender ? stacks * (payoff.healPctPerStack || 0) : 0);
+  return 1 + stacks * (passive.healPctPerStack || 0) * specEngineFxMult('supportPct') + (spender ? stacks * (payoff.healPctPerStack || 0) * specEngineFxMult('corePayoffPct') : 0);
 }
 function activeSpecStance(now){
   const sys = currentSpecStanceForCombat();
@@ -972,7 +999,7 @@ function calcSpecStanceRuntimeBonus(skillKey, sk, mon, now, dotCount){
   const active = activeSpecStance(now);
   if(!active || !sk || sk.type !== 'dmg') return { mult:1, forceCrit:false };
   const mode = active.mode;
-  let mult = 1 + (mode.damagePct || 0);
+  let mult = 1 + (mode.damagePct || 0) * specEngineFxMult('stancePct');
   let forceCrit = false;
   if(mode.forceCritIfState && monsterStateActive(mon, mode.forceCritIfState)) forceCrit = true;
   if(mode.forceCritIfDot && dotCount > 0) forceCrit = true;
@@ -980,7 +1007,7 @@ function calcSpecStanceRuntimeBonus(skillKey, sk, mon, now, dotCount){
 }
 function calcSpecStanceHealMult(now){
   const active = activeSpecStance(now);
-  return active?.mode?.healPct ? (1 + active.mode.healPct) : 1;
+  return active?.mode?.healPct ? (1 + active.mode.healPct * specEngineFxMult('supportPct')) : 1;
 }
 function applySpecStanceEffects(skillKey, sk, mon, value, ctx){
   const active = activeSpecStance(ctx?.now || Date.now());
@@ -989,20 +1016,22 @@ function applySpecStanceEffects(skillKey, sk, mon, value, ctx){
   const mode = active.mode;
   const target = (mon && mon.hp > 0) ? mon : (state.currentMonsters || []).find(x => x && x.hp > 0);
   if(target && sk.type === 'dmg' && value > 0){
-    if(mode.extraHitPct) applySkillFollowupDamage(target, value * mode.extraHitPct, mode.icon || sk.icon || '✦', '#facc15', now);
-    if(mode.splashPct && !ctx?.isAOE) splashSkillDamage(target, value, mode.splashPct, mode.icon || sk.icon || '✦', now);
-    if(mode.dotPct) applyMonsterDot(target, 'specStance:' + active.sys.key + ':' + active.modeKey, Math.max(1, Math.floor(value * mode.dotPct)), mode.dotMs || 6500, { icon:mode.icon || sk.icon || '✦', name:mode.name || '专精姿态', source:'specStance' });
+    const stanceDmgMult = specEngineFxMult('stancePct');
+    if(mode.extraHitPct) applySkillFollowupDamage(target, value * mode.extraHitPct * stanceDmgMult, mode.icon || sk.icon || '✦', '#facc15', now);
+    if(mode.splashPct && !ctx?.isAOE) splashSkillDamage(target, value * stanceDmgMult, mode.splashPct, mode.icon || sk.icon || '✦', now);
+    if(mode.dotPct) applyMonsterDot(target, 'specStance:' + active.sys.key + ':' + active.modeKey, Math.max(1, Math.floor(value * mode.dotPct * stanceDmgMult)), mode.dotMs || 6500, { icon:mode.icon || sk.icon || '✦', name:mode.name || '专精姿态', source:'specStance' });
     if(mode.state){
       if(mode.state === 'slow') target.slowUntil = Math.max(target.slowUntil || 0, now + (mode.stateMs || 4500));
       else applyMonsterState(target, mode.state, mode.stateMs || 7000);
     }
     if(mode.summon) specTacticSummon(mode.summon, now);
   }
-  if(mode.shieldPct) addTalentShield(Math.floor(state.hero.hpMax * mode.shieldPct), true, 8500);
-  if(mode.healPct && sk.type !== 'heal') healHeroAmount(Math.floor(state.hero.hpMax * Math.min(0.04, mode.healPct * 0.35)), mode.icon || sk.icon || '✦', '#6ee7b7', 'hero', mode.name || '专精姿态');
-  if(mode.resource) grantTalentResource(mode.resource);
+  const supportMult = specEngineFxMult('supportPct');
+  if(mode.shieldPct) addTalentShield(Math.floor(state.hero.hpMax * mode.shieldPct * supportMult), true, 8500);
+  if(mode.healPct && sk.type !== 'heal') healHeroAmount(Math.floor(state.hero.hpMax * Math.min(0.04, mode.healPct * 0.35 * supportMult)), mode.icon || sk.icon || '✦', '#6ee7b7', 'hero', mode.name || '专精姿态');
+  if(mode.resource) grantTalentResource(mode.resource + specEngineFxBonus('resource'));
   if(mode.cooldownPct) resetSkillCooldown(skillKey, mode.cooldownPct);
-  if(mode.companionShieldPct || mode.companionHealPct) applyCompanionClassSupport({ companionShieldPct:mode.companionShieldPct, companionHealPct:mode.companionHealPct }, sk, value, now);
+  if(mode.companionShieldPct || mode.companionHealPct) applyCompanionClassSupport({ companionShieldPct:(mode.companionShieldPct || 0) * supportMult, companionHealPct:(mode.companionHealPct || 0) * supportMult }, sk, value, now);
 }
 function specCoreGainForSkill(sys, skillKey, sk, ctx){
   if(!sys || !sk) return 0;
@@ -1016,34 +1045,37 @@ function specCoreGainForSkill(sys, skillKey, sk, ctx){
   if(isDefensiveSkill(skillKey, sk)) add += gain.defensive || 0;
   if(sk.dot || /持续|流血|中毒|灼烧|点燃|腐蚀|痛/.test(sk.desc || '')) add += gain.dot || 0;
   if(coreRegexMatches(sys.generator, text)) add += gain.generatorAdd || 0;
+  if(add > 0) add *= specEngineFxMult('coreGainPct');
   return Math.max(0, Math.floor(add));
 }
 function applySpecCorePayoff(sys, target, value, sk, skillKey, ctx, now, stacks){
   const payoff = sys?.payoff || {};
   const base = Math.max(1, Math.floor(value || state.hero.atk || state.hero.hpMax * 0.04 || 1));
+  const dmgMult = specEngineFxMult('corePayoffPct');
+  const supportMult = specEngineFxMult('supportPct');
   let fired = false;
   if(target && target.hp > 0){
     if(payoff.state) applyMonsterState(target, payoff.state, payoff.stateMs || 9000);
     if(payoff.damagePct || payoff.damagePctPerStack){
       const pct = (payoff.damagePct || 0) + stacks * (payoff.damagePctPerStack || 0);
-      if(pct > 0) fired = applySkillFollowupDamage(target, base * pct, sys.icon || sk?.icon || '✦', '#facc15', now) > 0 || fired;
+      if(pct > 0) fired = applySkillFollowupDamage(target, base * pct * dmgMult, sys.icon || sk?.icon || '✦', '#facc15', now) > 0 || fired;
     }
-    if(payoff.extraHitPct) fired = applySkillFollowupDamage(target, base * payoff.extraHitPct, sys.icon || sk?.icon || '✦', '#fde68a', now) > 0 || fired;
-    if(payoff.splashPct && !ctx?.isAOE) fired = splashSkillDamage(target, base, payoff.splashPct, sys.icon || sk?.icon || '✦', now) > 0 || fired;
-    if(payoff.dotPct) applyMonsterDot(target, 'specCore:' + sys.key, Math.max(1, Math.floor(base * payoff.dotPct)), payoff.dotMs || 8500, { icon:sys.icon || sk?.icon || '✦', name:sys.name || '专精核心', source:'specCore' });
-    if(payoff.spreadDotPct) spreadDotFromMonster(target, payoff.spreadDotPct, payoff.dotMs || 8500);
+    if(payoff.extraHitPct) fired = applySkillFollowupDamage(target, base * payoff.extraHitPct * dmgMult, sys.icon || sk?.icon || '✦', '#fde68a', now) > 0 || fired;
+    if(payoff.splashPct && !ctx?.isAOE) fired = splashSkillDamage(target, base * dmgMult, payoff.splashPct, sys.icon || sk?.icon || '✦', now) > 0 || fired;
+    if(payoff.dotPct) applyMonsterDot(target, 'specCore:' + sys.key, Math.max(1, Math.floor(base * payoff.dotPct * dmgMult)), payoff.dotMs || 8500, { icon:sys.icon || sk?.icon || '✦', name:sys.name || '专精核心', source:'specCore' });
+    if(payoff.spreadDotPct) spreadDotFromMonster(target, payoff.spreadDotPct * specEngineFxMult('dotSpreadPct'), payoff.dotMs || 8500);
     if(payoff.consumeDots){
       const removed = consumeMonsterDots(target);
-      if(removed > 0) applySkillFollowupDamage(target, removed * (payoff.consumeDotBurst || 1.1), sys.icon || '☠️', '#c084fc', now);
+      if(removed > 0) applySkillFollowupDamage(target, removed * (payoff.consumeDotBurst || 1.1) * dmgMult, sys.icon || '☠️', '#c084fc', now);
     }
   }
-  if(payoff.healPct) healHeroAmount(Math.floor(state.hero.hpMax * payoff.healPct), sys.icon || sk?.icon || '✦', '#6ee7b7', 'hero', sys.name || '专精核心');
-  if(payoff.shieldPct) addTalentShield(Math.floor(state.hero.hpMax * payoff.shieldPct + (state.hero.def || 0) * (payoff.defShieldScale || 0.35)), true, payoff.shieldMs || 9500);
-  if(payoff.resource) grantTalentResource(payoff.resource);
+  if(payoff.healPct) healHeroAmount(Math.floor(state.hero.hpMax * payoff.healPct * supportMult), sys.icon || sk?.icon || '✦', '#6ee7b7', 'hero', sys.name || '专精核心');
+  if(payoff.shieldPct) addTalentShield(Math.floor((state.hero.hpMax * payoff.shieldPct + (state.hero.def || 0) * (payoff.defShieldScale || 0.35)) * supportMult), true, payoff.shieldMs || 9500);
+  if(payoff.resource) grantTalentResource(payoff.resource + specEngineFxBonus('resource'));
   if(payoff.cooldownPct) resetSkillCooldown(skillKey, payoff.cooldownPct);
   if(payoff.buff) grantSpecTacticBuff(payoff.buff, payoff.buffMs || 4500, now);
   if(payoff.summon) specTacticSummon(payoff.summon, now);
-  if(payoff.companionHealPct || payoff.companionShieldPct) applyCompanionClassSupport({ companionHealPct:payoff.companionHealPct, companionShieldPct:payoff.companionShieldPct }, sk, base, now);
+  if(payoff.companionHealPct || payoff.companionShieldPct) applyCompanionClassSupport({ companionHealPct:(payoff.companionHealPct || 0) * supportMult, companionShieldPct:(payoff.companionShieldPct || 0) * supportMult }, sk, base, now);
   if(payoff.grantProc !== false) grantSpecProc(sys.name || '专精核心', now);
   showFloat($('hero-emoji'), `${sys.icon || '✦'}${sys.name || '专精核心'}`, '#facc15', { variant:'buff', scale:1.07 });
   log(`${sys.icon || '✦'} 专精核心「${sys.name}」收束: ${sys.desc}`,'epic');
@@ -1121,27 +1153,30 @@ function consumeSpecProcForSkill(skillKey, sk, now){
 }
 function applySpecProcHitEffects(proc, mon, dmgDone, sk, skillKey, now, ctx){
   if(!proc || !mon || mon.hp <= 0 || !(dmgDone > 0)) return;
-  if(proc.extraHitPct) applySkillFollowupDamage(mon, dmgDone * proc.extraHitPct, proc.icon || sk?.icon || '✦', '#facc15', now);
-  if(proc.splashPct && !ctx?.isAOE) splashSkillDamage(mon, dmgDone, proc.splashPct, proc.icon || sk?.icon || '✦', now);
-  if(proc.dotPct) applyMonsterDot(mon, 'specProc:' + proc.key, Math.max(1, Math.floor(dmgDone * proc.dotPct)), proc.dotMs || 7000, { icon:proc.icon || sk?.icon || '✦', name:proc.name || '临场强化', source:'specProc' });
-  if(proc.spreadDotPct) spreadDotFromMonster(mon, proc.spreadDotPct, proc.dotMs || 8000);
+  const procMult = specEngineFxMult('procPct');
+  const supportMult = specEngineFxMult('supportPct');
+  if(proc.extraHitPct) applySkillFollowupDamage(mon, dmgDone * proc.extraHitPct * procMult, proc.icon || sk?.icon || '✦', '#facc15', now);
+  if(proc.splashPct && !ctx?.isAOE) splashSkillDamage(mon, dmgDone * procMult, proc.splashPct, proc.icon || sk?.icon || '✦', now);
+  if(proc.dotPct) applyMonsterDot(mon, 'specProc:' + proc.key, Math.max(1, Math.floor(dmgDone * proc.dotPct * procMult)), proc.dotMs || 7000, { icon:proc.icon || sk?.icon || '✦', name:proc.name || '临场强化', source:'specProc' });
+  if(proc.spreadDotPct) spreadDotFromMonster(mon, proc.spreadDotPct * specEngineFxMult('dotSpreadPct'), proc.dotMs || 8000);
   if(proc.state){
     if(proc.state === 'slow') mon.slowUntil = Math.max(mon.slowUntil || 0, now + (proc.stateMs || 5000));
     else applyMonsterState(mon, proc.state, proc.stateMs || 8000);
   }
-  if(proc.shieldPct) addTalentShield(Math.floor(state.hero.hpMax * proc.shieldPct), true, 9000);
-  if(proc.healPct) healHeroAmount(Math.floor(state.hero.hpMax * proc.healPct), proc.icon || '✦', '#6ee7b7', 'hero', proc.name || '临场强化');
-  if(proc.resource) grantTalentResource(proc.resource);
+  if(proc.shieldPct) addTalentShield(Math.floor(state.hero.hpMax * proc.shieldPct * supportMult), true, 9000);
+  if(proc.healPct) healHeroAmount(Math.floor(state.hero.hpMax * proc.healPct * supportMult), proc.icon || '✦', '#6ee7b7', 'hero', proc.name || '临场强化');
+  if(proc.resource) grantTalentResource(proc.resource + specEngineFxBonus('resource'));
   if(proc.cooldownPct) resetSkillCooldown(skillKey, proc.cooldownPct);
   if(proc.summon) specTacticSummon(proc.summon, now);
-  if(proc.companionShieldPct || proc.companionHealPct) applyCompanionClassSupport({ companionShieldPct:proc.companionShieldPct, companionHealPct:proc.companionHealPct }, sk, dmgDone, now);
+  if(proc.companionShieldPct || proc.companionHealPct) applyCompanionClassSupport({ companionShieldPct:(proc.companionShieldPct || 0) * supportMult, companionHealPct:(proc.companionHealPct || 0) * supportMult }, sk, dmgDone, now);
 }
 function applySpecProcHealEffects(proc, amount, overheal, sk, skillKey, now){
   if(!proc) return;
-  if(proc.shieldPct) addTalentShield(Math.floor(state.hero.hpMax * proc.shieldPct), true, 9000);
-  if(proc.healPct) healHeroAmount(Math.floor(state.hero.hpMax * proc.healPct), proc.icon || sk?.icon || '✦', '#6ee7b7', 'hero', proc.name || '临场强化');
-  if(proc.resource) grantTalentResource(proc.resource);
-  if(proc.companionShieldPct || proc.companionHealPct) applyCompanionClassSupport({ companionShieldPct:proc.companionShieldPct, companionHealPct:proc.companionHealPct }, sk, amount, now);
+  const supportMult = specEngineFxMult('supportPct');
+  if(proc.shieldPct) addTalentShield(Math.floor(state.hero.hpMax * proc.shieldPct * supportMult), true, 9000);
+  if(proc.healPct) healHeroAmount(Math.floor(state.hero.hpMax * proc.healPct * supportMult), proc.icon || sk?.icon || '✦', '#6ee7b7', 'hero', proc.name || '临场强化');
+  if(proc.resource) grantTalentResource(proc.resource + specEngineFxBonus('resource'));
+  if(proc.companionShieldPct || proc.companionHealPct) applyCompanionClassSupport({ companionShieldPct:(proc.companionShieldPct || 0) * supportMult, companionHealPct:(proc.companionHealPct || 0) * supportMult }, sk, amount, now);
   if(proc.cooldownPct) resetSkillCooldown(skillKey, proc.cooldownPct);
 }
 function skillTextForReaction(skillKey, sk, ctx){
@@ -1199,7 +1234,9 @@ function detonateSpecReaction(mon, rule, stacks, value, ctx, now){
   const tactic = currentSpecTacticForCombat();
   const kind = tactic?.kind || '';
   const base = Math.max(1, Math.floor(value || state.hero.atk || 1));
-  const scaledBase = Math.floor(base * (0.45 + stacks * 0.12));
+  const reactionMult = specEngineFxMult('specReactionPct');
+  const supportMult = specEngineFxMult('supportPct');
+  const scaledBase = Math.floor(base * (0.45 + stacks * 0.12) * reactionMult);
   const def = Object.assign({}, tactic || {}, {
     icon:rule.icon || tactic?.icon || '✦',
     name:rule.name || tactic?.name || '专精反应',
@@ -1209,7 +1246,7 @@ function detonateSpecReaction(mon, rule, stacks, value, ctx, now){
   const before = mon.hp;
   applySpecTacticEffect(def, mon, scaledBase, now);
   const dealt = Math.max(0, before - Math.max(0, mon.hp));
-  const dotDps = Math.max(1, Math.floor((state.hero.atk || base) * (0.045 + stacks * 0.018)));
+  const dotDps = Math.max(1, Math.floor((state.hero.atk || base) * (0.045 + stacks * 0.018) * reactionMult));
   const dotKinds = /fire|void|poison|survival|affliction|chaos|feral|eclipse|bloom/.test(kind);
   if(dotKinds || /灼|毒|痛|裂|野火|星痕|创伤|契印|深裂/.test(rule.name || '')){
     applyMonsterDot(mon, 'specReaction:' + rule.key, dotDps, rule.dotMs || 8500, { icon:rule.icon || '✦', name:rule.name || '专精反应', source:'specReaction' });
@@ -1220,16 +1257,16 @@ function detonateSpecReaction(mon, rule, stacks, value, ctx, now){
   if(kind === 'verdict' || kind === 'divineBulwark' || kind === 'beacon') applyMonsterState(mon, 'judged', 9000);
   if(kind === 'breaker' || kind === 'shadow') applyMonsterState(mon, 'exposed', 7000);
   if(kind === 'survival') applyMonsterState(mon, 'rooted', 4200);
-  if(dealt > 0 && (kind === 'flurry' || kind === 'fire' || kind === 'chaos' || kind === 'element' || kind === 'eclipse')) splashSkillDamage(mon, Math.max(dealt, scaledBase), 0.18 + stacks * 0.035, rule.icon || '✦', now);
+  if(dealt > 0 && (kind === 'flurry' || kind === 'fire' || kind === 'chaos' || kind === 'element' || kind === 'eclipse')) splashSkillDamage(mon, Math.max(dealt, scaledBase), (0.18 + stacks * 0.035) * specEngineFxMult('dotSpreadPct'), rule.icon || '✦', now);
   if(/atonement|holyEcho|tide|beacon|bloom/.test(kind) || ctx?.heal){
-    healHeroAmount(Math.floor(state.hero.hpMax * (0.025 + stacks * 0.007)), rule.icon || '✦', '#6ee7b7', 'hero', rule.name || '专精反应');
-    addTalentShield(Math.floor(state.hero.hpMax * (0.018 + stacks * 0.006)), true, 9000);
+    healHeroAmount(Math.floor(state.hero.hpMax * (0.025 + stacks * 0.007) * supportMult), rule.icon || '✦', '#6ee7b7', 'hero', rule.name || '专精反应');
+    addTalentShield(Math.floor(state.hero.hpMax * (0.018 + stacks * 0.006) * supportMult), true, 9000);
     specReactionCompanionPulse('heal', now);
   } else if(/bulwark|divineBulwark/.test(kind)){
-    addTalentShield(Math.floor(state.hero.hpMax * (0.025 + stacks * 0.008) + (state.hero.def || 0) * 0.35), true, 9000);
+    addTalentShield(Math.floor((state.hero.hpMax * (0.025 + stacks * 0.008) + (state.hero.def || 0) * 0.35) * supportMult), true, 9000);
     specReactionCompanionPulse('shield', now);
   }
-  grantTalentResource(Math.min(10, 2 + stacks));
+  grantTalentResource(Math.min(10, 2 + stacks) + specEngineFxBonus('resource'));
   grantSpecProc(rule.name || '状态反应', now);
   clearSpecReaction(mon, rule);
   showMonsterFloat(mon, `${rule.icon || '✦'}${rule.stackName || rule.name}爆`, '#facc15', { important:true });
@@ -1301,15 +1338,15 @@ function applySpecSkillChainPayoff(chain, mon, value, ctx, now){
   });
   const target = (mon && mon.hp > 0) ? mon : (state.currentMonsters || []).find(x => x && x.hp > 0);
   const base = Math.max(1, Math.floor(value || state.hero.atk || state.hero.hpMax * 0.05 || 1));
-  const fired = applySpecTacticEffect(def, target, Math.floor(base * (chain.payoffMul || 1.18)), now);
+  const fired = applySpecTacticEffect(def, target, Math.floor(base * (chain.payoffMul || 1.18) * specEngineFxMult('chainPayoffPct')), now);
   if(tactic?.meterKey) addSkillAura(tactic.meterKey, { add:1, max:tactic.meterMax || 5, duration:15000, icon:tactic.icon, name:tactic.meterName || tactic.name, desc:tactic.desc });
-  if(target && target.hp > 0 && chain.extraHitPct) applySkillFollowupDamage(target, base * chain.extraHitPct, chain.icon || '✦', '#facc15', now);
+  if(target && target.hp > 0 && chain.extraHitPct) applySkillFollowupDamage(target, base * chain.extraHitPct * specEngineFxMult('chainPayoffPct'), chain.icon || '✦', '#facc15', now);
   if(ctx?.heal || (ctx?.buff && /圣言|潮汐|道标|林地|赎罪|合唱|治疗|护盾/.test(chain.name || ''))){
-    addTalentShield(Math.floor(state.hero.hpMax * 0.025), true, 8500);
+    addTalentShield(Math.floor(state.hero.hpMax * 0.025 * specEngineFxMult('supportPct')), true, 8500);
     specTacticCompanionSupport('heal', now);
   }
   grantSpecProc(chain.name || '技能连段', now);
-  grantTalentResource(chain.resource || 4);
+  grantTalentResource((chain.resource || 4) + specEngineFxBonus('resource'));
   if(target && target.hp > 0 && typeof triggerMonsterSpecAdaptationPressure === 'function') triggerMonsterSpecAdaptationPressure(target, now);
   return fired;
 }

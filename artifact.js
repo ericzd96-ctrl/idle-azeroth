@@ -860,6 +860,25 @@ function skillMechanicTrait(cfg){
     }
   }));
 }
+function specEngineTrait(cfg){
+  return trait(Object.assign({}, cfg, {
+    fx(rank){
+      return {
+        type:'specEngine',
+        coreGainPct:rankValue(cfg.coreGainPct || [4,8,12], rank),
+        corePassivePct:rankValue(cfg.corePassivePct || [4,8,12], rank),
+        corePayoffPct:rankValue(cfg.corePayoffPct || [6,12,18], rank),
+        chainPayoffPct:rankValue(cfg.chainPayoffPct || [5,10,15], rank),
+        specReactionPct:rankValue(cfg.specReactionPct || [5,10,15], rank),
+        procPct:rankValue(cfg.procPct || [4,8,12], rank),
+        stancePct:rankValue(cfg.stancePct || [4,8,12], rank),
+        dotSpreadPct:rankValue(cfg.dotSpreadPct || [3,6,9], rank),
+        supportPct:rankValue(cfg.supportPct || [4,8,12], rank),
+        resource:rankValue(cfg.resource || [0,1,2], rank),
+      };
+    }
+  }));
+}
 
 (function retuneSpecArtifacts() {
   for (const [clsKey, specs] of Object.entries(SPEC_ARTIFACT_SKILL_RETUNE)) {
@@ -877,17 +896,31 @@ function skillMechanicTrait(cfg){
         ARTIFACT_TRAITS[clsKey].push(skillAmpTrait({
           key, tree:specKey, name, icon:'✦', skill, dmgPct:[10,20,30], mod:{ mastery:1 },
           desc: desc + ' 并获得精通 +1/2/3。'
-        }));
+      }));
       }
       const mechanicKey = `art_${clsKey}_${specKey}_mechanic_20260714`;
-      if (ARTIFACT_TRAITS[clsKey].some(t => t.key === mechanicKey)) continue;
-      ARTIFACT_TRAITS[clsKey].push(skillMechanicTrait({
-        key:mechanicKey,
+      if (!ARTIFACT_TRAITS[clsKey].some(t => t.key === mechanicKey)) {
+        ARTIFACT_TRAITS[clsKey].push(skillMechanicTrait({
+          key:mechanicKey,
+          tree:specKey,
+          name:'机制共鸣',
+          icon:'✺',
+          mod:{ mastery:1 },
+          desc:'技能余波伤害提高 5/10/15%, 状态反应伤害提高 4/8/12%, 余波持续时间提高 6/12/18%, 触发时返还少量资源。并获得精通 +1/2/3。'
+        }));
+      }
+      const engineKey = `art_${clsKey}_${specKey}_engine_20260714`;
+      if (ARTIFACT_TRAITS[clsKey].some(t => t.key === engineKey)) continue;
+      const support = ['discipline','holy','restoration','resto'].includes(specKey) || (clsKey === 'paladin' && specKey === 'holy');
+      const guardian = specKey === 'prot' && (clsKey === 'warrior' || clsKey === 'paladin');
+      ARTIFACT_TRAITS[clsKey].push(specEngineTrait({
+        key:engineKey,
         tree:specKey,
-        name:'机制共鸣',
-        icon:'✺',
+        name:'专精引擎',
+        icon:'✦',
         mod:{ mastery:1 },
-        desc:'技能余波伤害提高 5/10/15%, 状态反应伤害提高 4/8/12%, 余波持续时间提高 6/12/18%, 触发时返还少量资源。并获得精通 +1/2/3。'
+        supportPct:support || guardian ? [6,12,18] : [3,6,9],
+        desc:'专精核心叠层速度提高 4/8/12%, 核心收束提高 6/12/18%, 连段/专精反应提高 5/10/15%, 姿态和临场强化提高 4/8/12%。并获得精通 +1/2/3。'
       }));
     }
   }
