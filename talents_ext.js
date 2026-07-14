@@ -801,3 +801,47 @@ const TALENT_AURA_LIBRARY = {
     }
   }
 })();
+
+(function extendSkillPrepTalents() {
+  if (typeof CLASSES === 'undefined') return;
+  const names = {
+    arms:'战技蓄势', fury:'怒潮蓄势', prot:'盾阵蓄势',
+    arcane:'魔网蓄势', fire:'燃烬蓄势', frost:'寒流蓄势',
+    discipline:'赎罪蓄势', holy:'圣歌蓄势', shadow:'虚空蓄势',
+    assassination:'毒刃蓄势', combat:'乱舞蓄势', subtlety:'暗幕蓄势',
+    bm:'兽群蓄势', marks:'狙击蓄势', survival:'野火蓄势',
+    element:'雷霆蓄势', enhancement:'风怒蓄势', restoration:'潮汐蓄势',
+    holy_paladin:'圣光蓄势', prot_paladin:'壁垒蓄势', ret:'裁决蓄势',
+    affliction:'腐蚀蓄势', demonology:'军团蓄势', destruction:'混乱蓄势',
+    balance:'星轨蓄势', feral:'血爪蓄势', resto:'林地蓄势',
+  };
+  const supportSpecs = new Set(['discipline','holy','restoration','resto']);
+  const dotSpecs = new Set(['fire','shadow','assassination','survival','affliction','destruction','balance','feral']);
+  const burstSpecs = new Set(['arms','fury','arcane','frost','marks','ret','element','destruction']);
+  for (const [clsKey, cls] of Object.entries(CLASSES)) {
+    if (!cls || !Array.isArray(cls.trees)) continue;
+    for (const tree of cls.trees) {
+      if (!tree || tree._skillPrepTalent) continue;
+      tree._skillPrepTalent = true;
+      const keyName = clsKey === 'paladin' && tree.key === 'holy' ? 'holy_paladin' : (clsKey === 'paladin' && tree.key === 'prot' ? 'prot_paladin' : tree.key);
+      const support = supportSpecs.has(tree.key) || (clsKey === 'paladin' && tree.key === 'holy') || (tree.key === 'prot' && (clsKey === 'warrior' || clsKey === 'paladin'));
+      const dot = dotSpecs.has(tree.key);
+      const burst = burstSpecs.has(tree.key);
+      tree.talents.push({
+        key: `skill_prep_${clsKey}_${tree.key}`,
+        name: names[keyName] || '技能蓄势',
+        desc: `技能蓄势更强: ${support ? '救援/壁垒收招提高 20%' : (dot ? '腐蚀收招 DOT 提高 20%' : '收招追击提高 18%')}, 蓄势效率提高,收招时返还资源。`,
+        req: 118,
+        max: 1,
+        fx: {
+          type:'skillPrep',
+          prepDmgPct:support ? 8 : (burst ? 20 : 18),
+          prepDotPct:dot ? 20 : 8,
+          prepSupportPct:support ? 20 : 6,
+          prepGainPct:burst ? 22 : 16,
+          prepResource:2
+        }
+      });
+    }
+  }
+})();

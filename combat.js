@@ -172,6 +172,11 @@ function specMasteryEngineBonus(field){
   if(field === 'weaknessSupportPct') return mastery * Math.max(b.supportPct || 0, b.mechanicShieldPct || 0) * 0.44;
   if(field === 'weaknessRevealPct') return mastery * Math.max(b.coreGainPct || 0, b.procPct || 0) * 0.34;
   if(field === 'weaknessResource') return mastery * (b.resource || 0);
+  if(field === 'prepDmgPct') return mastery * Math.max(b.chainPayoffPct || 0, b.corePayoffPct || 0, b.procPct || 0) * 0.46;
+  if(field === 'prepDotPct') return mastery * Math.max(b.dotSpreadPct || 0, b.reactionDotPct || 0, b.echoDotPct || 0) * 0.46;
+  if(field === 'prepSupportPct') return mastery * Math.max(b.supportPct || 0, b.mechanicShieldPct || 0) * 0.46;
+  if(field === 'prepGainPct') return mastery * Math.max(b.coreGainPct || 0, b.procPct || 0) * 0.36;
+  if(field === 'prepResource') return mastery * (b.resource || 0);
   return 0;
 }
 function masteryTakenMult(){ return 1 - Math.min(30, masteryFor('dr')*MASTERY_TYPE.dr.per + masteryFor('guardianEcho')*0.18 + specMasteryEngineBonus('takenPct'))/100; } // 受击减伤(封顶30%)
@@ -741,7 +746,7 @@ function processSkillElementReactions(skillKey, sk, mon, dmgDone, ctx){
 function skillMechanicFxBonus(field){
   let total = specMasteryEngineBonus(field);
   for(const fx of talentFxList()){
-    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho' && fx.type !== 'skillMark' && fx.type !== 'skillWeave' && fx.type !== 'skillRhythm' && fx.type !== 'skillControl' && fx.type !== 'skillWeakness')) continue;
+    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho' && fx.type !== 'skillMark' && fx.type !== 'skillWeave' && fx.type !== 'skillRhythm' && fx.type !== 'skillControl' && fx.type !== 'skillWeakness' && fx.type !== 'skillPrep')) continue;
     total += +(fx[field] || 0);
   }
   return total;
@@ -1543,6 +1548,143 @@ function skillWeaknessTip(skillKey, sk){
   const exploit = (sk?.type === 'heal' || sk?.dot || sk?.aoe || (sk?.mul || 0) >= 4 || /暴击|斩杀|处决|终结|爆发|精准|治疗|护盾/.test(text)) ? '可利用目标已有弱点触发追击/护盾/持续伤害' : '';
   return [reveal, exploit].filter(Boolean).join('；');
 }
+function prepKindName(kind){
+  const names = { blade:'武技', spell:'法术', venom:'腐蚀', guard:'壁垒', grace:'救援', pack:'协同' };
+  return names[kind] || kind || '蓄势';
+}
+function prepKindIcon(kind){
+  return ({ blade:'⚔️', spell:'🔷', venom:'☠️', guard:'🛡️', grace:'✨', pack:'🐾' })[kind] || '⚙️';
+}
+function skillPrepKind(skillKey, sk, ctx){
+  if(!sk) return '';
+  const tags = skillElementTags(skillKey, sk);
+  const text = `${skillKey || ''} ${sk.name || ''} ${sk.desc || ''}`;
+  if(sk.type === 'heal' || ctx?.heal || tags.includes('holy') || /治疗|圣光|恩典|赎罪|祝福|恢复/.test(text)) return 'grace';
+  if(isDefensiveSkill(skillKey, sk) || /减伤|护盾|壁垒|格挡|防御|守护|盾/.test(text)) return 'guard';
+  if(sk.type === 'summon' || sk.summonCount || tags.includes('beast') || /召唤|宠物|野兽|兽群|猎人|杀戮命令/.test(text)) return 'pack';
+  if(sk.dot || tags.some(t => ['shadow','poison'].includes(t)) || /毒|流血|痛苦|腐蚀|暗影|撕裂|割裂|献祭|月火/.test(text)) return 'venom';
+  if(tags.some(t => ['arcane','fire','frost','storm','nature'].includes(t)) || /奥术|火|炎|冰|霜|风暴|闪电|星界|元素|熔岩|自然/.test(text)) return 'spell';
+  if(tags.includes('physical') || sk.debuff === 'sunder' || /破甲|打击|斩杀|处决|压制|背刺|裁决|猛击|挥砍/.test(text)) return 'blade';
+  return sk.type === 'dmg' ? 'blade' : '';
+}
+function skillPrepIsFinisher(skillKey, sk, ctx){
+  if(!sk) return false;
+  if(ctx?.heal || sk.type === 'heal') return true;
+  if(sk.type !== 'dmg') return isDefensiveSkill(skillKey, sk);
+  const fx = skillFxMeta(skillKey, sk);
+  const text = `${skillKey || ''} ${sk.name || ''} ${sk.desc || ''}`;
+  return !!(sk.aoe || fx.splashPct || fx.spreadDotsPct || (sk.mul || 0) >= 4 || (sk.mp || 0) >= 40 || /斩杀|处决|终结|爆发|毁灭|裁决|混乱|彗星|星涌|瞄准|炎爆|巨人/.test(text));
+}
+function ensureSkillPrepRuntime(now){
+  const rt = ensureSkillRuntime();
+  if(!rt.prep) rt.prep = { kind:'', stacks:0, expire:0, chain:[] };
+  const ts = now || Date.now();
+  if(rt.prep.expire && rt.prep.expire <= ts) rt.prep = { kind:'', stacks:0, expire:0, chain:[] };
+  return rt.prep;
+}
+function addSkillPrep(kind, sk, now, add){
+  if(!kind) return 0;
+  const prep = ensureSkillPrepRuntime(now);
+  const same = !prep.kind || prep.kind === kind;
+  const max = 5;
+  const gain = Math.max(1, add || 1);
+  prep.kind = same ? kind : kind;
+  prep.stacks = same ? Math.min(max, (prep.stacks || 0) + gain) : Math.min(max, 1 + gain);
+  prep.chain = (prep.chain || []).concat(kind).slice(-5);
+  prep.expire = (now || Date.now()) + Math.floor(15000 * (1 + skillMechanicFxBonus('prepGainPct') / 240));
+  if(!same && state.skillRuntime?.auras) delete state.skillRuntime.auras.skill_prep;
+  addSkillAura('skill_prep', {
+    add:same ? gain : Math.max(1, gain),
+    max,
+    duration:15000,
+    icon:'⚙️',
+    name:'技能蓄势',
+    desc:`当前 ${prep.stacks}/${max} 层${prepKindName(kind)}蓄势。低耗/控场/DOT/治疗/防御技能蓄势,大招会按类型收招。`
+  });
+  markDirty('skills');
+  return prep.stacks;
+}
+function applySkillPrepFinisher(prep, mon, value, sk, now, ctx){
+  const kind = prep?.kind || 'blade';
+  const stacks = Math.max(1, prep?.stacks || 1);
+  const base = Math.max(1, Math.floor(value || state.hero.atk || state.hero.hpMax * 0.035 || 1));
+  const target = (mon && mon.hp > 0) ? mon : (state.currentMonsters || []).find(x => x && x.hp > 0);
+  const dmgMult = (1 + skillMechanicFxBonus('prepDmgPct') / 100) * (0.55 + stacks * 0.14);
+  const dotMult = (1 + skillMechanicFxBonus('prepDotPct') / 100) * (0.50 + stacks * 0.12);
+  const supportMult = masterySupportEchoMult() * (1 + skillMechanicFxBonus('prepSupportPct') / 100) * (0.60 + stacks * 0.11);
+  let fired = false;
+  if((ctx?.heal || sk.type === 'heal' || kind === 'grace') && stacks >= 2){
+    healHeroAmount(Math.floor(state.hero.hpMax * (0.016 + stacks * 0.004) * supportMult), sk.icon || '✨', '#6ee7b7', 'hero', '救援收招');
+    addTalentShield(Math.floor(state.hero.hpMax * (0.012 + stacks * 0.003) * supportMult), true, 9500);
+    specTacticCompanionSupport('heal', now);
+    fired = true;
+  } else if(kind === 'guard'){
+    addTalentShield(Math.floor(state.hero.hpMax * (0.020 + stacks * 0.004) * supportMult), true, 10000);
+    grantSpecTacticBuff('s_barrier', 2600 + stacks * 360, now);
+    if(target) fired = applySkillFollowupDamage(target, base * 0.11 * dmgMult, '🛡️', '#93c5fd', now) > 0 || fired;
+  } else if(target){
+    if(kind === 'spell'){
+      applyMonsterState(target, 'unstable', 7600 + stacks * 620);
+      fired = splashSkillDamage(target, base * dmgMult, 0.10 + stacks * 0.025, '🔷', now) > 0 || fired;
+      grantTalentResource(1 + Math.floor(stacks / 2) + Math.floor(skillMechanicFxBonus('prepResource')));
+    } else if(kind === 'venom'){
+      applyMonsterState(target, 'trauma', 7800 + stacks * 600);
+      applyMonsterDot(target, 'skillPrep:venom', Math.max(1, Math.floor(base * 0.09 * dotMult)), 9000, { icon:'☠️', name:'腐蚀收招', source:'skillPrep' });
+      if(stacks >= 4) spreadDotFromMonster(target, 0.26 + stacks * 0.025, 9000);
+      fired = true;
+    } else if(kind === 'pack'){
+      specTacticSummon(activeHeroClassKey() === 'warlock' ? 'demon' : 'beast', now);
+      applyMonsterState(target, 'huntWound', 7600 + stacks * 620);
+      fired = applySkillFollowupDamage(target, base * 0.14 * dmgMult, '🐾', '#7dd3fc', now) > 0 || fired;
+    } else {
+      applyMonsterState(target, 'sunder', 7600 + stacks * 600);
+      applyMonsterState(target, 'exposed', 6200 + stacks * 520);
+      fired = applySkillFollowupDamage(target, base * 0.16 * dmgMult, '⚔️', '#fbbf24', now) > 0 || fired;
+    }
+  }
+  if(fired){
+    grantTalentResource(Math.floor(1 + stacks / 2 + skillMechanicFxBonus('prepResource')));
+    addSkillAura('skill_prep', {
+      add:1,
+      max:1,
+      duration:5200,
+      icon:'⚙️',
+      name:'技能蓄势',
+      desc:`${prepKindName(kind)}蓄势被 ${sk?.name || '技能'} 收招,转化为追击、DOT、护盾、治疗或协同。`
+    });
+    showFloat($('hero-emoji'), `⚙️${prepKindName(kind)}收招`, '#facc15', { variant:'buff', scale:1.05 });
+    log(`⚙️ 技能蓄势触发: ${prepKindName(kind)}蓄势 ${stacks} 层被 ${sk?.name || '技能'} 收招`, 'good');
+    markDirty('skills','hero','companion','stage');
+  }
+  return fired;
+}
+function processSkillPreparation(skillKey, sk, mon, value, ctx){
+  if(!sk) return false;
+  const now = ctx?.now || Date.now();
+  if(ctx?.isAOE && !classRuntimeReady(`skill-prep-aoe-step:${skillKey}`, 250, now)) return false;
+  const prep = ensureSkillPrepRuntime(now);
+  const finisher = skillPrepIsFinisher(skillKey, sk, ctx || {});
+  if(finisher && prep.stacks >= 2){
+    const snap = Object.assign({}, prep, { chain:[...(prep.chain || [])] });
+    const rt = ensureSkillRuntime();
+    rt.prep = { kind:'', stacks:0, expire:0, chain:[] };
+    if(rt.auras) delete rt.auras.skill_prep;
+    return applySkillPrepFinisher(snap, mon, value, sk, now, ctx || {});
+  }
+  const kind = skillPrepKind(skillKey, sk, ctx || {});
+  if(!kind || finisher) return false;
+  const fx = skillFxMeta(skillKey, sk);
+  let gain = 1 + Math.floor(skillMechanicFxBonus('prepGainPct') / 35);
+  if(sk.dot || fx.applyTargetState || sk.slow || sk.type === 'heal' || sk.type === 'buff' || isDefensiveSkill(skillKey, sk) || sk.summonCount) gain += 1;
+  addSkillPrep(kind, sk, now, gain);
+  return true;
+}
+function skillPrepTip(skillKey, sk){
+  const kind = skillPrepKind(skillKey, sk, {});
+  const setup = (kind && !skillPrepIsFinisher(skillKey, sk, {})) ? `积累${prepKindName(kind)}蓄势` : '';
+  const finish = skillPrepIsFinisher(skillKey, sk, {}) ? '可消耗已有技能蓄势触发收招' : '';
+  return [setup, finish].filter(Boolean).join('；');
+}
 function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
   const fx = skillFxMeta(skillKey, sk);
   const now = ctx?.now || Date.now();
@@ -1575,6 +1717,7 @@ function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
   processSkillRhythm(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
   processSkillControl(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
   processSkillWeakness(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
+  processSkillPreparation(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
   if(fx.resourceGainOnKill && mon.hp <= 0) grantTalentResource(fx.resourceGainOnKill);
   applyClassMechanicAfterSkill(skillKey, sk, mon, dmgDone, Object.assign({ now, hit:true }, ctx || {}));
 }
@@ -1589,6 +1732,7 @@ function applySkillHealEffects(skillKey, sk, amount, overheal){
   processSkillRhythm(skillKey, sk, null, amount, { overheal, heal:true, now });
   processSkillControl(skillKey, sk, null, amount, { overheal, heal:true, now });
   processSkillWeakness(skillKey, sk, null, amount, { overheal, heal:true, now });
+  processSkillPreparation(skillKey, sk, null, amount, { overheal, heal:true, now });
   applyClassMechanicAfterSkill(skillKey, sk, null, amount, { overheal, heal:true, now });
 }
 function ensureClassRuntime(){

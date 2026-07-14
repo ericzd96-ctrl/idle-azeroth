@@ -950,6 +950,20 @@ function skillWeaknessTrait(cfg){
     }
   }));
 }
+function skillPrepTrait(cfg){
+  return trait(Object.assign({}, cfg, {
+    fx(rank){
+      return {
+        type:'skillPrep',
+        prepDmgPct:rankValue(cfg.prepDmgPct || [4,8,12], rank),
+        prepDotPct:rankValue(cfg.prepDotPct || [3,6,9], rank),
+        prepSupportPct:rankValue(cfg.prepSupportPct || [3,6,9], rank),
+        prepGainPct:rankValue(cfg.prepGainPct || [4,8,12], rank),
+        prepResource:rankValue(cfg.prepResource || [0,1,2], rank),
+      };
+    }
+  }));
+}
 
 (function retuneSpecArtifacts() {
   for (const [clsKey, specs] of Object.entries(SPEC_ARTIFACT_SKILL_RETUNE)) {
@@ -1068,6 +1082,21 @@ function skillWeaknessTrait(cfg){
           weaknessSupportPct:supportWeave ? [6,12,18] : [2,4,6],
           weaknessRevealPct:[5,10,15],
           desc:'弱点利用追击、持续伤害或支援效果提高,弱点揭露效率提高,利用时返还少量资源。并获得精通 +1/2/3。'
+        }));
+      }
+      const prepKey = `art_${clsKey}_${specKey}_prep_20260714`;
+      if (!ARTIFACT_TRAITS[clsKey].some(t => t.key === prepKey)) {
+        ARTIFACT_TRAITS[clsKey].push(skillPrepTrait({
+          key:prepKey,
+          tree:specKey,
+          name:'蓄势回路',
+          icon:'⚙️',
+          mod:{ mastery:1 },
+          prepDmgPct:supportWeave ? [3,6,9] : [6,12,18],
+          prepDotPct:dotWeave ? [6,12,18] : [3,6,9],
+          prepSupportPct:supportWeave ? [6,12,18] : [2,4,6],
+          prepGainPct:[5,10,15],
+          desc:'技能蓄势收招追击、持续伤害或支援效果提高,蓄势效率提高,收招时返还少量资源。并获得精通 +1/2/3。'
         }));
       }
     }

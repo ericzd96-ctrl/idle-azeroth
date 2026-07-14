@@ -508,6 +508,7 @@ function renderBuffBar() {
     const rhythmGuide = (typeof SKILL_RHYTHM_GUIDE === 'object' && Array.isArray(SKILL_RHYTHM_GUIDE)) ? SKILL_RHYTHM_GUIDE : [];
     const controlGuide = (typeof SKILL_CONTROL_GUIDE === 'object' && Array.isArray(SKILL_CONTROL_GUIDE)) ? SKILL_CONTROL_GUIDE : [];
     const weaknessGuide = (typeof SKILL_WEAKNESS_GUIDE === 'object' && Array.isArray(SKILL_WEAKNESS_GUIDE)) ? SKILL_WEAKNESS_GUIDE : [];
+    const prepGuide = (typeof SKILL_PREP_GUIDE === 'object' && Array.isArray(SKILL_PREP_GUIDE)) ? SKILL_PREP_GUIDE : [];
     const chainDesc = chain ? ` · 专精连段: ${chain.name}: ${chain.steps.map(x => x.label).join(' → ')}。完成: ${chain.finish}` : '';
     const reactionDesc = reaction ? ` · 状态反应: ${reaction.name}: ${reaction.desc}` : '';
     const procDesc = proc ? ` · 临场强化: ${proc.name}: ${proc.desc}` : '';
@@ -522,12 +523,13 @@ function renderBuffBar() {
     const rhythmDesc = rhythmGuide.length ? ` · 战斗律动: ${rhythmGuide.map(x => `${x.icon || '♬'}${x.name}: ${x.desc}`).join('；')}` : '';
     const controlDesc = controlGuide.length ? ` · 控场清算: ${controlGuide.map(x => `${x.icon || '⛓️'}${x.name}: ${x.desc}`).join('；')}` : '';
     const weaknessDesc = weaknessGuide.length ? ` · 弱点洞察: ${weaknessGuide.map(x => `${x.icon || '🎯'}${x.name}: ${x.desc}`).join('；')}` : '';
+    const prepDesc = prepGuide.length ? ` · 技能蓄势: ${prepGuide.map(x => `${x.icon || '⚙️'}${x.name}: ${x.desc}`).join('；')}` : '';
     selfStates.unshift({
       kind: 'spec-meter',
       icon: specMeter.icon || '✦',
       name: specMeter.name,
       base: '专精机制:' + specMeter.key,
-      desc: (specMeter.hint || '') + ` · 当前 ${specMeter.stacks || 0}/${specMeter.max || 0}` + (tactic ? ` · 战术窗口: ${tactic.name}: ${tactic.desc}` : '') + chainDesc + reactionDesc + procDesc + coreDesc + stanceDesc + engineDesc + elementDesc + echoDesc + markDesc + weaveDesc + rhythmDesc + controlDesc + weaknessDesc,
+      desc: (specMeter.hint || '') + ` · 当前 ${specMeter.stacks || 0}/${specMeter.max || 0}` + (tactic ? ` · 战术窗口: ${tactic.name}: ${tactic.desc}` : '') + chainDesc + reactionDesc + procDesc + coreDesc + stanceDesc + engineDesc + elementDesc + echoDesc + markDesc + weaveDesc + rhythmDesc + controlDesc + weaknessDesc + prepDesc,
       valText: `${specMeter.stacks || 0}/${specMeter.max || 0}`,
       stacks: specMeter.stacks || 0,
       left: 0
@@ -2980,7 +2982,9 @@ function renderSkillBar() {
     const controlDesc = controlTip ? `\n控场清算: ${controlTip}` : '';
     const weaknessTip = (typeof skillWeaknessTip === 'function') ? skillWeaknessTip(key, sk) : '';
     const weaknessDesc = weaknessTip ? `\n弱点洞察: ${weaknessTip}` : '';
-    const tip = `${sk.name} · ${baseDesc}${detailDesc}${procDesc}${coreDesc}${engineDesc}${elementDesc}${echoDesc}${markDesc}${weaveDesc}${rhythmDesc}${controlDesc}${weaknessDesc}\n${c.resource} ${sk.mp} · 冷却 ${getSkillCd(sk)}秒`.replace(/"/g, '&quot;');
+    const prepTip = (typeof skillPrepTip === 'function') ? skillPrepTip(key, sk) : '';
+    const prepDesc = prepTip ? `\n技能蓄势: ${prepTip}` : '';
+    const tip = `${sk.name} · ${baseDesc}${detailDesc}${procDesc}${coreDesc}${engineDesc}${elementDesc}${echoDesc}${markDesc}${weaveDesc}${rhythmDesc}${controlDesc}${weaknessDesc}${prepDesc}\n${c.resource} ${sk.mp} · 冷却 ${getSkillCd(sk)}秒`.replace(/"/g, '&quot;');
     const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, sk.icon) : sk.icon;
     return `<button class="skill-btn ${onCd?'on-cd':''}" data-skill="${key}" draggable="true" title="${tip}"
       style="${coreMatch&&!onCd?'border-color:#38bdf8;box-shadow:0 0 0 1px rgba(56,189,248,.50),0 0 14px rgba(56,189,248,.18)':(procMatch&&!onCd?'border-color:#facc15;box-shadow:0 0 0 1px rgba(250,204,21,.45)':(!onCd&&hasMp?'border-color:var(--accent)':''))}">
