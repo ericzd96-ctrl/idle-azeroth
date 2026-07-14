@@ -216,6 +216,42 @@ function buffMetaForClass() {
   }
   return map;
 }
+const MAIN_MONSTER_STATE_KEYS = new Set([
+  'decay', 'decay2', 'judged', 'frozen', 'exposed', 'terror', 'marked', 'rooted'
+]);
+const INTERNAL_MONSTER_STATE_KEYS = new Set([
+  'trauma', 'fever', 'brittle', 'unstable', 'penanceMark', 'voidTorn', 'venomBloom',
+  'huntWound', 'stormBrand', 'holyBrand', 'doomBrand', 'astralBrand', 'lifeSeed'
+]);
+const INTERNAL_MONSTER_DOT_PREFIXES = [
+  'elementReaction:', 'skillEcho:', 'skillMark:', 'skillWeave:', 'skillRhythm:',
+  'skillControl:', 'skillWeakness:', 'skillPrep:', 'skillOverload:', 'skillResource:',
+  'skillHarvest:', 'skillPact:', 'skillField:', 'skillCharge:', 'skillRune:',
+  'specStance:', 'specCore:', 'specProc:', 'specReaction:', 'specTactic:'
+];
+const INTERNAL_MONSTER_DOT_SOURCES = new Set([
+  'skillReaction', 'skillEcho', 'skillMark', 'skillWeave', 'skillRhythm', 'skillControl',
+  'skillWeakness', 'skillPrep', 'skillOverload', 'skillResource', 'skillHarvest',
+  'skillPact', 'skillField', 'skillCharge', 'skillRune', 'specStance', 'specCore',
+  'specProc', 'specReaction'
+]);
+function isMainMonsterStateKey(stateKey) {
+  if (!stateKey || stateKey === 'sunder') return false;
+  if (INTERNAL_MONSTER_STATE_KEYS.has(stateKey)) return false;
+  return MAIN_MONSTER_STATE_KEYS.has(stateKey);
+}
+function isMainMonsterDot(dot) {
+  if (!dot) return false;
+  const key = String(dot.key || '');
+  const source = String(dot.source || '');
+  if (INTERNAL_MONSTER_DOT_PREFIXES.some(prefix => key.startsWith(prefix))) return false;
+  if (INTERNAL_MONSTER_DOT_SOURCES.has(source)) return false;
+  return true;
+}
+function mainMonsterDots(mon, now) {
+  if (typeof getMonsterDots !== 'function') return [];
+  return getMonsterDots(mon, now).filter(isMainMonsterDot);
+}
 /* 焦点敌人当前的减益(debuff)列表 */
 function focusDebuffs(now) {
   const mon = state.currentMonsters && state.currentMonsters[0];
@@ -223,7 +259,7 @@ function focusDebuffs(now) {
   const out = [];
   if (mon.slowUntil > now)   out.push({ icon: '❄️', name: '减速',   desc: '攻击速度降低约33%', left: Math.ceil((mon.slowUntil - now) / 1000) });
   if (typeof getMonsterDots === 'function') {
-    for (const dot of getMonsterDots(mon, now)) {
+    for (const dot of mainMonsterDots(mon, now)) {
       out.push({
         icon: dot.icon || '🔥',
         name: dot.name || '持续伤害',
@@ -236,7 +272,7 @@ function focusDebuffs(now) {
   if (typeof MONSTER_STATE_META === 'object' && mon._skillStates) {
     for (const [stateKey, expire] of Object.entries(mon._skillStates)) {
       if (!(expire > now)) continue;
-      if (stateKey === 'sunder') continue;
+      if (!isMainMonsterStateKey(stateKey)) continue;
       const meta = MONSTER_STATE_META[stateKey] || { icon:'✨', name:stateKey, desc:'目标处于特殊状态' };
       out.push({
         icon: meta.icon || '✨',
@@ -245,59 +281,6 @@ function focusDebuffs(now) {
         left: Math.ceil((expire - now) / 1000)
       });
     }
-  }
-  if (mon._specReactions) {
-    for (const reaction of Object.values(mon._specReactions)) {
-      if (!reaction || !(reaction.expire > now) || !(reaction.stacks > 0)) continue;
-      const max = reaction.max || 5;
-      out.push({
-        icon: reaction.icon || '✦',
-        name: `${reaction.stackName || reaction.name || '专精反应'} ${reaction.stacks}/${max}`,
-        desc: reaction.desc || '当前专精技能叠加的反应层数,达到阈值后会被收束技能引爆',
-        left: Math.ceil((reaction.expire - now) / 1000)
-      });
-    }
-  }
-  if (mon._skillEchoes) {
-    for (const echo of Object.values(mon._skillEchoes)) {
-      if (!echo || !(echo.expire > now)) continue;
-      out.push({
-        icon: echo.icon || '✺',
-        name: echo.name || '技能余波',
-        desc: echo.desc || '技能留下的短暂战场痕迹,会被后续技能引爆或转化',
-        left: Math.ceil((echo.expire - now) / 1000)
-      });
-    }
-  }
-  if (mon._skillMarks) {
-    for (const mark of Object.values(mon._skillMarks)) {
-      if (!mark || !(mark.expire > now) || !(mark.stacks > 0)) continue;
-      const max = mark.max || 4;
-      out.push({
-        icon: mark.icon || '✦',
-        name: `${mark.name || '技能判词'} ${mark.stacks}/${max}`,
-        desc: mark.desc || '技能留下的可叠层目标判词,满层或被相克技能命中时会收束爆发',
-        left: Math.ceil((mark.expire - now) / 1000)
-      });
-    }
-  }
-  if (mon._skillControl && mon._skillControl.expire > now && mon._skillControl.stacks > 0) {
-    const ctrl = mon._skillControl;
-    out.push({
-      icon: ctrl.icon || '⛓️',
-      name: `${ctrl.name || '控制压力'} ${ctrl.stacks}/${ctrl.max || 4}`,
-      desc: ctrl.desc || '减速、破甲、冻结、沉默等控场效果积累的压力,可被后续技能清算为追击、DOT、护盾或资源',
-      left: Math.ceil((ctrl.expire - now) / 1000)
-    });
-  }
-  if (mon._skillWeakness && mon._skillWeakness.expire > now && mon._skillWeakness.stacks > 0) {
-    const weak = mon._skillWeakness;
-    out.push({
-      icon: weak.icon || '🎯',
-      name: `${weak.name || '目标弱点'} ${weak.stacks}/${weak.max || 4}`,
-      desc: weak.desc || '技能揭露的目标弱点,可被后续技能利用为追击、DOT、护盾、溅射或协同',
-      left: Math.ceil((weak.expire - now) / 1000)
-    });
   }
   return out;
 }
@@ -1564,7 +1547,7 @@ function renderMonList() {
     let s = '';
     if (m.slowUntil > now)   s += `<span title="减速:攻速降低">${statusIconHtml('减速', '❄️', 13)}</span>`;
     if (typeof getMonsterDots === 'function') {
-      const dots = getMonsterDots(m, now);
+      const dots = mainMonsterDots(m, now);
       if (dots.length) {
         const total = dots.reduce((sum, dot) => sum + (dot.dps || 0), 0);
         const names = dots.map(dot => `${dot.icon || '🔥'}${dot.name || '持续伤害'}:${fmt(dot.dps || 0)}/秒`).join(' · ');
