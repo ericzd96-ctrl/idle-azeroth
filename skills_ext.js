@@ -72,6 +72,7 @@ const SKILL_AURA_LIBRARY = {
   sh_totem:     { icon:'🪬', name:'图腾共鸣', desc:'萨满治疗、护盾与元素技能叠加,强化全队支援', maxStacks:5 },
   d_harmony:    { icon:'🌿', name:'自然调和', desc:'德鲁伊治疗、月火与野性技能叠加,在恢复/输出间转换', maxStacks:5 },
   spec_flow:    { icon:'✦', name:'专精连段', desc:'按当前专精的技能顺序推进,完成后触发独特战斗效果', maxStacks:3 },
+  spec_proc:    { icon:'✦', name:'临场强化', desc:'当前专精触发的下一技能变招,命中符合条件的技能后自动消费', maxStacks:1 },
 };
 
 const CLASS_COMBAT_MECHANICS = {
@@ -1068,6 +1069,54 @@ const SPEC_REACTION_SYSTEMS = {
   },
 };
 
+const SPEC_PROC_SYSTEMS = {
+  warrior:{
+    arms:{ key:'armsExecutionOrder', icon:'🪓', name:'处决号令', desc:'引爆创伤后,下一次斩杀/巨人之击资源消耗降低40%,必定暴击,并溅射20%。', spender:/斩杀|巨人|灭战者/, damagePct:0.22, costPct:0.60, forceCrit:true, splashPct:0.20 },
+    fury:{ key:'furyBloodSurge', icon:'😡', name:'血涌', desc:'暴怒节奏触发后,下一次怒火乱舞/奥丁之怒必暴,造成额外追击并恢复生命。', spender:/怒火|乱舞|奥丁|斩杀/, damagePct:0.18, forceCrit:true, healPct:0.035, extraHitPct:0.22 },
+    prot:{ key:'protShieldRiposte', icon:'🛡️', name:'盾牌还击', desc:'盾反裂口触发后,下一次盾击/复仇获得护盾,按防御追加反震并返还资源。', spender:/盾牌猛击|盾击|复仇|盾牌冲锋/, damagePct:0.12, shieldPct:0.05, resource:8, cooldownPct:0.20 },
+  },
+  mage:{
+    arcane:{ key:'arcaneClearcast', icon:'🔷', name:'节能倾泻', desc:'奥术失衡触发后,下一次弹幕/涌动资源消耗降低50%,额外返还法力并追加奥术爆发。', spender:/弹幕|涌动|大法师/, damagePct:0.20, costPct:0.50, resource:14, extraHitPct:0.18 },
+    fire:{ key:'fireHotStreak', icon:'🔥', name:'炎爆瞬发', desc:'内燃触发后,下一次炎爆/流星必暴,点燃目标并扩散火焰。', spender:/炎爆|流星|烈焰风暴|大灾/, damagePct:0.20, forceCrit:true, dotPct:0.16, spreadDotPct:0.45, splashPct:0.22 },
+    frost:{ key:'frostBrainFreeze', icon:'❄️', name:'冰冷智慧', desc:'寒脆触发后,下一次冰枪/彗星冻结目标,必暴并获得冰盾。', spender:/冰枪|彗星|冰风暴|宝珠/, damagePct:0.18, forceCrit:true, state:'frozen', shieldPct:0.035 },
+  },
+  priest:{
+    discipline:{ key:'discAtonementSurge', icon:'⚖️', name:'赎罪涌动', desc:'赎罪棱镜触发后,下一次惩罚/惩击必暴,伤害转化为主角与随从护盾。', spender:/惩罚|惩击|光明之怒/, damagePct:0.16, forceCrit:true, shieldPct:0.045, companionShieldPct:0.055 },
+    holy:{ key:'holySerendipity', icon:'✨', name:'圣光机缘', desc:'圣光回响触发后,下一次圣言/治疗祷言治疗提高,过量治疗转为护盾并治疗随从。', spender:/治疗祷言|圣言|神圣新星|圣光/, healPct:0.16, shieldPct:0.035, companionHealPct:0.07, costPct:0.70 },
+    shadow:{ key:'shadowVoidTorrent', icon:'🌑', name:'虚空洪流', desc:'虚空裂口触发后,下一次虚空/疫病技能必暴并扩散暗影持续伤害。', spender:/虚空|噬灵|疫病|冲撞/, damagePct:0.22, forceCrit:true, spreadDotPct:0.55, dotPct:0.14 },
+  },
+  rogue:{
+    assassination:{ key:'assnToxicFinish', icon:'🐍', name:'毒伤终结', desc:'毒花触发后,下一次奉毒/君王之灾必暴,消耗更少能量并追加毒爆。', spender:/奉毒|君王|毒/, damagePct:0.20, costPct:0.55, forceCrit:true, dotPct:0.14 },
+    combat:{ key:'combatLoadedDice', icon:'⚔️', name:'灌铅骰子', desc:'乱舞节拍触发后,下一次正中眉心/杀戮盛宴必暴,刷新部分冷却并溅射。', spender:/正中|眉心|杀戮|切割/, damagePct:0.18, forceCrit:true, cooldownPct:0.35, splashPct:0.25 },
+    subtlety:{ key:'subShadowOpportunity', icon:'🌑', name:'暗影机会', desc:'暗影破绽触发后,下一次暗袭/袖剑风暴必暴,制造破绽并追加暗影伤害。', spender:/暗袭|袖剑|秘技|暗影/, damagePct:0.20, forceCrit:true, state:'exposed', extraHitPct:0.18 },
+  },
+  hunter:{
+    bm:{ key:'bmKillWindow', icon:'🐾', name:'杀戮窗口', desc:'兽群气味触发后,下一次杀戮命令/协同猛攻召唤兽群追咬并强化宠物协同。', spender:/杀戮|协同|猛攻|兽群/, damagePct:0.16, summon:'beast', extraHitPct:0.20, resource:8 },
+    marks:{ key:'marksLockAndLoad', icon:'🎯', name:'荷枪实弹', desc:'弱点锁定触发后,下一次瞄准/杀戮射击资源消耗降低,必暴并穿透标记目标。', spender:/杀戮|奇美拉|瞄准|精确/, damagePct:0.24, costPct:0.50, forceCrit:true, state:'marked' },
+    survival:{ key:'survTrapChain', icon:'💣', name:'陷阱连锁', desc:'野火药引触发后,下一次猫鼬/屠戮引爆野火,束缚并扩散持续伤害。', spender:/猫鼬|屠戮|猛禽|爆炸/, damagePct:0.18, state:'rooted', dotPct:0.15, spreadDotPct:0.35 },
+  },
+  shaman:{
+    element:{ key:'eleLavaOverload', icon:'⛈️', name:'熔岩过载', desc:'风暴烙印触发后,下一次元素冲击/风暴守护者必暴并弹射闪电。', spender:/元素冲击|风暴守护|风暴|拉登/, damagePct:0.22, forceCrit:true, splashPct:0.28, state:'slow' },
+    enhancement:{ key:'enhWindlash', icon:'🌀', name:'风怒连击', desc:'漩涡刻痕触发后,下一次裂地/熔岩猛击追加风怒追击并返还资源。', spender:/裂地|熔岩猛击|熔岩|毁灭/, damagePct:0.18, extraHitPct:0.26, resource:10, cooldownPct:0.20 },
+    restoration:{ key:'restTidalCore', icon:'🌊', name:'潮汐核心', desc:'潮汐井触发后,下一次治疗链/暴雨图腾治疗提高,同时护盾主角和随从。', spender:/暴雨|潮汐|治疗链|图腾/, healPct:0.18, shieldPct:0.04, companionHealPct:0.08, companionShieldPct:0.05 },
+  },
+  paladin:{
+    holy:{ key:'hpalBeaconBloom', icon:'🌟', name:'道标绽放', desc:'双道标触发后,下一次黎明/圣光治疗提高,并给随从同步治疗与护盾。', spender:/黎明|圣光|震击/, healPct:0.18, companionHealPct:0.08, companionShieldPct:0.05, costPct:0.70 },
+    prot:{ key:'ppalAvengerEcho', icon:'🛡️', name:'复仇回声', desc:'奉献圣印触发后,下一次盾击/复仇者之盾获得护盾并弹射圣光伤害。', spender:/正义盾击|盾击|复仇者|盾/, damagePct:0.14, shieldPct:0.055, splashPct:0.22, resource:8 },
+    ret:{ key:'retFinalVerdict', icon:'⚜️', name:'最终裁决', desc:'裁决圣印触发后,下一次圣殿裁决/最终清算必暴并标记审判。', spender:/圣殿裁决|裁决|最终清算|愤怒之锤/, damagePct:0.24, forceCrit:true, state:'judged', costPct:0.65 },
+  },
+  warlock:{
+    affliction:{ key:'affSoulRapture', icon:'💜', name:'灵魂狂欢', desc:'痛苦契印触发后,下一次邪能狂涌/腐蚀之种扩散所有持续伤害并返还资源。', spender:/邪能狂涌|腐蚀之种|收割|狂涌/, damagePct:0.18, spreadDotPct:0.65, dotPct:0.14, resource:10 },
+    demonology:{ key:'demoDemonicCore', icon:'😈', name:'恶魔核心', desc:'军团裂门触发后,下一次内爆/恶魔之箭必暴并召唤恶魔协击。', spender:/内爆|恶魔之箭|吞噬|恶魔/, damagePct:0.20, forceCrit:true, summon:'demon', extraHitPct:0.18 },
+    destruction:{ key:'destBackdraft', icon:'🔥', name:'爆燃回流', desc:'混乱余烬触发后,下一次混乱之箭/裂隙必暴,消耗降低并点燃附近敌人。', spender:/混乱之箭|混乱|灵魂之火|裂隙/, damagePct:0.24, forceCrit:true, costPct:0.55, dotPct:0.15, splashPct:0.22 },
+  },
+  druid:{
+    balance:{ key:'balShootingStars', icon:'🌗', name:'坠星预兆', desc:'星痕触发后,下一次星涌/星落必暴并落下星界溅射。', spender:/星涌|星辰|新月|星落/, damagePct:0.20, forceCrit:true, splashPct:0.25, resource:8 },
+    feral:{ key:'feralBloodtalons', icon:'🐾', name:'血爪', desc:'深裂触发后,下一次凶猛撕咬/野性狂怒必暴,追加流血并返还能量。', spender:/凶猛|撕咬|野性狂怒/, damagePct:0.22, forceCrit:true, dotPct:0.14, resource:10 },
+    resto:{ key:'restForestGrace', icon:'🌿', name:'林地恩典', desc:'生命种子触发后,下一次百花/宁静治疗提高,给主角和随从生成自然护盾。', spender:/百花|宁静|母树|绽放/, healPct:0.20, shieldPct:0.045, companionHealPct:0.08, companionShieldPct:0.05 },
+  },
+};
+
 function currentSpecCombatRule() {
   if (typeof state === 'undefined' || !state) return null;
   return SPEC_COMBAT_RULES[state.cls]?.[state.specialization] || null;
@@ -1102,17 +1151,24 @@ function currentSpecReactionSystem() {
   return SPEC_REACTION_SYSTEMS[state.cls]?.[state.specialization] || null;
 }
 
+function currentSpecProcSystem() {
+  if (typeof state === 'undefined' || !state) return null;
+  return SPEC_PROC_SYSTEMS[state.cls]?.[state.specialization] || null;
+}
+
 if (typeof window !== 'undefined') {
   window.SPEC_COMBAT_RULES = SPEC_COMBAT_RULES;
   window.SPEC_COMBAT_METERS = SPEC_COMBAT_METERS;
   window.SPEC_TACTICAL_WINDOWS = SPEC_TACTICAL_WINDOWS;
   window.SPEC_SKILL_CHAINS = SPEC_SKILL_CHAINS;
   window.SPEC_REACTION_SYSTEMS = SPEC_REACTION_SYSTEMS;
+  window.SPEC_PROC_SYSTEMS = SPEC_PROC_SYSTEMS;
   window.currentSpecCombatRule = currentSpecCombatRule;
   window.currentSpecCombatMeter = currentSpecCombatMeter;
   window.currentSpecTacticalWindow = currentSpecTacticalWindow;
   window.currentSpecSkillChain = currentSpecSkillChain;
   window.currentSpecReactionSystem = currentSpecReactionSystem;
+  window.currentSpecProcSystem = currentSpecProcSystem;
 }
 
 const SPEC_STARTER_UNLOCKS = {

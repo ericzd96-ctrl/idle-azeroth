@@ -562,6 +562,11 @@ function currentSpecReactionForCombat(){
   if(typeof globalThis?.currentSpecReactionSystem === 'function') return globalThis.currentSpecReactionSystem();
   return null;
 }
+function currentSpecProcForCombat(){
+  if(typeof currentSpecProcSystem === 'function') return currentSpecProcSystem();
+  if(typeof globalThis?.currentSpecProcSystem === 'function') return globalThis.currentSpecProcSystem();
+  return null;
+}
 function ensureSpecSkillChainRuntime(chain, now){
   const rt = ensureSkillRuntime();
   if(!rt.specChain) rt.specChain = {};
@@ -571,6 +576,75 @@ function ensureSpecSkillChainRuntime(chain, now){
     rt.specChain = { cls, spec, name:chain?.name || '', index:0, history:[], expire:0, lastSkill:'', lastMarker:'' };
   }
   return rt.specChain;
+}
+function procRegexMatches(re, text){
+  if(!re) return false;
+  if(re.global || re.sticky) re.lastIndex = 0;
+  return re.test(text || '');
+}
+function grantSpecProc(reason, now){
+  const proc = currentSpecProcForCombat();
+  if(!proc || !proc.key) return null;
+  const rt = ensureSkillRuntime();
+  rt.specProc = { key:proc.key, expire:(now || Date.now()) + (proc.durationMs || 12000), reason:reason || '' };
+  addSkillAura('spec_proc', {
+    add:1,
+    max:1,
+    duration:proc.durationMs || 12000,
+    icon:proc.icon || '✦',
+    name:proc.name || '临场强化',
+    desc:(proc.desc || '下一次对应技能获得强化') + (reason ? ` 触发: ${reason}` : ''),
+  });
+  showFloat($('hero-emoji'), `${proc.icon || '✦'}${proc.name || '临场强化'}`, '#facc15', { variant:'buff', scale:1.05 });
+  markDirty('skills','hero');
+  return proc;
+}
+function peekSpecProcForSkill(skillKey, sk, now){
+  const proc = currentSpecProcForCombat();
+  const rt = ensureSkillRuntime();
+  if(!proc || !rt.specProc || rt.specProc.key !== proc.key) return null;
+  if(rt.specProc.expire && rt.specProc.expire <= (now || Date.now())){
+    delete rt.specProc;
+    consumeSkillAura('spec_proc', { all:true });
+    return null;
+  }
+  const text = skillTextForReaction(skillKey, sk, {});
+  return procRegexMatches(proc.spender, text) ? proc : null;
+}
+function consumeSpecProcForSkill(skillKey, sk, now){
+  const proc = peekSpecProcForSkill(skillKey, sk, now);
+  if(!proc) return null;
+  const rt = ensureSkillRuntime();
+  delete rt.specProc;
+  consumeSkillAura('spec_proc', { all:true });
+  log(`${proc.icon || '✦'} 临场强化「${proc.name}」强化了 ${sk?.name || '技能'}: ${proc.desc}`,'epic');
+  markDirty('skills','hero');
+  return proc;
+}
+function applySpecProcHitEffects(proc, mon, dmgDone, sk, skillKey, now, ctx){
+  if(!proc || !mon || mon.hp <= 0 || !(dmgDone > 0)) return;
+  if(proc.extraHitPct) applySkillFollowupDamage(mon, dmgDone * proc.extraHitPct, proc.icon || sk?.icon || '✦', '#facc15', now);
+  if(proc.splashPct && !ctx?.isAOE) splashSkillDamage(mon, dmgDone, proc.splashPct, proc.icon || sk?.icon || '✦', now);
+  if(proc.dotPct) applyMonsterDot(mon, 'specProc:' + proc.key, Math.max(1, Math.floor(dmgDone * proc.dotPct)), proc.dotMs || 7000, { icon:proc.icon || sk?.icon || '✦', name:proc.name || '临场强化', source:'specProc' });
+  if(proc.spreadDotPct) spreadDotFromMonster(mon, proc.spreadDotPct, proc.dotMs || 8000);
+  if(proc.state){
+    if(proc.state === 'slow') mon.slowUntil = Math.max(mon.slowUntil || 0, now + (proc.stateMs || 5000));
+    else applyMonsterState(mon, proc.state, proc.stateMs || 8000);
+  }
+  if(proc.shieldPct) addTalentShield(Math.floor(state.hero.hpMax * proc.shieldPct), true, 9000);
+  if(proc.healPct) healHeroAmount(Math.floor(state.hero.hpMax * proc.healPct), proc.icon || '✦', '#6ee7b7', 'hero', proc.name || '临场强化');
+  if(proc.resource) grantTalentResource(proc.resource);
+  if(proc.cooldownPct) resetSkillCooldown(skillKey, proc.cooldownPct);
+  if(proc.summon) specTacticSummon(proc.summon, now);
+  if(proc.companionShieldPct || proc.companionHealPct) applyCompanionClassSupport({ companionShieldPct:proc.companionShieldPct, companionHealPct:proc.companionHealPct }, sk, dmgDone, now);
+}
+function applySpecProcHealEffects(proc, amount, overheal, sk, skillKey, now){
+  if(!proc) return;
+  if(proc.shieldPct) addTalentShield(Math.floor(state.hero.hpMax * proc.shieldPct), true, 9000);
+  if(proc.healPct) healHeroAmount(Math.floor(state.hero.hpMax * proc.healPct), proc.icon || sk?.icon || '✦', '#6ee7b7', 'hero', proc.name || '临场强化');
+  if(proc.resource) grantTalentResource(proc.resource);
+  if(proc.companionShieldPct || proc.companionHealPct) applyCompanionClassSupport({ companionShieldPct:proc.companionShieldPct, companionHealPct:proc.companionHealPct }, sk, amount, now);
+  if(proc.cooldownPct) resetSkillCooldown(skillKey, proc.cooldownPct);
 }
 function skillTextForReaction(skillKey, sk, ctx){
   return [
@@ -658,6 +732,7 @@ function detonateSpecReaction(mon, rule, stacks, value, ctx, now){
     specReactionCompanionPulse('shield', now);
   }
   grantTalentResource(Math.min(10, 2 + stacks));
+  grantSpecProc(rule.name || '状态反应', now);
   clearSpecReaction(mon, rule);
   showMonsterFloat(mon, `${rule.icon || '✦'}${rule.stackName || rule.name}爆`, '#facc15', { important:true });
   log(`${rule.icon || '✦'} 专精反应「${rule.name}」引爆: ${rule.desc}`,'epic');
@@ -735,6 +810,7 @@ function applySpecSkillChainPayoff(chain, mon, value, ctx, now){
     addTalentShield(Math.floor(state.hero.hpMax * 0.025), true, 8500);
     specTacticCompanionSupport('heal', now);
   }
+  grantSpecProc(chain.name || '技能连段', now);
   grantTalentResource(chain.resource || 4);
   if(target && target.hp > 0 && typeof triggerMonsterSpecAdaptationPressure === 'function') triggerMonsterSpecAdaptationPressure(target, now);
   return fired;
@@ -7895,20 +7971,23 @@ function castSkill(skillKey,manual){
   }
   if(state.skillCooldowns[skillKey]&&state.skillCooldowns[skillKey]>now){if(manual){const left=Math.ceil((state.skillCooldowns[skillKey]-now)/1000);log(sk.name+' 冷却中('+left+'秒)','bad');}return;}
   if(summonSkill && !canSummonAllies(sk, 'hero', now)){if(manual)log('召唤物已在场上限','bad');return;}
+  const pendingSpecProc = peekSpecProcForSkill(skillKey, sk, now);
   let cost=sk.mp;if(state.hero.costReduction>0)cost=Math.max(1,Math.floor(sk.mp*(1-state.hero.costReduction/100)));
+  if(pendingSpecProc && pendingSpecProc.costPct !== undefined) cost = Math.max(0, Math.floor(cost * pendingSpecProc.costPct));
   if(sk.consumeRage){cost=Math.min(state.resource,10);}   // 斩杀:至少需10怒,但会消耗全部
   if(state.resource<cost){if(manual)log(c.resource+'不足','bad');return;}
   if(!sk.consumeRage)state.resource-=cost;   // 斩杀在伤害计算时消耗全部怒气
   const cdSec=getSkillCd(sk);state.skillCooldowns[skillKey]=now+cdSec*1000/castSpeedMul();   // CD 受 倍速×极速 影响
   const talentForceCrit = consumeNextSkillCrit(sk);
+  const specProc = consumeSpecProcForSkill(skillKey, sk, now);
   if(sk.type==='dmg'){const mon=state.currentMonsters[0];if(!mon)return;
     // 斩杀:消耗所有怒气,每点怒气+1%伤害
     let rageBonus=1;
     if(sk.consumeRage&&c.resKey==='rage'&&state.resource>0){rageBonus=1+state.resource/100;log('💀 消耗 '+state.resource+' 怒气,伤害 +'+(state.resource)+'%','good');state.resource=0;}
     const isAOE=((sk.aoe || sk.mul>=4)&&getAliveMonsters().length>1);
     let dmgDone=0;
-    const cb=castDmgBonus(sk)*masteryDmgMult()*rageBonus;   // 读条技能补偿 + 精通 + 怒气
-    const baseForceCrit = sk.alwaysCrit || talentForceCrit;
+    const cb=castDmgBonus(sk)*masteryDmgMult()*rageBonus*(1+(specProc?.damagePct || 0));   // 读条技能补偿 + 精通 + 怒气 + 临场强化
+    const baseForceCrit = sk.alwaysCrit || talentForceCrit || !!specProc?.forceCrit;
     if(isAOE){
       for(const target of state.currentMonsters){
         if(target.hp<=0) continue;
@@ -7929,6 +8008,7 @@ function castSkill(skillKey,manual){
         const applyState=(!skillFxMeta(skillKey, sk).applyTargetState && ai.applyTargetState && !['dot','slow','sunder'].includes(ai.applyTargetState)) ? ai.applyTargetState : null;
         if(applyState) applyMonsterState(target, applyState, ai.stateDurationMs || 10000);
         applySkillHitEffects(skillKey, sk, target, dd, { now, isAOE:true });
+        applySpecProcHitEffects(specProc, target, dd, sk, skillKey, now, { isAOE:true });
       }
       log(sk.name+'! AOE '+dmgDone+' 总伤害','good');
     }
@@ -7953,6 +8033,7 @@ function castSkill(skillKey,manual){
       const applyState=(!skillFxMeta(skillKey, sk).applyTargetState && ai.applyTargetState && !['dot','slow','sunder'].includes(ai.applyTargetState)) ? ai.applyTargetState : null;
       if(applyState) applyMonsterState(mon, applyState, ai.stateDurationMs || 10000);
       applySkillHitEffects(skillKey, sk, mon, dmgDone, { now, isAOE:false });
+      applySpecProcHitEffects(specProc, mon, dmgDone, sk, skillKey, now, { isAOE:false });
     }
     // 技能伤害也吸血(英雄吸血属性,每点=0.5%实际伤害);与技能自带 lifeSteal 叠加
     if(state.hero.leech>0 && dmgDone>0){
@@ -7961,11 +8042,12 @@ function castSkill(skillKey,manual){
     }
     processTalentAfterSkill(skillKey, sk, mon, dmgDone, { cost });
   }else if(sk.type==='heal'){
-    const healMult=(1+(state.hero.healBonus||0)/100)*calcSpecIdentityHealMult(skillKey, sk, now);
+    const healMult=(1+(state.hero.healBonus||0)/100)*calcSpecIdentityHealMult(skillKey, sk, now)*(1+(specProc?.healPct || 0));
     const h=Math.floor(state.hero.hpMax*sk.heal*healMult);
     const hr=healHeroAmount(h, sk.icon, '#6ee7b7', 'hero', sk.name);
     log(sk.name+'! 恢复 '+hr.applied+' 生命','good');
     applySkillHealEffects(skillKey, sk, hr.applied, hr.overheal);
+    applySpecProcHealEffects(specProc, hr.applied, hr.overheal, sk, skillKey, now);
     processTalentAfterHeal(skillKey, hr.applied, hr.overheal);
     processTalentAfterSkill(skillKey, sk, null, hr.applied, { overheal:hr.overheal, cost });
   }
@@ -7974,11 +8056,12 @@ function castSkill(skillKey,manual){
     const summoned = summonAlliedUnits(sk, now, owner);
     if(summoned > 0){
       log(`${sk.icon || '🐾'} ${sk.name}! 召唤了 ${summoned} 个单位助战`,'good');
+      applySpecProcHealEffects(specProc, 0, 0, sk, skillKey, now);
       applyClassMechanicAfterSkill(skillKey, sk, state.currentMonsters[0] || null, 0, { cost, summoned, now });
       processTalentAfterSkill(skillKey, sk, state.currentMonsters[0] || null, 0, { cost, summoned });
     }
   }
-  else if(sk.type==='buff'){const dur=sk.duration+(state.hero.buffDuration||0)*1000;state.buffs[sk.buff]=Date.now()+dur;recomputeStats();log(sk.name+'!','good');applyClassMechanicAfterSkill(skillKey, sk, state.currentMonsters[0] || null, 0, { cost, buff:true, now });}
+  else if(sk.type==='buff'){const dur=sk.duration+(state.hero.buffDuration||0)*1000;state.buffs[sk.buff]=Date.now()+dur;recomputeStats();log(sk.name+'!','good');applySpecProcHealEffects(specProc, 0, 0, sk, skillKey, now);applyClassMechanicAfterSkill(skillKey, sk, state.currentMonsters[0] || null, 0, { cost, buff:true, now });}
   if(sk.type==='buff') processTalentAfterSkill(skillKey, sk, state.currentMonsters[0] || null, 0, { cost });
 }
 /* BOSS 施法目标(用于施法条提前显示"对谁释放";单体伤害在开始施法时预选,结算时复用) */

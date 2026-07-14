@@ -457,14 +457,16 @@ function renderBuffBar() {
     const tactic = (typeof currentSpecTacticalWindow === 'function') ? currentSpecTacticalWindow() : null;
     const chain = (typeof currentSpecSkillChain === 'function') ? currentSpecSkillChain() : null;
     const reaction = (typeof currentSpecReactionSystem === 'function') ? currentSpecReactionSystem() : null;
+    const proc = (typeof currentSpecProcSystem === 'function') ? currentSpecProcSystem() : null;
     const chainDesc = chain ? ` · 专精连段: ${chain.name}: ${chain.steps.map(x => x.label).join(' → ')}。完成: ${chain.finish}` : '';
     const reactionDesc = reaction ? ` · 状态反应: ${reaction.name}: ${reaction.desc}` : '';
+    const procDesc = proc ? ` · 临场强化: ${proc.name}: ${proc.desc}` : '';
     selfStates.unshift({
       kind: 'spec-meter',
       icon: specMeter.icon || '✦',
       name: specMeter.name,
       base: '专精机制:' + specMeter.key,
-      desc: (specMeter.hint || '') + ` · 当前 ${specMeter.stacks || 0}/${specMeter.max || 0}` + (tactic ? ` · 战术窗口: ${tactic.name}: ${tactic.desc}` : '') + chainDesc + reactionDesc,
+      desc: (specMeter.hint || '') + ` · 当前 ${specMeter.stacks || 0}/${specMeter.max || 0}` + (tactic ? ` · 战术窗口: ${tactic.name}: ${tactic.desc}` : '') + chainDesc + reactionDesc + procDesc,
       valText: `${specMeter.stacks || 0}/${specMeter.max || 0}`,
       stacks: specMeter.stacks || 0,
       left: 0
@@ -2887,14 +2889,20 @@ function renderSkillBar() {
     const cdMs = Math.max(0, cdEnd - now);
     const onCd = cdMs > 0;
     const hasMp = state.resource >= sk.mp;
+    const proc = (typeof currentSpecProcSystem === 'function') ? currentSpecProcSystem() : null;
+    const activeProc = proc && state.skillRuntime && state.skillRuntime.specProc && state.skillRuntime.specProc.key === proc.key && (!state.skillRuntime.specProc.expire || state.skillRuntime.specProc.expire > now);
+    const procText = `${key} ${sk.name || ''} ${sk.desc || ''} ${sk.type || ''}`;
+    if (proc && proc.spender && (proc.spender.global || proc.spender.sticky)) proc.spender.lastIndex = 0;
+    const procMatch = !!(activeProc && proc && proc.spender && proc.spender.test(procText));
     const baseDesc = sk._baseDesc || sk.desc || '';
     const detailDesc = sk._detailDesc ? `\n联动: ${sk._detailDesc}` : '';
-    const tip = `${sk.name} · ${baseDesc}${detailDesc}\n${c.resource} ${sk.mp} · 冷却 ${getSkillCd(sk)}秒`.replace(/"/g, '&quot;');
+    const procDesc = procMatch ? `\n临场强化: ${proc.name} · ${proc.desc}` : '';
+    const tip = `${sk.name} · ${baseDesc}${detailDesc}${procDesc}\n${c.resource} ${sk.mp} · 冷却 ${getSkillCd(sk)}秒`.replace(/"/g, '&quot;');
     const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, sk.icon) : sk.icon;
     return `<button class="skill-btn ${onCd?'on-cd':''}" data-skill="${key}" draggable="true" title="${tip}"
-      style="${!onCd&&hasMp?'border-color:var(--accent)':''}">
+      style="${procMatch&&!onCd?'border-color:#facc15;box-shadow:0 0 0 1px rgba(250,204,21,.45)':(!onCd&&hasMp?'border-color:var(--accent)':'')}">
       <span>${skillIconHtml} ${sk.name}</span>
-      <span class="mp-cost">${sk.mp}${c.resKey==='rage'?'怒':c.resKey==='energy'?'能':'蓝'}</span>
+      <span class="mp-cost">${procMatch?'✦ ':''}${sk.mp}${c.resKey==='rage'?'怒':c.resKey==='energy'?'能':'蓝'}</span>
       ${onCd?`<div class="cd-overlay">${(cdMs/1000).toFixed(1)}秒</div>`:''}
     </button>`;
   }).join('');
