@@ -502,6 +502,115 @@ function splashSkillDamage(sourceMon, amount, pct, icon, now){
   }
   return total;
 }
+function skillElementTags(skillKey, sk){
+  if(!sk) return [];
+  const text = `${skillKey || ''} ${sk.name || ''} ${sk.desc || ''} ${sk.icon || ''}`;
+  const tags = new Set();
+  if(/火|炎|燃|灼|流星|凤凰|熔岩|献祭|混乱|余烬/.test(text)) tags.add('fire');
+  if(/冰|霜|寒|雪|冻结|彗星|宝珠/.test(text)) tags.add('frost');
+  if(/闪电|雷|风暴|震击|风怒|过载|元素/.test(text)) tags.add('storm');
+  if(/圣|神圣|审判|祝福|黎明|真言|惩罚|圣光/.test(text)) tags.add('holy');
+  if(/暗|虚空|痛|腐蚀|鬼影|灵魂|恶魔|恐惧|邪能|末日/.test(text)) tags.add('shadow');
+  if(/自然|月火|阳炎|星火|愤怒|回春|生命|绽放|治疗|根须|荆棘|野性成长/.test(text)) tags.add('nature');
+  if(/毒|钉刺|锁喉|割裂|毁伤|奉毒|君王/.test(text)) tags.add('poison');
+  if(/斩|击|盾|剑|刃|背刺|撕碎|撕咬|横扫|冲锋|压制|致死|巨人|复仇|物理|流血/.test(text)) tags.add('physical');
+  if(/奥术|奥能|飞弹|弹幕|阿鲁尼斯|魔网/.test(text)) tags.add('arcane');
+  if(/宠物|野兽|兽群|杀戮|瞄准|印记|奇美拉|射击|倒刺/.test(text)) tags.add('beast');
+  if(sk.dot) tags.add('dot');
+  return Array.from(tags);
+}
+function skillElementReactionTip(skillKey, sk){
+  const tags = skillElementTags(skillKey, sk);
+  const names = [];
+  if(tags.includes('fire')) names.push('冻结/易碎目标: 熔甲碎冰');
+  if(tags.includes('frost')) names.push('灼热/DOT目标: 蒸汽爆裂');
+  if(tags.includes('storm')) names.push('不稳定/风暴烙印目标: 风暴过载');
+  if(tags.includes('holy')) names.push('审判/赎罪目标: 圣辉震荡');
+  if(tags.includes('shadow')) names.push('DOT/末日目标: 暗影蔓延');
+  if(tags.includes('poison')) names.push('DOT/毒花目标: 毒爆');
+  if(tags.includes('physical')) names.push('破甲/创伤/破绽目标: 裂甲出血');
+  if(tags.includes('nature')) names.push('缠绕/生命种子目标: 荆棘绞杀');
+  if(tags.includes('arcane')) names.push('不稳定目标: 奥能坍缩');
+  if(tags.includes('beast')) names.push('印记/猎伤目标: 猎群追击');
+  return names.slice(0, 3).join('；');
+}
+function markSkillElementReaction(meta, now){
+  if(!meta) return;
+  addSkillAura('skill_reaction', {
+    add:1,
+    max:1,
+    duration:meta.durationMs || 5200,
+    icon:meta.icon || '✹',
+    name:meta.name || '技能反应',
+    desc:meta.desc || '技能元素命中了合适的目标状态,触发额外效果。',
+  });
+  markDirty('skills','hero','stage');
+}
+function triggerSkillElementReaction(rule, mon, dmgDone, sk, now, ctx){
+  if(!rule || !mon || mon.hp <= 0 || !(dmgDone > 0)) return false;
+  const base = Math.max(1, Math.floor(dmgDone));
+  let fired = false;
+  if(rule.state) applyMonsterState(mon, rule.state, rule.stateMs || 8000);
+  if(rule.dotPct) applyMonsterDot(mon, 'elementReaction:' + rule.key, Math.max(1, Math.floor(base * rule.dotPct)), rule.dotMs || 7500, { icon:rule.icon, name:rule.name, source:'skillReaction' });
+  if(rule.damagePct) fired = applySkillFollowupDamage(mon, base * rule.damagePct, rule.icon || sk?.icon || '✹', rule.color || '#facc15', now) > 0 || fired;
+  if(rule.damagePerDotPct){
+    const dots = getMonsterDotCount(mon, now);
+    if(dots > 0) fired = applySkillFollowupDamage(mon, base * dots * rule.damagePerDotPct, rule.icon || sk?.icon || '✹', rule.color || '#facc15', now) > 0 || fired;
+  }
+  if(rule.splashPct && !ctx?.isAOE) fired = splashSkillDamage(mon, base, rule.splashPct, rule.icon || sk?.icon || '✹', now) > 0 || fired;
+  if(rule.spreadDotPct) spreadDotFromMonster(mon, rule.spreadDotPct, rule.dotMs || 8000);
+  if(rule.shieldPct) addTalentShield(Math.floor(state.hero.hpMax * rule.shieldPct), true, 8500);
+  if(rule.healPct) healHeroAmount(Math.floor(state.hero.hpMax * rule.healPct), rule.icon || sk?.icon || '✹', '#6ee7b7', 'hero', rule.name);
+  if(rule.resource) grantTalentResource(rule.resource);
+  if(rule.summon) specTacticSummon(rule.summon, now);
+  showMonsterFloat(mon, `${rule.icon || '✹'}${rule.name}`, rule.color || '#facc15', { variant:'buff', important:true });
+  markSkillElementReaction(rule, now);
+  if(typeof log === 'function') log(`${rule.icon || '✹'} 技能反应「${rule.name}」触发: ${rule.desc}`, 'good');
+  return fired || true;
+}
+function processSkillElementReactions(skillKey, sk, mon, dmgDone, ctx){
+  if(!mon || mon.hp <= 0 || !(dmgDone > 0) || !sk) return false;
+  const now = ctx?.now || Date.now();
+  const tags = skillElementTags(skillKey, sk);
+  if(tags.length === 0) return false;
+  const cdKeyBase = `skill-element:${skillKey}:${mon._uid || mon.name || 'target'}`;
+  const dotCount = getMonsterDotCount(mon, now);
+  const rules = [];
+  if(tags.includes('fire') && (monsterStateActive(mon, 'frozen') || monsterStateActive(mon, 'brittle'))){
+    rules.push({ key:'meltArmor', icon:'🔥', name:'熔甲碎冰', color:'#fb923c', desc:'火焰击碎寒冰,造成爆裂伤害并施加破甲。', damagePct:0.22, state:'sunder', stateMs:12000, splashPct:0.12 });
+  }
+  if(tags.includes('frost') && (monsterStateActive(mon, 'fever') || dotCount > 0)){
+    rules.push({ key:'steamBurst', icon:'❄️', name:'蒸汽爆裂', color:'#93c5fd', desc:'冰霜压住灼热,制造蒸汽溅射并减速敌人。', damagePct:0.14, splashPct:0.20, state:'slow', stateMs:4500, shieldPct:0.018 });
+  }
+  if(tags.includes('storm') && (monsterStateActive(mon, 'unstable') || monsterStateActive(mon, 'stormBrand') || monsterStateActive(mon, 'slow'))){
+    rules.push({ key:'stormOverload', icon:'⛈️', name:'风暴过载', color:'#67e8f9', desc:'导电状态被风暴引爆,弹射闪电并返还资源。', damagePct:0.18, splashPct:0.28, resource:6 });
+  }
+  if(tags.includes('holy') && (monsterStateActive(mon, 'judged') || monsterStateActive(mon, 'penanceMark') || monsterStateActive(mon, 'holyBrand'))){
+    rules.push({ key:'holyShockwave', icon:'✨', name:'圣辉震荡', color:'#fde68a', desc:'圣光在审判印记中回响,造成冲击并为你生成护盾。', damagePct:0.16, shieldPct:0.032, healPct:0.018 });
+  }
+  if(tags.includes('shadow') && (dotCount > 0 || monsterStateActive(mon, 'doomBrand') || monsterStateActive(mon, 'voidTorn'))){
+    rules.push({ key:'voidSpread', icon:'🌑', name:'暗影蔓延', color:'#c084fc', desc:'暗影沿持续伤害裂缝扩散,留下虚空裂口并传播 DOT。', dotPct:0.12, spreadDotPct:0.45, state:'voidTorn', stateMs:8500 });
+  }
+  if(tags.includes('poison') && (dotCount > 0 || monsterStateActive(mon, 'venomBloom'))){
+    rules.push({ key:'venomPop', icon:'🐍', name:'毒爆', color:'#86efac', desc:'毒素遇到已有伤口爆开,按持续伤害数量追加毒性爆发。', damagePerDotPct:0.075, dotPct:0.10, state:'venomBloom', stateMs:8500 });
+  }
+  if(tags.includes('physical') && (monsterStateActive(mon, 'sunder') || monsterStateActive(mon, 'trauma') || monsterStateActive(mon, 'exposed'))){
+    rules.push({ key:'hemorrhage', icon:'🩸', name:'裂甲出血', color:'#fda4af', desc:'武器沿护甲裂口撕开伤口,追加出血持续伤害。', damagePct:0.12, dotPct:0.13, state:'trauma', stateMs:8500 });
+  }
+  if(tags.includes('nature') && (monsterStateActive(mon, 'rooted') || monsterStateActive(mon, 'lifeSeed'))){
+    rules.push({ key:'thornBind', icon:'🌿', name:'荆棘绞杀', color:'#86efac', desc:'自然法术收紧根须,造成荆棘持续伤害并生成护盾。', damagePct:0.10, dotPct:0.12, shieldPct:0.025, state:'rooted', stateMs:5200 });
+  }
+  if(tags.includes('arcane') && monsterStateActive(mon, 'unstable')){
+    rules.push({ key:'arcaneCollapse', icon:'🔷', name:'奥能坍缩', color:'#c4b5fd', desc:'奥术不稳定坍缩,造成爆发伤害、溅射并返还资源。', damagePct:0.24, splashPct:0.18, resource:8 });
+  }
+  if(tags.includes('beast') && (monsterStateActive(mon, 'marked') || monsterStateActive(mon, 'huntWound'))){
+    rules.push({ key:'packPursuit', icon:'🐾', name:'猎群追击', color:'#7dd3fc', desc:'猎群嗅到标记弱点,追加追咬并强化兽群协同。', damagePct:0.15, summon:'beast', resource:5 });
+  }
+  for(const rule of rules.slice(0, 2)){
+    if(classRuntimeReady(`${cdKeyBase}:${rule.key}`, rule.cooldownMs || 2600, now)) triggerSkillElementReaction(rule, mon, dmgDone, sk, now, ctx || {});
+  }
+  return rules.length > 0;
+}
 function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
   const fx = skillFxMeta(skillKey, sk);
   const now = ctx?.now || Date.now();
@@ -527,6 +636,7 @@ function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
   if(fx.extraHitPctIfBuff && buffActive(fx.extraHitPctIfBuff.key, now)) applySkillFollowupDamage(mon, dmgDone * (fx.extraHitPctIfBuff.pct || 0), sk.icon || '✨', '#fbbf24', now);
   if(fx.splashPct && !ctx?.isAOE) splashSkillDamage(mon, dmgDone, fx.splashPct, sk.icon || '💥', now);
   if(fx.spreadDotsPct) spreadDotFromMonster(mon, fx.spreadDotsPct, fx.dotMs || 5000);
+  processSkillElementReactions(skillKey, sk, mon, dmgDone, Object.assign({ now }, ctx || {}));
   if(fx.resourceGainOnKill && mon.hp <= 0) grantTalentResource(fx.resourceGainOnKill);
   applyClassMechanicAfterSkill(skillKey, sk, mon, dmgDone, Object.assign({ now, hit:true }, ctx || {}));
 }
@@ -1672,6 +1782,10 @@ function applyMonsterState(mon, stateKey, durMs){
   }
   if(stateKey === 'sunder'){
     mon.sunderUntil = Math.max(mon.sunderUntil || 0, Date.now() + (durMs || 15000));
+    return;
+  }
+  if(stateKey === 'slow'){
+    mon.slowUntil = Math.max(mon.slowUntil || 0, Date.now() + (durMs || 4500));
     return;
   }
   if(!mon._skillStates) mon._skillStates = {};

@@ -71,6 +71,7 @@ const SKILL_AURA_LIBRARY = {
   h_beastBond:  { icon:'🐾', name:'兽群羁绊', desc:'猎人与宠物/召唤物共同叠加,强化协同猛攻', maxStacks:5 },
   sh_totem:     { icon:'🪬', name:'图腾共鸣', desc:'萨满治疗、护盾与元素技能叠加,强化全队支援', maxStacks:5 },
   d_harmony:    { icon:'🌿', name:'自然调和', desc:'德鲁伊治疗、月火与野性技能叠加,在恢复/输出间转换', maxStacks:5 },
+  skill_reaction:{ icon:'✹', name:'技能反应', desc:'技能元素命中合适的目标状态后触发的额外反应', maxStacks:1 },
   spec_flow:    { icon:'✦', name:'专精连段', desc:'按当前专精的技能顺序推进,完成后触发独特战斗效果', maxStacks:3 },
   spec_core:    { icon:'✦', name:'专精核心', desc:'当前专精独有的战斗引擎资源,满层后用指定技能收束触发强力效果', maxStacks:8 },
   spec_proc:    { icon:'✦', name:'临场强化', desc:'当前专精触发的下一技能变招,命中符合条件的技能后自动消费', maxStacks:1 },
@@ -115,6 +116,19 @@ const MONSTER_STATE_META = {
   astralBrand:{ icon:'🌗', name:'星痕', desc:'日月星辉校准目标,星界技能会坠落追击' },
   lifeSeed:{ icon:'🌿', name:'生命种子', desc:'自然能量扎根,治疗收束会绽放为护盾与恢复' },
 };
+
+const SKILL_ELEMENT_REACTION_GUIDE = [
+  { icon:'🔥', name:'熔甲碎冰', desc:'火焰命中冻结/易碎目标会追加爆裂伤害并施加破甲。' },
+  { icon:'❄️', name:'蒸汽爆裂', desc:'冰霜命中灼热或带持续伤害目标会制造蒸汽溅射和减速。' },
+  { icon:'⛈️', name:'风暴过载', desc:'闪电/风暴命中不稳定、风暴烙印或减速目标会链式弹射并返还资源。' },
+  { icon:'✨', name:'圣辉震荡', desc:'神圣命中被审判或赎罪标记的目标会造成额外神圣冲击并产生护盾/治疗。' },
+  { icon:'🌑', name:'暗影蔓延', desc:'暗影命中带持续伤害或末日契印目标会扩散 DOT 并留下虚空裂口。' },
+  { icon:'🐍', name:'毒爆', desc:'毒药命中已有毒花或持续伤害目标会按 DOT 数量追加毒性爆发。' },
+  { icon:'🩸', name:'裂甲出血', desc:'物理/流血命中破甲、创伤或破绽目标会追加出血持续伤害。' },
+  { icon:'🌿', name:'荆棘绞杀', desc:'自然命中缠绕或生命种子目标会追加荆棘 DOT 并给自己护盾。' },
+  { icon:'🔷', name:'奥能坍缩', desc:'奥术命中不稳定目标会坍缩爆发、溅射并返还资源。' },
+  { icon:'🐾', name:'猎群追击', desc:'野兽/射击命中猎人印记或猎伤目标会触发追击和野兽协同。' },
+];
 
 /* 每个职业 4 个新技能:爆发 / 减伤 / 功能性 / 职业特色 */
 const NEW_SKILLS = {
@@ -1287,6 +1301,7 @@ if (typeof window !== 'undefined') {
   window.SPEC_PROC_SYSTEMS = SPEC_PROC_SYSTEMS;
   window.SPEC_CORE_SYSTEMS = SPEC_CORE_SYSTEMS;
   window.SPEC_STANCE_SYSTEMS = SPEC_STANCE_SYSTEMS;
+  window.SKILL_ELEMENT_REACTION_GUIDE = SKILL_ELEMENT_REACTION_GUIDE;
   window.currentSpecCombatRule = currentSpecCombatRule;
   window.currentSpecCombatMeter = currentSpecCombatMeter;
   window.currentSpecTacticalWindow = currentSpecTacticalWindow;
