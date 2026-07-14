@@ -207,6 +207,11 @@ function specMasteryEngineBonus(field){
   if(field === 'chargeSupportPct') return mastery * Math.max(b.supportPct || 0, b.mechanicShieldPct || 0) * 0.44;
   if(field === 'chargeGainPct') return mastery * Math.max(b.coreGainPct || 0, b.procPct || 0) * 0.34;
   if(field === 'chargeResource') return mastery * (b.resource || 0);
+  if(field === 'runeDmgPct') return mastery * Math.max(b.corePayoffPct || 0, b.chainPayoffPct || 0, b.specReactionPct || 0) * 0.44;
+  if(field === 'runeDotPct') return mastery * Math.max(b.dotSpreadPct || 0, b.reactionDotPct || 0, b.echoDotPct || 0) * 0.44;
+  if(field === 'runeSupportPct') return mastery * Math.max(b.supportPct || 0, b.mechanicShieldPct || 0) * 0.44;
+  if(field === 'runeGainPct') return mastery * Math.max(b.coreGainPct || 0, b.procPct || 0) * 0.34;
+  if(field === 'runeResource') return mastery * (b.resource || 0);
   return 0;
 }
 function masteryTakenMult(){ return 1 - Math.min(30, masteryFor('dr')*MASTERY_TYPE.dr.per + masteryFor('guardianEcho')*0.18 + specMasteryEngineBonus('takenPct'))/100; } // 受击减伤(封顶30%)
@@ -776,7 +781,7 @@ function processSkillElementReactions(skillKey, sk, mon, dmgDone, ctx){
 function skillMechanicFxBonus(field){
   let total = specMasteryEngineBonus(field);
   for(const fx of talentFxList()){
-    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho' && fx.type !== 'skillMark' && fx.type !== 'skillWeave' && fx.type !== 'skillRhythm' && fx.type !== 'skillControl' && fx.type !== 'skillWeakness' && fx.type !== 'skillPrep' && fx.type !== 'skillOverload' && fx.type !== 'skillResource' && fx.type !== 'skillHarvest' && fx.type !== 'skillPact' && fx.type !== 'skillField' && fx.type !== 'skillCharge')) continue;
+    if(!fx || (fx.type !== 'skillMechanic' && fx.type !== 'skillReaction' && fx.type !== 'skillEcho' && fx.type !== 'skillMark' && fx.type !== 'skillWeave' && fx.type !== 'skillRhythm' && fx.type !== 'skillControl' && fx.type !== 'skillWeakness' && fx.type !== 'skillPrep' && fx.type !== 'skillOverload' && fx.type !== 'skillResource' && fx.type !== 'skillHarvest' && fx.type !== 'skillPact' && fx.type !== 'skillField' && fx.type !== 'skillCharge' && fx.type !== 'skillRune')) continue;
     total += +(fx[field] || 0);
   }
   return total;
@@ -2306,7 +2311,7 @@ function fieldKindIcon(kind){
 function skillFieldKind(skillKey, sk, ctx){
   if(!sk) return '';
   const tags = skillElementTags(skillKey, sk);
-  if(ctx?.heal || sk.type === 'heal') return tags.includes('nature') ? 'nature' : 'holy';
+  if(ctx?.heal || sk.type === 'heal') return tags.includes('holy') ? 'holy' : (tags.includes('nature') ? 'nature' : 'holy');
   if(sk.type === 'buff' || isDefensiveSkill(skillKey, sk)) return tags.includes('holy') ? 'holy' : 'physical';
   if(sk.type === 'summon' || ctx?.summoned || tags.includes('beast')) return 'beast';
   const order = ['fire','frost','storm','arcane','nature','holy','shadow','poison','physical','beast'];
@@ -2567,6 +2572,156 @@ function skillChargeTip(skillKey, sk){
   const build = gain > 0 ? `积累${gain}层${chargeKindName(skillChargeKind(skillKey, sk, sample))}充能` : '';
   const release = skillChargeCanRelease(skillKey, sk, sample) ? '可释放已有技能充能触发收束' : '';
   return [build, release].filter(Boolean).join('；');
+}
+function runeKindName(kind){
+  const names = { fire:'火符', frost:'霜符', storm:'雷符', arcane:'奥符', nature:'林符', holy:'圣符', shadow:'影符', poison:'毒符', physical:'刃符', beast:'猎符' };
+  return names[kind] || kind || '符文';
+}
+function runeKindIcon(kind){
+  return ({ fire:'🔥', frost:'❄️', storm:'⛈️', arcane:'🔷', nature:'🌿', holy:'✨', shadow:'🌑', poison:'🐍', physical:'🩸', beast:'🐾' })[kind] || 'ᚱ';
+}
+function runeWordName(kind){
+  const names = { triad:'三相符文词', decay:'腐蚀符文词', ward:'守护符文词', pack:'猎群符文词', blade:'战刃符文词', element:'元素符文词' };
+  return names[kind] || kind || '符文词';
+}
+function skillRuneKind(skillKey, sk, ctx){
+  if(!sk) return '';
+  const tags = skillElementTags(skillKey, sk);
+  if(ctx?.heal || sk.type === 'heal') return tags.includes('holy') ? 'holy' : (tags.includes('nature') ? 'nature' : 'holy');
+  if(sk.type === 'buff' || isDefensiveSkill(skillKey, sk)) return tags.includes('holy') ? 'holy' : 'physical';
+  if(sk.type === 'summon' || ctx?.summoned || tags.includes('beast')) return 'beast';
+  const order = ['fire','frost','storm','arcane','nature','holy','shadow','poison','physical','beast'];
+  return order.find(t => tags.includes(t)) || (sk.type === 'dmg' ? 'physical' : '');
+}
+function skillRuneGain(skillKey, sk, ctx){
+  const kind = skillRuneKind(skillKey, sk, ctx || {});
+  if(!kind) return 0;
+  let gain = 1 + Math.floor(skillMechanicFxBonus('runeGainPct') / 50);
+  if(sk?.dot || sk?.type === 'heal' || sk?.type === 'summon' || ctx?.summoned) gain += 1;
+  if((ctx?.cost || sk?.mp || 0) <= Math.max(24, (state.resourceMax || 100) * 0.20)) gain += 1;
+  return Math.max(1, Math.min(3, gain));
+}
+function skillRuneCanInvoke(skillKey, sk, ctx){
+  if(!sk) return false;
+  const cost = Math.max(0, ctx?.cost || sk.mp || 0);
+  const maxRes = Math.max(1, state.resourceMax || 100);
+  if(ctx?.heal || sk.type === 'heal' || sk.type === 'summon') return true;
+  if(sk.type !== 'dmg') return false;
+  return !!(cost >= Math.max(34, maxRes * 0.27) || (sk.mul || 0) >= 4.0);
+}
+function ensureSkillRuneRuntime(now){
+  const rt = ensureSkillRuntime();
+  if(!rt.rune) rt.rune = { runes:[], power:0, expire:0 };
+  const ts = now || Date.now();
+  if(rt.rune.expire && rt.rune.expire <= ts) rt.rune = { runes:[], power:0, expire:0 };
+  if(!Array.isArray(rt.rune.runes)) rt.rune.runes = [];
+  return rt.rune;
+}
+function addSkillRune(kind, gain, sk, value, ctx, now){
+  if(!kind || !(gain > 0)) return 0;
+  const rune = ensureSkillRuneRuntime(now);
+  const max = 5;
+  for(let i = 0; i < gain; i++) rune.runes.push(kind);
+  rune.runes = rune.runes.slice(-max);
+  rune.power = Math.min((state.hero?.hpMax || 1) * 0.18, (rune.power || 0) + Math.max(1, (value || state.hero.atk || 1) * 0.03 + (ctx?.cost || sk?.mp || 0) * 9));
+  rune.expire = (now || Date.now()) + 17000;
+  addSkillAura('skill_rune', {
+    add:gain,
+    max,
+    duration:17000,
+    icon:'ᚱ',
+    name:'符文铭刻',
+    desc:`已铭刻 ${rune.runes.length}/${max} 枚符文: ${rune.runes.map(runeKindName).join('、')}。大招、治疗或召唤可吟唱符文词。`
+  });
+  markDirty('skills','hero');
+  return rune.runes.length;
+}
+function runeWordKind(runes, ctx){
+  const uniq = new Set(runes || []);
+  if((runes || []).includes('holy') || (runes || []).includes('nature') || ctx?.heal) return 'ward';
+  if((runes || []).includes('shadow') || (runes || []).includes('poison')) return 'decay';
+  if((runes || []).includes('beast')) return 'pack';
+  if((runes || []).includes('physical')) return 'blade';
+  if(uniq.size >= 3) return 'triad';
+  return 'element';
+}
+function invokeSkillRunes(rune, mon, value, sk, now, ctx){
+  const runes = (rune?.runes || []).slice(-5);
+  const stacks = Math.max(1, runes.length || 1);
+  const diversity = Math.max(1, new Set(runes).size);
+  const word = runeWordKind(runes, ctx || {});
+  const power = Math.max(1, rune?.power || 1);
+  const base = Math.max(1, Math.floor(value || state.hero.atk || 1));
+  const target = (mon && mon.hp > 0) ? mon : (state.currentMonsters || []).find(x => x && x.hp > 0);
+  const dmgMult = (1 + skillMechanicFxBonus('runeDmgPct') / 100) * (0.48 + stacks * 0.10 + diversity * 0.05);
+  const dotMult = (1 + skillMechanicFxBonus('runeDotPct') / 100) * (0.46 + stacks * 0.10 + diversity * 0.04);
+  const supportMult = masterySupportEchoMult() * (1 + skillMechanicFxBonus('runeSupportPct') / 100) * (0.56 + stacks * 0.09 + diversity * 0.04);
+  const resource = Math.floor(1 + diversity + stacks / 2 + skillMechanicFxBonus('runeResource'));
+  let fired = false;
+  if(resource > 0) grantTalentResource(resource);
+  if(word === 'ward' || ctx?.heal || sk?.type === 'heal'){
+    healHeroAmount(Math.floor((state.hero.hpMax * (0.012 + stacks * 0.0025) + power * 0.26) * supportMult), sk?.icon || '✨', '#fde68a', 'hero', '符文词');
+    addTalentShield(Math.floor((state.hero.hpMax * (0.012 + stacks * 0.0025) + power * 0.30) * supportMult), true, 10500);
+    specTacticCompanionSupport('heal', now);
+    fired = true;
+  } else if(word === 'decay' && target){
+    applyMonsterDot(target, 'skillRune:decay', Math.max(1, Math.floor((base * 0.075 + power * 0.034) * dotMult)), 9500, { icon:'☠️', name:'腐蚀符文词', source:'skillRune' });
+    if(stacks >= 4 || diversity >= 3) spreadDotFromMonster(target, 0.24 + stacks * 0.02, 9500);
+    healHeroAmount(Math.floor((state.hero.hpMax * 0.005 + power * 0.10) * supportMult), '☠️', '#c4b5fd', 'hero', '符文吸取');
+    fired = true;
+  } else if(word === 'pack'){
+    if(target) fired = applySkillFollowupDamage(target, (base * 0.10 + power * 0.032) * dmgMult, '🐾', '#7dd3fc', now) > 0 || fired;
+    specTacticSummon('beast', now);
+    specTacticCompanionSupport('shield', now);
+    fired = true;
+  } else if(word === 'blade' && target){
+    applyMonsterState(target, 'sunder', 7400 + stacks * 480);
+    applyMonsterState(target, 'exposed', 6000 + stacks * 420);
+    fired = applySkillFollowupDamage(target, (base * 0.12 + power * 0.036) * dmgMult, '🩸', '#f87171', now) > 0 || fired;
+    addTalentShield(Math.floor((state.hero.hpMax * 0.006 + power * 0.14) * supportMult), true, 9000);
+  } else if(target){
+    applyMonsterState(target, 'unstable', 7200 + stacks * 480);
+    fired = applySkillFollowupDamage(target, (base * 0.11 + power * 0.034) * dmgMult, '🔷', '#a78bfa', now) > 0 || fired;
+    fired = splashSkillDamage(target, base + power * 0.14, 0.10 + diversity * 0.025 + stacks * 0.012, '🔷', now) > 0 || fired;
+  }
+  if(fired || resource > 0){
+    addSkillAura('skill_rune', {
+      add:1,
+      max:1,
+      duration:5800,
+      icon:'ᚱ',
+      name:runeWordName(word),
+      desc:`${runeWordName(word)}由 ${runes.map(runeKindName).join('、')} 吟唱,转化为追击、扩散、护盾、治疗或协同,并返还 ${resource} 资源。`
+    });
+    showFloat($('hero-emoji'), `ᚱ${runeWordName(word)}`, '#c4b5fd', { variant:'buff', scale:1.04 });
+    log(`ᚱ 符文词吟唱: ${runeWordName(word)} 被 ${sk?.name || '技能'} 触发`, 'good');
+    markDirty('skills','hero','companion','stage');
+  }
+  return fired || resource > 0;
+}
+function processSkillRune(skillKey, sk, mon, value, ctx){
+  if(!sk) return false;
+  const now = ctx?.now || Date.now();
+  const rune = ensureSkillRuneRuntime(now);
+  if(rune.runes.length >= 3 && skillRuneCanInvoke(skillKey, sk, ctx || {})){
+    const snap = { runes:[...rune.runes], power:rune.power || 0, expire:rune.expire || 0 };
+    const rt = ensureSkillRuntime();
+    rt.rune = { runes:[], power:0, expire:0 };
+    if(rt.auras) delete rt.auras.skill_rune;
+    return invokeSkillRunes(snap, mon, value, sk, now, ctx || {});
+  }
+  const gain = skillRuneGain(skillKey, sk, ctx || {});
+  if(gain > 0) return addSkillRune(skillRuneKind(skillKey, sk, ctx || {}), gain, sk, value, ctx || {}, now) > 0;
+  return false;
+}
+function skillRuneTip(skillKey, sk){
+  if(!sk) return '';
+  const sample = { cost:sk.mp || 0 };
+  const kind = skillRuneKind(skillKey, sk, sample);
+  const gain = skillRuneGain(skillKey, sk, sample);
+  const build = kind && gain > 0 ? `铭刻${gain}枚${runeKindName(kind)}` : '';
+  const invoke = skillRuneCanInvoke(skillKey, sk, sample) ? '可吟唱已有符文词' : '';
+  return [build, invoke].filter(Boolean).join('；');
 }
 function applySkillHitEffects(skillKey, sk, mon, dmgDone, ctx){
   const fx = skillFxMeta(skillKey, sk);
@@ -4222,6 +4377,7 @@ function processTalentAfterSkill(skillKey, sk, mon, value, ctx){
   processSkillPact(skillKey, sk, mon, value, Object.assign({ now }, ctx || {}));
   processSkillField(skillKey, sk, mon, value, Object.assign({ now }, ctx || {}));
   processSkillCharge(skillKey, sk, mon, value, Object.assign({ now }, ctx || {}));
+  processSkillRune(skillKey, sk, mon, value, Object.assign({ now }, ctx || {}));
   for(const fx of talentFxList()){
     if(fx.type !== 'afterSkill') continue;
     if(!skillMatches(fx, skillKey)) continue;

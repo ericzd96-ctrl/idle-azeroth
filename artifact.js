@@ -1048,6 +1048,20 @@ function skillChargeTrait(cfg){
     }
   }));
 }
+function skillRuneTrait(cfg){
+  return trait(Object.assign({}, cfg, {
+    fx(rank){
+      return {
+        type:'skillRune',
+        runeDmgPct:rankValue(cfg.runeDmgPct || [4,8,12], rank),
+        runeDotPct:rankValue(cfg.runeDotPct || [3,6,9], rank),
+        runeSupportPct:rankValue(cfg.runeSupportPct || [3,6,9], rank),
+        runeGainPct:rankValue(cfg.runeGainPct || [4,8,12], rank),
+        runeResource:rankValue(cfg.runeResource || [0,1,2], rank),
+      };
+    }
+  }));
+}
 
 (function retuneSpecArtifacts() {
   for (const [clsKey, specs] of Object.entries(SPEC_ARTIFACT_SKILL_RETUNE)) {
@@ -1271,6 +1285,21 @@ function skillChargeTrait(cfg){
           chargeSupportPct:supportWeave ? [6,12,18] : [2,4,6],
           chargeGainPct:[5,10,15],
           desc:'技能充能释放追击、持续伤害或守护支援效果提高,充能积累效率提高,释放时返还少量资源。并获得精通 +1/2/3。'
+        }));
+      }
+      const runeKey = `art_${clsKey}_${specKey}_rune_20260714`;
+      if (!ARTIFACT_TRAITS[clsKey].some(t => t.key === runeKey)) {
+        ARTIFACT_TRAITS[clsKey].push(skillRuneTrait({
+          key:runeKey,
+          tree:specKey,
+          name:'符文回路',
+          icon:'ᚱ',
+          mod:{ mastery:1 },
+          runeDmgPct:supportWeave ? [3,6,9] : [6,12,18],
+          runeDotPct:dotWeave ? [6,12,18] : [3,6,9],
+          runeSupportPct:supportWeave ? [6,12,18] : [2,4,6],
+          runeGainPct:[5,10,15],
+          desc:'符文词追击、持续伤害或守护支援效果提高,符文铭刻效率提高,吟唱符文词时返还少量资源。并获得精通 +1/2/3。'
         }));
       }
     }

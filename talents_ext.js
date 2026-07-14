@@ -1115,3 +1115,49 @@ const TALENT_AURA_LIBRARY = {
     }
   }
 })();
+
+(function extendSkillRuneTalents() {
+  if (typeof CLASSES === 'undefined') return;
+  const names = {
+    arms:'战刃符文', fury:'狂怒符文', prot:'盾卫符文',
+    arcane:'奥术符文', fire:'火焰符文', frost:'寒冰符文',
+    discipline:'赎罪符文', holy:'圣光符文', shadow:'虚空符文',
+    assassination:'毒刃符文', combat:'剑舞符文', subtlety:'暗影符文',
+    bm:'兽群符文', marks:'猎命符文', survival:'荒野符文',
+    element:'元素符文', enhancement:'风怒符文', restoration:'潮汐符文',
+    holy_paladin:'圣光符文', prot_paladin:'壁垒符文', ret:'裁决符文',
+    affliction:'痛苦符文', demonology:'军团符文', destruction:'混乱符文',
+    balance:'星辰符文', feral:'血爪符文', resto:'生命符文',
+  };
+  const supportSpecs = new Set(['discipline','holy','restoration','resto']);
+  const dotSpecs = new Set(['fire','shadow','assassination','survival','affliction','destruction','balance','feral']);
+  const commandSpecs = new Set(['bm','demonology','survival']);
+  const burstSpecs = new Set(['arms','fury','arcane','frost','marks','element','enhancement','ret','destruction','feral']);
+  for (const [clsKey, cls] of Object.entries(CLASSES)) {
+    if (!cls || !Array.isArray(cls.trees)) continue;
+    for (const tree of cls.trees) {
+      if (!tree || tree._skillRuneTalent) continue;
+      tree._skillRuneTalent = true;
+      const keyName = clsKey === 'paladin' && tree.key === 'holy' ? 'holy_paladin' : (clsKey === 'paladin' && tree.key === 'prot' ? 'prot_paladin' : tree.key);
+      const support = supportSpecs.has(tree.key) || (clsKey === 'paladin' && tree.key === 'holy') || (tree.key === 'prot' && (clsKey === 'warrior' || clsKey === 'paladin'));
+      const dot = dotSpecs.has(tree.key);
+      const command = commandSpecs.has(tree.key);
+      const burst = burstSpecs.has(tree.key);
+      tree.talents.push({
+        key: `skill_rune_${clsKey}_${tree.key}`,
+        name: names[keyName] || '符文铭刻',
+        desc: `符文铭刻更强: ${support ? '守护符文词治疗和护盾提高 20%' : (command ? '猎群符文词协同提高 20%' : (dot ? '腐蚀符文词 DOT 与扩散提高 20%' : '符文词追击提高 18%'))}, 铭刻效率提高,吟唱符文词时返还资源。`,
+        req: 160,
+        max: 1,
+        fx: {
+          type:'skillRune',
+          runeDmgPct:support ? 8 : (command || burst ? 20 : 18),
+          runeDotPct:dot ? 20 : 8,
+          runeSupportPct:support ? 20 : 6,
+          runeGainPct:burst || command ? 22 : 16,
+          runeResource:2
+        }
+      });
+    }
+  }
+})();
