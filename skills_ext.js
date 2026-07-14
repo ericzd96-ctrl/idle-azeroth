@@ -72,6 +72,7 @@ const SKILL_AURA_LIBRARY = {
   sh_totem:     { icon:'🪬', name:'图腾共鸣', desc:'萨满治疗、护盾与元素技能叠加,强化全队支援', maxStacks:5 },
   d_harmony:    { icon:'🌿', name:'自然调和', desc:'德鲁伊治疗、月火与野性技能叠加,在恢复/输出间转换', maxStacks:5 },
   spec_flow:    { icon:'✦', name:'专精连段', desc:'按当前专精的技能顺序推进,完成后触发独特战斗效果', maxStacks:3 },
+  spec_core:    { icon:'✦', name:'专精核心', desc:'当前专精独有的战斗引擎资源,满层后用指定技能收束触发强力效果', maxStacks:8 },
   spec_proc:    { icon:'✦', name:'临场强化', desc:'当前专精触发的下一技能变招,命中符合条件的技能后自动消费', maxStacks:1 },
   spec_stance:  { icon:'✦', name:'专精姿态', desc:'当前专精的短暂战斗法则,会改变后续技能的附加效果', maxStacks:1 },
 };
@@ -1118,6 +1119,68 @@ const SPEC_PROC_SYSTEMS = {
   },
 };
 
+function specCore(key, icon, name, desc, generator, spender, payoff, opts) {
+  return Object.assign({
+    key, icon, name, desc,
+    max: opts?.max || 6,
+    threshold: opts?.threshold || opts?.max || 6,
+    durationMs: opts?.durationMs || 18000,
+    generator,
+    spender,
+    gain: Object.assign({ dmg:1, heal:1, buff:1, summon:1, defensive:1, generatorAdd:1 }, opts?.gain || {}),
+    passive: Object.assign({ damagePctPerStack:0.012, healPctPerStack:0.012 }, opts?.passive || {}),
+    payoff: Object.assign({ damagePct:0.18, resource:5 }, payoff || {}),
+  }, opts?.extra || {});
+}
+
+const SPEC_CORE_SYSTEMS = {
+  warrior:{
+    arms:specCore('armsExecutionEngine','🪓','斩杀校准','压制、破甲和致死打击会校准处决角度;满层用斩杀/巨人之击收束,造成破甲追击并让目标暴露。',/压制|破甲|致死|碎颅|灭战者|巨人/,/斩杀|巨人|灭战者/,{ damagePctPerStack:0.075, state:['sunder','exposed'], extraHitPct:0.18, resource:8 },{ passive:{ damagePctPerStack:0.014 } }),
+    fury:specCore('furyBloodboilEngine','😡','血沸节拍','嗜血、怒击和乱舞会让血液沸腾;满层用怒火乱舞/奥丁之怒释放,触发追击、回血和急速窗口。',/嗜血|怒击|浴血|怒火|乱舞|奥丁|鲁莽/,/怒火|乱舞|奥丁|斩杀/,{ damagePctPerStack:0.055, extraHitPct:0.26, healPct:0.045, buff:'s_frenzy', buffMs:4200 },{ passive:{ damagePctPerStack:0.011 } }),
+    prot:specCore('protBastionEngine','🛡️','壁垒压力','盾牌、复仇和雷霆会累积壁垒压力;满层用盾击/复仇收束,获得厚盾并按防御反震。',/盾|复仇|雷霆|壁垒|格挡|盾墙/,/盾牌猛击|盾击|复仇|盾牌冲锋/,{ damagePctPerStack:0.035, shieldPct:0.08, state:'trauma', resource:10 },{ passive:{ damagePctPerStack:0.008, shieldPctPerStack:0.006 } }),
+  },
+  mage:{
+    arcane:specCore('arcaneLeylineEngine','🔷','魔网过载','奥术技能会压缩魔网;满层用弹幕/涌动倾泻,返还法力并制造不稳定爆发。',/奥术|飞弹|冲击|弹幕|涌动|阿鲁尼斯/,/弹幕|涌动|大法师/,{ damagePctPerStack:0.065, state:'unstable', splashPct:0.22, resource:16, cooldownPct:0.18 },{ passive:{ damagePctPerStack:0.016 } }),
+    fire:specCore('fireKindlingEngine','🔥','燃点链','火球、凤凰、流星和燃烧会串起燃点;满层用炎爆/烈焰风暴收束,点燃并扩散灼烧。',/火|炎|燃|凤凰|流星|灼烧|烈焰/,/炎爆|流星|烈焰风暴|大灾/,{ damagePctPerStack:0.06, dotPct:0.18, spreadDotPct:0.55, splashPct:0.20, state:'fever' },{ passive:{ damagePctPerStack:0.011 } }),
+    frost:specCore('frostShatterEngine','❄️','碎裂温差','寒冰、冰风暴、宝珠和屏障会制造温差;满层用冰枪/彗星收束,冻结并打出碎裂护盾。',/冰|霜|寒|雪|宝珠|屏障|彗星/,/冰枪|彗星|碎裂|冰风暴/,{ damagePctPerStack:0.055, state:'frozen', shieldPct:0.055, extraHitPct:0.16, forceCrit:true },{ passive:{ damagePctPerStack:0.012 } }),
+  },
+  priest:{
+    discipline:specCore('discAtonementEngine','⚖️','赎罪回路','真言术、护盾和惩罚会建立赎罪回路;满层用惩罚/惩击收束,把伤害转为主角与随从护盾。',/真言|盾|障|惩罚|惩击|教派|分歧/,/惩罚|惩击|光明之怒/,{ damagePctPerStack:0.04, shieldPct:0.075, companionShieldPct:0.08, state:'penanceMark' },{ passive:{ damagePctPerStack:0.008, healPctPerStack:0.018 } }),
+    holy:specCore('holyChoirEngine','✨','圣言合唱','治疗、祷言和圣言会让圣光合唱升调;满层用圣言/治疗祷言收束,治疗主角和随从并留下护盾。',/治疗|祷言|圣言|恢复|神圣|圣光/,/治疗祷言|圣言|神圣新星|圣光/,{ healPct:0.16, shieldPct:0.055, companionHealPct:0.10, companionShieldPct:0.055, resource:8 },{ passive:{ damagePctPerStack:0.006, healPctPerStack:0.022 } }),
+    shadow:specCore('shadowEntropyEngine','🌑','虚空熵变','暗言、鞭笞、心灵和疫病会提高虚空熵;满层用虚空爆发/噬灵疫病收束,扩散暗影持续伤害。',/暗言|痛|鞭笞|心灵|暗影|疫病|虚空/,/虚空|噬灵|疫病|冲撞/,{ damagePctPerStack:0.065, dotPct:0.17, spreadDotPct:0.60, state:'voidTorn', resource:8 },{ passive:{ damagePctPerStack:0.012 } }),
+  },
+  rogue:{
+    assassination:specCore('assnVenomEngine','🐍','毒液调配','锁喉、割裂、毁伤和毒药会调配毒液;满层用奉毒/君王之灾收束,触发毒爆并延长痛苦。',/锁喉|割裂|毁伤|毒|君王/,/奉毒|君王|毒/,{ damagePctPerStack:0.058, dotPct:0.18, state:'venomBloom', forceCrit:true, resource:8 },{ passive:{ damagePctPerStack:0.012 } }),
+    combat:specCore('combatTempoEngine','⚔️','刀锋节拍','邪恶打击、剑刃冲刺和命运骨骰会推进节拍;满层用正中眉心/杀戮盛宴收束,刷新冷却并乱舞溅射。',/邪恶|剑刃|冲刺|命运|骨骰|切割|眉心/,/正中|眉心|杀戮|切割/,{ damagePctPerStack:0.052, splashPct:0.30, cooldownPct:0.30, buff:'s_haste', buffMs:3500 },{ passive:{ damagePctPerStack:0.011 } }),
+    subtlety:specCore('subUmbralEngine','🌑','暗幕步点','背刺、暗影之舞和袖剑会在目标背后布下步点;满层用暗袭/秘技收束,制造破绽并追加暗影刀。',/背刺|幽暗|暗影|袖剑|暗袭|绞喉/,/暗袭|袖剑|秘技|暗影/,{ damagePctPerStack:0.06, state:'exposed', extraHitPct:0.24, forceCrit:true, resource:8 },{ passive:{ damagePctPerStack:0.013 } }),
+  },
+  hunter:{
+    bm:specCore('bmPackEngine','🐾','兽群号令','宠物、倒刺和野兽技能会吹响号令;满层用杀戮命令/协同猛攻收束,召唤兽群追咬。',/宠物|野兽|倒刺|杀戮|兽群|召唤|协同/,/杀戮|协同|猛攻|兽群/,{ damagePctPerStack:0.045, summon:'beast', extraHitPct:0.22, companionShieldPct:0.055, resource:10 },{ passive:{ damagePctPerStack:0.010 } }),
+    marks:specCore('marksBallisticEngine','🎯','弹道测算','印记、瞄准和百发会完成弹道测算;满层用瞄准/杀戮射击收束,标记弱点并必暴穿透。',/印记|标记|瞄准|百发|二连|精确|奇美拉/,/杀戮|奇美拉|瞄准|精确/,{ damagePctPerStack:0.07, state:'marked', forceCrit:true, splashPct:0.18, resource:8 },{ passive:{ damagePctPerStack:0.015 } }),
+    survival:specCore('survTrapEngine','💣','陷阱网络','钉刺、炸弹、陷阱和近战会布置陷阱网络;满层用猫鼬/屠戮收束,束缚并引燃野火。',/钉刺|陷阱|毒蛇|野火|炸弹|猫鼬|猛禽/,/猫鼬|屠戮|猛禽|爆炸/,{ damagePctPerStack:0.052, dotPct:0.17, state:'rooted', spreadDotPct:0.38, resource:8 },{ passive:{ damagePctPerStack:0.011 } }),
+  },
+  shaman:{
+    element:specCore('eleConduitEngine','⛈️','元素导线','闪电、熔岩和震击会铺设元素导线;满层用元素冲击/风暴守护者收束,过载弹射。',/闪电|熔岩|震击|雷霆|元素|风暴/,/元素冲击|风暴守护|风暴|拉登/,{ damagePctPerStack:0.062, splashPct:0.32, state:'stormBrand', resource:10 },{ passive:{ damagePctPerStack:0.014 } }),
+    enhancement:specCore('enhWolfEngine','🌀','幽魂双狼','风暴打击、毁灭闪电和幽魂狼会积蓄双狼节奏;满层用裂地/熔岩猛击收束,触发风怒连击。',/风暴打击|毁灭闪电|风怒|幽魂|漩涡|狼|熔岩/,/裂地|熔岩猛击|熔岩|毁灭/,{ damagePctPerStack:0.052, extraHitPct:0.30, buff:'windfury', buffMs:4200, resource:12 },{ passive:{ damagePctPerStack:0.012 } }),
+    restoration:specCore('restTideEngine','🌊','潮汐库容','激流、治疗波、治疗链和图腾会积蓄潮汐;满层用治疗链/暴雨图腾收束,治疗全队并制造护盾。',/激流|治疗波|治疗链|链愈|图腾|潮汐|暴雨/,/暴雨|潮汐|治疗链|图腾/,{ healPct:0.15, shieldPct:0.055, companionHealPct:0.10, companionShieldPct:0.06, resource:10 },{ passive:{ damagePctPerStack:0.006, healPctPerStack:0.022 } }),
+  },
+  paladin:{
+    holy:specCore('hpalBeaconEngine','🌟','道标折射','神圣震击、圣光和祝福会折射道标;满层用黎明/圣光收束,双目标治疗并护盾随从。',/神圣震击|圣光|祝福|道标|黎明|治疗/,/黎明|圣光|震击/,{ healPct:0.16, shieldPct:0.05, companionHealPct:0.105, companionShieldPct:0.06, resource:8 },{ passive:{ damagePctPerStack:0.006, healPctPerStack:0.021 } }),
+    prot:specCore('ppalConsecrateEngine','🛡️','奉献矩阵','审判、奉献、复仇者之盾和祝福会展开奉献矩阵;满层用盾击/复仇者之盾收束,护盾反击。',/审判|奉献|复仇者|盾|正义|祝福|圣盾/,/正义盾击|盾击|复仇者|盾/,{ damagePctPerStack:0.038, shieldPct:0.085, splashPct:0.20, state:'holyBrand', resource:10 },{ passive:{ damagePctPerStack:0.008, shieldPctPerStack:0.006 } }),
+    ret:specCore('retJudgmentEngine','⚜️','裁决天平','审判、十字军和公正之剑会压低裁决天平;满层用圣殿裁决/愤怒之锤收束,必暴清算。',/审判|十字军|公正|灰烬|复仇之怒|圣能/,/圣殿裁决|裁决|最终清算|愤怒之锤/,{ damagePctPerStack:0.07, state:'judged', forceCrit:true, resource:8 },{ passive:{ damagePctPerStack:0.014 } }),
+  },
+  warlock:{
+    affliction:specCore('affRotEngine','💜','腐蚀账本','痛楚、腐蚀、鬼影和痛苦会记录灵魂债务;满层用邪能狂涌/腐蚀之种收束,扩散所有痛苦。',/痛楚|腐蚀|痛苦|鬼影|缠身|吸取/,/邪能狂涌|腐蚀之种|收割|狂涌/,{ damagePctPerStack:0.052, dotPct:0.18, spreadDotPct:0.68, state:'doomBrand', resource:10 },{ passive:{ damagePctPerStack:0.011 } }),
+    demonology:specCore('demoLegionEngine','😈','军团队列','恶魔、恐惧猎犬和古尔丹之手会排队穿门;满层用内爆/恶魔之箭收束,召唤恶魔协击。',/恐惧猎犬|古尔丹|恶魔|召唤|曼阿里|内爆/,/内爆|恶魔之箭|吞噬|恶魔/,{ damagePctPerStack:0.05, summon:'demon', extraHitPct:0.24, companionShieldPct:0.055, resource:10 },{ passive:{ damagePctPerStack:0.011 } }),
+    destruction:specCore('destRiftEngine','🔥','混乱裂隙','献祭、烧尽、燃烧和火雨会撕开裂隙;满层用混乱之箭/裂隙收束,必暴并点燃周围。',/献祭|烧尽|燃烧|火焰之雨|大灾变|混乱/,/混乱之箭|混乱|灵魂之火|裂隙/,{ damagePctPerStack:0.073, forceCrit:true, dotPct:0.16, splashPct:0.24, state:'fever' },{ passive:{ damagePctPerStack:0.015 } }),
+  },
+  druid:{
+    balance:specCore('balanceOrbitEngine','🌗','日月轨道','月火、阳炎、愤怒和星火会校准日月轨道;满层用星涌/星落收束,落下星界溅射。',/月火|阳炎|日炎|星火|愤怒|星涌|星辰/,/星涌|星辰|新月|星落/,{ damagePctPerStack:0.06, splashPct:0.30, state:'astralBrand', resource:10 },{ passive:{ damagePctPerStack:0.013 } }),
+    feral:specCore('feralHuntEngine','🐾','猎杀本能','斜掠、撕碎、割裂和横扫会唤醒猎杀本能;满层用凶猛撕咬/野性狂怒收束,必暴并撕开深裂。',/斜掠|撕碎|横扫|割裂|流血|凶猛/,/凶猛|撕咬|野性狂怒/,{ damagePctPerStack:0.064, forceCrit:true, dotPct:0.16, extraHitPct:0.20, state:'trauma' },{ passive:{ damagePctPerStack:0.013 } }),
+    resto:specCore('restGroveEngine','🌿','林地生长','回春、生命绽放、迅捷治愈和宁静会让林地生长;满层用百花/宁静收束,治疗主角和随从并生成自然护盾。',/回春|生命绽放|迅捷|治愈|野性成长|宁静|百花/,/百花|宁静|母树|绽放/,{ healPct:0.17, shieldPct:0.055, companionHealPct:0.11, companionShieldPct:0.06, resource:8 },{ passive:{ damagePctPerStack:0.006, healPctPerStack:0.023 } }),
+  },
+};
+
 const SPEC_STANCE_SYSTEMS = {
   warrior:{
     arms:{ key:'warriorArmsLaw', icon:'🪓', name:'武器战斗法则', desc:'破甲/压制进入破阵姿态,防御怒吼进入稳步姿态。', assault:{ icon:'🪓', name:'破阵姿态', trigger:/破甲|压制|致死|巨人|斩杀|灭战者/, damagePct:0.10, state:'trauma', extraHitPct:0.10 }, sustain:{ icon:'🛡️', name:'稳步姿态', trigger:/盾|壁垒|回复|怒吼|防御/, shieldPct:0.025, resource:4 } },
@@ -1205,6 +1268,11 @@ function currentSpecProcSystem() {
   return SPEC_PROC_SYSTEMS[state.cls]?.[state.specialization] || null;
 }
 
+function currentSpecCoreSystem() {
+  if (typeof state === 'undefined' || !state) return null;
+  return SPEC_CORE_SYSTEMS[state.cls]?.[state.specialization] || null;
+}
+
 function currentSpecStanceSystem() {
   if (typeof state === 'undefined' || !state) return null;
   return SPEC_STANCE_SYSTEMS[state.cls]?.[state.specialization] || null;
@@ -1217,6 +1285,7 @@ if (typeof window !== 'undefined') {
   window.SPEC_SKILL_CHAINS = SPEC_SKILL_CHAINS;
   window.SPEC_REACTION_SYSTEMS = SPEC_REACTION_SYSTEMS;
   window.SPEC_PROC_SYSTEMS = SPEC_PROC_SYSTEMS;
+  window.SPEC_CORE_SYSTEMS = SPEC_CORE_SYSTEMS;
   window.SPEC_STANCE_SYSTEMS = SPEC_STANCE_SYSTEMS;
   window.currentSpecCombatRule = currentSpecCombatRule;
   window.currentSpecCombatMeter = currentSpecCombatMeter;
@@ -1224,6 +1293,7 @@ if (typeof window !== 'undefined') {
   window.currentSpecSkillChain = currentSpecSkillChain;
   window.currentSpecReactionSystem = currentSpecReactionSystem;
   window.currentSpecProcSystem = currentSpecProcSystem;
+  window.currentSpecCoreSystem = currentSpecCoreSystem;
   window.currentSpecStanceSystem = currentSpecStanceSystem;
 }
 

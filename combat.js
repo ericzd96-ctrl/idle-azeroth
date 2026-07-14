@@ -374,6 +374,9 @@ function calcSkillRuntimeBonus(skillKey, sk, mon, now){
   const stanceMod = calcSpecStanceRuntimeBonus(skillKey, sk, mon, now, dotCount);
   if(stanceMod.mult) mult *= stanceMod.mult;
   if(stanceMod.forceCrit) forceCrit = true;
+  const coreMod = calcSpecCoreRuntimeBonus(skillKey, sk, mon, now, dotCount);
+  if(coreMod.mult) mult *= coreMod.mult;
+  if(coreMod.forceCrit) forceCrit = true;
   return { fx, mult, forceCrit, dotCount };
 }
 function calcSpecIdentityRuntimeBonus(skillKey, sk, mon, now, dotCount){
@@ -473,6 +476,7 @@ function calcSpecIdentityHealMult(skillKey, sk, now){
   else if(cls === 'druid' && spec === 'resto') mult += skillAuraStacks('d_harmony') * 0.065;
   else if(cls === 'warrior' && spec === 'prot') mult += skillAuraStacks('w_block') * 0.035;
   mult *= calcSpecStanceHealMult(now);
+  mult *= calcSpecCoreHealMult(skillKey, sk, now);
   return mult;
 }
 function applySkillFollowupDamage(mon, amount, icon, color, now){
@@ -571,6 +575,11 @@ function currentSpecProcForCombat(){
   if(typeof globalThis?.currentSpecProcSystem === 'function') return globalThis.currentSpecProcSystem();
   return null;
 }
+function currentSpecCoreForCombat(){
+  if(typeof currentSpecCoreSystem === 'function') return currentSpecCoreSystem();
+  if(typeof globalThis?.currentSpecCoreSystem === 'function') return globalThis.currentSpecCoreSystem();
+  return null;
+}
 function currentSpecStanceForCombat(){
   if(typeof currentSpecStanceSystem === 'function') return currentSpecStanceSystem();
   if(typeof globalThis?.currentSpecStanceSystem === 'function') return globalThis.currentSpecStanceSystem();
@@ -595,6 +604,104 @@ function stanceRegexMatches(re, text){
   if(!re) return false;
   if(re.global || re.sticky) re.lastIndex = 0;
   return re.test(text || '');
+}
+function coreRegexMatches(re, text){
+  if(!re) return false;
+  if(re.global || re.sticky) re.lastIndex = 0;
+  return re.test(text || '');
+}
+function ensureSpecCoreRuntime(sys, now){
+  const rt = ensureSkillRuntime();
+  if(!rt.specCore) rt.specCore = {};
+  const cls = activeHeroClassKey();
+  const spec = activeHeroSpecKey();
+  const ts = now || Date.now();
+  if(!sys || rt.specCore.cls !== cls || rt.specCore.spec !== spec || rt.specCore.systemKey !== sys.key || (rt.specCore.expire && rt.specCore.expire <= ts)){
+    rt.specCore = { cls, spec, systemKey:sys?.key || '', stacks:0, max:sys?.max || 6, expire:0, lastMarker:'' };
+    if(!sys) consumeSkillAura('spec_core', { all:true });
+  }
+  return rt.specCore;
+}
+function syncSpecCoreAura(sys, core, now){
+  const rt = ensureSkillRuntime();
+  if(!sys || !core || !(core.stacks > 0)){
+    delete rt.auras.spec_core;
+    return;
+  }
+  const max = sys.max || core.max || 6;
+  rt.auras.spec_core = {
+    key:'spec_core',
+    icon:sys.icon || '✦',
+    name:sys.name || '专精核心',
+    desc:(sys.desc || '当前专精独有核心资源') + ` 当前 ${core.stacks || 0}/${max}。满层收束: ${sys.payoff?.hint || '触发专属爆发效果'}`,
+    stacks:Math.max(0, Math.min(max, core.stacks || 0)),
+    max,
+    duration:sys.durationMs || 18000,
+    expire:core.expire || ((now || Date.now()) + (sys.durationMs || 18000)),
+  };
+}
+function currentSpecCoreState(now){
+  const sys = currentSpecCoreForCombat();
+  if(!sys) return null;
+  const core = ensureSpecCoreRuntime(sys, now);
+  if(core.expire && core.expire <= (now || Date.now())){
+    core.stacks = 0;
+    core.expire = 0;
+    syncSpecCoreAura(sys, core, now);
+  }
+  return { sys, core };
+}
+function addSpecCoreStacks(sys, amount, reason, now){
+  if(!sys || !(amount > 0)) return 0;
+  const core = ensureSpecCoreRuntime(sys, now);
+  const max = sys.max || core.max || 6;
+  const before = core.stacks || 0;
+  core.stacks = Math.max(0, Math.min(max, before + amount));
+  core.max = max;
+  core.expire = (now || Date.now()) + (sys.durationMs || 18000);
+  syncSpecCoreAura(sys, core, now);
+  if(core.stacks !== before && classRuntimeReady(`spec-core-float:${sys.key}`, 700, now || Date.now())){
+    showFloat($('hero-emoji'), `${sys.icon || '✦'}${core.stacks}/${max}`, '#fde68a', { variant:'buff', scale:1.01 });
+  }
+  markDirty('skills','hero');
+  return core.stacks;
+}
+function resetSpecCore(sys, now){
+  const core = ensureSpecCoreRuntime(sys, now);
+  core.stacks = 0;
+  core.expire = 0;
+  syncSpecCoreAura(sys, core, now);
+}
+function calcSpecCoreRuntimeBonus(skillKey, sk, mon, now, dotCount){
+  const stateCore = currentSpecCoreState(now);
+  if(!stateCore || !sk || sk.type !== 'dmg') return { mult:1, forceCrit:false };
+  const { sys, core } = stateCore;
+  const stacks = core.stacks || 0;
+  if(stacks <= 0) return { mult:1, forceCrit:false };
+  const text = skillTextForReaction(skillKey, sk, {});
+  const spender = coreRegexMatches(sys.spender, text);
+  const passive = sys.passive || {};
+  const payoff = sys.payoff || {};
+  let mult = 1 + stacks * (passive.damagePctPerStack || 0);
+  let forceCrit = false;
+  if(spender){
+    mult *= 1 + stacks * (payoff.damagePctPerStack || 0);
+    if(payoff.forceCrit && stacks >= (sys.threshold || sys.max || 6)) forceCrit = true;
+  }
+  if(payoff.forceCritIfDot && dotCount > 0 && spender) forceCrit = true;
+  if(payoff.forceCritIfState && monsterStateActive(mon, payoff.forceCritIfState) && spender) forceCrit = true;
+  return { mult, forceCrit };
+}
+function calcSpecCoreHealMult(skillKey, sk, now){
+  const stateCore = currentSpecCoreState(now);
+  if(!stateCore || !sk || sk.type !== 'heal') return 1;
+  const { sys, core } = stateCore;
+  const stacks = core.stacks || 0;
+  if(stacks <= 0) return 1;
+  const passive = sys.passive || {};
+  const payoff = sys.payoff || {};
+  const spender = coreRegexMatches(sys.spender, skillTextForReaction(skillKey, sk, { heal:true }));
+  return 1 + stacks * (passive.healPctPerStack || 0) + (spender ? stacks * (payoff.healPctPerStack || 0) : 0);
 }
 function activeSpecStance(now){
   const sys = currentSpecStanceForCombat();
@@ -670,6 +777,76 @@ function applySpecStanceEffects(skillKey, sk, mon, value, ctx){
   if(mode.resource) grantTalentResource(mode.resource);
   if(mode.cooldownPct) resetSkillCooldown(skillKey, mode.cooldownPct);
   if(mode.companionShieldPct || mode.companionHealPct) applyCompanionClassSupport({ companionShieldPct:mode.companionShieldPct, companionHealPct:mode.companionHealPct }, sk, value, now);
+}
+function specCoreGainForSkill(sys, skillKey, sk, ctx){
+  if(!sys || !sk) return 0;
+  const gain = sys.gain || {};
+  const text = skillTextForReaction(skillKey, sk, ctx || {});
+  let add = 0;
+  if(sk.type === 'dmg') add += gain.dmg || 0;
+  if(sk.type === 'heal' || ctx?.heal) add += gain.heal || 0;
+  if(sk.type === 'buff' || ctx?.buff) add += gain.buff || 0;
+  if(sk.type === 'summon' || sk.summonCount || ctx?.summoned) add += gain.summon || 0;
+  if(isDefensiveSkill(skillKey, sk)) add += gain.defensive || 0;
+  if(sk.dot || /持续|流血|中毒|灼烧|点燃|腐蚀|痛/.test(sk.desc || '')) add += gain.dot || 0;
+  if(coreRegexMatches(sys.generator, text)) add += gain.generatorAdd || 0;
+  return Math.max(0, Math.floor(add));
+}
+function applySpecCorePayoff(sys, target, value, sk, skillKey, ctx, now, stacks){
+  const payoff = sys?.payoff || {};
+  const base = Math.max(1, Math.floor(value || state.hero.atk || state.hero.hpMax * 0.04 || 1));
+  let fired = false;
+  if(target && target.hp > 0){
+    if(payoff.state) applyMonsterState(target, payoff.state, payoff.stateMs || 9000);
+    if(payoff.damagePct || payoff.damagePctPerStack){
+      const pct = (payoff.damagePct || 0) + stacks * (payoff.damagePctPerStack || 0);
+      if(pct > 0) fired = applySkillFollowupDamage(target, base * pct, sys.icon || sk?.icon || '✦', '#facc15', now) > 0 || fired;
+    }
+    if(payoff.extraHitPct) fired = applySkillFollowupDamage(target, base * payoff.extraHitPct, sys.icon || sk?.icon || '✦', '#fde68a', now) > 0 || fired;
+    if(payoff.splashPct && !ctx?.isAOE) fired = splashSkillDamage(target, base, payoff.splashPct, sys.icon || sk?.icon || '✦', now) > 0 || fired;
+    if(payoff.dotPct) applyMonsterDot(target, 'specCore:' + sys.key, Math.max(1, Math.floor(base * payoff.dotPct)), payoff.dotMs || 8500, { icon:sys.icon || sk?.icon || '✦', name:sys.name || '专精核心', source:'specCore' });
+    if(payoff.spreadDotPct) spreadDotFromMonster(target, payoff.spreadDotPct, payoff.dotMs || 8500);
+    if(payoff.consumeDots){
+      const removed = consumeMonsterDots(target);
+      if(removed > 0) applySkillFollowupDamage(target, removed * (payoff.consumeDotBurst || 1.1), sys.icon || '☠️', '#c084fc', now);
+    }
+  }
+  if(payoff.healPct) healHeroAmount(Math.floor(state.hero.hpMax * payoff.healPct), sys.icon || sk?.icon || '✦', '#6ee7b7', 'hero', sys.name || '专精核心');
+  if(payoff.shieldPct) addTalentShield(Math.floor(state.hero.hpMax * payoff.shieldPct + (state.hero.def || 0) * (payoff.defShieldScale || 0.35)), true, payoff.shieldMs || 9500);
+  if(payoff.resource) grantTalentResource(payoff.resource);
+  if(payoff.cooldownPct) resetSkillCooldown(skillKey, payoff.cooldownPct);
+  if(payoff.buff) grantSpecTacticBuff(payoff.buff, payoff.buffMs || 4500, now);
+  if(payoff.summon) specTacticSummon(payoff.summon, now);
+  if(payoff.companionHealPct || payoff.companionShieldPct) applyCompanionClassSupport({ companionHealPct:payoff.companionHealPct, companionShieldPct:payoff.companionShieldPct }, sk, base, now);
+  if(payoff.grantProc !== false) grantSpecProc(sys.name || '专精核心', now);
+  showFloat($('hero-emoji'), `${sys.icon || '✦'}${sys.name || '专精核心'}`, '#facc15', { variant:'buff', scale:1.07 });
+  log(`${sys.icon || '✦'} 专精核心「${sys.name}」收束: ${sys.desc}`,'epic');
+  markDirty('skills','hero','companion');
+  return fired;
+}
+function processSpecCore(skillKey, sk, mon, value, ctx){
+  const sys = currentSpecCoreForCombat();
+  if(!sys || !sk) return false;
+  const now = ctx?.now || Date.now();
+  const core = ensureSpecCoreRuntime(sys, now);
+  const marker = `${skillKey}:${now}:${ctx?.isAOE ? 'aoe' : 'one'}:${ctx?.heal ? 'heal' : ''}:${ctx?.buff ? 'buff' : ''}:${ctx?.summoned ? 'summon' : ''}`;
+  if(core.lastMarker === marker) return false;
+  core.lastMarker = marker;
+  const target = (mon && mon.hp > 0) ? mon : (state.currentMonsters || []).find(x => x && x.hp > 0);
+  const gained = specCoreGainForSkill(sys, skillKey, sk, ctx || {});
+  const stacks = addSpecCoreStacks(sys, gained, sk.name || '', now);
+  const threshold = sys.threshold || sys.max || 6;
+  const text = skillTextForReaction(skillKey, sk, ctx || {});
+  const spender = coreRegexMatches(sys.spender, text);
+  if(stacks >= threshold && (spender || sys.autoTrigger)){
+    const key = `spec-core:${activeHeroClassKey()}:${activeHeroSpecKey()}:${sys.key}`;
+    if(classRuntimeReady(key, sys.cooldownMs || 4800, now)){
+      applySpecCorePayoff(sys, target, value, sk, skillKey, ctx || {}, now, stacks);
+      resetSpecCore(sys, now);
+      return true;
+    }
+  }
+  return gained > 0;
 }
 function processSpecStance(skillKey, sk, ctx){
   const modeKey = chooseSpecStanceMode(skillKey, sk, ctx || {});
@@ -1350,6 +1527,7 @@ function applyClassMechanicAfterSkill(skillKey, sk, mon, value, ctx){
   applySpecIdentityMechanicAfterSkill(skillKey, sk, mon, value, ctx);
   processSpecSkillChain(skillKey, sk, mon, value, ctx || {});
   processSpecReaction(skillKey, sk, mon, value, ctx || {});
+  processSpecCore(skillKey, sk, mon, value, ctx || {});
   processSpecStance(skillKey, sk, ctx || {});
   if(mon && mon.hp > 0 && fx.extraHitPctIfSummon && activeAllySummonCount(now) > 0){
     applySkillFollowupDamage(mon, value * fx.extraHitPctIfSummon, sk.icon || '🐾', '#7dd3fc', now);
