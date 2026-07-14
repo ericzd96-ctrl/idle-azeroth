@@ -96,7 +96,7 @@ const CLASSES = {
     baseAttrs:{str:22, agi:12, int:5, spi:8, sta:18},
     baseStats:{hpMax:80, mpMax:100, atk:8, def:6, crit:5, critd:150, spd:1.0, reg:1},
     skills:{
-      interrupt:{name:"拳击",icon:"👊",desc:"打断首领施法，冷却15秒",mp:10,type:"interrupt",cd:15,unlockLvl:1},
+      interrupt:{name:"拳击",icon:"👊",desc:"打断首领施法，冷却10秒",mp:10,type:"interrupt",cd:10,unlockLvl:1},
       cleave:       {name:'顺劈斩', icon:'🗡️', desc:'造成3倍攻击伤害', mp:20, type:'dmg', mul:3, unlockLvl:1},
       thunderClap:  {name:'雷霆一击', icon:'⚡', desc:'2倍攻击,降低敌人攻速', mp:25, type:'dmg', mul:2, slow:true, unlockLvl:12},
       shockwave:    {name:'震荡波', icon:'🌊', desc:'3倍攻击,击晕并顺带打断读条', mp:32, type:'dmg', mul:3, slow:true, stun:true, stunMs:1200, interruptCast:true, unlockLvl:36, cd:18},
@@ -174,7 +174,7 @@ const CLASSES = {
     baseAttrs:{str:5, agi:10, int:22, spi:14, sta:12},
     baseStats:{hpMax:50, mpMax:80, atk:6, def:2, crit:8, critd:150, spd:1.1, reg:1},
     skills:{
-      interrupt:{name:"法术反制",icon:"✋",desc:"打断首领施法，冷却15秒",mp:15,type:"interrupt",cd:15,unlockLvl:1},
+      interrupt:{name:"法术反制",icon:"✋",desc:"打断首领施法，冷却10秒",mp:15,type:"interrupt",cd:10,unlockLvl:1},
       arcane:       {name:'奥术飞弹', icon:'✨', desc:'造成3倍攻击伤害', mp:15, type:'dmg', mul:3, unlockLvl:1,castTime:1.5},
       arcaneExplosion:{name:'奥术爆炸', icon:'💥', desc:'3倍攻击范围伤害', mp:30, type:'dmg', mul:3, unlockLvl:14,castTime:0},
       fireball:     {name:'火球术',   icon:'🔥', desc:'3倍攻击,引燃灼烧', mp:25, type:'dmg', mul:3, dot:true, unlockLvl:12,castTime:2.5},
@@ -250,7 +250,7 @@ const CLASSES = {
     baseAttrs:{str:6, agi:8, int:20, spi:18, sta:13},
     baseStats:{hpMax:55, mpMax:90, atk:5, def:2, crit:5, critd:150, spd:0.9, reg:2},
     skills:{
-      interrupt:{name:"沉默",icon:"🤫",desc:"打断首领施法，冷却15秒",mp:12,type:"interrupt",cd:15,unlockLvl:1},
+      interrupt:{name:"沉默",icon:"🤫",desc:"打断首领施法，冷却10秒",mp:12,type:"interrupt",cd:10,unlockLvl:1},
       smite:      {name:'惩击',     icon:'✝️', desc:'2倍神圣伤害', mp:15, type:'dmg', mul:2, unlockLvl:1,castTime:1.5},
       shadowWord: {name:'暗言术·痛',icon:'🌑', desc:'3倍攻击,持续暗影伤害', mp:20, type:'dmg', mul:3, dot:true, unlockLvl:12,castTime:0},
       shield:     {name:'真言术盾', icon:'🛡️', desc:'15秒受到伤害降低33%', mp:30, type:'buff', buff:'shield', duration:15000,castTime:0},
@@ -327,7 +327,7 @@ const CLASSES = {
     baseAttrs:{str:12, agi:24, int:6, spi:7, sta:14},
     baseStats:{hpMax:60, mpMax:100, atk:7, def:3, crit:10, critd:160, spd:1.4, reg:2},
     skills:{
-      interrupt:{name:"脚踢",icon:"🦶",desc:"打断首领施法，冷却15秒",mp:15,type:"interrupt",cd:15,unlockLvl:1},
+      interrupt:{name:"脚踢",icon:"🦶",desc:"打断首领施法，冷却10秒",mp:15,type:"interrupt",cd:10,unlockLvl:1},
       sinister:    {name:'邪恶打击', icon:'🗡️', desc:'造成2倍攻击', mp:20, type:'dmg', mul:2, unlockLvl:1},
       backstab:    {name:'背刺',     icon:'🔪', desc:'3倍攻击伤害', mp:30, type:'dmg', mul:3},
       poison:      {name:'毒刃',     icon:'🐍', desc:'3倍攻击,持续中毒', mp:25, type:'dmg', mul:3, dot:true},
@@ -403,7 +403,7 @@ const CLASSES = {
     baseAttrs:{str:10, agi:22, int:8, spi:10, sta:15},
     baseStats:{hpMax:65, mpMax:80, atk:7, def:4, crit:8, critd:155, spd:1.2, reg:1},
     skills:{
-      interrupt:{name:"反制射击",icon:"🏹",desc:"打断首领施法，冷却15秒",mp:15,type:"interrupt",cd:15,unlockLvl:1},
+      interrupt:{name:"反制射击",icon:"🏹",desc:"打断首领施法，冷却10秒",mp:15,type:"interrupt",cd:10,unlockLvl:1},
       arcaneShot:   {name:'奥术射击', icon:'🏹', desc:'2倍攻击', mp:15, type:'dmg', mul:2, unlockLvl:1,castTime:0},
       serpentSting: {name:'毒蛇钉刺', icon:'🐍', desc:'3倍攻击,持续中毒', mp:20, type:'dmg', mul:3, dot:true, unlockLvl:12,castTime:0},
       rapidFire:    {name:'急速射击', icon:'⚡', desc:'15秒攻速+60%', mp:35, type:'buff', buff:'rapidFire', duration:15000, unlockLvl:25,castTime:0},
@@ -481,7 +481,7 @@ const CLASSES = {
     baseAttrs:{str:14, agi:12, int:18, spi:14, sta:14},
     baseStats:{hpMax:65, mpMax:85, atk:7, def:4, crit:6, critd:150, spd:1.0, reg:2},
     skills:{
-      interrupt:{name:"风剪",icon:"💨",desc:"打断首领施法，冷却15秒",mp:12,type:"interrupt",cd:15,unlockLvl:1},
+      interrupt:{name:"风剪",icon:"💨",desc:"打断首领施法，冷却10秒",mp:12,type:"interrupt",cd:10,unlockLvl:1},
       lightning:      {name:'闪电箭', icon:'⚡', desc:'3倍攻击', mp:20, type:'dmg', mul:3, unlockLvl:1,castTime:2},
       flameShock:     {name:'烈焰震击',icon:'🔥', desc:'3倍攻击,持续灼烧', mp:22, type:'dmg', mul:3, dot:true, unlockLvl:14,castTime:0},
       earthShield:    {name:'大地之盾',icon:'🪨', desc:'15秒受到伤害降低33%', mp:35, type:'buff', buff:'earthShield', duration:15000, unlockLvl:28,castTime:0},
@@ -557,7 +557,7 @@ const CLASSES = {
     baseAttrs:{str:18, agi:10, int:12, spi:12, sta:16},
     baseStats:{hpMax:75, mpMax:90, atk:7, def:6, crit:5, critd:150, spd:1.0, reg:2},
     skills:{
-      interrupt:{name:"责难",icon:"⚖️",desc:"打断首领施法，冷却15秒",mp:15,type:"interrupt",cd:15,unlockLvl:1},
+      interrupt:{name:"责难",icon:"⚖️",desc:"打断首领施法，冷却10秒",mp:15,type:"interrupt",cd:10,unlockLvl:1},
       judgement:    {name:'审判',       icon:'⚖️', desc:'2倍神圣伤害', mp:20, type:'dmg', mul:2, unlockLvl:1,castTime:0},
       consecration: {name:'奉献',       icon:'🔥', desc:'3倍攻击,范围圣光', mp:25, type:'dmg', mul:3, unlockLvl:12,castTime:0},
       holyLight:    {name:'圣光术',     icon:'✨', desc:'恢复40%生命', mp:35, type:'heal', heal:0.4,castTime:2.5},
@@ -620,7 +620,7 @@ const CLASSES = {
     baseAttrs:{str:7, agi:9, int:22, spi:14, sta:13},
     baseStats:{hpMax:55, mpMax:90, atk:6, def:2, crit:7, critd:150, spd:1.0, reg:2},
     skills:{
-      interrupt:{name:"法术封锁",icon:"🔇",desc:"打断首领施法，冷却15秒",mp:12,type:"interrupt",cd:15,unlockLvl:1},
+      interrupt:{name:"法术封锁",icon:"🔇",desc:"打断首领施法，冷却10秒",mp:12,type:"interrupt",cd:10,unlockLvl:1},
       shadowBolt: {name:'暗影箭',   icon:'🌑', desc:'3倍攻击', mp:20, type:'dmg', mul:3, unlockLvl:1,castTime:2.5},
       immolate:   {name:'献祭',     icon:'🔥', desc:'3倍攻击,持续灼烧', mp:22, type:'dmg', mul:3, dot:true, unlockLvl:12,castTime:1.5},
       corruption: {name:'腐蚀术',   icon:'🧿', desc:'3倍攻击,持续腐蚀', mp:25, type:'dmg', mul:3, dot:true,castTime:0},
@@ -696,7 +696,7 @@ const CLASSES = {
     baseAttrs:{str:14, agi:16, int:14, spi:13, sta:14},
     baseStats:{hpMax:65, mpMax:85, atk:7, def:4, crit:7, critd:150, spd:1.1, reg:2},
     skills:{
-      interrupt:{name:"日光术",icon:"☀️",desc:"打断首领施法，冷却15秒",mp:12,type:"interrupt",cd:15,unlockLvl:1},
+      interrupt:{name:"日光术",icon:"☀️",desc:"打断首领施法，冷却10秒",mp:12,type:"interrupt",cd:10,unlockLvl:1},
       wrath:       {name:'愤怒',     icon:'🌿', desc:'2倍自然伤害', mp:15, type:'dmg', mul:2, unlockLvl:1,castTime:1.5},
       swipe:       {name:'横扫',     icon:'🐾', desc:'2倍攻击范围伤害', mp:22, type:'dmg', mul:2, unlockLvl:12,castTime:0},
       rejuvenation:{name:'回春术',   icon:'🍃', desc:'恢复35%生命', mp:28, type:'heal', heal:0.35, unlockLvl:22,castTime:0},

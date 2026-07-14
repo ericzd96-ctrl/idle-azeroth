@@ -10501,7 +10501,7 @@ function castSkill(skillKey,manual){
     const ok=doInterrupt();
     if(!ok)return;
     if(cost>0)state.resource-=cost;
-    const cdSec=sk.cd||5;state.skillCooldowns[skillKey]=now+cdSec*1000/castSpeedMul();
+    const cdSec=sk.cd||10;state.skillCooldowns[skillKey]=now+cdSec*1000/castSpeedMul();
     markDirty('skills','hero');
     return;
   }
