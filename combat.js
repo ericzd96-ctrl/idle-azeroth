@@ -557,6 +557,11 @@ function currentSpecSkillChainForCombat(){
   if(typeof globalThis?.currentSpecSkillChain === 'function') return globalThis.currentSpecSkillChain();
   return null;
 }
+function currentSpecReactionForCombat(){
+  if(typeof currentSpecReactionSystem === 'function') return currentSpecReactionSystem();
+  if(typeof globalThis?.currentSpecReactionSystem === 'function') return globalThis.currentSpecReactionSystem();
+  return null;
+}
 function ensureSpecSkillChainRuntime(chain, now){
   const rt = ensureSkillRuntime();
   if(!rt.specChain) rt.specChain = {};
@@ -566,6 +571,122 @@ function ensureSpecSkillChainRuntime(chain, now){
     rt.specChain = { cls, spec, name:chain?.name || '', index:0, history:[], expire:0, lastSkill:'', lastMarker:'' };
   }
   return rt.specChain;
+}
+function skillTextForReaction(skillKey, sk, ctx){
+  return [
+    skillKey || '',
+    sk?.name || '',
+    sk?.desc || '',
+    sk?.type || '',
+    ctx?.heal ? '治疗' : '',
+    ctx?.buff ? '增益' : '',
+    ctx?.summoned ? '召唤' : '',
+  ].join(' ');
+}
+function reactionRegexMatches(re, text){
+  if(!re) return false;
+  if(re.global || re.sticky) re.lastIndex = 0;
+  return re.test(text || '');
+}
+function ensureMonsterReactionState(mon, rule, now){
+  if(!mon || !rule?.key) return null;
+  if(!mon._specReactions) mon._specReactions = {};
+  const prev = mon._specReactions[rule.key];
+  if(!prev || (prev.expire && prev.expire <= now)){
+    mon._specReactions[rule.key] = { key:rule.key, icon:rule.icon, name:rule.name, stackName:rule.stackName || rule.name, stacks:0, max:rule.max || 5, expire:0, desc:rule.desc || '' };
+  }
+  return mon._specReactions[rule.key];
+}
+function addSpecReactionStack(mon, rule, add, now){
+  const r = ensureMonsterReactionState(mon, rule, now);
+  if(!r) return 0;
+  const max = rule.max || r.max || 5;
+  r.stacks = Math.max(0, Math.min(max, (r.stacks || 0) + (add || 1)));
+  r.max = max;
+  r.icon = rule.icon || r.icon;
+  r.name = rule.name || r.name;
+  r.stackName = rule.stackName || r.stackName || r.name;
+  r.desc = rule.desc || r.desc || '';
+  r.expire = now + (rule.durationMs || 12000);
+  if(rule.state) applyMonsterState(mon, rule.state, rule.stateMs || 9000);
+  return r.stacks;
+}
+function clearSpecReaction(mon, rule){
+  if(mon?._specReactions && rule?.key) delete mon._specReactions[rule.key];
+}
+function specReactionCompanionPulse(kind, now){
+  if(typeof companionTargetable !== 'function' || !companionTargetable() || typeof computeCompanionStats !== 'function') return;
+  const st = computeCompanionStats();
+  if(!st || (typeof compDowned === 'function' && compDowned())) return;
+  if(kind === 'heal') healCompanionAmount(Math.floor(st.hpMax * 0.07), '✦', '#6ee7b7', 'hero', '专精反应');
+  addCompanionBarrier(Math.floor(st.hpMax * (kind === 'heal' ? 0.04 : 0.025)), '✦', '#93c5fd');
+  markDirty('companion');
+}
+function detonateSpecReaction(mon, rule, stacks, value, ctx, now){
+  if(!mon || mon.hp <= 0 || !rule || !(stacks > 0)) return false;
+  const tactic = currentSpecTacticForCombat();
+  const kind = tactic?.kind || '';
+  const base = Math.max(1, Math.floor(value || state.hero.atk || 1));
+  const scaledBase = Math.floor(base * (0.45 + stacks * 0.12));
+  const def = Object.assign({}, tactic || {}, {
+    icon:rule.icon || tactic?.icon || '✦',
+    name:rule.name || tactic?.name || '专精反应',
+    kind,
+    desc:rule.desc || tactic?.desc || '引爆专精反应。',
+  });
+  const before = mon.hp;
+  applySpecTacticEffect(def, mon, scaledBase, now);
+  const dealt = Math.max(0, before - Math.max(0, mon.hp));
+  const dotDps = Math.max(1, Math.floor((state.hero.atk || base) * (0.045 + stacks * 0.018)));
+  const dotKinds = /fire|void|poison|survival|affliction|chaos|feral|eclipse|bloom/.test(kind);
+  if(dotKinds || /灼|毒|痛|裂|野火|星痕|创伤|契印|深裂/.test(rule.name || '')){
+    applyMonsterDot(mon, 'specReaction:' + rule.key, dotDps, rule.dotMs || 8500, { icon:rule.icon || '✦', name:rule.name || '专精反应', source:'specReaction' });
+  }
+  if(rule.state) applyMonsterState(mon, rule.state, rule.stateMs || 9000);
+  if(kind === 'frost') applyMonsterState(mon, 'frozen', 3200);
+  if(kind === 'marks') applyMonsterState(mon, 'marked', 9000);
+  if(kind === 'verdict' || kind === 'divineBulwark' || kind === 'beacon') applyMonsterState(mon, 'judged', 9000);
+  if(kind === 'breaker' || kind === 'shadow') applyMonsterState(mon, 'exposed', 7000);
+  if(kind === 'survival') applyMonsterState(mon, 'rooted', 4200);
+  if(dealt > 0 && (kind === 'flurry' || kind === 'fire' || kind === 'chaos' || kind === 'element' || kind === 'eclipse')) splashSkillDamage(mon, Math.max(dealt, scaledBase), 0.18 + stacks * 0.035, rule.icon || '✦', now);
+  if(/atonement|holyEcho|tide|beacon|bloom/.test(kind) || ctx?.heal){
+    healHeroAmount(Math.floor(state.hero.hpMax * (0.025 + stacks * 0.007)), rule.icon || '✦', '#6ee7b7', 'hero', rule.name || '专精反应');
+    addTalentShield(Math.floor(state.hero.hpMax * (0.018 + stacks * 0.006)), true, 9000);
+    specReactionCompanionPulse('heal', now);
+  } else if(/bulwark|divineBulwark/.test(kind)){
+    addTalentShield(Math.floor(state.hero.hpMax * (0.025 + stacks * 0.008) + (state.hero.def || 0) * 0.35), true, 9000);
+    specReactionCompanionPulse('shield', now);
+  }
+  grantTalentResource(Math.min(10, 2 + stacks));
+  clearSpecReaction(mon, rule);
+  showMonsterFloat(mon, `${rule.icon || '✦'}${rule.stackName || rule.name}爆`, '#facc15', { important:true });
+  log(`${rule.icon || '✦'} 专精反应「${rule.name}」引爆: ${rule.desc}`,'epic');
+  markDirty('skills','hero','companion');
+  return true;
+}
+function processSpecReaction(skillKey, sk, mon, value, ctx){
+  const rule = currentSpecReactionForCombat();
+  if(!rule || !sk) return false;
+  const now = ctx?.now || Date.now();
+  const target = (mon && mon.hp > 0) ? mon : (state.currentMonsters || []).find(x => x && x.hp > 0);
+  if(!target) return false;
+  const text = skillTextForReaction(skillKey, sk, ctx || {});
+  const primes = reactionRegexMatches(rule.primer, text);
+  const detonates = reactionRegexMatches(rule.detonator, text);
+  if(!primes && !detonates) return false;
+  const add = primes ? (detonates ? 2 : 1) : 0;
+  const stacks = add > 0 ? addSpecReactionStack(target, rule, add, now) : (target._specReactions?.[rule.key]?.stacks || 0);
+  if(stacks > 0 && primes){
+    const r = target._specReactions?.[rule.key];
+    if(r) showMonsterFloat(target, `${rule.icon || '✦'}${r.stacks}/${r.max}`, '#fde68a', { variant:'buff' });
+  }
+  if((detonates && stacks >= Math.max(2, Math.ceil((rule.max || 5) * 0.45))) || stacks >= (rule.max || 5)){
+    if(classRuntimeReady(`spec-reaction:${activeHeroClassKey()}:${activeHeroSpecKey()}:${rule.key}`, rule.cooldownMs || 3200, now)){
+      return detonateSpecReaction(target, rule, stacks, value, ctx || {}, now);
+    }
+  }
+  markDirty('stage');
+  return true;
 }
 function skillChainStepMatches(step, skillKey, sk, ctx){
   if(!step || !step.match) return false;
@@ -1056,6 +1177,7 @@ function applyClassMechanicAfterSkill(skillKey, sk, mon, value, ctx){
   applyCompanionClassSupport(fx, sk, value, now);
   applySpecIdentityMechanicAfterSkill(skillKey, sk, mon, value, ctx);
   processSpecSkillChain(skillKey, sk, mon, value, ctx || {});
+  processSpecReaction(skillKey, sk, mon, value, ctx || {});
   if(mon && mon.hp > 0 && fx.extraHitPctIfSummon && activeAllySummonCount(now) > 0){
     applySkillFollowupDamage(mon, value * fx.extraHitPctIfSummon, sk.icon || '🐾', '#7dd3fc', now);
   }

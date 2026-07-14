@@ -98,6 +98,19 @@ const MONSTER_STATE_META = {
   marked:  { icon:'🎯', name:'猎人印记', desc:'射击猎精准技能会造成额外伤害' },
   rooted:  { icon:'🌿', name:'缠绕',   desc:'被自然法术束缚,后续自然技能更容易接上' },
   dot:     { icon:'☠️', name:'持续伤害', desc:'目标身上已有持续伤害效果' },
+  trauma:  { icon:'🩸', name:'创伤', desc:'被武器撕开弱点,后续处决/流血类技能更危险' },
+  fever:   { icon:'🔥', name:'灼热', desc:'火焰在护甲下蔓延,会被火系收束技能引爆' },
+  brittle: { icon:'❄️', name:'易碎', desc:'寒冰让目标变脆,碎裂类技能会追加伤害' },
+  unstable:{ icon:'🔷', name:'不稳定', desc:'奥术或元素能量失衡,会被倾泻类技能引爆' },
+  penanceMark:{ icon:'⚖️', name:'赎罪印记', desc:'戒律法术留下印记,后续伤害会转化为护盾' },
+  voidTorn:{ icon:'🌑', name:'虚空裂口', desc:'暗影持续侵蚀目标,会被虚空类技能扩散' },
+  venomBloom:{ icon:'🐍', name:'毒花', desc:'毒药在体内积蓄,终结技会触发毒爆' },
+  huntWound:{ icon:'🎯', name:'猎伤', desc:'被猎人锁定的弱点,精准射击会穿透' },
+  stormBrand:{ icon:'⛈️', name:'风暴烙印', desc:'元素能量导电,风暴技能会过载弹射' },
+  holyBrand:{ icon:'🌟', name:'圣印', desc:'圣光审判目标,裁决或护盾技能会引爆圣能' },
+  doomBrand:{ icon:'💜', name:'末日契印', desc:'邪能契约正在收紧,术士收割技能会爆发' },
+  astralBrand:{ icon:'🌗', name:'星痕', desc:'日月星辉校准目标,星界技能会坠落追击' },
+  lifeSeed:{ icon:'🌿', name:'生命种子', desc:'自然能量扎根,治疗收束会绽放为护盾与恢复' },
 };
 
 /* 每个职业 4 个新技能:爆发 / 减伤 / 功能性 / 职业特色 */
@@ -1007,6 +1020,54 @@ const SPEC_SKILL_CHAINS = {
   },
 };
 
+const SPEC_REACTION_SYSTEMS = {
+  warrior:{
+    arms:{ key:'warriorArmsTrauma', icon:'🪓', name:'撕裂创伤', stackName:'创伤', max:4, state:'trauma', desc:'破甲、压制、致死打击叠创伤;斩杀/巨人之击会引爆为破甲、破绽和处决追击。', primer:/破甲|压制|致死|碎颅|灭战者/, detonator:/斩杀|巨人|灭战者/ },
+    fury:{ key:'warriorFuryBloodheat', icon:'😡', name:'血热', stackName:'血热', max:5, state:'trauma', desc:'嗜血、怒击、浴血奋战叠血热;怒火乱舞/奥丁之怒引爆,获得回血和狂怒追击。', primer:/嗜血|怒击|浴血|鲁莽|暴怒/, detonator:/怒火|乱舞|奥丁|斩杀/ },
+    prot:{ key:'warriorProtCounter', icon:'🛡️', name:'盾反裂口', stackName:'裂口', max:4, state:'trauma', desc:'盾牌、复仇、雷霆和承伤节奏叠裂口;盾击/复仇引爆为护盾反震。', primer:/盾|复仇|雷霆|壁垒|格挡/, detonator:/盾牌猛击|盾击|复仇|盾牌冲锋/ },
+  },
+  mage:{
+    arcane:{ key:'mageArcaneInstability', icon:'🔷', name:'奥术失衡', stackName:'失衡', max:4, state:'unstable', desc:'奥术冲击/飞弹叠失衡;弹幕/涌动引爆,造成奥术爆发并返还法力。', primer:/奥术|飞弹|冲击|阿鲁尼斯/, detonator:/弹幕|涌动|大法师/ },
+    fire:{ key:'mageFireCombustion', icon:'🔥', name:'内燃', stackName:'燃点', max:5, state:'fever', desc:'火球、活动炸弹、凤凰、流星叠燃点;炎爆/烈焰风暴引爆为灼烧 DOT 和扩散火焰。', primer:/火球|活动炸弹|燃烧|凤凰|流星|火焰/, detonator:/炎爆|烈焰风暴|流星|大灾/ },
+    frost:{ key:'mageFrostBrittle', icon:'❄️', name:'寒脆', stackName:'寒脆', max:4, state:'brittle', desc:'寒冰箭、冰风暴、宝珠叠寒脆;冰枪/彗星引爆为冻结、碎裂追击和护盾。', primer:/寒冰|冰霜|冰风暴|宝珠|暴风雪/, detonator:/冰枪|彗星|碎裂|冰风暴/ },
+  },
+  priest:{
+    discipline:{ key:'priestDiscPrism', icon:'⚖️', name:'赎罪棱镜', stackName:'棱镜', max:4, state:'penanceMark', desc:'真言术、护盾、教派分歧叠棱镜;惩罚/惩击引爆,把伤害转成主角与随从护盾。', primer:/真言|盾|障|教派|分歧/, detonator:/惩罚|惩击|光明之怒/ },
+    holy:{ key:'priestHolyEcho', icon:'✨', name:'圣光回响', stackName:'回响', max:4, state:'holyBrand', desc:'恢复、圣言、祷言叠回响;治疗祷言/圣言引爆,治疗主角和随从并留下护盾。', primer:/恢复|治疗|祷言|圣言|神圣/, detonator:/治疗祷言|圣言|神圣新星|圣光/ },
+    shadow:{ key:'priestShadowMadness', icon:'🌑', name:'虚空裂口', stackName:'裂口', max:5, state:'voidTorn', desc:'暗言、鞭笞、疫病叠裂口;虚空爆发/暗影冲撞引爆,扩散暗影 DOT。', primer:/暗言|痛|鞭笞|心灵|暗影|疫病/, detonator:/虚空|噬灵|疫病|冲撞/ },
+  },
+  rogue:{
+    assassination:{ key:'rogueAssnVenomBloom', icon:'🐍', name:'毒花', stackName:'毒花', max:5, state:'venomBloom', desc:'锁喉、割裂、毁伤和毒药叠毒花;奉毒/君王之灾引爆,按 DOT 数量追加毒爆。', primer:/锁喉|割裂|毁伤|毒|君王/, detonator:/奉毒|君王|毒/ },
+    combat:{ key:'rogueCombatTempo', icon:'⚔️', name:'乱舞节拍', stackName:'节拍', max:5, state:'exposed', desc:'邪恶打击、剑刃冲刺、命运骨骰叠节拍;正中眉心/杀戮盛宴引爆为急速和溅射追击。', primer:/邪恶|剑刃|冲刺|命运|骨骰|切割/, detonator:/正中|眉心|杀戮|切割/ },
+    subtlety:{ key:'rogueSubShadowGap', icon:'🌑', name:'暗影破绽', stackName:'破绽', max:4, state:'exposed', desc:'背刺、幽暗之刃、暗影之舞叠破绽;暗袭/袖剑风暴引爆为暗影追击。', primer:/背刺|幽暗|暗影|袖剑|绞喉/, detonator:/暗袭|袖剑|秘技|暗影/ },
+  },
+  hunter:{
+    bm:{ key:'hunterBmPackScent', icon:'🐾', name:'兽群气味', stackName:'气味', max:5, state:'huntWound', desc:'倒刺射击、宠物、野兽技能叠气味;杀戮命令/协同猛攻引爆,触发追咬和野兽协战。', primer:/倒刺|宠物|野兽|凶暴|召唤/, detonator:/杀戮|协同|猛攻|兽群/ },
+    marks:{ key:'hunterMarksWeakpoint', icon:'🎯', name:'弱点锁定', stackName:'锁定', max:4, state:'huntWound', desc:'印记、瞄准、百发叠锁定;杀戮射击/奇美拉引爆为穿透伤害。', primer:/印记|标记|瞄准|百发|二连|精确/, detonator:/杀戮|奇美拉|瞄准|精确/ },
+    survival:{ key:'hunterSurvWildfire', icon:'💣', name:'野火药引', stackName:'药引', max:5, state:'fever', desc:'钉刺、陷阱、野火炸弹叠药引;猫鼬/屠戮引爆为束缚和野火 DOT。', primer:/钉刺|陷阱|毒蛇|野火|炸弹/, detonator:/猫鼬|屠戮|猛禽|爆炸/ },
+  },
+  shaman:{
+    element:{ key:'shamanEleStormbrand', icon:'⛈️', name:'风暴烙印', stackName:'烙印', max:4, state:'stormBrand', desc:'闪电、熔岩、震击叠烙印;元素冲击/风暴守护者引爆为过载弹射和减速。', primer:/闪电|熔岩|震击|雷霆|元素/, detonator:/元素冲击|风暴守护|风暴|拉登/ },
+    enhancement:{ key:'shamanEnhMaelbrand', icon:'🌀', name:'漩涡刻痕', stackName:'刻痕', max:5, state:'stormBrand', desc:'风暴打击、毁灭闪电、幽魂狼叠刻痕;裂地术/熔岩猛击引爆为风怒追击。', primer:/风暴打击|毁灭闪电|风怒|幽魂|漩涡|狼/, detonator:/裂地|熔岩猛击|熔岩|毁灭/ },
+    restoration:{ key:'shamanRestTidewell', icon:'🌊', name:'潮汐井', stackName:'潮汐', max:4, state:'lifeSeed', desc:'激流、治疗波、治疗链叠潮汐;暴雨图腾/潮汐引爆,治疗主角与随从并制造护盾。', primer:/激流|治疗波|治疗链|链愈|图腾/, detonator:/暴雨|潮汐|治疗链|图腾/ },
+  },
+  paladin:{
+    holy:{ key:'paladinHolyBeacon', icon:'🌟', name:'双道标', stackName:'道标', max:4, state:'holyBrand', desc:'神圣震击、圣光、祝福叠道标;黎明之光/圣光引爆,双目标治疗并护盾随从。', primer:/神圣震击|圣光|祝福|道标/, detonator:/黎明|圣光|震击/ },
+    prot:{ key:'paladinProtConsecrate', icon:'🛡️', name:'奉献圣印', stackName:'圣印', max:5, state:'holyBrand', desc:'审判、奉献、复仇者之盾叠圣印;正义盾击引爆为减伤护盾和圣光反击。', primer:/审判|奉献|复仇者|盾|正义/, detonator:/正义盾击|盾击|复仇者|盾/ },
+    ret:{ key:'paladinRetVerdict', icon:'⚜️', name:'裁决圣印', stackName:'圣印', max:5, state:'holyBrand', desc:'审判、十字军、公正之剑叠圣印;圣殿裁决/最终清算引爆为圣能爆发。', primer:/审判|十字军|公正|灰烬|复仇之怒/, detonator:/圣殿裁决|裁决|最终清算|愤怒之锤/ },
+  },
+  warlock:{
+    affliction:{ key:'warlockAffDoombrand', icon:'💜', name:'痛苦契印', stackName:'契印', max:5, state:'doomBrand', desc:'痛楚、腐蚀、鬼影叠契印;邪能狂涌/腐蚀之种引爆,强化并扩散 DOT。', primer:/痛楚|腐蚀|痛苦|鬼影|缠身/, detonator:/邪能狂涌|腐蚀之种|收割|狂涌/ },
+    demonology:{ key:'warlockDemoPortal', icon:'😈', name:'军团裂门', stackName:'裂门', max:4, state:'doomBrand', desc:'恐惧猎犬、古尔丹之手、恶魔技能叠裂门;内爆/恶魔之箭引爆,召唤恶魔协战。', primer:/恐惧猎犬|古尔丹|恶魔|召唤|曼阿里/, detonator:/内爆|恶魔之箭|吞噬|恶魔/ },
+    destruction:{ key:'warlockDestChaosbrand', icon:'🔥', name:'混乱余烬', stackName:'余烬', max:5, state:'fever', desc:'献祭、烧尽、燃烧叠余烬;混乱之箭/大灾变引爆为混乱裂变和火焰 DOT。', primer:/献祭|烧尽|燃烧|火焰之雨|大灾变/, detonator:/混乱之箭|混乱|灵魂之火|裂隙/ },
+  },
+  druid:{
+    balance:{ key:'druidBalAstralbrand', icon:'🌗', name:'星痕', stackName:'星痕', max:5, state:'astralBrand', desc:'月火、阳炎、星火叠星痕;星涌/星辰坠落引爆为星界追击和星雨溅射。', primer:/月火|阳炎|日炎|星火|愤怒/, detonator:/星涌|星辰|新月|星落/ },
+    feral:{ key:'druidFeralDeepbleed', icon:'🐾', name:'深裂', stackName:'深裂', max:5, state:'trauma', desc:'斜掠、撕碎、割裂叠深裂;凶猛撕咬/野性狂怒引爆为流血和撕咬追击。', primer:/斜掠|撕碎|横扫|割裂|流血/, detonator:/凶猛|撕咬|野性狂怒/ },
+    resto:{ key:'druidRestLifeseed', icon:'🌿', name:'生命种子', stackName:'种子', max:4, state:'lifeSeed', desc:'回春、生命绽放、迅捷治愈叠种子;百花齐放/宁静引爆,治疗主角与随从并生成自然护盾。', primer:/回春|生命绽放|迅捷|治愈|野性成长/, detonator:/百花|宁静|母树|绽放/ },
+  },
+};
+
 function currentSpecCombatRule() {
   if (typeof state === 'undefined' || !state) return null;
   return SPEC_COMBAT_RULES[state.cls]?.[state.specialization] || null;
@@ -1036,15 +1097,22 @@ function currentSpecSkillChain() {
   return SPEC_SKILL_CHAINS[state.cls]?.[state.specialization] || null;
 }
 
+function currentSpecReactionSystem() {
+  if (typeof state === 'undefined' || !state) return null;
+  return SPEC_REACTION_SYSTEMS[state.cls]?.[state.specialization] || null;
+}
+
 if (typeof window !== 'undefined') {
   window.SPEC_COMBAT_RULES = SPEC_COMBAT_RULES;
   window.SPEC_COMBAT_METERS = SPEC_COMBAT_METERS;
   window.SPEC_TACTICAL_WINDOWS = SPEC_TACTICAL_WINDOWS;
   window.SPEC_SKILL_CHAINS = SPEC_SKILL_CHAINS;
+  window.SPEC_REACTION_SYSTEMS = SPEC_REACTION_SYSTEMS;
   window.currentSpecCombatRule = currentSpecCombatRule;
   window.currentSpecCombatMeter = currentSpecCombatMeter;
   window.currentSpecTacticalWindow = currentSpecTacticalWindow;
   window.currentSpecSkillChain = currentSpecSkillChain;
+  window.currentSpecReactionSystem = currentSpecReactionSystem;
 }
 
 const SPEC_STARTER_UNLOCKS = {

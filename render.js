@@ -246,6 +246,18 @@ function focusDebuffs(now) {
       });
     }
   }
+  if (mon._specReactions) {
+    for (const reaction of Object.values(mon._specReactions)) {
+      if (!reaction || !(reaction.expire > now) || !(reaction.stacks > 0)) continue;
+      const max = reaction.max || 5;
+      out.push({
+        icon: reaction.icon || '✦',
+        name: `${reaction.stackName || reaction.name || '专精反应'} ${reaction.stacks}/${max}`,
+        desc: reaction.desc || '当前专精技能叠加的反应层数,达到阈值后会被收束技能引爆',
+        left: Math.ceil((reaction.expire - now) / 1000)
+      });
+    }
+  }
   return out;
 }
 function focusBuffs(now) {
@@ -444,13 +456,15 @@ function renderBuffBar() {
   if (specMeter) {
     const tactic = (typeof currentSpecTacticalWindow === 'function') ? currentSpecTacticalWindow() : null;
     const chain = (typeof currentSpecSkillChain === 'function') ? currentSpecSkillChain() : null;
+    const reaction = (typeof currentSpecReactionSystem === 'function') ? currentSpecReactionSystem() : null;
     const chainDesc = chain ? ` · 专精连段: ${chain.name}: ${chain.steps.map(x => x.label).join(' → ')}。完成: ${chain.finish}` : '';
+    const reactionDesc = reaction ? ` · 状态反应: ${reaction.name}: ${reaction.desc}` : '';
     selfStates.unshift({
       kind: 'spec-meter',
       icon: specMeter.icon || '✦',
       name: specMeter.name,
       base: '专精机制:' + specMeter.key,
-      desc: (specMeter.hint || '') + ` · 当前 ${specMeter.stacks || 0}/${specMeter.max || 0}` + (tactic ? ` · 战术窗口: ${tactic.name}: ${tactic.desc}` : '') + chainDesc,
+      desc: (specMeter.hint || '') + ` · 当前 ${specMeter.stacks || 0}/${specMeter.max || 0}` + (tactic ? ` · 战术窗口: ${tactic.name}: ${tactic.desc}` : '') + chainDesc + reactionDesc,
       valText: `${specMeter.stacks || 0}/${specMeter.max || 0}`,
       stacks: specMeter.stacks || 0,
       left: 0
