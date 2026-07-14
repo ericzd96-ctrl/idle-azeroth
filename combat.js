@@ -6129,6 +6129,24 @@ function spawnDungeonMonster(){
       mon.baseXp = Math.floor(mon.baseXp * (isBoss ? 1.45 : 1.2));
     }
   }
+  // 低级普通副本以前太容易被一身绿装的爆发技能跳过机制。这里给 30 级前普通本补耐久,
+  // 让 BOSS 至少能进入循环,但不影响英雄/团本/史诗本的既有难度曲线。
+  const earlyDungeonBand = (state.mode === 'dungeon' && !isRaid && _dgTier === 0 && req < 30)
+    ? Math.max(0, Math.min(1, (30 - req) / 18))
+    : 0;
+  if (earlyDungeonBand > 0) {
+    const hpMult = isBoss
+      ? (1 + earlyDungeonBand * (isFinalBoss ? 1.05 : 0.85))
+      : (1 + earlyDungeonBand * 0.38);
+    const defMult = isBoss ? (1 + earlyDungeonBand * 0.22) : (1 + earlyDungeonBand * 0.10);
+    mon.hpMax = Math.floor(mon.hpMax * hpMult); mon.hp = mon.hpMax;
+    mon.def = Math.floor(mon.def * defMult);
+    mon._earlyDungeonResolve = {
+      hpMult,
+      defMult,
+      dr: isBoss ? Math.min(0.32, 0.10 + earlyDungeonBand * 0.22) : Math.min(0.16, 0.04 + earlyDungeonBand * 0.08)
+    };
+  }
   if (state.mode === 'dungeon' && ds.contractLevel > 0 && typeof dungeonContractInfo === 'function') {
     const contract = dungeonContractInfo(ds.contractLevel);
     mon.hpMax = Math.floor(mon.hpMax * (contract.hp || 1)); mon.hp = mon.hpMax;
@@ -6181,6 +6199,9 @@ function spawnDungeonMonster(){
     } else {
       mon.dodgeChance=0.15; mon.critChance=0.25; mon.stunChance=0.12;
     }
+  }
+  if (mon._earlyDungeonResolve?.dr) {
+    mon.dmgReduction = Math.max(mon.dmgReduction || 0, mon._earlyDungeonResolve.dr);
   }
   if (ds.affixes) {
     mon._affixes = ds.affixes;
