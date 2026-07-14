@@ -54,17 +54,17 @@ const BUFF_NAMES = {
   demonForm:     { icon:'😈', name:'恶魔形态', desc:'攻×1.33·吸血+10' },
 };
 const MASTERY_TYPE = {
-  dmgAmp:    { per:0.6,  fmt:n=>`造成的伤害 +${(n*0.6).toFixed(1)}%` },
-  dotAmp:    { per:1.2,  fmt:n=>`持续伤害(灼烧/中毒/流血)效果 +${(n*1.2).toFixed(0)}%` },
-  leechAmp:  { per:0.3,  fmt:n=>`普攻吸血效果 +${(n*0.3*0.5).toFixed(1)}%` },
-  dr:        { per:0.25, fmt:n=>`受到的伤害 -${Math.min(30,n*0.25).toFixed(1)}%` },
-  healAmp:   { per:0.8,  fmt:n=>`治疗/护盾量 +${(n*0.8).toFixed(0)}%` },
-  critdAmp:  { per:1.5,  fmt:n=>`暴击伤害 +${(n*1.5).toFixed(0)}%` },
-  bleedOnCrit:{ per:0.5, fmt:n=>`暴击使敌人流血:每秒造成该次伤害的 ${(n*0.5).toFixed(1)}%,持续5秒` },
-  reactionAmp:{ per:0.75, fmt:n=>`技能元素反应伤害 +${(n*0.75).toFixed(1)}%, 触发时额外返还资源` },
-  echoAmp:   { per:0.85, fmt:n=>`技能余波爆发伤害 +${(n*0.85).toFixed(1)}%, 余波持续时间更长` },
-  supportEcho:{ per:0.75, fmt:n=>`治疗/护盾与支援型余波效果 +${(n*0.75).toFixed(1)}%` },
-  guardianEcho:{ per:0.55, fmt:n=>`技能余波护盾与反击效果 +${(n*0.55).toFixed(1)}%, 受到伤害降低 ${Math.min(24,n*0.18).toFixed(1)}%` },
+  dmgAmp:    { per:0.6,  fmt:n=>`直接伤害更高。` },
+  dotAmp:    { per:1.2,  fmt:n=>`持续伤害更高。` },
+  leechAmp:  { per:0.3,  fmt:n=>`吸血效果更强。` },
+  dr:        { per:0.25, fmt:n=>`受到伤害更低。` },
+  healAmp:   { per:0.8,  fmt:n=>`治疗和护盾更强。` },
+  critdAmp:  { per:1.5,  fmt:n=>`暴击伤害更高。` },
+  bleedOnCrit:{ per:0.5, fmt:n=>`暴击会追加流血。` },
+  reactionAmp:{ per:0.75, fmt:n=>`状态反应和资源返还更强。` },
+  echoAmp:   { per:0.85, fmt:n=>`技能余波和爆发更强。` },
+  supportEcho:{ per:0.75, fmt:n=>`治疗、护盾和支援更强。` },
+  guardianEcho:{ per:0.55, fmt:n=>`护盾、反击和减伤更强。` },
 };
 // 专精 → 精通效果(同名 key 的不同职业共享同一原型,如 prot=减伤 / holy=治疗,语义一致)
 const MASTERY_SPEC = { arms:'echoAmp', fury:'echoAmp', prot:'guardianEcho', arcane:'reactionAmp', fire:'reactionAmp', frost:'echoAmp', discipline:'supportEcho', holy:'supportEcho', shadow:'reactionAmp', assassination:'echoAmp', combat:'echoAmp', subtlety:'echoAmp', bm:'echoAmp', marks:'reactionAmp', survival:'reactionAmp', element:'reactionAmp', enhancement:'echoAmp', restoration:'supportEcho', ret:'reactionAmp', affliction:'reactionAmp', demonology:'echoAmp', destruction:'reactionAmp', balance:'reactionAmp', feral:'echoAmp', resto:'supportEcho' };
@@ -215,18 +215,21 @@ function specMasteryEngineBonus(field){
   return 0;
 }
 function masteryTakenMult(){ return 1 - Math.min(30, masteryFor('dr')*MASTERY_TYPE.dr.per + masteryFor('guardianEcho')*0.18 + specMasteryEngineBonus('takenPct'))/100; } // 受击减伤(封顶30%)
+function masterySimpleFocus(p){
+  const b = p?.bonus || {};
+  if(b.takenPct) return '护盾、减伤和反击更强';
+  if((b.supportPct || 0) >= 0.4 || (b.mechanicShieldPct || 0) >= 0.32) return '治疗、护盾和支援更强';
+  if(b.dotSpreadPct || b.reactionDotPct || b.echoDotPct) return '持续伤害、扩散和引爆更强';
+  if(b.procPct || b.stancePct || b.resource) return '爆发窗口、循环节奏和资源返还更强';
+  if(b.corePayoffPct || b.chainPayoffPct || b.specReactionPct) return '核心技能、连段和收束爆发更强';
+  return '本专精的核心玩法更强';
+}
 function masteryDescText(){
   const p = currentSpecMasteryEngine();
-  const n = state?.hero?.mastery || 0;
   if(p){
-    const bits = Object.entries(p.bonus || {})
-      .filter(([k, v]) => k !== 'resource' && k !== 'takenPct' && v)
-      .slice(0, 4)
-      .map(([k, v]) => `${SPEC_MASTERY_LABELS[k] || k} +${(n * v).toFixed(1)}%`);
-    const res = p.bonus?.resource ? `资源返还 +${(n * p.bonus.resource).toFixed(1)}` : '';
-    const taken = p.bonus?.takenPct ? `承伤 -${Math.min(30, n * p.bonus.takenPct).toFixed(1)}%` : '';
-    return `${p.icon || '✦'} ${p.name}: ${p.desc} 当前: ${bits.concat(res || [], taken || []).filter(Boolean).join(' · ')}`;
+    return `${p.icon || '✦'} ${p.name}: ${masterySimpleFocus(p)}。`;
   }
+  const n = state?.hero?.mastery || 0;
   const t=masterySpecType(); return t ? MASTERY_TYPE[t].fmt(n) : '未选择专精';
 }
 function masteryReactionMult(){ return 1 + masteryFor('reactionAmp')*MASTERY_TYPE.reactionAmp.per/100; }
@@ -799,20 +802,9 @@ function specEngineFxMult(field){
   return 1 + specEngineFxBonus(field) / 100;
 }
 function specEngineDescText(){
-  const core = specEngineFxBonus('corePayoffPct');
-  const gain = specEngineFxBonus('coreGainPct');
-  const chain = specEngineFxBonus('chainPayoffPct');
-  const reaction = specEngineFxBonus('specReactionPct');
-  const support = specEngineFxBonus('supportPct');
-  const proc = specEngineFxBonus('procPct');
-  const parts = [];
-  if(core) parts.push(`核心收束 +${core}%`);
-  if(gain) parts.push(`核心叠层 +${gain}%`);
-  if(chain) parts.push(`连段奖励 +${chain}%`);
-  if(reaction) parts.push(`专精反应 +${reaction}%`);
-  if(proc) parts.push(`临场强化 +${proc}%`);
-  if(support) parts.push(`治疗/护盾联动 +${support}%`);
-  return parts.join(' · ');
+  const p = currentSpecMasteryEngine();
+  if(p) return `${p.name}: ${masterySimpleFocus(p)}`;
+  return '';
 }
 const SKILL_ECHO_RULES = {
   fire:{ icon:'🔥', name:'火痕', desc:'火焰留下的燃烧余波,可被冰霜、风暴或物理技能引爆。', triggers:['frost','storm','physical'], dotPct:0.10, state:'fever' },
