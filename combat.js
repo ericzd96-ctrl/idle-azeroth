@@ -580,6 +580,76 @@ function showSpecProcFx(targetEl, proc, mode, opts){
   if(typeof pulseCombatEl === 'function') pulseCombatEl(targetEl, safeMode === 'release' ? 'crit' : 'artifact', safeMode === 'release' ? 340 : 280);
   setTimeout(() => el.remove(), safeMode === 'release' ? 860 : 760);
 }
+const _companionSpecialFxCooldown = {};
+function companionSpecialFxType(spec){
+  const type = spec?.type || '';
+  if(type === 'guard' || type === 'barrier' || type === 'cleanse' || type === 'rescue') return 'guard';
+  if(type === 'control' || type === 'tempo') return 'control';
+  if(type === 'dot') return 'dot';
+  if(type === 'execute') return 'execute';
+  if(type === 'summon') return 'summon';
+  if(type === 'aoe') return 'aoe';
+  if(type === 'mark') return 'mark';
+  return 'special';
+}
+function showCompanionSpecialFx(tpl, spec, mon, ctx){
+  if(!spec || typeof document === 'undefined' || document.hidden) return;
+  const support = !!ctx?.support;
+  const sourceEl = $('comp-mini') || $('hero-emoji');
+  const targetEl = mon ? monsterFloatAnchor(mon) : $('hero-emoji');
+  if(!sourceEl) return;
+  const key = `${support ? 'support' : 'active'}:${tpl?.key || spec.name || 'special'}:${ctx?.slot || ''}`;
+  const now = Date.now();
+  if((_companionSpecialFxCooldown[key] || 0) > now) return;
+  _companionSpecialFxCooldown[key] = now + (support ? 900 : 620);
+  const layer = skillFxLayer();
+  const sp = skillFxPoint(sourceEl);
+  const tp = skillFxPoint(targetEl || sourceEl);
+  if(!layer || !sp) return;
+  const fxType = companionSpecialFxType(spec);
+  const sourceSize = Math.round(Math.max(42, Math.min(116, Math.max(sp.w, sp.h) + (support ? 26 : 44))));
+  const cast = document.createElement('div');
+  cast.className = `comp-special-fx comp-special-cast comp-special-${fxType}${support ? ' support' : ''}`;
+  cast.style.left = (sp.x - sourceSize / 2) + 'px';
+  cast.style.top = (sp.y - sourceSize / 2) + 'px';
+  cast.style.width = sourceSize + 'px';
+  cast.style.height = sourceSize + 'px';
+  const icon = document.createElement('i');
+  icon.textContent = spec.icon || tpl?.emoji || '🌟';
+  cast.appendChild(icon);
+  const label = document.createElement('b');
+  label.textContent = support ? '支援' : '专属';
+  cast.appendChild(label);
+  layer.appendChild(cast);
+  const spawned = [cast];
+  if(tp && targetEl && targetEl !== sourceEl){
+    const dx = tp.x - sp.x;
+    const dy = tp.y - sp.y;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if(len > 12){
+      const trail = document.createElement('div');
+      trail.className = `comp-special-fx comp-special-trail comp-special-${fxType}${support ? ' support' : ''}`;
+      trail.style.left = sp.x + 'px';
+      trail.style.top = sp.y + 'px';
+      trail.style.width = Math.max(18, len) + 'px';
+      trail.style.setProperty('--comp-special-angle', Math.atan2(dy, dx) + 'rad');
+      layer.appendChild(trail);
+      spawned.push(trail);
+    }
+    const burstSize = Math.round(Math.max(36, Math.min(108, Math.max(tp.w, tp.h) + (support ? 24 : 42))));
+    const burst = document.createElement('div');
+    burst.className = `comp-special-fx comp-special-burst comp-special-${fxType}${support ? ' support' : ''}`;
+    burst.style.left = (tp.x - burstSize / 2) + 'px';
+    burst.style.top = (tp.y - burstSize / 2) + 'px';
+    burst.style.width = burstSize + 'px';
+    burst.style.height = burstSize + 'px';
+    layer.appendChild(burst);
+    spawned.push(burst);
+  }
+  if(typeof pulseCombatEl === 'function') pulseCombatEl(sourceEl, support ? 'comp' : 'artifact', support ? 260 : 360);
+  if(!support && typeof stageFlashFx === 'function' && (mon?.isBoss || fxType === 'execute')) stageFlashFx(fxType === 'execute' ? 'crit' : 'artifact');
+  setTimeout(() => spawned.forEach(el => el.remove()), support ? 720 : 900);
+}
 function showBossPhaseFx(mon, label, opts){
   if(!mon || typeof document === 'undefined' || document.hidden) return;
   const layer = skillFxLayer();
@@ -12959,6 +13029,7 @@ function applyCompanionCombatSpecialEffect(now, st, tpl, comp, mon, ctx){
     state._compSupportLastAt = now;
     state._compSupportName = spec.name;
   }
+  showCompanionSpecialFx(tpl, spec, mon, ctx);
   log(`${spec.icon || tpl.emoji || '🐾'} ${tpl.name}${ctx?.support ? '支援' : '触发'}专属战斗「${spec.name}」`,'good');
   markDirty('stage','companion','hero');
   return true;
