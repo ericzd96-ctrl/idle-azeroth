@@ -3965,6 +3965,64 @@ h1 {
   height: 22px;
   animation-duration: .92s;
 }
+.boss-phase-fx {
+  --boss-phase-color: var(--skill-fx-color, #fbbf24);
+  --boss-phase-soft: var(--skill-fx-color-soft, rgba(251,191,36,.34));
+  position: absolute;
+  pointer-events: none;
+  z-index: 9;
+  border-radius: 999px;
+  border: 1px solid var(--boss-phase-color);
+  background:
+    conic-gradient(from 0deg, rgba(255,255,255,0), var(--boss-phase-color), rgba(255,255,255,0) 22%, rgba(255,255,255,0) 50%, var(--boss-phase-color), rgba(255,255,255,0) 72%),
+    radial-gradient(circle, var(--boss-phase-soft) 0 24%, rgba(0,0,0,0) 68%);
+  box-shadow: 0 0 20px var(--boss-phase-soft), inset 0 0 16px var(--boss-phase-soft);
+  mix-blend-mode: screen;
+  animation: bossPhaseOpen 1.08s ease-out forwards;
+}
+.boss-phase-fx.mechanic,
+.boss-phase-fx.grand {
+  --boss-phase-color: #f9a8d4;
+  --boss-phase-soft: rgba(216,180,254,.34);
+}
+.boss-phase-fx.phase {
+  --boss-phase-color: #facc15;
+  --boss-phase-soft: rgba(250,204,21,.30);
+}
+.boss-phase-fx.school-fire { --boss-phase-color:#fb923c; --boss-phase-soft:rgba(248,113,113,.42); }
+.boss-phase-fx.school-frost { --boss-phase-color:#93c5fd; --boss-phase-soft:rgba(125,211,252,.38); }
+.boss-phase-fx.school-arcane { --boss-phase-color:#c084fc; --boss-phase-soft:rgba(192,132,252,.42); }
+.boss-phase-fx.school-nature { --boss-phase-color:#86efac; --boss-phase-soft:rgba(52,211,153,.36); }
+.boss-phase-fx.school-shadow { --boss-phase-color:#a78bfa; --boss-phase-soft:rgba(88,28,135,.52); }
+.boss-phase-fx.school-holy { --boss-phase-color:#fde68a; --boss-phase-soft:rgba(250,204,21,.40); }
+.boss-phase-fx b {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  max-width: 132px;
+  transform: translate(-50%, -50%);
+  color: #fff7ed;
+  font-size: 10px;
+  line-height: 1.05;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 5px rgba(0,0,0,.95), 0 0 12px var(--boss-phase-soft);
+  animation: bossPhaseLabel 1.08s ease-out forwards;
+}
+.boss-phase-fx span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2px;
+  height: 18px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255,255,255,.95), var(--boss-phase-color), rgba(255,255,255,0));
+  box-shadow: 0 0 8px var(--boss-phase-soft);
+  transform-origin: center bottom;
+  animation: bossPhaseRune 1.08s ease-out forwards;
+}
 @keyframes impactHalo {
   0% { opacity: 0; transform: scale(.58); }
   32% { opacity: 1; transform: scale(1); }
@@ -3983,6 +4041,23 @@ h1 {
   0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--death-shard-angle)) translateY(-6px) scaleY(.35); }
   22% { opacity: 1; }
   100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--death-shard-angle)) translateY(calc(var(--death-shard-distance) * -1)) scaleY(.9); }
+}
+@keyframes bossPhaseOpen {
+  0% { opacity: 0; transform: scale(.45) rotate(-24deg); filter: brightness(1.4); }
+  22% { opacity: 1; transform: scale(1.05) rotate(10deg); filter: brightness(1.7); }
+  72% { opacity: .86; transform: scale(1.18) rotate(44deg); filter: brightness(1.15); }
+  100% { opacity: 0; transform: scale(1.46) rotate(82deg); filter: brightness(.9); }
+}
+@keyframes bossPhaseLabel {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.72); }
+  20% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+  70% { opacity: 1; transform: translate(-50%, -58%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -72%) scale(.96); }
+}
+@keyframes bossPhaseRune {
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--boss-phase-angle)) translateY(-10px) scaleY(.35); }
+  24% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--boss-phase-angle)) translateY(-58px) scaleY(1); }
 }
 @keyframes impactSlam {
   0% { opacity: 0; transform: translateX(-10px) rotate(var(--impact-slam-angle)) scaleX(.22) scaleY(.72); }

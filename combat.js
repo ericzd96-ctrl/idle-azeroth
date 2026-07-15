@@ -368,6 +368,36 @@ function showMonsterDeathFx(mon){
   }
   setTimeout(() => el.remove(), boss ? 980 : elite ? 820 : 680);
 }
+function showBossPhaseFx(mon, label, opts){
+  if(!mon || typeof document === 'undefined' || document.hidden) return;
+  const layer = skillFxLayer();
+  const anchor = monsterFloatAnchor(mon);
+  const p = skillFxPoint(anchor);
+  if(!layer || !p) return;
+  const boss = !!(mon.isBoss || mon.isWorldBoss || mon._isRaid || mon._isEpicRaid);
+  const type = opts?.type || 'phase';
+  const school = opts?.school || skillVisualSchool(null, { name:label || '', icon:opts?.icon || '', desc:opts?.desc || '', threat:opts?.danger ? 'high' : '' }, 'boss');
+  const size = Math.round(Math.max(58, Math.min(150, Math.max(p.w, p.h) + (boss ? 78 : 52))));
+  const el = document.createElement('div');
+  el.className = `boss-phase-fx ${type} school-${school}`;
+  el.style.left = (p.x - size / 2) + 'px';
+  el.style.top = (p.y - size / 2) + 'px';
+  el.style.width = size + 'px';
+  el.style.height = size + 'px';
+  const text = document.createElement('b');
+  text.textContent = String((opts?.icon || '') + (label || '阶段转换')).slice(0, 18);
+  el.appendChild(text);
+  for(let i=0;i<8;i++){
+    const mark = document.createElement('span');
+    mark.style.setProperty('--boss-phase-angle', (i * 45) + 'deg');
+    el.appendChild(mark);
+  }
+  layer.appendChild(el);
+  if(typeof pulseCombatEl === 'function') pulseCombatEl(anchor, opts?.danger ? 'danger' : 'bosscast', 420);
+  if(typeof stageFlashFx === 'function') stageFlashFx(opts?.danger ? 'danger' : 'boss');
+  if(typeof stageEdgeFx === 'function' && opts?.danger) stageEdgeFx('danger', { intensity:1 });
+  setTimeout(() => el.remove(), opts?.duration || 1080);
+}
 function bossCastIsDamage(cast){
   return !!(cast && typeof cast.mul === 'number' && cast.mul > 0 && cast.type !== 'heal' && cast.type !== 'buff' && cast.type !== 'support' && !cast.summonCount);
 }
@@ -7119,6 +7149,7 @@ function applyDungeonBossPhase(mon, phase, now){
     }
   }
   showMonsterFloat(mon, `${phase.icon || '⚔️'}${phase.name}`, '#fb7185', { variant:'boss', scale:1.12, important:true });
+  showBossPhaseFx(mon, phase.name, { icon:phase.icon || '⚔️', desc:phase.desc || '', type:'phase', danger:!!mod.phaseDamagePct || !!mod.heroDebuff });
   pulseMonsterEl(mon, 'bosscast', 320);
   log(`⚔️ 契约阶段: ${mon.bossName || mon.name} 触发 ${phase.icon || ''}${phase.name}! ${phase.desc || ''}`, 'bad');
   return true;
@@ -7187,6 +7218,7 @@ function applyWorldBossContractPhase(mon, phase, encounter, now){
     }
   }
   showMonsterFloat(mon, `${phase.icon || '⚔️'}${phase.name}`, '#fb7185', { variant:'boss', scale:1.12, important:true });
+  showBossPhaseFx(mon, phase.name, { icon:phase.icon || '⚔️', desc:phase.desc || '', type:'phase', danger:!!mod.phaseDamagePct || !!mod.heroDebuff });
   pulseMonsterEl(mon, 'bosscast', 320);
   log(`🌌 世界Boss阶段: ${mon.bossName || mon.name} 触发 ${phase.icon || ''}${phase.name}! ${phase.desc || ''}`, 'bad');
   return true;
@@ -7701,6 +7733,7 @@ function triggerDungeonBossSpectacle(mon, mech, now){
     if(typeof applyHeroDebuff === 'function') applyHeroDebuff('brittle', 4500);
   }
   dungeonBossSpectacleMark(mon, mech, now);
+  showBossPhaseFx(mon, mech.name, { icon:mech.icon || '🎭', desc:mech.desc || '', type:'mechanic', danger:mech.danger !== false, school:mech.theme === 'fire' ? 'fire' : mech.theme === 'frost' ? 'frost' : mech.theme === 'shadow' ? 'shadow' : '' });
   log(`${mech.icon} ${mon.bossName || mon.name} 触发首领机制: ${mech.name}!`, 'bad');
   if(typeof markDirty === 'function') markDirty('hero', 'stage');
   return true;
@@ -8573,6 +8606,7 @@ function triggerDungeonBossGrandMechanic(mon, mech, now){
     applyHeroDebuff(mech.theme === 'death' ? 'decay2' : 'burn', 5200, { dps:dungeonBossSpectacleDmg(0.010, mon, 0.3) });
   }
   showMonsterFloat(mon, `${mech.icon}${mech.name}`, color, { variant:'boss', scale:1.04 });
+  showBossPhaseFx(mon, mech.name, { icon:mech.icon || '🎭', desc:mech.desc || '', type:'grand', danger:['cataclysm','brand','pulse','counter'].includes(mech.effect), school:mech.theme === 'fire' || mech.theme === 'flame' || mech.theme === 'dragon' ? 'fire' : mech.theme === 'storm' || mech.theme === 'tidal' ? 'nature' : mech.theme === 'death' || mech.theme === 'void' || mech.theme === 'shadow' ? 'shadow' : '' });
   log(`${mech.icon} ${mon.bossName || mon.name} 触发扩展Boss机制: ${mech.name}`, 'bad');
   if(typeof markDirty === 'function') markDirty('hero', 'stage');
   return true;
@@ -9671,7 +9705,7 @@ function tickBattle(now){
     checkWorldBossContractPhases(mon, now);
     let _forcedPhaseSk=null;
     for(const _s of _allBossSkills){ if(typeof _s.hpBelow==='number'&&_hpFrac<=_s.hpBelow){ mon._phasesSeen=mon._phasesSeen||{}; if(!mon._phasesSeen[_s.name]){ mon._phasesSeen[_s.name]=1; _forcedPhaseSk=_s; } } }
-    if(_forcedPhaseSk){ log('⚔️ '+(mon.bossName||mon.name)+' 进入新阶段 —— '+(_forcedPhaseSk.icon||'')+_forcedPhaseSk.name+'!','bad'); if(typeof showMonsterFloat==='function')showMonsterFloat(mon,'⚔️ 阶段转换!','#f59e0b'); lastBossSkill=0; }
+    if(_forcedPhaseSk){ log('⚔️ '+(mon.bossName||mon.name)+' 进入新阶段 —— '+(_forcedPhaseSk.icon||'')+_forcedPhaseSk.name+'!','bad'); if(typeof showMonsterFloat==='function')showMonsterFloat(mon,'⚔️ 阶段转换!','#f59e0b'); if(typeof showBossPhaseFx==='function')showBossPhaseFx(mon,_forcedPhaseSk.name,{icon:_forcedPhaseSk.icon||'⚔️',desc:_forcedPhaseSk.desc||'',type:'phase',danger:_forcedPhaseSk.threat==='high'||_forcedPhaseSk.threat==='extreme'||isEmpoweredBossCast(_forcedPhaseSk)}); lastBossSkill=0; }
     const _phasePool=(()=>{ const e=_allBossSkills.filter(_s=>{ if(typeof _s.hpBelow==='number'&&_hpFrac>_s.hpBelow)return false; if(typeof _s.hpAbove==='number'&&_hpFrac<_s.hpAbove)return false; return true; }); return e.length?e:_allBossSkills; })();
     const _queuedSk=(mon._queuedBossSkills&&mon._queuedBossSkills.length)?mon._queuedBossSkills.shift():null;
     const _pickSk=_queuedSk||_forcedPhaseSk||_phasePool[bossSkillIdx%Math.max(1,_phasePool.length)];
