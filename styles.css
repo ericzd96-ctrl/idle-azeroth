@@ -4574,11 +4574,70 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   background: linear-gradient(180deg, rgba(30,64,175,.70), rgba(15,23,42,.74));
   animation-duration: 1.15s;
 }
+.combat-cue-toast {
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  transform: translate(-50%, -50%);
+  z-index: 18;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: calc(100% - 50px);
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,.34);
+  background: linear-gradient(180deg, rgba(15,23,42,.70), rgba(2,6,23,.58));
+  color: #e5e7eb;
+  box-shadow: 0 6px 22px rgba(0,0,0,.24), inset 0 0 0 1px rgba(255,255,255,.05);
+  pointer-events: none;
+  white-space: nowrap;
+  animation: combatCueToast .95s ease-out forwards;
+}
+.combat-cue-toast b {
+  font-size: 12px;
+  line-height: 1;
+  text-shadow: 0 1px 4px rgba(0,0,0,.82);
+}
+.combat-cue-toast span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 10px;
+  color: #cbd5e1;
+}
+.combat-cue-toast.crit,
+.combat-cue-toast.hit {
+  color: #fde68a;
+  border-color: rgba(250,204,21,.54);
+  background: linear-gradient(180deg, rgba(113,63,18,.58), rgba(15,23,42,.62));
+}
+.combat-cue-toast.heal {
+  color: #bbf7d0;
+  border-color: rgba(52,211,153,.50);
+  background: linear-gradient(180deg, rgba(6,95,70,.56), rgba(15,23,42,.62));
+}
+.combat-cue-toast.shield {
+  color: #bfdbfe;
+  border-color: rgba(96,165,250,.52);
+  background: linear-gradient(180deg, rgba(30,64,175,.54), rgba(15,23,42,.62));
+}
+.combat-cue-toast.danger {
+  color: #fecaca;
+  border-color: rgba(248,113,113,.62);
+  background: linear-gradient(180deg, rgba(127,29,29,.66), rgba(15,23,42,.62));
+}
 @keyframes combatEventBanner {
   0% { opacity: 0; transform: translate(-50%, -34%) scale(.84); }
   18% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
   72% { opacity: 1; transform: translate(-50%, -58%) scale(1); }
   100% { opacity: 0; transform: translate(-50%, -76%) scale(.96); }
+}
+@keyframes combatCueToast {
+  0% { opacity: 0; transform: translate(-50%, -35%) scale(.88); }
+  18% { opacity: .96; transform: translate(-50%, -50%) scale(1.03); }
+  70% { opacity: .96; transform: translate(-50%, -56%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -72%) scale(.96); }
 }
 .tab.has-badge::after {
   content: ''; position: absolute; top: 3px; right: 3px;

@@ -412,6 +412,7 @@ function absorbTalentShield(amount){
   rt.shield -= absorb;
   showFloat($('hero-emoji'), '🛡️-' + absorb, '#93c5fd', { variant:'shield-break', scale:1.02 });
   if(typeof pulseCombatEl === 'function') pulseCombatEl($('hero-emoji'), 'shield', 260);
+  if(absorb >= Math.max(1, amount * 0.55) || absorb >= Math.max(1, (state.hero?.hpMax || 1) * 0.08)) combatCueToast('护盾吸收', '挡下 '+fmt(absorb), 'shield');
   markDirty('hero');
   return amount - absorb;
 }
@@ -4129,6 +4130,8 @@ function healHeroAmount(amount, icon, color, source, skillLabel){
   if(applied > 0){
     showFloat($('hero-emoji'), (icon || '') + '+' + applied, color || '#6ee7b7', { variant:'heal', scale:1.06 });
     if(typeof pulseCombatEl === 'function') pulseCombatEl($('hero-emoji'), 'heal', 240);
+    const maxHp = Math.max(1, state.hero.hpMax || 1);
+    if(before / maxHp <= 0.32 && state.hp / maxHp >= 0.42) combatCueToast('治疗救回', '+' + fmt(applied), 'heal');
   }
   return { applied, overheal };
 }
@@ -8922,6 +8925,7 @@ function healCompanionAmount(amount, icon, color, source, skillLabel){
   if(applied > 0){
     showFloat($('comp-mini'), (icon || '') + '+' + applied, color || '#6ee7b7', { variant:'heal', scale:1.04 });
     if(typeof pulseCombatEl === 'function') pulseCombatEl($('comp-mini'), 'heal', 240);
+    if(before / Math.max(1, st.hpMax || 1) <= 0.32 && state._compHp / Math.max(1, st.hpMax || 1) >= 0.42) combatCueToast('随从稳住', '+' + fmt(applied), 'heal');
   }
   markDirty('companion');
   return { applied, overheal };
@@ -11029,10 +11033,22 @@ let lastCompAtk=0,lastCompSkill=0,compSkillIdx=0,lastCompRegen=0;
 function defaultDmgStats(){return {hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,heroHeal:0,compHeal:0,heroHealMax:0,compHealMax:0,heroHealSkills:{},compHealSkills:{},kills:0,heroSkills:{},compSkills:{},taken:0,takenMax:0,takenHits:0,compTaken:0,compTakenMax:0,compTakenHits:0,takenSources:{},compTakenSources:{},killTs:0,killFast:0,killSlow:0,peakDps:0,lastTakenAmount:0,lastTakenAt:0,lastTakenSource:'',lastTakenSkill:'',lastTakenBoss:false,maxTakenSource:'',maxTakenSkill:'',lastCompTakenAmount:0,lastCompTakenAt:0,lastCompTakenSource:'',lastCompTakenSkill:'',lastCompTakenBoss:false,maxCompTakenSource:'',maxCompTakenSkill:''};}
 let dmgStats=defaultDmgStats();
 function takenSourceLabel(meta){const src=normalizeTrackedSkillLabel(meta?.source)||'敌人';const skill=normalizeTrackedSkillLabel(meta?.skill);return skill&&skill!==src?`${src}·${skill}`:src;}
-function trackTaken(amt,meta){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;dmgStats.taken=(dmgStats.taken||0)+amt;dmgStats.takenHits=(dmgStats.takenHits||0)+1;dmgStats.lastTakenAmount=amt;dmgStats.lastTakenAt=t;dmgStats.lastTakenSource=meta?.source||dmgStats.lastTakenSource||'敌人';dmgStats.lastTakenSkill=meta?.skill||'';dmgStats.lastTakenBoss=!!meta?.boss;const k=takenSourceLabel(meta);dmgStats.takenSources[k]=(dmgStats.takenSources[k]||0)+amt;if(amt>(dmgStats.takenMax||0)){dmgStats.takenMax=amt;dmgStats.maxTakenSource=dmgStats.lastTakenSource;dmgStats.maxTakenSkill=dmgStats.lastTakenSkill;}}
-function trackCompanionTaken(amt,meta){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;dmgStats.compTaken=(dmgStats.compTaken||0)+amt;dmgStats.compTakenHits=(dmgStats.compTakenHits||0)+1;dmgStats.lastCompTakenAmount=amt;dmgStats.lastCompTakenAt=t;dmgStats.lastCompTakenSource=meta?.source||dmgStats.lastCompTakenSource||'敌人';dmgStats.lastCompTakenSkill=meta?.skill||'';dmgStats.lastCompTakenBoss=!!meta?.boss;const k=takenSourceLabel(meta);dmgStats.compTakenSources[k]=(dmgStats.compTakenSources[k]||0)+amt;if(amt>(dmgStats.compTakenMax||0)){dmgStats.compTakenMax=amt;dmgStats.maxCompTakenSource=dmgStats.lastCompTakenSource;dmgStats.maxCompTakenSkill=dmgStats.lastCompTakenSkill;}}
+function trackTaken(amt,meta){
+  amt=Math.floor(amt||0);if(amt<=0)return;
+  const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;dmgStats.taken=(dmgStats.taken||0)+amt;dmgStats.takenHits=(dmgStats.takenHits||0)+1;dmgStats.lastTakenAmount=amt;dmgStats.lastTakenAt=t;dmgStats.lastTakenSource=meta?.source||dmgStats.lastTakenSource||'敌人';dmgStats.lastTakenSkill=meta?.skill||'';dmgStats.lastTakenBoss=!!meta?.boss;const k=takenSourceLabel(meta);dmgStats.takenSources[k]=(dmgStats.takenSources[k]||0)+amt;if(amt>(dmgStats.takenMax||0)){dmgStats.takenMax=amt;dmgStats.maxTakenSource=dmgStats.lastTakenSource;dmgStats.maxTakenSkill=dmgStats.lastTakenSkill;}
+  const maxHp=Math.max(1,state?.hero?.hpMax||1);
+  if(amt>=maxHp*(meta?.boss?0.10:0.16)) combatCueToast(meta?.boss?'首领重击':'受到重创', fmt(amt), 'danger');
+}
+function trackCompanionTaken(amt,meta){
+  amt=Math.floor(amt||0);if(amt<=0)return;
+  const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;dmgStats.compTaken=(dmgStats.compTaken||0)+amt;dmgStats.compTakenHits=(dmgStats.compTakenHits||0)+1;dmgStats.lastCompTakenAmount=amt;dmgStats.lastCompTakenAt=t;dmgStats.lastCompTakenSource=meta?.source||dmgStats.lastCompTakenSource||'敌人';dmgStats.lastCompTakenSkill=meta?.skill||'';dmgStats.lastCompTakenBoss=!!meta?.boss;const k=takenSourceLabel(meta);dmgStats.compTakenSources[k]=(dmgStats.compTakenSources[k]||0)+amt;if(amt>(dmgStats.compTakenMax||0)){dmgStats.compTakenMax=amt;dmgStats.maxCompTakenSource=dmgStats.lastCompTakenSource;dmgStats.maxCompTakenSkill=dmgStats.lastCompTakenSkill;}
+  const st=typeof computeCompanionStats==='function'?computeCompanionStats():null;
+  const maxHp=Math.max(1,st?.hpMax||1);
+  if(amt>=maxHp*(meta?.boss?0.10:0.16)) combatCueToast(meta?.boss?'随从承压':'随从受创', fmt(amt), 'danger');
+}
 /* ---- 战斗手感 polish:屏震 / 连杀提示 ---- */
 let _lastShakeTs=0, _lastStageFlashTs=0, _lastCombatBannerTs=0, killStreak=0;
+const _combatCueCooldown = {};
 function stageShakeFx(){
   if(typeof document==='undefined'||document.hidden)return;
   const now=Date.now();if(now-_lastShakeTs<500)return;_lastShakeTs=now;
@@ -11070,6 +11086,27 @@ function combatEventBanner(title, detail, kind){
   st.appendChild(el);
   setTimeout(()=>el.remove(), important ? 1250 : 900);
 }
+function combatCueToast(title, detail, kind){
+  if(typeof document==='undefined'||document.hidden)return;
+  const now=Date.now();
+  const key=kind||'info';
+  const gap=key==='danger'?1100:key==='crit'?1000:1400;
+  if((_combatCueCooldown[key]||0)>now)return;
+  _combatCueCooldown[key]=now+gap;
+  const st=document.getElementById('stage');if(!st)return;
+  const el=document.createElement('div');
+  el.className='combat-cue-toast '+key;
+  const b=document.createElement('b');
+  b.textContent=String(title||'战斗提示');
+  el.appendChild(b);
+  if(detail){
+    const span=document.createElement('span');
+    span.textContent=String(detail);
+    el.appendChild(span);
+  }
+  st.appendChild(el);
+  setTimeout(()=>el.remove(),950);
+}
 function killStreakToast(n){
   if(typeof document==='undefined'||document.hidden)return;
   const st=document.getElementById('stage');if(!st)return;
@@ -11077,7 +11114,7 @@ function killStreakToast(n){
   st.appendChild(el);setTimeout(()=>el.remove(),1100);
   combatEventBanner('连杀 '+n, '战斗节奏提升', 'kill');
 }
-function trackDmg(src,amt,isCrit,skillLabel){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;dmgStats[src]=(dmgStats[src]||0)+amt;const maxKey=src==='hero'?'heroMax':'compMax';if(amt>dmgStats[maxKey])dmgStats[maxKey]=amt;const hitKey=src==='hero'?'heroHits':'compHits';dmgStats[hitKey]=(dmgStats[hitKey]||0)+1;if(isCrit){const critKey=src==='hero'?'heroCrits':'compCrits';dmgStats[critKey]=(dmgStats[critKey]||0)+1;if(src==='hero'){stageShakeFx();stageFlashFx('crit');}}const cleanLabel=normalizeTrackedSkillLabel(skillLabel);if(cleanLabel){const skKey=src==='hero'?'heroSkills':'compSkills';dmgStats[skKey][cleanLabel]=(dmgStats[skKey][cleanLabel]||0)+amt;}}
+function trackDmg(src,amt,isCrit,skillLabel){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;dmgStats[src]=(dmgStats[src]||0)+amt;const maxKey=src==='hero'?'heroMax':'compMax';const prevMax=dmgStats[maxKey]||0;if(amt>dmgStats[maxKey])dmgStats[maxKey]=amt;const hitKey=src==='hero'?'heroHits':'compHits';dmgStats[hitKey]=(dmgStats[hitKey]||0)+1;const cleanLabel=normalizeTrackedSkillLabel(skillLabel);if(isCrit){const critKey=src==='hero'?'heroCrits':'compCrits';dmgStats[critKey]=(dmgStats[critKey]||0)+1;if(src==='hero'){stageShakeFx();stageFlashFx('crit');}if(amt<=prevMax)combatCueToast(src==='hero'?'暴击':'随从暴击',(cleanLabel?cleanLabel+' · ':'')+fmt(amt),'crit');}if(amt>prevMax&&prevMax>0)combatCueToast(src==='hero'?'爆发一击':'随从爆发',(cleanLabel?cleanLabel+' · ':'')+fmt(amt),isCrit?'crit':'hit');if(cleanLabel){const skKey=src==='hero'?'heroSkills':'compSkills';dmgStats[skKey][cleanLabel]=(dmgStats[skKey][cleanLabel]||0)+amt;}}
 function trackHeal(src,amt,skillLabel){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;const totalKey=src==='hero'?'heroHeal':'compHeal';const maxKey=src==='hero'?'heroHealMax':'compHealMax';const skKey=src==='hero'?'heroHealSkills':'compHealSkills';dmgStats[totalKey]=(dmgStats[totalKey]||0)+amt;if(amt>(dmgStats[maxKey]||0))dmgStats[maxKey]=amt;const cleanLabel=normalizeTrackedSkillLabel(skillLabel);if(cleanLabel)dmgStats[skKey][cleanLabel]=(dmgStats[skKey][cleanLabel]||0)+amt;}
 function trackKill(){const now=Date.now();if(dmgStats.killTs){const dt=(now-dmgStats.killTs)/1000;if(dt>0&&dt<600){if(!dmgStats.killFast||dt<dmgStats.killFast)dmgStats.killFast=dt;if(dt>(dmgStats.killSlow||0))dmgStats.killSlow=dt;}}dmgStats.killTs=now;dmgStats.kills=(dmgStats.kills||0)+1;killStreak++;if(killStreak>=5&&killStreak%5===0)killStreakToast(killStreak);}
 function resetDmgStats(){dmgStats=defaultDmgStats();if(typeof markDirty==='function')markDirty('stage');}
