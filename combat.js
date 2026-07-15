@@ -413,6 +413,27 @@ function showMonsterDeathFx(mon){
   }
   setTimeout(() => el.remove(), boss ? 980 : elite ? 820 : 680);
 }
+function showManualFocusFx(mon){
+  if(!mon || typeof document === 'undefined' || document.hidden) return;
+  const layer = skillFxLayer();
+  const anchor = monsterFloatAnchor(mon);
+  const p = skillFxPoint(anchor);
+  if(!layer || !p) return;
+  const size = Math.round(Math.max(46, Math.min(116, Math.max(p.w, p.h) + (mon.isBoss ? 46 : 30))));
+  const el = document.createElement('div');
+  el.className = `manual-focus-fx${mon.isBoss ? ' boss' : ''}`;
+  el.style.left = (p.x - size / 2) + 'px';
+  el.style.top = (p.y - size / 2) + 'px';
+  el.style.width = size + 'px';
+  el.style.height = size + 'px';
+  const tag = document.createElement('b');
+  tag.textContent = '集火';
+  el.appendChild(tag);
+  layer.appendChild(el);
+  if(typeof pulseCombatEl === 'function') pulseCombatEl(anchor, mon.isBoss ? 'crit' : 'artifact', 320);
+  showMonsterFloat(mon, '🎯集火', '#facc15', { variant:'status', scale:1.06, important:true });
+  setTimeout(() => el.remove(), mon.isBoss ? 980 : 820);
+}
 function showBossPhaseFx(mon, label, opts){
   if(!mon || typeof document === 'undefined' || document.hidden) return;
   const layer = skillFxLayer();
@@ -9441,9 +9462,11 @@ function focusHighestThreat(){
 /* 手动指定攻击目标(点击敌人):把它的仇恨拉到最高,焦点立即切过去 */
 function setManualFocus(uid){
   const m=state.currentMonsters.find(x=>x._uid===uid&&x.hp>0);if(!m)return;
+  const prev=state.currentMonsters.find(x=>x&&x.hp>0) || null;
   let mx=0;for(const o of state.currentMonsters)if(o.hp>0)mx=Math.max(mx,o.threat||0);
   m.threat=mx+100;
   focusHighestThreat();
+  if(prev !== m) showManualFocusFx(m);
   return m;
 }
 /* 结算所有死亡敌人(AOE 可能一次放倒多只);世界模式整波清空后才刷新下一波 */

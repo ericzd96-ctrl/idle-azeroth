@@ -4179,6 +4179,40 @@ h1 {
   height: 22px;
   animation-duration: .92s;
 }
+.manual-focus-fx {
+  position: absolute;
+  pointer-events: none;
+  z-index: 9;
+  border-radius: 999px;
+  border: 1px solid rgba(250,204,21,.92);
+  background:
+    linear-gradient(90deg, transparent 45%, rgba(250,204,21,.92) 48% 52%, transparent 55%),
+    linear-gradient(0deg, transparent 45%, rgba(250,204,21,.92) 48% 52%, transparent 55%),
+    radial-gradient(circle, rgba(250,204,21,.20) 0 34%, rgba(113,63,18,0) 70%);
+  box-shadow: 0 0 22px rgba(250,204,21,.38), inset 0 0 16px rgba(250,204,21,.18);
+  mix-blend-mode: screen;
+  animation: manualFocusLock .82s ease-out forwards;
+}
+.manual-focus-fx.boss {
+  border-color: rgba(253,230,138,.98);
+  box-shadow: 0 0 28px rgba(250,204,21,.46), inset 0 0 18px rgba(250,204,21,.22);
+  animation-duration: .98s;
+}
+.manual-focus-fx b {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(250,204,21,.42);
+  background: rgba(15,23,42,.78);
+  color: #fef3c7;
+  font-size: 10px;
+  line-height: 1.15;
+  text-shadow: 0 1px 4px #000;
+  white-space: nowrap;
+}
 .boss-phase-fx {
   --boss-phase-color: var(--skill-fx-color, #fbbf24);
   --boss-phase-soft: var(--skill-fx-color-soft, rgba(251,191,36,.34));
@@ -4350,6 +4384,12 @@ h1 {
   0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--death-shard-angle)) translateY(-6px) scaleY(.35); }
   22% { opacity: 1; }
   100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--death-shard-angle)) translateY(calc(var(--death-shard-distance) * -1)) scaleY(.9); }
+}
+@keyframes manualFocusLock {
+  0% { opacity: 0; transform: scale(.62) rotate(-10deg); }
+  18% { opacity: 1; transform: scale(1.08) rotate(0deg); }
+  64% { opacity: .88; transform: scale(.98) rotate(0deg); }
+  100% { opacity: 0; transform: scale(1.22) rotate(8deg); }
 }
 @keyframes bossPhaseOpen {
   0% { opacity: 0; transform: scale(.45) rotate(-24deg); filter: brightness(1.4); }
