@@ -1965,9 +1965,11 @@ function updateDmgMeter() {
     if (detailSummary.textContent !== text) detailSummary.textContent = text;
   }
   if (totalEl) {
-    let text = '总伤 ' + fmt(total) + ' · ' + Math.floor(elapsed) + '秒';
-    if (healTotal > 0) text += ' · 总疗 ' + fmt(healTotal);
+    const kills = (typeof dmgStats !== 'undefined') ? (dmgStats.kills || 0) : 0;
+    const seconds = Math.floor(elapsed);
+    const text = `总${fmt(total)} · ${seconds}s · 击杀${kills}`;
     totalEl.textContent = text;
+    totalEl.title = `总伤害 ${fmt(total)}。总治疗 ${fmt(healTotal)}。统计时间 ${seconds} 秒。`;
   }
 }
 
