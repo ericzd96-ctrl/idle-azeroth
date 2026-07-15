@@ -5924,6 +5924,32 @@ button.legend:hover:not(:disabled) {
   width: 56px; flex-shrink: 0; text-align: right;
   font-size: 11px; font-weight: bold; font-variant-numeric: tabular-nums;
 }
+.dm-detail {
+  margin-top: 4px;
+  border-top: 1px dashed var(--border);
+  padding-top: 4px;
+}
+.dm-detail > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 22px;
+  padding: 2px 7px;
+  border: 1px solid rgba(148,163,184,.22);
+  border-radius: 6px;
+  background: rgba(15,23,42,.36);
+  color: #cbd5e1;
+  font-size: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.dm-detail > summary::-webkit-details-marker { display: none; }
+.dm-detail > summary::after {
+  content: '▾';
+  color: var(--muted);
+  font-size: 9px;
+}
+.dm-detail[open] > summary::after { content: '▴'; }
 .meter-breakdown-title {
   display: flex;
   align-items: center;
