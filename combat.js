@@ -916,6 +916,49 @@ function showBossCastFinalTelegraph(cast, mon, opts){
     }, duration + 120);
   }
 }
+function showBossCastRhythmFx(cast, mon, opts){
+  if(!cast || !mon || !bossCastIsDamage(cast) || typeof document === 'undefined' || document.hidden) return;
+  const layer = skillFxLayer();
+  if(!layer) return;
+  const now = opts?.now || Date.now();
+  const duration = Math.max(1, cast.duration || 0);
+  const pct = typeof opts?.pct === 'number' ? opts.pct : Math.min(100, Math.max(0, (now - (cast.startTime || now)) / duration * 100));
+  const remainMs = typeof opts?.remainMs === 'number' ? opts.remainMs : Math.max(0, duration - (now - (cast.startTime || now)));
+  const dangerous = cast._empowered || cast.threat === 'high' || cast.threat === 'extreme';
+  const finalBeat = remainMs <= (dangerous ? 950 : 700) || pct >= (dangerous ? 68 : 82);
+  if(pct < (dangerous ? 18 : 34) && !finalBeat) return;
+  const maxBeats = dangerous ? 5 : 3;
+  if((cast._rhythmFxCount || 0) >= maxBeats) return;
+  const interval = finalBeat ? (dangerous ? 260 : 420) : (dangerous ? 460 : 680);
+  if((cast._nextRhythmFxAt || 0) > now) return;
+  cast._nextRhythmFxAt = now + interval;
+  cast._rhythmFxCount = (cast._rhythmFxCount || 0) + 1;
+  const targets = bossTelegraphTargets(cast, mon, now).filter(x => x && x.el).slice(0, 4);
+  if(!targets.length) return;
+  const school = skillVisualSchool(null, cast, 'boss');
+  const label = finalBeat
+    ? (cast.interruptPolicy === 'none' ? '硬吃' : '快断')
+    : (cast.aoe ? '范围' : '点名');
+  const fxDuration = finalBeat ? (dangerous ? 520 : 460) : 420;
+  for(const t of targets){
+    const p = skillFxPoint(t.el);
+    if(!p) continue;
+    const size = Math.round(Math.max(34, Math.min(86, Math.max(p.w, p.h) + (finalBeat ? 26 : 16))));
+    const el = document.createElement('div');
+    el.className = `boss-cast-rhythm ${dangerous ? 'danger' : ''} ${finalBeat ? 'final' : ''} ${t.kind || 'target'} school-${school}`;
+    el.style.left = (p.x - size / 2) + 'px';
+    el.style.top = (p.y - size / 2) + 'px';
+    el.style.width = size + 'px';
+    el.style.height = size + 'px';
+    el.style.setProperty('--boss-rhythm-duration', fxDuration + 'ms');
+    const tag = document.createElement('span');
+    tag.textContent = label;
+    el.appendChild(tag);
+    layer.appendChild(el);
+    if(typeof pulseCombatEl === 'function') pulseCombatEl(t.el, finalBeat || dangerous ? 'danger' : 'bosscast', finalBeat ? 300 : 220);
+    setTimeout(() => el.remove(), fxDuration + 100);
+  }
+}
 
 /* ---------- 天赋特效运行时 ---------- */
 function talentAuraMeta(key){ return (typeof TALENT_AURA_LIBRARY === 'object' && TALENT_AURA_LIBRARY[key]) || null; }
@@ -11470,6 +11513,10 @@ function tickCast(now){
     bossCastFill.style.setProperty('--boss-cast-fill', bossCastFillStyle);
     bossCastFill.style.width=pct+'%';
     updateBossCastBarFx(bossCasting, pct, remainMs);
+    if(_isDmgCast){
+      const castMon = bossCastingMonster(bossCasting);
+      if(castMon) showBossCastRhythmFx(bossCasting, castMon, { now, remainMs, pct });
+    }
     if(_isDmgCast && !bossCasting._finalTelegraphShown){
       const urgent = bossCasting._empowered || bossCasting.threat === 'high' || bossCasting.threat === 'extreme';
       if(pct >= (urgent ? 56 : 76) || remainMs <= (urgent ? 1100 : 760)){

@@ -5141,6 +5141,45 @@ h1 {
   white-space: nowrap;
   text-shadow: 0 1px 3px #000;
 }
+.boss-cast-rhythm {
+  --boss-rhythm-duration: 420ms;
+  position: absolute;
+  pointer-events: none;
+  z-index: 7;
+  border-radius: 999px;
+  border: 1px solid var(--skill-fx-color, rgba(248,113,113,.86));
+  background:
+    radial-gradient(circle, rgba(255,255,255,.24) 0 12%, var(--skill-fx-color-soft, rgba(248,113,113,.24)) 18% 42%, rgba(0,0,0,0) 70%);
+  box-shadow: 0 0 16px var(--skill-fx-color-soft, rgba(248,113,113,.28)), inset 0 0 12px var(--skill-fx-color-soft, rgba(248,113,113,.18));
+  animation: bossCastRhythm var(--boss-rhythm-duration) ease-out forwards;
+}
+.boss-cast-rhythm.danger,
+.boss-cast-rhythm.final {
+  border-color: rgba(248,113,113,.96);
+  box-shadow: 0 0 22px rgba(248,113,113,.34), inset 0 0 14px var(--skill-fx-color-soft, rgba(248,113,113,.24));
+}
+.boss-cast-rhythm.final {
+  background:
+    linear-gradient(90deg, transparent 45%, rgba(254,202,202,.92) 48% 52%, transparent 55%),
+    linear-gradient(0deg, transparent 45%, rgba(254,202,202,.92) 48% 52%, transparent 55%),
+    radial-gradient(circle, rgba(248,113,113,.30) 0 35%, rgba(127,29,29,0) 72%);
+}
+.boss-cast-rhythm.aoe { border-style: dashed; }
+.boss-cast-rhythm span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 1px 4px;
+  border-radius: 999px;
+  background: rgba(15,23,42,.76);
+  color: #fecaca;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+  text-shadow: 0 1px 4px #000;
+}
 .boss-cast-lock-line,
 .boss-cast-lock-on {
   --boss-lock-duration: 700ms;
@@ -5223,6 +5262,11 @@ h1 {
   18% { opacity: 1; transform: scale(1.02) rotate(0deg); }
   72% { opacity: .82; transform: scale(1.08) rotate(4deg); }
   100% { opacity: 0; transform: scale(1.22) rotate(8deg); }
+}
+@keyframes bossCastRhythm {
+  0% { opacity: 0; transform: scale(.52); filter: brightness(1); }
+  28% { opacity: .96; transform: scale(1.02); filter: brightness(1.32); }
+  100% { opacity: 0; transform: scale(1.36); filter: brightness(1.08); }
 }
 @keyframes bossCastLockLine {
   0% { opacity: 0; clip-path: inset(0 100% 0 0); filter: brightness(1); }
