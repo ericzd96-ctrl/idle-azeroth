@@ -282,6 +282,51 @@ function skillFxClass(school, extra){
   const safe = String(school || 'physical').replace(/[^a-z0-9_-]/gi, '') || 'physical';
   return `${extra || ''} school-${safe}`.trim();
 }
+let _lastBasicAttackFxTs = 0;
+let _activeBasicAttackFx = 0;
+function showBasicAttackFx(sourceEl, targetEl, opts){
+  const layer = skillFxLayer();
+  const a = skillFxPoint(sourceEl);
+  const b = skillFxPoint(targetEl);
+  if(!layer || !a || !b) return;
+  const now = Date.now();
+  const important = !!(opts?.crit || opts?.dangerous);
+  const mobile = typeof isMobilePerfMode === 'function' && isMobilePerfMode();
+  if(!opts?.force && now - _lastBasicAttackFxTs < (important ? 45 : 95)) return;
+  if(mobile && _activeBasicAttackFx >= (important ? 7 : 4)) return;
+  _lastBasicAttackFxTs = now;
+  const actor = String(opts?.actor || 'hero').replace(/[^a-z0-9_-]/gi, '') || 'hero';
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const dist = Math.max(14, Math.sqrt(dx * dx + dy * dy));
+  const scale = Math.max(.72, Math.min(1.35, opts?.scale || 1));
+  const duration = Math.max(220, opts?.duration || (important ? 360 : 280));
+  const angle = Math.atan2(dy, dx);
+  const trail = document.createElement('div');
+  trail.className = `basic-attack-trail basic-attack-${actor}${opts?.crit ? ' crit' : ''}${opts?.dangerous ? ' dangerous' : ''}`;
+  trail.style.left = a.x + 'px';
+  trail.style.top = a.y + 'px';
+  trail.style.width = Math.min(dist, mobile ? 92 : 132) + 'px';
+  trail.style.transform = `rotate(${angle}rad) scaleY(${scale})`;
+  trail.style.setProperty('--basic-attack-duration', duration + 'ms');
+  layer.appendChild(trail);
+  const spark = document.createElement('div');
+  spark.className = `basic-attack-spark basic-attack-${actor}${opts?.crit ? ' crit' : ''}${opts?.dangerous ? ' dangerous' : ''}`;
+  const size = Math.round((important ? 28 : 22) * scale);
+  spark.style.left = (b.x - size / 2) + 'px';
+  spark.style.top = (b.y - size / 2) + 'px';
+  spark.style.width = size + 'px';
+  spark.style.height = size + 'px';
+  spark.style.setProperty('--basic-attack-duration', duration + 'ms');
+  spark.style.setProperty('--basic-attack-angle', (angle * 180 / Math.PI) + 'deg');
+  layer.appendChild(spark);
+  _activeBasicAttackFx++;
+  setTimeout(() => {
+    trail.remove();
+    spark.remove();
+    _activeBasicAttackFx = Math.max(0, _activeBasicAttackFx - 1);
+  }, duration + 90);
+}
 function showSkillCastFx(sourceEl, sk, opts){
   const layer = skillFxLayer();
   const p = skillFxPoint(sourceEl);
@@ -9678,6 +9723,7 @@ function tickBattle(now){
     if (!dodged) actualDmg = absorbMonsterBarrier(mon, actualDmg, d.crit ? '💥' : '⚔️').remaining;
     {const dr=monsterDamageReduction(mon, now);if(dr&&actualDmg>0)actualDmg=Math.max(1,Math.floor(actualDmg*(1-dr)));}   // 怪物减伤
     mon.hp-=actualDmg;trackDmg('hero',actualDmg,d.crit&&!dodged,'⚔️普攻');
+    if(!dodged && actualDmg > 0) showBasicAttackFx($('hero-emoji'), monsterFloatAnchor(mon), { actor:'hero', crit:d.crit, scale:d.crit ? 1.12 : 1 });
     if(!dodged && actualDmg > 0) companionCoordinateTrigger(mon, actualDmg, { now, crit:d.crit, skill:false });
     if(!dodged&&state.hero.extraAtk>0&&Math.random()*100<state.hero.extraAtk){const d2=calcDmg(ap,heroTargetDef(mon),state.hero.crit,state.hero.critd,false,mon.lvl,state.hero.lvl);let dd2=absorbMonsterBarrier(mon, d2.dmg, '🎯').remaining;const dr=monsterDamageReduction(mon, now);if(dr&&dd2>0)dd2=Math.max(1,Math.floor(dd2*(1-dr)));mon.hp-=dd2;trackDmg('hero',dd2,d2.crit);companionCoordinateTrigger(mon, dd2, { now, crit:d2.crit, skill:false });showMonsterFloat(mon,'🎯+'+dd2,'#fbbf24',{variant:d2.crit?'crit':'hit',scale:d2.crit?1.18:1.02});}
     showMonsterFloat(mon,dodged?'闪避':('-'+actualDmg),dodged?'#9ca3af':(d.crit?'#fbbf24':'#fff'),{variant:dodged?'avoid':(d.crit?'crit':'hit'),scale:d.crit?1.22:1});
@@ -9786,6 +9832,7 @@ function tickBattle(now){
       const cst=computeCompanionStats();
       const cd=calcDmg(matk,cst?cst.def:0,critRate,(m.critMult?m.critMult*100:150),false,state.hero.lvl,m.lvl);
       const tc=applyCompanionDamage(Math.max(1,cd.dmg),m,{label:t=>(kindFloat?kindFloat+' ':'')+'-'+t,color:'#ff9aa0',now});
+      if(tc > 0) showBasicAttackFx(monsterFloatAnchor(m), $('comp-mini'), { actor:'monster', crit:cd.crit, dangerous:m.isBoss || !!kindSkill, scale:m.isBoss ? 1.12 : 1 });
       if(typeof pulseCombatEl === 'function') pulseCombatEl($('comp-mini'), (m.isBoss || tc >= ((computeCompanionStats()?.hpMax || 1) * 0.12)) ? 'danger' : 'comp', m.isBoss ? 300 : 220);
       if(kindSkill)skillEffects(kindSkill,m,tc,now,{allowFallback:false,target:'companion'});
       continue;   // 这只怪打了随从,英雄本拍不挨打、不进怒气
@@ -9793,6 +9840,7 @@ function tickBattle(now){
     if(target.kind==='summon' && target.unit){
       const sd=calcDmg(matk,target.unit.def || 0,critRate,(m.critMult?m.critMult*100:150),false,state.hero.lvl,m.lvl);
       applyAllySummonDamage(target.unit,Math.max(1,sd.dmg),m,{label:t=>(kindFloat?kindFloat+' ':'')+'-'+t,color:'#ffb4c1',now});
+      if(typeof allySummonAnchor === 'function') showBasicAttackFx(monsterFloatAnchor(m), allySummonAnchor(target.unit), { actor:'monster', crit:sd.crit, dangerous:m.isBoss || !!kindSkill, scale:m.isBoss ? 1.1 : .96 });
       continue;
     }
     // —— 命中英雄(原逻辑) ——
@@ -9804,6 +9852,7 @@ function tickBattle(now){
     if(m.stunChance&&Math.random()<m.stunChance){state.heroStunUntil=now+1500;showFloat($('hero-emoji'),'💫晕眩','#fde047');log('💫 你被 '+m.name+' 击晕了!','bad');}
     taken=resolveMonsterDamageTaken(m,taken);
     taken=applyHeroDamage(taken,m,{label:t=>'-'+t,color:'#ff7a7a',now,skillName:kindSkill?.name || ''});
+    if(taken > 0) showBasicAttackFx(monsterFloatAnchor(m), $('hero-emoji'), { actor:'monster', crit:d.crit, dangerous:m.isBoss || !!kindSkill || taken >= state.hero.hpMax * 0.10, scale:m.isBoss ? 1.14 : 1 });
     if(kindSkill)skillEffects(kindSkill,m,taken,now,{allowFallback:false});
     processTalentLowHp(m,now);
     totalDmg+=taken;
@@ -12704,7 +12753,7 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
   companionCombatSpecialTick(now, st, tpl, mon);
   companionResonanceTrigger(now, st, tpl, mon);
   if(compSkillCd._owner!==comp.key)compSkillCd={_owner:comp.key};   // 换随从:重置技能冷却
-  const interval=1000/(st.spd||0.5);if((state._compDisarmUntil||0)<=now&&(now-lastCompAtk>interval||now-lastCompAtk>5000)){let cm=state.currentMonsters[0];if(cm&&cm.hp>0){const cd=calcDmg(st.atk,monArmor(cm),st.crit,st.critd,false,cm.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(cm, cd.dmg, st.emoji).remaining;cm.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,cd.crit,'普攻');showMonsterFloat(cm,st.emoji+'-'+dealt,'#a0d0ff',allySideFloatOpts({variant:cd.crit?'crit':'comp',scale:cd.crit?1.12:1}));}applyCompanionSignatureHit(companionSignature(tpl), st, cm, dealt, now);}lastCompAtk=now;
+  const interval=1000/(st.spd||0.5);if((state._compDisarmUntil||0)<=now&&(now-lastCompAtk>interval||now-lastCompAtk>5000)){let cm=state.currentMonsters[0];if(cm&&cm.hp>0){const cd=calcDmg(st.atk,monArmor(cm),st.crit,st.critd,false,cm.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(cm, cd.dmg, st.emoji).remaining;cm.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,cd.crit,'普攻');showMonsterFloat(cm,st.emoji+'-'+dealt,'#a0d0ff',allySideFloatOpts({variant:cd.crit?'crit':'comp',scale:cd.crit?1.12:1}));showBasicAttackFx($('comp-mini'),monsterFloatAnchor(cm),{actor:'companion',crit:cd.crit,scale:cd.crit?1.08:.9});}applyCompanionSignatureHit(companionSignature(tpl), st, cm, dealt, now);}lastCompAtk=now;
     // 技能:每个技能按自己的 cd 独立冷却,就绪即放(GCD 0.9秒,避免一次性全放;优先治疗>buff>伤害)
     if((state._compSilenceUntil||0)<=now&&now-lastCompSkill>COMPANION_SKILL_GCD_MS){
       const ready=[];for(let i=0;i<st.skills.length;i++){if((compSkillCd[i]||0)<=now)ready.push(i);}

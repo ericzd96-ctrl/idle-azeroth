@@ -4445,6 +4445,54 @@ h1 {
   box-shadow: 0 0 16px var(--skill-fx-color-soft);
   animation: skillBurst var(--skill-fx-duration) ease-out forwards;
 }
+.basic-attack-trail,
+.basic-attack-spark {
+  --basic-attack-color: rgba(226,232,240,.88);
+  --basic-attack-soft: rgba(148,163,184,.24);
+  --basic-attack-duration: 280ms;
+  position: absolute;
+  pointer-events: none;
+  z-index: 4;
+}
+.basic-attack-trail {
+  height: 2px;
+  border-radius: 999px;
+  transform-origin: left center;
+  background: linear-gradient(90deg, rgba(255,255,255,0), var(--basic-attack-color), rgba(255,255,255,.72), rgba(255,255,255,0));
+  box-shadow: 0 0 8px var(--basic-attack-soft);
+  animation: basicAttackTrail var(--basic-attack-duration) ease-out forwards;
+}
+.basic-attack-spark {
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, transparent 42%, var(--basic-attack-color) 47% 53%, transparent 58%),
+    radial-gradient(circle, var(--basic-attack-soft) 0 34%, rgba(0,0,0,0) 70%);
+  box-shadow: 0 0 10px var(--basic-attack-soft);
+  transform: rotate(var(--basic-attack-angle, 0deg));
+  animation: basicAttackSpark var(--basic-attack-duration) ease-out forwards;
+}
+.basic-attack-hero {
+  --basic-attack-color: rgba(248,250,252,.92);
+  --basic-attack-soft: rgba(203,213,225,.28);
+}
+.basic-attack-companion {
+  --basic-attack-color: rgba(147,197,253,.94);
+  --basic-attack-soft: rgba(96,165,250,.28);
+}
+.basic-attack-monster {
+  --basic-attack-color: rgba(248,113,113,.92);
+  --basic-attack-soft: rgba(239,68,68,.30);
+}
+.basic-attack-trail.crit,
+.basic-attack-spark.crit {
+  --basic-attack-color: rgba(253,230,138,.98);
+  --basic-attack-soft: rgba(251,191,36,.38);
+}
+.basic-attack-trail.dangerous,
+.basic-attack-spark.dangerous {
+  --basic-attack-color: rgba(254,202,202,.98);
+  --basic-attack-soft: rgba(248,113,113,.42);
+}
 .boss-target-telegraph {
   --boss-telegraph-duration: 1200ms;
   position: absolute;
@@ -4557,6 +4605,16 @@ h1 {
   0% { transform: scale(.35); opacity: 0; }
   24% { transform: scale(1.05); opacity: .95; }
   100% { transform: scale(1.58); opacity: 0; }
+}
+@keyframes basicAttackTrail {
+  0% { opacity: 0; clip-path: inset(0 100% 0 0); }
+  18% { opacity: .92; clip-path: inset(0 18% 0 0); }
+  100% { opacity: 0; clip-path: inset(0 0 0 78%); }
+}
+@keyframes basicAttackSpark {
+  0% { opacity: 0; transform: rotate(var(--basic-attack-angle, 0deg)) scale(.45); }
+  25% { opacity: .95; transform: rotate(var(--basic-attack-angle, 0deg)) scale(1.08); }
+  100% { opacity: 0; transform: rotate(var(--basic-attack-angle, 0deg)) scale(1.45); }
 }
 @keyframes bossTargetTelegraph {
   0% { opacity: 0; transform: scale(.62) rotate(0deg); }
