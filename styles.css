@@ -3885,6 +3885,61 @@ h1 {
   color: #f5d0fe !important;
   text-shadow: 0 1px 4px rgba(0,0,0,.95), 0 0 14px rgba(216,180,254,.42);
 }
+.skill-cast-ring,
+.skill-fx-trail,
+.skill-fx-burst {
+  --skill-fx-color: #e5e7eb;
+  --skill-fx-color-soft: rgba(229,231,235,.28);
+  --skill-fx-duration: 520ms;
+  position: absolute;
+  pointer-events: none;
+  z-index: 3;
+}
+.school-fire { --skill-fx-color:#fb923c; --skill-fx-color-soft:rgba(248,113,113,.34); }
+.school-frost { --skill-fx-color:#93c5fd; --skill-fx-color-soft:rgba(125,211,252,.34); }
+.school-arcane { --skill-fx-color:#c084fc; --skill-fx-color-soft:rgba(192,132,252,.34); }
+.school-nature { --skill-fx-color:#86efac; --skill-fx-color-soft:rgba(52,211,153,.32); }
+.school-shadow { --skill-fx-color:#a78bfa; --skill-fx-color-soft:rgba(88,28,135,.42); }
+.school-holy { --skill-fx-color:#fde68a; --skill-fx-color-soft:rgba(250,204,21,.34); }
+.school-physical { --skill-fx-color:#e5e7eb; --skill-fx-color-soft:rgba(203,213,225,.30); }
+.school-heal { --skill-fx-color:#6ee7b7; --skill-fx-color-soft:rgba(16,185,129,.32); }
+.school-shield { --skill-fx-color:#93c5fd; --skill-fx-color-soft:rgba(59,130,246,.34); }
+.skill-cast-ring {
+  border: 1px solid var(--skill-fx-color);
+  border-radius: 999px;
+  box-shadow: 0 0 12px var(--skill-fx-color-soft), inset 0 0 10px var(--skill-fx-color-soft);
+  animation: skillCastRing var(--skill-fx-duration) ease-out forwards;
+}
+.skill-fx-trail {
+  height: 3px;
+  border-radius: 999px;
+  transform-origin: left center;
+  background: linear-gradient(90deg, rgba(255,255,255,0), var(--skill-fx-color), rgba(255,255,255,0));
+  box-shadow: 0 0 10px var(--skill-fx-color-soft);
+  animation: skillTrail var(--skill-fx-duration) ease-out forwards;
+}
+.skill-fx-burst {
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(255,255,255,.86) 0 10%, var(--skill-fx-color) 18%, var(--skill-fx-color-soft) 44%, rgba(0,0,0,0) 70%);
+  box-shadow: 0 0 16px var(--skill-fx-color-soft);
+  animation: skillBurst var(--skill-fx-duration) ease-out forwards;
+}
+@keyframes skillCastRing {
+  0% { transform: scale(.52); opacity: 0; }
+  22% { opacity: .95; }
+  100% { transform: scale(1.45); opacity: 0; }
+}
+@keyframes skillTrail {
+  0% { opacity: 0; clip-path: inset(0 100% 0 0); }
+  18% { opacity: .95; clip-path: inset(0 28% 0 0); }
+  100% { opacity: 0; clip-path: inset(0 0 0 72%); }
+}
+@keyframes skillBurst {
+  0% { transform: scale(.35); opacity: 0; }
+  24% { transform: scale(1.05); opacity: .95; }
+  100% { transform: scale(1.58); opacity: 0; }
+}
 @keyframes floatUp {
   0% { transform: translate(0, 0) scale(var(--float-scale)); opacity: 0; }
   12% { transform: translate(0, -6px) scale(calc(var(--float-scale) * 1.04)); opacity: 1; }
