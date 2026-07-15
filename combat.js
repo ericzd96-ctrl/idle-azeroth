@@ -9555,7 +9555,7 @@ function tickBattle(now){
     const _pickSk=_queuedSk||_forcedPhaseSk||_phasePool[bossSkillIdx%Math.max(1,_phasePool.length)];
     const rawCd=(_pickSk&&_pickSk.cd)||10;
     const skillCd=Math.max(2,Math.floor(rawCd*0.42));   // 读条技更频繁:CD压缩58%,但最低2秒间隔
-    if(_allBossSkills.length&&now-lastBossSkill>skillCd*1000){const sk=_pickSk;let castTime=sk.castTime!==undefined?sk.castTime:2;const instantChance=typeof mon.instantCastChance==='number'?mon.instantCastChance:(mon.instantCast?0.35:0);let instant=instantChance>0&&Math.random()<instantChance;if(instant&&isEmpoweredBossCast(sk))instant=false;/* 大伤害/灭团技(蓄力大招)绝不瞬发,必须读条可打断 */if(instant)castTime=0;bossCasting={casterUid:mon._uid,bossName:mon.bossName||mon.name,name:sk.name,icon:sk.icon,type:sk.type,heal:sk.heal,healPct:sk.healPct,mul:sk.mul,dotSkill:sk.dotSkill,dotSecs:sk.dotSecs,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,spdBuffSecs:sk.spdBuffSecs,spdBuffPct:sk.spdBuffPct,atkBuffSecs:sk.atkBuffSecs,atkBuffPct:sk.atkBuffPct,defBuffSecs:sk.defBuffSecs,defBuffPct:sk.defBuffPct,drBuffSecs:sk.drBuffSecs,drBuffPct:sk.drBuffPct,shieldPct:sk.shieldPct,critBuffSecs:sk.critBuffSecs,critBuffPct:sk.critBuffPct,leechBuffSecs:sk.leechBuffSecs,leechBuffPct:sk.leechBuffPct,summonCount:sk.summonCount,summonTheme:sk.summonTheme,aoe:sk.aoe,silence:sk.silence,disarm:sk.disarm,fear:sk.fear,freeze:sk.freeze,cripple:sk.cripple,decay:sk.decay,wither:sk.wither,manaDrain:sk.manaDrain,bomb:sk.bomb,plague:sk.plague,bleed:sk.bleed,brittle:sk.brittle,soulDrain:sk.soulDrain,soulLink:sk.soulLink,revenge:sk.revenge,vulnerable:sk.vulnerable,frenzy:sk.frenzy,decay2:sk.decay2,mirror:sk.mirror,threat:sk.threat,interruptPolicy:sk.interruptPolicy,_empowered:isEmpoweredBossCast(sk),startTime:now,duration:castTime*1000};const _bt=bossCastTargetInfo(sk,now);bossCasting._targetDesc=_bt.desc;bossCasting._target=_bt.target;const _emp=!instant&&isEmpoweredBossCast(sk)&&sk.interruptPolicy!=='none';const _aoeLog=(sk.type!=='heal'&&sk.type!=='buff'&&!sk.summonCount&&typeof sk.mul==='number'&&sk.mul>0)?(sk.aoe?' [🌀群体]':' [🎯单体]'):'';log('💀 '+(mon.bossName||mon.name)+(instant?' 瞬发 ':' 开始施放 ')+sk.name+_aoeLog+'!'+(instant?'(无法打断)':(_emp?' ⚡蓄力大招—打断可造成破绽!':'')),'bad');lastBossSkill=now;bossSkillIdx++;}
+    if(_allBossSkills.length&&now-lastBossSkill>skillCd*1000){const sk=_pickSk;let castTime=sk.castTime!==undefined?sk.castTime:2;const instantChance=typeof mon.instantCastChance==='number'?mon.instantCastChance:(mon.instantCast?0.35:0);let instant=instantChance>0&&Math.random()<instantChance;if(instant&&isEmpoweredBossCast(sk))instant=false;/* 大伤害/灭团技(蓄力大招)绝不瞬发,必须读条可打断 */if(instant)castTime=0;bossCasting={casterUid:mon._uid,bossName:mon.bossName||mon.name,name:sk.name,icon:sk.icon,type:sk.type,heal:sk.heal,healPct:sk.healPct,mul:sk.mul,dotSkill:sk.dotSkill,dotSecs:sk.dotSecs,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,spdBuffSecs:sk.spdBuffSecs,spdBuffPct:sk.spdBuffPct,atkBuffSecs:sk.atkBuffSecs,atkBuffPct:sk.atkBuffPct,defBuffSecs:sk.defBuffSecs,defBuffPct:sk.defBuffPct,drBuffSecs:sk.drBuffSecs,drBuffPct:sk.drBuffPct,shieldPct:sk.shieldPct,critBuffSecs:sk.critBuffSecs,critBuffPct:sk.critBuffPct,leechBuffSecs:sk.leechBuffSecs,leechBuffPct:sk.leechBuffPct,summonCount:sk.summonCount,summonTheme:sk.summonTheme,aoe:sk.aoe,silence:sk.silence,disarm:sk.disarm,fear:sk.fear,freeze:sk.freeze,cripple:sk.cripple,decay:sk.decay,wither:sk.wither,manaDrain:sk.manaDrain,bomb:sk.bomb,plague:sk.plague,bleed:sk.bleed,brittle:sk.brittle,soulDrain:sk.soulDrain,soulLink:sk.soulLink,revenge:sk.revenge,vulnerable:sk.vulnerable,frenzy:sk.frenzy,decay2:sk.decay2,mirror:sk.mirror,threat:sk.threat,interruptPolicy:sk.interruptPolicy,_empowered:isEmpoweredBossCast(sk),startTime:now,duration:castTime*1000};const _bt=bossCastTargetInfo(sk,now);bossCasting._targetDesc=_bt.desc;bossCasting._target=_bt.target;const _emp=!instant&&isEmpoweredBossCast(sk)&&sk.interruptPolicy!=='none';const _aoeLog=(sk.type!=='heal'&&sk.type!=='buff'&&!sk.summonCount&&typeof sk.mul==='number'&&sk.mul>0)?(sk.aoe?' [🌀群体]':' [🎯单体]'):'';if(_emp || sk.threat==='high' || sk.threat==='extreme')combatEventBanner(_emp?'必须打断':'高危读条',(sk.icon||'')+sk.name,'danger');log('💀 '+(mon.bossName||mon.name)+(instant?' 瞬发 ':' 开始施放 ')+sk.name+_aoeLog+'!'+(instant?'(无法打断)':(_emp?' ⚡蓄力大招—打断可造成破绽!':'')),'bad');lastBossSkill=now;bossSkillIdx++;}
     // BOSS技巧(独立冷却,避免开场和支援技能一起连发)
     const tricks=bossTrickList(bossData).filter(trick => bossTrickAvailable(mon, trick, _hpFrac, now));
     const supportRecently = (mon._lastSupportSkill || 0) > 0 && now - mon._lastSupportSkill < 4500;
@@ -9612,6 +9612,8 @@ function onMonsterDeath(mon){
     hideBossCastBar();
     bossCasting = null;
   }
+  const deathName = mon.bossName || mon.name || '敌人';
+  combatEventBanner(mon.isBoss ? '首领击败' : '击杀', deathName, mon.isBoss ? 'boss' : 'kill');
   // 大秘境词缀:崩裂/血池
   if (mon._affixes) {
     for (const af of mon._affixes) {
@@ -10996,6 +10998,7 @@ function doInterrupt(){
     return false;
   }
   log('🦶 打断了 '+bossName+' 的 '+bossCasting.icon+' '+bossCasting.name+'!','good');
+  combatEventBanner('打断成功', (bossCasting.icon || '') + (bossCasting.name || '施法'), 'interrupt');
   if(bossCasting.interruptPolicy === 'soft' && mon && mon.hp > 0){
     const residual = buildInterruptedBossResidual(bossCasting);
     if(residual){
@@ -11013,6 +11016,7 @@ function doInterrupt(){
     mon.stunUntil=Math.max(mon.stunUntil||0, now+2200);
     mon.sunderUntil=Math.max(mon.sunderUntil||0, now+6000);
     log('💥 完美打断!'+bossName+' 露出破绽:硬直 + 破甲,抓紧爆发!','epic');
+    combatEventBanner('完美打断', '破绽窗口开启', 'interrupt');
     if(typeof showMonsterFloat==='function') showMonsterFloat(mon,'💥破绽!','#fde047',{variant:'boss',scale:1.14});
   }
   if(mon && mon.hp > 0 && mon.isBoss) noteDungeonBossChallenge(mon, 'interrupt');
@@ -11028,7 +11032,7 @@ function takenSourceLabel(meta){const src=normalizeTrackedSkillLabel(meta?.sourc
 function trackTaken(amt,meta){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;dmgStats.taken=(dmgStats.taken||0)+amt;dmgStats.takenHits=(dmgStats.takenHits||0)+1;dmgStats.lastTakenAmount=amt;dmgStats.lastTakenAt=t;dmgStats.lastTakenSource=meta?.source||dmgStats.lastTakenSource||'敌人';dmgStats.lastTakenSkill=meta?.skill||'';dmgStats.lastTakenBoss=!!meta?.boss;const k=takenSourceLabel(meta);dmgStats.takenSources[k]=(dmgStats.takenSources[k]||0)+amt;if(amt>(dmgStats.takenMax||0)){dmgStats.takenMax=amt;dmgStats.maxTakenSource=dmgStats.lastTakenSource;dmgStats.maxTakenSkill=dmgStats.lastTakenSkill;}}
 function trackCompanionTaken(amt,meta){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;dmgStats.compTaken=(dmgStats.compTaken||0)+amt;dmgStats.compTakenHits=(dmgStats.compTakenHits||0)+1;dmgStats.lastCompTakenAmount=amt;dmgStats.lastCompTakenAt=t;dmgStats.lastCompTakenSource=meta?.source||dmgStats.lastCompTakenSource||'敌人';dmgStats.lastCompTakenSkill=meta?.skill||'';dmgStats.lastCompTakenBoss=!!meta?.boss;const k=takenSourceLabel(meta);dmgStats.compTakenSources[k]=(dmgStats.compTakenSources[k]||0)+amt;if(amt>(dmgStats.compTakenMax||0)){dmgStats.compTakenMax=amt;dmgStats.maxCompTakenSource=dmgStats.lastCompTakenSource;dmgStats.maxCompTakenSkill=dmgStats.lastCompTakenSkill;}}
 /* ---- 战斗手感 polish:屏震 / 连杀提示 ---- */
-let _lastShakeTs=0, killStreak=0;
+let _lastShakeTs=0, _lastCombatBannerTs=0, killStreak=0;
 function stageShakeFx(){
   if(typeof document==='undefined'||document.hidden)return;
   const now=Date.now();if(now-_lastShakeTs<500)return;_lastShakeTs=now;
@@ -11036,11 +11040,32 @@ function stageShakeFx(){
   st.classList.remove('shake-fx');void st.offsetWidth;st.classList.add('shake-fx');
   setTimeout(()=>{const s=document.getElementById('stage');if(s)s.classList.remove('shake-fx');},240);
 }
+function combatEventBanner(title, detail, kind){
+  if(typeof document==='undefined'||document.hidden)return;
+  const now=Date.now();
+  const important = kind === 'boss' || kind === 'danger' || kind === 'interrupt';
+  if(!important && now - _lastCombatBannerTs < 700) return;
+  _lastCombatBannerTs = now;
+  const st=document.getElementById('stage');if(!st)return;
+  const el=document.createElement('div');
+  el.className='combat-event-banner '+(kind||'kill');
+  const titleEl=document.createElement('b');
+  titleEl.textContent=String(title||'战斗事件');
+  el.appendChild(titleEl);
+  if(detail){
+    const detailEl=document.createElement('span');
+    detailEl.textContent=String(detail);
+    el.appendChild(detailEl);
+  }
+  st.appendChild(el);
+  setTimeout(()=>el.remove(), important ? 1250 : 900);
+}
 function killStreakToast(n){
   if(typeof document==='undefined'||document.hidden)return;
   const st=document.getElementById('stage');if(!st)return;
   const el=document.createElement('div');el.className='killstreak-toast';el.textContent='🔥 连杀 '+n+'!';
   st.appendChild(el);setTimeout(()=>el.remove(),1100);
+  combatEventBanner('连杀 '+n, '战斗节奏提升', 'kill');
 }
 function trackDmg(src,amt,isCrit,skillLabel){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;dmgStats[src]=(dmgStats[src]||0)+amt;const maxKey=src==='hero'?'heroMax':'compMax';if(amt>dmgStats[maxKey])dmgStats[maxKey]=amt;const hitKey=src==='hero'?'heroHits':'compHits';dmgStats[hitKey]=(dmgStats[hitKey]||0)+1;if(isCrit){const critKey=src==='hero'?'heroCrits':'compCrits';dmgStats[critKey]=(dmgStats[critKey]||0)+1;if(src==='hero')stageShakeFx();}const cleanLabel=normalizeTrackedSkillLabel(skillLabel);if(cleanLabel){const skKey=src==='hero'?'heroSkills':'compSkills';dmgStats[skKey][cleanLabel]=(dmgStats[skKey][cleanLabel]||0)+amt;}}
 function trackHeal(src,amt,skillLabel){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;const totalKey=src==='hero'?'heroHeal':'compHeal';const maxKey=src==='hero'?'heroHealMax':'compHealMax';const skKey=src==='hero'?'heroHealSkills':'compHealSkills';dmgStats[totalKey]=(dmgStats[totalKey]||0)+amt;if(amt>(dmgStats[maxKey]||0))dmgStats[maxKey]=amt;const cleanLabel=normalizeTrackedSkillLabel(skillLabel);if(cleanLabel)dmgStats[skKey][cleanLabel]=(dmgStats[skKey][cleanLabel]||0)+amt;}

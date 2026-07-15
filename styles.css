@@ -4481,6 +4481,63 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   70%{opacity:1;transform:translateX(-50%) scale(1) translateY(0)}
   100%{opacity:0;transform:translateX(-50%) scale(1) translateY(-22px)}
 }
+.combat-event-banner {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  transform: translate(-50%, -50%);
+  z-index: 19;
+  min-width: 150px;
+  max-width: calc(100% - 42px);
+  padding: 7px 15px;
+  border-radius: 999px;
+  border: 1px solid rgba(251,191,36,.52);
+  background: linear-gradient(180deg, rgba(30,41,59,.82), rgba(15,23,42,.72));
+  color: #fde68a;
+  text-align: center;
+  box-shadow: 0 8px 28px rgba(0,0,0,.34), inset 0 0 0 1px rgba(255,255,255,.06);
+  pointer-events: none;
+  animation: combatEventBanner .95s ease-out forwards;
+}
+.combat-event-banner b {
+  display: block;
+  font-size: 16px;
+  line-height: 1.05;
+  text-shadow: 0 1px 5px rgba(0,0,0,.9);
+}
+.combat-event-banner span {
+  display: block;
+  margin-top: 2px;
+  font-size: 10px;
+  color: #cbd5e1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.combat-event-banner.boss {
+  color: #facc15;
+  border-color: rgba(250,204,21,.72);
+  background: linear-gradient(180deg, rgba(113,63,18,.78), rgba(15,23,42,.76));
+  animation-duration: 1.2s;
+}
+.combat-event-banner.danger {
+  color: #fecaca;
+  border-color: rgba(248,113,113,.76);
+  background: linear-gradient(180deg, rgba(127,29,29,.86), rgba(15,23,42,.76));
+  animation-duration: 1.2s;
+}
+.combat-event-banner.interrupt {
+  color: #bfdbfe;
+  border-color: rgba(147,197,253,.72);
+  background: linear-gradient(180deg, rgba(30,64,175,.70), rgba(15,23,42,.74));
+  animation-duration: 1.15s;
+}
+@keyframes combatEventBanner {
+  0% { opacity: 0; transform: translate(-50%, -34%) scale(.84); }
+  18% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+  72% { opacity: 1; transform: translate(-50%, -58%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -76%) scale(.96); }
+}
 .tab.has-badge::after {
   content: ''; position: absolute; top: 3px; right: 3px;
   width: 8px; height: 8px; border-radius: 50%;
