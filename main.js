@@ -836,6 +836,7 @@ function setupMainButtons() {
     const btn = e.target.closest('button[data-action="dmgreset"]');
     if (!btn) return;
     if (typeof resetDmgStats === 'function') resetDmgStats();
+    log('📊 伤害统计已重置', 'info');
   });
 
   const heroCollapseBtn = $('btn-hero-collapse');
