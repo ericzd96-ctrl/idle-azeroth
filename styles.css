@@ -3907,10 +3907,82 @@ h1 {
 .impact-slam.school-physical { --impact-slam-color:#e5e7eb; --impact-slam-soft:rgba(203,213,225,.32); }
 .impact-slam.school-heal { --impact-slam-color:#6ee7b7; --impact-slam-soft:rgba(16,185,129,.36); }
 .impact-slam.school-shield { --impact-slam-color:#93c5fd; --impact-slam-soft:rgba(59,130,246,.38); }
+.monster-death-fx {
+  --death-fx-core: rgba(248,250,252,.94);
+  --death-fx-edge: rgba(203,213,225,.34);
+  --death-fx-soft: rgba(148,163,184,.18);
+  position: absolute;
+  pointer-events: none;
+  z-index: 8;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(255,255,255,.96) 0 8%, var(--death-fx-core) 14%, var(--death-fx-edge) 36%, rgba(0,0,0,0) 70%);
+  box-shadow: 0 0 18px var(--death-fx-soft), inset 0 0 14px var(--death-fx-soft);
+  mix-blend-mode: screen;
+  animation: monsterDeathBurst .68s ease-out forwards;
+}
+.monster-death-fx.elite {
+  --death-fx-core: rgba(216,180,254,.96);
+  --death-fx-edge: rgba(250,204,21,.34);
+  --death-fx-soft: rgba(168,85,247,.24);
+  animation-duration: .82s;
+}
+.monster-death-fx.boss {
+  --death-fx-core: rgba(254,240,138,.98);
+  --death-fx-edge: rgba(248,113,113,.42);
+  --death-fx-soft: rgba(250,204,21,.32);
+  animation-duration: .98s;
+}
+.monster-death-fx::before,
+.monster-death-fx::after {
+  content: '';
+  position: absolute;
+  inset: 12%;
+  border-radius: inherit;
+  border: 1px solid var(--death-fx-core);
+  opacity: .9;
+  animation: monsterDeathRing .68s ease-out forwards;
+}
+.monster-death-fx::after {
+  inset: 25%;
+  border-color: var(--death-fx-edge);
+  animation-delay: .06s;
+}
+.monster-death-fx span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 3px;
+  height: 15px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255,255,255,.96), var(--death-fx-core), rgba(255,255,255,0));
+  box-shadow: 0 0 8px var(--death-fx-soft);
+  transform-origin: center bottom;
+  animation: monsterDeathShard .72s ease-out forwards;
+}
+.monster-death-fx.boss span {
+  width: 4px;
+  height: 22px;
+  animation-duration: .92s;
+}
 @keyframes impactHalo {
   0% { opacity: 0; transform: scale(.58); }
   32% { opacity: 1; transform: scale(1); }
   100% { opacity: 0; transform: scale(1.46); }
+}
+@keyframes monsterDeathBurst {
+  0% { opacity: 0; transform: scale(.42) rotate(0deg); filter: brightness(1.35); }
+  25% { opacity: 1; transform: scale(1.08) rotate(10deg); filter: brightness(1.65); }
+  100% { opacity: 0; transform: scale(1.52) rotate(28deg); filter: brightness(.92); }
+}
+@keyframes monsterDeathRing {
+  0% { opacity: .95; transform: scale(.48); }
+  100% { opacity: 0; transform: scale(1.72); }
+}
+@keyframes monsterDeathShard {
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--death-shard-angle)) translateY(-6px) scaleY(.35); }
+  22% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--death-shard-angle)) translateY(calc(var(--death-shard-distance) * -1)) scaleY(.9); }
 }
 @keyframes impactSlam {
   0% { opacity: 0; transform: translateX(-10px) rotate(var(--impact-slam-angle)) scaleX(.22) scaleY(.72); }

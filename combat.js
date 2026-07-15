@@ -339,6 +339,35 @@ function showSkillImpactFx(sourceEl, targetEl, sk, opts){
   if(typeof pulseCombatEl === 'function') pulseCombatEl(targetEl, opts?.pulse || (opts?.actor === 'boss' ? 'danger' : 'hit'), opts?.pulseDuration || 220);
   setTimeout(() => burst.remove(), opts?.duration || 560);
 }
+function showMonsterDeathFx(mon){
+  if(!mon || mon._deathFxShown || typeof document === 'undefined' || document.hidden) return;
+  const layer = skillFxLayer();
+  const anchor = monsterFloatAnchor(mon);
+  const p = skillFxPoint(anchor);
+  if(!layer || !p) return;
+  mon._deathFxShown = true;
+  const boss = !!(mon.isBoss || mon.isWorldBoss || mon._isRaid || mon._isEpicRaid);
+  const elite = boss || !!(mon.isRareElite || mon._fieldCommander || mon._roomReward || mon._bossTacticReward || mon._bossWeakpointReward);
+  const size = Math.round(Math.max(42, Math.min(132, Math.max(p.w, p.h) + (boss ? 82 : elite ? 54 : 34))));
+  const el = document.createElement('div');
+  el.className = `monster-death-fx ${boss ? 'boss' : elite ? 'elite' : 'trash'}`;
+  el.style.left = (p.x - size / 2) + 'px';
+  el.style.top = (p.y - size / 2) + 'px';
+  el.style.width = size + 'px';
+  el.style.height = size + 'px';
+  for(let i=0;i<(boss ? 10 : elite ? 8 : 6);i++){
+    const shard = document.createElement('span');
+    shard.style.setProperty('--death-shard-angle', (i * (360 / (boss ? 10 : elite ? 8 : 6)) + (boss ? 9 : 0)) + 'deg');
+    shard.style.setProperty('--death-shard-distance', Math.round(size * (boss ? 0.48 : elite ? 0.40 : 0.32)) + 'px');
+    el.appendChild(shard);
+  }
+  layer.appendChild(el);
+  if(boss){
+    if(typeof stageShakeFx === 'function') stageShakeFx();
+    if(typeof stageFlashFx === 'function') stageFlashFx('boss');
+  }
+  setTimeout(() => el.remove(), boss ? 980 : elite ? 820 : 680);
+}
 function bossCastIsDamage(cast){
   return !!(cast && typeof cast.mul === 'number' && cast.mul > 0 && cast.type !== 'heal' && cast.type !== 'buff' && cast.type !== 'support' && !cast.summonCount);
 }
@@ -9706,6 +9735,7 @@ function onMonsterDeath(mon){
     bossCasting = null;
   }
   const deathName = mon.bossName || mon.name || '敌人';
+  showMonsterDeathFx(mon);
   combatEventBanner(mon.isBoss ? '首领击败' : '击杀', deathName, mon.isBoss ? 'boss' : 'kill');
   // 大秘境词缀:崩裂/血池
   if (mon._affixes) {
