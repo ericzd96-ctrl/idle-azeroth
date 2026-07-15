@@ -4299,6 +4299,69 @@ h1 {
 .comp-special-aoe { --comp-special-color:#fb923c; --comp-special-soft:rgba(248,113,113,.38); }
 .comp-special-mark { --comp-special-color:#fef08a; --comp-special-soft:rgba(250,204,21,.34); }
 .comp-special-special { --comp-special-color:#e9d5ff; --comp-special-soft:rgba(192,132,252,.34); }
+.ally-summon-strike {
+  --ally-summon-color: #7dd3fc;
+  --ally-summon-soft: rgba(56,189,248,.26);
+  position: absolute;
+  pointer-events: none;
+  z-index: 7;
+  mix-blend-mode: screen;
+}
+.ally-summon-strike.school-fire { --ally-summon-color:#fb923c; --ally-summon-soft:rgba(248,113,113,.32); }
+.ally-summon-strike.school-frost { --ally-summon-color:#93c5fd; --ally-summon-soft:rgba(56,189,248,.30); }
+.ally-summon-strike.school-arcane { --ally-summon-color:#c084fc; --ally-summon-soft:rgba(192,132,252,.30); }
+.ally-summon-strike.school-nature { --ally-summon-color:#86efac; --ally-summon-soft:rgba(52,211,153,.28); }
+.ally-summon-strike.school-shadow { --ally-summon-color:#a78bfa; --ally-summon-soft:rgba(88,28,135,.38); }
+.ally-summon-strike.school-holy { --ally-summon-color:#fde68a; --ally-summon-soft:rgba(250,204,21,.30); }
+.ally-summon-strike.school-physical { --ally-summon-color:#e5e7eb; --ally-summon-soft:rgba(148,163,184,.24); }
+.ally-summon-cast {
+  border-radius: 999px;
+  border: 1px solid var(--ally-summon-color);
+  background: radial-gradient(circle, var(--ally-summon-soft) 0 36%, rgba(0,0,0,0) 72%);
+  box-shadow: 0 0 12px var(--ally-summon-soft), inset 0 0 8px var(--ally-summon-soft);
+  animation: allySummonCast .46s ease-out forwards;
+}
+.ally-summon-cast.important {
+  animation-duration: .62s;
+}
+.ally-summon-trail {
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255,255,255,0), var(--ally-summon-color), rgba(255,255,255,.78), rgba(255,255,255,0));
+  box-shadow: 0 0 9px var(--ally-summon-soft);
+  transform-origin: left center;
+  transform: rotate(var(--ally-summon-angle, 0deg)) scaleX(1);
+  animation: allySummonTrail .42s ease-out forwards;
+}
+.ally-summon-trail.important {
+  height: 4px;
+  animation-duration: .58s;
+}
+.ally-summon-burst {
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255,255,255,.86) 0 10%, var(--ally-summon-color) 18%, var(--ally-summon-soft) 46%, rgba(0,0,0,0) 72%);
+  box-shadow: 0 0 13px var(--ally-summon-soft);
+  animation: allySummonBurst .48s ease-out forwards;
+}
+.ally-summon-burst.important {
+  animation-duration: .68s;
+}
+.ally-summon-burst.crit {
+  --ally-summon-color: #fde68a;
+  --ally-summon-soft: rgba(251,191,36,.38);
+}
+.ally-summon-burst i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: #fff7ed;
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1;
+  text-shadow: 0 1px 5px rgba(0,0,0,.95), 0 0 8px var(--ally-summon-soft);
+  animation: allySummonIcon .68s ease-out forwards;
+}
 .execute-window-fx {
   --execute-color: #fca5a5;
   --execute-soft: rgba(248,113,113,.36);
@@ -4711,6 +4774,26 @@ h1 {
   0% { opacity: 0; transform: scale(.38); filter: brightness(1.35); }
   24% { opacity: 1; transform: scale(1.08); filter: brightness(1.75); }
   100% { opacity: 0; transform: scale(1.52); filter: brightness(.9); }
+}
+@keyframes allySummonCast {
+  0% { opacity: 0; transform: scale(.54); filter: brightness(1.25); }
+  28% { opacity: .88; transform: scale(1.06); filter: brightness(1.55); }
+  100% { opacity: 0; transform: scale(1.30); filter: brightness(.9); }
+}
+@keyframes allySummonTrail {
+  0% { opacity: 0; transform: rotate(var(--ally-summon-angle, 0deg)) scaleX(.18); filter: brightness(1.25); }
+  32% { opacity: .92; transform: rotate(var(--ally-summon-angle, 0deg)) scaleX(1); filter: brightness(1.55); }
+  100% { opacity: 0; transform: rotate(var(--ally-summon-angle, 0deg)) scaleX(.64); filter: brightness(.9); }
+}
+@keyframes allySummonBurst {
+  0% { opacity: 0; transform: scale(.45); filter: brightness(1.25); }
+  26% { opacity: .94; transform: scale(1.08); filter: brightness(1.62); }
+  100% { opacity: 0; transform: scale(1.38); filter: brightness(.9); }
+}
+@keyframes allySummonIcon {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.70); }
+  24% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+  100% { opacity: 0; transform: translate(-50%, -64%) scale(.96); }
 }
 @keyframes executeWindowOpen {
   0% { opacity: 0; transform: scale(.48) rotate(-18deg); filter: brightness(1.3); }

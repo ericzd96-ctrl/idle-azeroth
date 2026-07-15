@@ -650,6 +650,65 @@ function showCompanionSpecialFx(tpl, spec, mon, ctx){
   if(!support && typeof stageFlashFx === 'function' && (mon?.isBoss || fxType === 'execute')) stageFlashFx(fxType === 'execute' ? 'crit' : 'artifact');
   setTimeout(() => spawned.forEach(el => el.remove()), support ? 720 : 900);
 }
+let _lastAllySummonStrikeFxTs = 0;
+let _activeAllySummonStrikeFx = 0;
+function showAllySummonStrikeFx(unit, target, skill, opts){
+  if(!unit || !target || typeof document === 'undefined' || document.hidden) return;
+  const sourceEl = typeof allySummonAnchor === 'function' ? allySummonAnchor(unit) : null;
+  const targetEl = monsterFloatAnchor(target);
+  const layer = skillFxLayer();
+  const a = skillFxPoint(sourceEl);
+  const b = skillFxPoint(targetEl);
+  if(!layer || !a || !b) return;
+  const now = Date.now();
+  const important = !!(opts?.skill || opts?.crit || target.isBoss);
+  const mobile = typeof isMobilePerfMode === 'function' && isMobilePerfMode();
+  if(now - _lastAllySummonStrikeFxTs < (important ? 70 : 140)) return;
+  if(mobile && _activeAllySummonStrikeFx >= (important ? 5 : 3)) return;
+  _lastAllySummonStrikeFxTs = now;
+  _activeAllySummonStrikeFx++;
+  const fxSkill = skill || { name:unit.baseName || unit.name || '召唤物', icon:unit.icon || '🐾' };
+  const school = skillVisualSchool(null, fxSkill, unit._ownerType === 'companion' ? 'companion' : 'hero');
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const dist = Math.max(16, Math.sqrt(dx * dx + dy * dy));
+  const angle = Math.atan2(dy, dx);
+  const small = !important;
+  const ringSize = Math.round(Math.max(24, Math.min(54, Math.max(a.w, a.h) + (small ? 8 : 18))));
+  const ring = document.createElement('div');
+  ring.className = skillFxClass(school, `ally-summon-strike ally-summon-cast${important ? ' important' : ''}`);
+  ring.style.left = (a.x - ringSize / 2) + 'px';
+  ring.style.top = (a.y - ringSize / 2) + 'px';
+  ring.style.width = ringSize + 'px';
+  ring.style.height = ringSize + 'px';
+  layer.appendChild(ring);
+  const trail = document.createElement('div');
+  trail.className = skillFxClass(school, `ally-summon-strike ally-summon-trail${important ? ' important' : ''}`);
+  trail.style.left = a.x + 'px';
+  trail.style.top = a.y + 'px';
+  trail.style.width = Math.min(dist, mobile ? 96 : 150) + 'px';
+  trail.style.setProperty('--ally-summon-angle', angle + 'rad');
+  layer.appendChild(trail);
+  const burstSize = Math.round((important ? 34 : 22) * (opts?.crit ? 1.16 : 1));
+  const burst = document.createElement('div');
+  burst.className = skillFxClass(school, `ally-summon-strike ally-summon-burst${important ? ' important' : ''}${opts?.crit ? ' crit' : ''}`);
+  burst.style.left = (b.x - burstSize / 2) + 'px';
+  burst.style.top = (b.y - burstSize / 2) + 'px';
+  burst.style.width = burstSize + 'px';
+  burst.style.height = burstSize + 'px';
+  if(important){
+    const icon = document.createElement('i');
+    icon.textContent = fxSkill.icon || unit.icon || '✨';
+    burst.appendChild(icon);
+  }
+  layer.appendChild(burst);
+  setTimeout(() => {
+    ring.remove();
+    trail.remove();
+    burst.remove();
+    _activeAllySummonStrikeFx = Math.max(0, _activeAllySummonStrikeFx - 1);
+  }, important ? 720 : 520);
+}
 function showBossPhaseFx(mon, label, opts){
   if(!mon || typeof document === 'undefined' || document.hidden) return;
   const layer = skillFxLayer();
@@ -6204,6 +6263,7 @@ function tickAllySummons(now){
     if(dealt > 0){
       trackDmg(allySummonDamageSource(unit), dealt, hit.crit, useSkill ? (summonSkill.name || unit.baseName || unit.name) : (unit.baseName || unit.name));
       showMonsterFloat(target, skillIcon + '-' + dealt, hit.crit ? '#fbbf24' : (useSkill ? '#c4b5fd' : '#7dd3fc'), allySideFloatOpts({ variant:hit.crit ? 'crit' : 'comp', scale:(hit.crit || useSkill) ? 1.1 : 1, important:true }));
+      showAllySummonStrikeFx(unit, target, summonSkill || null, { skill:useSkill, crit:hit.crit });
       if(unit.dotPct > 0) applyMonsterDot(target, `allysummon:${unit._uid}`, Math.max(1, Math.floor(dealt * unit.dotPct)), unit.dotMs || 5000, { icon:unit.icon || '🔥', name:unit.baseName || unit.name, source:unit._ownerName || '召唤物' });
       if(unit.slow) target.slowUntil = Math.max(target.slowUntil || 0, now + (unit.slowMs || 3000));
       if(unit.splashPct > 0) applyAllySummonSplash(unit, target, dealt, unit.splashPct, unit.icon || '💥', '#fda4af');
