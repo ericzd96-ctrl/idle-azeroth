@@ -4263,19 +4263,42 @@ function autoSkillKind(skillKey, sk){
 function autoSkillAllowed(skillKey, sk){
   return autoSkillKindEnabled(autoSkillKind(skillKey, sk));
 }
+function autoInterruptCandidateRank(skillKey, sk, order){
+  if(!sk) return null;
+  if(sk.type === 'interrupt') return { skillKey, sk, order, priority:0 };
+  if(sk.interruptCast && getCastTime(sk) <= 0) return { skillKey, sk, order, priority:1 };
+  return null;
+}
 function tryAutoInterrupt(autoSkills, now){
   if(!bossCasting || !autoSkillKindEnabled('interrupt')) return false;
   if(bossCasting.interruptPolicy === 'none') return false;
-  for(const [skKey, sk] of autoSkills){
-    if(!sk || sk.type !== 'interrupt') continue;
+  const ready = [];
+  for(let order = 0; order < autoSkills.length; order++){
+    const [skKey, sk] = autoSkills[order];
+    const candidate = autoInterruptCandidateRank(skKey, sk, order);
+    if(!candidate) continue;
     if(state.skillCooldowns[skKey] && state.skillCooldowns[skKey] > now) continue;
     let cost = sk.mp || 0;
     if(state.hero.costReduction > 0) cost = Math.max(1, Math.floor(cost * (1 - state.hero.costReduction / 100)));
     if(state.resource < cost) continue;
-    castSkill(skKey, false);
-    return true;
+    ready.push({ ...candidate, cost, cd:sk.cd || 0 });
   }
-  return false;
+  if(!ready.length) return false;
+  ready.sort((a, b) => a.priority - b.priority || a.cd - b.cd || a.cost - b.cost || a.order - b.order);
+  castSkill(ready[0].skillKey, false);
+  return true;
+}
+function shouldSkipAutoDamageForInterruptReserve(skillKey, sk){
+  if(!sk?.interruptCast || !autoSkillKindEnabled('interrupt')) return false;
+  if(getCastTime(sk) > 0) return false;
+  const now = Date.now();
+  if(!bossCasting || bossCasting.interruptPolicy === 'none') return false;
+  if(state.skillCooldowns[skillKey] && state.skillCooldowns[skillKey] > now) return false;
+  const duration = Math.max(1, bossCasting.duration || 1);
+  const elapsed = Math.max(0, now - (bossCasting.startTime || now));
+  const remainFrac = Math.max(0, (duration - elapsed) / duration);
+  const highValue = bossCasting.interruptPolicy === 'hard' || bossCasting._empowered || bossCasting.threat === 'high' || bossCasting.threat === 'extreme';
+  return highValue && remainFrac > 0.28;
 }
 function runTalentAction(fx, mon, value, ctx, now){
   const artifactTarget = (fx.healPct || fx.shieldPct || fx.type === 'afterHeal' || fx.type === 'lowHp') ? 'hero' : 'monster';
@@ -9244,8 +9267,10 @@ function tickBattle(now){
       const hpFrac=state.hp/Math.max(1,state.hero.hpMax);
       const targetHpFrac=mon&&mon.hp>0?mon.hp/Math.max(1,mon.hpMax):1;
       const autoSkills=autoCastSkillEntries(getCls());
-      tryAutoInterrupt(autoSkills, now2);
-      if(casting){
+      const interruptedNow = tryAutoInterrupt(autoSkills, now2);
+      if(interruptedNow){
+        lastAutoCast=now2;
+      }else if(casting){
         // 读条期间:瞬发 buff 保持原逻辑;所有防御/减伤 buff 也可穿插,不打断当前读条。
         for(const [skKey, sk] of autoSkills){
           if(!sk||sk.type!=='buff')continue;
@@ -9264,6 +9289,7 @@ function tickBattle(now){
         const [skKey, sk] = autoSkills[order];
         if(state.skillCooldowns[skKey]&&state.skillCooldowns[skKey]>now2)continue;
         if(!sk||sk.type==='interrupt')continue;
+        if(shouldSkipAutoDamageForInterruptReserve(skKey, sk))continue;
         if(!autoSkillAllowed(skKey, sk))continue;
         let cost=sk.mp;if(state.hero.costReduction>0)cost=Math.max(1,Math.floor(sk.mp*(1-state.hero.costReduction/100)));
         if(state.resource<cost)continue;
