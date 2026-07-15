@@ -1538,9 +1538,11 @@ function renderMonList() {
     const targetEl = row.querySelector('.m-target');
     if(targetEl){
       const recentTarget = (m._lastTargetAt || 0) > now - 3500;
+      row.title = isDead ? '已击败' : (isFocusRow ? '当前攻击目标;点击其他敌人可切换集火' : '点击切换为攻击目标');
       const wildText = m._wildHpMult ? `野外耐久 ×${Number(m._wildHpMult || 1).toFixed(2)}` : '';
       const challengeText = m._companionChallengeName ? `${m._companionChallengeName} ${m._companionChallengeRank || ''}` : '';
-      const idleText = [challengeText, wildText].filter(Boolean).join(' · ');
+      const focusText = isFocusRow && !isDead ? '当前目标' : '';
+      const idleText = [focusText, challengeText, wildText].filter(Boolean).join(' · ');
       const targetText = recentTarget ? `目标: ${m._lastTargetName || '主角'}` : idleText;
       targetEl.classList.toggle('is-companion', recentTarget && m._lastTargetKind === 'companion');
       targetEl.classList.toggle('is-summon', recentTarget && m._lastTargetKind === 'summon');

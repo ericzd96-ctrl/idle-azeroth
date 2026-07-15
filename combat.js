@@ -9001,6 +9001,7 @@ function setManualFocus(uid){
   let mx=0;for(const o of state.currentMonsters)if(o.hp>0)mx=Math.max(mx,o.threat||0);
   m.threat=mx+100;
   focusHighestThreat();
+  return m;
 }
 /* 结算所有死亡敌人(AOE 可能一次放倒多只);世界模式整波清空后才刷新下一波 */
 function reapDeadMonsters(){

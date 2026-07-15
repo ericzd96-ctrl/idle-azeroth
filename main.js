@@ -761,7 +761,8 @@ function setupMainButtons() {
       const row = e.target.closest('.mon-row'); if (!row) return;
       const uid = parseInt(row.dataset.uid, 10);
       if (!isNaN(uid) && typeof setManualFocus === 'function') {
-        setManualFocus(uid);
+        const focused = setManualFocus(uid);
+        if (focused) log(`🎯 集火目标: ${focused.bossName || focused.name || '敌人'}`, 'info');
         if (typeof renderMonList === 'function') renderMonList();
       }
     });
