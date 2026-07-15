@@ -724,9 +724,11 @@ let _lastLogTs = 0;
 let _lastFloatTs = 0;
 let _activeFloatCount = 0;
 let _activeImpactSlamCount = 0;
+let _activeStatusSigilCount = 0;
 let _impactSeq = 0;
 let _lastImpactHaloTs = 0;
 let _lastImpactSlamTs = 0;
+let _lastStatusSigilTs = 0;
 
 function isMobilePerfMode() {
   return typeof window !== 'undefined' && window.innerWidth <= 920;
@@ -805,6 +807,54 @@ function floatVariantNeedsSlam(variant, text, opts) {
   if (variant === 'shield' || variant === 'shield-break') return /\d|盾|护/.test(s);
   if (variant === 'artifact') return /-\d|爆|反噬|追击/.test(s) || !!opts?.important;
   return false;
+}
+
+function statusSigilKind(text, variant) {
+  const s = String(text || '');
+  if (/净化|驱散|解除/.test(s)) return 'cleanse';
+  if (/闪避|格挡|免疫/.test(s) || variant === 'avoid') return 'avoid';
+  if (/眩晕|击晕|晕眩|💫/.test(s)) return 'stun';
+  if (/沉默|🔇/.test(s)) return 'silence';
+  if (/冻结|冰冻|🧊/.test(s)) return 'freeze';
+  if (/恐惧|👻/.test(s)) return 'fear';
+  if (/缴械|残废|减速|破甲|易伤|审判|破绽|虚弱|标记/.test(s)) return 'vulnerable';
+  if (variant === 'status' || variant === 'control') return 'control';
+  return '';
+}
+
+function showCombatStatusSigil(targetEl, text, variant, opts) {
+  if (opts?.statusFx === false) return;
+  const kind = statusSigilKind(text, variant);
+  if (!kind || !targetEl) return;
+  const stage = $('stage');
+  const layer = $('float-layer') || stage;
+  if (!stage || !layer) return;
+  if (typeof document !== 'undefined' && document.hidden) return;
+  const mobile = isMobilePerfMode();
+  const important = /stun|silence|freeze|fear|cleanse/i.test(kind) || !!opts?.important;
+  const now = Date.now();
+  if (!opts?.force && now - _lastStatusSigilTs < (important ? 70 : 150)) return;
+  if (mobile && _activeStatusSigilCount >= (important ? 6 : 3)) return;
+  _lastStatusSigilTs = now;
+  const rect = targetEl.getBoundingClientRect();
+  const sRect = stage.getBoundingClientRect();
+  if (!rect.width || !rect.height || !sRect.width || !sRect.height) return;
+  const size = Math.round(Math.max(30, Math.min(84, Math.max(rect.width, rect.height) + (important ? 30 : 18))));
+  const el = document.createElement('div');
+  el.className = `status-sigil status-sigil-${kind}`;
+  el.style.left = (rect.left - sRect.left + rect.width / 2 - size / 2) + 'px';
+  el.style.top = (rect.top - sRect.top + rect.height / 2 - size / 2) + 'px';
+  el.style.width = size + 'px';
+  el.style.height = size + 'px';
+  const mark = document.createElement('span');
+  mark.textContent = kind === 'cleanse' ? '净' : kind === 'avoid' ? '闪' : kind === 'stun' ? '晕' : kind === 'silence' ? '默' : kind === 'freeze' ? '冰' : kind === 'fear' ? '惧' : '弱';
+  el.appendChild(mark);
+  layer.appendChild(el);
+  _activeStatusSigilCount++;
+  setTimeout(() => {
+    el.remove();
+    _activeStatusSigilCount = Math.max(0, _activeStatusSigilCount - 1);
+  }, important ? 780 : 620);
 }
 
 function showCombatHitSlam(targetEl, kind, opts) {
@@ -915,6 +965,9 @@ function showFloat(targetEl, text, color, opts) {
       duration: mobile ? 360 : 420,
       scale: opts?.scale || 1
     });
+  }
+  if (variant === 'status' || variant === 'control' || variant === 'avoid') {
+    showCombatStatusSigil(targetEl, text, variant, { important, scale: opts?.scale || 1 });
   }
   _activeFloatCount++;
   setTimeout(() => {

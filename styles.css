@@ -3907,6 +3907,46 @@ h1 {
 .impact-slam.school-physical { --impact-slam-color:#e5e7eb; --impact-slam-soft:rgba(203,213,225,.32); }
 .impact-slam.school-heal { --impact-slam-color:#6ee7b7; --impact-slam-soft:rgba(16,185,129,.36); }
 .impact-slam.school-shield { --impact-slam-color:#93c5fd; --impact-slam-soft:rgba(59,130,246,.38); }
+.status-sigil {
+  --status-sigil-color: #fde68a;
+  --status-sigil-soft: rgba(250,204,21,.28);
+  position: absolute;
+  pointer-events: none;
+  z-index: 7;
+  border-radius: 999px;
+  border: 1px solid var(--status-sigil-color);
+  background:
+    linear-gradient(90deg, transparent 47%, var(--status-sigil-color) 49% 51%, transparent 53%),
+    linear-gradient(0deg, transparent 47%, var(--status-sigil-color) 49% 51%, transparent 53%),
+    radial-gradient(circle, var(--status-sigil-soft) 0 34%, rgba(0,0,0,0) 72%);
+  box-shadow: 0 0 16px var(--status-sigil-soft), inset 0 0 12px var(--status-sigil-soft);
+  mix-blend-mode: screen;
+  animation: statusSigilPop .66s ease-out forwards;
+}
+.status-sigil span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: #fff7ed;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  text-shadow: 0 1px 5px rgba(0,0,0,.95), 0 0 10px var(--status-sigil-soft);
+  animation: statusSigilMark .66s ease-out forwards;
+}
+.status-sigil-stun { --status-sigil-color:#fde047; --status-sigil-soft:rgba(250,204,21,.34); }
+.status-sigil-silence { --status-sigil-color:#c4b5fd; --status-sigil-soft:rgba(124,58,237,.34); }
+.status-sigil-freeze { --status-sigil-color:#93c5fd; --status-sigil-soft:rgba(56,189,248,.34); }
+.status-sigil-fear { --status-sigil-color:#f0abfc; --status-sigil-soft:rgba(168,85,247,.34); }
+.status-sigil-vulnerable,
+.status-sigil-control { --status-sigil-color:#fca5a5; --status-sigil-soft:rgba(248,113,113,.32); }
+.status-sigil-cleanse { --status-sigil-color:#fef3c7; --status-sigil-soft:rgba(250,204,21,.26); }
+.status-sigil-avoid {
+  --status-sigil-color:#cbd5e1;
+  --status-sigil-soft:rgba(148,163,184,.26);
+  animation-name: statusSigilSlip;
+}
 .monster-death-fx {
   --death-fx-core: rgba(248,250,252,.94);
   --death-fx-edge: rgba(203,213,225,.34);
@@ -4091,6 +4131,21 @@ h1 {
   0% { opacity: 0; transform: scale(.58); }
   32% { opacity: 1; transform: scale(1); }
   100% { opacity: 0; transform: scale(1.46); }
+}
+@keyframes statusSigilPop {
+  0% { opacity: 0; transform: scale(.46) rotate(-12deg); filter: brightness(1.2); }
+  26% { opacity: .98; transform: scale(1.06) rotate(5deg); filter: brightness(1.55); }
+  100% { opacity: 0; transform: scale(1.32) rotate(18deg); filter: brightness(.92); }
+}
+@keyframes statusSigilSlip {
+  0% { opacity: 0; transform: translateX(-8px) scale(.68); }
+  28% { opacity: .92; transform: translateX(0) scale(1.02); }
+  100% { opacity: 0; transform: translateX(18px) scale(.96); }
+}
+@keyframes statusSigilMark {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.62); }
+  24% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+  100% { opacity: 0; transform: translate(-50%, -70%) scale(.96); }
 }
 @keyframes monsterDeathBurst {
   0% { opacity: 0; transform: scale(.42) rotate(0deg); filter: brightness(1.35); }
