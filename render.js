@@ -1720,8 +1720,13 @@ function updateDmgMeter() {
   const compDtps = compTk ? Math.round(compTk / elapsed) : 0;
   if (takenEl) {
     if (tk || compTk) {
-      takenEl.textContent = `🦸${fmt(tk)}(${fmt(dtps)}/秒,高${fmt(tkMax)})  🐾${fmt(compTk)}(${fmt(compDtps)}/秒,高${fmt(compTkMax)})`;
-    } else takenEl.textContent = '-';
+      const compText = compTk ? ` · 🐾${fmt(compTk)}(${fmt(compDtps)}/秒)` : '';
+      takenEl.textContent = `🦸${fmt(tk)}(${fmt(dtps)}/秒)${compText}`;
+      takenEl.title = `主角承伤 ${fmt(tk)}, 每秒 ${fmt(dtps)}, 最高一击 ${fmt(tkMax)}。随从承伤 ${fmt(compTk)}, 每秒 ${fmt(compDtps)}, 最高一击 ${fmt(compTkMax)}。`;
+    } else {
+      takenEl.textContent = '-';
+      takenEl.removeAttribute('title');
+    }
   }
 
   // 战斗压力:把承伤、治疗和血量换成可读状态,帮助判断卡关原因
