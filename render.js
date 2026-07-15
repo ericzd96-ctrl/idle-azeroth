@@ -1703,13 +1703,40 @@ function updateDmgMeter() {
 
   // 承受伤害(总 · 每秒 · 最高一次)
   const takenEl = $('dm-taken');
+  const tk = (typeof dmgStats !== 'undefined') ? (dmgStats.taken || 0) : 0;
+  const tkMax = (typeof dmgStats !== 'undefined') ? (dmgStats.takenMax || 0) : 0;
+  const dtps = tk ? Math.round(tk / elapsed) : 0;
   if (takenEl) {
-    const tk = (typeof dmgStats !== 'undefined') ? (dmgStats.taken || 0) : 0;
-    const tkMax = (typeof dmgStats !== 'undefined') ? (dmgStats.takenMax || 0) : 0;
     if (tk) {
-      const dtps = Math.round(tk / elapsed);
       takenEl.textContent = `${fmt(tk)} · ${fmt(dtps)}/秒 · 最高 ${fmt(tkMax)}`;
     } else takenEl.textContent = '-';
+  }
+
+  // 战斗压力:把承伤、治疗和血量换成可读状态,帮助判断卡关原因
+  const pressureEl = $('dm-pressure');
+  if (pressureEl) {
+    const hMax = Math.max(1, state?.hero?.hpMax || 1);
+    const hpNow = Math.max(0, state?.hp || 0);
+    const healPerSec = healTotal > 0 ? Math.round(healTotal / elapsed) : 0;
+    const netPerSec = Math.max(0, dtps - healPerSec);
+    const takenPct = dtps / hMax;
+    const netPct = netPerSec / hMax;
+    let cls = 'safe', label = '安全', hint = tk ? '承伤很低' : '暂无压力';
+    if (tk) {
+      if (netPerSec <= 0 && hpNow > hMax * 0.55) {
+        cls = 'safe'; label = '稳定'; hint = '治疗覆盖';
+      } else if (netPct <= 0.015 && takenPct <= 0.045) {
+        cls = 'ok'; label = '可控'; hint = '压力可控';
+      } else if (netPct <= 0.04 && hpNow > hMax * 0.35) {
+        cls = 'warn'; label = '吃紧'; hint = '需要减伤';
+      } else {
+        cls = 'danger'; label = '危险'; hint = '容易暴毙';
+      }
+    }
+    const surviveText = netPerSec > 0 ? `可撑 ${Math.max(1, Math.min(120, Math.floor(hpNow / netPerSec)))}秒${hpNow / netPerSec > 120 ? '+' : ''}` : '净压力 0';
+    const text = `${label} · ${hint} · 净 ${fmt(netPerSec)}/秒 · ${surviveText}`;
+    pressureEl.className = `dm-pressure ${cls}`;
+    if (pressureEl.textContent !== text) pressureEl.textContent = text;
   }
 
   // 击杀耗时(平均 · 最快)
