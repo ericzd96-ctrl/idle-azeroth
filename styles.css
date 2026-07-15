@@ -4158,6 +4158,67 @@ h1 {
   --status-sigil-soft:rgba(148,163,184,.26);
   animation-name: statusSigilSlip;
 }
+.spec-proc-fx {
+  --spec-proc-color: #fde68a;
+  --spec-proc-soft: rgba(250,204,21,.36);
+  position: absolute;
+  pointer-events: none;
+  z-index: 9;
+  border-radius: 999px;
+  border: 1px solid var(--spec-proc-color);
+  background:
+    conic-gradient(from 18deg, rgba(255,255,255,0), var(--spec-proc-color), rgba(255,255,255,0) 20%, rgba(255,255,255,0) 50%, var(--spec-proc-color), rgba(255,255,255,0) 70%),
+    radial-gradient(circle, var(--spec-proc-soft) 0 28%, rgba(0,0,0,0) 72%);
+  box-shadow: 0 0 20px var(--spec-proc-soft), inset 0 0 14px var(--spec-proc-soft);
+  mix-blend-mode: screen;
+  animation: specProcReady .76s ease-out forwards;
+}
+.spec-proc-fx.spec-proc-release {
+  --spec-proc-color: #fff7ad;
+  --spec-proc-soft: rgba(251,191,36,.48);
+  animation-name: specProcRelease;
+}
+.spec-proc-fx b,
+.spec-proc-fx i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  line-height: 1;
+  text-shadow: 0 1px 5px rgba(0,0,0,.95), 0 0 12px var(--spec-proc-soft);
+}
+.spec-proc-fx b {
+  top: 66%;
+  color: #fef3c7;
+  font-size: 10px;
+  font-style: normal;
+  white-space: nowrap;
+  animation: specProcLabel .76s ease-out forwards;
+}
+.spec-proc-fx i {
+  top: 44%;
+  color: #fff7ed;
+  font-size: 15px;
+  font-style: normal;
+  animation: specProcIcon .76s ease-out forwards;
+}
+.spec-proc-fx span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2px;
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255,255,255,.96), var(--spec-proc-color), rgba(255,255,255,0));
+  box-shadow: 0 0 8px var(--spec-proc-soft);
+  transform-origin: center bottom;
+  animation: specProcSpark .76s ease-out forwards;
+}
+.spec-proc-fx.spec-proc-release b,
+.spec-proc-fx.spec-proc-release i,
+.spec-proc-fx.spec-proc-release span {
+  animation-duration: .86s;
+}
 .execute-window-fx {
   --execute-color: #fca5a5;
   --execute-soft: rgba(248,113,113,.36);
@@ -4517,6 +4578,33 @@ h1 {
   0% { opacity: 0; transform: translate(-50%, -50%) scale(.62); }
   24% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
   100% { opacity: 0; transform: translate(-50%, -70%) scale(.96); }
+}
+@keyframes specProcReady {
+  0% { opacity: 0; transform: scale(.50) rotate(-20deg); filter: brightness(1.25); }
+  24% { opacity: 1; transform: scale(1.04) rotate(8deg); filter: brightness(1.65); }
+  68% { opacity: .86; transform: scale(1.10) rotate(28deg); filter: brightness(1.12); }
+  100% { opacity: 0; transform: scale(1.26) rotate(52deg); filter: brightness(.9); }
+}
+@keyframes specProcRelease {
+  0% { opacity: 0; transform: scale(.44) rotate(-28deg); filter: brightness(1.4); }
+  18% { opacity: 1; transform: scale(1.10) rotate(10deg); filter: brightness(1.85); }
+  62% { opacity: .90; transform: scale(1.20) rotate(42deg); filter: brightness(1.2); }
+  100% { opacity: 0; transform: scale(1.48) rotate(86deg); filter: brightness(.88); }
+}
+@keyframes specProcLabel {
+  0% { opacity: 0; transform: translate(-50%, -42%) scale(.74); }
+  22% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+  100% { opacity: 0; transform: translate(-50%, -78%) scale(.94); }
+}
+@keyframes specProcIcon {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.62); }
+  22% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); }
+  100% { opacity: 0; transform: translate(-50%, -54%) scale(1.02); }
+}
+@keyframes specProcSpark {
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--spec-proc-angle)) translateY(-6px) scaleY(.28); }
+  22% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--spec-proc-angle)) translateY(-46px) scaleY(1); }
 }
 @keyframes executeWindowOpen {
   0% { opacity: 0; transform: scale(.48) rotate(-18deg); filter: brightness(1.3); }

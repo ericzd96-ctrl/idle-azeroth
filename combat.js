@@ -547,6 +547,39 @@ function showStatusSigilFx(targetEl, key, opts){
   layer.appendChild(el);
   setTimeout(() => el.remove(), opts?.important ? 820 : 660);
 }
+const _specProcFxCooldown = {};
+function showSpecProcFx(targetEl, proc, mode, opts){
+  if(!targetEl || !proc || typeof document === 'undefined' || document.hidden) return;
+  const safeMode = String(mode || 'ready').replace(/[^a-z0-9_-]/gi, '') || 'ready';
+  const key = `${safeMode}:${proc.key || proc.name || 'proc'}:${opts?.target || targetEl.id || 'hero'}`;
+  const now = Date.now();
+  if((_specProcFxCooldown[key] || 0) > now) return;
+  _specProcFxCooldown[key] = now + (safeMode === 'release' ? 420 : 760);
+  const layer = skillFxLayer();
+  const p = skillFxPoint(targetEl);
+  if(!layer || !p) return;
+  const size = Math.round(Math.max(48, Math.min(122, Math.max(p.w, p.h) + (safeMode === 'release' ? 54 : 42))));
+  const el = document.createElement('div');
+  el.className = `spec-proc-fx spec-proc-${safeMode}`;
+  el.style.left = (p.x - size / 2) + 'px';
+  el.style.top = (p.y - size / 2) + 'px';
+  el.style.width = size + 'px';
+  el.style.height = size + 'px';
+  const label = document.createElement('b');
+  label.textContent = safeMode === 'release' ? '释放' : '强化';
+  el.appendChild(label);
+  const icon = document.createElement('i');
+  icon.textContent = proc.icon || '✦';
+  el.appendChild(icon);
+  for(let i=0;i<6;i++){
+    const spark = document.createElement('span');
+    spark.style.setProperty('--spec-proc-angle', (i * 60 + (safeMode === 'release' ? 22 : 0)) + 'deg');
+    el.appendChild(spark);
+  }
+  layer.appendChild(el);
+  if(typeof pulseCombatEl === 'function') pulseCombatEl(targetEl, safeMode === 'release' ? 'crit' : 'artifact', safeMode === 'release' ? 340 : 280);
+  setTimeout(() => el.remove(), safeMode === 'release' ? 860 : 760);
+}
 function showBossPhaseFx(mon, label, opts){
   if(!mon || typeof document === 'undefined' || document.hidden) return;
   const layer = skillFxLayer();
@@ -3635,6 +3668,7 @@ function grantSpecProc(reason, now){
     desc:(proc.desc || '下一次对应技能获得强化') + (reason ? ` 触发: ${reason}` : ''),
   });
   showFloat($('hero-emoji'), `${proc.icon || '✦'}${proc.name || '临场强化'}`, '#facc15', { variant:'buff', scale:1.05 });
+  showSpecProcFx($('hero-emoji'), proc, 'ready', { target:'hero' });
   markDirty('skills','hero');
   return proc;
 }
@@ -3657,6 +3691,7 @@ function consumeSpecProcForSkill(skillKey, sk, now){
   delete rt.specProc;
   consumeSkillAura('spec_proc', { all:true });
   log(`${proc.icon || '✦'} 临场强化「${proc.name}」强化了 ${sk?.name || '技能'}: ${proc.desc}`,'epic');
+  showSpecProcFx($('hero-emoji'), proc, 'release', { target:'hero' });
   markDirty('skills','hero');
   return proc;
 }
