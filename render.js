@@ -2014,7 +2014,14 @@ function updateBattleVisuals() {
   $('h-honor').textContent = fmt(state.honor);
   if ($('h-towercoin')) $('h-towercoin').textContent = fmt(state.towerCoin || 0);
   if ($('h-essence')) $('h-essence').textContent = fmt(state.essence || 0);
-  if ($('btn-speed')) { const bs = state.battleSpeed || 1; const lbl = `⏩ ${bs}倍`; if ($('btn-speed').textContent !== lbl) { $('btn-speed').textContent = lbl; $('btn-speed').classList.toggle('gold', bs > 1); } }
+  if ($('btn-speed')) {
+    const bs = state.battleSpeed || 1;
+    const lbl = `⏩ ${bs}倍`;
+    const title = `战斗倍速 ${bs}倍: 同步加速普攻、读条、技能冷却和找怪节奏。`;
+    if ($('btn-speed').textContent !== lbl) $('btn-speed').textContent = lbl;
+    if ($('btn-speed').title !== title) $('btn-speed').title = title;
+    $('btn-speed').classList.toggle('gold', bs > 1);
+  }
 
   // XP / HP / 资源条
   setBar($('b-xp'), h.lvl >= MAX_LEVEL ? 100 : h.xp / xpNeeded(h.lvl) * 100,

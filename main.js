@@ -740,9 +740,10 @@ function setupMainButtons() {
     const SPEEDS = [1, 2, 4, 8];
     const i = SPEEDS.indexOf(state.battleSpeed || 1);
     state.battleSpeed = SPEEDS[(i + 1) % SPEEDS.length];
-    $('btn-speed').textContent = `⏩ ${state.battleSpeed}x`;
+    $('btn-speed').textContent = `⏩ ${state.battleSpeed}倍`;
+    $('btn-speed').title = `战斗倍速 ${state.battleSpeed}倍: 同步加速普攻、读条、技能冷却和找怪节奏。`;
     $('btn-speed').classList.toggle('gold', state.battleSpeed > 1);
-    log(`战斗倍速: ${state.battleSpeed}x`, 'info');
+    log(`战斗倍速: ${state.battleSpeed}倍`, 'info');
   });
 
   $('btn-leave').addEventListener('click', () => {
@@ -1275,7 +1276,12 @@ function boot() {
     applyOfflineProgress();
     if (typeof lifeOfflineCatchup==='function') lifeOfflineCatchup();
     spawnMonster();
-    if ($('btn-speed')) { $('btn-speed').textContent = `⏩ ${state.battleSpeed||1}x`; $('btn-speed').classList.toggle('gold', (state.battleSpeed||1)>1); }
+    if ($('btn-speed')) {
+      const bs = state.battleSpeed || 1;
+      $('btn-speed').textContent = `⏩ ${bs}倍`;
+      $('btn-speed').title = `战斗倍速 ${bs}倍: 同步加速普攻、读条、技能冷却和找怪节奏。`;
+      $('btn-speed').classList.toggle('gold', bs > 1);
+    }
     markDirty('all');
     log('🌟 重返艾泽拉斯', 'good');
   }
