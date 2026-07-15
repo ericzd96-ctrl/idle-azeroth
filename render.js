@@ -1836,8 +1836,12 @@ function updateDmgMeter() {
     const fast = (typeof dmgStats !== 'undefined') ? (dmgStats.killFast || 0) : 0;
     if (k >= 1 && elapsed > 0.2) {
       const avg = elapsed / k;
-      ttkEl.textContent = `平均 ${avg.toFixed(1)}秒` + (fast ? ` · 最快 ${fast.toFixed(1)}秒` : '');
-    } else ttkEl.textContent = '-';
+      ttkEl.textContent = `均${avg.toFixed(1)}s` + (fast ? ` · 快${fast.toFixed(1)}s` : '');
+      ttkEl.title = `已统计 ${k} 次击杀,总战斗时间 ${Math.floor(elapsed)} 秒。平均击杀耗时 ${avg.toFixed(1)} 秒${fast ? `,最快 ${fast.toFixed(1)} 秒` : ''}。`;
+    } else {
+      ttkEl.textContent = '-';
+      ttkEl.removeAttribute('title');
+    }
   }
 
   function syncMeterBreakdownRows(container, rows, valueKey, accentColor, fallbackIcon, title) {
