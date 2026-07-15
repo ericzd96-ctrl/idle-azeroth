@@ -4650,6 +4650,40 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
 .stage-flash.interrupt { background: radial-gradient(circle at 50% 45%, rgba(147,197,253,.32), rgba(30,64,175,0) 70%); }
 .stage-flash.boss { background: radial-gradient(circle at 50% 45%, rgba(250,204,21,.34), rgba(180,83,9,0) 72%); animation-duration: .62s; }
 @keyframes stageFlash { 0%{opacity:0} 18%{opacity:1} 100%{opacity:0} }
+.stage-edge-fx {
+  --stage-edge-color: rgba(248,113,113,.58);
+  --stage-edge-soft: rgba(127,29,29,.10);
+  --stage-edge-opacity: .72;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 7;
+  opacity: 0;
+  box-shadow:
+    inset 0 0 34px 8px var(--stage-edge-color),
+    inset 0 0 92px 24px var(--stage-edge-soft);
+  mix-blend-mode: screen;
+  animation: stageEdgeFlash .70s ease-out forwards;
+}
+.stage-edge-fx.critical {
+  --stage-edge-color: rgba(239,68,68,.74);
+  --stage-edge-soft: rgba(127,29,29,.22);
+  animation-duration: .78s;
+}
+.stage-edge-fx.heal {
+  --stage-edge-color: rgba(52,211,153,.42);
+  --stage-edge-soft: rgba(6,95,70,.10);
+}
+.stage-edge-fx.shield {
+  --stage-edge-color: rgba(96,165,250,.46);
+  --stage-edge-soft: rgba(30,64,175,.12);
+}
+@keyframes stageEdgeFlash {
+  0% { opacity: 0; transform: scale(.992); }
+  18% { opacity: var(--stage-edge-opacity); transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.012); }
+}
 .stage.low-hp::after {
   content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
   box-shadow: inset 0 0 60px 12px rgba(220,38,38,.5); z-index: 6;

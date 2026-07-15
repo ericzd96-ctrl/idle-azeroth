@@ -435,6 +435,7 @@ function addTalentShield(amount, quiet, durationMs){
   rt.shieldExpire = Math.max(rt.shieldExpire || 0, Date.now() + (durationMs || 10000));   // 护盾有持续时间, 到期自动消失(不再每波清盾)
   if(!quiet) showFloat($('hero-emoji'), '🛡️+' + amount, '#93c5fd', { variant:'shield', scale:1.04 });
   if(typeof pulseCombatEl === 'function') pulseCombatEl($('hero-emoji'), 'shield', 260);
+  if((!quiet || amount >= Math.max(1, (state.hero?.hpMax || 1) * 0.045)) && typeof stageEdgeFx === 'function') stageEdgeFx('shield', { intensity:0.78 });
   markDirty('hero');
   return amount;
 }
@@ -467,7 +468,10 @@ function absorbTalentShield(amount){
   rt.shield -= absorb;
   showFloat($('hero-emoji'), '🛡️-' + absorb, '#93c5fd', { variant:'shield-break', scale:1.02 });
   if(typeof pulseCombatEl === 'function') pulseCombatEl($('hero-emoji'), 'shield', 260);
-  if(absorb >= Math.max(1, amount * 0.55) || absorb >= Math.max(1, (state.hero?.hpMax || 1) * 0.08)) combatCueToast('护盾吸收', '挡下 '+fmt(absorb), 'shield');
+  if(absorb >= Math.max(1, amount * 0.55) || absorb >= Math.max(1, (state.hero?.hpMax || 1) * 0.08)){
+    combatCueToast('护盾吸收', '挡下 '+fmt(absorb), 'shield');
+    if(typeof stageEdgeFx === 'function') stageEdgeFx('shield', { intensity:0.92 });
+  }
   markDirty('hero');
   return amount - absorb;
 }
@@ -4186,6 +4190,7 @@ function healHeroAmount(amount, icon, color, source, skillLabel){
     showFloat($('hero-emoji'), (icon || '') + '+' + applied, color || '#6ee7b7', { variant:'heal', scale:1.06 });
     if(typeof pulseCombatEl === 'function') pulseCombatEl($('hero-emoji'), 'heal', 240);
     const maxHp = Math.max(1, state.hero.hpMax || 1);
+    if(typeof stageEdgeFx === 'function' && (before / maxHp <= 0.55 || applied >= maxHp * 0.06)) stageEdgeFx('heal', { intensity:before / maxHp <= 0.32 ? 1 : 0.76 });
     if(before / maxHp <= 0.32 && state.hp / maxHp >= 0.42) combatCueToast('治疗救回', '+' + fmt(applied), 'heal');
   }
   return { applied, overheal };
@@ -4209,11 +4214,15 @@ function applyHeroDamage(amount, mon, opts){
   const defensiveArtifactFx = activeArtifactTakenFx(mon);
   if(defensiveArtifactFx.length) artifactProcVisual(defensiveArtifactFx[0], mon, { now, target:'hero', tag:'taken' });
   state.hp -= taken;
+  const maxHp = Math.max(1, state.hero?.hpMax || 1);
   trackTaken(taken, {
     source: opts?.source || mon?.bossName || mon?.name || '敌人',
     skill: opts?.skillName || opts?.skill || opts?.sourceSkill || '',
     boss: !!mon?.isBoss
   });
+  if(typeof stageEdgeFx === 'function' && (mon?.isBoss || taken >= maxHp * 0.08 || state.hp <= maxHp * 0.35)){
+    stageEdgeFx(state.hp <= maxHp * 0.22 ? 'critical' : 'danger', { intensity:Math.min(1.25, 0.68 + taken / maxHp * 2.3) });
+  }
   applyClassMechanicOnTakeDamage(mon, taken, amountIn, now);
   if(state._soulLinkUntil > now && mon && mon.hp > 0){
     const healBack = Math.max(1, Math.floor(taken * 0.25));
@@ -11133,6 +11142,7 @@ function trackCompanionTaken(amt,meta){
 }
 /* ---- 战斗手感 polish:屏震 / 连杀提示 ---- */
 let _lastShakeTs=0, _lastStageFlashTs=0, _lastCombatBannerTs=0, killStreak=0;
+const _stageEdgeFxCooldown = {};
 const _combatCueCooldown = {};
 function stageShakeFx(){
   if(typeof document==='undefined'||document.hidden)return;
@@ -11149,6 +11159,20 @@ function stageFlashFx(kind){
   el.className='stage-flash '+(kind||'crit');
   st.appendChild(el);
   setTimeout(()=>el.remove(),720);
+}
+function stageEdgeFx(kind, opts){
+  if(typeof document==='undefined'||document.hidden)return;
+  const key=kind||'danger';
+  const now=Date.now();
+  const gap=key==='danger'||key==='critical'?260:420;
+  if((_stageEdgeFxCooldown[key]||0)>now)return;
+  _stageEdgeFxCooldown[key]=now+gap;
+  const st=document.getElementById('stage');if(!st)return;
+  const el=document.createElement('div');
+  el.className='stage-edge-fx '+key;
+  el.style.setProperty('--stage-edge-opacity', String(Math.max(0.38, Math.min(1, 0.72 * (opts?.intensity || 1)))));
+  st.appendChild(el);
+  setTimeout(()=>el.remove(),820);
 }
 function combatEventBanner(title, detail, kind){
   if(typeof document==='undefined'||document.hidden)return;
