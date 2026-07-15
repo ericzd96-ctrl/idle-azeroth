@@ -1776,9 +1776,10 @@ function updateDmgMeter() {
       const ago = agoSec < 60 ? `${agoSec}秒前` : `${Math.floor(agoSec / 60)}分钟前`;
       const lastHit = fmt(recap.lastHit || 0);
       const source = recap.source || '未知来源';
-      const text = `${ago} · ${recap.cause || '战败'} · 最后 ${lastHit} 来自 ${source} · ${recap.advice || '调整技能和随从后再战。'}`;
+      const text = `${recap.cause || '战败'} · ${ago} · 最后一击 ${lastHit}`;
+      const detail = recap.detail || `${text} · 来自 ${source}。建议: ${recap.advice || '调整技能和随从后再战。'}`;
       deathEl.className = `dm-death-recap ${recap.tone || 'warn'}`;
-      deathEl.title = recap.detail || text;
+      deathEl.title = detail;
       if (deathEl.textContent !== text) deathEl.textContent = text;
     } else {
       deathRow.style.display = 'none';
