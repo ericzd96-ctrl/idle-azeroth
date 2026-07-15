@@ -812,7 +812,7 @@ function worldFieldOperationTagHtml(map, subIdx, opts) {
   if (!tip) return '';
   return inlineTipSpanHtml(tip, {
     fallbackIcon:'achievement_zone_kalimdor_01',
-    color:tip.meta === '已完成' ? '#86efac' : (tip.meta === '首领现身' ? '#fbbf24' : '#67e8f9'),
+    color:tip.tone === 'done' ? '#86efac' : (tip.tone === 'failed' ? '#fb7185' : (tip.tone === 'ready' ? '#fbbf24' : '#67e8f9')),
     meta:tip.meta,
     metaVisible:!!opts?.metaVisible
   });
@@ -1936,7 +1936,10 @@ function updateBattleVisuals() {
     if (state.mode === 'world') {
       const sk = `${state.currentMap}-${state.currentSubzone}`;
       const searchLeft = state.worldSearch?.until ? Math.max(0, Math.ceil((state.worldSearch.until - Date.now()) / 1000)) : 0;
-      return base + `|${state.subzoneKills[sk]||0}|${state.subzoneCleared[sk]||''}|search:${searchLeft}`;
+      const map = (typeof getMap === 'function') ? getMap() : null;
+      const op = (map && typeof getWorldFieldOperation === 'function') ? getWorldFieldOperation(map, state.currentSubzone, { includeCompleted:true }) : null;
+      const fieldFailLeft = (op && typeof worldFieldOperationFailLeftMs === 'function') ? Math.ceil(worldFieldOperationFailLeftMs(op) / 1000) : 0;
+      return base + `|${state.subzoneKills[sk]||0}|${state.subzoneCleared[sk]||''}|search:${searchLeft}|fieldFail:${fieldFailLeft}`;
     }
     if (state.mode === 'dungeon') {
       const ds = state.dungeonState || {};

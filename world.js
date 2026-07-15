@@ -330,10 +330,19 @@ function getWorldFieldOperation(map, subIdx, opts) {
   return Object.assign({}, rule, active, { rule, subName:sub.name, completed:false });
 }
 
+function worldFieldOperationFailLeftMs(op, now) {
+  if (!op?.failedAt) return 0;
+  return Math.max(0, 90000 - ((now || Date.now()) - op.failedAt));
+}
+
 function worldFieldOperationProgressText(op) {
   if (!op) return '';
   if (op.completed) return '已完成';
-  if (op.failedAt && Date.now() - op.failedAt < 90000) return `挑战失败 ${Math.min(op.progress || 0, op.goal || 1)}/${op.goal || 1}`;
+  const failLeft = worldFieldOperationFailLeftMs(op);
+  if (failLeft > 0) {
+    const sec = Math.ceil(failLeft / 1000);
+    return `挑战失败 · ${sec}秒后可重新推进 ${Math.min(op.progress || 0, op.goal || 1)}/${op.goal || 1}`;
+  }
   if (op.commanderPending) return '指挥官现身';
   return `${Math.min(op.progress || 0, op.goal || 1)}/${op.goal || 1}`;
 }
@@ -341,11 +350,17 @@ function worldFieldOperationProgressText(op) {
 function worldFieldOperationTip(map, subIdx, opts) {
   const op = getWorldFieldOperation(map, subIdx, { includeCompleted:true, previewOnly:!!opts?.previewOnly });
   if (!op) return null;
+  const failLeft = worldFieldOperationFailLeftMs(op);
+  const failText = failLeft > 0
+    ? `上次首领挑战失败,首领已撤退;${Math.ceil(failLeft / 1000)}秒后继续击杀野外敌人,补回进度即可再次引出。`
+    : '';
   return {
     name:op.name || '野外据点',
     icon:op.icon || '🗺️',
-    desc:`${op.desc || '完成野外事件可引出据点指挥官。'} 进度: ${worldFieldOperationProgressText(op)}。奖励: ${op.reward || '区域补给'}。`,
-    meta:op.completed ? '已完成' : (op.commanderPending ? '首领现身' : op.meta || '野外事件')
+    desc:`${op.desc || '完成野外事件可引出据点指挥官。'} 进度: ${worldFieldOperationProgressText(op)}。${failText ? `${failText} ` : ''}奖励: ${op.reward || '区域补给'}。`,
+    meta:op.completed ? '已完成' : (failLeft > 0 ? '失败冷却' : (op.commanderPending ? '首领现身' : op.meta || '野外事件')),
+    tone:op.completed ? 'done' : (failLeft > 0 ? 'failed' : (op.commanderPending ? 'ready' : 'active')),
+    failLeftMs:failLeft
   };
 }
 
