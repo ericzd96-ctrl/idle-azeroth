@@ -1673,15 +1673,40 @@ function updateDmgMeter() {
   if (maxEl) {
     const hm = (typeof dmgStats !== 'undefined') ? (dmgStats.heroMax || 0) : 0;
     const cm = (typeof dmgStats !== 'undefined') ? (dmgStats.compMax || 0) : 0;
-    maxEl.textContent = (hm || cm) ? `🦸${fmt(hm)}  🐾${fmt(cm)}` : '-';
+    if (hm || cm) {
+      const top = Math.max(hm, cm);
+      const who = hm >= cm ? '主角' : '随从';
+      maxEl.textContent = `${who} ${fmt(top)}`;
+      maxEl.title = `主角最高一击 ${fmt(hm)}。随从最高一击 ${fmt(cm)}。`;
+    } else {
+      maxEl.textContent = '-';
+      maxEl.removeAttribute('title');
+    }
   }
   const healEl = $('dm-heal-total');
-  if (healEl) healEl.textContent = (heroHeal || compHeal) ? `🦸${fmt(heroHeal)}  🐾${fmt(compHeal)}` : '-';
+  if (healEl) {
+    if (heroHeal || compHeal) {
+      const hps = Math.round(healTotal / elapsed);
+      healEl.textContent = `${fmt(healTotal)}(${fmt(hps)}/秒)`;
+      healEl.title = `主角治疗 ${fmt(heroHeal)}。随从治疗 ${fmt(compHeal)}。`;
+    } else {
+      healEl.textContent = '-';
+      healEl.removeAttribute('title');
+    }
+  }
   const maxHealEl = $('dm-max-heal');
   if (maxHealEl) {
     const hm = (typeof dmgStats !== 'undefined') ? (dmgStats.heroHealMax || 0) : 0;
     const cm = (typeof dmgStats !== 'undefined') ? (dmgStats.compHealMax || 0) : 0;
-    maxHealEl.textContent = (hm || cm) ? `🦸${fmt(hm)}  🐾${fmt(cm)}` : '-';
+    if (hm || cm) {
+      const top = Math.max(hm, cm);
+      const who = hm >= cm ? '主角' : '随从';
+      maxHealEl.textContent = `${who} ${fmt(top)}`;
+      maxHealEl.title = `主角最高治疗 ${fmt(hm)}。随从最高治疗 ${fmt(cm)}。`;
+    } else {
+      maxHealEl.textContent = '-';
+      maxHealEl.removeAttribute('title');
+    }
   }
 
   // 暴击率
