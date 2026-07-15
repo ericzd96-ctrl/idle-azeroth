@@ -398,6 +398,36 @@ function showBossPhaseFx(mon, label, opts){
   if(typeof stageEdgeFx === 'function' && opts?.danger) stageEdgeFx('danger', { intensity:1 });
   setTimeout(() => el.remove(), opts?.duration || 1080);
 }
+function showInterruptFx(mon, kind, label){
+  if(!mon || typeof document === 'undefined' || document.hidden) return;
+  const layer = skillFxLayer();
+  const anchor = monsterFloatAnchor(mon);
+  const p = skillFxPoint(anchor);
+  if(!layer || !p) return;
+  const type = kind || 'success';
+  const count = type === 'perfect' ? 10 : 7;
+  const size = Math.round(Math.max(52, Math.min(122, Math.max(p.w, p.h) + (type === 'perfect' ? 70 : 46))));
+  const el = document.createElement('div');
+  el.className = `interrupt-fx ${type}`;
+  el.style.left = (p.x - size / 2) + 'px';
+  el.style.top = (p.y - size / 2) + 'px';
+  el.style.width = size + 'px';
+  el.style.height = size + 'px';
+  const text = document.createElement('b');
+  text.textContent = type === 'immune' ? '不可断' : (type === 'perfect' ? '完美打断' : '打断');
+  if(label) text.title = String(label);
+  el.appendChild(text);
+  for(let i=0;i<count;i++){
+    const shard = document.createElement('span');
+    shard.style.setProperty('--interrupt-angle', (i * (360 / count) + (type === 'immune' ? 18 : 0)) + 'deg');
+    shard.style.setProperty('--interrupt-distance', Math.round(size * (type === 'perfect' ? 0.48 : 0.36)) + 'px');
+    el.appendChild(shard);
+  }
+  layer.appendChild(el);
+  if(typeof pulseCombatEl === 'function') pulseCombatEl(anchor, type === 'immune' ? 'shield' : 'interrupt', 360);
+  if(type === 'perfect' && typeof stageFlashFx === 'function') stageFlashFx('interrupt');
+  setTimeout(() => el.remove(), type === 'perfect' ? 940 : 760);
+}
 function bossCastIsDamage(cast){
   return !!(cast && typeof cast.mul === 'number' && cast.mul > 0 && cast.type !== 'heal' && cast.type !== 'buff' && cast.type !== 'support' && !cast.summonCount);
 }
@@ -11157,10 +11187,12 @@ function doInterrupt(){
   if(bossCasting.interruptPolicy === 'none'){
     log('🧱 '+bossName+' 的 '+bossCasting.name+' 无法被打断!','bad');
     if(mon) showMonsterFloat(mon,'🧱不可断','#fca5a5',{variant:'boss',scale:1.04});
+    if(mon) showInterruptFx(mon, 'immune', bossCasting.name);
     return false;
   }
   log('🦶 打断了 '+bossName+' 的 '+bossCasting.icon+' '+bossCasting.name+'!','good');
   combatEventBanner('打断成功', (bossCasting.icon || '') + (bossCasting.name || '施法'), 'interrupt');
+  if(mon) showInterruptFx(mon, bossCasting._empowered ? 'perfect' : 'success', bossCasting.name);
   if(bossCasting.interruptPolicy === 'soft' && mon && mon.hp > 0){
     const residual = buildInterruptedBossResidual(bossCasting);
     if(residual){
