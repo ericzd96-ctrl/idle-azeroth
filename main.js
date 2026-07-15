@@ -700,10 +700,31 @@ function setupDelegation() {
     });
   })();
   // 自动施法
+  const autoKindTips = {
+    damage: '伤害: 自动使用常规输出技能,适合稳定循环。',
+    burst: '爆发: 自动使用高倍率/斩杀/爆发技能,会消耗关键资源和冷却。',
+    buff: 'Buff/治疗/减伤: 自动使用增益、治疗、护盾和防御技能,用于稳定战斗。',
+    interrupt: '打断/控制: 自动打断可打断读条,或用瞬发控制兜底;默认关闭,适合需要自动处理读条时开启。',
+  };
+  const syncAutoSkillLabels = () => {
+    const enabled = state.autoSkill !== false;
+    if (autoSk) {
+      autoSk.closest('label')?.classList.toggle('off', !enabled);
+      autoSk.closest('label')?.setAttribute('title', enabled ? '自动施法已开启: 会按下方分类自动使用已解锁技能。' : '自动施法已关闭: 只会使用手动技能栏。');
+    }
+    document.querySelectorAll('.auto-skill-kind').forEach(chk => {
+      const kind = chk.dataset.kind;
+      const on = enabled && chk.checked;
+      const label = chk.closest('label');
+      if (!label) return;
+      label.classList.toggle('off', !on);
+      label.title = `${autoKindTips[kind] || '自动施法分类。'} 当前${on ? '启用' : '停用'}。`;
+    });
+  };
   const autoSk = $('auto-sk');
   if (autoSk) {
     autoSk.checked = state.autoSkill !== false;
-    autoSk.addEventListener('change', e => { state.autoSkill = e.target.checked; markDirty('skills'); if (typeof saveState === 'function') saveState(); });
+    autoSk.addEventListener('change', e => { state.autoSkill = e.target.checked; syncAutoSkillLabels(); markDirty('skills'); if (typeof saveState === 'function') saveState(); });
   }
   if (!state.autoSkillConfig) state.autoSkillConfig = { damage:true, burst:true, buff:true, interrupt:false };
   document.querySelectorAll('.auto-skill-kind').forEach(chk => {
@@ -712,10 +733,12 @@ function setupDelegation() {
     chk.addEventListener('change', e => {
       if (!state.autoSkillConfig) state.autoSkillConfig = {};
       state.autoSkillConfig[kind] = e.target.checked;
+      syncAutoSkillLabels();
       markDirty('skills');
       if (typeof saveState === 'function') saveState();
     });
   });
+  syncAutoSkillLabels();
 
   // 洗点按钮
   $('btn-reset-talents').addEventListener('click', resetTalents);

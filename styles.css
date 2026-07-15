@@ -6081,6 +6081,10 @@ button.legend:hover:not(:disabled) {
   color: #cbd5e1;
   white-space: nowrap;
 }
+.skill-auto-panel label.off {
+  color: #64748b;
+  opacity: .78;
+}
 .skill-auto-panel input {
   margin: 0;
 }
