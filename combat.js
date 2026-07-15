@@ -428,6 +428,58 @@ function showInterruptFx(mon, kind, label){
   if(type === 'perfect' && typeof stageFlashFx === 'function') stageFlashFx('interrupt');
   setTimeout(() => el.remove(), type === 'perfect' ? 940 : 760);
 }
+const EXECUTE_WINDOW_THRESHOLD = 0.20;
+let executeWindowFxSeen = new Set();
+function monsterExecuteFxId(mon){
+  if(!mon) return '';
+  if(mon._uid != null) return 'uid:' + mon._uid;
+  return [mon.bossName || mon.name || 'monster', mon._spawnAt || '', mon.lvl || 0].join(':');
+}
+function showMonsterExecuteWindowFx(mon){
+  if(!mon || typeof document === 'undefined' || document.hidden) return;
+  const layer = skillFxLayer();
+  const anchor = monsterFloatAnchor(mon);
+  const p = skillFxPoint(anchor);
+  if(!layer || !p) return;
+  const boss = !!(mon.isBoss || mon.isWorldBoss || mon._isRaid || mon._isEpicRaid);
+  const elite = boss || !!(mon.isRareElite || mon._fieldCommander);
+  const size = Math.round(Math.max(48, Math.min(126, Math.max(p.w, p.h) + (boss ? 66 : elite ? 48 : 34))));
+  const el = document.createElement('div');
+  el.className = `execute-window-fx ${boss ? 'boss' : elite ? 'elite' : 'trash'}`;
+  el.style.left = (p.x - size / 2) + 'px';
+  el.style.top = (p.y - size / 2) + 'px';
+  el.style.width = size + 'px';
+  el.style.height = size + 'px';
+  const text = document.createElement('b');
+  text.textContent = '斩杀';
+  el.appendChild(text);
+  for(let i=0;i<(boss ? 8 : 6);i++){
+    const blade = document.createElement('span');
+    blade.style.setProperty('--execute-angle', (i * (360 / (boss ? 8 : 6)) + 12) + 'deg');
+    el.appendChild(blade);
+  }
+  layer.appendChild(el);
+  if(typeof pulseCombatEl === 'function') pulseCombatEl(anchor, boss ? 'danger' : 'crit', boss ? 420 : 320);
+  if(boss && typeof stageEdgeFx === 'function') stageEdgeFx('danger', { intensity:.82 });
+  setTimeout(() => el.remove(), boss ? 980 : 760);
+}
+function checkMonsterExecuteWindowFx(){
+  if(!state || !Array.isArray(state.currentMonsters)) return;
+  for(const mon of state.currentMonsters){
+    if(!mon || mon.hp <= 0 || !(mon.hpMax > 0)) continue;
+    const id = monsterExecuteFxId(mon);
+    if(!id) continue;
+    const frac = mon.hp / mon.hpMax;
+    if(frac > EXECUTE_WINDOW_THRESHOLD + 0.08){
+      executeWindowFxSeen.delete(id);
+      continue;
+    }
+    if(frac > 0 && frac <= EXECUTE_WINDOW_THRESHOLD && !executeWindowFxSeen.has(id)){
+      executeWindowFxSeen.add(id);
+      showMonsterExecuteWindowFx(mon);
+    }
+  }
+}
 function bossCastIsDamage(cast){
   return !!(cast && typeof cast.mul === 'number' && cast.mul > 0 && cast.type !== 'heal' && cast.type !== 'buff' && cast.type !== 'support' && !cast.summonCount);
 }
@@ -9396,6 +9448,7 @@ function tickBattle(now){
   }
   focusHighestThreat();                                 // 锁定仇恨最高的敌人为焦点([0])
   let mon=state.currentMonsters[0];
+  checkMonsterExecuteWindowFx();
   applyCouncilBossMechanics(now);
   applyDungeonBossSpectacleMechanics(now);
   applyDungeonBossDirectorMechanics(now);
@@ -10785,6 +10838,7 @@ function resetCombatState(){
   if(state){state._compHp=null;state._compDownUntil=0;}   // 随从血量/阵亡态:下个角色重新满血
   if(typeof resetDmgStats==='function')resetDmgStats();
   if(typeof killStreak==='number')killStreak=0;
+  if(typeof executeWindowFxSeen!=='undefined' && executeWindowFxSeen?.clear) executeWindowFxSeen.clear();
   compSkillCd={};
   hideHeroCastBar();
   hideBossCastBar();
