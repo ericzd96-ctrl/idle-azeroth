@@ -559,6 +559,7 @@ function switchSubzone(mapKey, subIdx) {
   if (mapKey === state.currentMap) {
     state.currentSubzone = subIdx;
     state.currentMonsters = [];
+    state.worldCombatPause = null;
     if (typeof resetDmgStats === 'function') resetDmgStats();
     spawnMonster();
     const sub = map.sub[subIdx];
@@ -599,6 +600,7 @@ function tickTravel(now) {
     state.currentMap = t.mapKey;
     state.currentSubzone = t.subIdx;
     state.travel = null;
+    state.worldCombatPause = null;
     if (typeof resetDmgStats === 'function') resetDmgStats();
     spawnMonster();
     const map = MAPS.find(m => m.key === t.mapKey);

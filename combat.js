@@ -6041,8 +6041,11 @@ function overLevelPenalty(mon){
 function spawnMonster(){
   initCompanionHp();state.currentMonsters=[];
   state.worldSearch = null;
-  state.worldCombatPause = null;
   state._currentRareElite = null;
+  if(state.mode==='world' && state.worldCombatPause){
+    if(typeof markDirty === 'function') markDirty('stage', 'map');
+    return;
+  }
   // 新战斗清除随从护盾;英雄护盾改为按持续时间到期(不再每波清盾,否则秒杀刷怪时护盾瞬间消失)
   state._compBarrier = 0;
   if(state.mode==='travel')return;
@@ -6432,6 +6435,7 @@ function worldMonsterSearchDelayMs(){
 }
 function startWorldMonsterSearch(reason){
   if(!state || state.mode !== 'world') return false;
+  if(state.worldCombatPause) return false;
   if(getAliveMonsters().length > 0) return false;
   const now = Date.now();
   const delay = worldMonsterSearchDelayMs();
@@ -6452,6 +6456,11 @@ function waitOrResolveWorldMonsterSearch(now){
   if(state.mode !== 'world'){
     state.worldSearch = null;
     return false;
+  }
+  if(state.worldCombatPause){
+    state.worldSearch = null;
+    if(typeof markDirty === 'function') markDirty('stage', 'map');
+    return true;
   }
   if(worldSearchRemainingMs(now) > 0){
     if(typeof markDirty === 'function') markDirty('stage');
@@ -9781,6 +9790,7 @@ function failFieldCommanderChallenge(mon){
   const failName = mon.bossName || failInfo?.name || mon.name || '据点指挥官';
   log(`💀 ${failName} 挑战失败,本次据点首领已经撤退,战斗已结束`, 'bad');
   state.mode = 'world';
+  if(typeof pauseWorldCombatAfterFieldCommanderFail === 'function') pauseWorldCombatAfterFieldCommanderFail(mon);
   bossCasting = null;
   casting = null;
   if(typeof hideBossCastBar === 'function') hideBossCastBar();
@@ -9792,7 +9802,6 @@ function failFieldCommanderChallenge(mon){
   lastBossSkill = 0;
   bossSkillIdx = 0;
   markDirty('map', 'stage');
-  if(typeof pauseWorldCombatAfterFieldCommanderFail === 'function') pauseWorldCombatAfterFieldCommanderFail(mon);
   return true;
 }
 function onHeroDeath(){
