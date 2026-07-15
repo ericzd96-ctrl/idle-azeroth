@@ -3952,6 +3952,52 @@ h1 {
   box-shadow: 0 0 16px var(--skill-fx-color-soft);
   animation: skillBurst var(--skill-fx-duration) ease-out forwards;
 }
+.boss-target-telegraph {
+  --boss-telegraph-duration: 1200ms;
+  position: absolute;
+  pointer-events: none;
+  z-index: 6;
+  border-radius: 999px;
+  border: 1px solid rgba(248,113,113,.88);
+  background:
+    linear-gradient(90deg, transparent 46%, rgba(248,113,113,.92) 48% 52%, transparent 54%),
+    linear-gradient(0deg, transparent 46%, rgba(248,113,113,.92) 48% 52%, transparent 54%),
+    radial-gradient(circle, rgba(248,113,113,.18) 0 36%, rgba(127,29,29,0) 68%);
+  box-shadow: 0 0 18px rgba(248,113,113,.32), inset 0 0 14px rgba(248,113,113,.18);
+  animation: bossTargetTelegraph var(--boss-telegraph-duration) ease-out forwards;
+}
+.boss-target-telegraph.school-shadow,
+.boss-target-telegraph.danger {
+  border-color: rgba(216,180,254,.88);
+  background:
+    linear-gradient(90deg, transparent 46%, rgba(216,180,254,.92) 48% 52%, transparent 54%),
+    linear-gradient(0deg, transparent 46%, rgba(216,180,254,.92) 48% 52%, transparent 54%),
+    radial-gradient(circle, rgba(168,85,247,.24) 0 36%, rgba(88,28,135,0) 70%);
+  box-shadow: 0 0 22px rgba(216,180,254,.38), inset 0 0 15px rgba(168,85,247,.22);
+}
+.boss-target-telegraph.aoe { border-style: dashed; }
+.boss-target-telegraph.self {
+  border-color: rgba(250,204,21,.82);
+  background:
+    linear-gradient(90deg, transparent 46%, rgba(250,204,21,.82) 48% 52%, transparent 54%),
+    linear-gradient(0deg, transparent 46%, rgba(250,204,21,.82) 48% 52%, transparent 54%),
+    radial-gradient(circle, rgba(250,204,21,.18) 0 36%, rgba(113,63,18,0) 68%);
+  box-shadow: 0 0 18px rgba(250,204,21,.28), inset 0 0 14px rgba(250,204,21,.16);
+}
+.boss-target-telegraph span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 1px 4px;
+  border-radius: 999px;
+  background: rgba(15,23,42,.72);
+  color: #fecaca;
+  font-size: 10px;
+  line-height: 1.1;
+  white-space: nowrap;
+  text-shadow: 0 1px 3px #000;
+}
 @keyframes skillCastRing {
   0% { transform: scale(.52); opacity: 0; }
   22% { opacity: .95; }
@@ -3966,6 +4012,12 @@ h1 {
   0% { transform: scale(.35); opacity: 0; }
   24% { transform: scale(1.05); opacity: .95; }
   100% { transform: scale(1.58); opacity: 0; }
+}
+@keyframes bossTargetTelegraph {
+  0% { opacity: 0; transform: scale(.62) rotate(0deg); }
+  18% { opacity: 1; transform: scale(1.02) rotate(0deg); }
+  72% { opacity: .82; transform: scale(1.08) rotate(4deg); }
+  100% { opacity: 0; transform: scale(1.22) rotate(8deg); }
 }
 @keyframes floatUp {
   0% { transform: translate(0, 0) scale(var(--float-scale)); opacity: 0; }

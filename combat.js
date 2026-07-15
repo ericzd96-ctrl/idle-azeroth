@@ -332,6 +332,54 @@ function showSkillImpactFx(sourceEl, targetEl, sk, opts){
   if(typeof pulseCombatEl === 'function') pulseCombatEl(targetEl, opts?.pulse || (opts?.actor === 'boss' ? 'danger' : 'hit'), opts?.pulseDuration || 220);
   setTimeout(() => burst.remove(), opts?.duration || 560);
 }
+function bossCastIsDamage(cast){
+  return !!(cast && typeof cast.mul === 'number' && cast.mul > 0 && cast.type !== 'heal' && cast.type !== 'buff' && cast.type !== 'support' && !cast.summonCount);
+}
+function bossTelegraphTargets(cast, mon, now){
+  if(!cast) return [];
+  if(!bossCastIsDamage(cast)) return mon ? [{ el:monsterFloatAnchor(mon), label:'自施', kind:'self' }] : [];
+  if(cast.aoe){
+    const out = [{ el:$('hero-emoji'), label:'全体', kind:'aoe' }];
+    if(typeof companionTargetable === 'function' && companionTargetable()) out.push({ el:$('comp-mini'), label:'全体', kind:'aoe' });
+    if(typeof livingAllySummons === 'function' && typeof allySummonAnchor === 'function'){
+      for(const unit of livingAllySummons(now || Date.now()).slice(0, 2)) out.push({ el:allySummonAnchor(unit), label:'全体', kind:'aoe' });
+    }
+    return out;
+  }
+  const target = cast._target;
+  if(target?.kind === 'companion') return [{ el:$('comp-mini'), label:'点名', kind:'target' }];
+  if(target?.kind === 'summon' && target.unit && typeof allySummonAnchor === 'function') return [{ el:allySummonAnchor(target.unit), label:'点名', kind:'target' }];
+  return [{ el:$('hero-emoji'), label:'点名', kind:'target' }];
+}
+function showBossTargetTelegraph(cast, mon, opts){
+  if(!cast || typeof document === 'undefined' || document.hidden) return;
+  const layer = skillFxLayer();
+  if(!layer) return;
+  const now = opts?.now || Date.now();
+  const targets = bossTelegraphTargets(cast, mon, now).filter(x => x && x.el);
+  if(!targets.length) return;
+  const dangerous = cast._empowered || cast.threat === 'high' || cast.threat === 'extreme';
+  const duration = opts?.duration || Math.max(700, Math.min(2600, cast.duration || 900));
+  const school = skillVisualSchool(null, cast, 'boss');
+  for(const t of targets.slice(0, 4)){
+    const p = skillFxPoint(t.el);
+    if(!p) continue;
+    const size = Math.round(Math.max(38, Math.min(92, Math.max(p.w, p.h) + (dangerous ? 28 : 18))));
+    const el = document.createElement('div');
+    el.className = `boss-target-telegraph ${dangerous ? 'danger' : ''} ${t.kind || 'target'} school-${school}`;
+    el.style.left = (p.x - size / 2) + 'px';
+    el.style.top = (p.y - size / 2) + 'px';
+    el.style.width = size + 'px';
+    el.style.height = size + 'px';
+    el.style.setProperty('--boss-telegraph-duration', duration + 'ms');
+    const tag = document.createElement('span');
+    tag.textContent = t.label || '点名';
+    el.appendChild(tag);
+    layer.appendChild(el);
+    if(typeof pulseCombatEl === 'function') pulseCombatEl(t.el, dangerous ? 'danger' : 'bosscast', Math.min(420, duration));
+    setTimeout(() => el.remove(), duration + 120);
+  }
+}
 
 /* ---------- 天赋特效运行时 ---------- */
 function talentAuraMeta(key){ return (typeof TALENT_AURA_LIBRARY === 'object' && TALENT_AURA_LIBRARY[key]) || null; }
@@ -9559,7 +9607,7 @@ function tickBattle(now){
     const _pickSk=_queuedSk||_forcedPhaseSk||_phasePool[bossSkillIdx%Math.max(1,_phasePool.length)];
     const rawCd=(_pickSk&&_pickSk.cd)||10;
     const skillCd=Math.max(2,Math.floor(rawCd*0.42));   // 读条技更频繁:CD压缩58%,但最低2秒间隔
-    if(_allBossSkills.length&&now-lastBossSkill>skillCd*1000){const sk=_pickSk;let castTime=sk.castTime!==undefined?sk.castTime:2;const instantChance=typeof mon.instantCastChance==='number'?mon.instantCastChance:(mon.instantCast?0.35:0);let instant=instantChance>0&&Math.random()<instantChance;if(instant&&isEmpoweredBossCast(sk))instant=false;/* 大伤害/灭团技(蓄力大招)绝不瞬发,必须读条可打断 */if(instant)castTime=0;bossCasting={casterUid:mon._uid,bossName:mon.bossName||mon.name,name:sk.name,icon:sk.icon,type:sk.type,heal:sk.heal,healPct:sk.healPct,mul:sk.mul,dotSkill:sk.dotSkill,dotSecs:sk.dotSecs,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,spdBuffSecs:sk.spdBuffSecs,spdBuffPct:sk.spdBuffPct,atkBuffSecs:sk.atkBuffSecs,atkBuffPct:sk.atkBuffPct,defBuffSecs:sk.defBuffSecs,defBuffPct:sk.defBuffPct,drBuffSecs:sk.drBuffSecs,drBuffPct:sk.drBuffPct,shieldPct:sk.shieldPct,critBuffSecs:sk.critBuffSecs,critBuffPct:sk.critBuffPct,leechBuffSecs:sk.leechBuffSecs,leechBuffPct:sk.leechBuffPct,summonCount:sk.summonCount,summonTheme:sk.summonTheme,aoe:sk.aoe,silence:sk.silence,disarm:sk.disarm,fear:sk.fear,freeze:sk.freeze,cripple:sk.cripple,decay:sk.decay,wither:sk.wither,manaDrain:sk.manaDrain,bomb:sk.bomb,plague:sk.plague,bleed:sk.bleed,brittle:sk.brittle,soulDrain:sk.soulDrain,soulLink:sk.soulLink,revenge:sk.revenge,vulnerable:sk.vulnerable,frenzy:sk.frenzy,decay2:sk.decay2,mirror:sk.mirror,threat:sk.threat,interruptPolicy:sk.interruptPolicy,_empowered:isEmpoweredBossCast(sk),startTime:now,duration:castTime*1000};const _bt=bossCastTargetInfo(sk,now);bossCasting._targetDesc=_bt.desc;bossCasting._target=_bt.target;const _emp=!instant&&isEmpoweredBossCast(sk)&&sk.interruptPolicy!=='none';const _aoeLog=(sk.type!=='heal'&&sk.type!=='buff'&&!sk.summonCount&&typeof sk.mul==='number'&&sk.mul>0)?(sk.aoe?' [🌀群体]':' [🎯单体]'):'';if(_emp || sk.threat==='high' || sk.threat==='extreme')combatEventBanner(_emp?'必须打断':'高危读条',(sk.icon||'')+sk.name,'danger');log('💀 '+(mon.bossName||mon.name)+(instant?' 瞬发 ':' 开始施放 ')+sk.name+_aoeLog+'!'+(instant?'(无法打断)':(_emp?' ⚡蓄力大招—打断可造成破绽!':'')),'bad');lastBossSkill=now;bossSkillIdx++;}
+    if(_allBossSkills.length&&now-lastBossSkill>skillCd*1000){const sk=_pickSk;let castTime=sk.castTime!==undefined?sk.castTime:2;const instantChance=typeof mon.instantCastChance==='number'?mon.instantCastChance:(mon.instantCast?0.35:0);let instant=instantChance>0&&Math.random()<instantChance;if(instant&&isEmpoweredBossCast(sk))instant=false;/* 大伤害/灭团技(蓄力大招)绝不瞬发,必须读条可打断 */if(instant)castTime=0;bossCasting={casterUid:mon._uid,bossName:mon.bossName||mon.name,name:sk.name,icon:sk.icon,type:sk.type,heal:sk.heal,healPct:sk.healPct,mul:sk.mul,dotSkill:sk.dotSkill,dotSecs:sk.dotSecs,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,spdBuffSecs:sk.spdBuffSecs,spdBuffPct:sk.spdBuffPct,atkBuffSecs:sk.atkBuffSecs,atkBuffPct:sk.atkBuffPct,defBuffSecs:sk.defBuffSecs,defBuffPct:sk.defBuffPct,drBuffSecs:sk.drBuffSecs,drBuffPct:sk.drBuffPct,shieldPct:sk.shieldPct,critBuffSecs:sk.critBuffSecs,critBuffPct:sk.critBuffPct,leechBuffSecs:sk.leechBuffSecs,leechBuffPct:sk.leechBuffPct,summonCount:sk.summonCount,summonTheme:sk.summonTheme,aoe:sk.aoe,silence:sk.silence,disarm:sk.disarm,fear:sk.fear,freeze:sk.freeze,cripple:sk.cripple,decay:sk.decay,wither:sk.wither,manaDrain:sk.manaDrain,bomb:sk.bomb,plague:sk.plague,bleed:sk.bleed,brittle:sk.brittle,soulDrain:sk.soulDrain,soulLink:sk.soulLink,revenge:sk.revenge,vulnerable:sk.vulnerable,frenzy:sk.frenzy,decay2:sk.decay2,mirror:sk.mirror,threat:sk.threat,interruptPolicy:sk.interruptPolicy,_empowered:isEmpoweredBossCast(sk),startTime:now,duration:castTime*1000};const _bt=bossCastTargetInfo(sk,now);bossCasting._targetDesc=_bt.desc;bossCasting._target=_bt.target;showBossTargetTelegraph(bossCasting,mon,{now,duration:instant?700:undefined});const _emp=!instant&&isEmpoweredBossCast(sk)&&sk.interruptPolicy!=='none';const _aoeLog=(sk.type!=='heal'&&sk.type!=='buff'&&!sk.summonCount&&typeof sk.mul==='number'&&sk.mul>0)?(sk.aoe?' [🌀群体]':' [🎯单体]'):'';if(_emp || sk.threat==='high' || sk.threat==='extreme')combatEventBanner(_emp?'必须打断':'高危读条',(sk.icon||'')+sk.name,'danger');log('💀 '+(mon.bossName||mon.name)+(instant?' 瞬发 ':' 开始施放 ')+sk.name+_aoeLog+'!'+(instant?'(无法打断)':(_emp?' ⚡蓄力大招—打断可造成破绽!':'')),'bad');lastBossSkill=now;bossSkillIdx++;}
     // BOSS技巧(独立冷却,避免开场和支援技能一起连发)
     const tricks=bossTrickList(bossData).filter(trick => bossTrickAvailable(mon, trick, _hpFrac, now));
     const supportRecently = (mon._lastSupportSkill || 0) > 0 && now - mon._lastSupportSkill < 4500;
