@@ -1874,6 +1874,17 @@ function updateDmgMeter() {
     const top = allSkills.slice(0, 5);
     syncMeterBreakdownRows(shEl, top, 'heal', '#6ee7b7', 'spell_holy_heal');
   }
+  const stEl = $('dm-taken-breakdown');
+  if (stEl) {
+    const hs = (typeof dmgStats !== 'undefined' && dmgStats.takenSources) ? dmgStats.takenSources : {};
+    const cs = (typeof dmgStats !== 'undefined' && dmgStats.compTakenSources) ? dmgStats.compTakenSources : {};
+    const allSources = [];
+    for (const [name, taken] of Object.entries(hs)) allSources.push({ name, taken, src: '🦸' });
+    for (const [name, taken] of Object.entries(cs)) allSources.push({ name, taken, src: '🐾' });
+    allSources.sort((a, b) => b.taken - a.taken);
+    const top = allSources.slice(0, 5);
+    syncMeterBreakdownRows(stEl, top, 'taken', '#fb7185', 'ability_warrior_decisivestrike');
+  }
   if (totalEl) {
     let text = '总伤 ' + fmt(total) + ' · ' + Math.floor(elapsed) + '秒';
     if (healTotal > 0) text += ' · 总疗 ' + fmt(healTotal);
