@@ -709,8 +709,24 @@ function fmtCd(seconds) {
 }
 
 function setBar(el, pct, text) {
+  if (!el) return;
   pct = Number.isFinite(pct) ? pct : 0;
-  const pctText = Math.max(0, Math.min(100, pct)) + '%';
+  const clampedPct = Math.max(0, Math.min(100, pct));
+  const pctText = clampedPct + '%';
+  const prevPct = el.dataset.barPct == null ? null : Number(el.dataset.barPct);
+  const bar = el.parentElement;
+  if (bar && bar.classList && bar.classList.contains('hp') && Number.isFinite(prevPct)) {
+    const delta = clampedPct - prevPct;
+    const flashClass = delta < -1 ? 'bar-loss-flash' : delta > 3.5 ? 'bar-gain-flash' : '';
+    if (flashClass) {
+      bar.classList.remove('bar-loss-flash', 'bar-gain-flash');
+      void bar.offsetWidth;
+      bar.classList.add(flashClass);
+      clearTimeout(bar._barFlashTimer);
+      bar._barFlashTimer = setTimeout(() => bar.classList.remove(flashClass), flashClass === 'bar-loss-flash' ? 430 : 540);
+    }
+  }
+  el.dataset.barPct = String(clampedPct);
   if (el.dataset.w !== pctText) {
     el.dataset.w = pctText;
     el.style.width = pctText;
