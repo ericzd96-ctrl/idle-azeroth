@@ -501,6 +501,52 @@ function showDefenseOutcomeFx(targetEl, kind, opts){
   layer.appendChild(el);
   setTimeout(() => el.remove(), safeKind === 'danger' ? 680 : 760);
 }
+const _statusSigilFxCooldown = {};
+function statusSigilMeta(key, opts){
+  const text = String(key || '');
+  const monsterMeta = (typeof MONSTER_STATE_META === 'object' && MONSTER_STATE_META[text]) || null;
+  const debuffMeta = (typeof DEBUFF_FX === 'object' && DEBUFF_FX[text]) || null;
+  const meta = opts?.meta || monsterMeta || debuffMeta || {};
+  let kind = opts?.kind || text || 'control';
+  if(/burn|dot|poison|bleed|fever|trauma|void|doom|decay/i.test(text)) kind = 'dot';
+  else if(/brittle/i.test(text)) kind = 'brittle';
+  else if(/root|bind/i.test(text)) kind = 'rooted';
+  else if(/freeze|frozen|frost|chill|slow/i.test(text)) kind = 'freeze';
+  else if(/silence|disarm|fear|stun|cripple/i.test(text)) kind = text.includes('silence') ? 'silence' : 'control';
+  else if(/sunder|vulnerable|exposed|marked|judged|hunt|brand/i.test(text)) kind = 'vulnerable';
+  return {
+    kind,
+    icon: opts?.icon || meta.icon || (kind === 'dot' ? '☠️' : kind === 'freeze' ? '🧊' : kind === 'silence' ? '🔇' : kind === 'vulnerable' ? '🩸' : kind === 'rooted' ? '🌿' : kind === 'brittle' ? '💥' : '✦'),
+    label: opts?.label || meta.name || (kind === 'dot' ? '持续' : kind === 'freeze' ? '冻结' : kind === 'silence' ? '沉默' : kind === 'vulnerable' ? '破绽' : kind === 'rooted' ? '束缚' : kind === 'brittle' ? '易爆' : '控制')
+  };
+}
+function showStatusSigilFx(targetEl, key, opts){
+  if(!targetEl || typeof document === 'undefined' || document.hidden) return;
+  const meta = statusSigilMeta(key, opts);
+  const target = opts?.target || targetEl.id || 'target';
+  const throttleKey = `${target}:${key || meta.kind}`;
+  const now = Date.now();
+  const gap = opts?.important ? 360 : 650;
+  if((_statusSigilFxCooldown[throttleKey] || 0) > now) return;
+  _statusSigilFxCooldown[throttleKey] = now + gap;
+  const layer = skillFxLayer();
+  const p = skillFxPoint(targetEl);
+  if(!layer || !p) return;
+  const size = Math.round(Math.max(36, Math.min(94, Math.max(p.w, p.h) + (opts?.important ? 36 : 24))));
+  const safeKind = String(meta.kind || 'control').replace(/[^a-z0-9_-]/gi, '') || 'control';
+  const el = document.createElement('div');
+  el.className = `status-sigil status-sigil-${safeKind}${opts?.important ? ' important' : ''}`;
+  el.style.left = (p.x - size / 2) + 'px';
+  el.style.top = (p.y - size / 2) + 'px';
+  el.style.width = size + 'px';
+  el.style.height = size + 'px';
+  const span = document.createElement('span');
+  span.textContent = String(meta.icon || '✦').slice(0, 3);
+  span.title = meta.label || '';
+  el.appendChild(span);
+  layer.appendChild(el);
+  setTimeout(() => el.remove(), opts?.important ? 820 : 660);
+}
 function showBossPhaseFx(mon, label, opts){
   if(!mon || typeof document === 'undefined' || document.hidden) return;
   const layer = skillFxLayer();
@@ -892,6 +938,13 @@ function applyMonsterDot(mon, dotKey, dps, durMs, meta){
     expire: Math.max(prev?.expire || 0, expire),
   };
   ensureMonsterDots(mon, now);
+  showStatusSigilFx(monsterFloatAnchor(mon), dotKey || 'dot', {
+    target:mon._uid || mon.name || 'monster',
+    kind:'dot',
+    icon:meta?.icon || mon._dots[key].icon || '☠️',
+    label:meta?.name || mon._dots[key].name || '持续伤害',
+    important:!!mon.isBoss
+  });
   return mon._dots[key].dps;
 }
 function tickMonsterDots(mon, now, tickInterval){
@@ -4389,16 +4442,20 @@ function applyMonsterState(mon, stateKey, durMs){
     }
     return;
   }
+  const now = Date.now();
   if(stateKey === 'sunder'){
-    mon.sunderUntil = Math.max(mon.sunderUntil || 0, Date.now() + (durMs || 15000));
+    mon.sunderUntil = Math.max(mon.sunderUntil || 0, now + (durMs || 15000));
+    showStatusSigilFx(monsterFloatAnchor(mon), 'sunder', { target:mon._uid || mon.name || 'monster', kind:'vulnerable', icon:'🩸', label:'易伤', important:!!mon.isBoss });
     return;
   }
   if(stateKey === 'slow'){
-    mon.slowUntil = Math.max(mon.slowUntil || 0, Date.now() + (durMs || 4500));
+    mon.slowUntil = Math.max(mon.slowUntil || 0, now + (durMs || 4500));
+    showStatusSigilFx(monsterFloatAnchor(mon), 'slow', { target:mon._uid || mon.name || 'monster', kind:'freeze', icon:'❄️', label:'减速', important:!!mon.isBoss });
     return;
   }
   if(!mon._skillStates) mon._skillStates = {};
-  mon._skillStates[stateKey] = Date.now() + (durMs || 10000);
+  mon._skillStates[stateKey] = now + (durMs || 10000);
+  showStatusSigilFx(monsterFloatAnchor(mon), stateKey, { target:mon._uid || mon.name || 'monster', important:!!mon.isBoss });
 }
 function talentDamageMult(mon, skillKey){
   let mult = 1;
@@ -9255,6 +9312,11 @@ function applyHeroDebuff(key, durMs, opts){
   if(opts&&opts.dps!=null)d.dps=opts.dps;
   state.heroDebuffs[key]=d;
   const fx=DEBUFF_FX[key];
+  showStatusSigilFx($('hero-emoji'), key, {
+    target:'hero',
+    meta:fx,
+    important:['silence','fear','freeze','brittle','vulnerable','decay2'].includes(key)
+  });
   if(fx.atkMul||fx.spdMul)recomputeStats();   // 影响面板属性的立即重算
   markDirty('hero');
 }
@@ -9287,6 +9349,11 @@ function applyCompanionDebuff(key, durMs, opts){
   d.expire = Date.now() + durMs;
   if(opts && opts.dps != null) d.dps = opts.dps;
   state._compDebuffs[key] = d;
+  showStatusSigilFx($('comp-mini'), key, {
+    target:'companion',
+    meta:DEBUFF_FX[key],
+    important:['silence','fear','freeze','brittle','vulnerable','decay2'].includes(key)
+  });
   markDirty('companion');
 }
 function companionDebuffTakenMult(){
@@ -11390,8 +11457,8 @@ function castSkill(skillKey,manual){
         companionCoordinateTrigger(target, dd, { now, crit:d.crit, skill:true, state:!!(sk.stateKey || sk.debuff), control:!!(sk.slow || sk.stun || sk.interruptCast || sk.debuff === 'sunder') });
         if(d.crit||forceCrit)processTalentOnCrit(target,dd,{skillKey});
         if(sk.lifeSteal){const heal=Math.floor(dd*sk.lifeSteal);healHeroAmount(heal,'🩸','#6ee7b7');}
-        if(sk.slow)target.slowUntil=Date.now()+4000;
-        if(sk.debuff==='sunder'){target.sunderUntil=Date.now()+15000;}
+        if(sk.slow){target.slowUntil=Date.now()+4000;showStatusSigilFx(monsterFloatAnchor(target),'slow',{target:target._uid || target.name || 'monster',kind:'freeze',icon:'❄️',label:'减速',important:!!target.isBoss});}
+        if(sk.debuff==='sunder'){target.sunderUntil=Date.now()+15000;showStatusSigilFx(monsterFloatAnchor(target),'sunder',{target:target._uid || target.name || 'monster',kind:'vulnerable',icon:'🩸',label:'易伤',important:!!target.isBoss});}
         const applyState=(!skillFxMeta(skillKey, sk).applyTargetState && ai.applyTargetState && !['dot','slow','sunder'].includes(ai.applyTargetState)) ? ai.applyTargetState : null;
         if(applyState) applyMonsterState(target, applyState, ai.stateDurationMs || 10000);
         applyHeroSkillControlInterrupt(sk, target, now);
@@ -11417,8 +11484,8 @@ function castSkill(skillKey,manual){
       log(sk.name+'! '+dd+' 伤害'+(forceCrit?' (必暴)':''),'good');
       if(d.crit||forceCrit)processTalentOnCrit(mon,dd,{skillKey});
       if(sk.lifeSteal){const heal=Math.floor(dmgDone*sk.lifeSteal);healHeroAmount(heal,'🩸','#6ee7b7');}
-      if(sk.slow)mon.slowUntil=Date.now()+4000;
-      if(sk.debuff==='sunder'){mon.sunderUntil=Date.now()+15000;}   // 破甲:15秒防御-30%
+      if(sk.slow){mon.slowUntil=Date.now()+4000;showStatusSigilFx(monsterFloatAnchor(mon),'slow',{target:mon._uid || mon.name || 'monster',kind:'freeze',icon:'❄️',label:'减速',important:!!mon.isBoss});}
+      if(sk.debuff==='sunder'){mon.sunderUntil=Date.now()+15000;showStatusSigilFx(monsterFloatAnchor(mon),'sunder',{target:mon._uid || mon.name || 'monster',kind:'vulnerable',icon:'🩸',label:'易伤',important:!!mon.isBoss});}   // 破甲:15秒防御-30%
       const applyState=(!skillFxMeta(skillKey, sk).applyTargetState && ai.applyTargetState && !['dot','slow','sunder'].includes(ai.applyTargetState)) ? ai.applyTargetState : null;
       if(applyState) applyMonsterState(mon, applyState, ai.stateDurationMs || 10000);
       applyHeroSkillControlInterrupt(sk, mon, now);

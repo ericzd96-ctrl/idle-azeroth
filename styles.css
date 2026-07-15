@@ -4140,10 +4140,19 @@ h1 {
 .status-sigil-stun { --status-sigil-color:#fde047; --status-sigil-soft:rgba(250,204,21,.34); }
 .status-sigil-silence { --status-sigil-color:#c4b5fd; --status-sigil-soft:rgba(124,58,237,.34); }
 .status-sigil-freeze { --status-sigil-color:#93c5fd; --status-sigil-soft:rgba(56,189,248,.34); }
+.status-sigil-dot { --status-sigil-color:#c084fc; --status-sigil-soft:rgba(168,85,247,.34); }
 .status-sigil-fear { --status-sigil-color:#f0abfc; --status-sigil-soft:rgba(168,85,247,.34); }
 .status-sigil-vulnerable,
 .status-sigil-control { --status-sigil-color:#fca5a5; --status-sigil-soft:rgba(248,113,113,.32); }
+.status-sigil-rooted { --status-sigil-color:#86efac; --status-sigil-soft:rgba(34,197,94,.32); }
+.status-sigil-brittle { --status-sigil-color:#fdba74; --status-sigil-soft:rgba(251,146,60,.34); }
 .status-sigil-cleanse { --status-sigil-color:#fef3c7; --status-sigil-soft:rgba(250,204,21,.26); }
+.status-sigil.important {
+  animation-duration: .82s;
+}
+.status-sigil.important span {
+  animation-duration: .82s;
+}
 .status-sigil-avoid {
   --status-sigil-color:#cbd5e1;
   --status-sigil-soft:rgba(148,163,184,.26);
