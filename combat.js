@@ -6736,6 +6736,12 @@ function bossInterruptTag(skill){
   if(skill?.interruptPolicy === 'none') return '不可断';
   return '可断';
 }
+function bossCastBarStyle(skill, threatMeta){
+  if(skill?.interruptPolicy === 'hard') return 'linear-gradient(90deg,#ef4444,#7f1d1d)';
+  if(skill?.interruptPolicy === 'soft') return 'linear-gradient(90deg,#fbbf24,#f97316)';
+  if(skill?.interruptPolicy === 'none') return 'linear-gradient(90deg,#60a5fa,#2563eb)';
+  return threatMeta?.bar || BOSS_CAST_THREAT_META.low.bar;
+}
 function buildInterruptedBossResidual(skill){
   if(!skill || skill.interruptPolicy !== 'soft') return null;
   const out = {
@@ -10622,7 +10628,7 @@ function tickCast(now){
     $('boss-cast-name').textContent='💀 '+(bossCasting.bossName||'BOSS')+' - '+(bossCasting.icon||'')+' '+(bossCasting.name||'施法')+'【'+tgtTag+' / '+threatMeta.label+' / '+interruptText+(bossCasting._empowered&&bossCasting.interruptPolicy!=='none'?' / ⚡可破绽':'')+'】';
     $('boss-cast-name').style.color = threatMeta.text;
     $('boss-cast-time').textContent=remainMs>0?(remainMs/1000).toFixed(1)+'s':'';
-    $('boss-b-cast').style.background = threatMeta.bar;
+    $('boss-b-cast').style.background = bossCastBarStyle(bossCasting, threatMeta);
     $('boss-b-cast').style.width=pct+'%';
     if(elapsed>=bossCasting.duration){
       hideBossCastBar();
