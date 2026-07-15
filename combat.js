@@ -9026,6 +9026,7 @@ function tickArtifactSkill(now){
 
 function tickBattle(now){
   if(state.mode==='travel'){lastHeroAtk=now;lastMonAtk=now;return;}
+  if(state.hp<=0){onHeroDeath();return;}
   if(pruneTalentAuras(now)) recomputeStats();
   pruneSkillAuras(now);
   if(state.talentState && state.talentState.shield > 0 && state.talentState.shieldExpire && now > state.talentState.shieldExpire){ state.talentState.shield = 0; state.talentState.shieldExpire = 0; markDirty('hero'); }   // 护盾到期消失
@@ -9076,7 +9077,7 @@ function tickBattle(now){
   tickArtifactSkill(now);                               // 神器招牌技能自动释放
   // 英雄身上的灼烧/中毒(boss debuff)持续掉血
   {const bd=state.heroDebuffs&&state.heroDebuffs.burn;
-   if(bd&&bd.expire>now&&now-burnTick>1000/spdMul){burnTick=now;const bdmg=Math.max(1,bd.dps||1);applyHeroDamage(bdmg,mon,{label:t=>'☠️-'+t,color:'#a3e635',now});processTalentLowHp(mon,now);if(state.hp<=0)return;}}
+   if(bd&&bd.expire>now&&now-burnTick>1000/spdMul){burnTick=now;const bdmg=Math.max(1,bd.dps||1);applyHeroDamage(bdmg,mon,{label:t=>'☠️-'+t,color:'#a3e635',now});processTalentLowHp(mon,now);if(state.hp<=0){onHeroDeath();return;}}}
   // 大秘境词缀:血池治疗
   for (const m of state.currentMonsters) {
     if (m._sanguineHeal > 0 && m._sanguineEnd > now && now - (m._lastSanguineTick || 0) > 1000) {
@@ -9699,7 +9700,47 @@ function combatDeathRecap(){
     cause = '小伤害叠加致死';
     advice = '清理召唤物、降低区域威胁,别只追求爆发输出。';
   }
-  log(`📉 死亡回放: ${cause}。承伤 ${combatNum(taken)}(${combatNum(dtps)}/秒),治疗 ${combatNum(heal)}(${combatNum(hps)}/秒),最高一击 ${combatNum(maxHit)},最后一击 ${combatNum(lastHit)} 来自 ${lastName}。建议: ${advice}`,'bad');
+  const detail = `${cause}。承伤 ${combatNum(taken)}(${combatNum(dtps)}/秒),治疗 ${combatNum(heal)}(${combatNum(hps)}/秒),最高一击 ${combatNum(maxHit)},最后一击 ${combatNum(lastHit)} 来自 ${lastName}。建议: ${advice}`;
+  state.lastDeathRecap = {
+    at:Date.now(),
+    cause,
+    advice,
+    source:lastName,
+    taken,
+    dtps,
+    heal,
+    hps,
+    maxHit,
+    lastHit,
+    detail,
+    tone:cause.includes('爆发') ? 'danger' : (cause.includes('治疗') ? 'heal' : 'warn')
+  };
+  if(typeof markDirty === 'function') markDirty('stage');
+  log(`📉 死亡回放: ${detail}`,'bad');
+}
+function failFieldCommanderChallenge(mon){
+  if(!mon || !mon._fieldCommander) return false;
+  const failInfo = typeof failWorldFieldCommanderEncounter === 'function' ? failWorldFieldCommanderEncounter(mon) : null;
+  const failName = mon.bossName || failInfo?.name || mon.name || '据点指挥官';
+  log(`💀 ${failName} 挑战失败,本次据点首领已经撤退`, 'bad');
+  state.mode = 'world';
+  bossCasting = null;
+  casting = null;
+  if(typeof hideBossCastBar === 'function') hideBossCastBar();
+  if(typeof hideHeroCastBar === 'function') hideHeroCastBar();
+  state.currentMonsters = [];
+  state.worldSearch = null;
+  lastHeroAtk = 0;
+  lastMonAtk = 0;
+  lastBossSkill = 0;
+  bossSkillIdx = 0;
+  markDirty('map', 'stage');
+  if(typeof startWorldMonsterSearch === 'function'){
+    startWorldMonsterSearch('fieldCommanderFail');
+  }else{
+    spawnMonster();
+  }
+  return true;
 }
 function onHeroDeath(){
   log('☠️ 你倒下了…','bad');killStreak=0;state._compHp=null;state._compDownUntil=0;   // 复活后随从满血归来
@@ -9728,6 +9769,7 @@ function onHeroDeath(){
     state.gold=Math.max(0,state.gold-loss);
   }
   state.hp=state.hero.hpMax;state.resource=state.resourceMax;
+  if(failedFieldCommander && failFieldCommanderChallenge(failedFieldCommander)) return;
   if(state.mode==='dungeon'){showDungeonFail();return;}
   if(state.mode==='mythic'){onMythicFail();return;}
   if(state.mode==='tower'){if(typeof onTowerFail==='function') onTowerFail(); spawnMonster(); return;}
@@ -9742,22 +9784,6 @@ function onHeroDeath(){
       if(typeof leaveWorldBoss==='function')leaveWorldBoss();else{state.mode='world';state.currentMonsters=[];}
     }
     markDirty('map','events');
-    return;
-  }
-  if(failedFieldCommander && state.mode==='world'){
-    const failInfo = typeof failWorldFieldCommanderEncounter === 'function' ? failWorldFieldCommanderEncounter(failedFieldCommander) : null;
-    const failName = failedFieldCommander.bossName || failInfo?.name || failedFieldCommander.name || '据点指挥官';
-    log(`💀 ${failName} 挑战失败,本次据点首领已经撤退`, 'bad');
-    bossCasting = null;
-    if(typeof hideBossCastBar === 'function') hideBossCastBar();
-    state.currentMonsters = [];
-    state.worldSearch = null;
-    markDirty('map', 'stage');
-    if(typeof startWorldMonsterSearch === 'function'){
-      startWorldMonsterSearch('fieldCommanderFail');
-    }else{
-      spawnMonster();
-    }
     return;
   }
   spawnMonster();

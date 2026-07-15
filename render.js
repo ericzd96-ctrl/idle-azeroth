@@ -1739,6 +1739,28 @@ function updateDmgMeter() {
     if (pressureEl.textContent !== text) pressureEl.textContent = text;
   }
 
+  // 上次死亡回放:保留在面板中,避免日志滚动后丢失失败原因
+  const deathRow = $('dm-death-row');
+  const deathEl = $('dm-death-recap');
+  if (deathRow && deathEl) {
+    const recap = state?.lastDeathRecap;
+    if (recap?.at) {
+      deathRow.style.display = '';
+      const agoSec = Math.max(0, Math.floor((Date.now() - recap.at) / 1000));
+      const ago = agoSec < 60 ? `${agoSec}秒前` : `${Math.floor(agoSec / 60)}分钟前`;
+      const lastHit = fmt(recap.lastHit || 0);
+      const source = recap.source || '未知来源';
+      const text = `${ago} · ${recap.cause || '战败'} · 最后 ${lastHit} 来自 ${source} · ${recap.advice || '调整技能和随从后再战。'}`;
+      deathEl.className = `dm-death-recap ${recap.tone || 'warn'}`;
+      deathEl.title = recap.detail || text;
+      if (deathEl.textContent !== text) deathEl.textContent = text;
+    } else {
+      deathRow.style.display = 'none';
+      deathEl.textContent = '-';
+      deathEl.removeAttribute('title');
+    }
+  }
+
   // 击杀耗时(平均 · 最快)
   const ttkEl = $('dm-ttk');
   if (ttkEl) {

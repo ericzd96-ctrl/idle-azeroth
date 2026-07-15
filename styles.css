@@ -5932,6 +5932,34 @@ button.legend:hover:not(:disabled) {
   border-color: rgba(248,113,113,.42);
   background: rgba(127,29,29,.24);
 }
+.dm-death-row { align-items: stretch; }
+.dm-death-recap {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 6px;
+  border-radius: 5px;
+  border: 1px solid rgba(251,191,36,.32);
+  background: rgba(113,63,18,.18);
+  color: #fde68a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dm-death-recap.danger {
+  color: #fecaca;
+  border-color: rgba(248,113,113,.42);
+  background: rgba(127,29,29,.24);
+}
+.dm-death-recap.heal {
+  color: #d1fae5;
+  border-color: rgba(52,211,153,.34);
+  background: rgba(6,95,70,.18);
+}
+.dm-death-recap.warn {
+  color: #fde68a;
+  border-color: rgba(251,191,36,.38);
+  background: rgba(113,63,18,.20);
+}
 .dm-total {
   text-align: center; margin-top: 2px; font-size: 10px;
 }
