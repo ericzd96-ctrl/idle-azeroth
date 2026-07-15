@@ -1868,6 +1868,10 @@ function updateDmgMeter() {
     });
   }
 
+  let damageBreakdownCount = 0;
+  let healBreakdownCount = 0;
+  let takenBreakdownCount = 0;
+
   // 技能伤害分解(结构稳定,仅更新数值/进度,避免图标闪烁)
   const sdEl = $('dm-skills-breakdown');
   if (sdEl) {
@@ -1878,6 +1882,7 @@ function updateDmgMeter() {
     for (const [name, dmg] of Object.entries(cs)) allSkills.push({ name, dmg, src: '🐾' });
     allSkills.sort((a, b) => b.dmg - a.dmg);
     const top = allSkills.slice(0, 5);
+    damageBreakdownCount = top.length;
     syncMeterBreakdownRows(sdEl, top, 'dmg', '', 'spell_holy_powerinfusion', '伤害来源');
   }
   const shEl = $('dm-heal-breakdown');
@@ -1889,6 +1894,7 @@ function updateDmgMeter() {
     for (const [name, heal] of Object.entries(cs)) allSkills.push({ name, heal, src: '🐾' });
     allSkills.sort((a, b) => b.heal - a.heal);
     const top = allSkills.slice(0, 5);
+    healBreakdownCount = top.length;
     syncMeterBreakdownRows(shEl, top, 'heal', '#6ee7b7', 'spell_holy_heal', '治疗来源');
   }
   const stEl = $('dm-taken-breakdown');
@@ -1900,7 +1906,17 @@ function updateDmgMeter() {
     for (const [name, taken] of Object.entries(cs)) allSources.push({ name, taken, src: '🐾' });
     allSources.sort((a, b) => b.taken - a.taken);
     const top = allSources.slice(0, 5);
+    takenBreakdownCount = top.length;
     syncMeterBreakdownRows(stEl, top, 'taken', '#fb7185', 'ability_warrior_decisivestrike', '承伤来源');
+  }
+  const detailSummary = $('dm-detail-summary');
+  if (detailSummary) {
+    const parts = [];
+    if (damageBreakdownCount) parts.push(`伤害${damageBreakdownCount}`);
+    if (healBreakdownCount) parts.push(`治疗${healBreakdownCount}`);
+    if (takenBreakdownCount) parts.push(`承伤${takenBreakdownCount}`);
+    const text = parts.length ? `来源明细 · ${parts.join(' / ')}` : '来源明细 · 暂无';
+    if (detailSummary.textContent !== text) detailSummary.textContent = text;
   }
   if (totalEl) {
     let text = '总伤 ' + fmt(total) + ' · ' + Math.floor(elapsed) + '秒';
