@@ -528,6 +528,53 @@ function showBossTargetTelegraph(cast, mon, opts){
     setTimeout(() => el.remove(), duration + 120);
   }
 }
+function showBossCastFinalTelegraph(cast, mon, opts){
+  if(!cast || !mon || typeof document === 'undefined' || document.hidden) return;
+  const layer = skillFxLayer();
+  const sourceEl = monsterFloatAnchor(mon);
+  const source = skillFxPoint(sourceEl);
+  if(!layer || !source) return;
+  const now = opts?.now || Date.now();
+  const targets = bossTelegraphTargets(cast, mon, now).filter(x => x && x.el);
+  if(!targets.length) return;
+  const dangerous = !!(opts?.urgent || cast._empowered || cast.threat === 'high' || cast.threat === 'extreme');
+  const school = skillVisualSchool(null, cast, 'boss');
+  const duration = dangerous ? 820 : 640;
+  if(typeof pulseCombatEl === 'function') pulseCombatEl(sourceEl, 'bosscast', dangerous ? 420 : 320);
+  if(dangerous && typeof stageEdgeFx === 'function') stageEdgeFx('critical', { intensity:.72 });
+  for(const t of targets.slice(0, 4)){
+    const target = skillFxPoint(t.el);
+    if(!target) continue;
+    const dx = target.x - source.x;
+    const dy = target.y - source.y;
+    const dist = Math.max(12, Math.sqrt(dx * dx + dy * dy));
+    const line = document.createElement('div');
+    line.className = `boss-cast-lock-line ${dangerous ? 'danger' : ''} school-${school}`;
+    line.style.left = source.x + 'px';
+    line.style.top = source.y + 'px';
+    line.style.width = dist + 'px';
+    line.style.transform = `rotate(${Math.atan2(dy, dx)}rad)`;
+    line.style.setProperty('--boss-lock-duration', duration + 'ms');
+    layer.appendChild(line);
+    const size = Math.round(Math.max(42, Math.min(106, Math.max(target.w, target.h) + (dangerous ? 34 : 24))));
+    const lock = document.createElement('div');
+    lock.className = `boss-cast-lock-on ${dangerous ? 'danger' : ''} ${t.kind || 'target'} school-${school}`;
+    lock.style.left = (target.x - size / 2) + 'px';
+    lock.style.top = (target.y - size / 2) + 'px';
+    lock.style.width = size + 'px';
+    lock.style.height = size + 'px';
+    lock.style.setProperty('--boss-lock-duration', duration + 'ms');
+    const tag = document.createElement('span');
+    tag.textContent = dangerous ? '快打断' : (t.kind === 'aoe' ? '范围' : '命中');
+    lock.appendChild(tag);
+    layer.appendChild(lock);
+    if(typeof pulseCombatEl === 'function') pulseCombatEl(t.el, dangerous ? 'danger' : 'bosscast', dangerous ? 460 : 340);
+    setTimeout(() => {
+      line.remove();
+      lock.remove();
+    }, duration + 120);
+  }
+}
 
 /* ---------- 天赋特效运行时 ---------- */
 function talentAuraMeta(key){ return (typeof TALENT_AURA_LIBRARY === 'object' && TALENT_AURA_LIBRARY[key]) || null; }
@@ -10992,6 +11039,14 @@ function tickCast(now){
     bossCastFill.style.setProperty('--boss-cast-fill', bossCastFillStyle);
     bossCastFill.style.width=pct+'%';
     updateBossCastBarFx(bossCasting, pct, remainMs);
+    if(_isDmgCast && !bossCasting._finalTelegraphShown){
+      const urgent = bossCasting._empowered || bossCasting.threat === 'high' || bossCasting.threat === 'extreme';
+      if(pct >= (urgent ? 56 : 76) || remainMs <= (urgent ? 1100 : 760)){
+        const castMon = bossCastingMonster(bossCasting);
+        if(castMon) showBossCastFinalTelegraph(bossCasting, castMon, { now, remainMs, pct, urgent });
+        bossCasting._finalTelegraphShown = true;
+      }
+    }
     if(elapsed>=bossCasting.duration){
       hideBossCastBar();
       const bc=bossCasting;bossCasting=null;const mon=bossCastingMonster(bc);if(!mon||mon.hp<=0)return;

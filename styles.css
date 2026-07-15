@@ -4491,6 +4491,58 @@ h1 {
   white-space: nowrap;
   text-shadow: 0 1px 3px #000;
 }
+.boss-cast-lock-line,
+.boss-cast-lock-on {
+  --boss-lock-duration: 700ms;
+  position: absolute;
+  pointer-events: none;
+  z-index: 8;
+}
+.boss-cast-lock-line {
+  height: 3px;
+  border-radius: 999px;
+  transform-origin: left center;
+  background: linear-gradient(90deg, rgba(248,113,113,0), var(--skill-fx-color), rgba(255,255,255,.86), var(--skill-fx-color), rgba(248,113,113,0));
+  box-shadow: 0 0 14px var(--skill-fx-color-soft), 0 0 22px rgba(248,113,113,.18);
+  animation: bossCastLockLine var(--boss-lock-duration) ease-out forwards;
+}
+.boss-cast-lock-line.danger {
+  height: 4px;
+  box-shadow: 0 0 18px var(--skill-fx-color-soft), 0 0 34px rgba(248,113,113,.32);
+}
+.boss-cast-lock-on {
+  border-radius: 999px;
+  border: 1px solid var(--skill-fx-color);
+  background:
+    linear-gradient(90deg, transparent 44%, rgba(255,255,255,.80) 48% 52%, transparent 56%),
+    linear-gradient(0deg, transparent 44%, rgba(255,255,255,.80) 48% 52%, transparent 56%),
+    radial-gradient(circle, var(--skill-fx-color-soft) 0 34%, rgba(0,0,0,0) 70%);
+  box-shadow: 0 0 20px var(--skill-fx-color-soft), inset 0 0 16px var(--skill-fx-color-soft);
+  animation: bossCastLockOn var(--boss-lock-duration) ease-out forwards;
+}
+.boss-cast-lock-on.danger {
+  border-color: rgba(248,113,113,.96);
+  box-shadow: 0 0 26px rgba(248,113,113,.36), inset 0 0 18px var(--skill-fx-color-soft);
+}
+.boss-cast-lock-on.aoe {
+  border-style: dashed;
+}
+.boss-cast-lock-on span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 1px 5px;
+  border-radius: 999px;
+  border: 1px solid rgba(248,113,113,.34);
+  background: rgba(15,23,42,.78);
+  color: #fecaca;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+  text-shadow: 0 1px 4px #000;
+}
 @keyframes skillCastRing {
   0% { transform: scale(.52); opacity: 0; }
   22% { opacity: .95; }
@@ -4511,6 +4563,18 @@ h1 {
   18% { opacity: 1; transform: scale(1.02) rotate(0deg); }
   72% { opacity: .82; transform: scale(1.08) rotate(4deg); }
   100% { opacity: 0; transform: scale(1.22) rotate(8deg); }
+}
+@keyframes bossCastLockLine {
+  0% { opacity: 0; clip-path: inset(0 100% 0 0); filter: brightness(1); }
+  18% { opacity: .96; clip-path: inset(0 18% 0 0); filter: brightness(1.28); }
+  72% { opacity: .88; clip-path: inset(0 0 0 0); filter: brightness(1.06); }
+  100% { opacity: 0; clip-path: inset(0 0 0 72%); filter: brightness(1.36); }
+}
+@keyframes bossCastLockOn {
+  0% { opacity: 0; transform: scale(.62) rotate(-8deg); }
+  18% { opacity: 1; transform: scale(1.08) rotate(0deg); }
+  68% { opacity: .9; transform: scale(.96) rotate(0deg); }
+  100% { opacity: 0; transform: scale(1.24) rotate(8deg); }
 }
 @keyframes floatUp {
   0% { transform: translate(0, 0) scale(var(--float-scale)); opacity: 0; }
