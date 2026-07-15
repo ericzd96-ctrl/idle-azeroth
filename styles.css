@@ -4463,6 +4463,21 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
 .stage { position: relative; }
 @keyframes stageShake { 0%,100%{transform:translate(0,0)} 20%{transform:translate(-3px,1px)} 40%{transform:translate(3px,-1px)} 60%{transform:translate(-2px,-1px)} 80%{transform:translate(2px,1px)} }
 .stage.shake-fx { animation: stageShake .22s ease; }
+.stage-flash {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+  mix-blend-mode: screen;
+  animation: stageFlash .52s ease-out forwards;
+}
+.stage-flash.crit { background: radial-gradient(circle at 50% 45%, rgba(250,204,21,.30), rgba(250,204,21,0) 68%); }
+.stage-flash.danger { background: radial-gradient(circle at 50% 45%, rgba(248,113,113,.34), rgba(127,29,29,0) 72%); animation-duration: .62s; }
+.stage-flash.interrupt { background: radial-gradient(circle at 50% 45%, rgba(147,197,253,.32), rgba(30,64,175,0) 70%); }
+.stage-flash.boss { background: radial-gradient(circle at 50% 45%, rgba(250,204,21,.34), rgba(180,83,9,0) 72%); animation-duration: .62s; }
+@keyframes stageFlash { 0%{opacity:0} 18%{opacity:1} 100%{opacity:0} }
 .stage.low-hp::after {
   content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
   box-shadow: inset 0 0 60px 12px rgba(220,38,38,.5); z-index: 6;
