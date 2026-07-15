@@ -4070,7 +4070,11 @@ function applyHeroDamage(amount, mon, opts){
   const defensiveArtifactFx = activeArtifactTakenFx(mon);
   if(defensiveArtifactFx.length) artifactProcVisual(defensiveArtifactFx[0], mon, { now, target:'hero', tag:'taken' });
   state.hp -= taken;
-  trackTaken(taken);
+  trackTaken(taken, {
+    source: opts?.source || mon?.bossName || mon?.name || '敌人',
+    skill: opts?.skillName || opts?.skill || opts?.sourceSkill || '',
+    boss: !!mon?.isBoss
+  });
   applyClassMechanicOnTakeDamage(mon, taken, amountIn, now);
   if(state._soulLinkUntil > now && mon && mon.hp > 0){
     const healBack = Math.max(1, Math.floor(taken * 0.25));
@@ -9342,7 +9346,7 @@ function tickBattle(now){
     // BOSS 普攻几率击晕英雄(1.5秒无法攻击/施法)
     if(m.stunChance&&Math.random()<m.stunChance){state.heroStunUntil=now+1500;showFloat($('hero-emoji'),'💫晕眩','#fde047');log('💫 你被 '+m.name+' 击晕了!','bad');}
     taken=resolveMonsterDamageTaken(m,taken);
-    taken=applyHeroDamage(taken,m,{label:t=>'-'+t,color:'#ff7a7a',now});
+    taken=applyHeroDamage(taken,m,{label:t=>'-'+t,color:'#ff7a7a',now,skillName:kindSkill?.name || ''});
     if(kindSkill)skillEffects(kindSkill,m,taken,now,{allowFallback:false});
     processTalentLowHp(m,now);
     totalDmg+=taken;
@@ -9353,7 +9357,7 @@ function tickBattle(now){
     if(doubleAtk){
       const d2d=calcDmg(matk,heroDefAgainst(m),critRate,(m.critMult?m.critMult*100:150),false,state.hero.lvl,m.lvl);let t2=d2d.dmg;
       t2=resolveMonsterDamageTaken(m,t2);
-      t2=applyHeroDamage(t2,m,{label:t=>'⚡-'+t,color:'#fbbf24',now});processTalentLowHp(m,now);totalDmg+=t2;
+      t2=applyHeroDamage(t2,m,{label:t=>'⚡-'+t,color:'#fbbf24',now,skillName:'双倍攻击'});processTalentLowHp(m,now);totalDmg+=t2;
     }
   }
   if(anyHit){
@@ -9443,7 +9447,7 @@ function onMonsterDeath(mon){
       if (af.mod.bursting) {
         const burstDmg = Math.max(1, Math.floor(state.hp * 0.05));
         state.hp -= burstDmg;
-        trackTaken(burstDmg);
+        trackTaken(burstDmg, { source:'大秘境词缀', skill:'崩裂' });
         showFloat($('hero-emoji'), '💥-'+burstDmg, '#ef4444');
       }
       if (af.mod.sanguine) {
@@ -9664,9 +9668,43 @@ function clearAllBuffs(){
   state._compBuffs = {};
   state._allySummons = [];
 }
+function combatNum(n){
+  return typeof fmt === 'function' ? fmt(Math.floor(n || 0)) : String(Math.floor(n || 0));
+}
+function combatDeathRecap(){
+  if(typeof dmgStats === 'undefined' || !dmgStats) return;
+  const taken = dmgStats.taken || 0;
+  if(taken <= 0) return;
+  const elapsed = dmgStats.start ? Math.max(1, ((dmgStats.last || Date.now()) - dmgStats.start) / 1000) : 1;
+  const heal = (dmgStats.heroHeal || 0) + (dmgStats.compHeal || 0);
+  const hMax = Math.max(1, state?.hero?.hpMax || 1);
+  const dtps = Math.round(taken / elapsed);
+  const hps = Math.round(heal / elapsed);
+  const net = Math.max(0, dtps - hps);
+  const maxHit = dmgStats.takenMax || 0;
+  const lastHit = dmgStats.lastTakenAmount || 0;
+  const lastName = [dmgStats.lastTakenSource, dmgStats.lastTakenSkill].filter(Boolean).join(' · ') || '未知来源';
+  let cause = '战斗压力过高';
+  let advice = '观察压力行,把减伤或治疗留给危险读条。';
+  if(maxHit >= hMax * 0.45 || lastHit >= hMax * 0.35){
+    cause = '大额爆发致死';
+    advice = '优先打断必断读条,不可断时提前开减伤/护盾。';
+  }else if(net >= hMax * 0.045){
+    cause = '持续承伤压垮';
+    advice = '提高防御、治疗覆盖或降低战斗倍速观察机制。';
+  }else if(heal < taken * 0.22 && taken >= hMax * 0.7){
+    cause = '治疗覆盖不足';
+    advice = '换上治疗/护盾随从,或把保命技能加入手动栏。';
+  }else if((dmgStats.takenHits || 0) >= 8 && maxHit < hMax * 0.22){
+    cause = '小伤害叠加致死';
+    advice = '清理召唤物、降低区域威胁,别只追求爆发输出。';
+  }
+  log(`📉 死亡回放: ${cause}。承伤 ${combatNum(taken)}(${combatNum(dtps)}/秒),治疗 ${combatNum(heal)}(${combatNum(hps)}/秒),最高一击 ${combatNum(maxHit)},最后一击 ${combatNum(lastHit)} 来自 ${lastName}。建议: ${advice}`,'bad');
+}
 function onHeroDeath(){
   log('☠️ 你倒下了…','bad');killStreak=0;state._compHp=null;state._compDownUntil=0;   // 复活后随从满血归来
   const failedFieldCommander = (state.currentMonsters || []).find(m => m && m._fieldCommander);
+  combatDeathRecap();
   clearAllBuffs();
   state._compBarrier = 0;
   state.heroStunUntil = 0;
@@ -10544,7 +10582,7 @@ function tickCast(now){
           // AOE: 同时命中英雄和随从
           let taken=calcDmg(rawAtk,heroDefAgainst(mon),0,0,false,state.hero.lvl,mon.lvl,{tightVar:true}).dmg;
           taken=resolveMonsterDamageTaken(mon,taken,{aoe:true});
-          taken=applyHeroDamage(taken,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ff4444',now});
+          taken=applyHeroDamage(taken,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ff4444',now,skillName:bc.name});
           processTalentLowHp(mon,now);
           if(typeof passiveOnTakeDamage==='function')passiveOnTakeDamage(mon,taken);
           if(bc.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(taken*bc.lifeSteal));
@@ -10580,7 +10618,7 @@ function tickCast(now){
           }else{
             let taken=calcDmg(rawAtk,heroDefAgainst(mon),0,0,false,state.hero.lvl,mon.lvl,{tightVar:true}).dmg;
             taken=resolveMonsterDamageTaken(mon,taken);
-            taken=applyHeroDamage(taken,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ff4444',now});
+            taken=applyHeroDamage(taken,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ff4444',now,skillName:bc.name});
             processTalentLowHp(mon,now);
             if(typeof passiveOnTakeDamage==='function')passiveOnTakeDamage(mon,taken);
             if(bc.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(taken*bc.lifeSteal));
@@ -10774,8 +10812,9 @@ function doInterrupt(){
 /* ---------- 随从 ---------- */
 let lastCompAtk=0,lastCompSkill=0,compSkillIdx=0,lastCompRegen=0;
 /* ---------- 伤害统计(战斗日志下面的伤害条) ---------- */
-let dmgStats={hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,heroHeal:0,compHeal:0,heroHealMax:0,compHealMax:0,heroHealSkills:{},compHealSkills:{},kills:0,heroSkills:{},compSkills:{},taken:0,takenMax:0,takenHits:0,killTs:0,killFast:0,killSlow:0,peakDps:0};
-function trackTaken(amt){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;dmgStats.taken=(dmgStats.taken||0)+amt;dmgStats.takenHits=(dmgStats.takenHits||0)+1;if(amt>(dmgStats.takenMax||0))dmgStats.takenMax=amt;}
+function defaultDmgStats(){return {hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,heroHeal:0,compHeal:0,heroHealMax:0,compHealMax:0,heroHealSkills:{},compHealSkills:{},kills:0,heroSkills:{},compSkills:{},taken:0,takenMax:0,takenHits:0,killTs:0,killFast:0,killSlow:0,peakDps:0,lastTakenAmount:0,lastTakenAt:0,lastTakenSource:'',lastTakenSkill:'',lastTakenBoss:false,maxTakenSource:'',maxTakenSkill:''};}
+let dmgStats=defaultDmgStats();
+function trackTaken(amt,meta){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;dmgStats.taken=(dmgStats.taken||0)+amt;dmgStats.takenHits=(dmgStats.takenHits||0)+1;dmgStats.lastTakenAmount=amt;dmgStats.lastTakenAt=t;dmgStats.lastTakenSource=meta?.source||dmgStats.lastTakenSource||'敌人';dmgStats.lastTakenSkill=meta?.skill||'';dmgStats.lastTakenBoss=!!meta?.boss;if(amt>(dmgStats.takenMax||0)){dmgStats.takenMax=amt;dmgStats.maxTakenSource=dmgStats.lastTakenSource;dmgStats.maxTakenSkill=dmgStats.lastTakenSkill;}}
 /* ---- 战斗手感 polish:屏震 / 连杀提示 ---- */
 let _lastShakeTs=0, killStreak=0;
 function stageShakeFx(){
@@ -10794,7 +10833,7 @@ function killStreakToast(n){
 function trackDmg(src,amt,isCrit,skillLabel){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;dmgStats[src]=(dmgStats[src]||0)+amt;const maxKey=src==='hero'?'heroMax':'compMax';if(amt>dmgStats[maxKey])dmgStats[maxKey]=amt;const hitKey=src==='hero'?'heroHits':'compHits';dmgStats[hitKey]=(dmgStats[hitKey]||0)+1;if(isCrit){const critKey=src==='hero'?'heroCrits':'compCrits';dmgStats[critKey]=(dmgStats[critKey]||0)+1;if(src==='hero')stageShakeFx();}const cleanLabel=normalizeTrackedSkillLabel(skillLabel);if(cleanLabel){const skKey=src==='hero'?'heroSkills':'compSkills';dmgStats[skKey][cleanLabel]=(dmgStats[skKey][cleanLabel]||0)+amt;}}
 function trackHeal(src,amt,skillLabel){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;const totalKey=src==='hero'?'heroHeal':'compHeal';const maxKey=src==='hero'?'heroHealMax':'compHealMax';const skKey=src==='hero'?'heroHealSkills':'compHealSkills';dmgStats[totalKey]=(dmgStats[totalKey]||0)+amt;if(amt>(dmgStats[maxKey]||0))dmgStats[maxKey]=amt;const cleanLabel=normalizeTrackedSkillLabel(skillLabel);if(cleanLabel)dmgStats[skKey][cleanLabel]=(dmgStats[skKey][cleanLabel]||0)+amt;}
 function trackKill(){const now=Date.now();if(dmgStats.killTs){const dt=(now-dmgStats.killTs)/1000;if(dt>0&&dt<600){if(!dmgStats.killFast||dt<dmgStats.killFast)dmgStats.killFast=dt;if(dt>(dmgStats.killSlow||0))dmgStats.killSlow=dt;}}dmgStats.killTs=now;dmgStats.kills=(dmgStats.kills||0)+1;killStreak++;if(killStreak>=5&&killStreak%5===0)killStreakToast(killStreak);}
-function resetDmgStats(){dmgStats={hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,heroHeal:0,compHeal:0,heroHealMax:0,compHealMax:0,heroHealSkills:{},compHealSkills:{},kills:0,heroSkills:{},compSkills:{},taken:0,takenMax:0,takenHits:0,killTs:0,killFast:0,killSlow:0,peakDps:0};if(typeof markDirty==='function')markDirty('stage');}
+function resetDmgStats(){dmgStats=defaultDmgStats();if(typeof markDirty==='function')markDirty('stage');}
 let compSkillCd={};   // 随从每个技能的独立冷却就绪时间戳(键=技能下标;_owner 记录当前随从,换随从自动重置)
 const COMP_SKILL_DEFAULT_CD=8;   // 随从技能默认CD(秒,技能未写 cd 时)
 const COMPANION_SKILL_CD_MULT=0.62;   // 随从技能冷却缩短:实际CD=配置CD×62%
