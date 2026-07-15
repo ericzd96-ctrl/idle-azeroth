@@ -3863,10 +3863,64 @@ h1 {
 .impact-halo-danger,
 .impact-halo-bosscast { --impact-halo-color: rgba(248,113,113,.90); --impact-halo-soft: rgba(239,68,68,.34); }
 .impact-halo-artifact { --impact-halo-color: rgba(216,180,254,.90); --impact-halo-soft: rgba(192,132,252,.34); }
+.impact-slam {
+  --impact-slam-color: rgba(248,250,252,.92);
+  --impact-slam-soft: rgba(226,232,240,.28);
+  --impact-slam-duration: 380ms;
+  --impact-slam-angle: 0deg;
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0), var(--impact-slam-color) 44% 56%, rgba(255,255,255,0)),
+    radial-gradient(ellipse at center, var(--impact-slam-soft) 0 42%, rgba(0,0,0,0) 72%);
+  box-shadow: 0 0 14px var(--impact-slam-soft);
+  mix-blend-mode: screen;
+  transform-origin: center center;
+  animation: impactSlam var(--impact-slam-duration) ease-out forwards;
+}
+.impact-slam-hit { --impact-slam-color: rgba(248,250,252,.92); --impact-slam-soft: rgba(226,232,240,.28); }
+.impact-slam-comp { --impact-slam-color: rgba(147,197,253,.94); --impact-slam-soft: rgba(96,165,250,.30); }
+.impact-slam-crit { --impact-slam-color: rgba(253,230,138,.98); --impact-slam-soft: rgba(251,191,36,.42); }
+.impact-slam-danger,
+.impact-slam-boss { --impact-slam-color: rgba(248,113,113,.98); --impact-slam-soft: rgba(239,68,68,.40); }
+.impact-slam-dot { --impact-slam-color: rgba(192,132,252,.96); --impact-slam-soft: rgba(168,85,247,.34); }
+.impact-slam-artifact { --impact-slam-color: rgba(216,180,254,.98); --impact-slam-soft: rgba(192,132,252,.40); }
+.impact-slam-heal {
+  --impact-slam-color: rgba(110,231,183,.96);
+  --impact-slam-soft: rgba(52,211,153,.34);
+  animation-name: impactGuardSlam;
+}
+.impact-slam-shield,
+.impact-slam-shield-break {
+  --impact-slam-color: rgba(147,197,253,.96);
+  --impact-slam-soft: rgba(59,130,246,.36);
+  animation-name: impactGuardSlam;
+}
+.impact-slam.school-fire { --impact-slam-color:#fb923c; --impact-slam-soft:rgba(248,113,113,.40); }
+.impact-slam.school-frost { --impact-slam-color:#93c5fd; --impact-slam-soft:rgba(125,211,252,.38); }
+.impact-slam.school-arcane { --impact-slam-color:#c084fc; --impact-slam-soft:rgba(192,132,252,.40); }
+.impact-slam.school-nature { --impact-slam-color:#86efac; --impact-slam-soft:rgba(52,211,153,.36); }
+.impact-slam.school-shadow { --impact-slam-color:#a78bfa; --impact-slam-soft:rgba(88,28,135,.48); }
+.impact-slam.school-holy { --impact-slam-color:#fde68a; --impact-slam-soft:rgba(250,204,21,.40); }
+.impact-slam.school-physical { --impact-slam-color:#e5e7eb; --impact-slam-soft:rgba(203,213,225,.32); }
+.impact-slam.school-heal { --impact-slam-color:#6ee7b7; --impact-slam-soft:rgba(16,185,129,.36); }
+.impact-slam.school-shield { --impact-slam-color:#93c5fd; --impact-slam-soft:rgba(59,130,246,.38); }
 @keyframes impactHalo {
   0% { opacity: 0; transform: scale(.58); }
   32% { opacity: 1; transform: scale(1); }
   100% { opacity: 0; transform: scale(1.46); }
+}
+@keyframes impactSlam {
+  0% { opacity: 0; transform: translateX(-10px) rotate(var(--impact-slam-angle)) scaleX(.22) scaleY(.72); }
+  34% { opacity: 1; transform: translateX(0) rotate(var(--impact-slam-angle)) scaleX(1.08) scaleY(1); }
+  100% { opacity: 0; transform: translateX(14px) rotate(var(--impact-slam-angle)) scaleX(.72) scaleY(.62); }
+}
+@keyframes impactGuardSlam {
+  0% { opacity: 0; transform: rotate(var(--impact-slam-angle)) scaleX(1.35) scaleY(.35); }
+  36% { opacity: .95; transform: rotate(var(--impact-slam-angle)) scaleX(.92) scaleY(1); }
+  100% { opacity: 0; transform: rotate(var(--impact-slam-angle)) scaleX(.45) scaleY(1.35); }
 }
 @keyframes impactHit {
   0% { transform: scale(1); filter: brightness(1); }

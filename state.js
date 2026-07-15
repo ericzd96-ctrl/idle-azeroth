@@ -723,8 +723,10 @@ function setBar(el, pct, text) {
 let _lastLogTs = 0;
 let _lastFloatTs = 0;
 let _activeFloatCount = 0;
+let _activeImpactSlamCount = 0;
 let _impactSeq = 0;
 let _lastImpactHaloTs = 0;
+let _lastImpactSlamTs = 0;
 
 function isMobilePerfMode() {
   return typeof window !== 'undefined' && window.innerWidth <= 920;
@@ -793,6 +795,54 @@ function showCombatImpactHalo(targetEl, kind, duration) {
   setTimeout(() => el.remove(), Math.max(260, duration || 300) + 120);
 }
 
+function floatVariantNeedsSlam(variant, text, opts) {
+  if (opts?.slam === false) return false;
+  if (opts?.slam) return true;
+  const s = String(text || '');
+  if (variant === 'hit') return /-\d/.test(s);
+  if (variant === 'crit' || variant === 'boss' || variant === 'comp' || variant === 'dot') return /-\d|爆|反噬|追击|蔓延/.test(s) || !!opts?.important;
+  if (variant === 'heal') return /\+\d|治疗|回血/.test(s);
+  if (variant === 'shield' || variant === 'shield-break') return /\d|盾|护/.test(s);
+  if (variant === 'artifact') return /-\d|爆|反噬|追击/.test(s) || !!opts?.important;
+  return false;
+}
+
+function showCombatHitSlam(targetEl, kind, opts) {
+  const stage = $('stage');
+  const layer = $('float-layer') || stage;
+  if (!stage || !layer || !targetEl) return;
+  if (typeof document !== 'undefined' && document.hidden) return;
+  const safeKind = String(kind || 'hit').replace(/[^a-z0-9_-]/gi, '') || 'hit';
+  const important = !!opts?.important || /crit|danger|boss|heal|shield|artifact|fire|frost|arcane|nature|shadow|holy/i.test(safeKind);
+  const mobile = isMobilePerfMode();
+  const now = Date.now();
+  if (!opts?.force && now - _lastImpactSlamTs < (important ? 32 : 75)) return;
+  if (mobile && _activeImpactSlamCount >= (important ? 10 : 5)) return;
+  _lastImpactSlamTs = now;
+  const slamSeq = ++_impactSeq;
+  const rect = targetEl.getBoundingClientRect();
+  const sRect = stage.getBoundingClientRect();
+  if (!rect.width || !rect.height || !sRect.width || !sRect.height) return;
+  const base = Math.max(rect.width, rect.height);
+  const width = Math.round(Math.max(34, Math.min(118, base * (important ? 1.55 : 1.25) * (opts?.scale || 1))));
+  const height = Math.round(Math.max(10, Math.min(28, base * (important ? .32 : .24))));
+  const el = document.createElement('div');
+  const school = opts?.school ? String(opts.school).replace(/[^a-z0-9_-]/gi, '') : '';
+  el.className = `impact-slam impact-slam-${safeKind}${school ? ` school-${school}` : ''}`;
+  el.style.left = (rect.left - sRect.left + rect.width / 2 - width / 2) + 'px';
+  el.style.top = (rect.top - sRect.top + rect.height / 2 - height / 2) + 'px';
+  el.style.width = width + 'px';
+  el.style.height = height + 'px';
+  el.style.setProperty('--impact-slam-duration', Math.max(240, opts?.duration || (important ? 460 : 360)) + 'ms');
+  el.style.setProperty('--impact-slam-angle', ((opts?.angle ?? ((slamSeq % 2 ? -8 : 8) + (slamSeq % 3) * 3))) + 'deg');
+  layer.appendChild(el);
+  _activeImpactSlamCount++;
+  setTimeout(() => {
+    el.remove();
+    _activeImpactSlamCount = Math.max(0, _activeImpactSlamCount - 1);
+  }, Math.max(280, opts?.duration || (important ? 460 : 360)) + 80);
+}
+
 function log(text, cls) {
   const logEl = $('log');
   if (!logEl) return;
@@ -859,6 +909,13 @@ function showFloat(targetEl, text, color, opts) {
   if (opts?.dy) el.style.setProperty('--float-dy', opts.dy + 'px');
   if (opts?.duration) el.style.setProperty('--float-duration', opts.duration + 'ms');
   floatLayer.appendChild(el);
+  if (floatVariantNeedsSlam(variant, text, opts)) {
+    showCombatHitSlam(targetEl, variant === 'boss' ? 'danger' : variant, {
+      important,
+      duration: mobile ? 360 : 420,
+      scale: opts?.scale || 1
+    });
+  }
   _activeFloatCount++;
   setTimeout(() => {
     el.remove();

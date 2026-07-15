@@ -329,6 +329,13 @@ function showSkillImpactFx(sourceEl, targetEl, sk, opts){
   burst.style.height = size + 'px';
   burst.style.setProperty('--skill-fx-duration', (opts?.duration || 560) + 'ms');
   layer.appendChild(burst);
+  if(typeof showCombatHitSlam === 'function') showCombatHitSlam(targetEl, school, {
+    school,
+    force:true,
+    important:opts?.actor === 'boss' || opts?.pulse === 'crit',
+    duration:opts?.duration || 560,
+    scale
+  });
   if(typeof pulseCombatEl === 'function') pulseCombatEl(targetEl, opts?.pulse || (opts?.actor === 'boss' ? 'danger' : 'hit'), opts?.pulseDuration || 220);
   setTimeout(() => burst.remove(), opts?.duration || 560);
 }
