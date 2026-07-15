@@ -4321,6 +4321,32 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   background: var(--panel-2); border: 1px solid var(--border);
   border-radius: 8px; padding: 8px; margin-bottom: 6px; font-size: 12px;
 }
+.skill-role-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 6px 0 2px;
+}
+.skill-role-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  padding: 1px 6px;
+  border: 1px solid rgba(148,163,184,.22);
+  border-radius: 5px;
+  background: rgba(15,23,42,.38);
+  color: #cbd5e1;
+  font-size: 10px;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+.skill-role-tag.dmg { color: #bfdbfe; border-color: rgba(96,165,250,.30); background: rgba(30,64,175,.14); }
+.skill-role-tag.burst { color: #fde68a; border-color: rgba(251,191,36,.34); background: rgba(113,63,18,.18); }
+.skill-role-tag.buff { color: #d8b4fe; border-color: rgba(192,132,252,.30); background: rgba(88,28,135,.16); }
+.skill-role-tag.interrupt { color: #fecaca; border-color: rgba(248,113,113,.38); background: rgba(127,29,29,.20); }
+.skill-role-tag.control { color: #fbcfe8; border-color: rgba(244,114,182,.30); background: rgba(131,24,67,.16); }
+.skill-role-tag.heal { color: #d1fae5; border-color: rgba(52,211,153,.34); background: rgba(6,95,70,.18); }
+.skill-role-tag.defensive { color: #dbeafe; border-color: rgba(96,165,250,.34); background: rgba(30,58,138,.18); }
 
 .tabs { display: flex; gap: 4px; margin-bottom: 8px; flex-wrap: wrap; }
 .tab {

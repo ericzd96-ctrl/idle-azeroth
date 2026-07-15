@@ -2757,7 +2757,7 @@ function renderSkills() {
   if (typeof syncAllowedSkillUnlocks === 'function') syncAllowedSkillUnlocks();
   if (typeof pruneSelectedSkillsForCurrentSpec === 'function') pruneSelectedSkillsForCurrentSpec();
   const skl = $('skill-list');
-  skl.innerHTML = `<div class="muted" style="margin-bottom:6px;font-size:11px">手动技能栏 <b style="color:var(--accent)">${state.selectedSkills.length}</b>/8 · 自动施法按上方分类勾选使用已解锁技能,这里仅影响手动快捷栏</div>`;
+  skl.innerHTML = `<div class="muted" style="margin-bottom:6px;font-size:11px">手动技能栏 <b style="color:var(--accent)">${state.selectedSkills.length}</b>/8 · 自动施法按上方分类使用已解锁技能 · 打断/控制会优先纯打断,瞬发控制兜底</div>`;
   const mech = (typeof CLASS_COMBAT_MECHANICS === 'object') ? CLASS_COMBAT_MECHANICS[state.cls] : null;
   if (mech) {
     const mechDiv = document.createElement('div');
@@ -2813,12 +2813,14 @@ function renderSkills() {
     const detailDesc = sk._detailDesc || '';
     const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, skillVisualFallback(sk)) : sk.icon;
     const castLabel = sk.castTime > 0 ? `${sk.castTime}秒读条` : '瞬发';
+    const autoTags = skillAutoRoleTagsHtml(skKey, sk);
     div.innerHTML = `
       <div class="row">
         <b style="color:${unlocked?'inherit':'var(--muted)'}">${skillIconHtml} ${sk.name}</b>
         <span class="pill">${unlocked?'已解锁':lockInfo}</span>
       </div>
       <div class="muted">${baseDesc}</div>
+      ${autoTags}
       ${detailDesc ? `<div class="muted" style="margin-top:4px;color:#cbd5e1;font-size:11px;line-height:1.45">联动: ${detailDesc}</div>` : ''}
       <div class="row">
         <span class="muted">${c.resource} ${sk.mp} · 冷却 ${cdSec}秒 · ${castLabel}</span>
@@ -2826,6 +2828,31 @@ function renderSkills() {
       </div>`;
     skl.appendChild(div);
   }
+}
+
+function skillAutoRoleTagsHtml(skillKey, sk) {
+  if (!sk) return '';
+  const tags = [];
+  const kind = (typeof autoSkillKind === 'function') ? autoSkillKind(skillKey, sk) : (sk.type === 'interrupt' ? 'interrupt' : 'damage');
+  const kindMap = {
+    damage:['伤害', 'dmg'],
+    burst:['爆发', 'burst'],
+    buff:['Buff/治疗/减伤', 'buff'],
+    interrupt:['打断/控制', 'interrupt']
+  };
+  const km = kindMap[kind] || kindMap.damage;
+  tags.push({ text:`自动:${km[0]}`, cls:km[1] });
+  const castTime = (typeof getCastTime === 'function') ? getCastTime(sk) : (sk.castTime || 0);
+  if (sk.type === 'interrupt') tags.push({ text:'应急打断', cls:'interrupt' });
+  else if (sk.interruptCast && castTime <= 0) tags.push({ text:'应急控制打断', cls:'interrupt' });
+  else if (sk.interruptCast) tags.push({ text:'读条控制:命中可断', cls:'control' });
+  if (typeof bossCastResponseKind === 'function') {
+    const response = bossCastResponseKind(skillKey, sk);
+    if (response === 'heal') tags.push({ text:'读条保命:治疗', cls:'heal' });
+    else if (response === 'defensive') tags.push({ text:'读条保命:减伤', cls:'defensive' });
+  }
+  if (!tags.length) return '';
+  return `<div class="skill-role-tags">${tags.map(t => `<span class="skill-role-tag ${t.cls}">${tipAttrText(t.text)}</span>`).join('')}</div>`;
 }
 
 function getTalentRow(t, idx) {
