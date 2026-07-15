@@ -3100,7 +3100,10 @@ function bossCastSkillPrompt(skillKey, sk, now, cdMs) {
     const hard = ui.urgent || ui.cast?.interruptPolicy === 'hard';
     const label = ready ? (hard ? '必断' : '可断') : (cdMs > 0 ? `${Math.ceil(cdMs / 1000)}秒` : '缺资源');
     const cls = ready ? (hard ? 'interrupt-hot' : 'interrupt-soft') : 'interrupt-wait';
-    const tip = `${ui.cast.icon || ''}${ui.cast.name || '施法'} · ${ui.threatMeta.label} · ${ui.interruptText} · ${ready ? '这个技能现在可用于打断' : label}`;
+    const action = ready
+      ? (hard ? '现在点击:打断读条并制造破绽窗口' : '现在点击:打断或削弱这次读条')
+      : (cdMs > 0 ? `暂时不能用:还差 ${Math.ceil(cdMs / 1000)}秒` : '暂时不能用:资源不足');
+    const tip = `${ui.cast.icon || ''}${ui.cast.name || '施法'} · ${ui.threatMeta.label} · ${ui.interruptText} · ${action}`;
     return { label, cls, tip };
   }
   const kind = bossCastResponseKind(skillKey, sk);
@@ -3108,7 +3111,10 @@ function bossCastSkillPrompt(skillKey, sk, now, cdMs) {
   if (!kind || !needsBackup || (!ui.urgent && ui.canInterrupt && ui.interruptCount > 0)) return null;
   const label = ready ? (kind === 'heal' ? '治疗' : '减伤') : (cdMs > 0 ? `${Math.ceil(cdMs / 1000)}秒` : '缺资源');
   const cls = ready ? (kind === 'heal' ? 'heal-hot' : 'defensive-hot') : 'defensive-wait';
-  const tip = `${ui.cast.icon || ''}${ui.cast.name || '施法'} · ${ui.threatMeta.label} · ${ui.interruptText} · ${ready ? '可作为本次读条的保命应对' : label}`;
+  const action = ready
+    ? (kind === 'heal' ? '现在点击:用治疗覆盖这次读条' : '现在点击:用减伤/护盾覆盖这次读条')
+    : (cdMs > 0 ? `暂时不能用:还差 ${Math.ceil(cdMs / 1000)}秒` : '暂时不能用:资源不足');
+  const tip = `${ui.cast.icon || ''}${ui.cast.name || '施法'} · ${ui.threatMeta.label} · ${ui.interruptText} · ${action}`;
   return { label, cls, tip };
 }
 
@@ -3328,10 +3334,11 @@ function renderSkillBar() {
     const chargeDesc = chargeTip ? `\n技能充能: ${chargeTip}` : '';
     const runeTip = (typeof skillRuneTip === 'function') ? skillRuneTip(key, sk) : '';
     const runeDesc = runeTip ? `\n符文铭刻: ${runeTip}` : '';
-    const bossDesc = bossPrompt ? `\nBoss读条: ${bossPrompt.tip}` : '';
-    const tip = `${sk.name} · ${baseDesc}${detailDesc}${procDesc}${coreDesc}${engineDesc}${elementDesc}${echoDesc}${markDesc}${weaveDesc}${rhythmDesc}${controlDesc}${weaknessDesc}${prepDesc}${overloadDesc}${resourceDesc}${harvestDesc}${pactDesc}${fieldDesc}${chargeDesc}${runeDesc}${bossDesc}\n${c.resource} ${sk.mp} · 冷却 ${getSkillCd(sk)}秒`.replace(/"/g, '&quot;');
+    const baseTip = `${sk.name} · ${baseDesc}${detailDesc}${procDesc}${coreDesc}${engineDesc}${elementDesc}${echoDesc}${markDesc}${weaveDesc}${rhythmDesc}${controlDesc}${weaknessDesc}${prepDesc}${overloadDesc}${resourceDesc}${harvestDesc}${pactDesc}${fieldDesc}${chargeDesc}${runeDesc}\n${c.resource} ${sk.mp} · 冷却 ${getSkillCd(sk)}秒`;
+    const tip = `${baseTip}${bossPrompt ? `\nBoss读条: ${bossPrompt.tip}` : ''}`.replace(/"/g, '&quot;');
+    const baseTipAttr = baseTip.replace(/"/g, '&quot;');
     const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, sk.icon) : sk.icon;
-    return `<button class="skill-btn ${onCd?'on-cd':''} ${bossPrompt?.cls || ''}" data-skill="${key}" draggable="true" title="${tip}"
+    return `<button class="skill-btn ${onCd?'on-cd':''} ${bossPrompt?.cls || ''}" data-skill="${key}" draggable="true" title="${tip}" data-base-title="${baseTipAttr}"
       style="${coreMatch&&!onCd?'border-color:#38bdf8;box-shadow:0 0 0 1px rgba(56,189,248,.50),0 0 14px rgba(56,189,248,.18)':(procMatch&&!onCd?'border-color:#facc15;box-shadow:0 0 0 1px rgba(250,204,21,.45)':(!onCd&&hasMp?'border-color:var(--accent)':''))}">
       <span>${skillIconHtml} ${sk.name}</span>
       <span class="mp-cost">${coreMatch?'✹ ':(procMatch?'✦ ':'')}${sk.mp}${c.resKey==='rage'?'怒':c.resKey==='energy'?'能':'蓝'}</span>
@@ -3379,6 +3386,9 @@ function updateSkillBarCd() {
     }else if(badge){
       badge.remove();
     }
+    const baseTitle = btn.dataset.baseTitle || btn.title || '';
+    const nextTitle = prompt ? `${baseTitle}\nBoss读条: ${prompt.tip}` : baseTitle;
+    if(btn.title !== nextTitle) btn.title = nextTitle;
   });
 }
 
