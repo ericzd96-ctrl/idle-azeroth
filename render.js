@@ -2388,7 +2388,19 @@ function updateBattleVisuals() {
     $('btn-leave').style.display = 'none';
   } else {
     stage.classList.add('dungeon');
-    $('btn-leave').style.display = '';
+    const leaveMeta = {
+      dungeon: ['离开副本', '离开当前副本: 进度丢失,保留已获得战利品和副本冷却。'],
+      mythic: ['离开大秘境', '离开当前大秘境: 进度丢失,已获得装备保留。'],
+      boss: ['撤离首领', '撤离地图首领战: 返回野外,下次需要重新开始挑战。'],
+      worldboss: ['撤离世界Boss', '撤离世界Boss战: CD不重置,之后可以重新挑战。'],
+      tower: ['撤离无尽塔', '撤离无尽塔: 本次进度结束,塔币和最高层保留。'],
+      roguelike: ['放弃幻象', '放弃幻象挑战: 已获得幻象币保留,返回世界。'],
+    }[state.mode] || ['离开战斗', '离开当前特殊战斗并返回世界。'];
+    const leaveBtn = $('btn-leave');
+    leaveBtn.style.display = '';
+    const leaveText = `🚪 ${leaveMeta[0]}`;
+    if (leaveBtn.textContent.trim() !== leaveText) leaveBtn.textContent = leaveText;
+    if (leaveBtn.title !== leaveMeta[1]) leaveBtn.title = leaveMeta[1];
   }
 
   // 伤害统计(每帧就地刷新)
