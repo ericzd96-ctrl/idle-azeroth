@@ -4213,6 +4213,73 @@ h1 {
   text-shadow: 0 1px 4px #000;
   white-space: nowrap;
 }
+.guardian-trigger-fx {
+  --guardian-color: #93c5fd;
+  --guardian-soft: rgba(59,130,246,.36);
+  position: absolute;
+  pointer-events: none;
+  z-index: 9;
+  border-radius: 999px;
+  border: 1px solid var(--guardian-color);
+  background:
+    radial-gradient(circle, rgba(255,255,255,.78) 0 8%, var(--guardian-color) 13%, var(--guardian-soft) 34%, rgba(0,0,0,0) 72%);
+  box-shadow: 0 0 22px var(--guardian-soft), inset 0 0 16px var(--guardian-soft);
+  mix-blend-mode: screen;
+  animation: guardianTriggerOpen .76s ease-out forwards;
+}
+.guardian-trigger-fx::before,
+.guardian-trigger-fx::after {
+  content: "";
+  position: absolute;
+  inset: 12%;
+  border-radius: inherit;
+  border: 1px solid var(--guardian-color);
+  box-shadow: 0 0 12px var(--guardian-soft);
+  animation: guardianTriggerRing .76s ease-out forwards;
+}
+.guardian-trigger-fx::after {
+  inset: 26%;
+  opacity: .72;
+  animation-delay: .05s;
+}
+.guardian-trigger-fx.guardian-heal {
+  --guardian-color: #6ee7b7;
+  --guardian-soft: rgba(16,185,129,.36);
+}
+.guardian-trigger-fx.guardian-shield {
+  --guardian-color: #93c5fd;
+  --guardian-soft: rgba(59,130,246,.38);
+}
+.guardian-trigger-fx.guardian-guard {
+  --guardian-color: #fde68a;
+  --guardian-soft: rgba(250,204,21,.34);
+}
+.guardian-trigger-fx.important {
+  animation-duration: .98s;
+}
+.guardian-trigger-fx.important::before,
+.guardian-trigger-fx.important::after {
+  animation-duration: .98s;
+}
+.guardian-trigger-fx b {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--guardian-color) 56%, rgba(255,255,255,.2));
+  background: rgba(15,23,42,.80);
+  color: #f8fafc;
+  font-size: 10px;
+  line-height: 1.15;
+  text-shadow: 0 1px 5px rgba(0,0,0,.95), 0 0 10px var(--guardian-soft);
+  white-space: nowrap;
+  animation: guardianTriggerLabel .76s ease-out forwards;
+}
+.guardian-trigger-fx.important b {
+  animation-duration: .98s;
+}
 .boss-phase-fx {
   --boss-phase-color: var(--skill-fx-color, #fbbf24);
   --boss-phase-soft: var(--skill-fx-color-soft, rgba(251,191,36,.34));
@@ -4390,6 +4457,23 @@ h1 {
   18% { opacity: 1; transform: scale(1.08) rotate(0deg); }
   64% { opacity: .88; transform: scale(.98) rotate(0deg); }
   100% { opacity: 0; transform: scale(1.22) rotate(8deg); }
+}
+@keyframes guardianTriggerOpen {
+  0% { opacity: 0; transform: scale(.48); filter: brightness(1.5); }
+  20% { opacity: 1; transform: scale(1.04); filter: brightness(1.75); }
+  66% { opacity: .82; transform: scale(1.16); filter: brightness(1.12); }
+  100% { opacity: 0; transform: scale(1.34); filter: brightness(.9); }
+}
+@keyframes guardianTriggerRing {
+  0% { opacity: 0; transform: scale(.46); }
+  22% { opacity: .92; transform: scale(.78); }
+  100% { opacity: 0; transform: scale(1.42); }
+}
+@keyframes guardianTriggerLabel {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.78); }
+  20% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+  68% { opacity: 1; transform: translate(-50%, -64%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -82%) scale(.94); }
 }
 @keyframes bossPhaseOpen {
   0% { opacity: 0; transform: scale(.45) rotate(-24deg); filter: brightness(1.4); }

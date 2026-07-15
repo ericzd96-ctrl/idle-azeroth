@@ -434,6 +434,36 @@ function showManualFocusFx(mon){
   showMonsterFloat(mon, '🎯集火', '#facc15', { variant:'status', scale:1.06, important:true });
   setTimeout(() => el.remove(), mon.isBoss ? 980 : 820);
 }
+const _guardianFxCooldown = {};
+function showGuardianTriggerFx(targetEl, kind, amount, opts){
+  if(!targetEl || typeof document === 'undefined' || document.hidden) return;
+  amount = Math.max(0, Math.floor(amount || 0));
+  const max = Math.max(1, opts?.max || state.hero?.hpMax || 1);
+  const important = !!opts?.important || amount >= max * 0.08;
+  if(opts?.quiet && !important && amount < max * 0.05) return;
+  if(!important && amount < max * 0.025) return;
+  const key = `${kind || 'guard'}:${opts?.target || targetEl.id || 'target'}`;
+  const now = Date.now();
+  const gap = important ? 240 : 520;
+  if((_guardianFxCooldown[key] || 0) > now) return;
+  _guardianFxCooldown[key] = now + gap;
+  const layer = skillFxLayer();
+  const p = skillFxPoint(targetEl);
+  if(!layer || !p) return;
+  const safeKind = String(kind || 'guard').replace(/[^a-z0-9_-]/gi, '') || 'guard';
+  const size = Math.round(Math.max(42, Math.min(112, Math.max(p.w, p.h) + (important ? 44 : 30))));
+  const el = document.createElement('div');
+  el.className = `guardian-trigger-fx guardian-${safeKind}${important ? ' important' : ''}`;
+  el.style.left = (p.x - size / 2) + 'px';
+  el.style.top = (p.y - size / 2) + 'px';
+  el.style.width = size + 'px';
+  el.style.height = size + 'px';
+  const tag = document.createElement('b');
+  tag.textContent = opts?.label || (safeKind === 'heal' ? '治疗' : '护盾');
+  el.appendChild(tag);
+  layer.appendChild(el);
+  setTimeout(() => el.remove(), important ? 980 : 760);
+}
 function showBossPhaseFx(mon, label, opts){
   if(!mon || typeof document === 'undefined' || document.hidden) return;
   const layer = skillFxLayer();
@@ -685,11 +715,19 @@ function addTalentShield(amount, quiet, durationMs){
   amount = Math.max(0, Math.floor(amount || 0));
   if(amount <= 0) return 0;
   const rt = ensureTalentState();
+  const maxHp = Math.max(1, state.hero?.hpMax || 1);
   rt.shield += amount;
   rt.shieldExpire = Math.max(rt.shieldExpire || 0, Date.now() + (durationMs || 10000));   // 护盾有持续时间, 到期自动消失(不再每波清盾)
   if(!quiet) showFloat($('hero-emoji'), '🛡️+' + amount, '#93c5fd', { variant:'shield', scale:1.04 });
   if(typeof pulseCombatEl === 'function') pulseCombatEl($('hero-emoji'), 'shield', 260);
-  if((!quiet || amount >= Math.max(1, (state.hero?.hpMax || 1) * 0.045)) && typeof stageEdgeFx === 'function') stageEdgeFx('shield', { intensity:0.78 });
+  showGuardianTriggerFx($('hero-emoji'), 'shield', amount, {
+    target:'hero',
+    max:maxHp,
+    quiet:!!quiet,
+    important:!quiet || amount >= Math.max(1, maxHp * 0.045),
+    label:'护盾'
+  });
+  if((!quiet || amount >= Math.max(1, maxHp * 0.045)) && typeof stageEdgeFx === 'function') stageEdgeFx('shield', { intensity:0.78 });
   markDirty('hero');
   return amount;
 }
@@ -4444,6 +4482,12 @@ function healHeroAmount(amount, icon, color, source, skillLabel){
     showFloat($('hero-emoji'), (icon || '') + '+' + applied, color || '#6ee7b7', { variant:'heal', scale:1.06 });
     if(typeof pulseCombatEl === 'function') pulseCombatEl($('hero-emoji'), 'heal', 240);
     const maxHp = Math.max(1, state.hero.hpMax || 1);
+    showGuardianTriggerFx($('hero-emoji'), 'heal', applied, {
+      target:'hero',
+      max:maxHp,
+      important:before / maxHp <= 0.55 || applied >= maxHp * 0.06,
+      label:'治疗'
+    });
     if(typeof stageEdgeFx === 'function' && (before / maxHp <= 0.55 || applied >= maxHp * 0.06)) stageEdgeFx('heal', { intensity:before / maxHp <= 0.32 ? 1 : 0.76 });
     if(before / maxHp <= 0.32 && state.hp / maxHp >= 0.42) combatCueToast('治疗救回', '+' + fmt(applied), 'heal');
   }
@@ -9328,9 +9372,17 @@ function applyCompanionDamage(amount, mon, opts){
 function addCompanionBarrier(amount, icon, color){
   amount = Math.max(0, Math.floor(amount || 0));
   if(amount <= 0) return 0;
+  const compStats = computeCompanionStats();
+  const maxHp = Math.max(1, compStats?.hpMax || state.hero?.hpMax || 1);
   state._compBarrier = (state._compBarrier || 0) + amount;
   showFloat($('comp-mini'), (icon || '🛡️') + '+' + amount, color || '#93c5fd', { variant:'shield', scale:1.04 });
   if(typeof pulseCombatEl === 'function') pulseCombatEl($('comp-mini'), 'shield', 260);
+  showGuardianTriggerFx($('comp-mini'), 'shield', amount, {
+    target:'companion',
+    max:maxHp,
+    important:amount >= Math.max(1, maxHp * 0.055),
+    label:'护盾'
+  });
   markDirty('companion');
   return amount;
 }
