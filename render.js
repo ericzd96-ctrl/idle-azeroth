@@ -3339,7 +3339,7 @@ function renderSkillBar() {
     const tip = `${baseTip}${bossPrompt ? `\nBoss读条: ${bossPrompt.tip}` : ''}`.replace(/"/g, '&quot;');
     const baseTipAttr = baseTip.replace(/"/g, '&quot;');
     const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, sk.icon) : sk.icon;
-    return `<button class="skill-btn ${onCd?'on-cd':''} ${bossPrompt?.cls || ''}" data-skill="${key}" draggable="true" title="${tip}" data-base-title="${baseTipAttr}"
+    return `<button class="skill-btn ${onCd?'on-cd':''} ${bossPrompt?.cls || ''}" data-skill="${key}" data-cd-active="${onCd?'1':'0'}" draggable="true" title="${tip}" data-base-title="${baseTipAttr}"
       style="${coreMatch&&!onCd?'border-color:#38bdf8;box-shadow:0 0 0 1px rgba(56,189,248,.50),0 0 14px rgba(56,189,248,.18)':(procMatch&&!onCd?'border-color:#facc15;box-shadow:0 0 0 1px rgba(250,204,21,.45)':(!onCd&&hasMp?'border-color:var(--accent)':''))}">
       <span>${skillIconHtml} ${sk.name}</span>
       <span class="mp-cost">${coreMatch?'✹ ':(procMatch?'✦ ':'')}${sk.mp}${c.resKey==='rage'?'怒':c.resKey==='energy'?'能':'蓝'}</span>
@@ -3361,13 +3361,22 @@ function updateSkillBarCd() {
     const cdMs = Math.max(0, cdEnd - now);
     const cdTxt = (cdMs / 1000).toFixed(1) + '秒';
     const overlay = btn.querySelector('.cd-overlay');
+    const wasOnCd = btn.dataset.cdActive === '1' || btn.classList.contains('on-cd');
     if (cdMs > 0) {
+      btn.dataset.cdActive = '1';
       btn.classList.add('on-cd');
       if (overlay) overlay.textContent = cdTxt;
       else { const d=document.createElement('div');d.className='cd-overlay';d.textContent=cdTxt;btn.appendChild(d); }
     } else {
+      btn.dataset.cdActive = '0';
       btn.classList.remove('on-cd');
       if (overlay) overlay.remove();
+      if (wasOnCd) {
+        btn.classList.remove('skill-ready-flash');
+        void btn.offsetWidth;
+        btn.classList.add('skill-ready-flash');
+        setTimeout(() => btn.classList.remove('skill-ready-flash'), 820);
+      }
     }
     const prompt = sk ? bossCastSkillPrompt(key, sk, now, cdMs) : null;
     btn.classList.toggle('interrupt-hot', prompt?.cls === 'interrupt-hot');

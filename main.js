@@ -560,6 +560,10 @@ function setupDelegation() {
     if (!btn || btn.classList.contains('on-cd')) return;
     const key = btn.dataset.skill;
     if (!key) return;
+    btn.classList.remove('skill-pressed');
+    void btn.offsetWidth;
+    btn.classList.add('skill-pressed');
+    setTimeout(() => btn.classList.remove('skill-pressed'), 240);
     const c = getCls(); const sk = c?.skills[key];
     if (typeof isSkillAllowedForCurrentSpec === 'function' && !isSkillAllowedForCurrentSpec(key)) {
       state.selectedSkills = (state.selectedSkills || []).filter(s => s !== key);

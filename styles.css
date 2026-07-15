@@ -5478,6 +5478,23 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   transition: all .15s; user-select: none; min-width: 70px; justify-content: center;
 }
 .skill-btn:hover:not(:disabled) { background: #2d345a; border-color: #6ee7b7; }
+.skill-btn.skill-pressed:not(:disabled) {
+  transform: translateY(1px) scale(.98);
+  filter: brightness(1.18);
+}
+.skill-btn.skill-ready-flash:not(.on-cd) {
+  animation: skillReadyFlash .82s ease-out;
+}
+.skill-btn.skill-ready-flash:not(.on-cd)::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 10px;
+  border: 1px solid rgba(110,231,183,.82);
+  box-shadow: 0 0 16px rgba(110,231,183,.34), inset 0 0 10px rgba(110,231,183,.18);
+  pointer-events: none;
+  animation: skillReadyRing .82s ease-out forwards;
+}
 .skill-btn.on-cd { opacity: 0.5; cursor: not-allowed; }
 .skill-btn.interrupt-hot:not(.on-cd) {
   border-color: #f87171 !important;
@@ -5541,6 +5558,16 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
 @keyframes interruptPulse {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-1px); }
+}
+@keyframes skillReadyFlash {
+  0% { filter: brightness(1); }
+  22% { filter: brightness(1.42) saturate(1.14); }
+  100% { filter: brightness(1); }
+}
+@keyframes skillReadyRing {
+  0% { opacity: 0; transform: scale(.82); }
+  20% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.12); }
 }
 .skill-btn .cd-overlay {
   position: absolute; inset: 0; background: rgba(0,0,0,.6);
