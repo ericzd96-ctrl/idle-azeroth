@@ -1741,7 +1741,13 @@ function updateDmgMeter() {
   const peakEl = $('dm-peak-dps');
   if (peakEl) {
     const pk = (typeof dmgStats !== 'undefined') ? Math.round(dmgStats.peakDps || 0) : 0;
-    peakEl.textContent = pk ? fmt(pk) : '-';
+    if (pk) {
+      peakEl.textContent = fmt(pk);
+      peakEl.title = `峰值秒伤 ${fmt(pk)}。当前秒伤 ${fmt(dps)}。统计时间 ${Math.floor(elapsed)} 秒。`;
+    } else {
+      peakEl.textContent = '-';
+      peakEl.removeAttribute('title');
+    }
   }
 
   // 承受伤害(总 · 每秒 · 最高一次)
