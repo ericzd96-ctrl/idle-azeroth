@@ -4022,6 +4022,93 @@ h1 {
 .impact-slam.school-physical { --impact-slam-color:#e5e7eb; --impact-slam-soft:rgba(203,213,225,.32); }
 .impact-slam.school-heal { --impact-slam-color:#6ee7b7; --impact-slam-soft:rgba(16,185,129,.36); }
 .impact-slam.school-shield { --impact-slam-color:#93c5fd; --impact-slam-soft:rgba(59,130,246,.38); }
+.defense-outcome-fx {
+  --defense-color: rgba(248,250,252,.92);
+  --defense-soft: rgba(148,163,184,.26);
+  --defense-angle: -16deg;
+  position: absolute;
+  pointer-events: none;
+  z-index: 8;
+  border-radius: 999px;
+  mix-blend-mode: screen;
+  transform-origin: center center;
+  animation: defenseOutcomePop .72s ease-out forwards;
+}
+.defense-outcome-fx::before,
+.defense-outcome-fx::after {
+  content: "";
+  position: absolute;
+  inset: 18%;
+  border-radius: inherit;
+  border: 1px solid var(--defense-color);
+  box-shadow: 0 0 16px var(--defense-soft), inset 0 0 12px var(--defense-soft);
+}
+.defense-outcome-fx::after {
+  inset: 34%;
+  border-style: dashed;
+  opacity: .72;
+}
+.defense-outcome-fx b {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--defense-color);
+  background: rgba(15,23,42,.80);
+  color: #f8fafc;
+  font-size: 10px;
+  line-height: 1.15;
+  text-shadow: 0 1px 5px rgba(0,0,0,.95), 0 0 10px var(--defense-soft);
+  white-space: nowrap;
+  animation: defenseOutcomeLabel .72s ease-out forwards;
+}
+.defense-outcome-fx.defense-dodge {
+  --defense-color: rgba(226,232,240,.88);
+  --defense-soft: rgba(148,163,184,.26);
+  background:
+    linear-gradient(110deg, rgba(255,255,255,0), rgba(226,232,240,.46), rgba(255,255,255,0)),
+    radial-gradient(ellipse at center, rgba(148,163,184,.18) 0 38%, rgba(0,0,0,0) 72%);
+  animation-name: defenseDodgeSlip;
+}
+.defense-outcome-fx.defense-dodge::before {
+  transform: rotate(var(--defense-angle)) scaleX(1.18);
+}
+.defense-outcome-fx.defense-dodge::after {
+  transform: rotate(calc(var(--defense-angle) + 18deg)) scaleX(.86);
+}
+.defense-outcome-fx.defense-absorb {
+  --defense-color: rgba(147,197,253,.94);
+  --defense-soft: rgba(59,130,246,.34);
+  background:
+    linear-gradient(90deg, transparent 45%, rgba(147,197,253,.82) 48% 52%, transparent 55%),
+    linear-gradient(0deg, transparent 45%, rgba(147,197,253,.66) 48% 52%, transparent 55%),
+    radial-gradient(circle, rgba(59,130,246,.22) 0 38%, rgba(0,0,0,0) 72%);
+}
+.defense-outcome-fx.defense-absorb::before {
+  clip-path: polygon(50% 0, 86% 18%, 78% 70%, 50% 100%, 22% 70%, 14% 18%);
+}
+.defense-outcome-fx.defense-absorb::after {
+  clip-path: polygon(50% 8%, 78% 24%, 70% 66%, 50% 88%, 30% 66%, 22% 24%);
+}
+.defense-outcome-fx.defense-danger,
+.defense-outcome-fx.defense-hit {
+  --defense-color: rgba(248,113,113,.96);
+  --defense-soft: rgba(239,68,68,.38);
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0), var(--defense-color), rgba(255,255,255,.82), rgba(255,255,255,0)),
+    radial-gradient(ellipse at center, var(--defense-soft) 0 42%, rgba(0,0,0,0) 74%);
+  animation-name: defenseDangerSlash;
+}
+.defense-outcome-fx.defense-danger::before,
+.defense-outcome-fx.defense-hit::before {
+  transform: rotate(var(--defense-angle)) scaleX(1.24) scaleY(.48);
+}
+.defense-outcome-fx.defense-danger::after,
+.defense-outcome-fx.defense-hit::after {
+  transform: rotate(calc(var(--defense-angle) + 88deg)) scaleX(.72) scaleY(.38);
+}
 .status-sigil {
   --status-sigil-color: #fde68a;
   --status-sigil-soft: rgba(250,204,21,.28);
@@ -4527,6 +4614,29 @@ h1 {
   0% { opacity: 0; transform: rotate(var(--impact-slam-angle)) scaleX(1.35) scaleY(.35); }
   36% { opacity: .95; transform: rotate(var(--impact-slam-angle)) scaleX(.92) scaleY(1); }
   100% { opacity: 0; transform: rotate(var(--impact-slam-angle)) scaleX(.45) scaleY(1.35); }
+}
+@keyframes defenseOutcomePop {
+  0% { opacity: 0; transform: scale(.50); filter: brightness(1.35); }
+  24% { opacity: 1; transform: scale(1.04); filter: brightness(1.55); }
+  70% { opacity: .80; transform: scale(1.12); filter: brightness(1.08); }
+  100% { opacity: 0; transform: scale(1.34); filter: brightness(.9); }
+}
+@keyframes defenseDodgeSlip {
+  0% { opacity: 0; transform: translateX(0) scale(.62); filter: blur(1px) brightness(1.25); }
+  24% { opacity: .95; transform: translateX(-6px) scale(1.04); filter: blur(0) brightness(1.45); }
+  62% { opacity: .74; transform: translateX(8px) scale(1.08); filter: blur(.2px) brightness(1.06); }
+  100% { opacity: 0; transform: translateX(18px) scale(1.22); filter: blur(1.2px) brightness(.9); }
+}
+@keyframes defenseDangerSlash {
+  0% { opacity: 0; transform: rotate(var(--defense-angle)) scaleX(.24) scaleY(.72); filter: brightness(1.45); }
+  28% { opacity: 1; transform: rotate(var(--defense-angle)) scaleX(1.08) scaleY(1); filter: brightness(1.75); }
+  100% { opacity: 0; transform: rotate(var(--defense-angle)) scaleX(.72) scaleY(.62) translateX(16px); filter: brightness(.9); }
+}
+@keyframes defenseOutcomeLabel {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.78); }
+  20% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+  66% { opacity: 1; transform: translate(-50%, -66%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -86%) scale(.94); }
 }
 @keyframes impactHit {
   0% { transform: scale(1); filter: brightness(1); }

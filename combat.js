@@ -464,6 +464,43 @@ function showGuardianTriggerFx(targetEl, kind, amount, opts){
   layer.appendChild(el);
   setTimeout(() => el.remove(), important ? 980 : 760);
 }
+const _defenseOutcomeFxCooldown = {};
+function showDefenseOutcomeFx(targetEl, kind, opts){
+  if(!targetEl || typeof document === 'undefined' || document.hidden) return;
+  const safeKind = String(kind || 'hit').replace(/[^a-z0-9_-]/gi, '') || 'hit';
+  const amount = Math.max(0, Math.floor(opts?.amount || 0));
+  const max = Math.max(1, opts?.max || state.hero?.hpMax || 1);
+  const important = !!opts?.important || safeKind === 'dodge' || safeKind === 'absorb' || safeKind === 'danger' || amount >= max * 0.12;
+  if(opts?.quiet && !important) return;
+  if(safeKind === 'hit' && !important) return;
+  const key = `${safeKind}:${opts?.target || targetEl.id || 'target'}`;
+  const now = Date.now();
+  const gap = safeKind === 'danger' ? 260 : safeKind === 'dodge' ? 420 : 560;
+  if((_defenseOutcomeFxCooldown[key] || 0) > now) return;
+  _defenseOutcomeFxCooldown[key] = now + gap;
+  const layer = skillFxLayer();
+  const p = skillFxPoint(targetEl);
+  if(!layer || !p) return;
+  const size = Math.round(Math.max(42, Math.min(124, Math.max(p.w, p.h) + (important ? 48 : 32))));
+  const el = document.createElement('div');
+  el.className = `defense-outcome-fx defense-${safeKind}${important ? ' important' : ''}`;
+  el.style.left = (p.x - size / 2) + 'px';
+  el.style.top = (p.y - size / 2) + 'px';
+  el.style.width = size + 'px';
+  el.style.height = size + 'px';
+  if(opts?.sourceEl){
+    const sp = skillFxPoint(opts.sourceEl);
+    if(sp){
+      const angle = Math.atan2(p.y - sp.y, p.x - sp.x) * 180 / Math.PI;
+      el.style.setProperty('--defense-angle', angle + 'deg');
+    }
+  }
+  const tag = document.createElement('b');
+  tag.textContent = opts?.label || (safeKind === 'dodge' ? '闪避' : safeKind === 'absorb' ? '吸收' : '重击');
+  el.appendChild(tag);
+  layer.appendChild(el);
+  setTimeout(() => el.remove(), safeKind === 'danger' ? 680 : 760);
+}
 function showBossPhaseFx(mon, label, opts){
   if(!mon || typeof document === 'undefined' || document.hidden) return;
   const layer = skillFxLayer();
@@ -760,6 +797,13 @@ function absorbTalentShield(amount){
   rt.shield -= absorb;
   showFloat($('hero-emoji'), '🛡️-' + absorb, '#93c5fd', { variant:'shield-break', scale:1.02 });
   if(typeof pulseCombatEl === 'function') pulseCombatEl($('hero-emoji'), 'shield', 260);
+  showDefenseOutcomeFx($('hero-emoji'), 'absorb', {
+    target:'hero',
+    amount:absorb,
+    max:state.hero?.hpMax || 1,
+    important:absorb >= Math.max(1, amount * 0.55) || absorb >= Math.max(1, (state.hero?.hpMax || 1) * 0.08),
+    label:'吸收'
+  });
   if(absorb >= Math.max(1, amount * 0.55) || absorb >= Math.max(1, (state.hero?.hpMax || 1) * 0.08)){
     combatCueToast('护盾吸收', '挡下 '+fmt(absorb), 'shield');
     if(typeof stageEdgeFx === 'function') stageEdgeFx('shield', { intensity:0.92 });
@@ -4532,6 +4576,16 @@ function applyHeroDamage(amount, mon, opts){
     showFloat($('hero-emoji'), text, opts?.color || '#ff7a7a', {
       variant: opts?.variant || ((mon?.isBoss || taken >= state.hero.hpMax * 0.12) ? 'boss' : 'hit'),
       scale: mon?.isBoss ? 1.08 : 1
+    });
+  }
+  if(mon?.isBoss || taken >= maxHp * 0.12 || state.hp <= maxHp * 0.24){
+    showDefenseOutcomeFx($('hero-emoji'), 'danger', {
+      target:'hero',
+      sourceEl:mon ? monsterFloatAnchor(mon) : null,
+      amount:taken,
+      max:maxHp,
+      important:true,
+      label:mon?.isBoss ? '首领命中' : '重击'
     });
   }
   if(typeof pulseCombatEl === 'function') pulseCombatEl($('hero-emoji'), (mon?.isBoss || taken >= state.hero.hpMax * 0.12) ? 'danger' : 'hit', mon?.isBoss ? 300 : 220);
@@ -9340,6 +9394,15 @@ function applyCompanionDamage(amount, mon, opts){
     taken -= absorb;
     showFloat($('comp-mini'), '🛡️-' + absorb, '#93c5fd', { variant:'shield-break', scale:1.02 });
     if(typeof pulseCombatEl === 'function') pulseCombatEl($('comp-mini'), 'shield', 260);
+    const compStats = computeCompanionStats();
+    const maxHp = Math.max(1, compStats?.hpMax || state.hero?.hpMax || 1);
+    showDefenseOutcomeFx($('comp-mini'), 'absorb', {
+      target:'companion',
+      amount:absorb,
+      max:maxHp,
+      important:absorb >= Math.max(1, amount * 0.55) || absorb >= Math.max(1, maxHp * 0.08),
+      label:'吸收'
+    });
   }
   if(state._compDebuffs && state._compDebuffs.brittle && state._compDebuffs.brittle.expire > now){
     taken *= 2;
@@ -9364,7 +9427,18 @@ function applyCompanionDamage(amount, mon, opts){
       scale: mon?.isBoss ? 1.07 : 1
     });
   }
-  if(typeof pulseCombatEl === 'function') pulseCombatEl($('comp-mini'), (mon?.isBoss || taken >= ((computeCompanionStats()?.hpMax || 1) * 0.12)) ? 'danger' : 'comp', mon?.isBoss ? 300 : 220);
+  const compMaxHp = Math.max(1, computeCompanionStats()?.hpMax || state.hero?.hpMax || 1);
+  if(mon?.isBoss || taken >= compMaxHp * 0.12 || state._compHp <= compMaxHp * 0.24){
+    showDefenseOutcomeFx($('comp-mini'), 'danger', {
+      target:'companion',
+      sourceEl:mon ? monsterFloatAnchor(mon) : null,
+      amount:taken,
+      max:compMaxHp,
+      important:true,
+      label:mon?.isBoss ? '首领命中' : '重击'
+    });
+  }
+  if(typeof pulseCombatEl === 'function') pulseCombatEl($('comp-mini'), (mon?.isBoss || taken >= compMaxHp * 0.12) ? 'danger' : 'comp', mon?.isBoss ? 300 : 220);
   if(state._compHp <= 0) downCompanion(now);
   markDirty('companion');
   return taken;
@@ -9799,6 +9873,7 @@ function tickBattle(now){
     {const dr=monsterDamageReduction(mon, now);if(dr&&actualDmg>0)actualDmg=Math.max(1,Math.floor(actualDmg*(1-dr)));}   // 怪物减伤
     mon.hp-=actualDmg;trackDmg('hero',actualDmg,d.crit&&!dodged,'⚔️普攻');
     if(!dodged && actualDmg > 0) showBasicAttackFx($('hero-emoji'), monsterFloatAnchor(mon), { actor:'hero', crit:d.crit, scale:d.crit ? 1.12 : 1 });
+    if(dodged) showDefenseOutcomeFx(monsterFloatAnchor(mon), 'dodge', { target:mon._uid || mon.name, sourceEl:$('hero-emoji'), label:'闪避' });
     if(!dodged && actualDmg > 0) companionCoordinateTrigger(mon, actualDmg, { now, crit:d.crit, skill:false });
     if(!dodged&&state.hero.extraAtk>0&&Math.random()*100<state.hero.extraAtk){const d2=calcDmg(ap,heroTargetDef(mon),state.hero.crit,state.hero.critd,false,mon.lvl,state.hero.lvl);let dd2=absorbMonsterBarrier(mon, d2.dmg, '🎯').remaining;const dr=monsterDamageReduction(mon, now);if(dr&&dd2>0)dd2=Math.max(1,Math.floor(dd2*(1-dr)));mon.hp-=dd2;trackDmg('hero',dd2,d2.crit);companionCoordinateTrigger(mon, dd2, { now, crit:d2.crit, skill:false });showMonsterFloat(mon,'🎯+'+dd2,'#fbbf24',{variant:d2.crit?'crit':'hit',scale:d2.crit?1.18:1.02});}
     showMonsterFloat(mon,dodged?'闪避':('-'+actualDmg),dodged?'#9ca3af':(d.crit?'#fbbf24':'#fff'),{variant:dodged?'avoid':(d.crit?'crit':'hit'),scale:d.crit?1.22:1});
@@ -9919,7 +9994,7 @@ function tickBattle(now){
       continue;
     }
     // —— 命中英雄(原逻辑) ——
-    if(state.hero.dodge&&Math.random()*100<state.hero.dodge){showFloat($('hero-emoji'),'闪避','#9ca3af',{variant:'avoid'});continue;}   // 英雄"闪避"天赋
+    if(state.hero.dodge&&Math.random()*100<state.hero.dodge){showFloat($('hero-emoji'),'闪避','#9ca3af',{variant:'avoid'});showDefenseOutcomeFx($('hero-emoji'),'dodge',{target:'hero',sourceEl:monsterFloatAnchor(m),label:'闪避'});continue;}   // 英雄"闪避"天赋
     if(kindFloat)showFloat($('hero-emoji'),kindFloat,kindColor,{variant:(kindSkill&&monsterSkillDangerLevel(kindSkill)>0)?'boss':'status',scale:(kindSkill&&monsterSkillDangerLevel(kindSkill)>1)?1.12:1.04});
     if(kindLog)log(kindLog[0],kindLog[1]);
     const d=calcDmg(matk,heroDefAgainst(m),critRate,(m.critMult?m.critMult*100:150),false,state.hero.lvl,m.lvl);let taken=d.dmg;
@@ -11325,7 +11400,7 @@ function castSkill(skillKey,manual){
       }
       log(sk.name+'! AOE '+dmgDone+' 总伤害','good');
     }
-    else if(mon.dodgeChance&&Math.random()<mon.dodgeChance){showMonsterFloat(mon,'闪避','#9ca3af',{variant:'avoid'});log(sk.name+' 被 '+mon.name+' 闪避!','bad');}
+    else if(mon.dodgeChance&&Math.random()<mon.dodgeChance){showMonsterFloat(mon,'闪避','#9ca3af',{variant:'avoid'});showDefenseOutcomeFx(monsterFloatAnchor(mon),'dodge',{target:mon._uid || mon.name,sourceEl:heroCastEl,label:'闪避'});log(sk.name+' 被 '+mon.name+' 闪避!','bad');}
     else{
       const rt=calcSkillRuntimeBonus(skillKey, sk, mon, now);
       const forceCrit = baseForceCrit || rt.forceCrit;
