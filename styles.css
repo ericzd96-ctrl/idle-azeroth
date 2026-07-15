@@ -289,6 +289,28 @@ h1 {
   background: linear-gradient(90deg, rgba(74, 222, 128, 0), rgba(74, 222, 128, .38), rgba(187, 247, 208, .24), rgba(74, 222, 128, 0));
   animation: barGainFlash .54s ease-out forwards;
 }
+.bar.bar-resource-gain-flash {
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, .30), 0 0 10px rgba(37, 99, 235, .16);
+}
+.bar.rage.bar-resource-gain-flash,
+.bar.energy.bar-resource-gain-flash {
+  box-shadow: inset 0 0 0 1px rgba(251, 191, 36, .30), 0 0 10px rgba(217, 119, 6, .16);
+}
+.bar.bar-resource-gain-flash::after {
+  background: linear-gradient(90deg, rgba(96, 165, 250, 0), rgba(96, 165, 250, .42), rgba(219, 234, 254, .24), rgba(96, 165, 250, 0));
+  animation: barResourceGainFlash .50s ease-out forwards;
+}
+.bar.rage.bar-resource-gain-flash::after,
+.bar.energy.bar-resource-gain-flash::after {
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0), rgba(251, 191, 36, .42), rgba(254, 243, 199, .24), rgba(251, 191, 36, 0));
+}
+.bar.bar-spend-flash {
+  box-shadow: inset 0 0 0 1px rgba(251, 146, 60, .28), 0 0 10px rgba(185, 28, 28, .14);
+}
+.bar.bar-spend-flash::after {
+  background: linear-gradient(90deg, rgba(251, 146, 60, 0), rgba(251, 146, 60, .40), rgba(254, 215, 170, .20), rgba(251, 146, 60, 0));
+  animation: barSpendFlash .38s ease-out forwards;
+}
 #boss-cast-bar-wrap {
   position: relative;
   border-radius: 8px;
@@ -337,6 +359,16 @@ h1 {
   0% { opacity: 0; transform: translateX(32%) scaleX(.25); }
   28% { opacity: .9; }
   100% { opacity: 0; transform: translateX(-46%) scaleX(.72); }
+}
+@keyframes barResourceGainFlash {
+  0% { opacity: 0; transform: translateX(26%) scaleX(.22); }
+  26% { opacity: .9; }
+  100% { opacity: 0; transform: translateX(-36%) scaleX(.68); }
+}
+@keyframes barSpendFlash {
+  0% { opacity: 0; transform: translateX(-12%) scaleX(.22); }
+  24% { opacity: .95; }
+  100% { opacity: 0; transform: translateX(62%) scaleX(.62); }
 }
 /* 桌面端保留平滑过渡, 手机端禁用以防每帧触发 transition 导致发热 */
 @media (min-width: 769px) {

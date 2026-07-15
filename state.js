@@ -715,15 +715,22 @@ function setBar(el, pct, text) {
   const pctText = clampedPct + '%';
   const prevPct = el.dataset.barPct == null ? null : Number(el.dataset.barPct);
   const bar = el.parentElement;
-  if (bar && bar.classList && bar.classList.contains('hp') && Number.isFinite(prevPct)) {
+  if (bar && bar.classList && Number.isFinite(prevPct)) {
     const delta = clampedPct - prevPct;
-    const flashClass = delta < -1 ? 'bar-loss-flash' : delta > 3.5 ? 'bar-gain-flash' : '';
+    const isHpBar = bar.classList.contains('hp');
+    const isResourceBar = bar.classList.contains('mp') || bar.classList.contains('rage') || bar.classList.contains('energy');
+    const flashClass = isHpBar
+      ? (delta < -1 ? 'bar-loss-flash' : delta > 3.5 ? 'bar-gain-flash' : '')
+      : isResourceBar
+        ? (delta < -2.5 ? 'bar-spend-flash' : delta > 4 ? 'bar-resource-gain-flash' : '')
+        : '';
     if (flashClass) {
-      bar.classList.remove('bar-loss-flash', 'bar-gain-flash');
+      bar.classList.remove('bar-loss-flash', 'bar-gain-flash', 'bar-spend-flash', 'bar-resource-gain-flash');
       void bar.offsetWidth;
       bar.classList.add(flashClass);
       clearTimeout(bar._barFlashTimer);
-      bar._barFlashTimer = setTimeout(() => bar.classList.remove(flashClass), flashClass === 'bar-loss-flash' ? 430 : 540);
+      const flashMs = flashClass === 'bar-loss-flash' ? 430 : flashClass === 'bar-spend-flash' ? 380 : 540;
+      bar._barFlashTimer = setTimeout(() => bar.classList.remove(flashClass), flashMs);
     }
   }
   el.dataset.barPct = String(clampedPct);
