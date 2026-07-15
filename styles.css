@@ -3802,6 +3802,33 @@ h1 {
 #comp-mini.impact-artifact {
   border-radius: 10px;
 }
+.impact-halo {
+  --impact-halo-color: rgba(248,250,252,.72);
+  --impact-halo-soft: rgba(248,250,252,.24);
+  --impact-halo-duration: 300ms;
+  position: absolute;
+  pointer-events: none;
+  z-index: 4;
+  border-radius: 999px;
+  border: 1px solid var(--impact-halo-color);
+  background: radial-gradient(circle, var(--impact-halo-soft) 0 28%, rgba(0,0,0,0) 68%);
+  box-shadow: 0 0 14px var(--impact-halo-soft), inset 0 0 12px var(--impact-halo-soft);
+  animation: impactHalo var(--impact-halo-duration) ease-out forwards;
+}
+.impact-halo-hit { --impact-halo-color: rgba(248,250,252,.78); --impact-halo-soft: rgba(226,232,240,.24); }
+.impact-halo-comp { --impact-halo-color: rgba(147,197,253,.82); --impact-halo-soft: rgba(96,165,250,.25); }
+.impact-halo-crit { --impact-halo-color: rgba(250,204,21,.88); --impact-halo-soft: rgba(251,191,36,.34); }
+.impact-halo-heal { --impact-halo-color: rgba(110,231,183,.86); --impact-halo-soft: rgba(52,211,153,.30); }
+.impact-halo-shield,
+.impact-halo-shield-break { --impact-halo-color: rgba(147,197,253,.86); --impact-halo-soft: rgba(59,130,246,.30); }
+.impact-halo-danger,
+.impact-halo-bosscast { --impact-halo-color: rgba(248,113,113,.90); --impact-halo-soft: rgba(239,68,68,.34); }
+.impact-halo-artifact { --impact-halo-color: rgba(216,180,254,.90); --impact-halo-soft: rgba(192,132,252,.34); }
+@keyframes impactHalo {
+  0% { opacity: 0; transform: scale(.58); }
+  32% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.46); }
+}
 @keyframes impactHit {
   0% { transform: scale(1); filter: brightness(1); }
   45% { transform: scale(1.06); filter: brightness(1.22); }

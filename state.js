@@ -724,6 +724,7 @@ let _lastLogTs = 0;
 let _lastFloatTs = 0;
 let _activeFloatCount = 0;
 let _impactSeq = 0;
+let _lastImpactHaloTs = 0;
 
 function isMobilePerfMode() {
   return typeof window !== 'undefined' && window.innerWidth <= 920;
@@ -761,9 +762,35 @@ function pulseCombatEl(targetEl, kind, duration) {
   targetEl.classList.remove('impact-hit','impact-crit','impact-heal','impact-shield','impact-danger','impact-bosscast','impact-comp','impact-artifact');
   void targetEl.offsetWidth;
   targetEl.classList.add(cls);
+  showCombatImpactHalo(targetEl, kind, duration);
   setTimeout(() => {
     if (targetEl.dataset.lastImpact === token) targetEl.classList.remove(cls);
   }, duration || 280);
+}
+
+function showCombatImpactHalo(targetEl, kind, duration) {
+  const stage = $('stage');
+  const layer = $('float-layer') || stage;
+  if (!stage || !layer || !targetEl) return;
+  if (typeof document !== 'undefined' && document.hidden) return;
+  const safeKind = String(kind || 'hit').replace(/[^a-z0-9_-]/gi, '') || 'hit';
+  const important = /crit|danger|boss|heal|shield|artifact/i.test(safeKind);
+  const now = Date.now();
+  if (now - _lastImpactHaloTs < (important ? 45 : 95)) return;
+  _lastImpactHaloTs = now;
+  const rect = targetEl.getBoundingClientRect();
+  const sRect = stage.getBoundingClientRect();
+  if (!rect.width || !rect.height || !sRect.width || !sRect.height) return;
+  const size = Math.round(Math.max(30, Math.min(92, Math.max(rect.width, rect.height) + (important ? 22 : 14))));
+  const el = document.createElement('div');
+  el.className = `impact-halo impact-halo-${safeKind}`;
+  el.style.left = (rect.left - sRect.left + rect.width / 2 - size / 2) + 'px';
+  el.style.top = (rect.top - sRect.top + rect.height / 2 - size / 2) + 'px';
+  el.style.width = size + 'px';
+  el.style.height = size + 'px';
+  el.style.setProperty('--impact-halo-duration', Math.max(220, duration || 300) + 'ms');
+  layer.appendChild(el);
+  setTimeout(() => el.remove(), Math.max(260, duration || 300) + 120);
 }
 
 function log(text, cls) {
