@@ -1431,6 +1431,10 @@ function renderMonList() {
   const paused = state.mode === 'world' && state.worldCombatPause && all.length === 0;
   const searchRemain = searching ? Math.max(1, Math.ceil(((state.worldSearch.until || 0) - now) / 1000)) : 0;
   const searchPct = searching ? Math.max(0, Math.min(100, ((now - (state.worldSearch.start || now)) / Math.max(1, state.worldSearch.duration || ((state.worldSearch.until || now) - (state.worldSearch.start || now)))) * 100)) : 0;
+  const pauseRemainMs = paused ? Math.max(0, (state.worldCombatPause.until || now) - now) : 0;
+  const pauseRemain = paused ? Math.ceil(pauseRemainMs / 1000) : 0;
+  const pauseDuration = paused ? Math.max(1, (state.worldCombatPause.until || now) - (state.worldCombatPause.at || now)) : 1;
+  const pausePct = paused ? Math.max(0, Math.min(100, ((now - (state.worldCombatPause.at || now)) / pauseDuration) * 100)) : 0;
   const displayName = (raw) => {
     const s = String(raw || '');
     if (!s) return '敌人';
@@ -1449,7 +1453,7 @@ function renderMonList() {
   const focus = all.find(m => m.hp > 0) || all[0] || null;
 
   // 签名: 槽位内容(含空槽)
-  const sig = (searching ? `S${searchRemain}|` : '') + (paused ? `P${state.worldCombatPause.reason || ''}|` : '') + slots.map((m, i) => m ? m._uid + (m === focus ? 'F' : '') + (m.hp > 0 ? 'A' : 'D') : 'E' + i).join('|');
+  const sig = (searching ? `S${searchRemain}|` : '') + (paused ? `P${state.worldCombatPause.reason || ''}:${pauseRemain}|` : '') + slots.map((m, i) => m ? m._uid + (m === focus ? 'F' : '') + (m.hp > 0 ? 'A' : 'D') : 'E' + i).join('|');
   if (sig !== _monListSig) {
     _monListSig = sig;
     wrap.innerHTML = slots.map((m, i) => {
@@ -1462,10 +1466,13 @@ function renderMonList() {
         }
         if (paused && i === 0) {
           const pauseName = state.worldCombatPause.name || '据点指挥官';
-          const pauseText = state.worldCombatPause.text || '挑战失败,战斗已结束。';
+          const pauseText = pauseRemainMs > 0
+            ? `挑战失败,首领已撤退。${pauseRemain}秒后恢复野外推进。`
+            : (state.worldCombatPause.text || '挑战冷却结束,正在重新寻找敌人。');
+          const pauseLevel = pauseRemainMs > 0 ? `失败冷却 ${pauseRemain}秒` : '恢复中';
           return `<div class="mon-row mon-placeholder" data-slot="${i}">
             <div class="m-emoji">💀</div>
-            <div class="m-mid"><div class="m-name">${pauseName}<span class="m-lvl">已撤退</span></div><div class="bar hp"><i style="width:0%"></i><span>${pauseText}</span></div></div>
+            <div class="m-mid"><div class="m-name">${pauseName}<span class="m-lvl">${pauseLevel}</span></div><div class="bar hp"><i style="width:${pausePct}%"></i><span>${pauseText}</span></div></div>
           </div>`;
         }
         return `<div class="mon-row mon-placeholder" data-slot="${i}">

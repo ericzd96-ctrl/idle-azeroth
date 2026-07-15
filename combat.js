@@ -6043,8 +6043,12 @@ function spawnMonster(){
   state.worldSearch = null;
   state._currentRareElite = null;
   if(state.mode==='world' && state.worldCombatPause){
-    if(typeof markDirty === 'function') markDirty('stage', 'map');
-    return;
+    if(clearExpiredWorldCombatPause(Date.now())){
+      state.worldSearch = null;
+    }else{
+      if(typeof markDirty === 'function') markDirty('stage', 'map');
+      return;
+    }
   }
   // 新战斗清除随从护盾;英雄护盾改为按持续时间到期(不再每波清盾,否则秒杀刷怪时护盾瞬间消失)
   state._compBarrier = 0;
@@ -6423,6 +6427,20 @@ function worldSearchRemainingMs(now){
   if(state.mode !== 'world' || !state.worldSearch) return 0;
   return Math.max(0, (state.worldSearch.until || 0) - (now || Date.now()));
 }
+function worldCombatPauseRemainingMs(now){
+  if(!state || state.mode !== 'world' || !state.worldCombatPause) return 0;
+  const until = state.worldCombatPause.until || 0;
+  if(!until) return Number.POSITIVE_INFINITY;
+  return Math.max(0, until - (now || Date.now()));
+}
+function clearExpiredWorldCombatPause(now){
+  if(!state || state.mode !== 'world' || !state.worldCombatPause) return false;
+  const until = state.worldCombatPause.until || 0;
+  if(!until || until > (now || Date.now())) return false;
+  state.worldCombatPause = null;
+  if(typeof markDirty === 'function') markDirty('stage', 'map');
+  return true;
+}
 function worldMonsterSearchDelayMs(){
   const map = typeof getMap === 'function' ? getMap() : null;
   const sub = map?.sub?.[state.currentSubzone] || map?.sub?.[0] || null;
@@ -6435,7 +6453,7 @@ function worldMonsterSearchDelayMs(){
 }
 function startWorldMonsterSearch(reason){
   if(!state || state.mode !== 'world') return false;
-  if(state.worldCombatPause) return false;
+  if(state.worldCombatPause && !clearExpiredWorldCombatPause(Date.now())) return false;
   if(getAliveMonsters().length > 0) return false;
   const now = Date.now();
   const delay = worldMonsterSearchDelayMs();
@@ -6457,7 +6475,7 @@ function waitOrResolveWorldMonsterSearch(now){
     state.worldSearch = null;
     return false;
   }
-  if(state.worldCombatPause){
+  if(state.worldCombatPause && !clearExpiredWorldCombatPause(now)){
     state.worldSearch = null;
     if(typeof markDirty === 'function') markDirty('stage', 'map');
     return true;
@@ -6473,19 +6491,24 @@ function waitOrResolveWorldMonsterSearch(now){
   if(typeof markDirty === 'function') markDirty('stage', 'map');
   return true;
 }
-function pauseWorldCombatAfterFieldCommanderFail(mon){
+function pauseWorldCombatAfterFieldCommanderFail(mon, failInfo){
   if(!state || state.mode !== 'world') return;
+  const now = Date.now();
+  const failedAt = failInfo?.active?.failedAt || now;
+  const until = failedAt + 90000;
   state.worldSearch = null;
   state.worldCombatPause = {
     reason: 'fieldCommanderFail',
-    at: Date.now(),
+    at: now,
+    until,
     name: mon?.bossName || mon?.name || '据点指挥官',
-    text: '挑战失败,首领已撤退。切换区域或重新推进据点后再战。'
+    text: '挑战失败,首领已撤退。冷却结束后会恢复野外推进,也可以切换区域。'
   };
   if(typeof markDirty === 'function') markDirty('stage', 'map');
 }
 function isWorldCombatPaused(){
-  return !!(state && state.mode === 'world' && state.worldCombatPause);
+  if(!state || state.mode !== 'world' || !state.worldCombatPause) return false;
+  return !clearExpiredWorldCombatPause(Date.now());
 }
 function bossTrickList(bossData){
   if(!bossData) return [];
@@ -9790,7 +9813,7 @@ function failFieldCommanderChallenge(mon){
   const failName = mon.bossName || failInfo?.name || mon.name || '据点指挥官';
   log(`💀 ${failName} 挑战失败,本次据点首领已经撤退,战斗已结束`, 'bad');
   state.mode = 'world';
-  if(typeof pauseWorldCombatAfterFieldCommanderFail === 'function') pauseWorldCombatAfterFieldCommanderFail(mon);
+  if(typeof pauseWorldCombatAfterFieldCommanderFail === 'function') pauseWorldCombatAfterFieldCommanderFail(mon, failInfo);
   bossCasting = null;
   casting = null;
   if(typeof hideBossCastBar === 'function') hideBossCastBar();
