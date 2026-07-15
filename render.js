@@ -2877,6 +2877,24 @@ function bossCastResponseKind(skillKey, sk) {
   return '';
 }
 
+function bossCastUsableSkillState(entry, now) {
+  if (!entry?.sk) return { left:Infinity, cost:0, ready:false };
+  const left = Math.max(0, (state.skillCooldowns?.[entry.key] || 0) - now);
+  let cost = Math.max(0, entry.sk.mp || 0);
+  if (state.hero?.costReduction > 0) cost = Math.max(1, Math.floor(cost * (1 - state.hero.costReduction / 100)));
+  return { left, cost, ready:left <= 0 && (state.resource || 0) >= cost };
+}
+
+function bossCastBestSkill(entries, now) {
+  let ready = null, soonestLeft = Infinity;
+  for (const x of entries) {
+    const use = bossCastUsableSkillState(x, now);
+    if (use.left < soonestLeft) soonestLeft = use.left;
+    if (use.ready && !ready) ready = x;
+  }
+  return { ready, soonestLeft };
+}
+
 function bossCastUiState(now) {
   if (typeof bossCasting === 'undefined' || !bossCasting) return null;
   const duration = Math.max(1, bossCasting.duration || 1);
@@ -2893,33 +2911,41 @@ function bossCastUiState(now) {
   const responseSkills = entries
     .map(x => Object.assign({}, x, { kind:bossCastResponseKind(x.key, x.sk) }))
     .filter(x => x.kind);
-  let ready = null, responseReady = null;
-  let soonestLeft = Infinity, responseSoonestLeft = Infinity;
-  for (const x of interruptSkills) {
-    const left = Math.max(0, (state.skillCooldowns?.[x.key] || 0) - now);
-    const cost = Math.max(0, x.sk.mp || 0);
-    if (left < soonestLeft) soonestLeft = left;
-    if (left <= 0 && (state.resource || 0) >= cost && !ready) ready = x;
-  }
-  for (const x of responseSkills) {
-    const left = Math.max(0, (state.skillCooldowns?.[x.key] || 0) - now);
-    const cost = Math.max(0, x.sk.mp || 0);
-    if (left < responseSoonestLeft) responseSoonestLeft = left;
-    if (left <= 0 && (state.resource || 0) >= cost && !responseReady) responseReady = x;
-  }
+  const manualInterrupt = bossCastBestSkill(interruptSkills, now);
+  const manualResponse = bossCastBestSkill(responseSkills, now);
+  const autoEntries = (state.autoSkill && typeof autoCastSkillEntries === 'function') ? autoCastSkillEntries(c) : [];
+  const autoInterruptSkills = (canInterrupt && state.autoSkill && typeof autoSkillKindEnabled === 'function' && autoSkillKindEnabled('interrupt'))
+    ? autoEntries
+      .map(([key, sk], order) => ({ key, sk, order, auto:true, candidate:(typeof autoInterruptCandidateRank === 'function') ? autoInterruptCandidateRank(key, sk, order) : null }))
+      .filter(x => x.candidate)
+      .sort((a, b) => a.candidate.priority - b.candidate.priority || (a.sk.cd || 0) - (b.sk.cd || 0) || a.order - b.order)
+    : [];
+  const autoResponseSkills = state.autoSkill
+    ? autoEntries
+      .map(([key, sk]) => Object.assign({ key, sk, auto:true }, { kind:bossCastResponseKind(key, sk) }))
+      .filter(x => x.kind && (typeof autoSkillAllowed !== 'function' || autoSkillAllowed(x.key, x.sk)))
+    : [];
+  const autoInterrupt = bossCastBestSkill(autoInterruptSkills, now);
+  const autoResponse = bossCastBestSkill(autoResponseSkills, now);
+  const ready = manualInterrupt.ready || autoInterrupt.ready;
+  const responseReady = manualResponse.ready || autoResponse.ready;
+  const soonestLeft = Math.min(manualInterrupt.soonestLeft, autoInterrupt.soonestLeft);
+  const responseSoonestLeft = Math.min(manualResponse.soonestLeft, autoResponse.soonestLeft);
+  const interruptCount = interruptSkills.length + autoInterruptSkills.length;
+  const responseCount = responseSkills.length + autoResponseSkills.length;
   const responseText = responseReady
-    ? `${responseReady.kind === 'heal' ? '治疗' : '减伤'}: ${responseReady.sk.name}`
-    : responseSkills.length
+    ? `${responseReady.auto ? '自动' : ''}${responseReady.kind === 'heal' ? '治疗' : '减伤'}: ${responseReady.sk.name}`
+    : responseCount
       ? (responseSoonestLeft <= 0 ? '保命技能缺资源' : `保命技能还差 ${Math.ceil(responseSoonestLeft / 1000)}秒`)
       : '保留资源,准备硬吃';
   const action = !canInterrupt
     ? `不可打断,${responseText}`
     : ready
-      ? `${urgent ? '立刻打断' : '可打断'}: ${ready.sk.name}`
-      : interruptSkills.length
+      ? `${ready.auto ? '自动' : ''}${urgent ? '立刻打断' : '可打断'}: ${ready.sk.name}`
+      : interruptCount
         ? (urgent ? `打断未就绪,${responseText}` : (soonestLeft <= 0 ? '打断缺资源' : `打断未就绪,还差 ${Math.ceil(soonestLeft / 1000)}秒`))
-        : `技能栏没有打断,${responseText}`;
-  return { cast:bossCasting, remainMs, threatMeta, interruptText, canInterrupt, urgent, ready, responseReady, interruptCount:interruptSkills.length, action };
+        : `没有可用打断,${responseText}`;
+  return { cast:bossCasting, remainMs, threatMeta, interruptText, canInterrupt, urgent, ready, responseReady, interruptCount, action };
 }
 
 function bossCastSkillPrompt(skillKey, sk, now, cdMs) {
