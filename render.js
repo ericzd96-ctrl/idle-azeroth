@@ -1758,10 +1758,12 @@ function updateDmgMeter() {
         cls = 'danger'; label = '危险'; hint = '容易暴毙';
       }
     }
-    const surviveText = netPerSec > 0 ? `可撑 ${Math.max(1, Math.min(120, Math.floor(hpNow / netPerSec)))}秒${hpNow / netPerSec > 120 ? '+' : ''}` : '净压力 0';
-    const compText = compAlive && (compTk || compHpPct < 0.95) ? ` · 随从净 ${fmt(compNetPerSec)}/秒` : '';
-    const text = `${label} · ${hint} · 主角净 ${fmt(netPerSec)}/秒${compText} · ${surviveText}`;
+    const surviveText = netPerSec > 0 ? `可撑 ${Math.max(1, Math.min(120, Math.floor(hpNow / netPerSec)))}秒${hpNow / netPerSec > 120 ? '+' : ''}` : '净压力0';
+    const compShort = compAlive && (compTk || compHpPct < 0.95) ? ` · 随${fmt(compNetPerSec)}/秒` : '';
+    const text = `${label} · 主${fmt(netPerSec)}/秒${compShort} · ${surviveText}`;
+    const detail = `压力判断: ${hint}。主角承伤 ${fmt(dtps)}/秒,治疗 ${fmt(healPerSec)}/秒,净压力 ${fmt(netPerSec)}/秒。${compAlive ? `随从承伤 ${fmt(compDtps)}/秒,治疗 ${fmt(compHealPerSec)}/秒,净压力 ${fmt(compNetPerSec)}/秒。` : ''}`;
     pressureEl.className = `dm-pressure ${cls}`;
+    pressureEl.title = detail;
     if (pressureEl.textContent !== text) pressureEl.textContent = text;
   }
 
