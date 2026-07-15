@@ -3040,14 +3040,19 @@ function updateBossIntentLine(now) {
   if (!ui) {
     el.style.display = 'none';
     el.textContent = '';
+    el.removeAttribute('title');
     return;
   }
+  const readyToStop = !!ui.ready;
+  el.classList.toggle('urgent', ui.canInterrupt && ui.urgent && readyToStop);
+  el.classList.toggle('wait', ui.canInterrupt && ui.urgent && !readyToStop);
   el.classList.toggle('soft', ui.canInterrupt && !ui.urgent);
   el.classList.toggle('none', !ui.canInterrupt);
   el.style.display = '';
   const cast = ui.cast;
   const remain = (ui.remainMs / 1000).toFixed(1);
   const text = `${cast.icon || '💀'} ${cast.name || '施法'} · ${ui.threatMeta.label} · ${ui.interruptText} · ${remain}s · ${ui.action}`;
+  el.title = `${cast.name || '施法'}: ${ui.action}`;
   if (el.textContent !== text) el.textContent = text;
 }
 
