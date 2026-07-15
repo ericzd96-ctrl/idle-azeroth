@@ -2788,6 +2788,16 @@ function getTalentRow(t, idx) {
 }
 const TALENT_ROW_REQ = [0, 5, 10, 15, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56];
 
+function bossCastResponseKind(skillKey, sk) {
+  if (!sk) return '';
+  if (sk.type === 'heal' || sk.heal || sk.healPct) return 'heal';
+  if (typeof isDefensiveSkill === 'function' && isDefensiveSkill(skillKey, sk)) return 'defensive';
+  const text = `${sk.name || ''} ${sk.desc || ''} ${sk.buff || ''}`;
+  if (/治疗|恢复|圣疗|愈合|链疗|宁静|生命/.test(text)) return 'heal';
+  if (/减伤|护盾|盾|屏障|壁垒|防御|格挡|闪避|圣盾|守护|树皮|冰箱|庇护/.test(text)) return 'defensive';
+  return '';
+}
+
 function bossCastUiState(now) {
   if (typeof bossCasting === 'undefined' || !bossCasting) return null;
   const duration = Math.max(1, bossCasting.duration || 1);
@@ -2799,36 +2809,58 @@ function bossCastUiState(now) {
   const urgent = canInterrupt && (bossCasting.interruptPolicy === 'hard' || bossCasting._empowered || bossCasting.threat === 'high' || bossCasting.threat === 'extreme');
   const c = getCls();
   const selected = Array.isArray(state.selectedSkills) ? state.selectedSkills : [];
-  const interruptSkills = selected
-    .map(key => ({ key, sk:c?.skills?.[key] }))
-    .filter(x => x.sk && (x.sk.type === 'interrupt' || x.sk.interruptCast));
-  let ready = null;
-  let soonestLeft = Infinity;
+  const entries = selected.map(key => ({ key, sk:c?.skills?.[key] })).filter(x => x.sk);
+  const interruptSkills = entries.filter(x => x.sk.type === 'interrupt' || x.sk.interruptCast);
+  const responseSkills = entries
+    .map(x => Object.assign({}, x, { kind:bossCastResponseKind(x.key, x.sk) }))
+    .filter(x => x.kind);
+  let ready = null, responseReady = null;
+  let soonestLeft = Infinity, responseSoonestLeft = Infinity;
   for (const x of interruptSkills) {
     const left = Math.max(0, (state.skillCooldowns?.[x.key] || 0) - now);
     const cost = Math.max(0, x.sk.mp || 0);
     if (left < soonestLeft) soonestLeft = left;
     if (left <= 0 && (state.resource || 0) >= cost && !ready) ready = x;
   }
+  for (const x of responseSkills) {
+    const left = Math.max(0, (state.skillCooldowns?.[x.key] || 0) - now);
+    const cost = Math.max(0, x.sk.mp || 0);
+    if (left < responseSoonestLeft) responseSoonestLeft = left;
+    if (left <= 0 && (state.resource || 0) >= cost && !responseReady) responseReady = x;
+  }
+  const responseText = responseReady
+    ? `${responseReady.kind === 'heal' ? '治疗' : '减伤'}: ${responseReady.sk.name}`
+    : responseSkills.length
+      ? (responseSoonestLeft <= 0 ? '保命技能缺资源' : `保命技能还差 ${Math.ceil(responseSoonestLeft / 1000)}秒`)
+      : '保留资源,准备硬吃';
   const action = !canInterrupt
-    ? '不可打断,开减伤或治疗'
+    ? `不可打断,${responseText}`
     : ready
       ? `${urgent ? '立刻打断' : '可打断'}: ${ready.sk.name}`
       : interruptSkills.length
-        ? `打断未就绪,还差 ${Math.ceil(soonestLeft / 1000)}秒`
-        : '技能栏没有打断,用控制/防御处理';
-  return { cast:bossCasting, remainMs, threatMeta, interruptText, canInterrupt, urgent, ready, action };
+        ? (urgent ? `打断未就绪,${responseText}` : (soonestLeft <= 0 ? '打断缺资源' : `打断未就绪,还差 ${Math.ceil(soonestLeft / 1000)}秒`))
+        : `技能栏没有打断,${responseText}`;
+  return { cast:bossCasting, remainMs, threatMeta, interruptText, canInterrupt, urgent, ready, responseReady, interruptCount:interruptSkills.length, action };
 }
 
 function bossCastSkillPrompt(skillKey, sk, now, cdMs) {
   const ui = bossCastUiState(now);
-  if (!ui || !sk || !ui.canInterrupt || !(sk.type === 'interrupt' || sk.interruptCast)) return null;
+  if (!ui || !sk) return null;
   const cost = Math.max(0, sk.mp || 0);
   const ready = (cdMs || 0) <= 0 && (state.resource || 0) >= cost;
-  const hard = ui.urgent || ui.cast?.interruptPolicy === 'hard';
-  const label = ready ? (hard ? '必断' : '可断') : (cdMs > 0 ? `${Math.ceil(cdMs / 1000)}秒` : '缺资源');
-  const cls = ready ? (hard ? 'interrupt-hot' : 'interrupt-soft') : 'interrupt-wait';
-  const tip = `${ui.cast.icon || ''}${ui.cast.name || '施法'} · ${ui.threatMeta.label} · ${ui.interruptText} · ${ready ? '这个技能现在可用于打断' : label}`;
+  if (ui.canInterrupt && (sk.type === 'interrupt' || sk.interruptCast)) {
+    const hard = ui.urgent || ui.cast?.interruptPolicy === 'hard';
+    const label = ready ? (hard ? '必断' : '可断') : (cdMs > 0 ? `${Math.ceil(cdMs / 1000)}秒` : '缺资源');
+    const cls = ready ? (hard ? 'interrupt-hot' : 'interrupt-soft') : 'interrupt-wait';
+    const tip = `${ui.cast.icon || ''}${ui.cast.name || '施法'} · ${ui.threatMeta.label} · ${ui.interruptText} · ${ready ? '这个技能现在可用于打断' : label}`;
+    return { label, cls, tip };
+  }
+  const kind = bossCastResponseKind(skillKey, sk);
+  const needsBackup = !ui.canInterrupt || !ui.ready || ui.urgent;
+  if (!kind || !needsBackup || (!ui.urgent && ui.canInterrupt && ui.interruptCount > 0)) return null;
+  const label = ready ? (kind === 'heal' ? '治疗' : '减伤') : (cdMs > 0 ? `${Math.ceil(cdMs / 1000)}秒` : '缺资源');
+  const cls = ready ? (kind === 'heal' ? 'heal-hot' : 'defensive-hot') : 'defensive-wait';
+  const tip = `${ui.cast.icon || ''}${ui.cast.name || '施法'} · ${ui.threatMeta.label} · ${ui.interruptText} · ${ready ? '可作为本次读条的保命应对' : label}`;
   return { label, cls, tip };
 }
 
@@ -3080,6 +3112,9 @@ function updateSkillBarCd() {
     btn.classList.toggle('interrupt-hot', prompt?.cls === 'interrupt-hot');
     btn.classList.toggle('interrupt-soft', prompt?.cls === 'interrupt-soft');
     btn.classList.toggle('interrupt-wait', prompt?.cls === 'interrupt-wait');
+    btn.classList.toggle('defensive-hot', prompt?.cls === 'defensive-hot');
+    btn.classList.toggle('heal-hot', prompt?.cls === 'heal-hot');
+    btn.classList.toggle('defensive-wait', prompt?.cls === 'defensive-wait');
     let badge = btn.querySelector('.sk-alert');
     if(prompt){
       if(!badge){

@@ -5153,6 +5153,17 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
 .skill-btn.interrupt-wait {
   border-color: rgba(251,191,36,.34);
 }
+.skill-btn.defensive-hot:not(.on-cd) {
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 0 1px rgba(96,165,250,.58), 0 0 15px rgba(96,165,250,.22);
+}
+.skill-btn.heal-hot:not(.on-cd) {
+  border-color: #34d399 !important;
+  box-shadow: 0 0 0 1px rgba(52,211,153,.55), 0 0 15px rgba(52,211,153,.20);
+}
+.skill-btn.defensive-wait {
+  border-color: rgba(96,165,250,.32);
+}
 .skill-btn .sk-alert {
   position: absolute;
   top: -7px;
@@ -5177,6 +5188,17 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   background: #1f2937;
   border-color: rgba(251,191,36,.35);
   color: #fde68a;
+}
+.skill-btn.defensive-hot .sk-alert,
+.skill-btn.defensive-wait .sk-alert {
+  background: #1e3a8a;
+  border-color: rgba(147,197,253,.55);
+  color: #dbeafe;
+}
+.skill-btn.heal-hot .sk-alert {
+  background: #065f46;
+  border-color: rgba(167,243,208,.55);
+  color: #d1fae5;
 }
 @keyframes interruptPulse {
   0%, 100% { transform: translateY(0); }
