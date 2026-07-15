@@ -3136,9 +3136,10 @@ function updateBossIntentLine(now) {
   el.style.display = '';
   const cast = ui.cast;
   const remain = (ui.remainMs / 1000).toFixed(1);
-  const text = `${cast.icon || '💀'} ${cast.name || '施法'} · ${ui.threatMeta.label} · ${ui.interruptText} · ${remain}s · ${ui.action}`;
+  const castName = `${cast.icon || '💀'} ${cast.name || '施法'}`;
+  const html = `<span class="intent-token cast">${castName}</span><span class="intent-token threat">${ui.threatMeta.label}</span><span class="intent-token rule">${ui.interruptText}</span><span class="intent-token time">${remain}s</span><span class="intent-action">${ui.action}</span>`;
   el.title = `${cast.name || '施法'}: ${ui.action}`;
-  if (el.textContent !== text) el.textContent = text;
+  if (el.innerHTML !== html) el.innerHTML = html;
 }
 
 function renderTalents() {

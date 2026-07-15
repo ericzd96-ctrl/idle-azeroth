@@ -3715,7 +3715,43 @@ h1 {
   font-size: 11px;
   line-height: 1.35;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex-wrap: wrap;
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.04), 0 0 12px rgba(239,68,68,.10);
+}
+.boss-intent-line .intent-token,
+.boss-intent-line .intent-action {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(15,23,42,.42);
+  white-space: nowrap;
+}
+.boss-intent-line .intent-token.cast {
+  color: #fff1f2;
+  border-color: rgba(254,202,202,.22);
+}
+.boss-intent-line .intent-token.threat,
+.boss-intent-line .intent-token.rule {
+  color: #fde68a;
+}
+.boss-intent-line .intent-token.time {
+  min-width: 42px;
+  justify-content: center;
+  color: #e0f2fe;
+  font-variant-numeric: tabular-nums;
+}
+.boss-intent-line .intent-action {
+  max-width: 100%;
+  color: inherit;
+  font-weight: 700;
+  white-space: normal;
 }
 .boss-intent-line.urgent {
   border-color: rgba(248,113,113,.72);
