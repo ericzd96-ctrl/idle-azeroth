@@ -6906,6 +6906,31 @@ function bossCastBarStyle(skill, threatMeta){
   if(skill?.interruptPolicy === 'none') return 'linear-gradient(90deg,#60a5fa,#2563eb)';
   return threatMeta?.bar || BOSS_CAST_THREAT_META.low.bar;
 }
+const BOSS_CAST_WRAP_FX_CLASSES = ['cast-low','cast-medium','cast-high','cast-extreme','cast-empowered','cast-interruptible','cast-uninterruptible','cast-final'];
+const BOSS_CAST_FILL_FX_CLASSES = ['cast-striped','cast-final-fill'];
+function updateBossCastBarFx(cast, pct, remainMs){
+  const wrap = document.getElementById('boss-cast-bar-wrap');
+  const fill = document.getElementById('boss-b-cast');
+  if(!wrap || !fill) return;
+  const threat = cast?.threat || 'low';
+  const finalWindow = pct >= 65 || remainMs <= 900;
+  wrap.classList.toggle('cast-low', threat === 'low');
+  wrap.classList.toggle('cast-medium', threat === 'medium');
+  wrap.classList.toggle('cast-high', threat === 'high');
+  wrap.classList.toggle('cast-extreme', threat === 'extreme');
+  wrap.classList.toggle('cast-empowered', !!cast?._empowered && cast.interruptPolicy !== 'none');
+  wrap.classList.toggle('cast-interruptible', cast?.interruptPolicy !== 'none');
+  wrap.classList.toggle('cast-uninterruptible', cast?.interruptPolicy === 'none');
+  wrap.classList.toggle('cast-final', finalWindow);
+  fill.classList.toggle('cast-striped', cast?.interruptPolicy !== 'none' || threat === 'high' || threat === 'extreme' || !!cast?._empowered);
+  fill.classList.toggle('cast-final-fill', finalWindow);
+}
+function clearBossCastBarFx(){
+  const wrap = document.getElementById('boss-cast-bar-wrap');
+  const fill = document.getElementById('boss-b-cast');
+  if(wrap) wrap.classList.remove(...BOSS_CAST_WRAP_FX_CLASSES);
+  if(fill) fill.classList.remove(...BOSS_CAST_FILL_FX_CLASSES);
+}
 function buildInterruptedBossResidual(skill){
   if(!skill || skill.interruptPolicy !== 'soft') return null;
   const out = {
@@ -10615,6 +10640,7 @@ function hideHeroCastBar(){
 function hideBossCastBar(){
   const cb=document.getElementById('boss-cast-bar-wrap');
   if(cb)cb.style.visibility='hidden';
+  clearBossCastBarFx();
 }
 function bossCastingMonster(cast){
   if(!cast) return null;
@@ -10796,8 +10822,12 @@ function tickCast(now){
     $('boss-cast-name').textContent='💀 '+(bossCasting.bossName||'BOSS')+' - '+(bossCasting.icon||'')+' '+(bossCasting.name||'施法')+'【'+tgtTag+' / '+threatMeta.label+' / '+interruptText+(bossCasting._empowered&&bossCasting.interruptPolicy!=='none'?' / ⚡可破绽':'')+'】';
     $('boss-cast-name').style.color = threatMeta.text;
     $('boss-cast-time').textContent=remainMs>0?(remainMs/1000).toFixed(1)+'s':'';
-    $('boss-b-cast').style.background = bossCastBarStyle(bossCasting, threatMeta);
-    $('boss-b-cast').style.width=pct+'%';
+    const bossCastFill = $('boss-b-cast');
+    const bossCastFillStyle = bossCastBarStyle(bossCasting, threatMeta);
+    bossCastFill.style.background = bossCastFillStyle;
+    bossCastFill.style.setProperty('--boss-cast-fill', bossCastFillStyle);
+    bossCastFill.style.width=pct+'%';
+    updateBossCastBarFx(bossCasting, pct, remainMs);
     if(elapsed>=bossCasting.duration){
       hideBossCastBar();
       const bc=bossCasting;bossCasting=null;const mon=bossCastingMonster(bc);if(!mon||mon.hp<=0)return;
