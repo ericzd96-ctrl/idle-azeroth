@@ -6076,7 +6076,8 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
 .skill-btn.skill-ready-flash:not(.on-cd) {
   animation: skillReadyFlash .82s ease-out;
 }
-.skill-btn.skill-ready-flash:not(.on-cd)::after {
+.skill-btn.skill-ready-flash:not(.on-cd)::after,
+.skill-btn.skill-resource-flash:not(.on-cd)::after {
   content: '';
   position: absolute;
   inset: -3px;
@@ -6085,6 +6086,37 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   box-shadow: 0 0 16px rgba(110,231,183,.34), inset 0 0 10px rgba(110,231,183,.18);
   pointer-events: none;
   animation: skillReadyRing .82s ease-out forwards;
+}
+.skill-btn.skill-resource-flash:not(.on-cd)::after {
+  border-color: rgba(96,165,250,.78);
+  box-shadow: 0 0 16px rgba(96,165,250,.30), inset 0 0 10px rgba(96,165,250,.16);
+  animation-duration: .76s;
+}
+.skill-btn.action-ready:not(.on-cd) {
+  background:
+    linear-gradient(180deg, rgba(45,52,90,.96), rgba(28,33,56,.98)),
+    radial-gradient(circle at 50% 0%, rgba(110,231,183,.14), rgba(110,231,183,0) 62%);
+}
+.skill-btn.action-ready:not(.on-cd)::before {
+  content: '';
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 2px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(110,231,183,0), rgba(110,231,183,.66), rgba(110,231,183,0));
+  opacity: .7;
+  pointer-events: none;
+}
+.skill-btn.resource-starved:not(.on-cd) {
+  border-color: rgba(248,113,113,.30) !important;
+  color: #cbd5e1;
+  filter: saturate(.78) brightness(.82);
+}
+.skill-btn.resource-starved:not(.on-cd) .mp-cost {
+  color: #fca5a5;
+  text-shadow: 0 0 8px rgba(248,113,113,.24);
 }
 .skill-btn.on-cd { opacity: 0.5; cursor: not-allowed; }
 .skill-btn.interrupt-hot:not(.on-cd) {
@@ -6161,9 +6193,13 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   100% { opacity: 0; transform: scale(1.12); }
 }
 .skill-btn .cd-overlay {
-  position: absolute; inset: 0; background: rgba(0,0,0,.6);
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(15,23,42,.44) 0 38%, rgba(15,23,42,.72) 70%),
+    conic-gradient(from -90deg, rgba(148,163,184,.16) 0deg var(--cd-angle), rgba(0,0,0,.76) var(--cd-angle) 360deg);
   border-radius: 8px; display: flex; align-items: center; justify-content: center;
   font-size: 11px; color: #fbbf24; font-weight: bold;
+  text-shadow: 0 1px 4px rgba(0,0,0,.92);
   z-index: 2;
 }
 .skill-btn .mp-cost { font-size: 10px; color: var(--mp); }

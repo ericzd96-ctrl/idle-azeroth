@@ -3287,7 +3287,13 @@ function renderSkillBar() {
     const cdEnd = state.skillCooldowns[key] || 0;
     const cdMs = Math.max(0, cdEnd - now);
     const onCd = cdMs > 0;
-    const hasMp = state.resource >= sk.mp;
+    let useCost = Math.max(0, sk.mp || 0);
+    if(state.hero?.costReduction > 0) useCost = Math.max(1, Math.floor(useCost * (1 - state.hero.costReduction / 100)));
+    if(sk.consumeRage && c.resKey === 'rage') useCost = Math.min(Math.max(10, useCost), Math.max(10, state.resource || 0));
+    const hasMp = (state.resource || 0) >= useCost;
+    const cdTotalMs = Math.max(1, Math.round((getSkillCd(sk) * 1000) / ((typeof castSpeedMul === 'function') ? castSpeedMul() : 1)));
+    const cdAngle = onCd ? Math.round((1 - Math.min(1, cdMs / cdTotalMs)) * 360) : 360;
+    const useStateClass = onCd ? '' : (hasMp ? 'action-ready' : 'resource-starved');
     const bossPrompt = bossCastSkillPrompt(key, sk, now, cdMs);
     const proc = (typeof currentSpecProcSystem === 'function') ? currentSpecProcSystem() : null;
     const activeProc = proc && state.skillRuntime && state.skillRuntime.specProc && state.skillRuntime.specProc.key === proc.key && (!state.skillRuntime.specProc.expire || state.skillRuntime.specProc.expire > now);
@@ -3339,11 +3345,11 @@ function renderSkillBar() {
     const tip = `${baseTip}${bossPrompt ? `\nBoss读条: ${bossPrompt.tip}` : ''}`.replace(/"/g, '&quot;');
     const baseTipAttr = baseTip.replace(/"/g, '&quot;');
     const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, sk.icon) : sk.icon;
-    return `<button class="skill-btn ${onCd?'on-cd':''} ${bossPrompt?.cls || ''}" data-skill="${key}" data-cd-active="${onCd?'1':'0'}" draggable="true" title="${tip}" data-base-title="${baseTipAttr}"
-      style="${coreMatch&&!onCd?'border-color:#38bdf8;box-shadow:0 0 0 1px rgba(56,189,248,.50),0 0 14px rgba(56,189,248,.18)':(procMatch&&!onCd?'border-color:#facc15;box-shadow:0 0 0 1px rgba(250,204,21,.45)':(!onCd&&hasMp?'border-color:var(--accent)':''))}">
+    return `<button class="skill-btn ${onCd?'on-cd':''} ${useStateClass} ${bossPrompt?.cls || ''}" data-skill="${key}" data-cd-active="${onCd?'1':'0'}" data-resource-ready="${hasMp?'1':'0'}" data-cd-total="${cdTotalMs}" draggable="true" title="${tip}" data-base-title="${baseTipAttr}"
+      style="--cd-angle:${cdAngle}deg;${coreMatch&&!onCd?'border-color:#38bdf8;box-shadow:0 0 0 1px rgba(56,189,248,.50),0 0 14px rgba(56,189,248,.18)':(procMatch&&!onCd?'border-color:#facc15;box-shadow:0 0 0 1px rgba(250,204,21,.45)':(!onCd&&hasMp?'border-color:var(--accent)':''))}">
       <span>${skillIconHtml} ${sk.name}</span>
       <span class="mp-cost">${coreMatch?'✹ ':(procMatch?'✦ ':'')}${sk.mp}${c.resKey==='rage'?'怒':c.resKey==='energy'?'能':'蓝'}</span>
-      ${onCd?`<div class="cd-overlay">${(cdMs/1000).toFixed(1)}秒</div>`:''}
+      ${onCd?`<div class="cd-overlay" style="--cd-angle:${cdAngle}deg">${(cdMs/1000).toFixed(1)}秒</div>`:''}
       ${bossPrompt ? `<span class="sk-alert">${bossPrompt.label}</span>` : ''}
     </button>`;
   }).join('');
@@ -3359,23 +3365,44 @@ function updateSkillBarCd() {
     const sk = c?.skills?.[key];
     const cdEnd = state.skillCooldowns[key] || 0;
     const cdMs = Math.max(0, cdEnd - now);
+    const cdTotalMs = Math.max(1, Number(btn.dataset.cdTotal) || (sk ? Math.round((getSkillCd(sk) * 1000) / ((typeof castSpeedMul === 'function') ? castSpeedMul() : 1)) : 1000));
+    const cdAngle = cdMs > 0 ? Math.round((1 - Math.min(1, cdMs / cdTotalMs)) * 360) : 360;
+    btn.style.setProperty('--cd-angle', cdAngle + 'deg');
     const cdTxt = (cdMs / 1000).toFixed(1) + '秒';
     const overlay = btn.querySelector('.cd-overlay');
     const wasOnCd = btn.dataset.cdActive === '1' || btn.classList.contains('on-cd');
+    let useCost = Math.max(0, sk?.mp || 0);
+    if(state.hero?.costReduction > 0) useCost = Math.max(1, Math.floor(useCost * (1 - state.hero.costReduction / 100)));
+    if(sk?.consumeRage && c?.resKey === 'rage') useCost = Math.min(Math.max(10, useCost), Math.max(10, state.resource || 0));
+    const hasResource = (state.resource || 0) >= useCost;
+    const wasResourceReady = btn.dataset.resourceReady === '1';
+    btn.dataset.resourceReady = hasResource ? '1' : '0';
     if (cdMs > 0) {
       btn.dataset.cdActive = '1';
       btn.classList.add('on-cd');
-      if (overlay) overlay.textContent = cdTxt;
-      else { const d=document.createElement('div');d.className='cd-overlay';d.textContent=cdTxt;btn.appendChild(d); }
+      btn.classList.remove('action-ready', 'resource-starved');
+      if (overlay) {
+        overlay.textContent = cdTxt;
+        overlay.style.setProperty('--cd-angle', cdAngle + 'deg');
+      }
+      else { const d=document.createElement('div');d.className='cd-overlay';d.textContent=cdTxt;d.style.setProperty('--cd-angle', cdAngle + 'deg');btn.appendChild(d); }
     } else {
       btn.dataset.cdActive = '0';
       btn.classList.remove('on-cd');
+      btn.classList.toggle('action-ready', hasResource);
+      btn.classList.toggle('resource-starved', !hasResource);
       if (overlay) overlay.remove();
       if (wasOnCd) {
         btn.classList.remove('skill-ready-flash');
         void btn.offsetWidth;
         btn.classList.add('skill-ready-flash');
         setTimeout(() => btn.classList.remove('skill-ready-flash'), 820);
+      }
+      if (hasResource && !wasResourceReady && !wasOnCd) {
+        btn.classList.remove('skill-resource-flash');
+        void btn.offsetWidth;
+        btn.classList.add('skill-resource-flash');
+        setTimeout(() => btn.classList.remove('skill-resource-flash'), 760);
       }
     }
     const prompt = sk ? bossCastSkillPrompt(key, sk, now, cdMs) : null;
