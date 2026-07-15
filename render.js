@@ -1718,7 +1718,16 @@ function updateDmgMeter() {
     const ch = (typeof dmgStats !== 'undefined') ? (dmgStats.compHits || 0) : 0;
     const hRate = hh > 0 ? Math.round(hc / hh * 100) : 0;
     const cRate = ch > 0 ? Math.round(cc / ch * 100) : 0;
-    critEl.textContent = (hh || ch) ? `🦸${hRate}%  🐾${cRate}%` : '-';
+    const hits = hh + ch;
+    const crits = hc + cc;
+    if (hits) {
+      const rate = Math.round(crits / hits * 100);
+      critEl.textContent = `总体 ${rate}%`;
+      critEl.title = `主角暴击 ${hc}/${hh} (${hRate}%)。随从暴击 ${cc}/${ch} (${cRate}%)。`;
+    } else {
+      critEl.textContent = '-';
+      critEl.removeAttribute('title');
+    }
   }
 
   // 击杀数
