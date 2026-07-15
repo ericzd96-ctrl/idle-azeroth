@@ -1705,10 +1705,13 @@ function updateDmgMeter() {
   const takenEl = $('dm-taken');
   const tk = (typeof dmgStats !== 'undefined') ? (dmgStats.taken || 0) : 0;
   const tkMax = (typeof dmgStats !== 'undefined') ? (dmgStats.takenMax || 0) : 0;
+  const compTk = (typeof dmgStats !== 'undefined') ? (dmgStats.compTaken || 0) : 0;
+  const compTkMax = (typeof dmgStats !== 'undefined') ? (dmgStats.compTakenMax || 0) : 0;
   const dtps = tk ? Math.round(tk / elapsed) : 0;
+  const compDtps = compTk ? Math.round(compTk / elapsed) : 0;
   if (takenEl) {
-    if (tk) {
-      takenEl.textContent = `${fmt(tk)} · ${fmt(dtps)}/秒 · 最高 ${fmt(tkMax)}`;
+    if (tk || compTk) {
+      takenEl.textContent = `🦸${fmt(tk)}(${fmt(dtps)}/秒,高${fmt(tkMax)})  🐾${fmt(compTk)}(${fmt(compDtps)}/秒,高${fmt(compTkMax)})`;
     } else takenEl.textContent = '-';
   }
 
@@ -1717,12 +1720,25 @@ function updateDmgMeter() {
   if (pressureEl) {
     const hMax = Math.max(1, state?.hero?.hpMax || 1);
     const hpNow = Math.max(0, state?.hp || 0);
+    const compStats = (typeof computeCompanionStats === 'function') ? computeCompanionStats() : null;
+    const compMax = Math.max(1, compStats?.hpMax || 1);
+    const compHpKnown = state?._compHp != null;
+    const compHp = Math.max(0, state?._compHp || 0);
+    const compAlive = !!compStats && compHpKnown && !(typeof compDowned === 'function' && compDowned());
     const healPerSec = healTotal > 0 ? Math.round(healTotal / elapsed) : 0;
     const netPerSec = Math.max(0, dtps - healPerSec);
+    const compHealPerSec = compHeal > 0 ? Math.round(compHeal / elapsed) : 0;
+    const compNetPerSec = Math.max(0, compDtps - compHealPerSec);
     const takenPct = dtps / hMax;
     const netPct = netPerSec / hMax;
+    const compNetPct = compNetPerSec / compMax;
+    const compHpPct = compAlive ? compHp / compMax : 1;
     let cls = 'safe', label = '安全', hint = tk ? '承伤很低' : '暂无压力';
-    if (tk) {
+    if (compAlive && (compHpPct < 0.30 || compNetPct > 0.055)) {
+      cls = 'danger'; label = '护卫告急'; hint = compHpPct < 0.30 ? '随从濒危' : '随从承压';
+    } else if (compAlive && (compHpPct < 0.55 || compNetPct > 0.030)) {
+      cls = 'warn'; label = '护卫吃紧'; hint = compHpPct < 0.55 ? '随从低血' : '随从承压';
+    } else if (tk) {
       if (netPerSec <= 0 && hpNow > hMax * 0.55) {
         cls = 'safe'; label = '稳定'; hint = '治疗覆盖';
       } else if (netPct <= 0.015 && takenPct <= 0.045) {
@@ -1734,7 +1750,8 @@ function updateDmgMeter() {
       }
     }
     const surviveText = netPerSec > 0 ? `可撑 ${Math.max(1, Math.min(120, Math.floor(hpNow / netPerSec)))}秒${hpNow / netPerSec > 120 ? '+' : ''}` : '净压力 0';
-    const text = `${label} · ${hint} · 净 ${fmt(netPerSec)}/秒 · ${surviveText}`;
+    const compText = compAlive && (compTk || compHpPct < 0.95) ? ` · 随从净 ${fmt(compNetPerSec)}/秒` : '';
+    const text = `${label} · ${hint} · 主角净 ${fmt(netPerSec)}/秒${compText} · ${surviveText}`;
     pressureEl.className = `dm-pressure ${cls}`;
     if (pressureEl.textContent !== text) pressureEl.textContent = text;
   }
