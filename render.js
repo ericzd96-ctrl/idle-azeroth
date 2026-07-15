@@ -1789,8 +1789,16 @@ function updateDmgMeter() {
     } else ttkEl.textContent = '-';
   }
 
-  function syncMeterBreakdownRows(container, rows, valueKey, accentColor, fallbackIcon) {
+  function syncMeterBreakdownRows(container, rows, valueKey, accentColor, fallbackIcon, title) {
     if (!container) return;
+    let titleEl = container.querySelector('.meter-breakdown-title');
+    if (!titleEl) {
+      titleEl = document.createElement('div');
+      titleEl.className = 'meter-breakdown-title';
+      container.insertBefore(titleEl, container.firstChild);
+    }
+    const titleText = title ? `${title} · 前${Math.min(5, rows.length || 0)}` : '';
+    if (titleEl.textContent !== titleText) titleEl.textContent = titleText;
     const desiredKeys = rows.map(r => `${r.src}|${r.name}`);
     const existing = new Map(Array.from(container.querySelectorAll('[data-meter-key]')).map(el => [el.dataset.meterKey, el]));
     const fragment = document.createDocumentFragment();
@@ -1861,7 +1869,7 @@ function updateDmgMeter() {
     for (const [name, dmg] of Object.entries(cs)) allSkills.push({ name, dmg, src: '🐾' });
     allSkills.sort((a, b) => b.dmg - a.dmg);
     const top = allSkills.slice(0, 5);
-    syncMeterBreakdownRows(sdEl, top, 'dmg', '', 'spell_holy_powerinfusion');
+    syncMeterBreakdownRows(sdEl, top, 'dmg', '', 'spell_holy_powerinfusion', '伤害来源');
   }
   const shEl = $('dm-heal-breakdown');
   if (shEl) {
@@ -1872,7 +1880,7 @@ function updateDmgMeter() {
     for (const [name, heal] of Object.entries(cs)) allSkills.push({ name, heal, src: '🐾' });
     allSkills.sort((a, b) => b.heal - a.heal);
     const top = allSkills.slice(0, 5);
-    syncMeterBreakdownRows(shEl, top, 'heal', '#6ee7b7', 'spell_holy_heal');
+    syncMeterBreakdownRows(shEl, top, 'heal', '#6ee7b7', 'spell_holy_heal', '治疗来源');
   }
   const stEl = $('dm-taken-breakdown');
   if (stEl) {
@@ -1883,7 +1891,7 @@ function updateDmgMeter() {
     for (const [name, taken] of Object.entries(cs)) allSources.push({ name, taken, src: '🐾' });
     allSources.sort((a, b) => b.taken - a.taken);
     const top = allSources.slice(0, 5);
-    syncMeterBreakdownRows(stEl, top, 'taken', '#fb7185', 'ability_warrior_decisivestrike');
+    syncMeterBreakdownRows(stEl, top, 'taken', '#fb7185', 'ability_warrior_decisivestrike', '承伤来源');
   }
   if (totalEl) {
     let text = '总伤 ' + fmt(total) + ' · ' + Math.floor(elapsed) + '秒';
