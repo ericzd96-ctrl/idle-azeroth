@@ -56,6 +56,7 @@ const defaultState = () => ({
   battleSpeed: 1,          // 战斗倍速(1x / 2x)
   travel: null,
   worldSearch: null,
+  worldCombatPause: null,
   dungeonState: null,
   dungeonCd: {},
   dungeonFirstClear: {},   // 每角色:已首通的副本 key(首通一次性奖励用)
@@ -487,6 +488,7 @@ function mergeState(saved) {
     }) : { maps:{} },
     travel: null,
     worldSearch: null,
+    worldCombatPause: null,
     currentMonsters: saved.currentMon ? [saved.currentMon] : (saved.currentMonsters || []),
     // 装备深度
     gems: saved.gems || {},

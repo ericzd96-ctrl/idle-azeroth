@@ -1428,6 +1428,7 @@ function renderMonList() {
   const all = state.currentMonsters || [];
   const now = Date.now();
   const searching = state.mode === 'world' && state.worldSearch && (state.worldSearch.until || 0) > now && all.length === 0;
+  const paused = state.mode === 'world' && state.worldCombatPause && all.length === 0;
   const searchRemain = searching ? Math.max(1, Math.ceil(((state.worldSearch.until || 0) - now) / 1000)) : 0;
   const searchPct = searching ? Math.max(0, Math.min(100, ((now - (state.worldSearch.start || now)) / Math.max(1, state.worldSearch.duration || ((state.worldSearch.until || now) - (state.worldSearch.start || now)))) * 100)) : 0;
   const displayName = (raw) => {
@@ -1448,7 +1449,7 @@ function renderMonList() {
   const focus = all.find(m => m.hp > 0) || all[0] || null;
 
   // 签名: 槽位内容(含空槽)
-  const sig = (searching ? `S${searchRemain}|` : '') + slots.map((m, i) => m ? m._uid + (m === focus ? 'F' : '') + (m.hp > 0 ? 'A' : 'D') : 'E' + i).join('|');
+  const sig = (searching ? `S${searchRemain}|` : '') + (paused ? `P${state.worldCombatPause.reason || ''}|` : '') + slots.map((m, i) => m ? m._uid + (m === focus ? 'F' : '') + (m.hp > 0 ? 'A' : 'D') : 'E' + i).join('|');
   if (sig !== _monListSig) {
     _monListSig = sig;
     wrap.innerHTML = slots.map((m, i) => {
@@ -1457,6 +1458,14 @@ function renderMonList() {
           return `<div class="mon-row mon-placeholder" data-slot="${i}">
             <div class="m-emoji">🔎</div>
             <div class="m-mid"><div class="m-name">寻找目标<span class="m-lvl">${searchRemain}秒</span></div><div class="bar hp"><i style="width:${searchPct}%"></i><span>${state.worldSearch.text || '正在寻找下一批敌人'}</span></div></div>
+          </div>`;
+        }
+        if (paused && i === 0) {
+          const pauseName = state.worldCombatPause.name || '据点指挥官';
+          const pauseText = state.worldCombatPause.text || '挑战失败,战斗已结束。';
+          return `<div class="mon-row mon-placeholder" data-slot="${i}">
+            <div class="m-emoji">💀</div>
+            <div class="m-mid"><div class="m-name">${pauseName}<span class="m-lvl">已撤退</span></div><div class="bar hp"><i style="width:0%"></i><span>${pauseText}</span></div></div>
           </div>`;
         }
         return `<div class="mon-row mon-placeholder" data-slot="${i}">

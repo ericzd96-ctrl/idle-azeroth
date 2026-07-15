@@ -6041,6 +6041,7 @@ function overLevelPenalty(mon){
 function spawnMonster(){
   initCompanionHp();state.currentMonsters=[];
   state.worldSearch = null;
+  state.worldCombatPause = null;
   state._currentRareElite = null;
   // 新战斗清除随从护盾;英雄护盾改为按持续时间到期(不再每波清盾,否则秒杀刷怪时护盾瞬间消失)
   state._compBarrier = 0;
@@ -6462,6 +6463,20 @@ function waitOrResolveWorldMonsterSearch(now){
   lastMonAtk = now;
   if(typeof markDirty === 'function') markDirty('stage', 'map');
   return true;
+}
+function pauseWorldCombatAfterFieldCommanderFail(mon){
+  if(!state || state.mode !== 'world') return;
+  state.worldSearch = null;
+  state.worldCombatPause = {
+    reason: 'fieldCommanderFail',
+    at: Date.now(),
+    name: mon?.bossName || mon?.name || '据点指挥官',
+    text: '挑战失败,首领已撤退。切换区域或重新推进据点后再战。'
+  };
+  if(typeof markDirty === 'function') markDirty('stage', 'map');
+}
+function isWorldCombatPaused(){
+  return !!(state && state.mode === 'world' && state.worldCombatPause);
 }
 function bossTrickList(bossData){
   if(!bossData) return [];
@@ -9062,6 +9077,10 @@ function tickBattle(now){
   reapDeadMonsters();                                   // 先结算上一拍可能死亡的敌人(含 AOE 群杀)
   if(getAliveMonsters().length===0){
     if(state.mode === 'world'){
+      if(isWorldCombatPaused()){
+        lastHeroAtk=now;lastMonAtk=now;
+        return;
+      }
       if(waitOrResolveWorldMonsterSearch(now)) return;
       startWorldMonsterSearch('empty');
       lastHeroAtk=now;lastMonAtk=now;
@@ -9753,7 +9772,7 @@ function failFieldCommanderChallenge(mon){
   if(!mon || !mon._fieldCommander) return false;
   const failInfo = typeof failWorldFieldCommanderEncounter === 'function' ? failWorldFieldCommanderEncounter(mon) : null;
   const failName = mon.bossName || failInfo?.name || mon.name || '据点指挥官';
-  log(`💀 ${failName} 挑战失败,本次据点首领已经撤退`, 'bad');
+  log(`💀 ${failName} 挑战失败,本次据点首领已经撤退,战斗已结束`, 'bad');
   state.mode = 'world';
   bossCasting = null;
   casting = null;
@@ -9766,11 +9785,7 @@ function failFieldCommanderChallenge(mon){
   lastBossSkill = 0;
   bossSkillIdx = 0;
   markDirty('map', 'stage');
-  if(typeof startWorldMonsterSearch === 'function'){
-    startWorldMonsterSearch('fieldCommanderFail');
-  }else{
-    spawnMonster();
-  }
+  if(typeof pauseWorldCombatAfterFieldCommanderFail === 'function') pauseWorldCombatAfterFieldCommanderFail(mon);
   return true;
 }
 function onHeroDeath(){
@@ -10445,6 +10460,7 @@ function resetCombatState(){
     clearAllBuffs();
     state.heroStunUntil=0;state.heroSilenceUntil=0;state.heroDisarmUntil=0;
     state.worldSearch=null;
+    state.worldCombatPause=null;
     state._compBarrier=0;state._compStunUntil=0;state._compSilenceUntil=0;state._compDisarmUntil=0;state._compSoulLinkUntil=0;state._compFrenzyUntil=0;state._compDecayUntil=0;state._compLastDotTick=0;
     state._brittleUntil=0;state._soulLinkUntil=0;state._decayUntil=0;
     state._allySummons=[];
