@@ -2193,6 +2193,7 @@ function updateBattleVisuals() {
   renderAllySummonBar(now);
 
   // 技能栏(只在dirty时重建, 否则只更新CD;拖拽排序进行中不重建以免打断)
+  updateBossIntentLine(now);
   if ((!$('skill-bar')?.children?.length || isDirty('skills')) && !skillDragging) renderSkillBar();
   else updateSkillBarCd();
 
@@ -2787,6 +2788,68 @@ function getTalentRow(t, idx) {
 }
 const TALENT_ROW_REQ = [0, 5, 10, 15, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56];
 
+function bossCastUiState(now) {
+  if (typeof bossCasting === 'undefined' || !bossCasting) return null;
+  const duration = Math.max(1, bossCasting.duration || 1);
+  const elapsed = Math.max(0, now - (bossCasting.startTime || now));
+  const remainMs = Math.max(0, duration - elapsed);
+  const threatMeta = (typeof bossCastThreatMeta === 'function') ? bossCastThreatMeta(bossCasting) : { label:'危险', text:'#fecaca' };
+  const interruptText = (typeof bossInterruptTag === 'function') ? bossInterruptTag(bossCasting) : '可断';
+  const canInterrupt = bossCasting.interruptPolicy !== 'none';
+  const urgent = canInterrupt && (bossCasting.interruptPolicy === 'hard' || bossCasting._empowered || bossCasting.threat === 'high' || bossCasting.threat === 'extreme');
+  const c = getCls();
+  const selected = Array.isArray(state.selectedSkills) ? state.selectedSkills : [];
+  const interruptSkills = selected
+    .map(key => ({ key, sk:c?.skills?.[key] }))
+    .filter(x => x.sk && (x.sk.type === 'interrupt' || x.sk.interruptCast));
+  let ready = null;
+  let soonestLeft = Infinity;
+  for (const x of interruptSkills) {
+    const left = Math.max(0, (state.skillCooldowns?.[x.key] || 0) - now);
+    const cost = Math.max(0, x.sk.mp || 0);
+    if (left < soonestLeft) soonestLeft = left;
+    if (left <= 0 && (state.resource || 0) >= cost && !ready) ready = x;
+  }
+  const action = !canInterrupt
+    ? '不可打断,开减伤或治疗'
+    : ready
+      ? `${urgent ? '立刻打断' : '可打断'}: ${ready.sk.name}`
+      : interruptSkills.length
+        ? `打断未就绪,还差 ${Math.ceil(soonestLeft / 1000)}秒`
+        : '技能栏没有打断,用控制/防御处理';
+  return { cast:bossCasting, remainMs, threatMeta, interruptText, canInterrupt, urgent, ready, action };
+}
+
+function bossCastSkillPrompt(skillKey, sk, now, cdMs) {
+  const ui = bossCastUiState(now);
+  if (!ui || !sk || !ui.canInterrupt || !(sk.type === 'interrupt' || sk.interruptCast)) return null;
+  const cost = Math.max(0, sk.mp || 0);
+  const ready = (cdMs || 0) <= 0 && (state.resource || 0) >= cost;
+  const hard = ui.urgent || ui.cast?.interruptPolicy === 'hard';
+  const label = ready ? (hard ? '必断' : '可断') : (cdMs > 0 ? `${Math.ceil(cdMs / 1000)}秒` : '缺资源');
+  const cls = ready ? (hard ? 'interrupt-hot' : 'interrupt-soft') : 'interrupt-wait';
+  const tip = `${ui.cast.icon || ''}${ui.cast.name || '施法'} · ${ui.threatMeta.label} · ${ui.interruptText} · ${ready ? '这个技能现在可用于打断' : label}`;
+  return { label, cls, tip };
+}
+
+function updateBossIntentLine(now) {
+  const el = $('boss-intent-line');
+  if (!el) return;
+  const ui = bossCastUiState(now);
+  if (!ui) {
+    el.style.display = 'none';
+    el.textContent = '';
+    return;
+  }
+  el.classList.toggle('soft', ui.canInterrupt && !ui.urgent);
+  el.classList.toggle('none', !ui.canInterrupt);
+  el.style.display = '';
+  const cast = ui.cast;
+  const remain = (ui.remainMs / 1000).toFixed(1);
+  const text = `${cast.icon || '💀'} ${cast.name || '施法'} · ${ui.threatMeta.label} · ${ui.interruptText} · ${remain}s · ${ui.action}`;
+  if (el.textContent !== text) el.textContent = text;
+}
+
 function renderTalents() {
   const c = getCls(); if (!c) return;
   if (typeof renderLoadouts === 'function') renderLoadouts();
@@ -2933,6 +2996,7 @@ function renderSkillBar() {
     const cdMs = Math.max(0, cdEnd - now);
     const onCd = cdMs > 0;
     const hasMp = state.resource >= sk.mp;
+    const bossPrompt = bossCastSkillPrompt(key, sk, now, cdMs);
     const proc = (typeof currentSpecProcSystem === 'function') ? currentSpecProcSystem() : null;
     const activeProc = proc && state.skillRuntime && state.skillRuntime.specProc && state.skillRuntime.specProc.key === proc.key && (!state.skillRuntime.specProc.expire || state.skillRuntime.specProc.expire > now);
     const procText = `${key} ${sk.name || ''} ${sk.desc || ''} ${sk.type || ''}`;
@@ -2979,13 +3043,15 @@ function renderSkillBar() {
     const chargeDesc = chargeTip ? `\n技能充能: ${chargeTip}` : '';
     const runeTip = (typeof skillRuneTip === 'function') ? skillRuneTip(key, sk) : '';
     const runeDesc = runeTip ? `\n符文铭刻: ${runeTip}` : '';
-    const tip = `${sk.name} · ${baseDesc}${detailDesc}${procDesc}${coreDesc}${engineDesc}${elementDesc}${echoDesc}${markDesc}${weaveDesc}${rhythmDesc}${controlDesc}${weaknessDesc}${prepDesc}${overloadDesc}${resourceDesc}${harvestDesc}${pactDesc}${fieldDesc}${chargeDesc}${runeDesc}\n${c.resource} ${sk.mp} · 冷却 ${getSkillCd(sk)}秒`.replace(/"/g, '&quot;');
+    const bossDesc = bossPrompt ? `\nBoss读条: ${bossPrompt.tip}` : '';
+    const tip = `${sk.name} · ${baseDesc}${detailDesc}${procDesc}${coreDesc}${engineDesc}${elementDesc}${echoDesc}${markDesc}${weaveDesc}${rhythmDesc}${controlDesc}${weaknessDesc}${prepDesc}${overloadDesc}${resourceDesc}${harvestDesc}${pactDesc}${fieldDesc}${chargeDesc}${runeDesc}${bossDesc}\n${c.resource} ${sk.mp} · 冷却 ${getSkillCd(sk)}秒`.replace(/"/g, '&quot;');
     const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, sk.icon) : sk.icon;
-    return `<button class="skill-btn ${onCd?'on-cd':''}" data-skill="${key}" draggable="true" title="${tip}"
+    return `<button class="skill-btn ${onCd?'on-cd':''} ${bossPrompt?.cls || ''}" data-skill="${key}" draggable="true" title="${tip}"
       style="${coreMatch&&!onCd?'border-color:#38bdf8;box-shadow:0 0 0 1px rgba(56,189,248,.50),0 0 14px rgba(56,189,248,.18)':(procMatch&&!onCd?'border-color:#facc15;box-shadow:0 0 0 1px rgba(250,204,21,.45)':(!onCd&&hasMp?'border-color:var(--accent)':''))}">
       <span>${skillIconHtml} ${sk.name}</span>
       <span class="mp-cost">${coreMatch?'✹ ':(procMatch?'✦ ':'')}${sk.mp}${c.resKey==='rage'?'怒':c.resKey==='energy'?'能':'蓝'}</span>
       ${onCd?`<div class="cd-overlay">${(cdMs/1000).toFixed(1)}秒</div>`:''}
+      ${bossPrompt ? `<span class="sk-alert">${bossPrompt.label}</span>` : ''}
     </button>`;
   }).join('');
 }
@@ -2993,9 +3059,11 @@ function renderSkillBar() {
 function updateSkillBarCd() {
   const bar = $('skill-bar'); if (!bar) return;
   const now = Date.now();
+  const c = getCls();
   bar.querySelectorAll('.skill-btn').forEach(btn => {
     const key = btn.dataset.skill;
     if (!key) return;
+    const sk = c?.skills?.[key];
     const cdEnd = state.skillCooldowns[key] || 0;
     const cdMs = Math.max(0, cdEnd - now);
     const cdTxt = (cdMs / 1000).toFixed(1) + '秒';
@@ -3007,6 +3075,21 @@ function updateSkillBarCd() {
     } else {
       btn.classList.remove('on-cd');
       if (overlay) overlay.remove();
+    }
+    const prompt = sk ? bossCastSkillPrompt(key, sk, now, cdMs) : null;
+    btn.classList.toggle('interrupt-hot', prompt?.cls === 'interrupt-hot');
+    btn.classList.toggle('interrupt-soft', prompt?.cls === 'interrupt-soft');
+    btn.classList.toggle('interrupt-wait', prompt?.cls === 'interrupt-wait');
+    let badge = btn.querySelector('.sk-alert');
+    if(prompt){
+      if(!badge){
+        badge = document.createElement('span');
+        badge.className = 'sk-alert';
+        btn.appendChild(badge);
+      }
+      if(badge.textContent !== prompt.label) badge.textContent = prompt.label;
+    }else if(badge){
+      badge.remove();
     }
   });
 }

@@ -3705,6 +3705,28 @@ h1 {
 }
 .buff-chip .b-t { font-size: 9px; color: var(--muted); margin-top: 1px; }
 .buff-chip .b-s { font-size: 9px; color: var(--muted); margin-top: 1px; }
+.boss-intent-line {
+  margin: 0 14px 5px;
+  padding: 4px 8px;
+  border-radius: 7px;
+  border: 1px solid rgba(248,113,113,.45);
+  background: linear-gradient(180deg, rgba(127,29,29,.42), rgba(15,23,42,.72));
+  color: #fecaca;
+  font-size: 11px;
+  line-height: 1.35;
+  text-align: center;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.04), 0 0 12px rgba(239,68,68,.10);
+}
+.boss-intent-line.soft {
+  border-color: rgba(251,191,36,.45);
+  background: linear-gradient(180deg, rgba(113,63,18,.38), rgba(15,23,42,.70));
+  color: #fde68a;
+}
+.boss-intent-line.none {
+  border-color: rgba(96,165,250,.42);
+  background: linear-gradient(180deg, rgba(30,64,175,.32), rgba(15,23,42,.70));
+  color: #bfdbfe;
+}
 /* 可拖拽技能按钮 */
 .skill-btn[draggable="true"] { cursor: grab; }
 .skill-btn.dragging { opacity: .4; }
@@ -5119,10 +5141,52 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
 }
 .skill-btn:hover:not(:disabled) { background: #2d345a; border-color: #6ee7b7; }
 .skill-btn.on-cd { opacity: 0.5; cursor: not-allowed; }
+.skill-btn.interrupt-hot:not(.on-cd) {
+  border-color: #f87171 !important;
+  box-shadow: 0 0 0 1px rgba(248,113,113,.62), 0 0 16px rgba(248,113,113,.28);
+  animation: interruptPulse 1s ease-in-out infinite;
+}
+.skill-btn.interrupt-soft:not(.on-cd) {
+  border-color: #fbbf24 !important;
+  box-shadow: 0 0 0 1px rgba(251,191,36,.48), 0 0 12px rgba(251,191,36,.16);
+}
+.skill-btn.interrupt-wait {
+  border-color: rgba(251,191,36,.34);
+}
+.skill-btn .sk-alert {
+  position: absolute;
+  top: -7px;
+  right: -5px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: #7f1d1d;
+  border: 1px solid rgba(254,202,202,.6);
+  color: #fff1f2;
+  font-size: 9px;
+  line-height: 1.2;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 3;
+}
+.skill-btn.interrupt-soft .sk-alert {
+  background: #713f12;
+  border-color: rgba(253,230,138,.55);
+  color: #fef3c7;
+}
+.skill-btn.interrupt-wait .sk-alert {
+  background: #1f2937;
+  border-color: rgba(251,191,36,.35);
+  color: #fde68a;
+}
+@keyframes interruptPulse {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1px); }
+}
 .skill-btn .cd-overlay {
   position: absolute; inset: 0; background: rgba(0,0,0,.6);
   border-radius: 8px; display: flex; align-items: center; justify-content: center;
   font-size: 11px; color: #fbbf24; font-weight: bold;
+  z-index: 2;
 }
 .skill-btn .mp-cost { font-size: 10px; color: var(--mp); }
 
