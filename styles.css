@@ -6822,6 +6822,45 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   color: #fca5a5;
   text-shadow: 0 0 8px rgba(248,113,113,.24);
 }
+.skill-btn.skill-denied {
+  animation: skillDeniedShake .42s ease-out;
+}
+.skill-btn.skill-denied::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 10px;
+  border: 1px solid rgba(248,113,113,.82);
+  box-shadow: 0 0 16px rgba(248,113,113,.34), inset 0 0 12px rgba(248,113,113,.20);
+  pointer-events: none;
+  animation: skillDeniedRing .48s ease-out forwards;
+}
+.skill-btn.skill-denied-cooldown::after {
+  border-color: rgba(251,191,36,.82);
+  box-shadow: 0 0 16px rgba(251,191,36,.30), inset 0 0 12px rgba(251,191,36,.16);
+}
+.skill-btn.skill-denied-spec::after,
+.skill-btn.skill-denied-locked::after,
+.skill-btn.skill-denied-summon::after {
+  border-color: rgba(196,181,253,.78);
+  box-shadow: 0 0 16px rgba(196,181,253,.28), inset 0 0 12px rgba(196,181,253,.16);
+}
+#b-mp-wrap.resource-denied-flash {
+  animation: resourceDeniedFlash .62s ease-out;
+}
+#b-mp-wrap.resource-denied-flash::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  border: 1px solid rgba(248,113,113,.72);
+  box-shadow: 0 0 14px rgba(248,113,113,.28), inset 0 0 10px rgba(248,113,113,.16);
+  pointer-events: none;
+  animation: skillDeniedRing .62s ease-out forwards;
+}
+.skill-btn .cd-overlay.cd-denied-flash {
+  animation: cdDeniedFlash .62s ease-out;
+}
 .skill-btn.on-cd { opacity: 0.5; cursor: not-allowed; }
 .skill-btn.interrupt-hot:not(.on-cd) {
   border-color: #f87171 !important;
@@ -6895,6 +6934,26 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   0% { opacity: 0; transform: scale(.82); }
   20% { opacity: 1; transform: scale(1); }
   100% { opacity: 0; transform: scale(1.12); }
+}
+@keyframes skillDeniedShake {
+  0%, 100% { transform: translateX(0); filter: brightness(1); }
+  18% { transform: translateX(-3px); filter: brightness(1.22); }
+  36% { transform: translateX(3px); }
+  54% { transform: translateX(-2px); }
+  72% { transform: translateX(2px); }
+}
+@keyframes skillDeniedRing {
+  0% { opacity: 0; transform: scale(.88); }
+  22% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.14); }
+}
+@keyframes resourceDeniedFlash {
+  0%, 100% { filter: brightness(1); }
+  24% { filter: brightness(1.35) saturate(1.18); }
+}
+@keyframes cdDeniedFlash {
+  0%, 100% { filter: brightness(1); }
+  28% { filter: brightness(1.55) saturate(1.20); color: #fff7ed; }
 }
 .skill-btn .cd-overlay {
   position: absolute; inset: 0;

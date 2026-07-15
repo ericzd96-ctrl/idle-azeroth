@@ -282,6 +282,57 @@ function skillFxClass(school, extra){
   const safe = String(school || 'physical').replace(/[^a-z0-9_-]/gi, '') || 'physical';
   return `${extra || ''} school-${safe}`.trim();
 }
+function skillButtonEl(skillKey){
+  if(typeof document === 'undefined' || !skillKey) return null;
+  const buttons = document.querySelectorAll('.skill-btn[data-skill]');
+  for(const btn of buttons){
+    if(btn?.dataset?.skill === skillKey) return btn;
+  }
+  return null;
+}
+function showSkillDeniedFx(skillKey, reason, opts){
+  if(typeof document === 'undefined' || document.hidden) return;
+  const btn = skillButtonEl(skillKey);
+  const kind = String(reason || 'locked').replace(/[^a-z0-9_-]/gi, '') || 'locked';
+  const labelMap = {
+    cooldown:'冷却中',
+    resource:'资源不足',
+    locked:'未解锁',
+    spec:'专精不符',
+    summon:'召唤已满',
+    silence:'被沉默'
+  };
+  const label = opts?.label || labelMap[kind] || '不能用';
+  const color = kind === 'resource' ? '#fca5a5' : kind === 'cooldown' ? '#fbbf24' : '#c4b5fd';
+  if(btn){
+    btn.classList.remove('skill-denied', 'skill-denied-resource', 'skill-denied-cooldown', 'skill-denied-locked', 'skill-denied-spec', 'skill-denied-summon', 'skill-denied-silence');
+    void btn.offsetWidth;
+    btn.classList.add('skill-denied', `skill-denied-${kind}`);
+    showFloat(btn, label, color, { variant:'bad', scale:.92, dy:-22 });
+    setTimeout(() => {
+      const b = skillButtonEl(skillKey);
+      if(b) b.classList.remove('skill-denied', `skill-denied-${kind}`);
+    }, 520);
+  }
+  if(kind === 'resource'){
+    const wrap = $('b-mp-wrap');
+    if(wrap){
+      wrap.classList.remove('resource-denied-flash');
+      void wrap.offsetWidth;
+      wrap.classList.add('resource-denied-flash');
+      showFloat(wrap, label, color, { variant:'bad', scale:.95, dy:-18 });
+      setTimeout(() => { const w = $('b-mp-wrap'); if(w) w.classList.remove('resource-denied-flash'); }, 620);
+    }
+  }else if(btn && kind === 'cooldown'){
+    const overlay = btn.querySelector('.cd-overlay');
+    if(overlay){
+      overlay.classList.remove('cd-denied-flash');
+      void overlay.offsetWidth;
+      overlay.classList.add('cd-denied-flash');
+      setTimeout(() => overlay.classList.remove('cd-denied-flash'), 620);
+    }
+  }
+}
 let _lastBasicAttackFxTs = 0;
 let _activeBasicAttackFx = 0;
 function showBasicAttackFx(sourceEl, targetEl, opts){
@@ -11389,13 +11440,13 @@ function cancelHeroCast(){
 function getSkillCd(sk){let base;if(sk.cd)base=sk.cd;else if(sk.type==='buff')base=40;else if(sk.type==='heal')base=16;else{const mul=sk.mul||1;if(mul>=8)base=35;else if(mul>=6)base=24;else if(mul>=5)base=18;else if(mul>=4)base=13;else if(mul>=3)base=9;else base=7;}if(state.hero.cdReduction>0)base=Math.max(3,Math.floor(base*(1-state.hero.cdReduction/100)));return base;}
 function startCast(skillKey,manual){
   const c=getCls();const sk=c.skills[skillKey];if(!sk)return;
-  if(typeof isSkillAllowedForCurrentSpec==='function'&&!isSkillAllowedForCurrentSpec(skillKey)){if(manual)log('该技能不属于当前专精','bad');return;}
+  if(typeof isSkillAllowedForCurrentSpec==='function'&&!isSkillAllowedForCurrentSpec(skillKey)){if(manual){showSkillDeniedFx(skillKey, 'spec');log('该技能不属于当前专精','bad');}return;}
   const now=Date.now();
-  if(state.heroSilenceUntil>now){if(manual)log('你被沉默了,无法施法','bad');return;}
+  if(state.heroSilenceUntil>now){if(manual){showSkillDeniedFx(skillKey, 'silence');log('你被沉默了,无法施法','bad');}return;}
   const castTime=getCastTime(sk);if(castTime<=0){castSkill(skillKey,manual);return;}
-  if(state.skillCooldowns[skillKey]&&state.skillCooldowns[skillKey]>now){if(manual)log(sk.name+' 冷却中','bad');return;}
+  if(state.skillCooldowns[skillKey]&&state.skillCooldowns[skillKey]>now){if(manual){const left=Math.ceil((state.skillCooldowns[skillKey]-now)/1000);showSkillDeniedFx(skillKey, 'cooldown', { label:'冷却 '+left+'秒' });log(sk.name+' 冷却中','bad');}return;}
   let cost=sk.mp;if(state.hero.costReduction>0)cost=Math.max(1,Math.floor(sk.mp*(1-state.hero.costReduction/100)));
-  if(state.resource<cost){if(manual)log(c.resource+'不足','bad');return;}
+  if(state.resource<cost){if(manual){showSkillDeniedFx(skillKey, 'resource', { label:c.resource+'不足' });log(c.resource+'不足','bad');}return;}
   casting={skillKey,startTime:now,duration:castTime*1000/castSpeedMul(),manual:!!manual};log('施放 '+sk.name+'...','info');   // 读条受 倍速×极速 影响
 }
 function skillEffects(wc,mon,taken,now,opts){
@@ -11610,29 +11661,29 @@ function tickCast(now){
 }
 function castSkill(skillKey,manual){
   const c=getCls();const sk=c.skills[skillKey];if(!sk)return;
-  if(typeof isSkillAllowedForCurrentSpec==='function'&&!isSkillAllowedForCurrentSpec(skillKey)){if(manual)log('该技能不属于当前专精','bad');return;}
+  if(typeof isSkillAllowedForCurrentSpec==='function'&&!isSkillAllowedForCurrentSpec(skillKey)){if(manual){showSkillDeniedFx(skillKey, 'spec');log('该技能不属于当前专精','bad');}return;}
   const ai=skillAiMeta(skillKey, sk);
   const summonSkill = sk.type==='summon' || sk.summonCount;
-  if(!state.unlockedSkills[skillKey]){if(manual)log('技能未解锁','bad');return;}
+  if(!state.unlockedSkills[skillKey]){if(manual){showSkillDeniedFx(skillKey, 'locked');log('技能未解锁','bad');}return;}
   const now=Date.now();
   if(sk.type==='interrupt'){
-    if(state.skillCooldowns[skillKey]&&state.skillCooldowns[skillKey]>now){if(manual){const left=Math.ceil((state.skillCooldowns[skillKey]-now)/1000);log(sk.name+' 冷却中('+left+'秒)','bad');}return;}
+    if(state.skillCooldowns[skillKey]&&state.skillCooldowns[skillKey]>now){if(manual){const left=Math.ceil((state.skillCooldowns[skillKey]-now)/1000);showSkillDeniedFx(skillKey, 'cooldown', { label:'冷却 '+left+'秒' });log(sk.name+' 冷却中('+left+'秒)','bad');}return;}
     let cost=sk.mp||0;if(state.hero.costReduction>0)cost=Math.max(1,Math.floor(cost*(1-state.hero.costReduction/100)));
-    if(state.resource<cost){if(manual)log(c.resource+'不足','bad');return;}
-    const ok=doInterrupt();
+    if(state.resource<cost){if(manual){showSkillDeniedFx(skillKey, 'resource', { label:c.resource+'不足' });log(c.resource+'不足','bad');}return;}
+    const ok=doInterrupt(skillKey);
     if(!ok)return;
     if(cost>0)state.resource-=cost;
     const cdSec=sk.cd||10;state.skillCooldowns[skillKey]=now+cdSec*1000/castSpeedMul();
     markDirty('skills','hero');
     return;
   }
-  if(state.skillCooldowns[skillKey]&&state.skillCooldowns[skillKey]>now){if(manual){const left=Math.ceil((state.skillCooldowns[skillKey]-now)/1000);log(sk.name+' 冷却中('+left+'秒)','bad');}return;}
-  if(summonSkill && !canSummonAllies(sk, 'hero', now)){if(manual)log('召唤物已在场上限','bad');return;}
+  if(state.skillCooldowns[skillKey]&&state.skillCooldowns[skillKey]>now){if(manual){const left=Math.ceil((state.skillCooldowns[skillKey]-now)/1000);showSkillDeniedFx(skillKey, 'cooldown', { label:'冷却 '+left+'秒' });log(sk.name+' 冷却中('+left+'秒)','bad');}return;}
+  if(summonSkill && !canSummonAllies(sk, 'hero', now)){if(manual){showSkillDeniedFx(skillKey, 'summon');log('召唤物已在场上限','bad');}return;}
   const pendingSpecProc = peekSpecProcForSkill(skillKey, sk, now);
   let cost=sk.mp;if(state.hero.costReduction>0)cost=Math.max(1,Math.floor(sk.mp*(1-state.hero.costReduction/100)));
   if(pendingSpecProc && pendingSpecProc.costPct !== undefined) cost = Math.max(0, Math.floor(cost * pendingSpecProc.costPct));
   if(sk.consumeRage){cost=Math.min(state.resource,10);}   // 斩杀:至少需10怒,但会消耗全部
-  if(state.resource<cost){if(manual)log(c.resource+'不足','bad');return;}
+  if(state.resource<cost){if(manual){showSkillDeniedFx(skillKey, 'resource', { label:c.resource+'不足' });log(c.resource+'不足','bad');}return;}
   if(!sk.consumeRage)state.resource-=cost;   // 斩杀在伤害计算时消耗全部怒气
   const cdSec=getSkillCd(sk);state.skillCooldowns[skillKey]=now+cdSec*1000/castSpeedMul();   // CD 受 倍速×极速 影响
   const talentForceCrit = consumeNextSkillCrit(sk);
@@ -11767,11 +11818,12 @@ function applyHeroSkillControlInterrupt(sk, mon, now){
   mon.stunUntil = Math.max(mon.stunUntil || 0, now + dur);
   if(typeof showMonsterFloat === 'function') showMonsterFloat(mon, '击晕', '#fde047', { variant:'control', scale:1.02 });
 }
-function doInterrupt(){
-  if(!bossCasting){log('没有正在施放的法术','info');return false;}
+function doInterrupt(skillKey){
+  if(!bossCasting){if(skillKey)showSkillDeniedFx(skillKey, 'locked', { label:'无读条' });log('没有正在施放的法术','info');return false;}
   const bossName=bossCasting.bossName||'BOSS';
   const mon=bossCastingMonster(bossCasting);
   if(bossCasting.interruptPolicy === 'none'){
+    if(skillKey)showSkillDeniedFx(skillKey, 'locked', { label:'不可断' });
     log('🧱 '+bossName+' 的 '+bossCasting.name+' 无法被打断!','bad');
     if(mon) showMonsterFloat(mon,'🧱不可断','#fca5a5',{variant:'boss',scale:1.04});
     if(mon) showInterruptFx(mon, 'immune', bossCasting.name);
