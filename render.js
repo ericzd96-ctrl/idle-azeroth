@@ -338,24 +338,33 @@ function updateCombatReactionAdvice() {
   if (ui) {
     const remain = Math.max(0, Math.ceil((ui.remainMs || 0) / 1000));
     const castName = `${ui.cast?.icon || ''}${ui.cast?.name || '施法'}`;
+    const readySkill = ui.ready?.sk?.name || '';
+    const responseSkill = ui.responseReady?.sk?.name || '';
+    const responseKind = ui.responseReady?.kind === 'heal' ? '治疗' : '减伤';
     if (ui.canInterrupt) {
       if (ui.ready) {
         cls = ui.urgent ? 'danger' : 'warn';
-        text = `${ui.urgent ? '立刻打断' : '可打断'} · ${castName} · ${remain}秒`;
-        title = ui.action || '点击打断技能处理这次读条。';
+        text = `${ui.urgent ? '立刻打断' : '可打断'} · ${readySkill || castName} · ${remain}秒`;
+        title = `${ui.action || '点击打断技能处理这次读条。'} 当前读条: ${castName}。`;
       } else if (ui.urgent) {
-        cls = 'danger';
-        text = `打断未就绪 · 减伤/治疗 · ${remain}秒`;
-        title = ui.action || '高危读条无法立刻打断,优先用保命技能覆盖。';
+        cls = ui.responseReady ? 'warn' : 'danger';
+        text = ui.responseReady
+          ? `打断未就绪 · ${responseKind}${responseSkill ? ' ' + responseSkill : ''} · ${remain}秒`
+          : `打断未就绪 · 减伤/治疗 · ${remain}秒`;
+        title = `${ui.action || '高危读条无法立刻打断,优先用保命技能覆盖。'} 当前读条: ${castName}。`;
       } else {
         cls = 'warn';
-        text = `等打断/准备硬吃 · ${remain}秒`;
-        title = ui.action || '普通读条,可等待打断或准备承受。';
+        text = ui.responseReady
+          ? `可硬吃 · ${responseKind}${responseSkill ? ' ' + responseSkill : ''} · ${remain}秒`
+          : `等打断/准备硬吃 · ${remain}秒`;
+        title = `${ui.action || '普通读条,可等待打断或准备承受。'} 当前读条: ${castName}。`;
       }
     } else {
       cls = ui.responseReady ? 'warn' : 'danger';
-      text = `${ui.responseReady ? '开保命' : '不可断'} · ${castName} · ${remain}秒`;
-      title = ui.action || '这次读条不可打断,用治疗、护盾或减伤覆盖。';
+      text = ui.responseReady
+        ? `开${responseKind} · ${responseSkill || castName} · ${remain}秒`
+        : `不可断 · ${castName} · ${remain}秒`;
+      title = `${ui.action || '这次读条不可打断,用治疗、护盾或减伤覆盖。'} 当前读条: ${castName}。`;
     }
   } else {
     const hMax = Math.max(1, state?.hero?.hpMax || 1);
