@@ -820,6 +820,33 @@ function combatAdviceSkillText(kind, now) {
   if (Number.isFinite(best.left) && best.left > 0) return `${prefix}还差 ${Math.ceil(best.left / 1000)}秒`;
   return `${prefix}缺资源`;
 }
+function combatAdviceInterruptSkillText(now) {
+  const c = (typeof getCls === 'function') ? getCls() : null;
+  const selected = Array.isArray(state?.selectedSkills) ? state.selectedSkills : [];
+  const manual = selected.map(key => ({ key, sk:c?.skills?.[key], auto:false })).filter(x => x.sk);
+  const auto = (state?.autoSkill && typeof autoCastSkillEntries === 'function')
+    ? autoCastSkillEntries(c).map(([key, sk]) => ({ key, sk, auto:true })).filter(x => x.sk)
+    : [];
+  const seen = {};
+  const entries = manual.concat(auto).filter(entry => {
+    if (seen[entry.key]) return false;
+    seen[entry.key] = true;
+    return entry.sk?.type === 'interrupt' || entry.sk?.interruptCast;
+  }).map(entry => {
+    const use = (typeof bossCastUsableSkillState === 'function')
+      ? bossCastUsableSkillState(entry, now)
+      : { ready:false, left:Infinity };
+    return Object.assign(entry, use);
+  }).sort((a, b) => {
+    if (a.ready !== b.ready) return a.ready ? -1 : 1;
+    return a.left - b.left || (a.sk.cd || 0) - (b.sk.cd || 0);
+  });
+  const best = entries[0];
+  if (!best) return '补一个打断技能';
+  if (best.ready) return `按 ${best.sk.name}`;
+  if (Number.isFinite(best.left) && best.left > 0) return `打断还差 ${Math.ceil(best.left / 1000)}秒`;
+  return '打断缺资源';
+}
 function combatPressureActionChip(meta, now) {
   const cls = meta?.cls || 'safe';
   const danger = cls === 'danger';
@@ -1355,20 +1382,33 @@ function updateDmgBossCastOutcome() {
   const name = ds.lastBossCastName || '首领技能';
   const target = ds.lastBossCastTarget || '目标';
   const kind = ds.lastBossCastKind === 'dot' ? '持续' : (ds.lastBossCastKind === 'aoe' ? '群体' : '单体');
+  const advice = bossCastOutcomeAdvice({
+    name,
+    target,
+    damage,
+    kind:ds.lastBossCastKind,
+    empowered:ds.lastBossCastEmpowered,
+    threat:ds.lastBossCastThreat || ''
+  });
   if (row) row.style.display = '';
   el.className = `dm-boss-cast-outcome ${cls}`;
-  el.textContent = `${kind}命中 · ${name} → ${target} · ${fmt(damage)} · ${ago}s前`;
-  el.title = `最近首领读条结算: ${ds.lastBossCastBoss || 'BOSS'} 的 ${name},命中 ${target},造成 ${fmt(damage)} 点伤害。`;
+  el.textContent = `${kind}命中 · ${name} → ${target} · ${fmt(damage)} · 下次:${advice}`;
+  el.title = `最近首领读条结算: ${ds.lastBossCastBoss || 'BOSS'} 的 ${name},命中 ${target},造成 ${fmt(damage)} 点伤害,${ago}秒前。下次建议: ${advice}。`;
 }
 function bossCastOutcomeAdvice(item) {
+  const now = Date.now();
   const damage = item?.damage || 0;
   const heroMax = Math.max(1, state?.hero?.hpMax || 1);
   const pct = damage / heroMax;
-  if (item?.empowered || item?.threat === 'extreme') return '下次优先打断';
-  if (item?.kind === 'aoe') return '群体技能前开减伤';
-  if (item?.kind === 'dot') return '持续伤害交治疗';
-  if (pct >= 0.20) return '留保命硬吃';
-  if (pct >= 0.10) return '注意血线';
+  const interrupt = combatAdviceInterruptSkillText(now);
+  const defensive = combatAdviceSkillText('defensive', now);
+  const heal = combatAdviceSkillText('heal', now);
+  if (item?.empowered || item?.threat === 'extreme' || item?.threat === 'high') return interrupt || '下次优先打断';
+  if (item?.kind === 'aoe') return defensive || heal || '群体前开减伤';
+  if (item?.kind === 'dot') return heal || defensive || '持续伤害交治疗';
+  if (String(item?.target || '').includes('随从')) return heal || defensive || '照看随从血线';
+  if (pct >= 0.20) return defensive || heal || '留保命硬吃';
+  if (pct >= 0.10) return heal || defensive || '提前稳血';
   return '压力可控';
 }
 function updateDmgBossCastHistory() {

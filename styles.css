@@ -9709,7 +9709,12 @@ button.dm-boss-cast-chip.skill-pressed {
   color: #fecaca;
   font-variant-numeric: tabular-nums;
 }
-.dm-boss-cast-history-item em { color: #fde68a; }
+.dm-boss-cast-history-item em {
+  min-width: 0;
+  overflow: hidden;
+  color: #fde68a;
+  text-overflow: ellipsis;
+}
 .dm-boss-cast-history-item i {
   color: #94a3b8;
   text-align: right;
