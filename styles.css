@@ -476,6 +476,15 @@ h1 {
   --cue-chip-color: #bfdbfe;
   --cue-chip-soft: rgba(96,165,250,.22);
 }
+.combat-cue-chip.hero,
+.combat-cue-chip.skill {
+  --cue-chip-color: #ddd6fe;
+  --cue-chip-soft: rgba(168,85,247,.22);
+}
+.combat-cue-chip.companion {
+  --cue-chip-color: #bfdbfe;
+  --cue-chip-soft: rgba(96,165,250,.22);
+}
 .combat-cue-chip.heal {
   --cue-chip-color: #bbf7d0;
   --cue-chip-soft: rgba(52,211,153,.20);

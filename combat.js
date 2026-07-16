@@ -300,6 +300,30 @@ function skillFxLabelText(sk){
   const icon = String(sk.icon || '').trim();
   return (icon ? icon : '') + name;
 }
+const _skillCastCueCooldown = {};
+function combatSkillCue(sk, opts){
+  if(typeof document === 'undefined' || document.hidden || opts?.cue === false || !sk) return;
+  if(typeof combatCueLanePush !== 'function') return;
+  const name = String(sk.name || '').trim();
+  if(!name) return;
+  const actor = String(opts?.actor || 'hero').replace(/[^a-z0-9_-]/gi, '') || 'hero';
+  const school = String(opts?.school || skillVisualSchool(opts?.skillKey, sk, actor)).replace(/[^a-z0-9_-]/gi, '') || 'physical';
+  const type = sk.type === 'heal' ? 'heal' : (skillSupportVisualSchool(opts?.skillKey, sk, actor) === 'shield' ? 'shield' : '');
+  const kind = opts?.kind || (actor === 'boss' ? 'danger' : type || actor);
+  const now = Date.now();
+  const key = actor + ':' + name + ':' + kind;
+  const gap = actor === 'boss' ? 520 : actor === 'companion' ? 1150 : 850;
+  if((_skillCastCueCooldown[key] || 0) > now) return;
+  _skillCastCueCooldown[key] = now + gap;
+  const titleMap = { hero:'主角释放', companion:'随从释放', boss:'首领施放' };
+  const schoolNames = { fire:'火焰', frost:'冰霜', arcane:'奥术', nature:'自然', shadow:'暗影', holy:'神圣', heal:'治疗', shield:'护盾', physical:'物理' };
+  const schoolText = !['physical','heal','shield'].includes(school) ? (' · ' + (schoolNames[school] || school)) : '';
+  const detail = (sk.icon || '') + name + schoolText;
+  combatCueLanePush(titleMap[actor] || '技能释放', detail, kind);
+  if(actor === 'boss' && (sk.threat === 'high' || sk.threat === 'extreme' || sk._empowered)){
+    combatCueLanePush('危险技能', detail, 'boss');
+  }
+}
 function skillButtonEl(skillKey){
   if(typeof document === 'undefined' || !skillKey) return null;
   const buttons = document.querySelectorAll('.skill-btn[data-skill]');
@@ -422,6 +446,7 @@ function showSkillCastFx(sourceEl, sk, opts){
     layer.appendChild(label);
     setTimeout(() => label.remove(), opts?.labelDuration || opts?.duration || 520);
   }
+  combatSkillCue(sk, { actor:opts?.actor, school, skillKey:opts?.skillKey, cue:opts?.cue, kind:opts?.cueKind });
   if(typeof pulseCombatEl === 'function') pulseCombatEl(sourceEl, opts?.pulse || (opts?.actor === 'boss' ? 'bosscast' : 'artifact'), opts?.pulseDuration || 220);
   setTimeout(() => ring.remove(), opts?.duration || 420);
 }
@@ -11966,7 +11991,7 @@ function combatCueLanePush(title, detail, kind){
   const safeKind=String(kind||'info').replace(/[^a-z0-9_-]/gi,'')||'info';
   const item=document.createElement('div');
   item.className='combat-cue-chip '+safeKind;
-  const iconMap={ crit:'✦', hit:'✹', danger:'!', boss:'!!', interrupt:'X', heal:'+', shield:'◆', kill:'✓', gold:'$', loot:'🎁', epic:'紫', legend:'橙', info:'•' };
+  const iconMap={ crit:'✦', hit:'✹', danger:'!', boss:'!!', interrupt:'X', heal:'+', shield:'◆', kill:'✓', gold:'$', loot:'🎁', epic:'紫', legend:'橙', hero:'我', companion:'伴', skill:'✦', info:'•' };
   const icon=document.createElement('b');
   icon.textContent=iconMap[safeKind]||iconMap.info;
   item.appendChild(icon);
