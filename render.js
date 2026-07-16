@@ -633,6 +633,30 @@ function updateDmgTopSkill(total) {
   el.textContent = `${best.who} ${best.name} · ${fmt(best.amount)} · ${pct}%`;
   el.title = `本轮最高伤害来源: ${best.who}的${best.name}, 累计 ${fmt(best.amount)}, 占总伤害 ${pct}%。`;
 }
+function bossCastReadinessChips(ui) {
+  if (!ui) return [];
+  const chips = [];
+  if (!ui.canInterrupt) {
+    chips.push({ cls:'locked', text:'不可断', title:'这次读条不能被打断,需要用治疗、护盾或减伤覆盖。' });
+  } else if (ui.ready) {
+    chips.push({ cls:ui.urgent ? 'hot' : 'ready', text:'断:就绪', title:`打断已就绪: ${ui.ready.sk?.name || '打断技能'}。` });
+  } else if (ui.interruptCount > 0) {
+    const left = Math.ceil(Math.max(0, ui.soonestLeft || 0) / 1000);
+    chips.push({ cls:left > 0 ? 'wait' : 'empty', text:left > 0 ? `断:${left}s` : '断:缺蓝', title:left > 0 ? `最快打断还差 ${left} 秒。` : '有打断技能,但当前资源不足。' });
+  } else {
+    chips.push({ cls:'empty', text:'断:无', title:'当前手动栏和自动打断设置里没有可用打断技能。' });
+  }
+  if (ui.responseReady) {
+    const isHeal = ui.responseReady.kind === 'heal';
+    chips.push({ cls:isHeal ? 'heal' : 'defense', text:isHeal ? '疗:就绪' : '护:就绪', title:`保命技能已就绪: ${ui.responseReady.sk?.name || (isHeal ? '治疗' : '减伤')}。` });
+  } else if (ui.responseCount > 0) {
+    const left = Math.ceil(Math.max(0, ui.responseSoonestLeft || 0) / 1000);
+    chips.push({ cls:left > 0 ? 'wait' : 'empty', text:left > 0 ? `保:${left}s` : '保:缺蓝', title:left > 0 ? `最快保命技能还差 ${left} 秒。` : '有治疗/减伤技能,但当前资源不足。' });
+  } else {
+    chips.push({ cls:'empty', text:'保:无', title:'当前手动栏和自动技能里没有治疗/护盾/减伤兜底。' });
+  }
+  return chips;
+}
 function updateDmgBossCastReadout() {
   const row = $('dm-boss-cast-row');
   const el = $('dm-boss-cast');
@@ -679,7 +703,9 @@ function updateDmgBossCastReadout() {
   el.className = `dm-boss-cast ${cls}`;
   const suggestion = finalWindow ? (ui?.finalAction || action) : (ui?.action || action);
   const text = `${icon}${name} · 对${target}`;
-  const sig = `${text}|${remain}|${suggestion}|${finalWindow ? '1' : '0'}`;
+  const readyChips = bossCastReadinessChips(ui);
+  const chipSig = readyChips.map(x => `${x.cls}:${x.text}`).join('|');
+  const sig = `${text}|${remain}|${suggestion}|${chipSig}|${finalWindow ? '1' : '0'}`;
   if (el.dataset.castSig !== sig) {
     el.dataset.castSig = sig;
     el.replaceChildren();
@@ -693,6 +719,13 @@ function updateDmgBossCastReadout() {
     tip.className = 'dm-boss-cast-action';
     tip.textContent = suggestion;
     el.append(main, clock, tip);
+    for (const meta of readyChips) {
+      const chip = document.createElement('span');
+      chip.className = `dm-boss-cast-chip ${meta.cls}`;
+      chip.textContent = meta.text;
+      chip.title = meta.title;
+      el.appendChild(chip);
+    }
   }
   el.title = `首领读条: ${cast.bossName || 'BOSS'} 的 ${name}。目标: ${target}。威胁: ${threatMeta.label}。打断: ${interruptText}。建议: ${suggestion}。剩余 ${remain} 秒。`;
 }
@@ -3945,7 +3978,7 @@ function bossCastUiState(now) {
         ? (urgent ? `打断未就绪,${responseText}` : (soonestLeft <= 0 ? '打断缺资源' : `打断未就绪,还差 ${Math.ceil(soonestLeft / 1000)}秒`))
         : `没有可用打断,${responseText}`;
   const finalAction = bossCastFinalActionText({ canInterrupt, urgent, ready, responseReady, interruptCount }, action);
-  return { cast:bossCasting, duration, elapsed, remainMs, finalWindow, threatMeta, interruptText, canInterrupt, urgent, ready, responseReady, interruptCount, action, finalAction };
+  return { cast:bossCasting, duration, elapsed, remainMs, finalWindow, threatMeta, interruptText, canInterrupt, urgent, ready, responseReady, interruptCount, responseCount, soonestLeft, responseSoonestLeft, action, finalAction };
 }
 
 function bossCastSkillPrompt(skillKey, sk, now, cdMs) {

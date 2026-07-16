@@ -6368,6 +6368,10 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   .dm-recent-skills { gap: 3px; min-height: 19px; }
   .dm-recent-chip { max-width: 33%; padding: 1px 5px; font-size: 9px; }
   .dm-recent-chip:nth-child(n+5) { display: none; }
+  .dm-boss-cast { gap: 3px; padding: 2px 4px; }
+  .dm-boss-cast-action { max-width: 30%; }
+  .dm-boss-cast-chip { min-width: 32px; padding: 0 3px; }
+  .dm-boss-cast-chip:nth-of-type(n+5) { display: none; }
   .dm-boss-cast-history-item { grid-template-columns: 28px minmax(0, 1fr) 44px 24px; }
   .dm-boss-cast-history-item em { display: none; }
   .arena { padding: 14px 2px 10px; gap: 6px; justify-content: center; }
@@ -8623,7 +8627,7 @@ button.legend:hover:not(:disabled) {
 }
 .dm-boss-cast-action {
   flex: 0 0 auto;
-  max-width: 46%;
+  max-width: 34%;
   padding: 0 5px;
   border-radius: 999px;
   background: rgba(2,6,23,.34);
@@ -8632,6 +8636,49 @@ button.legend:hover:not(:disabled) {
   font-weight: 900;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.dm-boss-cast-chip {
+  flex: 0 0 auto;
+  min-width: 38px;
+  padding: 0 5px;
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,.20);
+  background: rgba(2,6,23,.34);
+  color: #cbd5e1;
+  font-size: 9px;
+  font-weight: 900;
+  text-align: center;
+  line-height: 1.35;
+}
+.dm-boss-cast-chip.hot,
+.dm-boss-cast-chip.ready {
+  color: #fecaca;
+  border-color: rgba(248,113,113,.46);
+  background: rgba(127,29,29,.32);
+}
+.dm-boss-cast-chip.hot {
+  box-shadow: 0 0 9px rgba(248,113,113,.20);
+}
+.dm-boss-cast-chip.heal {
+  color: #bbf7d0;
+  border-color: rgba(52,211,153,.36);
+  background: rgba(6,95,70,.26);
+}
+.dm-boss-cast-chip.defense {
+  color: #bfdbfe;
+  border-color: rgba(96,165,250,.34);
+  background: rgba(30,64,175,.24);
+}
+.dm-boss-cast-chip.wait {
+  color: #fde68a;
+  border-color: rgba(251,191,36,.34);
+  background: rgba(113,63,18,.22);
+}
+.dm-boss-cast-chip.locked,
+.dm-boss-cast-chip.empty {
+  color: #94a3b8;
+  border-color: rgba(148,163,184,.18);
+  background: rgba(15,23,42,.24);
 }
 .dm-boss-cast.locked {
   color: #bfdbfe;
