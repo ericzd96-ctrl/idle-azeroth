@@ -6909,6 +6909,9 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   .combat-skill-chain-chip i { display: none; }
   .combat-skill-chain-chip.has-amount i { display: inline-block; min-width: 28px; padding: 0 3px; font-size: 8px; }
   .combat-skill-chain-tag { display: none; }
+  .dm-skill-fx-guide { gap: 3px; }
+  .dm-skill-fx-guide-chip { max-width: 45%; padding: 1px 5px; font-size: 9px; }
+  .dm-skill-fx-guide-chip:nth-child(n+7) { display: none; }
   .combat-cue-chip { max-width: 32%; padding: 1px 5px 1px 4px; }
   .combat-cue-chip:nth-child(n+4) { display: none; }
   .combat-cue-chip span { font-size: 9px; }
@@ -9507,6 +9510,47 @@ button.dm-heat-action.ready.skill-pressed {
   color: currentColor;
   font-size: 8px;
   font-weight: 900;
+}
+.dm-skill-fx-guide {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px dashed rgba(148,163,184,.22);
+}
+.dm-skill-fx-guide-title {
+  flex: 0 0 auto;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 900;
+}
+.dm-skill-fx-guide-chip {
+  --skill-fx-color: #cbd5e1;
+  --skill-fx-color-soft: rgba(148,163,184,.20);
+  min-width: 0;
+  max-width: 142px;
+  padding: 2px 6px;
+  border: 1px solid color-mix(in srgb, var(--skill-fx-color) 42%, transparent);
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, var(--skill-fx-color-soft), rgba(15,23,42,.44)),
+    rgba(2,6,23,.28);
+  color: var(--skill-fx-color);
+  box-shadow: inset 0 0 8px var(--skill-fx-color-soft);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dm-skill-fx-guide-chip.danger {
+  max-width: 156px;
+  border-color: rgba(248,113,113,.54);
+  color: #fecaca;
+  box-shadow: inset 0 0 9px rgba(248,113,113,.14), 0 0 10px rgba(248,113,113,.10);
 }
 .meter-breakdown-title {
   display: flex;

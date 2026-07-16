@@ -147,6 +147,7 @@ let _dmDpsTrendValue = 0, _dmDpsTrendTs = 0, _dmDpsTrendDir = 'stable', _dmDpsTr
 let _dmRecentSkillSig = '';
 let _stageSkillChainSig = '';
 let _dmCombatSummarySig = '';
+let _dmSkillFxGuideSig = '';
 let _dmTacticsSig = '';
 let _dmCombatTempoSig = '';
 let _dmCombatHeatSig = '';
@@ -166,6 +167,66 @@ function combatSchoolShortName(school) {
     heal:'治疗',
     shield:'护盾'
   })[school] || '技能';
+}
+function combatSkillFxGuideMeta(school) {
+  return ({
+    fire:{ text:'红橙爆点', title:'火焰技能:红橙轨迹和爆点,通常代表爆发、灼烧或燃烧类伤害。' },
+    frost:{ text:'冰蓝碎光', title:'冰霜技能:冰蓝轨迹和棱形爆点,常见于减速、冻结和冰霜伤害。' },
+    arcane:{ text:'奥紫符光', title:'奥术技能:紫色轨迹和符文爆点,常见于法力、时间、星辰和相位效果。' },
+    nature:{ text:'自然绿光', title:'自然技能:绿色轨迹和叶形爆点,常见于闪电、大地、毒素和自然法术。' },
+    shadow:{ text:'暗紫黑焰', title:'暗影技能:暗紫爆点,常见于虚空、死亡、恐惧、腐蚀和高危首领技能。' },
+    holy:{ text:'圣金闪光', title:'神圣技能:金色闪光,常见于圣光、审判、祝福和制裁效果。' },
+    physical:{ text:'银白斩线', title:'物理技能:银白轨迹,常见于射击、斩击、猛击、冲锋和武器攻击。' },
+    heal:{ text:'绿色抬血', title:'治疗技能:绿色反馈,表示主角或随从获得生命恢复。' },
+    shield:{ text:'蓝色护盾', title:'护盾技能:蓝色反馈,表示护盾、防护、壁垒或守护效果。' }
+  })[school] || { text:'技能反馈', title:'技能释放时会出现起手光、轨迹和命中爆点。' };
+}
+function updateDmgSkillFxGuide(list, now) {
+  const el = $('dm-skill-fx-guide');
+  if (!el) return;
+  const fresh = (list || []).filter(x => x && now - (x.ts || 0) <= 9000);
+  const seen = new Set();
+  const schools = [];
+  fresh.forEach(item => {
+    const school = String(item.school || '').replace(/[^a-z0-9_-]/gi, '');
+    if (school && !seen.has(school)) {
+      seen.add(school);
+      schools.push(school);
+    }
+  });
+  const defaults = fresh.length ? ['heal', 'shield'] : ['fire', 'frost', 'arcane', 'holy', 'heal', 'shield'];
+  defaults.forEach(school => {
+    if (!seen.has(school)) {
+      seen.add(school);
+      schools.push(school);
+    }
+  });
+  if (!schools.length) schools.push('physical');
+  const danger = fresh.find(x => x.actor === 'boss' && (x.type === 'danger' || x.threat === 'high' || x.threat === 'extreme' || x.empowered));
+  const sig = `${schools.slice(0, 6).join('|')}#${danger ? `${danger.name}:${danger.threat}:${danger.empowered ? 1 : 0}` : 'safe'}#${fresh.length ? 1 : 0}`;
+  if (sig === _dmSkillFxGuideSig) return;
+  _dmSkillFxGuideSig = sig;
+  el.replaceChildren();
+  const title = document.createElement('span');
+  title.className = 'dm-skill-fx-guide-title';
+  title.textContent = fresh.length ? '演出说明' : '演出图例';
+  title.title = '技能释放会显示起手光、飞行轨迹和命中爆点;颜色代表技能类型。';
+  el.appendChild(title);
+  schools.slice(0, 6).forEach(school => {
+    const meta = combatSkillFxGuideMeta(school);
+    const chip = document.createElement('span');
+    chip.className = `dm-skill-fx-guide-chip school-${school}`;
+    chip.textContent = `${combatSchoolShortName(school)}:${meta.text}`;
+    chip.title = meta.title;
+    el.appendChild(chip);
+  });
+  if (danger) {
+    const chip = document.createElement('span');
+    chip.className = 'dm-skill-fx-guide-chip danger school-shadow';
+    chip.textContent = '高危:红边优先处理';
+    chip.title = `${danger.icon || ''}${danger.name || '首领技能'} 是危险技能;看到红边、暗影爆点或高危标签时,优先打断、减伤、治疗或护盾。`;
+    el.appendChild(chip);
+  }
 }
 function combatRecentSkillEffectText(item) {
   const type = String(item?.type || 'skill');
@@ -404,6 +465,7 @@ function updateDmgRecentSkills() {
   const list = (typeof combatRecentSkillCasts === 'function') ? combatRecentSkillCasts() : [];
   const sig = list.map(x => `${x.actor}:${x.school}:${x.type}:${x.threat}:${x.interruptPolicy || ''}:${x.empowered}:${x.aoe ? 1 : 0}:${x.icon}:${x.name}:${x.hits || 0}:${x.target || ''}:${x.status || ''}:${x.damage || 0}:${x.heal || 0}:${x.shield || 0}:${x.taken || 0}:${x.maxAmount || 0}:${x.crits || 0}:${Math.floor((now - (x.ts || 0)) / 2500)}`).join('|');
   updateStageSkillChain(list, now);
+  updateDmgSkillFxGuide(list, now);
   if (sig === _dmRecentSkillSig) return;
   _dmRecentSkillSig = sig;
   el.replaceChildren();
