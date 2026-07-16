@@ -626,6 +626,63 @@ function updateDmgBossCastOutcome() {
   el.textContent = `${kind}命中 · ${name} → ${target} · ${fmt(damage)} · ${ago}s前`;
   el.title = `最近首领读条结算: ${ds.lastBossCastBoss || 'BOSS'} 的 ${name},命中 ${target},造成 ${fmt(damage)} 点伤害。`;
 }
+function bossCastOutcomeAdvice(item) {
+  const damage = item?.damage || 0;
+  const heroMax = Math.max(1, state?.hero?.hpMax || 1);
+  const pct = damage / heroMax;
+  if (item?.empowered || item?.threat === 'extreme') return '下次优先打断';
+  if (item?.kind === 'aoe') return '群体技能前开减伤';
+  if (item?.kind === 'dot') return '持续伤害交治疗';
+  if (pct >= 0.20) return '留保命硬吃';
+  if (pct >= 0.10) return '注意血线';
+  return '压力可控';
+}
+function updateDmgBossCastHistory() {
+  const el = $('dm-boss-cast-history');
+  if (!el) return 0;
+  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
+  const history = Array.isArray(ds?.bossCastHistory) ? ds.bossCastHistory.slice(0, 3) : [];
+  if (!history.length) {
+    el.style.display = 'none';
+    el.replaceChildren();
+    return 0;
+  }
+  el.style.display = 'block';
+  const sig = history.map(x => `${x.at}:${Math.max(0, Math.floor((Date.now() - (x.at || 0)) / 1000))}:${x.name}:${x.target}:${x.damage}:${x.kind}:${x.empowered}:${x.threat}`).join('|');
+  if (el.dataset.sig === sig) return history.length;
+  el.dataset.sig = sig;
+  el.replaceChildren();
+  const title = document.createElement('div');
+  title.className = 'dm-boss-cast-history-title';
+  title.textContent = `读条回放 · 最近${history.length}`;
+  el.appendChild(title);
+  history.forEach(item => {
+    const row = document.createElement('div');
+    const damage = item.damage || 0;
+    const heroMax = Math.max(1, state?.hero?.hpMax || 1);
+    const cls = item.empowered || damage >= heroMax * 0.22 ? 'danger' : (damage >= heroMax * 0.10 ? 'warn' : 'hit');
+    const kind = item.kind === 'dot' ? '持续' : (item.kind === 'aoe' ? '群体' : '单体');
+    const ago = item.at ? Math.max(0, Math.floor((Date.now() - item.at) / 1000)) : 0;
+    const advice = bossCastOutcomeAdvice(item);
+    row.className = `dm-boss-cast-history-item ${cls}`;
+    row.title = `${item.boss || 'BOSS'} 的 ${item.name || '首领技能'} 命中 ${item.target || '目标'},造成 ${fmt(damage)}。建议: ${advice}。`;
+    const kindEl = document.createElement('b');
+    kindEl.textContent = kind;
+    const nameEl = document.createElement('span');
+    nameEl.className = 'dm-boss-cast-history-name';
+    nameEl.textContent = `${item.name || '首领技能'} → ${item.target || '目标'}`;
+    const dmgEl = document.createElement('span');
+    dmgEl.className = 'dm-boss-cast-history-dmg';
+    dmgEl.textContent = fmt(damage);
+    const adviceEl = document.createElement('em');
+    adviceEl.textContent = advice;
+    const agoEl = document.createElement('i');
+    agoEl.textContent = `${ago}s`;
+    row.append(kindEl, nameEl, dmgEl, adviceEl, agoEl);
+    el.appendChild(row);
+  });
+  return history.length;
+}
 function updateDmgVulnerabilityWindow() {
   const row = $('dm-vuln-window-row');
   const el = $('dm-vuln-window');
@@ -2210,6 +2267,7 @@ function updateDmgMeter() {
   updateDmgBossCastReadout();
   updateDmgLastInterrupt();
   updateDmgBossCastOutcome();
+  const bossCastHistoryCount = updateDmgBossCastHistory();
   updateDmgVulnerabilityWindow();
   updateDmgVulnerabilityHit();
   updateDmgCombatSummary(total, healTotal);
@@ -2596,6 +2654,7 @@ function updateDmgMeter() {
     if (schoolBreakdownCount) parts.push(`法术系${schoolBreakdownCount}`);
     if (healBreakdownCount) parts.push(`治疗${healBreakdownCount}`);
     if (takenBreakdownCount) parts.push(`承伤${takenBreakdownCount}`);
+    if (bossCastHistoryCount) parts.push(`读条${bossCastHistoryCount}`);
     const text = parts.length ? `来源明细 · ${parts.join(' / ')}` : '来源明细 · 暂无';
     if (detailSummary.textContent !== text) detailSummary.textContent = text;
   }
