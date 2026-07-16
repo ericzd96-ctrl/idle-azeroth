@@ -677,7 +677,9 @@ function combatPressureActionChip(meta, now) {
     return {
       tone:pureHeal ? 'heal' : 'defense',
       text:`按 ${ready.sk.name}`,
-      title:`建议现在使用 ${ready.sk.name},处理当前${preferHeal ? '血线' : '承伤'}压力。`
+      title:`建议现在使用 ${ready.sk.name},处理当前${preferHeal ? '血线' : '承伤'}压力。`,
+      key:ready.key,
+      ready:true
     };
   }
   const wait = ordered.find(x => x && Number.isFinite(x.left) && x.left > 0);
@@ -3045,7 +3047,11 @@ function updateDmgMeter() {
       netPerSec,
       compNetPerSec
     }, Date.now());
-    const actionHtml = action ? `<span class="dm-pressure-action ${escapeDmgMeterText(action.tone)}" title="${escapeDmgMeterText(action.title || action.text)}">${escapeDmgMeterText(action.text)}</span>` : '';
+    const actionHtml = action
+      ? (action.ready && action.key
+        ? `<button class="dm-pressure-action ${escapeDmgMeterText(action.tone)} ready" data-action="pressurecast" data-skill="${escapeDmgMeterText(action.key)}" title="${escapeDmgMeterText((action.title || action.text) + ' 点击立即施放。')}">${escapeDmgMeterText(action.text)}</button>`
+        : `<span class="dm-pressure-action ${escapeDmgMeterText(action.tone)}" title="${escapeDmgMeterText(action.title || action.text)}">${escapeDmgMeterText(action.text)}</span>`)
+      : '';
     const html = `<span class="dm-pressure-state">${escapeDmgMeterText(label)}</span>${actionHtml}<span class="dm-pressure-net">主 ${fmt(netPerSec)}/秒</span>${compVisible ? `<span class="dm-pressure-net companion">随 ${fmt(compNetPerSec)}/秒</span>` : ''}${sourceHtml}<span class="dm-pressure-time">${escapeDmgMeterText(surviveText)}</span>`;
     const sourceDetail = topSource ? `主要承伤来源 ${topSource.name} ${fmt(topSource.amount)}。` : '';
     const detail = `压力判断: ${hint}。${action ? `建议: ${action.title || action.text}。` : ''}主角承伤 ${fmt(dtps)}/秒,治疗 ${fmt(healPerSec)}/秒,净压力 ${fmt(netPerSec)}/秒。${compAlive ? `随从承伤 ${fmt(compDtps)}/秒,治疗 ${fmt(compHealPerSec)}/秒,净压力 ${fmt(compNetPerSec)}/秒。` : ''}${sourceDetail}`;

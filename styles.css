@@ -9483,6 +9483,21 @@ button.legend:hover:not(:disabled) {
   font-weight: 900;
   border: 1px solid rgba(148,163,184,.18);
 }
+button.dm-pressure-action {
+  appearance: none;
+  font: inherit;
+  cursor: pointer;
+  transform: translateY(0);
+  transition: transform .14s ease, filter .14s ease, box-shadow .14s ease;
+}
+button.dm-pressure-action.ready:hover {
+  filter: brightness(1.16);
+  transform: translateY(-1px);
+}
+button.dm-pressure-action.ready.skill-pressed {
+  transform: translateY(1px) scale(.97);
+  filter: brightness(1.32);
+}
 .dm-pressure-action.heal {
   color: #bbf7d0;
   border-color: rgba(52,211,153,.34);

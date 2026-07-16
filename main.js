@@ -117,6 +117,27 @@ function applyResponsiveLayout() {
   updateHeroMobileToggle();
 }
 
+function manualCastSkillFromUi(key, sourceEl) {
+  if (!key) return;
+  if (sourceEl) {
+    sourceEl.classList.remove('skill-pressed');
+    void sourceEl.offsetWidth;
+    sourceEl.classList.add('skill-pressed');
+    setTimeout(() => sourceEl.classList.remove('skill-pressed'), 240);
+  }
+  const c = getCls();
+  const sk = c?.skills?.[key];
+  if (typeof isSkillAllowedForCurrentSpec === 'function' && !isSkillAllowedForCurrentSpec(key)) {
+    state.selectedSkills = (state.selectedSkills || []).filter(s => s !== key);
+    log('该技能不属于当前专精,已从快捷栏移除', 'bad');
+    markDirty('skills', 'stage');
+    return;
+  }
+  if (sk && sk.type === 'interrupt') { castSkill(key, true); return; }
+  if (sk && casting && typeof canWeaveSkillDuringCast === 'function' && canWeaveSkillDuringCast(key, sk)) { castSkill(key, true); return; }
+  if (!casting) startCast(key, true);
+}
+
 function targetFrameIntervalMs() {
   const mobile = isMobileLayout();
   const hidden = typeof document !== 'undefined' && document.hidden;
@@ -199,6 +220,11 @@ function setupDelegation() {
   document.addEventListener('click', e => {
     if (e.target.closest('[data-tip-close]') && typeof unpinTip === 'function') {
       unpinTip();
+    }
+    const pressureBtn = e.target.closest('button[data-action="pressurecast"]');
+    if (pressureBtn) {
+      e.preventDefault();
+      manualCastSkillFromUi(pressureBtn.dataset.skill, pressureBtn);
     }
   });
 
@@ -560,21 +586,7 @@ function setupDelegation() {
     if (!btn || btn.classList.contains('on-cd')) return;
     const key = btn.dataset.skill;
     if (!key) return;
-    btn.classList.remove('skill-pressed');
-    void btn.offsetWidth;
-    btn.classList.add('skill-pressed');
-    setTimeout(() => btn.classList.remove('skill-pressed'), 240);
-    const c = getCls(); const sk = c?.skills[key];
-    if (typeof isSkillAllowedForCurrentSpec === 'function' && !isSkillAllowedForCurrentSpec(key)) {
-      state.selectedSkills = (state.selectedSkills || []).filter(s => s !== key);
-      log('该技能不属于当前专精,已从快捷栏移除', 'bad');
-      markDirty('skills', 'stage');
-      return;
-    }
-    // 打断与防御/减伤技能随时可用(即使正在读条)
-    if (sk && sk.type === 'interrupt') { castSkill(key, true); return; }
-    if (sk && casting && typeof canWeaveSkillDuringCast === 'function' && canWeaveSkillDuringCast(key, sk)) { castSkill(key, true); return; }
-    if (!casting) startCast(key, true);
+    manualCastSkillFromUi(key, btn);
   });
 
   // 增益/减益图标 悬浮查看效果(复用 compare-tip)
