@@ -161,6 +161,19 @@ function combatSchoolShortName(school) {
     shield:'护盾'
   })[school] || '技能';
 }
+function combatRecentSkillEffectText(item) {
+  const type = String(item?.type || 'skill');
+  const hits = item?.hits || 0;
+  const target = item?.target || '';
+  if (type === 'heal') return target && target !== '自身' ? `回复${target}` : '回复';
+  if (type === 'shield') return target && target !== '自身' ? `护住${target}` : '护盾';
+  if (type === 'buff') return '增益';
+  if (type === 'summon') return '召唤';
+  if (type === 'danger') return hits > 1 ? `压制x${hits}` : '高危';
+  if (hits > 1) return `命中x${hits}`;
+  if (hits === 1) return target ? `命中${target}` : '命中';
+  return '起手';
+}
 function setHeaderResourceText(id, key, value) {
   const el = $(id);
   if (!el) return;
@@ -218,8 +231,9 @@ function dmgMeterTrendMeta(dps, total) {
 function updateDmgRecentSkills() {
   const el = $('dm-recent-skills');
   if (!el) return;
+  const now = Date.now();
   const list = (typeof combatRecentSkillCasts === 'function') ? combatRecentSkillCasts() : [];
-  const sig = list.map(x => `${x.actor}:${x.school}:${x.type}:${x.threat}:${x.empowered}:${x.icon}:${x.name}:${x.ts}`).join('|');
+  const sig = list.map(x => `${x.actor}:${x.school}:${x.type}:${x.threat}:${x.empowered}:${x.icon}:${x.name}:${x.hits || 0}:${x.target || ''}:${Math.floor((now - (x.ts || 0)) / 2500)}`).join('|');
   if (sig === _dmRecentSkillSig) return;
   _dmRecentSkillSig = sig;
   el.replaceChildren();
@@ -233,11 +247,13 @@ function updateDmgRecentSkills() {
   el.className = 'dm-recent-skills';
   const label = document.createElement('span');
   label.className = 'dm-recent-label';
-  label.textContent = '轨迹';
+  label.textContent = '回放';
   el.appendChild(label);
   const actorName = { hero:'主角', companion:'随从', boss:'首领' };
   const actorIcon = { hero:'我', companion:'伴', boss:'首' };
   const typeName = { dmg:'伤害', heal:'治疗', shield:'护盾', buff:'增益', summon:'召唤', danger:'高危', skill:'技能' };
+  const latest = list[0] || null;
+  const chainCount = latest ? list.filter(x => x.actor === latest.actor && x.school === latest.school && now - (x.ts || 0) < 3200).length : 0;
   list.forEach((item, idx) => {
     const chip = document.createElement('span');
     const actor = String(item.actor || 'hero').replace(/[^a-z0-9_-]/gi, '') || 'hero';
@@ -245,8 +261,11 @@ function updateDmgRecentSkills() {
     const type = String(item.type || 'skill').replace(/[^a-z0-9_-]/gi, '') || 'skill';
     const danger = actor === 'boss' && (type === 'danger' || item.threat === 'high' || item.threat === 'extreme' || item.empowered);
     const schoolName = combatSchoolShortName(school);
-    chip.className = `dm-recent-chip actor-${actor} school-${school} type-${type}${idx === 0 ? ' is-latest' : ''}${danger ? ' is-danger' : ''}`;
-    chip.title = `${actorName[actor] || '技能'}释放 ${schoolName}${typeName[type] || '技能'}: ${item.icon || ''}${item.name || ''}${danger ? '。高危首领技能,优先打断或开保命。' : ''}`;
+    const effectText = combatRecentSkillEffectText(item);
+    const chainText = idx === 0 && chainCount >= 2 ? `连动x${chainCount}` : '';
+    const ageOld = now - (item.ts || 0) > 7500;
+    chip.className = `dm-recent-chip actor-${actor} school-${school} type-${type}${idx === 0 ? ' is-latest' : ''}${danger ? ' is-danger' : ''}${ageOld ? ' is-old' : ''}`;
+    chip.title = `${actorName[actor] || '技能'}释放 ${schoolName}${typeName[type] || '技能'}: ${item.icon || ''}${item.name || ''}。结果: ${effectText}${chainText ? ',' + chainText : ''}。${danger ? '高危首领技能,优先打断或开保命。' : ''}`;
     const source = document.createElement('b');
     source.className = 'dm-recent-actor';
     source.textContent = actorIcon[actor] || '技';
@@ -256,10 +275,16 @@ function updateDmgRecentSkills() {
     const badge = document.createElement('span');
     badge.className = 'dm-recent-school';
     badge.textContent = danger ? '高危' : schoolName;
-    const kind = document.createElement('span');
-    kind.className = 'dm-recent-kind';
-    kind.textContent = danger ? schoolName : (typeName[type] || '技能');
-    chip.append(source, name, badge, kind);
+    const effect = document.createElement('span');
+    effect.className = 'dm-recent-effect';
+    effect.textContent = effectText;
+    chip.append(source, name, badge, effect);
+    if (chainText) {
+      const chain = document.createElement('span');
+      chain.className = 'dm-recent-chain';
+      chain.textContent = chainText;
+      chip.appendChild(chain);
+    }
     el.appendChild(chip);
   });
 }

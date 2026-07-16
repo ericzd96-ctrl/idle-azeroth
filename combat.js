@@ -310,6 +310,16 @@ function skillFxLabelText(sk){
 const _skillCastCueCooldown = {};
 const _combatRecentSkillCasts = [];
 const _combatRecentSkillCastCooldown = {};
+function combatSkillImpactTargetLabel(targetEl, sourceEl){
+  if(!targetEl) return '';
+  if(targetEl === sourceEl) return '自身';
+  const id = targetEl.id || '';
+  if(id === 'hero-emoji') return '主角';
+  if(id === 'comp-mini') return '随从';
+  if(id === 'mon-emoji' || targetEl.classList?.contains('m-emoji')) return '敌人';
+  if(targetEl.closest?.('#mon-list')) return '敌人';
+  return '';
+}
 function combatRecentSkillType(sk, school, actor){
   if(!sk) return 'skill';
   if(sk.type === 'heal' || school === 'heal' || sk.heal || sk.healPct) return 'heal';
@@ -336,9 +346,29 @@ function recordCombatSkillCast(sk, opts){
     empowered:!!sk._empowered,
     icon:String(sk.icon || ''),
     name:String(sk.name || ''),
+    hits:0,
+    target:'',
+    impactTs:0,
     ts:now
   });
   _combatRecentSkillCasts.splice(5);
+}
+function recordCombatSkillImpact(sk, opts){
+  if(!sk || !sk.name) return;
+  const now = Date.now();
+  const actor = String(opts?.actor || 'hero').replace(/[^a-z0-9_-]/gi, '') || 'hero';
+  const school = String(opts?.school || skillVisualSchool(opts?.skillKey, sk, actor)).replace(/[^a-z0-9_-]/gi, '') || 'physical';
+  const name = String(sk.name || '');
+  let item = _combatRecentSkillCasts.find(x => x.actor === actor && x.school === school && x.name === name && now - (x.ts || 0) < 1300);
+  if(!item){
+    recordCombatSkillCast(sk, { actor, school, skillKey:opts?.skillKey });
+    item = _combatRecentSkillCasts.find(x => x.actor === actor && x.school === school && x.name === name);
+  }
+  if(!item) return;
+  item.hits = Math.min(99, (item.hits || 0) + 1);
+  item.impactTs = now;
+  if(opts?.target) item.target = String(opts.target).slice(0, 12);
+  item.ts = Math.max(item.ts || 0, now - 120);
 }
 function combatRecentSkillCasts(){
   return _combatRecentSkillCasts.slice();
@@ -514,6 +544,12 @@ function showSkillImpactFx(sourceEl, targetEl, sk, opts){
   if(!layer || !a || !b) return;
   const school = opts?.school || skillVisualSchool(opts?.skillKey, sk, opts?.actor);
   const scale = opts?.scale || 1;
+  if(opts?.record !== false) recordCombatSkillImpact(sk, {
+    actor:opts?.actor,
+    school,
+    skillKey:opts?.skillKey,
+    target:opts?.target || combatSkillImpactTargetLabel(targetEl, sourceEl)
+  });
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const dist = Math.max(12, Math.sqrt(dx * dx + dy * dy));
