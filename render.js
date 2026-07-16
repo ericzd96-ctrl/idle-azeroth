@@ -435,10 +435,34 @@ function updateDmgTacticalStatus(total, healTotal, elapsed) {
     push(ui.urgent ? 'danger' : 'warn', `读条 ${remain}`, `${name}: ${ui.finalAction || ui.action || '准备应对'}`);
     push(ui.ready ? 'good' : (ui.responseReady ? 'warn' : 'danger'), ui.finalAction || ui.action || '准备应对', `当前建议: ${ui.action || ui.finalAction || '观察'}。`);
   }
+  const survival = (typeof survivalWindowState === 'function') ? survivalWindowState() : null;
+  if (survival) {
+    const hpText = Math.max(1, Math.round(survival.pct * 100));
+    push(survival.critical ? 'danger' : 'warn', survival.critical ? `急救 ${hpText}%` : `保命 ${hpText}%`, `生命约 ${hpText}%。优先使用治疗、护盾或减伤技能。`);
+  }
+  if (ds && ds.start) {
+    const hMax = Math.max(1, state?.hero?.hpMax || 1);
+    const dtps = (ds.taken || 0) ? Math.round((ds.taken || 0) / Math.max(0.001, elapsed || 1)) : 0;
+    const healPerSec = healTotal > 0 ? Math.round(healTotal / Math.max(0.001, elapsed || 1)) : 0;
+    const netPerSec = Math.max(0, dtps - healPerSec);
+    const netPct = netPerSec / hMax;
+    const topSource = (typeof incomingPressureSource === 'function') ? incomingPressureSource(ds) : null;
+    if (netPct > 0.04) {
+      push('danger', `减伤 ${fmt(netPerSec)}/秒`, `当前净压力约 ${fmt(netPerSec)}/秒。${topSource ? `主要来源: ${topSource.name}。` : '建议开减伤或治疗。'}`);
+    } else if (netPct > 0.018) {
+      push('warn', `承压 ${fmt(netPerSec)}/秒`, `当前净压力约 ${fmt(netPerSec)}/秒。${topSource ? `主要来源: ${topSource.name}。` : '注意保留保命技能。'}`);
+    }
+  }
   const win = (typeof vulnerabilityWindowState === 'function') ? vulnerabilityWindowState(now) : null;
   if (win) {
     const target = win.mon?.bossName || win.mon?.name || '目标';
     push('good', `破绽 ${(win.left / 1000).toFixed(1)}秒`, `${target} 正处于破绽窗口,优先打高伤害技能。`);
+  }
+  const executeWin = (typeof executeWindowState === 'function') ? executeWindowState() : null;
+  if (executeWin) {
+    const target = executeWin.mon?.bossName || executeWin.mon?.name || '目标';
+    const hpText = Math.max(1, Math.round(executeWin.pct * 100));
+    push('good', `收尾 ${hpText}%`, `${target} 进入斩杀窗口,优先使用终结技能。`);
   }
   if (ds?.lastBossCastAt && now - ds.lastBossCastAt < 9000) {
     const dmg = ds.lastBossCastDamage || 0;
