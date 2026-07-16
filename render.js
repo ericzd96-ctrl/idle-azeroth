@@ -362,33 +362,43 @@ function updateCombatReactionAdvice() {
   let title = '当前没有需要立即处理的战斗事件。';
   if (ui) {
     const remain = Math.max(0, Math.ceil((ui.remainMs || 0) / 1000));
+    const remainText = ui.finalWindow && ui.remainMs < 1000 ? `${Math.max(0.1, ui.remainMs / 1000).toFixed(1)}秒` : `${remain}秒`;
     const castName = `${ui.cast?.icon || ''}${ui.cast?.name || '施法'}`;
     const readySkill = ui.ready?.sk?.name || '';
     const responseSkill = ui.responseReady?.sk?.name || '';
     const responseKind = ui.responseReady?.kind === 'heal' ? '治疗' : '减伤';
+    const finalPrefix = ui.finalWindow ? '最后窗口' : '';
     if (ui.canInterrupt) {
       if (ui.ready) {
         cls = ui.urgent ? 'danger' : 'warn';
-        text = `${ui.urgent ? '立刻打断' : '可打断'} · ${readySkill || castName} · ${remain}秒`;
+        text = ui.finalWindow
+          ? `${finalPrefix} · ${ui.finalAction || '按打断'} · ${remainText}`
+          : `${ui.urgent ? '立刻打断' : '可打断'} · ${readySkill || castName} · ${remainText}`;
         title = `${ui.action || '点击打断技能处理这次读条。'} 当前读条: ${castName}。`;
       } else if (ui.urgent) {
         cls = ui.responseReady ? 'warn' : 'danger';
-        text = ui.responseReady
-          ? `打断未就绪 · ${responseKind}${responseSkill ? ' ' + responseSkill : ''} · ${remain}秒`
-          : `打断未就绪 · 减伤/治疗 · ${remain}秒`;
+        text = ui.finalWindow
+          ? `${finalPrefix} · ${ui.finalAction || '硬吃保命'} · ${remainText}`
+          : ui.responseReady
+            ? `打断未就绪 · ${responseKind}${responseSkill ? ' ' + responseSkill : ''} · ${remainText}`
+            : `打断未就绪 · 减伤/治疗 · ${remainText}`;
         title = `${ui.action || '高危读条无法立刻打断,优先用保命技能覆盖。'} 当前读条: ${castName}。`;
       } else {
         cls = 'warn';
-        text = ui.responseReady
-          ? `可硬吃 · ${responseKind}${responseSkill ? ' ' + responseSkill : ''} · ${remain}秒`
-          : `等打断/准备硬吃 · ${remain}秒`;
+        text = ui.finalWindow
+          ? `${finalPrefix} · ${ui.finalAction || '看情况断'} · ${remainText}`
+          : ui.responseReady
+            ? `可硬吃 · ${responseKind}${responseSkill ? ' ' + responseSkill : ''} · ${remainText}`
+            : `等打断/准备硬吃 · ${remainText}`;
         title = `${ui.action || '普通读条,可等待打断或准备承受。'} 当前读条: ${castName}。`;
       }
     } else {
       cls = ui.responseReady ? 'warn' : 'danger';
-      text = ui.responseReady
-        ? `开${responseKind} · ${responseSkill || castName} · ${remain}秒`
-        : `不可断 · ${castName} · ${remain}秒`;
+      text = ui.finalWindow
+        ? `${finalPrefix} · ${ui.finalAction || '开保命'} · ${remainText}`
+        : ui.responseReady
+          ? `开${responseKind} · ${responseSkill || castName} · ${remainText}`
+          : `不可断 · ${castName} · ${remainText}`;
       title = `${ui.action || '这次读条不可打断,用治疗、护盾或减伤覆盖。'} 当前读条: ${castName}。`;
     }
   } else {
@@ -415,6 +425,7 @@ function updateCombatReactionAdvice() {
       title = '随从承压,留意治疗随从或护盾类技能。';
     }
   }
+  if (ui?.finalWindow && cls !== 'idle') cls += ' final';
   el.className = `dm-reaction ${cls}`;
   el.title = title;
   if (el.textContent !== text) el.textContent = text;
@@ -573,19 +584,22 @@ function updateDmgBossCastReadout() {
   const name = cast.name || '施法';
   row.style.display = '';
   el.className = `dm-boss-cast ${cls}`;
-  const suggestion = ui?.action || action;
-  const text = `${icon}${name} · 对${target} · ${remain}s`;
-  const sig = `${text}|${suggestion}`;
+  const suggestion = finalWindow ? (ui?.finalAction || action) : (ui?.action || action);
+  const text = `${icon}${name} · 对${target}`;
+  const sig = `${text}|${remain}|${suggestion}|${finalWindow ? '1' : '0'}`;
   if (el.dataset.castSig !== sig) {
     el.dataset.castSig = sig;
     el.replaceChildren();
     const main = document.createElement('span');
     main.className = 'dm-boss-cast-main';
     main.textContent = text;
+    const clock = document.createElement('span');
+    clock.className = 'dm-boss-cast-clock';
+    clock.textContent = remain + 's';
     const tip = document.createElement('span');
     tip.className = 'dm-boss-cast-action';
     tip.textContent = suggestion;
-    el.append(main, tip);
+    el.append(main, clock, tip);
   }
   el.title = `首领读条: ${cast.bossName || 'BOSS'} 的 ${name}。目标: ${target}。威胁: ${threatMeta.label}。打断: ${interruptText}。建议: ${suggestion}。剩余 ${remain} 秒。`;
 }
@@ -3759,6 +3773,17 @@ function bossCastBestSkill(entries, now) {
   return { ready, soonestLeft };
 }
 
+function bossCastFinalActionText(ui, action) {
+  if (!ui) return action || '观察';
+  const readyName = ui.ready?.sk?.name || '';
+  const responseName = ui.responseReady?.sk?.name || '';
+  if (ui.canInterrupt && readyName) return `按 ${readyName}`;
+  if (!ui.canInterrupt && responseName) return `开 ${responseName}`;
+  if (ui.urgent && responseName) return `顶 ${responseName}`;
+  if (ui.canInterrupt && ui.interruptCount) return ui.urgent ? '打断未好' : '等打断';
+  return ui.urgent ? '硬吃保命' : '观察硬吃';
+}
+
 function bossCastUiState(now) {
   if (typeof bossCasting === 'undefined' || !bossCasting) return null;
   const duration = Math.max(1, bossCasting.duration || 1);
@@ -3810,7 +3835,8 @@ function bossCastUiState(now) {
       : interruptCount
         ? (urgent ? `打断未就绪,${responseText}` : (soonestLeft <= 0 ? '打断缺资源' : `打断未就绪,还差 ${Math.ceil(soonestLeft / 1000)}秒`))
         : `没有可用打断,${responseText}`;
-  return { cast:bossCasting, duration, elapsed, remainMs, finalWindow, threatMeta, interruptText, canInterrupt, urgent, ready, responseReady, interruptCount, action };
+  const finalAction = bossCastFinalActionText({ canInterrupt, urgent, ready, responseReady, interruptCount }, action);
+  return { cast:bossCasting, duration, elapsed, remainMs, finalWindow, threatMeta, interruptText, canInterrupt, urgent, ready, responseReady, interruptCount, action, finalAction };
 }
 
 function bossCastSkillPrompt(skillKey, sk, now, cdMs) {
