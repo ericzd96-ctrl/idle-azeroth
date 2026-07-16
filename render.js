@@ -145,6 +145,7 @@ let _invFilterRarity = 'all'; // 背包品质筛选
 let _dmSampleTotal = 0, _dmSampleTs = 0;   // 峰值秒伤采样基线
 let _dmDpsTrendValue = 0, _dmDpsTrendTs = 0, _dmDpsTrendDir = 'stable', _dmDpsTrendPct = 0;
 let _dmRecentSkillSig = '';
+let _stageSkillChainSig = '';
 let _dmCombatSummarySig = '';
 let _dmTacticsSig = '';
 let _navBadgePaint = 0, _expLivePaint = 0; // 导航红点 / 远征实时刷新节流
@@ -193,6 +194,45 @@ function combatRecentSkillHitText(item) {
   if (hits > 1) return `x${hits}`;
   if (hits === 1 && item?.target) return '命中';
   return '';
+}
+function updateStageSkillChain(list, now) {
+  const el = $('combat-skill-chain');
+  if (!el) return;
+  const fresh = (list || []).filter(x => now - (x.ts || 0) <= 9000).slice(0, 3);
+  const stageSig = fresh.map(x => `${x.actor}:${x.school}:${x.type}:${x.threat}:${x.empowered}:${x.icon}:${x.name}:${x.hits || 0}:${x.target || ''}`).join('|');
+  if (!fresh.length) {
+    if (_stageSkillChainSig === '') return;
+    _stageSkillChainSig = '';
+    el.style.display = 'none';
+    el.replaceChildren();
+    return;
+  }
+  if (stageSig === _stageSkillChainSig && el.style.display !== 'none') return;
+  _stageSkillChainSig = stageSig;
+  el.replaceChildren();
+  const label = document.createElement('span');
+  label.className = 'combat-skill-chain-label';
+  label.textContent = '技能链';
+  el.appendChild(label);
+  const actorIcon = { hero:'我', companion:'伴', boss:'首' };
+  fresh.forEach((item, idx) => {
+    const actor = String(item.actor || 'hero').replace(/[^a-z0-9_-]/gi, '') || 'hero';
+    const school = String(item.school || 'physical').replace(/[^a-z0-9_-]/gi, '') || 'physical';
+    const type = String(item.type || 'skill').replace(/[^a-z0-9_-]/gi, '') || 'skill';
+    const danger = actor === 'boss' && (type === 'danger' || item.threat === 'high' || item.threat === 'extreme' || item.empowered);
+    const chip = document.createElement('span');
+    chip.className = `combat-skill-chain-chip actor-${actor} school-${school} type-${type}${idx === 0 ? ' is-latest' : ''}${danger ? ' is-danger' : ''}`;
+    chip.title = `${combatSchoolShortName(school)} · ${item.icon || ''}${item.name || ''} · ${combatRecentSkillEffectText(item)}${combatRecentSkillTargetText(item) ? ' ' + combatRecentSkillTargetText(item) : ''}`;
+    const source = document.createElement('b');
+    source.textContent = actorIcon[actor] || '技';
+    const name = document.createElement('span');
+    name.textContent = `${item.icon || ''}${item.name || ''}`;
+    const result = document.createElement('i');
+    result.textContent = danger ? '高危' : (combatRecentSkillHitText(item) || combatRecentSkillEffectText(item));
+    chip.append(source, name, result);
+    el.appendChild(chip);
+  });
+  el.style.display = 'flex';
 }
 function setHeaderResourceText(id, key, value) {
   const el = $(id);
@@ -254,6 +294,7 @@ function updateDmgRecentSkills() {
   const now = Date.now();
   const list = (typeof combatRecentSkillCasts === 'function') ? combatRecentSkillCasts() : [];
   const sig = list.map(x => `${x.actor}:${x.school}:${x.type}:${x.threat}:${x.empowered}:${x.icon}:${x.name}:${x.hits || 0}:${x.target || ''}:${Math.floor((now - (x.ts || 0)) / 2500)}`).join('|');
+  updateStageSkillChain(list, now);
   if (sig === _dmRecentSkillSig) return;
   _dmRecentSkillSig = sig;
   el.replaceChildren();
