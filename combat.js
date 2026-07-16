@@ -12229,6 +12229,45 @@ function combatCueToast(title, detail, kind){
   combatCueLanePush(title, detail, key);
   setTimeout(()=>el.remove(),950);
 }
+const _combatMomentCooldown = {};
+function combatMomentCue(kind, title, detail, opts){
+  if(typeof document==='undefined'||document.hidden)return;
+  const key=String(kind||'info').replace(/[^a-z0-9_-]/gi,'')||'info';
+  const now=Date.now();
+  const gap=opts?.gap || (key==='crit'?2200:key==='heal'||key==='shield'?2600:2400);
+  if((_combatMomentCooldown[key]||0)>now)return;
+  _combatMomentCooldown[key]=now+gap;
+  if(key==='crit'||key==='hit')stageFlashFx('crit');
+  if(key==='heal'||key==='shield')stageEdgeFx(key,{intensity:.72});
+  combatEventBanner(title, detail, key);
+}
+function combatMomentMaxHp(src){
+  if(src==='hero')return Math.max(1,state?.hero?.hpMax||1);
+  const st=(typeof computeCompanionStats==='function')?computeCompanionStats():null;
+  return Math.max(1,st?.hpMax||state?._compHpMax||state?.hero?.hpMax||1);
+}
+function maybeCombatDamageMoment(src, amt, isCrit, cleanLabel, prevMax){
+  if(!prevMax || amt<=prevMax)return;
+  const hitCount=dmgStats[src==='hero'?'heroHits':'compHits']||0;
+  if(hitCount<4)return;
+  const hpRef=combatMomentMaxHp(src);
+  const recordJump=amt>=Math.max(prevMax*1.28,prevMax+Math.max(10,hpRef*.025));
+  const heavyHit=amt>=hpRef*.18;
+  if(!recordJump&&!heavyHit)return;
+  const owner=src==='hero'?'主角':'随从';
+  const title=isCrit?`${owner}大暴击`:`${owner}爆发`;
+  combatMomentCue(isCrit?'crit':'hit',title,(cleanLabel?cleanLabel+' · ':'')+fmt(amt),{gap:isCrit?2100:2600});
+}
+function maybeCombatSupportMoment(src, kind, amt, cleanLabel, prevMax){
+  if(!prevMax || amt<=prevMax)return;
+  const hpRef=combatMomentMaxHp(src);
+  const recordJump=amt>=Math.max(prevMax*1.25,prevMax+Math.max(10,hpRef*.025));
+  const bigSave=amt>=hpRef*(kind==='heal'?0.14:0.16);
+  if(!recordJump&&!bigSave)return;
+  const owner=src==='hero'?'主角':'随从';
+  const title=kind==='heal'?`${owner}大治疗`:`${owner}厚护盾`;
+  combatMomentCue(kind,title,(cleanLabel?cleanLabel+' · ':'')+fmt(amt),{gap:2800});
+}
 function killStreakToast(n){
   if(typeof document==='undefined'||document.hidden)return;
   const st=document.getElementById('stage');if(!st)return;
@@ -12259,11 +12298,42 @@ function trackDmg(src,amt,isCrit,skillLabel,meta){
     if(src==='hero'){stageShakeFx();stageFlashFx('crit');}
     if(amt<=prevMax)combatCueToast(src==='hero'?'暴击':'随从暴击',(cleanLabel?cleanLabel+' · ':'')+fmt(amt),'crit');
   }
-  if(amt>prevMax&&prevMax>0)combatCueToast(src==='hero'?'爆发一击':'随从爆发',(cleanLabel?cleanLabel+' · ':'')+fmt(amt),isCrit?'crit':'hit');
+  if(amt>prevMax&&prevMax>0){
+    combatCueToast(src==='hero'?'爆发一击':'随从爆发',(cleanLabel?cleanLabel+' · ':'')+fmt(amt),isCrit?'crit':'hit');
+    maybeCombatDamageMoment(src,amt,isCrit,cleanLabel,prevMax);
+  }
   if(cleanLabel){const skKey=src==='hero'?'heroSkills':'compSkills';dmgStats[skKey][cleanLabel]=(dmgStats[skKey][cleanLabel]||0)+amt;}
 }
-function trackHeal(src,amt,skillLabel){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;const isHero=src==='hero';const totalKey=isHero?'heroHeal':'compHeal';const maxKey=isHero?'heroHealMax':'compHealMax';const skKey=isHero?'heroHealSkills':'compHealSkills';dmgStats[totalKey]=(dmgStats[totalKey]||0)+amt;if(amt>(dmgStats[maxKey]||0))dmgStats[maxKey]=amt;const cleanLabel=normalizeTrackedSkillLabel(skillLabel);if(isHero){dmgStats.lastHeroHealAmount=amt;dmgStats.lastHeroHealAt=t;dmgStats.lastHeroHealSkill=cleanLabel||'';}else{dmgStats.lastCompHealAmount=amt;dmgStats.lastCompHealAt=t;dmgStats.lastCompHealSkill=cleanLabel||'';}if(cleanLabel)dmgStats[skKey][cleanLabel]=(dmgStats[skKey][cleanLabel]||0)+amt;}
-function trackShield(src,amt,skillLabel){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;const isHero=src==='hero';const totalKey=isHero?'heroShield':'compShield';const maxKey=isHero?'heroShieldMax':'compShieldMax';dmgStats[totalKey]=(dmgStats[totalKey]||0)+amt;if(amt>(dmgStats[maxKey]||0))dmgStats[maxKey]=amt;const cleanLabel=normalizeTrackedSkillLabel(skillLabel);if(isHero){dmgStats.lastHeroShieldAmount=amt;dmgStats.lastHeroShieldAt=t;dmgStats.lastHeroShieldSkill=cleanLabel||'';}else{dmgStats.lastCompShieldAmount=amt;dmgStats.lastCompShieldAt=t;dmgStats.lastCompShieldSkill=cleanLabel||'';}}
+function trackHeal(src,amt,skillLabel){
+  amt=Math.floor(amt||0);if(amt<=0)return;
+  const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;
+  const isHero=src==='hero';
+  const totalKey=isHero?'heroHeal':'compHeal';
+  const maxKey=isHero?'heroHealMax':'compHealMax';
+  const skKey=isHero?'heroHealSkills':'compHealSkills';
+  const prevMax=dmgStats[maxKey]||0;
+  dmgStats[totalKey]=(dmgStats[totalKey]||0)+amt;
+  if(amt>(dmgStats[maxKey]||0))dmgStats[maxKey]=amt;
+  const cleanLabel=normalizeTrackedSkillLabel(skillLabel);
+  if(isHero){dmgStats.lastHeroHealAmount=amt;dmgStats.lastHeroHealAt=t;dmgStats.lastHeroHealSkill=cleanLabel||'';}
+  else{dmgStats.lastCompHealAmount=amt;dmgStats.lastCompHealAt=t;dmgStats.lastCompHealSkill=cleanLabel||'';}
+  if(amt>prevMax)maybeCombatSupportMoment(src,'heal',amt,cleanLabel,prevMax);
+  if(cleanLabel)dmgStats[skKey][cleanLabel]=(dmgStats[skKey][cleanLabel]||0)+amt;
+}
+function trackShield(src,amt,skillLabel){
+  amt=Math.floor(amt||0);if(amt<=0)return;
+  const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;
+  const isHero=src==='hero';
+  const totalKey=isHero?'heroShield':'compShield';
+  const maxKey=isHero?'heroShieldMax':'compShieldMax';
+  const prevMax=dmgStats[maxKey]||0;
+  dmgStats[totalKey]=(dmgStats[totalKey]||0)+amt;
+  if(amt>(dmgStats[maxKey]||0))dmgStats[maxKey]=amt;
+  const cleanLabel=normalizeTrackedSkillLabel(skillLabel);
+  if(isHero){dmgStats.lastHeroShieldAmount=amt;dmgStats.lastHeroShieldAt=t;dmgStats.lastHeroShieldSkill=cleanLabel||'';}
+  else{dmgStats.lastCompShieldAmount=amt;dmgStats.lastCompShieldAt=t;dmgStats.lastCompShieldSkill=cleanLabel||'';}
+  if(amt>prevMax)maybeCombatSupportMoment(src,'shield',amt,cleanLabel,prevMax);
+}
 function trackKill(){const now=Date.now();if(dmgStats.killTs){const dt=(now-dmgStats.killTs)/1000;if(dt>0&&dt<600){if(!dmgStats.killFast||dt<dmgStats.killFast)dmgStats.killFast=dt;if(dt>(dmgStats.killSlow||0))dmgStats.killSlow=dt;}}dmgStats.killTs=now;dmgStats.kills=(dmgStats.kills||0)+1;killStreak++;if(killStreak>=5&&killStreak%5===0)killStreakToast(killStreak);}
 function resetDmgStats(){dmgStats=defaultDmgStats();if(typeof killStreak==='number')killStreak=0;if(typeof markDirty==='function')markDirty('stage');}
 let compSkillCd={};   // 随从每个技能的独立冷却就绪时间戳(键=技能下标;_owner 记录当前随从,换随从自动重置)

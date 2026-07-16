@@ -6098,6 +6098,26 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   background: linear-gradient(180deg, rgba(30,64,175,.70), rgba(15,23,42,.74));
   animation-duration: 1.15s;
 }
+.combat-event-banner.crit {
+  color: #fde68a;
+  border-color: rgba(250,204,21,.72);
+  background: linear-gradient(180deg, rgba(113,63,18,.78), rgba(15,23,42,.74));
+}
+.combat-event-banner.hit {
+  color: #e5e7eb;
+  border-color: rgba(203,213,225,.52);
+  background: linear-gradient(180deg, rgba(51,65,85,.74), rgba(15,23,42,.74));
+}
+.combat-event-banner.heal {
+  color: #bbf7d0;
+  border-color: rgba(52,211,153,.60);
+  background: linear-gradient(180deg, rgba(6,95,70,.66), rgba(15,23,42,.72));
+}
+.combat-event-banner.shield {
+  color: #bfdbfe;
+  border-color: rgba(96,165,250,.62);
+  background: linear-gradient(180deg, rgba(30,64,175,.62), rgba(15,23,42,.72));
+}
 .combat-cue-toast {
   position: absolute;
   left: 50%;
