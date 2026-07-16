@@ -8254,6 +8254,48 @@ button.legend:hover:not(:disabled) {
   background: rgba(15,23,42,.28);
   box-shadow: none;
 }
+.dm-last-interrupt-row { align-items: stretch; }
+.dm-last-interrupt {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 6px;
+  border-radius: 5px;
+  border: 1px solid rgba(148,163,184,.24);
+  background: rgba(15,23,42,.34);
+  color: #cbd5e1;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dm-last-interrupt.perfect {
+  color: #fef3c7;
+  border-color: rgba(250,204,21,.46);
+  background: rgba(113,63,18,.22);
+  box-shadow: inset 0 0 10px rgba(250,204,21,.12);
+}
+.dm-last-interrupt.success {
+  color: #bfdbfe;
+  border-color: rgba(96,165,250,.36);
+  background: rgba(30,64,175,.16);
+}
+.dm-last-interrupt.soft {
+  color: #fed7aa;
+  border-color: rgba(251,146,60,.38);
+  background: rgba(124,45,18,.20);
+}
+.dm-last-interrupt.immune {
+  color: #fecaca;
+  border-color: rgba(248,113,113,.42);
+  background: rgba(127,29,29,.24);
+}
+.dm-last-interrupt.miss,
+.dm-last-interrupt.idle {
+  color: #94a3b8;
+  border-color: rgba(148,163,184,.22);
+  background: rgba(15,23,42,.30);
+}
 @keyframes dmBossCastPulse {
   0%, 100% { filter: brightness(1); }
   50% { filter: brightness(1.22); }

@@ -11935,11 +11935,12 @@ function applyHeroSkillControlInterrupt(sk, mon, now){
   if(typeof showMonsterFloat === 'function') showMonsterFloat(mon, '击晕', '#fde047', { variant:'control', scale:1.02 });
 }
 function doInterrupt(skillKey){
-  if(!bossCasting){if(skillKey)showSkillDeniedFx(skillKey, 'locked', { label:'无读条' });log('没有正在施放的法术','info');return false;}
+  if(!bossCasting){if(skillKey)showSkillDeniedFx(skillKey, 'locked', { label:'无读条' });if(skillKey)trackInterruptResult('miss',{skillKey,skillName:(getCls()?.skills?.[skillKey]?.name)||'打断',castName:'无读条'});log('没有正在施放的法术','info');return false;}
   const bossName=bossCasting.bossName||'BOSS';
   const mon=bossCastingMonster(bossCasting);
   if(bossCasting.interruptPolicy === 'none'){
     if(skillKey)showSkillDeniedFx(skillKey, 'locked', { label:'不可断' });
+    trackInterruptResult('immune',{skillKey,skillName:(getCls()?.skills?.[skillKey]?.name)||'打断',bossName,castName:bossCasting.name,empowered:!!bossCasting._empowered,soft:false});
     log('🧱 '+bossName+' 的 '+bossCasting.name+' 无法被打断!','bad');
     if(mon) showMonsterFloat(mon,'🧱不可断','#fca5a5',{variant:'boss',scale:1.04});
     if(mon) showInterruptFx(mon, 'immune', bossCasting.name);
@@ -11948,15 +11949,18 @@ function doInterrupt(skillKey){
   log('🦶 打断了 '+bossName+' 的 '+bossCasting.icon+' '+bossCasting.name+'!','good');
   combatEventBanner('打断成功', (bossCasting.icon || '') + (bossCasting.name || '施法'), 'interrupt');
   if(mon) showInterruptFx(mon, bossCasting._empowered ? 'perfect' : 'success', bossCasting.name);
+  let softResidual = false;
   if(bossCasting.interruptPolicy === 'soft' && mon && mon.hp > 0){
     const residual = buildInterruptedBossResidual(bossCasting);
     if(residual){
+      softResidual = true;
       applyMonsterSupportSkill(mon, residual, Date.now(), { announce:false });
       log('⚠️ 施法被打断，但仍留下了部分余波','bad');
       showMonsterFloat(mon,'⚠️余波','#fda4af',{variant:'boss',scale:1.04});
     }
   }
   const empowered = bossCasting._empowered;
+  trackInterruptResult(empowered?'perfect':(softResidual?'soft':'success'),{skillKey,skillName:(getCls()?.skills?.[skillKey]?.name)||(skillKey?'打断':'顺带打断'),bossName,castName:bossCasting.name,empowered,soft:softResidual});
   hideBossCastBar();
   bossCasting=null;
   // 打断蓄力大招的奖励:让 BOSS 露出破绽(硬直 + 破甲),AI 会自动抓窗口爆发
@@ -11975,9 +11979,22 @@ function doInterrupt(skillKey){
 /* ---------- 随从 ---------- */
 let lastCompAtk=0,lastCompSkill=0,compSkillIdx=0,lastCompRegen=0;
 /* ---------- 伤害统计(战斗日志下面的伤害条) ---------- */
-function defaultDmgStats(){return {hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,heroHeal:0,compHeal:0,heroHealMax:0,compHealMax:0,heroHealSkills:{},compHealSkills:{},lastHeroHealAmount:0,lastHeroHealAt:0,lastHeroHealSkill:'',lastCompHealAmount:0,lastCompHealAt:0,lastCompHealSkill:'',heroShield:0,compShield:0,heroShieldMax:0,compShieldMax:0,lastHeroShieldAmount:0,lastHeroShieldAt:0,lastHeroShieldSkill:'',lastCompShieldAmount:0,lastCompShieldAt:0,lastCompShieldSkill:'',kills:0,heroSkills:{},compSkills:{},taken:0,takenMax:0,takenHits:0,compTaken:0,compTakenMax:0,compTakenHits:0,takenSources:{},compTakenSources:{},killTs:0,killFast:0,killSlow:0,peakDps:0,lastTakenAmount:0,lastTakenAt:0,lastTakenSource:'',lastTakenSkill:'',lastTakenBoss:false,maxTakenSource:'',maxTakenSkill:'',lastCompTakenAmount:0,lastCompTakenAt:0,lastCompTakenSource:'',lastCompTakenSkill:'',lastCompTakenBoss:false,maxCompTakenSource:'',maxCompTakenSkill:''};}
+function defaultDmgStats(){return {hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,heroHeal:0,compHeal:0,heroHealMax:0,compHealMax:0,heroHealSkills:{},compHealSkills:{},lastHeroHealAmount:0,lastHeroHealAt:0,lastHeroHealSkill:'',lastCompHealAmount:0,lastCompHealAt:0,lastCompHealSkill:'',heroShield:0,compShield:0,heroShieldMax:0,compShieldMax:0,lastHeroShieldAmount:0,lastHeroShieldAt:0,lastHeroShieldSkill:'',lastCompShieldAmount:0,lastCompShieldAt:0,lastCompShieldSkill:'',kills:0,heroSkills:{},compSkills:{},taken:0,takenMax:0,takenHits:0,compTaken:0,compTakenMax:0,compTakenHits:0,takenSources:{},compTakenSources:{},killTs:0,killFast:0,killSlow:0,peakDps:0,lastTakenAmount:0,lastTakenAt:0,lastTakenSource:'',lastTakenSkill:'',lastTakenBoss:false,maxTakenSource:'',maxTakenSkill:'',lastCompTakenAmount:0,lastCompTakenAt:0,lastCompTakenSource:'',lastCompTakenSkill:'',lastCompTakenBoss:false,maxCompTakenSource:'',maxCompTakenSkill:'',interruptSuccesses:0,interruptFails:0,lastInterruptAt:0,lastInterruptResult:'',lastInterruptSkill:'',lastInterruptBoss:'',lastInterruptCast:'',lastInterruptEmpowered:false,lastInterruptSoft:false};}
 let dmgStats=defaultDmgStats();
 function takenSourceLabel(meta){const src=normalizeTrackedSkillLabel(meta?.source)||'敌人';const skill=normalizeTrackedSkillLabel(meta?.skill);return skill&&skill!==src?`${src}·${skill}`:src;}
+function trackInterruptResult(result,meta){
+  if(typeof dmgStats==='undefined'||!dmgStats)return;
+  const ok=result==='success'||result==='perfect'||result==='soft';
+  dmgStats.lastInterruptAt=Date.now();
+  dmgStats.lastInterruptResult=result||'miss';
+  dmgStats.lastInterruptSkill=normalizeTrackedSkillLabel(meta?.skillName)||'打断';
+  dmgStats.lastInterruptBoss=normalizeTrackedSkillLabel(meta?.bossName)||'BOSS';
+  dmgStats.lastInterruptCast=normalizeTrackedSkillLabel(meta?.castName)||'施法';
+  dmgStats.lastInterruptEmpowered=!!meta?.empowered;
+  dmgStats.lastInterruptSoft=!!meta?.soft;
+  if(ok)dmgStats.interruptSuccesses=(dmgStats.interruptSuccesses||0)+1;
+  else dmgStats.interruptFails=(dmgStats.interruptFails||0)+1;
+}
 function trackTaken(amt,meta){
   amt=Math.floor(amt||0);if(amt<=0)return;
   const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;dmgStats.taken=(dmgStats.taken||0)+amt;dmgStats.takenHits=(dmgStats.takenHits||0)+1;dmgStats.lastTakenAmount=amt;dmgStats.lastTakenAt=t;dmgStats.lastTakenSource=meta?.source||dmgStats.lastTakenSource||'敌人';dmgStats.lastTakenSkill=meta?.skill||'';dmgStats.lastTakenBoss=!!meta?.boss;const k=takenSourceLabel(meta);dmgStats.takenSources[k]=(dmgStats.takenSources[k]||0)+amt;if(amt>(dmgStats.takenMax||0)){dmgStats.takenMax=amt;dmgStats.maxTakenSource=dmgStats.lastTakenSource;dmgStats.maxTakenSkill=dmgStats.lastTakenSkill;}

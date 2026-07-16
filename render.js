@@ -446,6 +446,39 @@ function updateDmgBossCastReadout() {
   el.textContent = `${action} · ${icon}${name} · 对${target} · ${remain}s`;
   el.title = `首领读条: ${cast.bossName || 'BOSS'} 的 ${name}。目标: ${target}。威胁: ${threatMeta.label}。打断: ${interruptText}。剩余 ${remain} 秒。`;
 }
+function updateDmgLastInterrupt() {
+  const el = $('dm-last-interrupt');
+  if (!el) return;
+  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
+  if (!ds || !ds.lastInterruptAt) {
+    el.className = 'dm-last-interrupt idle';
+    el.textContent = '-';
+    el.removeAttribute('title');
+    return;
+  }
+  const ago = Math.max(0, Math.floor((Date.now() - ds.lastInterruptAt) / 1000));
+  if (ago > 14) {
+    el.className = 'dm-last-interrupt idle';
+    el.textContent = `近期无打断 · 成功${ds.interruptSuccesses || 0}/失败${ds.interruptFails || 0}`;
+    el.title = `本轮打断成功 ${ds.interruptSuccesses || 0} 次,失败 ${ds.interruptFails || 0} 次。`;
+    return;
+  }
+  const result = ds.lastInterruptResult || 'miss';
+  const map = {
+    perfect: ['perfect', '完美打断'],
+    success: ['success', '打断成功'],
+    soft: ['soft', '打断成功 · 有余波'],
+    immune: ['immune', '不可打断'],
+    miss: ['miss', '无读条']
+  };
+  const meta = map[result] || map.miss;
+  const skill = ds.lastInterruptSkill || '打断';
+  const cast = ds.lastInterruptCast || '施法';
+  const boss = ds.lastInterruptBoss || 'BOSS';
+  el.className = `dm-last-interrupt ${meta[0]}`;
+  el.textContent = `${meta[1]} · ${skill} → ${cast} · ${ago}s前`;
+  el.title = `最近打断: ${skill} 对 ${boss} 的 ${cast}。结果: ${meta[1]}。本轮成功 ${ds.interruptSuccesses || 0} 次,失败 ${ds.interruptFails || 0} 次。`;
+}
 
 /* 导航栏红点:远征储备满 / 公会今日有可做的捐献 */
 function updateNavBadges() {
@@ -1977,6 +2010,7 @@ function updateDmgMeter() {
   updateDmgRecentSkills();
   updateCombatReactionAdvice();
   updateDmgBossCastReadout();
+  updateDmgLastInterrupt();
 
   // 英雄条
   const heroBar = $('dm-hero-bar');
