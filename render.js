@@ -447,10 +447,12 @@ function updateDmgBossCastReadout() {
   el.title = `首领读条: ${cast.bossName || 'BOSS'} 的 ${name}。目标: ${target}。威胁: ${threatMeta.label}。打断: ${interruptText}。剩余 ${remain} 秒。`;
 }
 function updateDmgLastInterrupt() {
+  const row = $('dm-last-interrupt-row');
   const el = $('dm-last-interrupt');
   if (!el) return;
   const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
   if (!ds || !ds.lastInterruptAt) {
+    if (row) row.style.display = 'none';
     el.className = 'dm-last-interrupt idle';
     el.textContent = '-';
     el.removeAttribute('title');
@@ -458,6 +460,7 @@ function updateDmgLastInterrupt() {
   }
   const ago = Math.max(0, Math.floor((Date.now() - ds.lastInterruptAt) / 1000));
   if (ago > 14) {
+    if (row) row.style.display = 'none';
     el.className = 'dm-last-interrupt idle';
     el.textContent = `近期无打断 · 成功${ds.interruptSuccesses || 0}/失败${ds.interruptFails || 0}`;
     el.title = `本轮打断成功 ${ds.interruptSuccesses || 0} 次,失败 ${ds.interruptFails || 0} 次。`;
@@ -475,15 +478,18 @@ function updateDmgLastInterrupt() {
   const skill = ds.lastInterruptSkill || '打断';
   const cast = ds.lastInterruptCast || '施法';
   const boss = ds.lastInterruptBoss || 'BOSS';
+  if (row) row.style.display = '';
   el.className = `dm-last-interrupt ${meta[0]}`;
   el.textContent = `${meta[1]} · ${skill} → ${cast} · ${ago}s前`;
   el.title = `最近打断: ${skill} 对 ${boss} 的 ${cast}。结果: ${meta[1]}。本轮成功 ${ds.interruptSuccesses || 0} 次,失败 ${ds.interruptFails || 0} 次。`;
 }
 function updateDmgBossCastOutcome() {
+  const row = $('dm-boss-cast-outcome-row');
   const el = $('dm-boss-cast-outcome');
   if (!el) return;
   const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
   if (!ds || !ds.lastBossCastAt) {
+    if (row) row.style.display = 'none';
     el.className = 'dm-boss-cast-outcome idle';
     el.textContent = '-';
     el.removeAttribute('title');
@@ -493,6 +499,7 @@ function updateDmgBossCastOutcome() {
   if (ago > 16) {
     const hits = ds.bossCastHits || 0;
     const avg = hits > 0 ? Math.round((ds.bossCastTotalDamage || 0) / hits) : 0;
+    if (row) row.style.display = 'none';
     el.className = 'dm-boss-cast-outcome idle';
     el.textContent = hits ? `近期无结算 · ${hits}次/均${fmt(avg)}` : '-';
     el.title = hits ? `本轮首领读条结算 ${hits} 次,总伤害 ${fmt(ds.bossCastTotalDamage || 0)},平均 ${fmt(avg)}。` : '';
@@ -505,6 +512,7 @@ function updateDmgBossCastOutcome() {
   const name = ds.lastBossCastName || '首领技能';
   const target = ds.lastBossCastTarget || '目标';
   const kind = ds.lastBossCastKind === 'dot' ? '持续' : (ds.lastBossCastKind === 'aoe' ? '群体' : '单体');
+  if (row) row.style.display = '';
   el.className = `dm-boss-cast-outcome ${cls}`;
   el.textContent = `${kind}命中 · ${name} → ${target} · ${fmt(damage)} · ${ago}s前`;
   el.title = `最近首领读条结算: ${ds.lastBossCastBoss || 'BOSS'} 的 ${name},命中 ${target},造成 ${fmt(damage)} 点伤害。`;
