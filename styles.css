@@ -7320,6 +7320,13 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
 .skill-btn.vuln-burst-wait {
   border-color: rgba(250,204,21,.32);
 }
+.skill-btn.execute-hot:not(.on-cd) {
+  border-color: #fb7185 !important;
+  box-shadow: 0 0 0 1px rgba(251,113,133,.62), 0 0 16px rgba(251,113,133,.24);
+}
+.skill-btn.execute-wait {
+  border-color: rgba(251,113,133,.32);
+}
 .skill-btn.defensive-wait {
   border-color: rgba(96,165,250,.32);
 }
@@ -7365,6 +7372,12 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   border-color: rgba(253,230,138,.58);
   color: #fef3c7;
 }
+.skill-btn.execute-hot .sk-alert,
+.skill-btn.execute-wait .sk-alert {
+  background: #7f1d1d;
+  border-color: rgba(254,202,202,.60);
+  color: #fff1f2;
+}
 .skill-btn.boss-cast-prompt {
   overflow: visible;
 }
@@ -7376,6 +7389,11 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
 .skill-btn.vuln-window-recommended:not(.on-cd) {
   transform: translateY(-1px);
   outline: 1px solid rgba(250,204,21,.32);
+  outline-offset: 1px;
+}
+.skill-btn.execute-window-recommended:not(.on-cd) {
+  transform: translateY(-1px);
+  outline: 1px solid rgba(251,113,133,.34);
   outline-offset: 1px;
 }
 .skill-btn.boss-cast-recommended:not(.on-cd)::before {
@@ -7418,7 +7436,28 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   z-index: 6;
   box-shadow: 0 0 14px rgba(250,204,21,.42);
 }
-.skill-btn.vuln-window-prompt {
+.skill-btn.execute-window-recommended:not(.on-cd)::before {
+  content: '斩';
+  position: absolute;
+  top: -8px;
+  left: -6px;
+  width: 17px;
+  height: 17px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(254,202,202,.78);
+  background: radial-gradient(circle at 35% 30%, #fff1f2, #fb7185 58%, #7f1d1d);
+  color: #250007;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 6;
+  box-shadow: 0 0 14px rgba(251,113,133,.44);
+}
+.skill-btn.vuln-window-prompt,
+.skill-btn.execute-window-prompt {
   overflow: visible;
 }
 .skill-btn .boss-cast-timer,
@@ -7451,6 +7490,10 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   background: linear-gradient(90deg, rgba(254,243,199,.95), rgba(250,204,21,.95));
   box-shadow: 0 0 8px rgba(250,204,21,.24);
 }
+.skill-btn.execute-window-prompt .skill-window-timer::before {
+  background: linear-gradient(90deg, rgba(254,202,202,.95), rgba(251,113,133,.95));
+  box-shadow: 0 0 8px rgba(251,113,133,.26);
+}
 .skill-btn.interrupt-soft .boss-cast-timer::before {
   background: linear-gradient(90deg, rgba(253,230,138,.95), rgba(251,191,36,.95));
   box-shadow: 0 0 8px rgba(251,191,36,.22);
@@ -7468,6 +7511,9 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   animation: bossCastButtonTimerPulse .52s ease-in-out infinite;
 }
 .skill-btn.vuln-window-final:not(.on-cd) .skill-window-timer {
+  animation: bossCastButtonTimerPulse .52s ease-in-out infinite;
+}
+.skill-btn.execute-window-final:not(.on-cd) .skill-window-timer {
   animation: bossCastButtonTimerPulse .52s ease-in-out infinite;
 }
 @keyframes interruptPulse {
@@ -7491,6 +7537,8 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   .skill-btn.vuln-window-final:not(.on-cd) .skill-window-timer { animation: none; }
   .skill-btn.boss-cast-recommended:not(.on-cd) { transform: none; }
   .skill-btn.vuln-window-recommended:not(.on-cd) { transform: none; }
+  .skill-btn.execute-window-final:not(.on-cd) .skill-window-timer { animation: none; }
+  .skill-btn.execute-window-recommended:not(.on-cd) { transform: none; }
 }
 @keyframes skillReadyFlash {
   0% { filter: brightness(1); }

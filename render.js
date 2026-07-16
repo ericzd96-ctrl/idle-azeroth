@@ -4108,6 +4108,80 @@ function vulnerabilitySkillPrompt(skillKey, sk, now, cdMs) {
     : `${target} 处于破绽窗口,但该技能${cdMs > 0 ? '还在冷却' : '资源不足'}。窗口剩余 ${(win.left / 1000).toFixed(1)} 秒。`;
   return { label, cls, tip, final:win.left <= 900, recommended, timerPct:win.pct };
 }
+function executeWindowState() {
+  const mon = state?.currentMonsters?.find(m => m && m.hp > 0);
+  if (!mon || !(mon.hpMax > 0)) return null;
+  const pct = Math.max(0, mon.hp / mon.hpMax);
+  const threshold = mon.isBoss || mon.isWorldBoss ? 0.4 : 0.35;
+  if (pct > threshold) return null;
+  return {
+    mon,
+    pct,
+    threshold,
+    urgency:Math.max(0, Math.min(100, (threshold - pct) / Math.max(0.01, threshold) * 100))
+  };
+}
+function executeSkillIsFinisher(skillKey, sk) {
+  if (!sk || sk.type !== 'dmg') return false;
+  const text = `${skillKey || ''} ${sk.name || ''} ${sk.desc || ''}`;
+  return sk.consumeRage || sk.executeBonus || sk.ai?.priorityTag === 'execute' || sk.ai?.useIfTargetHpBelow || /斩杀|处决|终结|收割|灭杀|杀戮射击|暗言术·灭|死亡标记|终极审判|湮灭|喉切/.test(text);
+}
+function executeSkillScore(skillKey, sk) {
+  if (!sk) return 0;
+  const text = `${skillKey || ''} ${sk.name || ''} ${sk.desc || ''}`;
+  return (sk.mul || 1) * 100
+    + (sk.executeBonus || 0) * 3
+    + (sk.consumeRage ? 110 : 0)
+    + (sk.alwaysCrit ? 42 : 0)
+    + ((sk.ai?.priorityTag === 'execute') ? 95 : 0)
+    + ((sk.ai?.useIfTargetHpBelow || 0) > 0 ? 55 : 0)
+    + (/斩杀|处决|灭杀|湮灭|喉切/.test(text) ? 70 : 0)
+    + (/终结|收割|杀戮射击|暗言术·灭|死亡标记|终极审判/.test(text) ? 50 : 0);
+}
+function executeSkillThreshold(sk, win) {
+  if (sk?.executeThreshold) return sk.executeThreshold;
+  if (sk?.ai?.useIfTargetHpBelow) return sk.ai.useIfTargetHpBelow;
+  if (sk?.executeBonus) return 0.35;
+  return win?.threshold || 0.35;
+}
+function executeRecommendedSkillKey(now) {
+  const win = executeWindowState();
+  if (!win) return '';
+  const c = getCls();
+  let bestKey = '', bestScore = -Infinity;
+  for (const key of (state.selectedSkills || [])) {
+    const sk = c?.skills?.[key];
+    if (!executeSkillIsFinisher(key, sk)) continue;
+    if (win.pct > executeSkillThreshold(sk, win)) continue;
+    const cdMs = Math.max(0, (state.skillCooldowns?.[key] || 0) - now);
+    const cost = skillUiCost(key, sk, c);
+    if (cdMs > 0 || (state.resource || 0) < cost) continue;
+    const score = executeSkillScore(key, sk);
+    if (score > bestScore) {
+      bestScore = score;
+      bestKey = key;
+    }
+  }
+  return bestKey;
+}
+function executeSkillPrompt(skillKey, sk, now, cdMs) {
+  if (!executeSkillIsFinisher(skillKey, sk)) return null;
+  const win = executeWindowState();
+  if (!win) return null;
+  const threshold = executeSkillThreshold(sk, win);
+  if (win.pct > threshold) return null;
+  const cost = skillUiCost(skillKey, sk);
+  const ready = (cdMs || 0) <= 0 && (state.resource || 0) >= cost;
+  const recommended = ready && executeRecommendedSkillKey(now) === skillKey;
+  const target = win.mon.bossName || win.mon.name || '目标';
+  const hpText = Math.max(1, Math.round(win.pct * 100));
+  const label = ready ? '斩杀' : (cdMs > 0 ? `${Math.ceil(cdMs / 1000)}秒` : '缺资源');
+  const cls = ready ? 'execute-hot' : 'execute-wait';
+  const tip = ready
+    ? `${target} 生命约 ${hpText}%,${recommended ? '推荐用这个收尾技能。' : '可以交斩杀/终结技能。'}`
+    : `${target} 已进入斩杀窗口,但该技能${cdMs > 0 ? '还在冷却' : '资源不足'}。`;
+  return { label, cls, tip, final:win.pct <= 0.18, recommended, timerPct:win.urgency };
+}
 
 function updateBossIntentLine(now) {
   const el = $('boss-intent-line');
@@ -4285,7 +4359,8 @@ function renderSkillBar() {
     const useStateClass = onCd ? '' : (hasMp ? 'action-ready' : 'resource-starved');
     const bossPrompt = bossCastSkillPrompt(key, sk, now, cdMs);
     const vulnPrompt = bossPrompt ? null : vulnerabilitySkillPrompt(key, sk, now, cdMs);
-    const actionPrompt = bossPrompt || vulnPrompt;
+    const executePrompt = (bossPrompt || vulnPrompt) ? null : executeSkillPrompt(key, sk, now, cdMs);
+    const actionPrompt = bossPrompt || vulnPrompt || executePrompt;
     const proc = (typeof currentSpecProcSystem === 'function') ? currentSpecProcSystem() : null;
     const activeProc = proc && state.skillRuntime && state.skillRuntime.specProc && state.skillRuntime.specProc.key === proc.key && (!state.skillRuntime.specProc.expire || state.skillRuntime.specProc.expire > now);
     const procText = `${key} ${sk.name || ''} ${sk.desc || ''} ${sk.type || ''}`;
@@ -4334,7 +4409,7 @@ function renderSkillBar() {
     const runeDesc = runeTip ? `\n符文铭刻: ${runeTip}` : '';
     const costText = useCost !== Math.max(0, sk.mp || 0) ? `${useCost}(基础${sk.mp || 0})` : `${sk.mp || 0}`;
     const baseTip = `${sk.name} · ${baseDesc}${detailDesc}${procDesc}${coreDesc}${engineDesc}${elementDesc}${echoDesc}${markDesc}${weaveDesc}${rhythmDesc}${controlDesc}${weaknessDesc}${prepDesc}${overloadDesc}${resourceDesc}${harvestDesc}${pactDesc}${fieldDesc}${chargeDesc}${runeDesc}\n${c.resource} ${costText} · 冷却 ${getSkillCd(sk)}秒`;
-    const tip = `${baseTip}${bossPrompt ? `\nBoss读条: ${bossPrompt.tip}` : ''}${vulnPrompt ? `\n破绽窗口: ${vulnPrompt.tip}` : ''}`.replace(/"/g, '&quot;');
+    const tip = `${baseTip}${bossPrompt ? `\nBoss读条: ${bossPrompt.tip}` : ''}${vulnPrompt ? `\n破绽窗口: ${vulnPrompt.tip}` : ''}${executePrompt ? `\n斩杀窗口: ${executePrompt.tip}` : ''}`.replace(/"/g, '&quot;');
     const baseTipAttr = baseTip.replace(/"/g, '&quot;');
     const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, sk.icon) : sk.icon;
     const roleTag = skillButtonRoleTag(key, sk);
@@ -4342,15 +4417,18 @@ function renderSkillBar() {
     const recommendClass = bossPrompt?.recommended ? 'boss-cast-recommended' : '';
     const vulnPromptClass = vulnPrompt ? `vuln-window-prompt ${vulnPrompt.cls || ''} ${vulnPrompt.final ? 'vuln-window-final' : ''}` : '';
     const vulnRecommendClass = vulnPrompt?.recommended ? 'vuln-window-recommended' : '';
-    return `<button class="skill-btn skill-role-${roleTag.cls} ${onCd?'on-cd':''} ${useStateClass} ${bossPromptClass} ${recommendClass} ${vulnPromptClass} ${vulnRecommendClass}" data-skill="${key}" data-cd-active="${onCd?'1':'0'}" data-resource-ready="${hasMp?'1':'0'}" data-cd-total="${cdTotalMs}" draggable="true" title="${tip}" data-base-title="${baseTipAttr}"
-      style="--cd-angle:${cdAngle}deg;${bossPrompt ? `--boss-cast-pct:${Math.round(bossPrompt.timerPct || 0)}%;` : ''}${vulnPrompt ? `--skill-window-pct:${Math.round(vulnPrompt.timerPct || 0)}%;` : ''}${coreMatch&&!onCd?'border-color:#38bdf8;box-shadow:0 0 0 1px rgba(56,189,248,.50),0 0 14px rgba(56,189,248,.18)':(procMatch&&!onCd?'border-color:#facc15;box-shadow:0 0 0 1px rgba(250,204,21,.45)':(!onCd&&hasMp?'border-color:var(--accent)':''))}">
+    const executePromptClass = executePrompt ? `execute-window-prompt ${executePrompt.cls || ''} ${executePrompt.final ? 'execute-window-final' : ''}` : '';
+    const executeRecommendClass = executePrompt?.recommended ? 'execute-window-recommended' : '';
+    const skillWindowPrompt = vulnPrompt || executePrompt;
+    return `<button class="skill-btn skill-role-${roleTag.cls} ${onCd?'on-cd':''} ${useStateClass} ${bossPromptClass} ${recommendClass} ${vulnPromptClass} ${vulnRecommendClass} ${executePromptClass} ${executeRecommendClass}" data-skill="${key}" data-cd-active="${onCd?'1':'0'}" data-resource-ready="${hasMp?'1':'0'}" data-cd-total="${cdTotalMs}" draggable="true" title="${tip}" data-base-title="${baseTipAttr}"
+      style="--cd-angle:${cdAngle}deg;${bossPrompt ? `--boss-cast-pct:${Math.round(bossPrompt.timerPct || 0)}%;` : ''}${skillWindowPrompt ? `--skill-window-pct:${Math.round(skillWindowPrompt.timerPct || 0)}%;` : ''}${coreMatch&&!onCd?'border-color:#38bdf8;box-shadow:0 0 0 1px rgba(56,189,248,.50),0 0 14px rgba(56,189,248,.18)':(procMatch&&!onCd?'border-color:#facc15;box-shadow:0 0 0 1px rgba(250,204,21,.45)':(!onCd&&hasMp?'border-color:var(--accent)':''))}">
       <span class="sk-name">${skillIconHtml} ${sk.name}</span>
       <span class="sk-role ${roleTag.cls}" title="${roleTag.title}">${roleTag.label}</span>
       <span class="mp-cost">${coreMatch?'✹ ':(procMatch?'✦ ':'')}${useCost}${c.resKey==='rage'?'怒':c.resKey==='energy'?'能':'蓝'}</span>
       ${onCd?`<div class="cd-overlay" style="--cd-angle:${cdAngle}deg">${(cdMs/1000).toFixed(1)}秒</div>`:''}
       ${actionPrompt ? `<span class="sk-alert">${actionPrompt.label}</span>` : ''}
       ${bossPrompt ? '<span class="boss-cast-timer"></span>' : ''}
-      ${vulnPrompt ? '<span class="skill-window-timer"></span>' : ''}
+      ${skillWindowPrompt ? '<span class="skill-window-timer"></span>' : ''}
     </button>`;
   }).join('');
 }
@@ -4405,7 +4483,8 @@ function updateSkillBarCd() {
     }
     const bossPrompt = sk ? bossCastSkillPrompt(key, sk, now, cdMs) : null;
     const vulnPrompt = (!bossPrompt && sk) ? vulnerabilitySkillPrompt(key, sk, now, cdMs) : null;
-    const prompt = bossPrompt || vulnPrompt;
+    const executePrompt = (!bossPrompt && !vulnPrompt && sk) ? executeSkillPrompt(key, sk, now, cdMs) : null;
+    const prompt = bossPrompt || vulnPrompt || executePrompt;
     btn.classList.toggle('interrupt-hot', bossPrompt?.cls === 'interrupt-hot');
     btn.classList.toggle('interrupt-soft', bossPrompt?.cls === 'interrupt-soft');
     btn.classList.toggle('interrupt-wait', bossPrompt?.cls === 'interrupt-wait');
@@ -4420,8 +4499,13 @@ function updateSkillBarCd() {
     btn.classList.toggle('vuln-window-recommended', !!vulnPrompt?.recommended);
     btn.classList.toggle('vuln-burst-hot', vulnPrompt?.cls === 'vuln-burst-hot');
     btn.classList.toggle('vuln-burst-wait', vulnPrompt?.cls === 'vuln-burst-wait');
+    btn.classList.toggle('execute-window-prompt', !!executePrompt);
+    btn.classList.toggle('execute-window-final', !!executePrompt?.final);
+    btn.classList.toggle('execute-window-recommended', !!executePrompt?.recommended);
+    btn.classList.toggle('execute-hot', executePrompt?.cls === 'execute-hot');
+    btn.classList.toggle('execute-wait', executePrompt?.cls === 'execute-wait');
     btn.style.setProperty('--boss-cast-pct', bossPrompt ? `${Math.round(bossPrompt.timerPct || 0)}%` : '0%');
-    btn.style.setProperty('--skill-window-pct', vulnPrompt ? `${Math.round(vulnPrompt.timerPct || 0)}%` : '0%');
+    btn.style.setProperty('--skill-window-pct', (vulnPrompt || executePrompt) ? `${Math.round((vulnPrompt || executePrompt).timerPct || 0)}%` : '0%');
     let badge = btn.querySelector('.sk-alert');
     if(prompt){
       if(!badge){
@@ -4444,7 +4528,7 @@ function updateSkillBarCd() {
       timer.remove();
     }
     let winTimer = btn.querySelector('.skill-window-timer');
-    if(vulnPrompt){
+    if(vulnPrompt || executePrompt){
       if(!winTimer){
         winTimer = document.createElement('span');
         winTimer.className = 'skill-window-timer';
@@ -4454,7 +4538,9 @@ function updateSkillBarCd() {
       winTimer.remove();
     }
     const baseTitle = btn.dataset.baseTitle || btn.title || '';
-    const nextTitle = bossPrompt ? `${baseTitle}\nBoss读条: ${bossPrompt.tip}` : (vulnPrompt ? `${baseTitle}\n破绽窗口: ${vulnPrompt.tip}` : baseTitle);
+    const nextTitle = bossPrompt
+      ? `${baseTitle}\nBoss读条: ${bossPrompt.tip}`
+      : (vulnPrompt ? `${baseTitle}\n破绽窗口: ${vulnPrompt.tip}` : (executePrompt ? `${baseTitle}\n斩杀窗口: ${executePrompt.tip}` : baseTitle));
     if(btn.title !== nextTitle) btn.title = nextTitle;
   });
 }
