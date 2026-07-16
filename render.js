@@ -2297,7 +2297,7 @@ function renderMonList() {
       return `<div class="mon-row${isFocus?' focus':''}${isDead?' dead':''}${summonCls}" data-uid="${m._uid}">
         <div class="m-emoji"${isFocus?' id="mon-emoji"':''}>${monIconHtml}</div>
         <div class="m-mid">
-          <div class="m-name"${isFocus?' id="mon-name"':''}>${nm}<span class="m-lvl">等级${m.lvl}</span><span class="m-debuffs"></span></div>
+          <div class="m-name"${isFocus?' id="mon-name"':''}>${nm}<span class="m-lvl">等级${m.lvl}</span><span class="m-debuffs"></span><span class="m-execute"></span></div>
           ${summonLine}
           <div class="m-target"></div>
           <div class="bar hp"><i${isFocus?' id="b-mhp"':''}></i><span${isFocus?' id="t-mhp"':''}></span></div>
@@ -2333,7 +2333,16 @@ function renderMonList() {
     const isFocusRow = m === focus;
     if (!isFocusRow && skipNonFocus) continue;
     const isDead = m.hp <= 0;
+    const hpFrac = (!isDead && m.hpMax > 0) ? Math.max(0, Math.min(1, m.hp / m.hpMax)) : 0;
+    const isBossLike = !!(m.isBoss || m.isWorldBoss || m._isRaid || m._isEpicRaid);
+    const isEliteLike = isBossLike || !!(m.isRareElite || m._fieldCommander);
+    const executeActive = hpFrac > 0 && hpFrac <= 0.20;
     row.classList.toggle('dead', isDead);
+    row.classList.toggle('low-hp', hpFrac > 0 && hpFrac <= 0.35);
+    row.classList.toggle('critical-hp', hpFrac > 0 && hpFrac <= 0.12);
+    row.classList.toggle('execute-window', executeActive);
+    row.classList.toggle('execute-boss', executeActive && isBossLike);
+    row.classList.toggle('execute-elite', executeActive && isEliteLike && !isBossLike);
 
     const fill = row.querySelector('.bar > i'); const txt = row.querySelector('.bar > span');
     if (fill) {
@@ -2347,22 +2356,33 @@ function renderMonList() {
       const hpText = isDead ? '已击败' : hpWithShieldText(m.hp, m.hpMax, Math.max(0, m._arcaneShield || 0));
       if (txt.textContent !== hpText) txt.textContent = hpText;
     }
+    const executeEl = row.querySelector('.m-execute');
+    if (executeEl) {
+      const executeText = executeActive ? (isBossLike ? '首领斩杀' : '斩杀') : '';
+      if (executeEl.textContent !== executeText) executeEl.textContent = executeText;
+      executeEl.title = executeActive
+        ? (isBossLike ? '首领进入斩杀窗口:优先使用收尾技能。' : '目标进入斩杀窗口:优先使用收尾技能。')
+        : '';
+    }
     const targetEl = row.querySelector('.m-target');
     if(targetEl){
       const recentTarget = (m._lastTargetAt || 0) > now - 3500;
       const targetKind = recentTarget ? (m._lastTargetKind || 'hero') : '';
-      row.title = isDead ? '已击败' : (isFocusRow ? '当前攻击目标;点击其他敌人可切换集火' : '点击切换为攻击目标');
+      const executeTitle = executeActive ? (isBossLike ? '首领已进入斩杀窗口。' : '目标已进入斩杀窗口。') : '';
+      row.title = isDead ? '已击败' : [isFocusRow ? '当前攻击目标;点击其他敌人可切换集火' : '点击切换为攻击目标', executeTitle].filter(Boolean).join('\n');
       const wildText = m._wildHpMult ? `野外耐久 ×${Number(m._wildHpMult || 1).toFixed(2)}` : '';
       const challengeText = m._companionChallengeName ? `${m._companionChallengeName} ${m._companionChallengeRank || ''}` : '';
       const focusText = isFocusRow && !isDead ? '当前目标' : '';
-      const idleText = [focusText, challengeText, wildText].filter(Boolean).join(' · ');
+      const executeText = executeActive ? (isBossLike ? '💀 首领斩杀' : '💀 斩杀') : '';
+      const idleText = [focusText, executeText, challengeText, wildText].filter(Boolean).join(' · ');
       const targetIcon = targetKind === 'companion' ? '🛡️' : targetKind === 'summon' ? '✦' : '🎯';
       const targetName = m._lastTargetName || (targetKind === 'companion' ? '随从' : targetKind === 'summon' ? '召唤物' : '主角');
-      const targetText = recentTarget ? `${isFocusRow ? '⚔️ 集火 · ' : ''}${targetIcon} 盯 ${targetName}` : idleText;
+      const targetText = recentTarget ? `${isFocusRow ? '⚔️ 集火 · ' : ''}${targetIcon} 盯 ${targetName}${executeActive ? ' · 斩杀' : ''}` : idleText;
       row.classList.toggle('target-hero', recentTarget && targetKind === 'hero');
       row.classList.toggle('target-companion', recentTarget && targetKind === 'companion');
       row.classList.toggle('target-summon', recentTarget && targetKind === 'summon');
       targetEl.classList.toggle('has-target', recentTarget);
+      targetEl.classList.toggle('is-execute', executeActive);
       targetEl.classList.toggle('is-hero', recentTarget && targetKind === 'hero');
       targetEl.classList.toggle('is-companion', recentTarget && targetKind === 'companion');
       targetEl.classList.toggle('is-summon', recentTarget && targetKind === 'summon');

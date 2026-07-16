@@ -629,6 +629,24 @@ h1 {
   border-color: rgba(248,113,113,.9);
   box-shadow: inset 0 0 0 1px rgba(248,113,113,.55), 0 0 14px rgba(239,68,68,.16);
 }
+.mon-row.execute-window:not(.dead) {
+  border-color: rgba(251, 191, 36, .70);
+  background:
+    linear-gradient(90deg, rgba(127,29,29,.30), rgba(15,23,42,.84) 34%, var(--panel-2));
+  box-shadow: inset 0 0 0 1px rgba(251,191,36,.14), 0 0 15px rgba(239,68,68,.14);
+}
+.mon-row.execute-window.focus:not(.dead) {
+  box-shadow: inset 0 0 0 1px var(--legend), inset 3px 0 0 rgba(251,191,36,.72), 0 0 18px rgba(239,68,68,.18);
+}
+.mon-row.execute-boss:not(.dead) {
+  border-color: rgba(254, 226, 226, .86);
+  background:
+    linear-gradient(90deg, rgba(153,27,27,.46), rgba(69,26,3,.28) 42%, rgba(15,23,42,.82));
+  box-shadow: inset 0 0 0 1px rgba(253,186,116,.22), 0 0 20px rgba(220,38,38,.22);
+}
+.mon-row.execute-window .bar.hp > i {
+  background: linear-gradient(90deg, #991b1b, #ef4444 54%, #fbbf24);
+}
 .mon-row.mon-placeholder { opacity: .18; pointer-events: none; }
 .mon-row .m-emoji {
   font-size: 28px; line-height: 1; user-select: none; flex: 0 0 auto;
@@ -649,6 +667,29 @@ h1 {
 .mon-row .m-name .m-lvl { color: var(--muted); font-weight: normal; font-size: 10px; margin-left: 4px; }
 .mon-row .m-sub { font-size: 10px; color: #94a3b8; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mon-row.summoned.boss-add .m-sub { color: #c084fc; }
+.mon-row .m-execute {
+  display: none;
+  margin-left: 5px;
+  padding: 1px 5px;
+  border: 1px solid rgba(251,191,36,.46);
+  border-radius: 4px;
+  background: rgba(127,29,29,.42);
+  color: #fde68a;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.2;
+  vertical-align: 1px;
+  text-shadow: 0 1px 4px rgba(0,0,0,.86);
+}
+.mon-row.execute-window .m-execute {
+  display: inline-flex;
+}
+.mon-row.execute-boss .m-execute {
+  border-color: rgba(254,226,226,.70);
+  background: rgba(127,29,29,.62);
+  color: #fff7ed;
+  box-shadow: 0 0 10px rgba(239,68,68,.22);
+}
 .mon-row .m-target {
   display: inline-flex;
   align-items: center;
@@ -687,6 +728,11 @@ h1 {
   color: #ddd6fe;
   border-color: rgba(192,132,252,.34);
   background: rgba(88,28,135,.18);
+}
+.mon-row .m-target.is-execute {
+  color: #fde68a;
+  border-color: rgba(251,191,36,.26);
+  background: rgba(127,29,29,.22);
 }
 @keyframes monTargetPulse {
   0% { filter: brightness(1.45); transform: translateY(0); }
