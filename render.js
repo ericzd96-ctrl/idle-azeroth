@@ -346,6 +346,30 @@ function updateDmgLastHeal() {
   el.textContent = text;
   el.title = `最近治疗: ${targetText} 在${agoText}恢复 ${fmt(amount)} 点生命。${skill ? '来源: ' + skill + '。' : ''}`;
 }
+function updateDmgLastShield() {
+  const el = $('dm-last-shield');
+  if (!el) return;
+  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
+  if (!ds || (!ds.lastHeroShieldAt && !ds.lastCompShieldAt)) {
+    el.className = 'dm-last-shield idle';
+    el.textContent = '-';
+    el.removeAttribute('title');
+    return;
+  }
+  const heroAt = ds.lastHeroShieldAt || 0;
+  const compAt = ds.lastCompShieldAt || 0;
+  const source = compAt > heroAt ? '随从' : '主角';
+  const amount = source === '随从' ? (ds.lastCompShieldAmount || 0) : (ds.lastHeroShieldAmount || 0);
+  const at = source === '随从' ? compAt : heroAt;
+  const skill = source === '随从' ? (ds.lastCompShieldSkill || '') : (ds.lastHeroShieldSkill || '');
+  const ago = at ? Math.max(0, Math.floor((Date.now() - at) / 1000)) : 0;
+  const agoText = ago < 60 ? `${ago}秒前` : `${Math.floor(ago / 60)}分钟前`;
+  const label = source === '随从' ? '随从护盾' : '主角护盾';
+  const text = `${label} +${fmt(amount)}${skill ? ' · ' + skill : ''}`;
+  el.className = `dm-last-shield ${source === '随从' ? 'companion' : 'hero'}`;
+  el.textContent = text;
+  el.title = `最近护盾: ${label} 在${agoText}获得 ${fmt(amount)} 点护盾。${skill ? '来源: ' + skill + '。' : ''}`;
+}
 
 /* 导航栏红点:远征储备满 / 公会今日有可做的捐献 */
 function updateNavBadges() {
@@ -1935,6 +1959,7 @@ function updateDmgMeter() {
     }
   }
   updateDmgLastHeal();
+  updateDmgLastShield();
 
   // 暴击率
   const critEl = $('dm-crit-rate');

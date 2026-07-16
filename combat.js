@@ -1161,6 +1161,7 @@ function addTalentShield(amount, quiet, durationMs){
   const maxHp = Math.max(1, state.hero?.hpMax || 1);
   rt.shield += amount;
   rt.shieldExpire = Math.max(rt.shieldExpire || 0, Date.now() + (durationMs || 10000));   // 护盾有持续时间, 到期自动消失(不再每波清盾)
+  trackShield('hero', amount, '护盾');
   if(!quiet) showFloat($('hero-emoji'), '🛡️+' + amount, '#93c5fd', { variant:'shield', scale:1.04 });
   if(typeof pulseCombatEl === 'function') pulseCombatEl($('hero-emoji'), 'shield', 260);
   showGuardianTriggerFx($('hero-emoji'), 'shield', amount, {
@@ -9879,6 +9880,7 @@ function addCompanionBarrier(amount, icon, color){
   const compStats = computeCompanionStats();
   const maxHp = Math.max(1, compStats?.hpMax || state.hero?.hpMax || 1);
   state._compBarrier = (state._compBarrier || 0) + amount;
+  trackShield('comp', amount, icon || '护盾');
   showFloat($('comp-mini'), (icon || '🛡️') + '+' + amount, color || '#93c5fd', { variant:'shield', scale:1.04 });
   if(typeof pulseCombatEl === 'function') pulseCombatEl($('comp-mini'), 'shield', 260);
   showGuardianTriggerFx($('comp-mini'), 'shield', amount, {
@@ -11973,7 +11975,7 @@ function doInterrupt(skillKey){
 /* ---------- 随从 ---------- */
 let lastCompAtk=0,lastCompSkill=0,compSkillIdx=0,lastCompRegen=0;
 /* ---------- 伤害统计(战斗日志下面的伤害条) ---------- */
-function defaultDmgStats(){return {hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,heroHeal:0,compHeal:0,heroHealMax:0,compHealMax:0,heroHealSkills:{},compHealSkills:{},lastHeroHealAmount:0,lastHeroHealAt:0,lastHeroHealSkill:'',lastCompHealAmount:0,lastCompHealAt:0,lastCompHealSkill:'',kills:0,heroSkills:{},compSkills:{},taken:0,takenMax:0,takenHits:0,compTaken:0,compTakenMax:0,compTakenHits:0,takenSources:{},compTakenSources:{},killTs:0,killFast:0,killSlow:0,peakDps:0,lastTakenAmount:0,lastTakenAt:0,lastTakenSource:'',lastTakenSkill:'',lastTakenBoss:false,maxTakenSource:'',maxTakenSkill:'',lastCompTakenAmount:0,lastCompTakenAt:0,lastCompTakenSource:'',lastCompTakenSkill:'',lastCompTakenBoss:false,maxCompTakenSource:'',maxCompTakenSkill:''};}
+function defaultDmgStats(){return {hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,heroHeal:0,compHeal:0,heroHealMax:0,compHealMax:0,heroHealSkills:{},compHealSkills:{},lastHeroHealAmount:0,lastHeroHealAt:0,lastHeroHealSkill:'',lastCompHealAmount:0,lastCompHealAt:0,lastCompHealSkill:'',heroShield:0,compShield:0,heroShieldMax:0,compShieldMax:0,lastHeroShieldAmount:0,lastHeroShieldAt:0,lastHeroShieldSkill:'',lastCompShieldAmount:0,lastCompShieldAt:0,lastCompShieldSkill:'',kills:0,heroSkills:{},compSkills:{},taken:0,takenMax:0,takenHits:0,compTaken:0,compTakenMax:0,compTakenHits:0,takenSources:{},compTakenSources:{},killTs:0,killFast:0,killSlow:0,peakDps:0,lastTakenAmount:0,lastTakenAt:0,lastTakenSource:'',lastTakenSkill:'',lastTakenBoss:false,maxTakenSource:'',maxTakenSkill:'',lastCompTakenAmount:0,lastCompTakenAt:0,lastCompTakenSource:'',lastCompTakenSkill:'',lastCompTakenBoss:false,maxCompTakenSource:'',maxCompTakenSkill:''};}
 let dmgStats=defaultDmgStats();
 function takenSourceLabel(meta){const src=normalizeTrackedSkillLabel(meta?.source)||'敌人';const skill=normalizeTrackedSkillLabel(meta?.skill);return skill&&skill!==src?`${src}·${skill}`:src;}
 function trackTaken(amt,meta){
@@ -12110,6 +12112,7 @@ function killStreakToast(n){
 }
 function trackDmg(src,amt,isCrit,skillLabel){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;dmgStats[src]=(dmgStats[src]||0)+amt;const maxKey=src==='hero'?'heroMax':'compMax';const prevMax=dmgStats[maxKey]||0;if(amt>dmgStats[maxKey])dmgStats[maxKey]=amt;const hitKey=src==='hero'?'heroHits':'compHits';dmgStats[hitKey]=(dmgStats[hitKey]||0)+1;const cleanLabel=normalizeTrackedSkillLabel(skillLabel);if(isCrit){const critKey=src==='hero'?'heroCrits':'compCrits';dmgStats[critKey]=(dmgStats[critKey]||0)+1;if(src==='hero'){stageShakeFx();stageFlashFx('crit');}if(amt<=prevMax)combatCueToast(src==='hero'?'暴击':'随从暴击',(cleanLabel?cleanLabel+' · ':'')+fmt(amt),'crit');}if(amt>prevMax&&prevMax>0)combatCueToast(src==='hero'?'爆发一击':'随从爆发',(cleanLabel?cleanLabel+' · ':'')+fmt(amt),isCrit?'crit':'hit');if(cleanLabel){const skKey=src==='hero'?'heroSkills':'compSkills';dmgStats[skKey][cleanLabel]=(dmgStats[skKey][cleanLabel]||0)+amt;}}
 function trackHeal(src,amt,skillLabel){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;const isHero=src==='hero';const totalKey=isHero?'heroHeal':'compHeal';const maxKey=isHero?'heroHealMax':'compHealMax';const skKey=isHero?'heroHealSkills':'compHealSkills';dmgStats[totalKey]=(dmgStats[totalKey]||0)+amt;if(amt>(dmgStats[maxKey]||0))dmgStats[maxKey]=amt;const cleanLabel=normalizeTrackedSkillLabel(skillLabel);if(isHero){dmgStats.lastHeroHealAmount=amt;dmgStats.lastHeroHealAt=t;dmgStats.lastHeroHealSkill=cleanLabel||'';}else{dmgStats.lastCompHealAmount=amt;dmgStats.lastCompHealAt=t;dmgStats.lastCompHealSkill=cleanLabel||'';}if(cleanLabel)dmgStats[skKey][cleanLabel]=(dmgStats[skKey][cleanLabel]||0)+amt;}
+function trackShield(src,amt,skillLabel){amt=Math.floor(amt||0);if(amt<=0)return;const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;const isHero=src==='hero';const totalKey=isHero?'heroShield':'compShield';const maxKey=isHero?'heroShieldMax':'compShieldMax';dmgStats[totalKey]=(dmgStats[totalKey]||0)+amt;if(amt>(dmgStats[maxKey]||0))dmgStats[maxKey]=amt;const cleanLabel=normalizeTrackedSkillLabel(skillLabel);if(isHero){dmgStats.lastHeroShieldAmount=amt;dmgStats.lastHeroShieldAt=t;dmgStats.lastHeroShieldSkill=cleanLabel||'';}else{dmgStats.lastCompShieldAmount=amt;dmgStats.lastCompShieldAt=t;dmgStats.lastCompShieldSkill=cleanLabel||'';}}
 function trackKill(){const now=Date.now();if(dmgStats.killTs){const dt=(now-dmgStats.killTs)/1000;if(dt>0&&dt<600){if(!dmgStats.killFast||dt<dmgStats.killFast)dmgStats.killFast=dt;if(dt>(dmgStats.killSlow||0))dmgStats.killSlow=dt;}}dmgStats.killTs=now;dmgStats.kills=(dmgStats.kills||0)+1;killStreak++;if(killStreak>=5&&killStreak%5===0)killStreakToast(killStreak);}
 function resetDmgStats(){dmgStats=defaultDmgStats();if(typeof killStreak==='number')killStreak=0;if(typeof markDirty==='function')markDirty('stage');}
 let compSkillCd={};   // 随从每个技能的独立冷却就绪时间戳(键=技能下标;_owner 记录当前随从,换随从自动重置)
