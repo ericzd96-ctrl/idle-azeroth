@@ -145,6 +145,7 @@ let _invFilterRarity = 'all'; // 背包品质筛选
 let _dmSampleTotal = 0, _dmSampleTs = 0;   // 峰值秒伤采样基线
 let _dmDpsTrendValue = 0, _dmDpsTrendTs = 0, _dmDpsTrendDir = 'stable', _dmDpsTrendPct = 0;
 let _dmRecentSkillSig = '';
+let _dmCombatSummarySig = '';
 let _navBadgePaint = 0, _expLivePaint = 0; // 导航红点 / 远征实时刷新节流
 const _headerResourceLast = {};
 function combatSchoolShortName(school) {
@@ -251,6 +252,53 @@ function updateDmgRecentSkills() {
     chip.append(name, badge);
     el.appendChild(chip);
   }
+}
+function updateDmgCombatSummary(total, healTotal) {
+  const el = $('dm-combat-summary');
+  if (!el) return;
+  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
+  if (!ds || !ds.start) {
+    el.style.display = 'none';
+    el.replaceChildren();
+    _dmCombatSummarySig = '';
+    return;
+  }
+  const shieldTotal = (ds.heroShield || 0) + (ds.compShield || 0);
+  const takenTotal = (ds.taken || 0) + (ds.compTaken || 0);
+  const bossCastDamage = ds.bossCastTotalDamage || 0;
+  const chips = [];
+  if (total > 0) chips.push({ tone:'info', text:`输出 ${fmt(total)}`, title:`本轮总伤害 ${fmt(total)}` });
+  if ((ds.interruptSuccesses || 0) || (ds.interruptFails || 0)) {
+    const ok = ds.interruptSuccesses || 0;
+    const fail = ds.interruptFails || 0;
+    chips.push({ tone:fail ? 'warn' : 'good', text:`打断 ${ok}/${ok + fail}`, title:`成功 ${ok} 次,失败 ${fail} 次` });
+  }
+  if (ds.vulnWindowHits || 0) chips.push({ tone:'good', text:`窗口 ${ds.vulnWindowHits}次`, title:`破绽窗口命中 ${ds.vulnWindowHits} 次,累计 ${fmt(ds.vulnWindowDamage || 0)}` });
+  if (ds.bossCastHits || 0) chips.push({ tone:bossCastDamage > 0 ? 'danger' : 'warn', text:`读条命中 ${ds.bossCastHits}`, title:`首领读条命中 ${ds.bossCastHits} 次,累计 ${fmt(bossCastDamage)}` });
+  if (takenTotal > 0) chips.push({ tone:takenTotal > Math.max(healTotal + shieldTotal, 1) ? 'danger' : 'warn', text:`承伤 ${fmt(takenTotal)}`, title:`英雄与随从累计承伤 ${fmt(takenTotal)}` });
+  if (healTotal + shieldTotal > 0) chips.push({ tone:'good', text:`回复 ${fmt(healTotal + shieldTotal)}`, title:`治疗 ${fmt(healTotal)},护盾 ${fmt(shieldTotal)}` });
+  const sig = chips.map(c => `${c.tone}:${c.text}`).join('|');
+  if (!sig) {
+    el.style.display = 'none';
+    el.replaceChildren();
+    _dmCombatSummarySig = '';
+    return;
+  }
+  if (sig === _dmCombatSummarySig) return;
+  _dmCombatSummarySig = sig;
+  el.replaceChildren();
+  const title = document.createElement('span');
+  title.className = 'dm-combat-summary-title';
+  title.textContent = '本场';
+  el.appendChild(title);
+  for (const chip of chips.slice(0, 6)) {
+    const span = document.createElement('span');
+    span.className = `dm-combat-summary-chip ${chip.tone}`;
+    span.textContent = chip.text;
+    span.title = chip.title || chip.text;
+    el.appendChild(span);
+  }
+  el.style.display = 'flex';
 }
 function updateCombatReactionAdvice() {
   const el = $('dm-reaction');
@@ -2123,6 +2171,7 @@ function updateDmgMeter() {
   updateDmgBossCastOutcome();
   updateDmgVulnerabilityWindow();
   updateDmgVulnerabilityHit();
+  updateDmgCombatSummary(total, healTotal);
 
   // 英雄条
   const heroBar = $('dm-hero-bar');

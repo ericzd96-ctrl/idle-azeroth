@@ -8093,6 +8093,51 @@ button.legend:hover:not(:disabled) {
   font-size: 9px;
 }
 .dm-detail[open] > summary::after { content: '▴'; }
+.dm-combat-summary {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 5px;
+}
+.dm-combat-summary-title {
+  flex: 0 0 auto;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 800;
+}
+.dm-combat-summary-chip {
+  min-width: 0;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,.22);
+  background: rgba(15,23,42,.36);
+  color: #cbd5e1;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.dm-combat-summary-chip.good {
+  color: #bbf7d0;
+  border-color: rgba(74,222,128,.32);
+  background: rgba(20,83,45,.20);
+}
+.dm-combat-summary-chip.warn {
+  color: #fde68a;
+  border-color: rgba(250,204,21,.34);
+  background: rgba(113,63,18,.20);
+}
+.dm-combat-summary-chip.danger {
+  color: #fecaca;
+  border-color: rgba(248,113,113,.38);
+  background: rgba(127,29,29,.24);
+}
+.dm-combat-summary-chip.info {
+  color: #bfdbfe;
+  border-color: rgba(96,165,250,.30);
+  background: rgba(30,64,175,.20);
+}
 .meter-breakdown-title {
   display: flex;
   align-items: center;
