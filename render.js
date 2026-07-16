@@ -157,6 +157,7 @@ let _combatNextActionSig = '';
 let _navBadgePaint = 0, _expLivePaint = 0; // 导航红点 / 远征实时刷新节流
 const _headerResourceLast = {};
 const _resourceBarLast = { value:null, max:null, key:'' };
+const _hpBarLast = {};
 function combatSchoolShortName(school) {
   return ({
     fire:'火焰',
@@ -433,6 +434,38 @@ function updateResourceBarFeedback(cls, value, max) {
     wrap.querySelector('.resource-bar-delta')?.remove();
   }
   setTimeout(() => em.remove(), gain ? 820 : 700);
+}
+function updateHpBarFeedback(key, fillEl, value, max, opts) {
+  if (!key || !fillEl) return;
+  const wrap = fillEl.closest?.('.bar');
+  if (!wrap) return;
+  const nextMax = Math.max(1, Math.floor(max || 0));
+  const next = Math.max(0, Math.min(nextMax, Math.floor(value || 0)));
+  const prev = _hpBarLast[key];
+  if (!prev || prev.max !== nextMax || opts?.reset || next <= 0 || prev.value <= 0) {
+    _hpBarLast[key] = { value:next, max:nextMax };
+    return;
+  }
+  const delta = next - prev.value;
+  _hpBarLast[key] = { value:next, max:nextMax };
+  const threshold = opts?.threshold || Math.max(1, Math.floor(nextMax * 0.006));
+  if (!delta || Math.abs(delta) < threshold) return;
+  const gain = delta > 0;
+  const cls = gain ? 'bar-gain-flash' : 'bar-loss-flash';
+  wrap.classList.remove('bar-gain-flash', 'bar-loss-flash');
+  void wrap.offsetWidth;
+  wrap.classList.add(cls);
+  const em = document.createElement('em');
+  em.className = 'hp-bar-delta ' + (gain ? 'gain' : 'loss') + (opts?.side ? ' ' + opts.side : '');
+  em.textContent = (gain ? '+' : '-') + fmt(Math.abs(delta));
+  wrap.appendChild(em);
+  while (wrap.querySelectorAll('.hp-bar-delta').length > 3) {
+    wrap.querySelector('.hp-bar-delta')?.remove();
+  }
+  setTimeout(() => {
+    wrap.classList.remove(cls);
+    em.remove();
+  }, gain ? 900 : 760);
 }
 function dmgMeterTrendMeta(dps, total) {
   const now = Date.now();
@@ -3316,6 +3349,7 @@ function renderMonList() {
       const hpText = isDead ? '已击败' : hpWithShieldText(m.hp, m.hpMax, Math.max(0, m._arcaneShield || 0));
       if (txt.textContent !== hpText) txt.textContent = hpText;
     }
+    if (fill) updateHpBarFeedback('monster:' + (m._uid ?? m.name), fill, Math.max(0, m.hp || 0), m.hpMax || 1, { side:isBossLike ? 'boss' : 'monster', reset:isDead });
     const executeEl = row.querySelector('.m-execute');
     if (executeEl) {
       const executeText = executeActive ? (isBossLike ? '首领斩杀' : '斩杀') : '';
@@ -3937,6 +3971,8 @@ function updateBattleVisuals() {
   const heroShield = Math.max(0, state?.talentState?.shield || 0);
   setBar($('b-hp'), state.hp/h.hpMax*100, hpWithShieldText(state.hp, h.hpMax, heroShield));
   setBar($('b-hp2'), state.hp/h.hpMax*100, hpWithShieldText(state.hp, h.hpMax, heroShield));
+  updateHpBarFeedback('hero:header', $('b-hp'), state.hp, h.hpMax, { side:'hero' });
+  updateHpBarFeedback('hero:stage', $('b-hp2'), state.hp, h.hpMax, { side:'hero' });
   setBar($('b-mp'), state.resource/state.resourceMax*100,
     `${c.resource} ${fmt(state.resource)}/${fmt(state.resourceMax)}`);
   updateResourceBarFeedback(c, state.resource, state.resourceMax);
@@ -4124,6 +4160,7 @@ function updateBattleVisuals() {
       compMiniName.innerHTML=`${compIconHtml} ${tpl?.name} · <span class="${q.cls||''}">${q.name}</span> ${'⭐'.repeat(comp.stars||1)}${sigBadge} · 攻${fmt(st.atk)} 防${fmt(st.def)}${statusTag}`;
     }
     setBar($('b-comp-hp'),Math.max(0,compHp)/st.hpMax*100,compDown?`倒下 ${reviveLeft}秒`:hpWithShieldText(compHp, st.hpMax, Math.max(0, state._compBarrier || 0)));
+    updateHpBarFeedback('companion:active', $('b-comp-hp'), Math.max(0, compHp), st.hpMax, { side:'companion', reset:compDown });
     const intentEl = $('comp-intent-line');
     if(intentEl){
       const it = (typeof companionIntentUiState === 'function') ? companionIntentUiState(now) : null;
