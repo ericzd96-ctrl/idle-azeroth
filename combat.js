@@ -300,6 +300,17 @@ function skillFxClass(school, extra){
   const safe = normalizeSkillFxSchool(school) || 'physical';
   return `${extra || ''} school-${safe}`.trim();
 }
+function skillFxActiveCount(layer){
+  if(!layer || !layer.querySelectorAll) return 0;
+  return layer.querySelectorAll('.skill-cast-ring,.skill-fx-trail,.skill-fx-burst,.skill-fx-label').length;
+}
+function skillFxShouldThrottle(layer, opts){
+  if(opts?.force) return false;
+  const mobile = typeof isMobilePerfMode === 'function' && isMobilePerfMode();
+  const cap = mobile ? 18 : 42;
+  if(skillFxActiveCount(layer) < cap) return false;
+  return !(opts?.important || opts?.actor === 'boss' || opts?.pulse === 'crit' || opts?.pulse === 'danger');
+}
 function skillFxLabelText(sk){
   if(!sk) return '';
   const name = String(sk.name || '').trim();
@@ -512,6 +523,11 @@ function showSkillCastFx(sourceEl, sk, opts){
   const p = skillFxPoint(sourceEl);
   if(!layer || !p) return;
   const school = opts?.school || skillVisualSchool(opts?.skillKey, sk, opts?.actor);
+  if(skillFxShouldThrottle(layer, opts)){
+    combatSkillCue(sk, { actor:opts?.actor, school, skillKey:opts?.skillKey, cue:opts?.cue, kind:opts?.cueKind });
+    if(typeof pulseCombatEl === 'function') pulseCombatEl(sourceEl, opts?.pulse || (opts?.actor === 'boss' ? 'bosscast' : 'artifact'), opts?.pulseDuration || 220);
+    return;
+  }
   const size = opts?.size || (opts?.small ? 28 : 42);
   const ring = document.createElement('div');
   ring.className = skillFxClass(school, 'skill-cast-ring');
@@ -550,6 +566,10 @@ function showSkillImpactFx(sourceEl, targetEl, sk, opts){
     skillKey:opts?.skillKey,
     target:opts?.target || combatSkillImpactTargetLabel(targetEl, sourceEl)
   });
+  if(skillFxShouldThrottle(layer, opts)){
+    if(typeof pulseCombatEl === 'function') pulseCombatEl(targetEl, opts?.pulse || (opts?.actor === 'boss' ? 'danger' : 'hit'), opts?.pulseDuration || 220);
+    return;
+  }
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const dist = Math.max(12, Math.sqrt(dx * dx + dy * dy));

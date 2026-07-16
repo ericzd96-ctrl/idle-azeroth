@@ -4018,21 +4018,54 @@ function vulnerabilityWindowState(now) {
   if (left <= 0) return null;
   return { mon, left, sunderLeft, stunLeft, pct:Math.max(0, Math.min(100, left / 2200 * 100)) };
 }
+function vulnerabilitySkillIsBurst(sk) {
+  if (!sk || sk.type !== 'dmg') return false;
+  return (sk.mul || 0) >= 3 || sk.consumeRage || sk.alwaysCrit || sk.bonusVsSunder || /斩杀|爆发|处决|大招|终结|审判|混乱|炎爆|瞄准|灭杀/.test(`${sk.name || ''} ${sk.desc || ''}`);
+}
+function vulnerabilityBurstScore(sk) {
+  if (!sk) return 0;
+  const text = `${sk.name || ''} ${sk.desc || ''}`;
+  return (sk.mul || 1) * 100
+    + Math.min(24, sk.cd || 0) * 3
+    + (sk.consumeRage ? 90 : 0)
+    + (sk.alwaysCrit ? 55 : 0)
+    + (sk.bonusVsSunder ? 60 : 0)
+    + (/斩杀|处决|终结|灭杀/.test(text) ? 70 : 0)
+    + (/爆发|炎爆|混乱|瞄准|审判/.test(text) ? 38 : 0);
+}
+function vulnerabilityRecommendedBurstKey(now) {
+  if (!vulnerabilityWindowState(now)) return '';
+  const c = getCls();
+  let bestKey = '', bestScore = -Infinity;
+  for (const key of (state.selectedSkills || [])) {
+    const sk = c?.skills?.[key];
+    if (!vulnerabilitySkillIsBurst(sk)) continue;
+    const cdMs = Math.max(0, (state.skillCooldowns?.[key] || 0) - now);
+    const cost = skillUiCost(key, sk, c);
+    if (cdMs > 0 || (state.resource || 0) < cost) continue;
+    const score = vulnerabilityBurstScore(sk);
+    if (score > bestScore) {
+      bestScore = score;
+      bestKey = key;
+    }
+  }
+  return bestKey;
+}
 function vulnerabilitySkillPrompt(skillKey, sk, now, cdMs) {
   if (!sk || sk.type !== 'dmg') return null;
   const win = vulnerabilityWindowState(now);
   if (!win) return null;
-  const isBurst = (sk.mul || 0) >= 3 || sk.consumeRage || sk.alwaysCrit || sk.bonusVsSunder || /斩杀|爆发|处决|大招|终结|审判|混乱|炎爆|瞄准|灭杀/.test(`${sk.name || ''} ${sk.desc || ''}`);
-  if (!isBurst) return null;
+  if (!vulnerabilitySkillIsBurst(sk)) return null;
   const cost = skillUiCost(skillKey, sk);
   const ready = (cdMs || 0) <= 0 && (state.resource || 0) >= cost;
+  const recommended = ready && vulnerabilityRecommendedBurstKey(now) === skillKey;
   const label = ready ? '爆发' : (cdMs > 0 ? `${Math.ceil(cdMs / 1000)}秒` : '缺资源');
   const cls = ready ? 'vuln-burst-hot' : 'vuln-burst-wait';
   const target = win.mon.bossName || win.mon.name || '目标';
   const tip = ready
-    ? `${target} 正在硬直且易伤,现在打出高伤害技能。窗口剩余 ${(win.left / 1000).toFixed(1)} 秒。`
+    ? `${target} 正在硬直且易伤,${recommended ? '推荐优先按这个爆发技能。' : '现在打出高伤害技能。'}窗口剩余 ${(win.left / 1000).toFixed(1)} 秒。`
     : `${target} 处于破绽窗口,但该技能${cdMs > 0 ? '还在冷却' : '资源不足'}。窗口剩余 ${(win.left / 1000).toFixed(1)} 秒。`;
-  return { label, cls, tip, final:win.left <= 900, timerPct:win.pct };
+  return { label, cls, tip, final:win.left <= 900, recommended, timerPct:win.pct };
 }
 
 function updateBossIntentLine(now) {
@@ -4267,7 +4300,8 @@ function renderSkillBar() {
     const bossPromptClass = bossPrompt ? `boss-cast-prompt ${bossPrompt.cls || ''} ${bossPrompt.final ? 'boss-cast-final' : ''}` : '';
     const recommendClass = bossPrompt?.recommended ? 'boss-cast-recommended' : '';
     const vulnPromptClass = vulnPrompt ? `vuln-window-prompt ${vulnPrompt.cls || ''} ${vulnPrompt.final ? 'vuln-window-final' : ''}` : '';
-    return `<button class="skill-btn skill-role-${roleTag.cls} ${onCd?'on-cd':''} ${useStateClass} ${bossPromptClass} ${recommendClass} ${vulnPromptClass}" data-skill="${key}" data-cd-active="${onCd?'1':'0'}" data-resource-ready="${hasMp?'1':'0'}" data-cd-total="${cdTotalMs}" draggable="true" title="${tip}" data-base-title="${baseTipAttr}"
+    const vulnRecommendClass = vulnPrompt?.recommended ? 'vuln-window-recommended' : '';
+    return `<button class="skill-btn skill-role-${roleTag.cls} ${onCd?'on-cd':''} ${useStateClass} ${bossPromptClass} ${recommendClass} ${vulnPromptClass} ${vulnRecommendClass}" data-skill="${key}" data-cd-active="${onCd?'1':'0'}" data-resource-ready="${hasMp?'1':'0'}" data-cd-total="${cdTotalMs}" draggable="true" title="${tip}" data-base-title="${baseTipAttr}"
       style="--cd-angle:${cdAngle}deg;${bossPrompt ? `--boss-cast-pct:${Math.round(bossPrompt.timerPct || 0)}%;` : ''}${vulnPrompt ? `--skill-window-pct:${Math.round(vulnPrompt.timerPct || 0)}%;` : ''}${coreMatch&&!onCd?'border-color:#38bdf8;box-shadow:0 0 0 1px rgba(56,189,248,.50),0 0 14px rgba(56,189,248,.18)':(procMatch&&!onCd?'border-color:#facc15;box-shadow:0 0 0 1px rgba(250,204,21,.45)':(!onCd&&hasMp?'border-color:var(--accent)':''))}">
       <span class="sk-name">${skillIconHtml} ${sk.name}</span>
       <span class="sk-role ${roleTag.cls}" title="${roleTag.title}">${roleTag.label}</span>
@@ -4342,6 +4376,7 @@ function updateSkillBarCd() {
     btn.classList.toggle('boss-cast-recommended', !!bossPrompt?.recommended);
     btn.classList.toggle('vuln-window-prompt', !!vulnPrompt);
     btn.classList.toggle('vuln-window-final', !!vulnPrompt?.final);
+    btn.classList.toggle('vuln-window-recommended', !!vulnPrompt?.recommended);
     btn.classList.toggle('vuln-burst-hot', vulnPrompt?.cls === 'vuln-burst-hot');
     btn.classList.toggle('vuln-burst-wait', vulnPrompt?.cls === 'vuln-burst-wait');
     btn.style.setProperty('--boss-cast-pct', bossPrompt ? `${Math.round(bossPrompt.timerPct || 0)}%` : '0%');

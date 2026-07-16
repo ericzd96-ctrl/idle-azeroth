@@ -7285,6 +7285,11 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   outline: 1px solid rgba(255,255,255,.18);
   outline-offset: 1px;
 }
+.skill-btn.vuln-window-recommended:not(.on-cd) {
+  transform: translateY(-1px);
+  outline: 1px solid rgba(250,204,21,.32);
+  outline-offset: 1px;
+}
 .skill-btn.boss-cast-recommended:not(.on-cd)::before {
   content: '按';
   position: absolute;
@@ -7304,6 +7309,26 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   pointer-events: none;
   z-index: 6;
   box-shadow: 0 0 12px rgba(251,191,36,.36);
+}
+.skill-btn.vuln-window-recommended:not(.on-cd)::before {
+  content: '爆';
+  position: absolute;
+  top: -8px;
+  left: -6px;
+  width: 17px;
+  height: 17px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(254,243,199,.76);
+  background: radial-gradient(circle at 35% 30%, #fff7ed, #facc15 58%, #92400e);
+  color: #241300;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 6;
+  box-shadow: 0 0 14px rgba(250,204,21,.42);
 }
 .skill-btn.vuln-window-prompt {
   overflow: visible;
@@ -7366,9 +7391,18 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   50% { filter: brightness(1.35); }
 }
 @media (prefers-reduced-motion: reduce) {
+  .skill-fx-trail {
+    display: none;
+  }
+  .skill-cast-ring,
+  .skill-fx-burst,
+  .skill-fx-label {
+    animation-duration: 180ms !important;
+  }
   .skill-btn.boss-cast-final:not(.on-cd) .boss-cast-timer { animation: none; }
   .skill-btn.vuln-window-final:not(.on-cd) .skill-window-timer { animation: none; }
   .skill-btn.boss-cast-recommended:not(.on-cd) { transform: none; }
+  .skill-btn.vuln-window-recommended:not(.on-cd) { transform: none; }
 }
 @keyframes skillReadyFlash {
   0% { filter: brightness(1); }
