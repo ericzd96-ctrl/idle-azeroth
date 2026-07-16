@@ -6686,6 +6686,10 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   .dm-recent-chip { max-width: 33%; padding: 1px 5px; font-size: 9px; }
   .dm-recent-amount { min-width: 30px; padding: 0 3px; font-size: 8px; }
   .dm-recent-chip:nth-child(n+5) { display: none; }
+  .dm-combat-tempo { gap: 3px; min-height: 20px; padding: 2px 4px; }
+  .dm-combat-tempo b { max-width: 38%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dm-combat-tempo span { font-size: 9px; }
+  .dm-combat-tempo-action { max-width: 58px; padding: 0 4px; font-size: 8px; }
   .dm-last-hit { gap: 3px; padding: 2px 4px; }
   .dm-last-hit-chip { max-width: 48%; padding: 1px 2px; }
   .dm-last-hit-chip.latest { max-width: 66%; }
@@ -8825,6 +8829,10 @@ button.dm-combat-tempo-action {
 button.dm-combat-tempo-action.ready:hover {
   transform: translateY(-1px);
   filter: brightness(1.12);
+}
+button.dm-combat-tempo-action.ready.skill-pressed {
+  transform: translateY(0) scale(.96);
+  filter: brightness(1.22);
 }
 .dm-combat-tempo-action.defense,
 .dm-combat-tempo-action.wait {

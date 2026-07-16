@@ -690,7 +690,7 @@ function updateDmgCombatTempo(total, healTotal) {
   el.title = [stateMeta.title, action?.title].filter(Boolean).join(' ');
   const actionHtml = action
     ? (action.key
-      ? `<button class="dm-combat-tempo-action ${escapeDmgMeterText(action.cls)}" data-action="pressurecast" data-skill="${escapeDmgMeterText(action.key)}" title="${escapeDmgMeterText(action.title || action.text)}">${escapeDmgMeterText(action.text)}</button>`
+      ? `<button type="button" class="dm-combat-tempo-action ${escapeDmgMeterText(action.cls)}" data-action="pressurecast" data-skill="${escapeDmgMeterText(action.key)}" title="${escapeDmgMeterText(action.title || action.text)}">${escapeDmgMeterText(action.text)}</button>`
       : `<i class="dm-combat-tempo-action ${escapeDmgMeterText(action.cls)}" title="${escapeDmgMeterText(action.title || action.text)}">${escapeDmgMeterText(action.text)}</i>`)
     : '';
   el.innerHTML = `<b>${escapeDmgMeterText(stateMeta.label)}</b><span>${escapeDmgMeterText(stateMeta.detail || '')}</span>${actionHtml}`;
@@ -3234,7 +3234,7 @@ function updateDmgMeter() {
     }, Date.now());
     const actionHtml = action
       ? (action.ready && action.key
-        ? `<button class="dm-pressure-action ${escapeDmgMeterText(action.tone)} ready" data-action="pressurecast" data-skill="${escapeDmgMeterText(action.key)}" title="${escapeDmgMeterText((action.title || action.text) + ' 点击立即施放。')}">${escapeDmgMeterText(action.text)}</button>`
+        ? `<button type="button" class="dm-pressure-action ${escapeDmgMeterText(action.tone)} ready" data-action="pressurecast" data-skill="${escapeDmgMeterText(action.key)}" title="${escapeDmgMeterText((action.title || action.text) + ' 点击立即施放。')}">${escapeDmgMeterText(action.text)}</button>`
         : `<span class="dm-pressure-action ${escapeDmgMeterText(action.tone)}" title="${escapeDmgMeterText(action.title || action.text)}">${escapeDmgMeterText(action.text)}</span>`)
       : '';
     const html = `<span class="dm-pressure-state">${escapeDmgMeterText(label)}</span>${actionHtml}<span class="dm-pressure-net">主 ${fmt(netPerSec)}/秒</span>${compVisible ? `<span class="dm-pressure-net companion">随 ${fmt(compNetPerSec)}/秒</span>` : ''}${sourceHtml}<span class="dm-pressure-time">${escapeDmgMeterText(surviveText)}</span>`;
