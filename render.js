@@ -517,6 +517,29 @@ function updateDmgBossCastOutcome() {
   el.textContent = `${kind}命中 · ${name} → ${target} · ${fmt(damage)} · ${ago}s前`;
   el.title = `最近首领读条结算: ${ds.lastBossCastBoss || 'BOSS'} 的 ${name},命中 ${target},造成 ${fmt(damage)} 点伤害。`;
 }
+function updateDmgVulnerabilityWindow() {
+  const row = $('dm-vuln-window-row');
+  const el = $('dm-vuln-window');
+  if (!row || !el) return;
+  const now = Date.now();
+  const mon = state?.currentMonsters?.find(m => m && m.hp > 0 && ((m.sunderUntil || 0) > now || (m.stunUntil || 0) > now));
+  const sunderLeft = mon ? Math.max(0, (mon.sunderUntil || 0) - now) : 0;
+  const stunLeft = mon ? Math.max(0, (mon.stunUntil || 0) - now) : 0;
+  if (!mon || sunderLeft <= 0 || stunLeft <= 0) {
+    row.style.display = 'none';
+    el.className = 'dm-vuln-window idle';
+    el.textContent = '-';
+    el.removeAttribute('title');
+    return;
+  }
+  const left = Math.max(sunderLeft, stunLeft);
+  const cls = left <= 1800 ? 'ending' : 'active';
+  const name = mon.bossName || mon.name || '目标';
+  row.style.display = '';
+  el.className = `dm-vuln-window ${cls}`;
+  el.textContent = `${left <= 1800 ? '快结束' : '爆发'} · ${name} 易伤+硬直 · ${(left / 1000).toFixed(1)}s`;
+  el.title = `破绽窗口: ${name} 正在硬直且易伤。硬直剩余 ${(stunLeft / 1000).toFixed(1)} 秒,易伤剩余 ${(sunderLeft / 1000).toFixed(1)} 秒。`;
+}
 
 /* 导航栏红点:远征储备满 / 公会今日有可做的捐献 */
 function updateNavBadges() {
@@ -2050,6 +2073,7 @@ function updateDmgMeter() {
   updateDmgBossCastReadout();
   updateDmgLastInterrupt();
   updateDmgBossCastOutcome();
+  updateDmgVulnerabilityWindow();
 
   // 英雄条
   const heroBar = $('dm-hero-bar');
