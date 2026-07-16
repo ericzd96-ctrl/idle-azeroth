@@ -144,6 +144,7 @@ let _invFilterSlot = 'all';   // 背包部位筛选
 let _invFilterRarity = 'all'; // 背包品质筛选
 let _dmSampleTotal = 0, _dmSampleTs = 0;   // 峰值秒伤采样基线
 let _dmDpsTrendValue = 0, _dmDpsTrendTs = 0, _dmDpsTrendDir = 'stable', _dmDpsTrendPct = 0;
+let _dmRecentSkillSig = '';
 let _navBadgePaint = 0, _expLivePaint = 0; // 导航红点 / 远征实时刷新节流
 const _headerResourceLast = {};
 function setHeaderResourceText(id, key, value) {
@@ -199,6 +200,37 @@ function dmgMeterTrendMeta(dps, total) {
   if (_dmDpsTrendDir === 'up') return { dir:'up', icon:'▲', label:`+${_dmDpsTrendPct}%`, title:`秒伤上升 ${_dmDpsTrendPct}%` };
   if (_dmDpsTrendDir === 'down') return { dir:'down', icon:'▼', label:`-${_dmDpsTrendPct}%`, title:`秒伤下降 ${_dmDpsTrendPct}%` };
   return { dir:'stable', icon:'→', label:'稳定', title:'秒伤基本稳定' };
+}
+function updateDmgRecentSkills() {
+  const el = $('dm-recent-skills');
+  if (!el) return;
+  const list = (typeof combatRecentSkillCasts === 'function') ? combatRecentSkillCasts() : [];
+  const sig = list.map(x => `${x.actor}:${x.school}:${x.icon}:${x.name}:${x.ts}`).join('|');
+  if (sig === _dmRecentSkillSig) return;
+  _dmRecentSkillSig = sig;
+  el.replaceChildren();
+  if (!list.length) {
+    el.className = 'dm-recent-skills idle';
+    const empty = document.createElement('span');
+    empty.textContent = '最近技能 -';
+    el.appendChild(empty);
+    return;
+  }
+  el.className = 'dm-recent-skills';
+  const label = document.createElement('span');
+  label.className = 'dm-recent-label';
+  label.textContent = '最近';
+  el.appendChild(label);
+  const actorName = { hero:'主角', companion:'随从', boss:'首领' };
+  for (const item of list) {
+    const chip = document.createElement('span');
+    const actor = String(item.actor || 'hero').replace(/[^a-z0-9_-]/gi, '') || 'hero';
+    const school = String(item.school || 'physical').replace(/[^a-z0-9_-]/gi, '') || 'physical';
+    chip.className = `dm-recent-chip actor-${actor} school-${school}`;
+    chip.title = `${actorName[actor] || '技能'}释放 ${item.icon || ''}${item.name || ''}`;
+    chip.textContent = `${actorName[actor] || '技能'} ${(item.icon || '')}${item.name || ''}`;
+    el.appendChild(chip);
+  }
 }
 
 /* 导航栏红点:远征储备满 / 公会今日有可做的捐献 */
@@ -1728,6 +1760,7 @@ function updateDmgMeter() {
     dpsEl.textContent = trend.icon ? `秒伤 ${fmt(dps)} ${trend.icon}${trend.label ? ' ' + trend.label : ''}` : '秒伤 ' + fmt(dps);
     dpsEl.title = `当前秒伤 ${fmt(dps)}。${trend.title}`;
   }
+  updateDmgRecentSkills();
 
   // 英雄条
   const heroBar = $('dm-hero-bar');

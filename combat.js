@@ -301,6 +301,28 @@ function skillFxLabelText(sk){
   return (icon ? icon : '') + name;
 }
 const _skillCastCueCooldown = {};
+const _combatRecentSkillCasts = [];
+const _combatRecentSkillCastCooldown = {};
+function recordCombatSkillCast(sk, opts){
+  if(!sk || !sk.name) return;
+  const now = Date.now();
+  const actor = String(opts?.actor || 'hero').replace(/[^a-z0-9_-]/gi, '') || 'hero';
+  const school = String(opts?.school || skillVisualSchool(opts?.skillKey, sk, actor)).replace(/[^a-z0-9_-]/gi, '') || 'physical';
+  const key = actor + ':' + sk.name;
+  if((_combatRecentSkillCastCooldown[key] || 0) > now) return;
+  _combatRecentSkillCastCooldown[key] = now + (actor === 'boss' ? 420 : 650);
+  _combatRecentSkillCasts.unshift({
+    actor,
+    school,
+    icon:String(sk.icon || ''),
+    name:String(sk.name || ''),
+    ts:now
+  });
+  _combatRecentSkillCasts.splice(4);
+}
+function combatRecentSkillCasts(){
+  return _combatRecentSkillCasts.slice();
+}
 function combatSkillCue(sk, opts){
   if(typeof document === 'undefined' || document.hidden || opts?.cue === false || !sk) return;
   if(typeof combatCueLanePush !== 'function') return;
@@ -323,6 +345,7 @@ function combatSkillCue(sk, opts){
   if(actor === 'boss' && (sk.threat === 'high' || sk.threat === 'extreme' || sk._empowered)){
     combatCueLanePush('危险技能', detail, 'boss');
   }
+  recordCombatSkillCast(sk, { actor:opts?.actor, school, skillKey:opts?.skillKey });
 }
 function skillButtonEl(skillKey){
   if(typeof document === 'undefined' || !skillKey) return null;
