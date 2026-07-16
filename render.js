@@ -370,6 +370,36 @@ function updateDmgLastShield() {
   el.textContent = text;
   el.title = `最近护盾: ${label} 在${agoText}获得 ${fmt(amount)} 点护盾。${skill ? '来源: ' + skill + '。' : ''}`;
 }
+function topDamageSkillEntry() {
+  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
+  if (!ds) return null;
+  let best = null;
+  const scan = (map, who) => {
+    Object.entries(map || {}).forEach(([name, amount]) => {
+      const value = Math.floor(amount || 0);
+      if (value <= 0) return;
+      if (!best || value > best.amount) best = { who, name, amount: value };
+    });
+  };
+  scan(ds.heroSkills, '主角');
+  scan(ds.compSkills, '随从');
+  return best;
+}
+function updateDmgTopSkill(total) {
+  const el = $('dm-top-skill');
+  if (!el) return;
+  const best = topDamageSkillEntry();
+  if (!best) {
+    el.className = 'dm-top-skill idle';
+    el.textContent = '-';
+    el.removeAttribute('title');
+    return;
+  }
+  const pct = total > 0 ? Math.round(best.amount / total * 100) : 0;
+  el.className = `dm-top-skill ${best.who === '随从' ? 'companion' : 'hero'}`;
+  el.textContent = `${best.who} ${best.name} · ${fmt(best.amount)} · ${pct}%`;
+  el.title = `本轮最高伤害来源: ${best.who}的${best.name}, 累计 ${fmt(best.amount)}, 占总伤害 ${pct}%。`;
+}
 
 /* 导航栏红点:远征储备满 / 公会今日有可做的捐献 */
 function updateNavBadges() {
@@ -1933,6 +1963,7 @@ function updateDmgMeter() {
       maxEl.removeAttribute('title');
     }
   }
+  updateDmgTopSkill(total);
   const healEl = $('dm-heal-total');
   if (healEl) {
     if (heroHeal || compHeal) {
