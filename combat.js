@@ -1004,6 +1004,8 @@ const EXECUTE_WINDOW_THRESHOLD = 0.20;
 let executeWindowFxSeen = new Set();
 let heroSurvivalCueBand = '';
 let heroSurvivalCueAt = 0;
+let companionSurvivalCueBand = '';
+let companionSurvivalCueAt = 0;
 function monsterExecuteFxId(mon){
   if(!mon) return '';
   if(mon._uid != null) return 'uid:' + mon._uid;
@@ -1102,6 +1104,29 @@ function checkHeroSurvivalCue(now){
   combatCueLanePush(title, detail, band === 'warn' ? 'shield' : 'danger');
   if(typeof stageEdgeFx === 'function') stageEdgeFx(band === 'warn' ? 'shield' : 'critical', { intensity:band === 'critical' ? 1.2 : .88 });
 }
+function checkCompanionSurvivalCue(now){
+  if(typeof computeCompanionStats !== 'function' || typeof compDowned !== 'function') return;
+  const st = computeCompanionStats();
+  if(!st || !(st.hpMax > 0) || compDowned() || state?._compHp == null || state._compHp <= 0){
+    companionSurvivalCueBand = '';
+    return;
+  }
+  const pct = Math.max(0, Math.min(1, state._compHp / st.hpMax));
+  let band = '';
+  if(pct <= 0.15) band = 'critical';
+  else if(pct <= 0.30) band = 'danger';
+  else if(pct <= 0.55) band = 'warn';
+  if(!band){ companionSurvivalCueBand = ''; return; }
+  if(companionSurvivalCueBand === band && now - companionSurvivalCueAt < 10000) return;
+  companionSurvivalCueBand = band;
+  companionSurvivalCueAt = now;
+  const hpPct = Math.max(1, Math.round(pct * 100));
+  const title = band === 'critical' ? `护卫濒危 ${hpPct}%` : (band === 'danger' ? `护卫告急 ${hpPct}%` : `护卫低血 ${hpPct}%`);
+  const skill = bestCombatSurvivalCueSkill(now);
+  const detail = skill?.kind === 'heal' ? `可用 ${skill.sk.name}` : (band === 'warn' ? '留意治疗' : '治疗/护盾支援');
+  combatCueLanePush(title, detail, band === 'warn' ? 'companion' : 'danger');
+  if(typeof stageEdgeFx === 'function') stageEdgeFx(band === 'warn' ? 'shield' : 'danger', { intensity:band === 'critical' ? 1.05 : .78 });
+}
 function bossCastIsDamage(cast){
   return !!(cast && typeof cast.mul === 'number' && cast.mul > 0 && cast.type !== 'heal' && cast.type !== 'buff' && cast.type !== 'support' && !cast.summonCount);
 }
@@ -1149,6 +1174,21 @@ function showBossTargetTelegraph(cast, mon, opts){
     if(typeof pulseCombatEl === 'function') pulseCombatEl(t.el, dangerous ? 'danger' : 'bosscast', Math.min(420, duration));
     setTimeout(() => el.remove(), duration + 120);
   }
+}
+function showBossCastStartFx(cast, mon, opts){
+  if(!cast || !mon || typeof document === 'undefined' || document.hidden) return;
+  const sourceEl = monsterFloatAnchor(mon);
+  if(!sourceEl) return;
+  const school = skillSupportVisualSchool(null, cast, 'boss');
+  const dangerous = cast._empowered || cast.threat === 'high' || cast.threat === 'extreme';
+  showSkillCastFx(sourceEl, cast, {
+    actor:'boss',
+    school,
+    pulse:dangerous ? 'danger' : 'bosscast',
+    duration:opts?.instant ? 360 : 540,
+    label:!opts?.instant,
+    important:dangerous
+  });
 }
 function showBossCastFinalTelegraph(cast, mon, opts){
   if(!cast || !mon || typeof document === 'undefined' || document.hidden) return;
@@ -10249,6 +10289,7 @@ function tickBattle(now){
   let mon=state.currentMonsters[0];
   checkMonsterExecuteWindowFx();
   checkHeroSurvivalCue(now);
+  checkCompanionSurvivalCue(now);
   applyCouncilBossMechanics(now);
   applyDungeonBossSpectacleMechanics(now);
   applyDungeonBossDirectorMechanics(now);
@@ -10599,7 +10640,7 @@ function tickBattle(now){
     const _pickSk=_queuedSk||_forcedPhaseSk||_phasePool[bossSkillIdx%Math.max(1,_phasePool.length)];
     const rawCd=(_pickSk&&_pickSk.cd)||10;
     const skillCd=Math.max(2,Math.floor(rawCd*0.42));   // 读条技更频繁:CD压缩58%,但最低2秒间隔
-    if(_allBossSkills.length&&now-lastBossSkill>skillCd*1000){const sk=_pickSk;let castTime=sk.castTime!==undefined?sk.castTime:2;const instantChance=typeof mon.instantCastChance==='number'?mon.instantCastChance:(mon.instantCast?0.35:0);let instant=instantChance>0&&Math.random()<instantChance;if(instant&&isEmpoweredBossCast(sk))instant=false;/* 大伤害/灭团技(蓄力大招)绝不瞬发,必须读条可打断 */if(instant)castTime=0;bossCasting={casterUid:mon._uid,bossName:mon.bossName||mon.name,name:sk.name,icon:sk.icon,type:sk.type,heal:sk.heal,healPct:sk.healPct,mul:sk.mul,dotSkill:sk.dotSkill,dotSecs:sk.dotSecs,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,spdBuffSecs:sk.spdBuffSecs,spdBuffPct:sk.spdBuffPct,atkBuffSecs:sk.atkBuffSecs,atkBuffPct:sk.atkBuffPct,defBuffSecs:sk.defBuffSecs,defBuffPct:sk.defBuffPct,drBuffSecs:sk.drBuffSecs,drBuffPct:sk.drBuffPct,shieldPct:sk.shieldPct,critBuffSecs:sk.critBuffSecs,critBuffPct:sk.critBuffPct,leechBuffSecs:sk.leechBuffSecs,leechBuffPct:sk.leechBuffPct,summonCount:sk.summonCount,summonTheme:sk.summonTheme,aoe:sk.aoe,silence:sk.silence,disarm:sk.disarm,fear:sk.fear,freeze:sk.freeze,cripple:sk.cripple,decay:sk.decay,wither:sk.wither,manaDrain:sk.manaDrain,bomb:sk.bomb,plague:sk.plague,bleed:sk.bleed,brittle:sk.brittle,soulDrain:sk.soulDrain,soulLink:sk.soulLink,revenge:sk.revenge,vulnerable:sk.vulnerable,frenzy:sk.frenzy,decay2:sk.decay2,mirror:sk.mirror,threat:sk.threat,interruptPolicy:sk.interruptPolicy,_empowered:isEmpoweredBossCast(sk),startTime:now,duration:castTime*1000};const _bt=bossCastTargetInfo(sk,now);bossCasting._targetDesc=_bt.desc;bossCasting._target=_bt.target;showBossTargetTelegraph(bossCasting,mon,{now,duration:instant?700:undefined});const _emp=!instant&&isEmpoweredBossCast(sk)&&sk.interruptPolicy!=='none';const _aoeLog=(sk.type!=='heal'&&sk.type!=='buff'&&!sk.summonCount&&typeof sk.mul==='number'&&sk.mul>0)?(sk.aoe?' [🌀群体]':' [🎯单体]'):'';if(_emp || sk.threat==='high' || sk.threat==='extreme')combatEventBanner(_emp?'必须打断':'高危读条',(sk.icon||'')+sk.name,'danger');log('💀 '+(mon.bossName||mon.name)+(instant?' 瞬发 ':' 开始施放 ')+sk.name+_aoeLog+'!'+(instant?'(无法打断)':(_emp?' ⚡蓄力大招—打断可造成破绽!':'')),'bad');lastBossSkill=now;bossSkillIdx++;}
+    if(_allBossSkills.length&&now-lastBossSkill>skillCd*1000){const sk=_pickSk;let castTime=sk.castTime!==undefined?sk.castTime:2;const instantChance=typeof mon.instantCastChance==='number'?mon.instantCastChance:(mon.instantCast?0.35:0);let instant=instantChance>0&&Math.random()<instantChance;if(instant&&isEmpoweredBossCast(sk))instant=false;/* 大伤害/灭团技(蓄力大招)绝不瞬发,必须读条可打断 */if(instant)castTime=0;bossCasting={casterUid:mon._uid,bossName:mon.bossName||mon.name,name:sk.name,icon:sk.icon,type:sk.type,heal:sk.heal,healPct:sk.healPct,mul:sk.mul,dotSkill:sk.dotSkill,dotSecs:sk.dotSecs,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,spdBuffSecs:sk.spdBuffSecs,spdBuffPct:sk.spdBuffPct,atkBuffSecs:sk.atkBuffSecs,atkBuffPct:sk.atkBuffPct,defBuffSecs:sk.defBuffSecs,defBuffPct:sk.defBuffPct,drBuffSecs:sk.drBuffSecs,drBuffPct:sk.drBuffPct,shieldPct:sk.shieldPct,critBuffSecs:sk.critBuffSecs,critBuffPct:sk.critBuffPct,leechBuffSecs:sk.leechBuffSecs,leechBuffPct:sk.leechBuffPct,summonCount:sk.summonCount,summonTheme:sk.summonTheme,aoe:sk.aoe,silence:sk.silence,disarm:sk.disarm,fear:sk.fear,freeze:sk.freeze,cripple:sk.cripple,decay:sk.decay,wither:sk.wither,manaDrain:sk.manaDrain,bomb:sk.bomb,plague:sk.plague,bleed:sk.bleed,brittle:sk.brittle,soulDrain:sk.soulDrain,soulLink:sk.soulLink,revenge:sk.revenge,vulnerable:sk.vulnerable,frenzy:sk.frenzy,decay2:sk.decay2,mirror:sk.mirror,threat:sk.threat,interruptPolicy:sk.interruptPolicy,_empowered:isEmpoweredBossCast(sk),startTime:now,duration:castTime*1000};const _bt=bossCastTargetInfo(sk,now);bossCasting._targetDesc=_bt.desc;bossCasting._target=_bt.target;showBossTargetTelegraph(bossCasting,mon,{now,duration:instant?700:undefined});showBossCastStartFx(bossCasting,mon,{instant});const _emp=!instant&&isEmpoweredBossCast(sk)&&sk.interruptPolicy!=='none';const _aoeLog=(sk.type!=='heal'&&sk.type!=='buff'&&!sk.summonCount&&typeof sk.mul==='number'&&sk.mul>0)?(sk.aoe?' [🌀群体]':' [🎯单体]'):'';if(_emp || sk.threat==='high' || sk.threat==='extreme')combatEventBanner(_emp?'必须打断':'高危读条',(sk.icon||'')+sk.name,'danger');log('💀 '+(mon.bossName||mon.name)+(instant?' 瞬发 ':' 开始施放 ')+sk.name+_aoeLog+'!'+(instant?'(无法打断)':(_emp?' ⚡蓄力大招—打断可造成破绽!':'')),'bad');lastBossSkill=now;bossSkillIdx++;}
     // BOSS技巧(独立冷却,避免开场和支援技能一起连发)
     const tricks=bossTrickList(bossData).filter(trick => bossTrickAvailable(mon, trick, _hpFrac, now));
     const supportRecently = (mon._lastSupportSkill || 0) > 0 && now - mon._lastSupportSkill < 4500;
@@ -11651,6 +11692,7 @@ function resetCombatState(){
   if(typeof killStreak==='number')killStreak=0;
   if(typeof executeWindowFxSeen!=='undefined' && executeWindowFxSeen?.clear) executeWindowFxSeen.clear();
   if(typeof heroSurvivalCueBand!=='undefined'){heroSurvivalCueBand='';heroSurvivalCueAt=0;}
+  if(typeof companionSurvivalCueBand!=='undefined'){companionSurvivalCueBand='';companionSurvivalCueAt=0;}
   compSkillCd={};
   hideHeroCastBar();
   hideBossCastBar();
