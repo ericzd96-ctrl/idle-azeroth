@@ -574,11 +574,47 @@ function deathRecapAdviceShort(recap) {
   const advice = String(recap?.advice || '').split(/[。.!]/)[0].trim();
   return advice || '调整保命技能';
 }
+function combatAdviceSkillEntries(kind, now) {
+  const c = (typeof getCls === 'function') ? getCls() : null;
+  const selected = Array.isArray(state?.selectedSkills) ? state.selectedSkills : [];
+  const manual = selected.map(key => ({ key, sk:c?.skills?.[key], auto:false })).filter(x => x.sk);
+  const auto = (state?.autoSkill && typeof autoCastSkillEntries === 'function')
+    ? autoCastSkillEntries(c).map(([key, sk]) => ({ key, sk, auto:true })).filter(x => x.sk)
+    : [];
+  const seen = {};
+  return manual.concat(auto).filter(entry => {
+    if (seen[entry.key]) return false;
+    seen[entry.key] = true;
+    if (kind === 'heal') return bossCastResponseKind(entry.key, entry.sk) === 'heal';
+    if (kind === 'defensive') return bossCastResponseKind(entry.key, entry.sk) === 'defensive';
+    return false;
+  }).map(entry => {
+    const use = bossCastUsableSkillState(entry, now);
+    return Object.assign(entry, use);
+  }).sort((a, b) => {
+    if (a.ready !== b.ready) return a.ready ? -1 : 1;
+    return a.left - b.left || (a.sk.cd || 0) - (b.sk.cd || 0);
+  });
+}
+function combatAdviceSkillText(kind, now) {
+  const best = combatAdviceSkillEntries(kind, now)[0];
+  if (!best) return '';
+  const prefix = kind === 'heal' ? '治疗' : '减伤';
+  if (best.ready) return `按 ${best.sk.name}`;
+  if (Number.isFinite(best.left) && best.left > 0) return `${prefix}还差 ${Math.ceil(best.left / 1000)}秒`;
+  return `${prefix}缺资源`;
+}
+function combatAdviceSourceShort(source) {
+  const raw = String(source || '').replace(/^随从:/, '随从承伤:').trim();
+  if (!raw) return '';
+  return raw.length > 9 ? raw.slice(0, 9) + '…' : raw;
+}
 function updateCombatReactionAdvice() {
   const el = $('dm-reaction');
   if (!el) return;
   const now = Date.now();
   const ui = (typeof bossCastUiState === 'function') ? bossCastUiState(now) : null;
+  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
   let cls = 'idle';
   let text = '稳定输出';
   let title = '当前没有需要立即处理的战斗事件。';
@@ -629,22 +665,43 @@ function updateCombatReactionAdvice() {
     const compStats = (typeof computeCompanionStats === 'function') ? computeCompanionStats() : null;
     const compAlive = !!compStats && state?._compHp != null && !(typeof compDowned === 'function' && compDowned());
     const compPct = compAlive ? Math.max(0, state._compHp || 0) / Math.max(1, compStats.hpMax || 1) : 1;
+    const healSkill = combatAdviceSkillText('heal', now);
+    const defSkill = combatAdviceSkillText('defensive', now);
+    const survivalSkill = healSkill || defSkill;
+    const takenTotal = (ds?.taken || 0) + (ds?.compTaken || 0);
+    const coverTotal = (ds?.heroHeal || 0) + (ds?.compHeal || 0) + (ds?.heroShield || 0) + (ds?.compShield || 0);
+    const coverGap = takenTotal - coverTotal;
+    const topSource = incomingPressureSource(ds);
+    const sourceText = combatAdviceSourceShort(topSource?.name || '');
+    const lastHit = Array.isArray(ds?.recentTakenHits) ? ds.recentTakenHits[0] : null;
     if (hpPct < 0.32) {
       cls = 'danger';
-      text = '先保命 · 治疗/减伤';
-      title = '主角生命较低,先用治疗、护盾或减伤技能稳定血线。';
+      text = `先保命 · ${survivalSkill || '治疗/减伤'}`;
+      title = `主角生命较低,先用治疗、护盾或减伤技能稳定血线。${sourceText ? ' 主要压力来自: ' + sourceText + '。' : ''}`;
     } else if (compAlive && compPct < 0.34) {
       cls = 'danger';
-      text = '随从告急 · 治疗/护卫';
-      title = '随从生命较低,治疗或切换护卫节奏能避免倒地。';
+      text = `随从告急 · ${healSkill || defSkill || '治疗/护卫'}`;
+      title = `随从生命较低,治疗或切换护卫节奏能避免倒地。${sourceText ? ' 主要压力来自: ' + sourceText + '。' : ''}`;
     } else if (hpPct < 0.58) {
       cls = 'warn';
-      text = '血线偏低 · 留保命';
+      text = survivalSkill ? `血线偏低 · ${survivalSkill}` : '血线偏低 · 留保命';
       title = '主角血线偏低,保留治疗或防御技能应对下一次读条。';
     } else if (compAlive && compPct < 0.58) {
       cls = 'warn';
-      text = '随从吃紧 · 留治疗';
+      text = healSkill ? `随从吃紧 · ${healSkill}` : '随从吃紧 · 留治疗';
       title = '随从承压,留意治疗随从或护盾类技能。';
+    } else if (coverGap > Math.max(hMax * 0.20, takenTotal * 0.24) && takenTotal > 0) {
+      cls = 'warn';
+      text = `${lastHit?.boss ? '首领压血' : '承伤偏高'} · ${defSkill || healSkill || '补防护'}`;
+      title = `本场承伤比治疗+护盾多 ${fmt(coverGap)}。${sourceText ? '主要压力来自: ' + sourceText + '。' : ''}`;
+    } else if ((ds?.interruptFails || 0) > Math.max(1, ds?.interruptSuccesses || 0)) {
+      cls = 'warn';
+      text = '打断失误偏多 · 盯读条';
+      title = `本场打断成功 ${ds?.interruptSuccesses || 0} 次,失败 ${ds?.interruptFails || 0} 次。优先处理高危读条。`;
+    } else if (sourceText && takenTotal > 0 && coverGap > 0) {
+      cls = 'idle';
+      text = `稳住 · 压力来自 ${sourceText}`;
+      title = `目前可继续输出,但本场主要承伤来源是 ${sourceText},下一次遇到同类技能可留减伤或治疗。`;
     }
   }
   if (ui?.finalWindow && cls !== 'idle') cls += ' final';
