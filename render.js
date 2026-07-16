@@ -455,6 +455,16 @@ function updateDmgCombatSummary(total, healTotal) {
   if (ds.vulnWindowHits || 0) chips.push({ tone:'good', text:`窗口 ${ds.vulnWindowHits}次`, title:`破绽窗口命中 ${ds.vulnWindowHits} 次,累计 ${fmt(ds.vulnWindowDamage || 0)}` });
   if (ds.bossCastHits || 0) chips.push({ tone:bossCastDamage > 0 ? 'danger' : 'warn', text:`读条命中 ${ds.bossCastHits}`, title:`首领读条命中 ${ds.bossCastHits} 次,累计 ${fmt(bossCastDamage)}` });
   if (takenTotal > 0) chips.push({ tone:takenTotal > Math.max(healTotal + shieldTotal, 1) ? 'danger' : 'warn', text:`承伤 ${fmt(takenTotal)}`, title:`英雄与随从累计承伤 ${fmt(takenTotal)}` });
+  const pressureSource = takenTotal > 0 ? incomingPressureSource(ds) : null;
+  if (pressureSource) {
+    const pressurePct = Math.round(pressureSource.amount / Math.max(1, takenTotal) * 100);
+    chips.push({
+      tone:pressurePct >= 45 ? 'danger' : (pressurePct >= 25 ? 'warn' : 'info'),
+      kind:'source',
+      text:`主压 ${compactPressureSourceName(pressureSource.name)} ${fmt(pressureSource.amount)}`,
+      title:`本场主要承伤来源: ${pressureSource.name},累计 ${fmt(pressureSource.amount)},占总承伤 ${pressurePct}%。`
+    });
+  }
   if (takenTotal > 0 || healTotal + shieldTotal > 0) {
     const cover = healTotal + shieldTotal - takenTotal;
     chips.push({
@@ -464,7 +474,7 @@ function updateDmgCombatSummary(total, healTotal) {
     });
   }
   if (healTotal + shieldTotal > 0) chips.push({ tone:'good', text:`回复 ${fmt(healTotal + shieldTotal)}`, title:`治疗 ${fmt(healTotal)},护盾 ${fmt(shieldTotal)}` });
-  const sig = chips.map(c => `${c.tone}:${c.text}`).join('|');
+  const sig = chips.map(c => `${c.tone}:${c.kind || ''}:${c.text}`).join('|');
   if (!sig) {
     el.style.display = 'none';
     el.replaceChildren();
@@ -478,9 +488,9 @@ function updateDmgCombatSummary(total, healTotal) {
   title.className = 'dm-combat-summary-title';
   title.textContent = '本场';
   el.appendChild(title);
-  for (const chip of chips.slice(0, 7)) {
+  for (const chip of chips.slice(0, 8)) {
     const span = document.createElement('span');
-    span.className = `dm-combat-summary-chip ${chip.tone}`;
+    span.className = `dm-combat-summary-chip ${chip.tone}${chip.kind ? ' ' + chip.kind : ''}`;
     span.textContent = chip.text;
     span.title = chip.title || chip.text;
     el.appendChild(span);
@@ -935,6 +945,14 @@ function incomingPressureSource(ds) {
   const entries = Object.entries(combined).sort((a, b) => b[1] - a[1]);
   if (!entries.length) return null;
   return { name:entries[0][0], amount:entries[0][1] };
+}
+function compactPressureSourceName(name) {
+  const raw = String(name || '').replace(/^随从:/, '随从·').trim();
+  if (!raw) return '未知';
+  const parts = raw.split('·').filter(Boolean);
+  const label = parts.length >= 2 ? `${parts[0]}·${parts[parts.length - 1]}` : raw;
+  const chars = Array.from(label);
+  return chars.length > 9 ? chars.slice(0, 8).join('') + '…' : label;
 }
 function updateDmgLastHeal() {
   const el = $('dm-last-heal');
