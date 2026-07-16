@@ -8180,6 +8180,8 @@ button.legend:hover:not(:disabled) {
   line-height: 1.25;
 }
 .dm-recent-effect,
+.dm-recent-target,
+.dm-recent-hits,
 .dm-recent-chain {
   flex: 0 0 auto;
   padding: 0 4px;
@@ -8189,6 +8191,22 @@ button.legend:hover:not(:disabled) {
   color: #cbd5e1;
   font-size: 9px;
   font-weight: 800;
+}
+.dm-recent-target {
+  border-color: rgba(125,211,252,.22);
+  background: rgba(8,47,73,.26);
+  color: #bae6fd;
+}
+.dm-recent-hits {
+  min-width: 20px;
+  text-align: center;
+  border-color: color-mix(in srgb, var(--skill-fx-color) 38%, transparent);
+  background: var(--skill-fx-color-soft);
+  color: color-mix(in srgb, var(--skill-fx-color) 82%, #fff);
+}
+.dm-recent-chip.is-latest .dm-recent-target,
+.dm-recent-chip.is-latest .dm-recent-hits {
+  box-shadow: 0 0 8px var(--skill-fx-color-soft);
 }
 .dm-recent-chain {
   color: #fde68a;

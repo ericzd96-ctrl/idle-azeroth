@@ -175,6 +175,25 @@ function combatRecentSkillEffectText(item) {
   if (hits === 1) return target ? `命中${target}` : '命中';
   return '起手';
 }
+function combatRecentSkillTargetText(item) {
+  const target = String(item?.target || '').trim();
+  const hits = item?.hits || 0;
+  if (!target && hits <= 0) return '';
+  if (!target) return hits > 1 ? '多目标' : '目标';
+  if (target.includes('+') || /全体|持续伤害/.test(target)) return `→${target.length > 5 ? '多目标' : target}`;
+  if (/英雄|主角|你/.test(target)) return '→主角';
+  if (/随从/.test(target)) return '→随从';
+  if (/召唤/.test(target)) return '→召唤';
+  if (/自身/.test(target)) return '自身';
+  if (/敌人|目标/.test(target)) return '→敌人';
+  return `→${target.slice(0, 5)}`;
+}
+function combatRecentSkillHitText(item) {
+  const hits = item?.hits || 0;
+  if (hits > 1) return `x${hits}`;
+  if (hits === 1 && item?.target) return '命中';
+  return '';
+}
 function setHeaderResourceText(id, key, value) {
   const el = $(id);
   if (!el) return;
@@ -263,10 +282,12 @@ function updateDmgRecentSkills() {
     const danger = actor === 'boss' && (type === 'danger' || item.threat === 'high' || item.threat === 'extreme' || item.empowered);
     const schoolName = combatSchoolShortName(school);
     const effectText = combatRecentSkillEffectText(item);
+    const targetText = combatRecentSkillTargetText(item);
+    const hitText = combatRecentSkillHitText(item);
     const chainText = idx === 0 && chainCount >= 2 ? `连动x${chainCount}` : '';
     const ageOld = now - (item.ts || 0) > 7500;
     chip.className = `dm-recent-chip actor-${actor} school-${school} type-${type}${idx === 0 ? ' is-latest' : ''}${danger ? ' is-danger' : ''}${ageOld ? ' is-old' : ''}`;
-    chip.title = `${actorName[actor] || '技能'}释放 ${schoolName}${typeName[type] || '技能'}: ${item.icon || ''}${item.name || ''}。结果: ${effectText}${chainText ? ',' + chainText : ''}。${danger ? '高危首领技能,优先打断或开保命。' : ''}`;
+    chip.title = `${actorName[actor] || '技能'}释放 ${schoolName}${typeName[type] || '技能'}: ${item.icon || ''}${item.name || ''}。结果: ${effectText}${targetText ? ',' + targetText.replace(/^→/, '目标 ') : ''}${hitText ? ',' + hitText : ''}${chainText ? ',' + chainText : ''}。${danger ? '高危首领技能,优先打断或开保命。' : ''}`;
     const source = document.createElement('b');
     source.className = 'dm-recent-actor';
     source.textContent = actorIcon[actor] || '技';
@@ -280,6 +301,18 @@ function updateDmgRecentSkills() {
     effect.className = 'dm-recent-effect';
     effect.textContent = effectText;
     chip.append(source, name, badge, effect);
+    if (targetText) {
+      const target = document.createElement('span');
+      target.className = 'dm-recent-target';
+      target.textContent = targetText;
+      chip.appendChild(target);
+    }
+    if (hitText) {
+      const hits = document.createElement('span');
+      hits.className = 'dm-recent-hits';
+      hits.textContent = hitText;
+      chip.appendChild(hits);
+    }
     if (chainText) {
       const chain = document.createElement('span');
       chain.className = 'dm-recent-chain';
