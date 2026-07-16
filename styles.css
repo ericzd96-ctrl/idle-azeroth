@@ -9549,6 +9549,16 @@ button.dm-boss-cast-chip.skill-pressed {
   border-color: rgba(251,191,36,.34);
   background: rgba(113,63,18,.22);
 }
+.dm-boss-cast-chip.effect {
+  color: #ddd6fe;
+  border-color: rgba(168,85,247,.34);
+  background: rgba(88,28,135,.18);
+}
+.dm-boss-cast-chip.effect.danger {
+  color: #fecaca;
+  border-color: rgba(248,113,113,.44);
+  background: rgba(127,29,29,.22);
+}
 .dm-boss-cast-chip.locked,
 .dm-boss-cast-chip.empty {
   color: #94a3b8;

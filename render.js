@@ -1240,6 +1240,34 @@ function bossCastReadinessChips(ui) {
   }
   return chips;
 }
+function bossCastEffectChip(cast) {
+  if (!cast) return null;
+  const parts = [];
+  const add = (text) => { if (text && !parts.includes(text)) parts.push(text); };
+  const isDamage = (typeof cast.mul === 'number' && cast.mul > 0) && cast.type !== 'heal' && cast.type !== 'buff' && !cast.summonCount;
+  if (cast.aoe) add('群体');
+  if (cast.dotSkill || cast.dot || cast.plague || cast.bleed) add('持续');
+  if (cast.stun || cast.silence || cast.disarm || cast.fear || cast.freeze || cast.cripple) add('控制');
+  if (cast.vulnerable || cast.sunder || cast.weaken || cast.brittle) add('易伤');
+  if (cast.summonCount) add('召唤');
+  if (cast.heal || cast.healPct) add('治疗');
+  if (cast.shieldPct) add('护盾');
+  if (cast.spdBuff || cast.spdBuffSecs || cast.atkBuffSecs || cast.defBuffSecs || cast.drBuffSecs || cast.critBuffSecs || cast.leechBuffSecs) add('强化');
+  if (cast.lifeSteal || cast.soulDrain) add('吸血');
+  if (cast.manaDrain) add('抽能');
+  if (cast.wither || cast.decay || cast.decay2) add('衰减');
+  if (cast.bomb) add('炸弹');
+  if (isDamage && !parts.length) add((cast.mul || 0) >= 5 || cast.alwaysCrit || cast.threat === 'high' || cast.threat === 'extreme' ? '重击' : '伤害');
+  if (!parts.length) add(cast.type === 'heal' ? '治疗' : (cast.type === 'buff' || cast.type === 'support' ? '强化' : '机制'));
+  const label = parts.slice(0, 2).join('+');
+  const target = cast._targetDesc || (cast.aoe ? '全体' : (isDamage ? '当前目标' : '自身'));
+  const threat = (typeof bossCastThreatMeta === 'function') ? bossCastThreatMeta(cast)?.label : '';
+  return {
+    cls:`effect ${cast.threat === 'high' || cast.threat === 'extreme' || cast._empowered ? 'danger' : ''}`.trim(),
+    text:label,
+    title:`读条效果: ${parts.join('、')}。目标: ${target}${threat ? '。威胁: ' + threat : ''}。`
+  };
+}
 function updateDmgBossCastReadout() {
   const row = $('dm-boss-cast-row');
   const el = $('dm-boss-cast');
@@ -1286,7 +1314,8 @@ function updateDmgBossCastReadout() {
   el.className = `dm-boss-cast ${cls}`;
   const suggestion = finalWindow ? (ui?.finalAction || action) : (ui?.action || action);
   const text = `${icon}${name} · 对${target}`;
-  const readyChips = bossCastReadinessChips(ui);
+  const effectChip = bossCastEffectChip(cast);
+  const readyChips = [effectChip].filter(Boolean).concat(bossCastReadinessChips(ui));
   const chipSig = readyChips.map(x => `${x.cls}:${x.text}`).join('|');
   const sig = `${text}|${remain}|${suggestion}|${chipSig}|${finalWindow ? '1' : '0'}`;
   if (el.dataset.castSig !== sig) {
