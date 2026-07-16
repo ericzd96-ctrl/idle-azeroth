@@ -6602,6 +6602,11 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   .dm-recent-chip { max-width: 33%; padding: 1px 5px; font-size: 9px; }
   .dm-recent-amount { min-width: 30px; padding: 0 3px; font-size: 8px; }
   .dm-recent-chip:nth-child(n+5) { display: none; }
+  .dm-last-hit { gap: 3px; padding: 2px 4px; }
+  .dm-last-hit-chip { max-width: 48%; padding: 1px 2px; }
+  .dm-last-hit-chip.latest { max-width: 66%; }
+  .dm-last-hit-chip:nth-child(n+4) { display: none; }
+  .dm-last-hit-source { max-width: 38%; }
   .dm-boss-cast { gap: 3px; padding: 2px 4px; }
   .dm-boss-cast-action { max-width: 30%; }
   .dm-boss-cast-chip { min-width: 32px; padding: 0 3px; }
@@ -8810,6 +8815,26 @@ button.legend:hover:not(:disabled) {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.dm-last-hit-chip {
+  flex: 0 1 auto;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  max-width: 48%;
+  padding: 1px 3px;
+  border-radius: 5px;
+  border: 1px solid rgba(148,163,184,.16);
+  background: rgba(2,6,23,.24);
+  opacity: .72;
+}
+.dm-last-hit-chip.latest {
+  flex: 1 1 auto;
+  max-width: 62%;
+  opacity: 1;
+  border-color: rgba(148,163,184,.28);
+  background: rgba(15,23,42,.38);
+}
 .dm-last-hit-target,
 .dm-last-hit-amount,
 .dm-last-hit-source,
@@ -8845,6 +8870,10 @@ button.legend:hover:not(:disabled) {
   color: #fef3c7;
   background: rgba(113,63,18,.28);
 }
+.dm-last-hit-chip.warn {
+  border-color: rgba(251,191,36,.26);
+  background: rgba(113,63,18,.16);
+}
 .dm-last-hit.danger {
   color: #fecaca;
   border-color: rgba(248,113,113,.42);
@@ -8857,6 +8886,10 @@ button.legend:hover:not(:disabled) {
 }
 .dm-last-hit.danger .dm-last-hit-source {
   color: #fecaca;
+}
+.dm-last-hit-chip.danger {
+  border-color: rgba(248,113,113,.34);
+  background: rgba(127,29,29,.22);
 }
 .dm-top-skill-row { align-items: stretch; }
 .dm-top-skill {

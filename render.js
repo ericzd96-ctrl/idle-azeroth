@@ -656,37 +656,50 @@ function updateDmgLastHit() {
   const el = $('dm-last-hit');
   if (!el) return;
   const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
-  if (!ds || (!ds.lastTakenAt && !ds.lastCompTakenAt)) {
+  const legacyHit = () => {
+    const heroAt = ds?.lastTakenAt || 0;
+    const compAt = ds?.lastCompTakenAt || 0;
+    if (!heroAt && !compAt) return null;
+    const target = compAt > heroAt ? '随从' : '主角';
+    return {
+      target,
+      amount:target === '随从' ? (ds.lastCompTakenAmount || 0) : (ds.lastTakenAmount || 0),
+      at:target === '随从' ? compAt : heroAt,
+      source:target === '随从' ? (ds.lastCompTakenSource || '敌人') : (ds.lastTakenSource || '敌人'),
+      skill:target === '随从' ? (ds.lastCompTakenSkill || '') : (ds.lastTakenSkill || ''),
+      boss:target === '随从' ? !!ds.lastCompTakenBoss : !!ds.lastTakenBoss
+    };
+  };
+  const hits = Array.isArray(ds?.recentTakenHits) && ds.recentTakenHits.length ? ds.recentTakenHits : [legacyHit()].filter(Boolean);
+  if (!ds || !hits.length) {
     el.className = 'dm-last-hit idle';
     el.dataset.sig = '';
     el.textContent = '-';
     el.removeAttribute('title');
     return;
   }
-  const heroAt = ds.lastTakenAt || 0;
-  const compAt = ds.lastCompTakenAt || 0;
-  const target = compAt > heroAt ? '随从' : '主角';
-  const amount = target === '随从' ? (ds.lastCompTakenAmount || 0) : (ds.lastTakenAmount || 0);
-  const at = target === '随从' ? compAt : heroAt;
-  const source = target === '随从' ? (ds.lastCompTakenSource || '敌人') : (ds.lastTakenSource || '敌人');
-  const skill = target === '随从' ? (ds.lastCompTakenSkill || '') : (ds.lastTakenSkill || '');
-  const boss = target === '随从' ? !!ds.lastCompTakenBoss : !!ds.lastTakenBoss;
   const now = Date.now();
-  const ago = at ? Math.max(0, Math.floor((now - at) / 1000)) : 0;
-  const maxHp = target === '随从'
-    ? Math.max(1, ((typeof computeCompanionStats === 'function') ? computeCompanionStats()?.hpMax : 1) || 1)
-    : Math.max(1, state?.hero?.hpMax || 1);
-  const pct = amount / maxHp;
-  let cls = boss || pct >= 0.16 ? 'danger' : (pct >= 0.07 ? 'warn' : 'idle');
-  const sourceText = [source, skill].filter(Boolean).join(' · ');
-  const agoText = ago < 60 ? `${ago}秒前` : `${Math.floor(ago / 60)}分钟前`;
-  const html = `<span class="dm-last-hit-target">${escapeDmgMeterText(target)}</span><span class="dm-last-hit-amount">-${fmt(amount)}</span><span class="dm-last-hit-source">${escapeDmgMeterText(sourceText || '未知来源')}</span><span class="dm-last-hit-ago">${escapeDmgMeterText(agoText)}</span>`;
+  const compMax = Math.max(1, ((typeof computeCompanionStats === 'function') ? computeCompanionStats()?.hpMax : 1) || 1);
+  const heroMax = Math.max(1, state?.hero?.hpMax || 1);
+  const meta = hits.slice(0, 4).map((hit, idx) => {
+    const target = String(hit.target || '主角');
+    const amount = Math.max(0, Math.floor(hit.amount || 0));
+    const maxHp = target === '随从' ? compMax : heroMax;
+    const pct = amount / maxHp;
+    const tone = hit.boss || pct >= 0.16 ? 'danger' : (pct >= 0.07 ? 'warn' : 'idle');
+    const ago = hit.at ? Math.max(0, Math.floor((now - hit.at) / 1000)) : 0;
+    const agoText = ago < 60 ? `${ago}秒` : `${Math.floor(ago / 60)}分`;
+    const sourceText = [hit.source || '敌人', hit.skill || ''].filter(Boolean).join(' · ');
+    return { target, amount, tone, agoText, sourceText, latest:idx === 0 };
+  });
+  let cls = meta.some(x => x.tone === 'danger') ? 'danger' : (meta.some(x => x.tone === 'warn') ? 'warn' : 'idle');
+  const html = meta.map(hit => `<span class="dm-last-hit-chip ${hit.tone}${hit.latest ? ' latest' : ''}"><span class="dm-last-hit-target">${escapeDmgMeterText(hit.target)}</span><span class="dm-last-hit-amount">-${fmt(hit.amount)}</span><span class="dm-last-hit-source">${escapeDmgMeterText(hit.sourceText || '未知来源')}</span><span class="dm-last-hit-ago">${escapeDmgMeterText(hit.agoText)}</span></span>`).join('');
   el.className = `dm-last-hit ${cls}`;
   if (el.dataset.sig !== html) {
     el.dataset.sig = html;
     el.innerHTML = html;
   }
-  el.title = `最近承伤: ${target} 在${agoText}受到 ${fmt(amount)} 点伤害。来源: ${sourceText || '未知来源'}。${boss ? '首领技能或首领攻击。' : ''}`;
+  el.title = '最近承伤: ' + meta.map(hit => `${hit.target} -${fmt(hit.amount)} (${hit.sourceText || '未知来源'}, ${hit.agoText}前)`).join(' / ');
 }
 function escapeDmgMeterText(value) {
   return String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({

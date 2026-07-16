@@ -12287,9 +12287,17 @@ function doInterrupt(skillKey){
 /* ---------- 随从 ---------- */
 let lastCompAtk=0,lastCompSkill=0,compSkillIdx=0,lastCompRegen=0;
 /* ---------- 伤害统计(战斗日志下面的伤害条) ---------- */
-function defaultDmgStats(){return {hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,heroHeal:0,compHeal:0,heroHealMax:0,compHealMax:0,heroHealSkills:{},compHealSkills:{},lastHeroHealAmount:0,lastHeroHealAt:0,lastHeroHealSkill:'',lastCompHealAmount:0,lastCompHealAt:0,lastCompHealSkill:'',heroShield:0,compShield:0,heroShieldMax:0,compShieldMax:0,lastHeroShieldAmount:0,lastHeroShieldAt:0,lastHeroShieldSkill:'',lastCompShieldAmount:0,lastCompShieldAt:0,lastCompShieldSkill:'',kills:0,heroSkills:{},compSkills:{},heroSchoolDamage:{},compSchoolDamage:{},taken:0,takenMax:0,takenHits:0,compTaken:0,compTakenMax:0,compTakenHits:0,takenSources:{},compTakenSources:{},killTs:0,killFast:0,killSlow:0,peakDps:0,lastTakenAmount:0,lastTakenAt:0,lastTakenSource:'',lastTakenSkill:'',lastTakenBoss:false,maxTakenSource:'',maxTakenSkill:'',lastCompTakenAmount:0,lastCompTakenAt:0,lastCompTakenSource:'',lastCompTakenSkill:'',lastCompTakenBoss:false,maxCompTakenSource:'',maxCompTakenSkill:'',interruptSuccesses:0,interruptFails:0,lastInterruptAt:0,lastInterruptResult:'',lastInterruptSkill:'',lastInterruptBoss:'',lastInterruptCast:'',lastInterruptEmpowered:false,lastInterruptSoft:false,bossCastHits:0,bossCastTotalDamage:0,bossCastHistory:[],lastBossCastAt:0,lastBossCastName:'',lastBossCastBoss:'',lastBossCastTarget:'',lastBossCastDamage:0,lastBossCastKind:'',lastBossCastEmpowered:false,vulnWindowHits:0,vulnWindowDamage:0,lastVulnWindowHitAt:0,lastVulnWindowSkill:'',lastVulnWindowTarget:'',lastVulnWindowDamage:0,lastVulnWindowCrit:false,lastVulnWindowAoe:false};}
+function defaultDmgStats(){return {hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,heroHeal:0,compHeal:0,heroHealMax:0,compHealMax:0,heroHealSkills:{},compHealSkills:{},lastHeroHealAmount:0,lastHeroHealAt:0,lastHeroHealSkill:'',lastCompHealAmount:0,lastCompHealAt:0,lastCompHealSkill:'',heroShield:0,compShield:0,heroShieldMax:0,compShieldMax:0,lastHeroShieldAmount:0,lastHeroShieldAt:0,lastHeroShieldSkill:'',lastCompShieldAmount:0,lastCompShieldAt:0,lastCompShieldSkill:'',kills:0,heroSkills:{},compSkills:{},heroSchoolDamage:{},compSchoolDamage:{},taken:0,takenMax:0,takenHits:0,compTaken:0,compTakenMax:0,compTakenHits:0,takenSources:{},compTakenSources:{},recentTakenHits:[],killTs:0,killFast:0,killSlow:0,peakDps:0,lastTakenAmount:0,lastTakenAt:0,lastTakenSource:'',lastTakenSkill:'',lastTakenBoss:false,maxTakenSource:'',maxTakenSkill:'',lastCompTakenAmount:0,lastCompTakenAt:0,lastCompTakenSource:'',lastCompTakenSkill:'',lastCompTakenBoss:false,maxCompTakenSource:'',maxCompTakenSkill:'',interruptSuccesses:0,interruptFails:0,lastInterruptAt:0,lastInterruptResult:'',lastInterruptSkill:'',lastInterruptBoss:'',lastInterruptCast:'',lastInterruptEmpowered:false,lastInterruptSoft:false,bossCastHits:0,bossCastTotalDamage:0,bossCastHistory:[],lastBossCastAt:0,lastBossCastName:'',lastBossCastBoss:'',lastBossCastTarget:'',lastBossCastDamage:0,lastBossCastKind:'',lastBossCastEmpowered:false,vulnWindowHits:0,vulnWindowDamage:0,lastVulnWindowHitAt:0,lastVulnWindowSkill:'',lastVulnWindowTarget:'',lastVulnWindowDamage:0,lastVulnWindowCrit:false,lastVulnWindowAoe:false};}
 let dmgStats=defaultDmgStats();
 function takenSourceLabel(meta){const src=normalizeTrackedSkillLabel(meta?.source)||'敌人';const skill=normalizeTrackedSkillLabel(meta?.skill);return skill&&skill!==src?`${src}·${skill}`:src;}
+function pushRecentTakenHit(target,amt,meta,at){
+  if(typeof dmgStats==='undefined'||!dmgStats)return;
+  if(!Array.isArray(dmgStats.recentTakenHits))dmgStats.recentTakenHits=[];
+  const source=normalizeTrackedSkillLabel(meta?.source)||'敌人';
+  const skill=normalizeTrackedSkillLabel(meta?.skill)||'';
+  dmgStats.recentTakenHits.unshift({target,amount:Math.max(0,Math.floor(amt||0)),at:at||Date.now(),source,skill,boss:!!meta?.boss});
+  dmgStats.recentTakenHits.splice(4);
+}
 function trackVulnerabilityWindowHit(mon,amt,skillLabel,meta){
   const now=Date.now();
   if(!mon||amt<=0||!((mon.sunderUntil||0)>now)||!((mon.stunUntil||0)>now))return;
@@ -12338,15 +12346,17 @@ function trackInterruptResult(result,meta){
 function trackTaken(amt,meta){
   amt=Math.floor(amt||0);if(amt<=0)return;
   const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;dmgStats.taken=(dmgStats.taken||0)+amt;dmgStats.takenHits=(dmgStats.takenHits||0)+1;dmgStats.lastTakenAmount=amt;dmgStats.lastTakenAt=t;dmgStats.lastTakenSource=meta?.source||dmgStats.lastTakenSource||'敌人';dmgStats.lastTakenSkill=meta?.skill||'';dmgStats.lastTakenBoss=!!meta?.boss;const k=takenSourceLabel(meta);dmgStats.takenSources[k]=(dmgStats.takenSources[k]||0)+amt;if(amt>(dmgStats.takenMax||0)){dmgStats.takenMax=amt;dmgStats.maxTakenSource=dmgStats.lastTakenSource;dmgStats.maxTakenSkill=dmgStats.lastTakenSkill;}
+  pushRecentTakenHit('主角',amt,meta,t);
   const maxHp=Math.max(1,state?.hero?.hpMax||1);
-  if(amt>=maxHp*(meta?.boss?0.10:0.16)) combatCueToast(meta?.boss?'首领重击':'受到重创', fmt(amt), 'danger');
+  if(amt>=maxHp*(meta?.boss?0.10:0.16)) combatCueToast(meta?.boss?'首领重击':'受到重创', `${takenSourceLabel(meta)} · ${fmt(amt)}`, 'danger');
 }
 function trackCompanionTaken(amt,meta){
   amt=Math.floor(amt||0);if(amt<=0)return;
   const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;dmgStats.compTaken=(dmgStats.compTaken||0)+amt;dmgStats.compTakenHits=(dmgStats.compTakenHits||0)+1;dmgStats.lastCompTakenAmount=amt;dmgStats.lastCompTakenAt=t;dmgStats.lastCompTakenSource=meta?.source||dmgStats.lastCompTakenSource||'敌人';dmgStats.lastCompTakenSkill=meta?.skill||'';dmgStats.lastCompTakenBoss=!!meta?.boss;const k=takenSourceLabel(meta);dmgStats.compTakenSources[k]=(dmgStats.compTakenSources[k]||0)+amt;if(amt>(dmgStats.compTakenMax||0)){dmgStats.compTakenMax=amt;dmgStats.maxCompTakenSource=dmgStats.lastCompTakenSource;dmgStats.maxCompTakenSkill=dmgStats.lastCompTakenSkill;}
+  pushRecentTakenHit('随从',amt,meta,t);
   const st=typeof computeCompanionStats==='function'?computeCompanionStats():null;
   const maxHp=Math.max(1,st?.hpMax||1);
-  if(amt>=maxHp*(meta?.boss?0.10:0.16)) combatCueToast(meta?.boss?'随从承压':'随从受创', fmt(amt), 'danger');
+  if(amt>=maxHp*(meta?.boss?0.10:0.16)) combatCueToast(meta?.boss?'随从承压':'随从受创', `${takenSourceLabel(meta)} · ${fmt(amt)}`, 'danger');
 }
 /* ---- 战斗手感 polish:屏震 / 连杀提示 ---- */
 let _lastShakeTs=0, _lastStageFlashTs=0, _lastCombatBannerTs=0, killStreak=0;
