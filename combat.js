@@ -12177,12 +12177,13 @@ function tickCast(now){
       const critRate = monsterCritRate(mon, now);
       const bossCastEl = monsterFloatAnchor(mon);
       if(bossCastEl) showSkillCastFx(bossCastEl, bc, { actor:'boss', pulse:'bosscast', duration:460 });
-      if(bc.type==='heal'){const h=bossSkillHealAmount(mon, bc.heal||0.2);mon.hp=Math.min(mon.hpMax,mon.hp+h);showMonsterFloat(mon,'💚+'+h,'#6ee7b7');if(bossCastEl)showSkillSelfFx(bossCastEl,bc,{actor:'boss',school:'heal',pulse:'heal',duration:520});}
+      if(bc.type==='heal'){const h=bossSkillHealAmount(mon, bc.heal||0.2);mon.hp=Math.min(mon.hpMax,mon.hp+h);showMonsterFloat(mon,'💚+'+h,'#6ee7b7');if(bossCastEl)showSkillSelfFx(bossCastEl,bc,{actor:'boss',school:'heal',pulse:'heal',duration:520});bossCastResultCue(bc,'support',(bc.icon||'')+(bc.name||'治疗')+' · 自身恢复 '+fmt(h),{intensity:.78});}
       else if(bc.type==='buff'||bc.type==='support'||bc.type==='summon'||(bc.summonCount && !bc.mul)){
         log(`💀 ${mon.bossName || mon.name} 释放了 ${bc.name}!`,'bad');
         showMonsterFloat(mon, (bc.icon || '✨') + bc.name + '!', '#fda4af');
         applyMonsterSupportSkill(mon, bc, now, { announce:false });
         if(bossCastEl){const bossSupportSchool=skillSupportVisualSchool(null,bc,'boss');showSkillSelfFx(bossCastEl,bc,{actor:'boss',school:bossSupportSchool,pulse:bossSupportSchool==='shield'?'shield':'bosscast',duration:520});}
+        bossCastResultCue(bc,'support',(bc.icon||'')+(bc.name||'强化')+' · 首领获得增益',{intensity:.82});
       } else{
         const mul=bc.mul||2;
         // DoT 类技能:不一次出伤,把这一发摊成持续灼烧(给治疗/吸血留反应空间);不暴击、读条可打断
@@ -12196,6 +12197,7 @@ function tickCast(now){
           if(bossCastEl) showSkillImpactFx(bossCastEl, $('hero-emoji'), bc, { actor:'boss', amount:dps*secs, targetMax:state.hero.hpMax, threat:bc.threat, empowered:bc._empowered, impactTag:'持续', scale:1.08, pulse:'danger' });
           if(companionTargetable()){const _cst=computeCompanionStats();applyCompanionDebuff('burn',secs*1000,{dps:Math.max(1,Math.floor(dps*0.5))});if(bossCastEl)showSkillImpactFx(bossCastEl,$('comp-mini'),bc,{actor:'boss',amount:Math.floor(dps*secs*0.5),targetMax:_cst?.hpMax||state.hero.hpMax,threat:bc.threat,empowered:bc._empowered,impactTag:'持续',scale:0.86,pulse:'danger'});}
           trackBossCastOutcome(bc, mon, { target:'持续伤害', damage:dps*secs, kind:'dot' });
+          bossCastResultCue(bc,'dot',(bc.icon||'')+(bc.name||'持续伤害')+' · 总量约 -'+fmt(dps*secs),{intensity:bc._empowered?1.12:.96});
           if(state.hp<=0)onHeroDeath();
           return;
         }
@@ -12232,6 +12234,7 @@ function tickCast(now){
             if(!castTargets.includes('召唤物')) castTargets.push('召唤物');
           }
           trackBossCastOutcome(bc, mon, { target:castTargets.join('+'), damage:castTotalDamage, kind:'aoe' });
+          bossCastResultCue(bc,bossCastResultKind(bc,castTotalDamage),(bc.icon||'')+(bc.name||'群体技能')+' · '+castTargets.join('+')+' -'+fmt(castTotalDamage),{intensity:bc._empowered?1.18:1});
           if(state.hp<=0)onHeroDeath();
         }else{
           // 复用开始施法时预选的目标(施法条已据此显示"对谁");若该目标已失效则重新选
@@ -12246,6 +12249,7 @@ function tickCast(now){
             log('🛡️ 随从替你承受了 '+bc.icon+'!','info');
             skillEffects(bc,mon,ct,now,{target:'companion'});
             trackBossCastOutcome(bc, mon, { target:'随从', damage:ct, kind:'single' });
+            bossCastResultCue(bc,bossCastResultKind(bc,ct),(bc.icon||'')+(bc.name||'单体技能')+' · 随从 -'+fmt(ct),{intensity:bc._empowered?1.12:.9});
           }else if(target.kind==='summon'&&target.unit){
             const unit = target.unit;
             const d3=calcDmg(rawAtk,unit.def || 0,0,0,false,state.hero.lvl,mon.lvl,{tightVar:true});
@@ -12253,6 +12257,7 @@ function tickCast(now){
             if(bc.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(d3.dmg*bc.lifeSteal));
             log(`🛡️ ${unit.baseName || unit.name} 挡下了 ${bc.icon || '✨'}!`,'info');
             trackBossCastOutcome(bc, mon, { target:unit.baseName || unit.name || '召唤物', damage:d3.dmg, kind:'single' });
+            bossCastResultCue(bc,'covered',(bc.icon||'')+(bc.name||'单体技能')+' · '+(unit.baseName || unit.name || '召唤物')+'挡下 -'+fmt(d3.dmg),{intensity:.82});
           }else{
             let taken=calcDmg(rawAtk,heroDefAgainst(mon),0,0,false,state.hero.lvl,mon.lvl,{tightVar:true}).dmg;
             taken=resolveMonsterDamageTaken(mon,taken);
@@ -12264,6 +12269,7 @@ function tickCast(now){
             skillEffects(bc,mon,taken,now);
             if(bc._empowered&&state.hp>0){applyHeroDebuff('weaken',4000);log('⚠️ 没能打断蓄力大招,陷入虚弱!下次记得打断','bad');}
             trackBossCastOutcome(bc, mon, { target:'英雄', damage:taken, kind:'single' });
+            bossCastResultCue(bc,bossCastResultKind(bc,taken),(bc.icon||'')+(bc.name||'单体技能')+' · 英雄 -'+fmt(taken),{intensity:bc._empowered?1.18:1});
           }
           if(state.hp<=0)onHeroDeath();}}}}
 }
@@ -12439,6 +12445,7 @@ function doInterrupt(skillKey){
     if(skillKey)showSkillDeniedFx(skillKey, 'locked', { label:'不可断' });
     trackInterruptResult('immune',{skillKey,skillName:(getCls()?.skills?.[skillKey]?.name)||'打断',bossName,castName:bossCasting.name,empowered:!!bossCasting._empowered,soft:false});
     log('🧱 '+bossName+' 的 '+bossCasting.name+' 无法被打断!','bad');
+    bossCastResultCue(bossCasting, 'immune', (bossCasting.icon || '') + (bossCasting.name || '施法') + ' · 换治疗/减伤处理', { intensity:1.05 });
     if(mon) showMonsterFloat(mon,'🧱不可断','#fca5a5',{variant:'boss',scale:1.04});
     if(mon) showInterruptFx(mon, 'immune', bossCasting.name);
     return false;
@@ -12465,6 +12472,7 @@ function doInterrupt(skillKey){
     }
   }
   const empowered = bossCasting._empowered;
+  bossCastResultCue(bossCasting, empowered?'perfect':(softResidual?'soft':'interrupt'), (bossCasting.icon || '') + (bossCasting.name || '施法') + (softResidual ? ' · 仍有余波' : ' · 已阻止'), { intensity:empowered?1.08:.86 });
   trackInterruptResult(empowered?'perfect':(softResidual?'soft':'success'),{skillKey,skillName:(getCls()?.skills?.[skillKey]?.name)||(skillKey?'打断':'顺带打断'),bossName,castName:bossCasting.name,empowered,soft:softResidual});
   hideBossCastBar();
   bossCasting=null;
@@ -12666,6 +12674,69 @@ function combatEventBanner(title, detail, kind){
   st.appendChild(el);
   combatCueLanePush(title, detail, kind||'kill');
   setTimeout(()=>el.remove(), important ? 1250 : 900);
+}
+function bossCastResultKind(cast, amount, fallback){
+  if(fallback) return fallback;
+  const threat = cast?.threat || 'low';
+  if((amount || 0) <= 0) return 'handled';
+  if(cast?.interruptPolicy === 'none') return 'covered';
+  if(cast?._empowered || threat === 'high' || threat === 'extreme' || cast?.interruptPolicy === 'hard') return 'missed';
+  return 'hit';
+}
+function bossCastResultCue(cast, kind, detail, opts){
+  if(typeof document==='undefined'||document.hidden)return;
+  const safeKind = String(kind || 'hit').replace(/[^a-z0-9_-]/gi,'') || 'hit';
+  const titleMap = {
+    interrupt:'读条已打断',
+    perfect:'完美打断',
+    soft:'打断余波',
+    immune:'不可打断',
+    covered:'不可断承受',
+    missed:'高危命中',
+    hit:'技能命中',
+    dot:'持续伤害',
+    support:'首领强化',
+    handled:'读条化解'
+  };
+  const toneMap = {
+    interrupt:'interrupt',
+    perfect:'interrupt',
+    soft:'danger',
+    immune:'danger',
+    covered:'shield',
+    missed:'danger',
+    hit:'boss',
+    dot:'danger',
+    support:'boss',
+    handled:'interrupt'
+  };
+  const title = opts?.title || titleMap[safeKind] || '读条结果';
+  const castName = [cast?.icon || '', cast?.name || '首领技能'].join('');
+  const text = detail || castName;
+  const st = document.getElementById('stage');
+  if(st){
+    const el = document.createElement('div');
+    el.className = 'combat-cast-result ' + safeKind;
+    const b = document.createElement('b');
+    b.textContent = title;
+    el.appendChild(b);
+    const span = document.createElement('span');
+    span.textContent = text;
+    el.appendChild(span);
+    st.appendChild(el);
+    setTimeout(()=>el.remove(), safeKind === 'missed' || safeKind === 'perfect' ? 1200 : 980);
+  }
+  const cueKind = toneMap[safeKind] || 'boss';
+  combatCueLanePush(title, text, cueKind);
+  if(safeKind === 'missed' || safeKind === 'immune' || safeKind === 'soft'){
+    stageEdgeFx('critical', { intensity:opts?.intensity || 1 });
+    stageFlashFx('danger');
+    if(safeKind === 'missed') stageShakeFx();
+  }else if(safeKind === 'covered'){
+    stageEdgeFx('shield', { intensity:.75 });
+  }else if(safeKind === 'interrupt' || safeKind === 'perfect' || safeKind === 'handled'){
+    stageFlashFx('interrupt');
+  }
 }
 function combatCueToast(title, detail, kind){
   if(typeof document==='undefined'||document.hidden)return;

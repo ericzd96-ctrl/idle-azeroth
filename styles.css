@@ -6333,6 +6333,10 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   --stage-edge-color: rgba(96,165,250,.46);
   --stage-edge-soft: rgba(30,64,175,.12);
 }
+.stage-edge-fx.interrupt {
+  --stage-edge-color: rgba(147,197,253,.42);
+  --stage-edge-soft: rgba(30,64,175,.10);
+}
 @keyframes stageEdgeFlash {
   0% { opacity: 0; transform: scale(.992); }
   18% { opacity: var(--stage-edge-opacity); transform: scale(1); }
@@ -6427,6 +6431,75 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   border-color: rgba(96,165,250,.62);
   background: linear-gradient(180deg, rgba(30,64,175,.62), rgba(15,23,42,.72));
 }
+.combat-cast-result {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 20;
+  min-width: 150px;
+  max-width: calc(100% - 38px);
+  padding: 6px 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,.40);
+  background: linear-gradient(180deg, rgba(15,23,42,.82), rgba(2,6,23,.70));
+  color: #e5e7eb;
+  box-shadow: 0 8px 24px rgba(0,0,0,.34), inset 0 0 0 1px rgba(255,255,255,.05);
+  pointer-events: none;
+  text-align: center;
+  transform: translate(-50%, -50%);
+  animation: combatCastResult .98s ease-out forwards;
+}
+.combat-cast-result b {
+  display: block;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.05;
+  text-shadow: 0 1px 5px rgba(0,0,0,.92);
+}
+.combat-cast-result span {
+  display: block;
+  min-width: 0;
+  margin-top: 2px;
+  overflow: hidden;
+  color: #cbd5e1;
+  font-size: 10px;
+  line-height: 1.12;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.combat-cast-result.interrupt,
+.combat-cast-result.handled {
+  color: #bfdbfe;
+  border-color: rgba(147,197,253,.68);
+  background: linear-gradient(180deg, rgba(30,64,175,.70), rgba(15,23,42,.72));
+}
+.combat-cast-result.perfect {
+  color: #fde68a;
+  border-color: rgba(250,204,21,.76);
+  background: linear-gradient(180deg, rgba(30,64,175,.76), rgba(113,63,18,.62));
+  box-shadow: 0 8px 28px rgba(0,0,0,.38), 0 0 18px rgba(250,204,21,.18), inset 0 0 12px rgba(147,197,253,.14);
+  animation-duration: 1.16s;
+}
+.combat-cast-result.covered {
+  color: #bfdbfe;
+  border-color: rgba(96,165,250,.62);
+  background: linear-gradient(180deg, rgba(30,64,175,.64), rgba(15,23,42,.72));
+}
+.combat-cast-result.support,
+.combat-cast-result.hit {
+  color: #fef3c7;
+  border-color: rgba(251,191,36,.58);
+  background: linear-gradient(180deg, rgba(113,63,18,.62), rgba(15,23,42,.72));
+}
+.combat-cast-result.missed,
+.combat-cast-result.immune,
+.combat-cast-result.soft,
+.combat-cast-result.dot {
+  color: #fecaca;
+  border-color: rgba(248,113,113,.76);
+  background: linear-gradient(180deg, rgba(127,29,29,.84), rgba(15,23,42,.74));
+  box-shadow: 0 8px 28px rgba(0,0,0,.38), 0 0 18px rgba(248,113,113,.18), inset 0 0 10px rgba(248,113,113,.12);
+}
 .combat-cue-toast {
   position: absolute;
   left: 50%;
@@ -6501,6 +6574,12 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   18% { opacity: .96; transform: translate(-50%, -50%) scale(1.03); }
   70% { opacity: .96; transform: translate(-50%, -56%) scale(1); }
   100% { opacity: 0; transform: translate(-50%, -72%) scale(.96); }
+}
+@keyframes combatCastResult {
+  0% { opacity: 0; transform: translate(-50%, -28%) scale(.86); }
+  18% { opacity: .98; transform: translate(-50%, -50%) scale(1.04); }
+  72% { opacity: .96; transform: translate(-50%, -58%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -78%) scale(.96); }
 }
 @keyframes combatCueChipIn {
   0% { opacity: 0; transform: translateY(-5px) scale(.92); }
