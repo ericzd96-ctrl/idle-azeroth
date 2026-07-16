@@ -8092,6 +8092,20 @@ button.legend:hover:not(:disabled) {
   border-color: rgba(56,189,248,.32);
   background: rgba(12,74,110,.16);
 }
+.dm-shield-total {
+  flex: 1;
+  min-width: 0;
+  color: #94a3b8;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dm-shield-total.active {
+  color: #bfdbfe;
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(96,165,250,.18);
+}
 .dm-reaction-row { align-items: stretch; }
 .dm-reaction {
   flex: 1;

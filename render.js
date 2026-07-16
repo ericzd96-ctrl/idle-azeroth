@@ -1960,6 +1960,22 @@ function updateDmgMeter() {
   }
   updateDmgLastHeal();
   updateDmgLastShield();
+  const shieldTotalEl = $('dm-shield-total');
+  if (shieldTotalEl) {
+    const heroShield = (typeof dmgStats !== 'undefined') ? (dmgStats.heroShield || 0) : 0;
+    const compShield = (typeof dmgStats !== 'undefined') ? (dmgStats.compShield || 0) : 0;
+    const shieldTotal = heroShield + compShield;
+    if (shieldTotal > 0) {
+      const sps = Math.round(shieldTotal / elapsed);
+      shieldTotalEl.className = 'dm-shield-total active';
+      shieldTotalEl.textContent = `${fmt(shieldTotal)}(${fmt(sps)}/秒)`;
+      shieldTotalEl.title = `主角护盾 ${fmt(heroShield)}。随从护盾 ${fmt(compShield)}。`;
+    } else {
+      shieldTotalEl.className = 'dm-shield-total';
+      shieldTotalEl.textContent = '-';
+      shieldTotalEl.removeAttribute('title');
+    }
+  }
 
   // 暴击率
   const critEl = $('dm-crit-rate');
