@@ -447,6 +447,8 @@ function updateDmgCombatSummary(total, healTotal) {
   const bossCastDamage = ds.bossCastTotalDamage || 0;
   const chips = [];
   if (total > 0) chips.push({ tone:'info', text:`输出 ${fmt(total)}`, title:`本轮总伤害 ${fmt(total)}` });
+  const verdictChip = combatSummaryVerdictChip(ds, total, healTotal, shieldTotal, takenTotal, bossCastDamage);
+  if (verdictChip) chips.push(verdictChip);
   if ((ds.interruptSuccesses || 0) || (ds.interruptFails || 0)) {
     const ok = ds.interruptSuccesses || 0;
     const fail = ds.interruptFails || 0;
@@ -497,6 +499,47 @@ function updateDmgCombatSummary(total, healTotal) {
     el.appendChild(span);
   }
   el.style.display = 'flex';
+}
+function combatSummaryVerdictChip(ds, total, healTotal, shieldTotal, takenTotal, bossCastDamage) {
+  if (!ds || !(ds.kills || 0)) return null;
+  const cover = healTotal + shieldTotal - takenTotal;
+  const killText = ds.kills > 1 ? `击杀${ds.kills}` : '击杀';
+  const fail = ds.interruptFails || 0;
+  const ok = ds.interruptSuccesses || 0;
+  const bossCastHits = ds.bossCastHits || 0;
+  const fast = ds.killFast && ds.killFast <= (ds.kills >= 3 ? 3.2 : 8);
+  let tone = 'good';
+  let text = `战评 ${killText}`;
+  let advice = '继续当前节奏。';
+  if (takenTotal > 0 && cover < -Math.max(1, takenTotal * 0.30)) {
+    tone = 'danger';
+    text = '战评 苦战';
+    advice = '治疗、护盾或减伤覆盖不足。';
+  } else if (bossCastHits > 0 && bossCastDamage > Math.max(1, takenTotal * 0.42)) {
+    tone = 'warn';
+    text = '战评 读条压血';
+    advice = '下轮优先处理高危读条。';
+  } else if (ok > 0 && fail === 0 && bossCastHits === 0) {
+    tone = 'good';
+    text = '战评 打断优秀';
+    advice = '打断节奏很好,继续留给高危读条。';
+  } else if (takenTotal > 0 && cover >= 0) {
+    tone = 'good';
+    text = '战评 稳健';
+    advice = '治疗和护盾覆盖住了承伤。';
+  } else if (fast) {
+    tone = 'info';
+    text = '战评 速刷';
+    advice = '击杀速度很快,适合继续推进。';
+  }
+  const best = total > 0 ? (Math.max(ds.hero || 0, ds.comp || 0) / Math.max(1, total)) : 0;
+  const leader = (ds.comp || 0) > (ds.hero || 0) ? '随从' : '主角';
+  return {
+    tone,
+    kind:'verdict',
+    text,
+    title:`${killText}复盘: ${advice} ${leader}贡献最高,约 ${Math.round(best * 100)}%。承伤 ${fmt(takenTotal)},覆盖 ${cover >= 0 ? '+' : '-'}${fmt(Math.abs(cover))}。`
+  };
 }
 function combatRecentSkillTempoChips(now) {
   const list = (typeof combatRecentSkillCasts === 'function') ? combatRecentSkillCasts() : [];

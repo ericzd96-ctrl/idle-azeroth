@@ -8860,6 +8860,25 @@ button.legend:hover:not(:disabled) {
   font-size: 8px;
   font-weight: 900;
 }
+.dm-combat-summary-chip.verdict {
+  max-width: 116px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: inset 0 0 8px rgba(15,23,42,.18);
+}
+.dm-combat-summary-chip.verdict::before {
+  content: '评';
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 12px;
+  margin-right: 3px;
+  border-radius: 3px;
+  background: rgba(15,23,42,.42);
+  color: currentColor;
+  font-size: 8px;
+  font-weight: 900;
+}
 .meter-breakdown-title {
   display: flex;
   align-items: center;
