@@ -311,6 +311,41 @@ h1 {
   background: linear-gradient(90deg, rgba(251, 146, 60, 0), rgba(251, 146, 60, .40), rgba(254, 215, 170, .20), rgba(251, 146, 60, 0));
   animation: barSpendFlash .38s ease-out forwards;
 }
+.resource-bar-delta {
+  position: absolute;
+  right: 7px;
+  top: 50%;
+  z-index: 4;
+  min-width: 24px;
+  padding: 0 5px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.20);
+  background: rgba(2,6,23,.62);
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 13px;
+  text-align: center;
+  pointer-events: none;
+  text-shadow: 0 1px 3px rgba(0,0,0,.90);
+  transform: translateY(-50%);
+  animation: resourceBarDelta .78s ease-out forwards;
+}
+.resource-bar-delta.gain {
+  color: #bfdbfe;
+  border-color: rgba(96,165,250,.46);
+  box-shadow: 0 0 9px rgba(96,165,250,.24);
+}
+.resource-bar-delta.gain.rage,
+.resource-bar-delta.gain.energy {
+  color: #fde68a;
+  border-color: rgba(251,191,36,.48);
+  box-shadow: 0 0 9px rgba(251,191,36,.22);
+}
+.resource-bar-delta.spend {
+  color: #fed7aa;
+  border-color: rgba(251,146,60,.46);
+  box-shadow: 0 0 9px rgba(251,146,60,.20);
+}
 #boss-cast-bar-wrap {
   position: relative;
   border-radius: 8px;
@@ -369,6 +404,11 @@ h1 {
   0% { opacity: 0; transform: translateX(-12%) scaleX(.22); }
   24% { opacity: .95; }
   100% { opacity: 0; transform: translateX(62%) scaleX(.62); }
+}
+@keyframes resourceBarDelta {
+  0% { opacity: 0; transform: translate(6px, -50%) scale(.84); }
+  18% { opacity: 1; transform: translate(0, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-10px, -50%) scale(.96); }
 }
 /* 桌面端保留平滑过渡, 手机端禁用以防每帧触发 transition 导致发热 */
 @media (min-width: 769px) {
@@ -6499,6 +6539,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   .combat-cue-chip { max-width: 32%; padding: 1px 5px 1px 4px; }
   .combat-cue-chip:nth-child(n+4) { display: none; }
   .combat-cue-chip span { font-size: 9px; }
+  .resource-bar-delta { right: 5px; min-width: 20px; padding: 0 4px; font-size: 9px; line-height: 12px; }
   .dm-recent-skills { gap: 3px; min-height: 19px; }
   .dm-recent-chip { max-width: 33%; padding: 1px 5px; font-size: 9px; }
   .dm-recent-chip:nth-child(n+5) { display: none; }
@@ -7624,6 +7665,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   .skill-btn.execute-window-recommended:not(.on-cd) { transform: none; }
   .skill-btn.survival-window-final:not(.on-cd) .skill-window-timer { animation: none; }
   .skill-btn.survival-window-recommended:not(.on-cd) { transform: none; }
+  .resource-bar-delta { animation-duration: 180ms !important; }
 }
 @keyframes skillReadyFlash {
   0% { filter: brightness(1); }

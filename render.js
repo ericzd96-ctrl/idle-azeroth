@@ -150,6 +150,7 @@ let _dmCombatSummarySig = '';
 let _dmTacticsSig = '';
 let _navBadgePaint = 0, _expLivePaint = 0; // 导航红点 / 远征实时刷新节流
 const _headerResourceLast = {};
+const _resourceBarLast = { value:null, max:null, key:'' };
 function combatSchoolShortName(school) {
   return ({
     fire:'火焰',
@@ -261,6 +262,32 @@ function setHeaderResourceText(id, key, value) {
     host.classList.remove(cls);
     delta.remove();
   }, 920);
+}
+function updateResourceBarFeedback(cls, value, max) {
+  const wrap = $('b-mp-wrap');
+  if (!wrap || !cls) return;
+  const next = Math.floor(value || 0);
+  const nextMax = Math.max(1, Math.floor(max || 0));
+  const key = cls.resKey || 'mp';
+  const reset = _resourceBarLast.value == null || _resourceBarLast.max !== nextMax || _resourceBarLast.key !== key;
+  if (reset) {
+    _resourceBarLast.value = next;
+    _resourceBarLast.max = nextMax;
+    _resourceBarLast.key = key;
+    return;
+  }
+  const delta = next - _resourceBarLast.value;
+  _resourceBarLast.value = next;
+  if (!delta) return;
+  const gain = delta > 0;
+  const em = document.createElement('em');
+  em.className = 'resource-bar-delta ' + (gain ? 'gain' : 'spend') + ' ' + key;
+  em.textContent = (gain ? '+' : '') + fmt(delta);
+  wrap.appendChild(em);
+  while (wrap.querySelectorAll('.resource-bar-delta').length > 3) {
+    wrap.querySelector('.resource-bar-delta')?.remove();
+  }
+  setTimeout(() => em.remove(), gain ? 820 : 700);
 }
 function dmgMeterTrendMeta(dps, total) {
   const now = Date.now();
@@ -3018,6 +3045,7 @@ function updateBattleVisuals() {
   setBar($('b-hp2'), state.hp/h.hpMax*100, hpWithShieldText(state.hp, h.hpMax, heroShield));
   setBar($('b-mp'), state.resource/state.resourceMax*100,
     `${c.resource} ${fmt(state.resource)}/${fmt(state.resourceMax)}`);
+  updateResourceBarFeedback(c, state.resource, state.resourceMax);
 
   // 怪物信息(竖排敌人列表)
   const monPaintGap = isMobileLayout() ? 120 : 80;
