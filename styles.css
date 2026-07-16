@@ -6131,9 +6131,54 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
 .head-stats b { color: var(--text); }
 .head-stats > span,
 .head-stats .pill {
+  position: relative;
   display: inline-flex; align-items: center; gap: 6px;
 }
 .head-stats .pill b { color: inherit; font-weight: 600; }
+.head-stats > span.currency-gain,
+.head-stats .pill.currency-gain {
+  animation: headerCurrencyGain .72s ease-out;
+}
+.head-stats > span.currency-spend,
+.head-stats .pill.currency-spend {
+  animation: headerCurrencySpend .72s ease-out;
+}
+.currency-delta {
+  position: absolute;
+  right: -4px;
+  top: -10px;
+  z-index: 5;
+  padding: 1px 5px;
+  border-radius: 999px;
+  border: 1px solid rgba(250,204,21,.42);
+  background: rgba(15,23,42,.88);
+  color: #fde68a;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
+  pointer-events: none;
+  text-shadow: 0 1px 4px rgba(0,0,0,.85);
+  animation: currencyDeltaFloat .92s ease-out forwards;
+}
+.currency-delta.spend {
+  border-color: rgba(248,113,113,.44);
+  color: #fecaca;
+}
+@keyframes headerCurrencyGain {
+  0%, 100% { box-shadow: none; filter: brightness(1); }
+  28% { box-shadow: 0 0 0 1px rgba(250,204,21,.36), 0 0 14px rgba(250,204,21,.22); filter: brightness(1.25); }
+}
+@keyframes headerCurrencySpend {
+  0%, 100% { box-shadow: none; filter: brightness(1); }
+  28% { box-shadow: 0 0 0 1px rgba(248,113,113,.32), 0 0 13px rgba(248,113,113,.18); filter: brightness(1.18); }
+}
+@keyframes currencyDeltaFloat {
+  0% { opacity: 0; transform: translateY(3px) scale(.88); }
+  18% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-16px) scale(.94); }
+}
 
 #mobile-panel-backdrop {
   display: none; position: fixed; inset: 0; background: rgba(4, 6, 12, .62); z-index: 35;

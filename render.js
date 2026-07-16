@@ -144,6 +144,35 @@ let _invFilterSlot = 'all';   // 背包部位筛选
 let _invFilterRarity = 'all'; // 背包品质筛选
 let _dmSampleTotal = 0, _dmSampleTs = 0;   // 峰值秒伤采样基线
 let _navBadgePaint = 0, _expLivePaint = 0; // 导航红点 / 远征实时刷新节流
+const _headerResourceLast = {};
+function setHeaderResourceText(id, key, value) {
+  const el = $(id);
+  if (!el) return;
+  const next = Math.floor(value || 0);
+  const prev = _headerResourceLast[key];
+  el.textContent = fmt(next);
+  if (prev === undefined) {
+    _headerResourceLast[key] = next;
+    return;
+  }
+  if (prev === next) return;
+  _headerResourceLast[key] = next;
+  const host = el.closest('.head-stats > span, .head-stats .pill') || el.parentElement;
+  if (!host) return;
+  const gain = next > prev;
+  const cls = gain ? 'currency-gain' : 'currency-spend';
+  host.classList.remove('currency-gain', 'currency-spend');
+  void host.offsetWidth;
+  host.classList.add(cls);
+  const delta = document.createElement('em');
+  delta.className = 'currency-delta ' + (gain ? 'gain' : 'spend');
+  delta.textContent = (gain ? '+' : '') + fmt(next - prev);
+  host.appendChild(delta);
+  setTimeout(() => {
+    host.classList.remove(cls);
+    delta.remove();
+  }, 920);
+}
 
 /* 导航栏红点:远征储备满 / 公会今日有可做的捐献 */
 function updateNavBadges() {
@@ -2024,13 +2053,13 @@ function updateBattleVisuals() {
     $('h-name').innerHTML = `${heroChip} <b>${state.name||'冒险者'}</b> ${titleHtml}<span class="pill">${classIcon(state.cls, 16, cls?.icon||'')} 等级${state.hero.lvl}</span>${progHtml}`;
   }
   $('h-name').title = '点击切换角色';
-  $('h-gold').textContent = fmt(state.gold);
-  $('h-gem').textContent = fmt(state.gem);
-  $('h-tickets').textContent = fmt(state.tickets || 0);
-  $('h-comp-tickets').textContent = fmt(state.compTickets || 0);
-  $('h-honor').textContent = fmt(state.honor);
-  if ($('h-towercoin')) $('h-towercoin').textContent = fmt(state.towerCoin || 0);
-  if ($('h-essence')) $('h-essence').textContent = fmt(state.essence || 0);
+  setHeaderResourceText('h-gold', 'gold', state.gold);
+  setHeaderResourceText('h-gem', 'gem', state.gem);
+  setHeaderResourceText('h-tickets', 'tickets', state.tickets || 0);
+  setHeaderResourceText('h-comp-tickets', 'compTickets', state.compTickets || 0);
+  setHeaderResourceText('h-honor', 'honor', state.honor);
+  setHeaderResourceText('h-towercoin', 'towerCoin', state.towerCoin || 0);
+  setHeaderResourceText('h-essence', 'essence', state.essence || 0);
   if ($('btn-speed')) {
     const bs = state.battleSpeed || 1;
     const lbl = `⏩ ${bs}倍`;
