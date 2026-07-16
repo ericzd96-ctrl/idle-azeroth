@@ -300,6 +300,15 @@ function updateDmgCombatSummary(total, healTotal) {
   }
   el.style.display = 'flex';
 }
+function deathRecapAdviceShort(recap) {
+  const cause = String(recap?.cause || '');
+  if (cause.includes('爆发')) return '留减伤或打断';
+  if (cause.includes('持续')) return '补防御和治疗';
+  if (cause.includes('治疗')) return '换治疗/护盾随从';
+  if (cause.includes('小伤害')) return '先清召唤物';
+  const advice = String(recap?.advice || '').split(/[。.!]/)[0].trim();
+  return advice || '调整保命技能';
+}
 function updateCombatReactionAdvice() {
   const el = $('dm-reaction');
   if (!el) return;
@@ -2388,10 +2397,23 @@ function updateDmgMeter() {
       const detail = recap.detail || `${text} · 来自 ${source}。建议: ${recap.advice || '调整技能和随从后再战。'}`;
       deathEl.className = `dm-death-recap ${recap.tone || 'warn'}`;
       deathEl.title = detail;
-      if (deathEl.textContent !== text) deathEl.textContent = text;
+      const advice = deathRecapAdviceShort(recap);
+      const sig = `${text}|${advice}`;
+      if (deathEl.dataset.deathSig !== sig) {
+        deathEl.dataset.deathSig = sig;
+        deathEl.replaceChildren();
+        const main = document.createElement('span');
+        main.className = 'dm-death-main';
+        main.textContent = text;
+        const tip = document.createElement('span');
+        tip.className = 'dm-death-advice';
+        tip.textContent = `建议 ${advice}`;
+        deathEl.append(main, tip);
+      }
     } else {
       deathRow.style.display = 'none';
       deathEl.textContent = '-';
+      delete deathEl.dataset.deathSig;
       deathEl.removeAttribute('title');
     }
   }

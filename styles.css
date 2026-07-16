@@ -8527,12 +8527,32 @@ button.legend:hover:not(:disabled) {
 .dm-death-recap {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
   padding: 2px 6px;
   border-radius: 5px;
   border: 1px solid rgba(251,191,36,.32);
   background: rgba(113,63,18,.18);
   color: #fde68a;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dm-death-main {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dm-death-advice {
+  flex: 0 0 auto;
+  max-width: 42%;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(15,23,42,.34);
+  color: #cbd5e1;
+  font-size: 9px;
+  font-weight: 800;
   overflow: hidden;
   text-overflow: ellipsis;
 }
