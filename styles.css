@@ -9170,6 +9170,20 @@ button.legend:hover:not(:disabled) {
   text-align: center;
   line-height: 1.35;
 }
+button.dm-boss-cast-chip {
+  appearance: none;
+  font: inherit;
+  cursor: pointer;
+  transition: transform .14s ease, filter .14s ease, box-shadow .14s ease;
+}
+button.dm-boss-cast-chip:hover {
+  filter: brightness(1.16);
+  transform: translateY(-1px);
+}
+button.dm-boss-cast-chip.skill-pressed {
+  filter: brightness(1.32);
+  transform: translateY(1px) scale(.97);
+}
 .dm-boss-cast-chip.hot,
 .dm-boss-cast-chip.ready {
   color: #fecaca;

@@ -1015,7 +1015,7 @@ function bossCastReadinessChips(ui) {
   if (!ui.canInterrupt) {
     chips.push({ cls:'locked', text:'不可断', title:'这次读条不能被打断,需要用治疗、护盾或减伤覆盖。' });
   } else if (ui.ready) {
-    chips.push({ cls:ui.urgent ? 'hot' : 'ready', text:'断:就绪', title:`打断已就绪: ${ui.ready.sk?.name || '打断技能'}。` });
+    chips.push({ cls:ui.urgent ? 'hot' : 'ready', text:'断:就绪', title:`打断已就绪: ${ui.ready.sk?.name || '打断技能'}。`, key:ui.ready.key, ready:true });
   } else if (ui.interruptCount > 0) {
     const left = Math.ceil(Math.max(0, ui.soonestLeft || 0) / 1000);
     chips.push({ cls:left > 0 ? 'wait' : 'empty', text:left > 0 ? `断:${left}s` : '断:缺蓝', title:left > 0 ? `最快打断还差 ${left} 秒。` : '有打断技能,但当前资源不足。' });
@@ -1024,7 +1024,7 @@ function bossCastReadinessChips(ui) {
   }
   if (ui.responseReady) {
     const isHeal = ui.responseReady.kind === 'heal';
-    chips.push({ cls:isHeal ? 'heal' : 'defense', text:isHeal ? '疗:就绪' : '护:就绪', title:`保命技能已就绪: ${ui.responseReady.sk?.name || (isHeal ? '治疗' : '减伤')}。` });
+    chips.push({ cls:isHeal ? 'heal' : 'defense', text:isHeal ? '疗:就绪' : '护:就绪', title:`保命技能已就绪: ${ui.responseReady.sk?.name || (isHeal ? '治疗' : '减伤')}。`, key:ui.responseReady.key, ready:true });
   } else if (ui.responseCount > 0) {
     const left = Math.ceil(Math.max(0, ui.responseSoonestLeft || 0) / 1000);
     chips.push({ cls:left > 0 ? 'wait' : 'empty', text:left > 0 ? `保:${left}s` : '保:缺蓝', title:left > 0 ? `最快保命技能还差 ${left} 秒。` : '有治疗/减伤技能,但当前资源不足。' });
@@ -1096,10 +1096,14 @@ function updateDmgBossCastReadout() {
     tip.textContent = suggestion;
     el.append(main, clock, tip);
     for (const meta of readyChips) {
-      const chip = document.createElement('span');
+      const chip = document.createElement(meta.ready && meta.key ? 'button' : 'span');
       chip.className = `dm-boss-cast-chip ${meta.cls}`;
       chip.textContent = meta.text;
       chip.title = meta.title;
+      if (meta.ready && meta.key) {
+        chip.dataset.action = 'bosscastskill';
+        chip.dataset.skill = meta.key;
+      }
       el.appendChild(chip);
     }
   }

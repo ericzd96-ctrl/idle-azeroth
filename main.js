@@ -221,7 +221,7 @@ function setupDelegation() {
     if (e.target.closest('[data-tip-close]') && typeof unpinTip === 'function') {
       unpinTip();
     }
-    const pressureBtn = e.target.closest('button[data-action="pressurecast"]');
+    const pressureBtn = e.target.closest('button[data-action="pressurecast"],button[data-action="bosscastskill"]');
     if (pressureBtn) {
       e.preventDefault();
       manualCastSkillFromUi(pressureBtn.dataset.skill, pressureBtn);
