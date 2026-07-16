@@ -146,6 +146,7 @@ let _dmSampleTotal = 0, _dmSampleTs = 0;   // 峰值秒伤采样基线
 let _dmDpsTrendValue = 0, _dmDpsTrendTs = 0, _dmDpsTrendDir = 'stable', _dmDpsTrendPct = 0;
 let _dmRecentSkillSig = '';
 let _dmCombatSummarySig = '';
+let _dmTacticsSig = '';
 let _navBadgePaint = 0, _expLivePaint = 0; // 导航红点 / 远征实时刷新节流
 const _headerResourceLast = {};
 function combatSchoolShortName(school) {
@@ -342,6 +343,65 @@ function updateDmgCombatSummary(total, healTotal) {
     el.appendChild(span);
   }
   el.style.display = 'flex';
+}
+function updateDmgTacticalStatus(total, healTotal, elapsed) {
+  const el = $('dm-tactics');
+  if (!el) return;
+  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
+  const now = Date.now();
+  const chips = [];
+  const push = (tone, text, title) => {
+    if (!text) return;
+    chips.push({ tone, text, title:title || text });
+  };
+  const ui = (typeof bossCastUiState === 'function') ? bossCastUiState(now) : null;
+  if (ui) {
+    const name = `${ui.cast?.icon || ''}${ui.cast?.name || '读条'}`;
+    const remain = ui.remainMs < 1000 ? `${Math.max(0.1, ui.remainMs / 1000).toFixed(1)}秒` : `${Math.ceil(ui.remainMs / 1000)}秒`;
+    push(ui.urgent ? 'danger' : 'warn', `读条 ${remain}`, `${name}: ${ui.finalAction || ui.action || '准备应对'}`);
+    push(ui.ready ? 'good' : (ui.responseReady ? 'warn' : 'danger'), ui.finalAction || ui.action || '准备应对', `当前建议: ${ui.action || ui.finalAction || '观察'}。`);
+  }
+  const win = (typeof vulnerabilityWindowState === 'function') ? vulnerabilityWindowState(now) : null;
+  if (win) {
+    const target = win.mon?.bossName || win.mon?.name || '目标';
+    push('good', `破绽 ${(win.left / 1000).toFixed(1)}秒`, `${target} 正处于破绽窗口,优先打高伤害技能。`);
+  }
+  if (ds?.lastBossCastAt && now - ds.lastBossCastAt < 9000) {
+    const dmg = ds.lastBossCastDamage || 0;
+    push(dmg > 0 ? 'danger' : 'warn', `刚中读条 ${fmt(dmg)}`, `${ds.lastBossCastBoss || '首领'} 的 ${ds.lastBossCastName || '读条'} 刚命中 ${ds.lastBossCastTarget || '目标'}。`);
+  }
+  if (ds && ds.start) {
+    const shieldTotal = (ds.heroShield || 0) + (ds.compShield || 0);
+    const takenTotal = (ds.taken || 0) + (ds.compTaken || 0);
+    const cover = healTotal + shieldTotal - takenTotal;
+    if (takenTotal > 0 && cover < 0) {
+      const severity = Math.abs(cover) > Math.max(1, takenTotal * 0.28) ? 'danger' : 'warn';
+      push(severity, `生存缺口 ${fmt(Math.abs(cover))}`, `本轮治疗+护盾比承伤少 ${fmt(Math.abs(cover))}。`);
+    }
+    const fails = ds.interruptFails || 0;
+    const ok = ds.interruptSuccesses || 0;
+    if (fails > ok && fails > 0) push('warn', `打断失误 ${fails}`, `本轮打断成功 ${ok} 次,失败 ${fails} 次。`);
+  }
+  if (!chips.length) {
+    if (total > 0) push('good', '输出稳定', '当前没有明显危险事件。');
+    else push('idle', '等待战斗', '开始战斗后这里会显示当前最重要的战斗态势。');
+  }
+  const toneRank = { idle:0, good:1, info:1, warn:2, danger:3 };
+  const overall = chips.reduce((best, x) => (toneRank[x.tone] || 0) > (toneRank[best] || 0) ? x.tone : best, 'idle');
+  const shown = chips.slice(0, 3);
+  const sig = shown.map(x => `${x.tone}:${x.text}`).join('|') + `|${overall}`;
+  if (sig === _dmTacticsSig) return;
+  _dmTacticsSig = sig;
+  el.className = `dm-tactics ${overall}`;
+  el.title = shown.map(x => x.title).join(' ');
+  el.replaceChildren();
+  shown.forEach(chip => {
+    const span = document.createElement('span');
+    span.className = `dm-tactics-chip ${chip.tone}`;
+    span.textContent = chip.text;
+    span.title = chip.title;
+    el.appendChild(span);
+  });
 }
 function deathRecapAdviceShort(recap) {
   const cause = String(recap?.cause || '');
@@ -2319,6 +2379,7 @@ function updateDmgMeter() {
   updateDmgVulnerabilityWindow();
   updateDmgVulnerabilityHit();
   updateDmgCombatSummary(total, healTotal);
+  updateDmgTacticalStatus(total, healTotal, elapsed);
 
   // 英雄条
   const heroBar = $('dm-hero-bar');
