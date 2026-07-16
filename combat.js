@@ -358,6 +358,12 @@ function recordCombatSkillCast(sk, opts){
     icon:String(sk.icon || ''),
     name:String(sk.name || ''),
     hits:0,
+    damage:0,
+    heal:0,
+    shield:0,
+    taken:0,
+    maxAmount:0,
+    crits:0,
     target:'',
     impactTs:0,
     ts:now
@@ -380,6 +386,40 @@ function recordCombatSkillImpact(sk, opts){
   item.impactTs = now;
   if(opts?.target) item.target = String(opts.target).slice(0, 12);
   item.ts = Math.max(item.ts || 0, now - 120);
+}
+function recordCombatSkillAmount(actor, kind, skillLabel, amount, opts){
+  amount = Math.max(0, Math.floor(amount || 0));
+  const name = String(skillLabel || '').trim();
+  if(!name || amount <= 0) return;
+  const now = Date.now();
+  const safeActor = String(actor || 'hero').replace(/[^a-z0-9_-]/gi, '') || 'hero';
+  const safeKind = String(kind || 'damage').replace(/[^a-z0-9_-]/gi, '') || 'damage';
+  const school = normalizeSkillFxSchool(opts?.school) || (safeKind === 'heal' ? 'heal' : safeKind === 'shield' ? 'shield' : (safeActor === 'boss' ? 'shadow' : 'physical'));
+  let item = _combatRecentSkillCasts.find(x => x.actor === safeActor && x.name === name && now - (x.ts || 0) < 2400);
+  if(!item && opts?.force){
+    const fake = { name, icon:opts?.icon || '', type:safeKind === 'heal' ? 'heal' : safeKind === 'shield' ? 'buff' : 'dmg', school, threat:opts?.threat || '' };
+    recordCombatSkillCast(fake, { actor:safeActor, school });
+    item = _combatRecentSkillCasts.find(x => x.actor === safeActor && x.name === name);
+  }
+  if(!item) return;
+  if(safeKind === 'heal'){
+    item.heal = (item.heal || 0) + amount;
+    item.type = 'heal';
+  }else if(safeKind === 'shield'){
+    item.shield = (item.shield || 0) + amount;
+    if(item.type !== 'heal') item.type = 'shield';
+  }else if(safeKind === 'taken'){
+    item.taken = (item.taken || 0) + amount;
+    item.damage = (item.damage || 0) + amount;
+    if(safeActor === 'boss') item.type = 'danger';
+  }else{
+    item.damage = (item.damage || 0) + amount;
+    if(item.type === 'skill') item.type = 'dmg';
+  }
+  if(opts?.crit) item.crits = (item.crits || 0) + 1;
+  item.maxAmount = Math.max(item.maxAmount || 0, amount);
+  if(opts?.target) item.target = String(opts.target).slice(0, 12);
+  item.ts = now;
 }
 function combatRecentSkillCasts(){
   return _combatRecentSkillCasts.slice();
@@ -5197,6 +5237,15 @@ function applyHeroDamage(amount, mon, opts){
   });
   if(typeof stageEdgeFx === 'function' && (mon?.isBoss || taken >= maxHp * 0.08 || state.hp <= maxHp * 0.35)){
     stageEdgeFx(state.hp <= maxHp * 0.22 ? 'critical' : 'danger', { intensity:Math.min(1.25, 0.68 + taken / maxHp * 2.3) });
+  }
+  if(opts?.skillName || opts?.skill || opts?.sourceSkill){
+    recordCombatSkillAmount(mon?.isBoss ? 'boss' : 'enemy', 'taken', opts?.skillName || opts?.skill || opts?.sourceSkill, taken, {
+      target:'主角',
+      force:!!mon?.isBoss,
+      icon:opts?.icon || '',
+      school:mon?.isBoss ? 'shadow' : 'physical',
+      threat:mon?.isBoss ? 'high' : ''
+    });
   }
   if(typeof combatHeavyImpactFx === 'function' && (mon?.isBoss || taken >= maxHp * 0.14 || state.hp <= maxHp * 0.28)){
     combatHeavyImpactFx($('hero-emoji'), mon?.isBoss ? 'boss' : 'danger', {
@@ -12536,6 +12585,13 @@ function trackDmg(src,amt,isCrit,skillLabel,meta){
     combatCueToast(src==='hero'?'爆发一击':'随从爆发',(cleanLabel?cleanLabel+' · ':'')+fmt(amt),isCrit?'crit':'hit');
     maybeCombatDamageMoment(src,amt,isCrit,cleanLabel,prevMax);
   }
+  if(cleanLabel && cleanLabel !== '普攻'){
+    recordCombatSkillAmount(src==='comp' ? 'companion' : 'hero', 'damage', cleanLabel, amt, {
+      school,
+      crit:isCrit,
+      target:'敌人'
+    });
+  }
   if(cleanLabel){const skKey=src==='hero'?'heroSkills':'compSkills';dmgStats[skKey][cleanLabel]=(dmgStats[skKey][cleanLabel]||0)+amt;}
 }
 function trackHeal(src,amt,skillLabel){
@@ -12552,6 +12608,12 @@ function trackHeal(src,amt,skillLabel){
   if(isHero){dmgStats.lastHeroHealAmount=amt;dmgStats.lastHeroHealAt=t;dmgStats.lastHeroHealSkill=cleanLabel||'';}
   else{dmgStats.lastCompHealAmount=amt;dmgStats.lastCompHealAt=t;dmgStats.lastCompHealSkill=cleanLabel||'';}
   if(amt>prevMax)maybeCombatSupportMoment(src,'heal',amt,cleanLabel,prevMax);
+  if(cleanLabel){
+    recordCombatSkillAmount(isHero ? 'hero' : 'companion', 'heal', cleanLabel, amt, {
+      school:'heal',
+      target:isHero ? '主角' : '随从'
+    });
+  }
   if(cleanLabel)dmgStats[skKey][cleanLabel]=(dmgStats[skKey][cleanLabel]||0)+amt;
 }
 function trackShield(src,amt,skillLabel){
@@ -12567,6 +12629,12 @@ function trackShield(src,amt,skillLabel){
   if(isHero){dmgStats.lastHeroShieldAmount=amt;dmgStats.lastHeroShieldAt=t;dmgStats.lastHeroShieldSkill=cleanLabel||'';}
   else{dmgStats.lastCompShieldAmount=amt;dmgStats.lastCompShieldAt=t;dmgStats.lastCompShieldSkill=cleanLabel||'';}
   if(amt>prevMax)maybeCombatSupportMoment(src,'shield',amt,cleanLabel,prevMax);
+  if(cleanLabel){
+    recordCombatSkillAmount(isHero ? 'hero' : 'companion', 'shield', cleanLabel, amt, {
+      school:'shield',
+      target:isHero ? '主角' : '随从'
+    });
+  }
 }
 function trackKill(){const now=Date.now();if(dmgStats.killTs){const dt=(now-dmgStats.killTs)/1000;if(dt>0&&dt<600){if(!dmgStats.killFast||dt<dmgStats.killFast)dmgStats.killFast=dt;if(dt>(dmgStats.killSlow||0))dmgStats.killSlow=dt;}}dmgStats.killTs=now;dmgStats.kills=(dmgStats.kills||0)+1;killStreak++;if(killStreak>=5&&killStreak%5===0)killStreakToast(killStreak);}
 function resetDmgStats(){dmgStats=defaultDmgStats();if(typeof killStreak==='number')killStreak=0;if(typeof markDirty==='function')markDirty('stage');}

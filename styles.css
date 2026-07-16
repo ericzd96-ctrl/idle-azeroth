@@ -521,6 +521,17 @@ h1 {
   font-size: 9px;
   font-style: normal;
 }
+.combat-skill-chain-chip.has-amount i {
+  min-width: 34px;
+  text-align: center;
+  border: 1px solid color-mix(in srgb, var(--skill-fx-color) 36%, transparent);
+  background: linear-gradient(180deg, rgba(2,6,23,.38), var(--skill-fx-color-soft));
+  color: #fef3c7;
+  text-shadow: 0 1px 4px rgba(0,0,0,.92);
+}
+.combat-skill-chain-chip.amount-heal i { color: #bbf7d0; }
+.combat-skill-chain-chip.amount-shield i { color: #bae6fd; }
+.combat-skill-chain-chip.amount-taken i { color: #fecaca; }
 .combat-skill-chain-chip.is-latest {
   max-width: 42%;
   box-shadow: inset 0 0 10px var(--skill-fx-color-soft), 0 0 12px var(--skill-fx-color-soft);
@@ -6581,6 +6592,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   .combat-skill-chain-chip { max-width: 32%; padding: 1px 4px; font-size: 9px; }
   .combat-skill-chain-chip.is-latest { max-width: 45%; }
   .combat-skill-chain-chip i { display: none; }
+  .combat-skill-chain-chip.has-amount i { display: inline-block; min-width: 28px; padding: 0 3px; font-size: 8px; }
   .combat-cue-chip { max-width: 32%; padding: 1px 5px 1px 4px; }
   .combat-cue-chip:nth-child(n+4) { display: none; }
   .combat-cue-chip span { font-size: 9px; }
@@ -6588,6 +6600,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   .boss-cast-targeted::after { right: -4px; top: -8px; min-width: 22px; padding: 1px 4px; font-size: 9px; }
   .dm-recent-skills { gap: 3px; min-height: 19px; }
   .dm-recent-chip { max-width: 33%; padding: 1px 5px; font-size: 9px; }
+  .dm-recent-amount { min-width: 30px; padding: 0 3px; font-size: 8px; }
   .dm-recent-chip:nth-child(n+5) { display: none; }
   .dm-boss-cast { gap: 3px; padding: 2px 4px; }
   .dm-boss-cast-action { max-width: 30%; }
@@ -8556,7 +8569,8 @@ button.legend:hover:not(:disabled) {
 .dm-recent-effect,
 .dm-recent-target,
 .dm-recent-hits,
-.dm-recent-chain {
+.dm-recent-chain,
+.dm-recent-amount {
   flex: 0 0 auto;
   padding: 0 4px;
   border-radius: 999px;
@@ -8565,6 +8579,33 @@ button.legend:hover:not(:disabled) {
   color: #cbd5e1;
   font-size: 9px;
   font-weight: 800;
+}
+.dm-recent-amount {
+  min-width: 38px;
+  text-align: center;
+  border-color: rgba(251,191,36,.30);
+  background: linear-gradient(180deg, rgba(113,63,18,.24), rgba(2,6,23,.30));
+  color: #fef3c7;
+  box-shadow: inset 0 0 8px rgba(251,191,36,.12);
+  text-shadow: 0 1px 4px rgba(0,0,0,.9);
+}
+.dm-recent-amount.heal {
+  border-color: rgba(74,222,128,.28);
+  background: linear-gradient(180deg, rgba(20,83,45,.28), rgba(2,6,23,.30));
+  color: #bbf7d0;
+  box-shadow: inset 0 0 8px rgba(74,222,128,.13);
+}
+.dm-recent-amount.shield {
+  border-color: rgba(56,189,248,.30);
+  background: linear-gradient(180deg, rgba(8,47,73,.30), rgba(2,6,23,.30));
+  color: #bae6fd;
+  box-shadow: inset 0 0 8px rgba(56,189,248,.14);
+}
+.dm-recent-amount.taken {
+  border-color: rgba(248,113,113,.34);
+  background: linear-gradient(180deg, rgba(127,29,29,.32), rgba(2,6,23,.32));
+  color: #fecaca;
+  box-shadow: inset 0 0 8px rgba(248,113,113,.16);
 }
 .dm-recent-target {
   border-color: rgba(125,211,252,.22);
