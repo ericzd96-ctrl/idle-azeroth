@@ -303,6 +303,10 @@ function skillFxClass(school, extra){
   const safe = normalizeSkillFxSchool(school) || 'physical';
   return `${extra || ''} school-${safe}`.trim();
 }
+function skillFxActorClass(actor){
+  const safe = String(actor || '').replace(/[^a-z0-9_-]/gi, '').toLowerCase();
+  return safe ? ` actor-${safe}` : '';
+}
 function skillFxActiveCount(layer){
   if(!layer || !layer.querySelectorAll) return 0;
   return layer.querySelectorAll('.skill-cast-ring,.skill-fx-trail,.skill-fx-burst,.skill-fx-label').length;
@@ -628,7 +632,7 @@ function showSkillCastFx(sourceEl, sk, opts){
   }
   const size = opts?.size || (opts?.small ? 28 : 42);
   const ring = document.createElement('div');
-  ring.className = skillFxClass(school, 'skill-cast-ring');
+  ring.className = skillFxClass(school, 'skill-cast-ring') + skillFxActorClass(opts?.actor);
   ring.style.left = (p.x - size / 2) + 'px';
   ring.style.top = (p.y - size / 2) + 'px';
   ring.style.width = size + 'px';
@@ -673,7 +677,7 @@ function showSkillImpactFx(sourceEl, targetEl, sk, opts){
   const dist = Math.max(12, Math.sqrt(dx * dx + dy * dy));
   if(opts?.trail !== false && dist > 18){
     const trail = document.createElement('div');
-    trail.className = skillFxClass(school, 'skill-fx-trail');
+    trail.className = skillFxClass(school, 'skill-fx-trail') + skillFxActorClass(opts?.actor);
     trail.style.left = a.x + 'px';
     trail.style.top = a.y + 'px';
     trail.style.width = dist + 'px';
@@ -683,7 +687,7 @@ function showSkillImpactFx(sourceEl, targetEl, sk, opts){
     setTimeout(() => trail.remove(), opts?.duration || 520);
   }
   const burst = document.createElement('div');
-  burst.className = skillFxClass(school, 'skill-fx-burst');
+  burst.className = skillFxClass(school, 'skill-fx-burst') + skillFxActorClass(opts?.actor);
   const size = Math.round((opts?.burstSize || 34) * scale);
   burst.style.left = (b.x - size / 2) + 'px';
   burst.style.top = (b.y - size / 2) + 'px';
