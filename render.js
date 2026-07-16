@@ -147,6 +147,19 @@ let _dmDpsTrendValue = 0, _dmDpsTrendTs = 0, _dmDpsTrendDir = 'stable', _dmDpsTr
 let _dmRecentSkillSig = '';
 let _navBadgePaint = 0, _expLivePaint = 0; // 导航红点 / 远征实时刷新节流
 const _headerResourceLast = {};
+function combatSchoolShortName(school) {
+  return ({
+    fire:'火焰',
+    frost:'冰霜',
+    arcane:'奥术',
+    nature:'自然',
+    shadow:'暗影',
+    holy:'神圣',
+    physical:'物理',
+    heal:'治疗',
+    shield:'护盾'
+  })[school] || '技能';
+}
 function setHeaderResourceText(id, key, value) {
   const el = $(id);
   if (!el) return;
@@ -226,9 +239,16 @@ function updateDmgRecentSkills() {
     const chip = document.createElement('span');
     const actor = String(item.actor || 'hero').replace(/[^a-z0-9_-]/gi, '') || 'hero';
     const school = String(item.school || 'physical').replace(/[^a-z0-9_-]/gi, '') || 'physical';
+    const schoolName = combatSchoolShortName(school);
     chip.className = `dm-recent-chip actor-${actor} school-${school}`;
-    chip.title = `${actorName[actor] || '技能'}释放 ${item.icon || ''}${item.name || ''}`;
-    chip.textContent = `${actorName[actor] || '技能'} ${(item.icon || '')}${item.name || ''}`;
+    chip.title = `${actorName[actor] || '技能'}释放 ${schoolName}技能: ${item.icon || ''}${item.name || ''}`;
+    const name = document.createElement('span');
+    name.className = 'dm-recent-chip-name';
+    name.textContent = `${actorName[actor] || '技能'} ${(item.icon || '')}${item.name || ''}`;
+    const badge = document.createElement('span');
+    badge.className = 'dm-recent-school';
+    badge.textContent = schoolName;
+    chip.append(name, badge);
     el.appendChild(chip);
   }
 }

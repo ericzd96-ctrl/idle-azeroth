@@ -7970,6 +7970,7 @@ button.legend:hover:not(:disabled) {
   max-width: 31%;
   display: inline-flex;
   align-items: center;
+  gap: 4px;
   padding: 2px 6px;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--skill-fx-color) 44%, transparent);
@@ -7982,6 +7983,21 @@ button.legend:hover:not(:disabled) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.dm-recent-chip-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dm-recent-school {
+  flex: 0 0 auto;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--skill-fx-color-soft);
+  color: color-mix(in srgb, var(--skill-fx-color) 84%, #fff);
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.25;
 }
 .dm-recent-chip.actor-boss {
   color: #fecaca;
