@@ -603,6 +603,30 @@ function showSkillImpactFx(sourceEl, targetEl, sk, opts){
   if(typeof pulseCombatEl === 'function') pulseCombatEl(targetEl, opts?.pulse || (opts?.actor === 'boss' ? 'danger' : 'hit'), opts?.pulseDuration || 220);
   setTimeout(() => burst.remove(), opts?.duration || 560);
 }
+function showCombatHitSlam(targetEl, kind, opts){
+  if(!targetEl || typeof document === 'undefined' || document.hidden) return;
+  const layer = skillFxLayer();
+  const p = skillFxPoint(targetEl);
+  if(!layer || !p) return;
+  const safeKind = String(kind || 'hit').replace(/[^a-z0-9_-]/gi, '') || 'hit';
+  const school = normalizeSkillFxSchool(opts?.school || safeKind);
+  const scale = Math.max(.72, Math.min(1.45, opts?.scale || 1));
+  const important = !!opts?.important || safeKind === 'danger' || safeKind === 'boss' || safeKind === 'crit';
+  const mobile = typeof isMobilePerfMode === 'function' && isMobilePerfMode();
+  const width = Math.round(Math.max(42, Math.min(mobile ? 96 : 138, Math.max(p.w, p.h) * (important ? 1.75 : 1.45) * scale)));
+  const height = Math.round(Math.max(20, Math.min(58, Math.max(p.w, p.h) * (important ? .68 : .52) * scale)));
+  const angle = typeof opts?.angle === 'number' ? opts.angle : (safeKind === 'crit' ? -14 : safeKind === 'danger' || safeKind === 'boss' ? 9 : -8);
+  const el = document.createElement('div');
+  el.className = `impact-slam impact-slam-${safeKind}${school ? ' school-' + school : ''}`;
+  el.style.left = (p.x - width / 2) + 'px';
+  el.style.top = (p.y - height / 2) + 'px';
+  el.style.width = width + 'px';
+  el.style.height = height + 'px';
+  el.style.setProperty('--impact-slam-angle', angle + 'deg');
+  el.style.setProperty('--impact-slam-duration', (opts?.duration || (important ? 430 : 340)) + 'ms');
+  layer.appendChild(el);
+  setTimeout(() => el.remove(), (opts?.duration || (important ? 430 : 340)) + 90);
+}
 function showSkillSelfFx(sourceEl, sk, opts){
   if(!sourceEl) return;
   const school = opts?.school || skillSupportVisualSchool(opts?.skillKey, sk, opts?.actor);
@@ -5150,6 +5174,15 @@ function applyHeroDamage(amount, mon, opts){
   });
   if(typeof stageEdgeFx === 'function' && (mon?.isBoss || taken >= maxHp * 0.08 || state.hp <= maxHp * 0.35)){
     stageEdgeFx(state.hp <= maxHp * 0.22 ? 'critical' : 'danger', { intensity:Math.min(1.25, 0.68 + taken / maxHp * 2.3) });
+  }
+  if(typeof combatHeavyImpactFx === 'function' && (mon?.isBoss || taken >= maxHp * 0.14 || state.hp <= maxHp * 0.28)){
+    combatHeavyImpactFx($('hero-emoji'), mon?.isBoss ? 'boss' : 'danger', {
+      target:'hero',
+      critical:state.hp <= maxHp * 0.22 || taken >= maxHp * 0.22,
+      intensity:Math.min(1.35, 0.72 + taken / maxHp * 2.6),
+      school:mon?.isBoss ? 'shadow' : 'physical',
+      flash:mon?.isBoss ? 'danger' : ''
+    });
   }
   applyClassMechanicOnTakeDamage(mon, taken, amountIn, now);
   if(state._soulLinkUntil > now && mon && mon.hp > 0){
@@ -10034,6 +10067,15 @@ function applyCompanionDamage(amount, mon, opts){
       important:true,
       label:mon?.isBoss ? '首领命中' : '重击'
     });
+    if(typeof combatHeavyImpactFx === 'function'){
+      combatHeavyImpactFx($('comp-mini'), mon?.isBoss ? 'boss' : 'danger', {
+        target:'companion',
+        critical:state._compHp <= compMaxHp * 0.18 || taken >= compMaxHp * 0.20,
+        intensity:Math.min(1.25, 0.66 + taken / compMaxHp * 2.2),
+        school:mon?.isBoss ? 'shadow' : 'physical',
+        flash:mon?.isBoss ? 'danger' : ''
+      });
+    }
   }
   if(typeof pulseCombatEl === 'function') pulseCombatEl($('comp-mini'), (mon?.isBoss || taken >= compMaxHp * 0.12) ? 'danger' : 'comp', mon?.isBoss ? 300 : 220);
   if(state._compHp <= 0) downCompanion(now);
@@ -10472,7 +10514,7 @@ function tickBattle(now){
     if (!dodged) actualDmg = absorbMonsterBarrier(mon, actualDmg, d.crit ? '💥' : '⚔️').remaining;
     {const dr=monsterDamageReduction(mon, now);if(dr&&actualDmg>0)actualDmg=Math.max(1,Math.floor(actualDmg*(1-dr)));}   // 怪物减伤
     mon.hp-=actualDmg;trackDmg('hero',actualDmg,d.crit&&!dodged,'⚔️普攻');
-    if(!dodged && actualDmg > 0) showBasicAttackFx($('hero-emoji'), monsterFloatAnchor(mon), { actor:'hero', crit:d.crit, scale:d.crit ? 1.12 : 1 });
+    if(!dodged && actualDmg > 0){const _targetEl=monsterFloatAnchor(mon);showBasicAttackFx($('hero-emoji'), _targetEl, { actor:'hero', crit:d.crit, scale:d.crit ? 1.12 : 1 });if(d.crit&&typeof showCombatHitSlam==='function')showCombatHitSlam(_targetEl,'crit',{school:'physical',important:true,scale:1.08,duration:390});}
     if(dodged) showDefenseOutcomeFx(monsterFloatAnchor(mon), 'dodge', { target:mon._uid || mon.name, sourceEl:$('hero-emoji'), label:'闪避' });
     if(!dodged && actualDmg > 0) companionCoordinateTrigger(mon, actualDmg, { now, crit:d.crit, skill:false });
     if(!dodged&&state.hero.extraAtk>0&&Math.random()*100<state.hero.extraAtk){const d2=calcDmg(ap,heroTargetDef(mon),state.hero.crit,state.hero.critd,false,mon.lvl,state.hero.lvl);let dd2=absorbMonsterBarrier(mon, d2.dmg, '🎯').remaining;const dr=monsterDamageReduction(mon, now);if(dr&&dd2>0)dd2=Math.max(1,Math.floor(dd2*(1-dr)));mon.hp-=dd2;trackDmg('hero',dd2,d2.crit);companionCoordinateTrigger(mon, dd2, { now, crit:d2.crit, skill:false });showMonsterFloat(mon,'🎯+'+dd2,'#fbbf24',{variant:d2.crit?'crit':'hit',scale:d2.crit?1.18:1.02});}
@@ -12266,6 +12308,28 @@ function stageEdgeFx(kind, opts){
   st.appendChild(el);
   setTimeout(()=>el.remove(),820);
 }
+const _heavyImpactFxCooldown = {};
+function combatHeavyImpactFx(targetEl, kind, opts){
+  if(typeof document==='undefined'||document.hidden||!targetEl)return;
+  const safeKind=String(kind||'danger').replace(/[^a-z0-9_-]/gi,'')||'danger';
+  const targetKey=opts?.target || targetEl.id || 'target';
+  const now=Date.now();
+  const gap=opts?.gap || (opts?.critical ? 420 : 620);
+  const key=safeKind+':'+targetKey;
+  if((_heavyImpactFxCooldown[key]||0)>now)return;
+  _heavyImpactFxCooldown[key]=now+gap;
+  const intensity=Math.max(.55,Math.min(1.35,opts?.intensity||1));
+  if(typeof showCombatHitSlam==='function')showCombatHitSlam(targetEl,safeKind,{
+    school:opts?.school || (safeKind==='crit'?'physical':'shadow'),
+    important:true,
+    scale:opts?.scale || (.95+intensity*.18),
+    angle:opts?.angle,
+    duration:opts?.duration || (opts?.critical?500:430)
+  });
+  if(opts?.shake!==false)stageShakeFx();
+  stageEdgeFx(opts?.edge || (opts?.critical?'critical':'danger'),{intensity});
+  if(opts?.flash)stageFlashFx(opts.flash);
+}
 function combatCueLanePush(title, detail, kind){
   if(typeof document==='undefined'||document.hidden)return;
   const lane=document.getElementById('combat-cue-lane');
@@ -13754,7 +13818,7 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
   companionCombatSpecialTick(now, st, tpl, mon);
   companionResonanceTrigger(now, st, tpl, mon);
   if(compSkillCd._owner!==comp.key)compSkillCd={_owner:comp.key};   // 换随从:重置技能冷却
-  const interval=1000/(st.spd||0.5);if((state._compDisarmUntil||0)<=now&&(now-lastCompAtk>interval||now-lastCompAtk>5000)){let cm=state.currentMonsters[0];if(cm&&cm.hp>0){const cd=calcDmg(st.atk,monArmor(cm),st.crit,st.critd,false,cm.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(cm, cd.dmg, st.emoji).remaining;cm.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,cd.crit,'普攻');showMonsterFloat(cm,st.emoji+'-'+dealt,'#a0d0ff',allySideFloatOpts({variant:cd.crit?'crit':'comp',scale:cd.crit?1.12:1}));showBasicAttackFx($('comp-mini'),monsterFloatAnchor(cm),{actor:'companion',crit:cd.crit,scale:cd.crit?1.08:.9});}applyCompanionSignatureHit(companionSignature(tpl), st, cm, dealt, now);}lastCompAtk=now;
+  const interval=1000/(st.spd||0.5);if((state._compDisarmUntil||0)<=now&&(now-lastCompAtk>interval||now-lastCompAtk>5000)){let cm=state.currentMonsters[0];if(cm&&cm.hp>0){const cd=calcDmg(st.atk,monArmor(cm),st.crit,st.critd,false,cm.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(cm, cd.dmg, st.emoji).remaining;cm.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,cd.crit,'普攻');showMonsterFloat(cm,st.emoji+'-'+dealt,'#a0d0ff',allySideFloatOpts({variant:cd.crit?'crit':'comp',scale:cd.crit?1.12:1}));const _targetEl=monsterFloatAnchor(cm);showBasicAttackFx($('comp-mini'),_targetEl,{actor:'companion',crit:cd.crit,scale:cd.crit?1.08:.9});if(cd.crit&&typeof showCombatHitSlam==='function')showCombatHitSlam(_targetEl,'crit',{school:'physical',important:true,scale:.98,duration:360});}applyCompanionSignatureHit(companionSignature(tpl), st, cm, dealt, now);}lastCompAtk=now;
     // 技能:每个技能按自己的 cd 独立冷却,就绪即放(GCD 0.9秒,避免一次性全放;优先治疗>buff>伤害)
     if((state._compSilenceUntil||0)<=now&&now-lastCompSkill>COMPANION_SKILL_GCD_MS){
       const ready=[];for(let i=0;i<st.skills.length;i++){if((compSkillCd[i]||0)<=now)ready.push(i);}
