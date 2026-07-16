@@ -596,6 +596,33 @@ function updateDmgLastHit() {
   el.textContent = text;
   el.title = `最近承伤: ${target} 在${agoText}受到 ${fmt(amount)} 点伤害。来源: ${sourceText || '未知来源'}。${boss ? '首领技能或首领攻击。' : ''}`;
 }
+function escapeDmgMeterText(value) {
+  return String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#39;'
+  }[ch]));
+}
+function incomingPressureSource(ds) {
+  if (!ds) return null;
+  const combined = {};
+  const addMap = (map, prefix) => {
+    for (const [raw, amount] of Object.entries(map || {})) {
+      const name = String(raw || '').trim();
+      const value = Math.max(0, amount || 0);
+      if (!name || value <= 0) continue;
+      const key = `${prefix}${name}`;
+      combined[key] = (combined[key] || 0) + value;
+    }
+  };
+  addMap(ds.takenSources, '');
+  addMap(ds.compTakenSources, '随从:');
+  const entries = Object.entries(combined).sort((a, b) => b[1] - a[1]);
+  if (!entries.length) return null;
+  return { name:entries[0][0], amount:entries[0][1] };
+}
 function updateDmgLastHeal() {
   const el = $('dm-last-heal');
   if (!el) return;
@@ -2700,12 +2727,20 @@ function updateDmgMeter() {
       }
     }
     const surviveText = netPerSec > 0 ? `可撑 ${Math.max(1, Math.min(120, Math.floor(hpNow / netPerSec)))}秒${hpNow / netPerSec > 120 ? '+' : ''}` : '净压力0';
-    const compShort = compAlive && (compTk || compHpPct < 0.95) ? ` · 随${fmt(compNetPerSec)}/秒` : '';
-    const text = `${label} · 主${fmt(netPerSec)}/秒${compShort} · ${surviveText}`;
-    const detail = `压力判断: ${hint}。主角承伤 ${fmt(dtps)}/秒,治疗 ${fmt(healPerSec)}/秒,净压力 ${fmt(netPerSec)}/秒。${compAlive ? `随从承伤 ${fmt(compDtps)}/秒,治疗 ${fmt(compHealPerSec)}/秒,净压力 ${fmt(compNetPerSec)}/秒。` : ''}`;
+    const compVisible = compAlive && (compTk || compHpPct < 0.95);
+    const topSource = incomingPressureSource((typeof dmgStats !== 'undefined') ? dmgStats : null);
+    const sourceHtml = topSource
+      ? `<span class="dm-pressure-source" title="本轮主要承伤来源">${escapeDmgMeterText(topSource.name)} ${fmt(topSource.amount)}</span>`
+      : '';
+    const html = `<span class="dm-pressure-state">${escapeDmgMeterText(label)}</span><span class="dm-pressure-net">主 ${fmt(netPerSec)}/秒</span>${compVisible ? `<span class="dm-pressure-net companion">随 ${fmt(compNetPerSec)}/秒</span>` : ''}${sourceHtml}<span class="dm-pressure-time">${escapeDmgMeterText(surviveText)}</span>`;
+    const sourceDetail = topSource ? `主要承伤来源 ${topSource.name} ${fmt(topSource.amount)}。` : '';
+    const detail = `压力判断: ${hint}。主角承伤 ${fmt(dtps)}/秒,治疗 ${fmt(healPerSec)}/秒,净压力 ${fmt(netPerSec)}/秒。${compAlive ? `随从承伤 ${fmt(compDtps)}/秒,治疗 ${fmt(compHealPerSec)}/秒,净压力 ${fmt(compNetPerSec)}/秒。` : ''}${sourceDetail}`;
     pressureEl.className = `dm-pressure ${cls}`;
     pressureEl.title = detail;
-    if (pressureEl.textContent !== text) pressureEl.textContent = text;
+    if (pressureEl.dataset.sig !== html) {
+      pressureEl.dataset.sig = html;
+      pressureEl.innerHTML = html;
+    }
   }
 
   // 上次死亡回放:保留在面板中,避免日志滚动后丢失失败原因
