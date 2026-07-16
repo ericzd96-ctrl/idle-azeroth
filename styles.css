@@ -521,6 +521,29 @@ h1 {
   font-size: 9px;
   font-style: normal;
 }
+.combat-skill-chain-tag {
+  flex: 0 0 auto;
+  padding: 0 4px;
+  border-radius: 999px;
+  border: 1px solid rgba(251,191,36,.28);
+  background: rgba(113,63,18,.22);
+  color: #fde68a;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 900;
+  line-height: 1.25;
+}
+.combat-skill-chain-tag.tag-danger {
+  border-color: rgba(248,113,113,.42);
+  background: rgba(127,29,29,.32);
+  color: #fecaca;
+}
+.combat-skill-chain-tag.tag-rescue,
+.combat-skill-chain-tag.tag-guard {
+  border-color: rgba(74,222,128,.34);
+  background: rgba(20,83,45,.28);
+  color: #bbf7d0;
+}
 .combat-skill-chain-chip.has-amount i {
   min-width: 34px;
   text-align: center;
@@ -6756,6 +6779,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   .combat-skill-chain-chip.is-latest { max-width: 45%; }
   .combat-skill-chain-chip i { display: none; }
   .combat-skill-chain-chip.has-amount i { display: inline-block; min-width: 28px; padding: 0 3px; font-size: 8px; }
+  .combat-skill-chain-tag { display: none; }
   .combat-cue-chip { max-width: 32%; padding: 1px 5px 1px 4px; }
   .combat-cue-chip:nth-child(n+4) { display: none; }
   .combat-cue-chip span { font-size: 9px; }
@@ -6764,6 +6788,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   .dm-recent-skills { gap: 3px; min-height: 19px; }
   .dm-recent-chip { max-width: 33%; padding: 1px 5px; font-size: 9px; }
   .dm-recent-amount { min-width: 30px; padding: 0 3px; font-size: 8px; }
+  .dm-recent-tag { padding: 0 3px; font-size: 8px; }
   .dm-recent-chip:nth-child(n+5) { display: none; }
   .dm-combat-tempo { gap: 3px; min-height: 20px; padding: 2px 4px; }
   .dm-combat-tempo b { max-width: 38%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -8770,6 +8795,7 @@ button.legend:hover:not(:disabled) {
 .dm-recent-target,
 .dm-recent-hits,
 .dm-recent-chain,
+.dm-recent-tag,
 .dm-recent-amount {
   flex: 0 0 auto;
   padding: 0 4px;
@@ -8842,6 +8868,33 @@ button.legend:hover:not(:disabled) {
   color: #fde68a;
   border-color: rgba(251,191,36,.28);
   background: rgba(113,63,18,.20);
+}
+.dm-recent-tag {
+  color: #e0f2fe;
+  border-color: rgba(125,211,252,.26);
+  background: rgba(8,47,73,.24);
+}
+.dm-recent-tag.tag-danger {
+  color: #fecaca;
+  border-color: rgba(248,113,113,.38);
+  background: rgba(127,29,29,.30);
+}
+.dm-recent-tag.tag-rescue,
+.dm-recent-tag.tag-guard {
+  color: #bbf7d0;
+  border-color: rgba(74,222,128,.30);
+  background: rgba(20,83,45,.26);
+}
+.dm-recent-tag.tag-chain,
+.dm-recent-tag.tag-crit {
+  color: #fde68a;
+  border-color: rgba(251,191,36,.32);
+  background: rgba(113,63,18,.24);
+}
+.dm-recent-tag.tag-aoe {
+  color: #ddd6fe;
+  border-color: rgba(192,132,252,.30);
+  background: rgba(88,28,135,.24);
 }
 .dm-recent-chip.actor-boss {
   color: #fecaca;

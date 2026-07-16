@@ -228,6 +228,29 @@ function combatRecentSkillDetailText(item) {
   if (crits > 0) parts.push('暴击 ' + crits + ' 次');
   return parts.join(', ');
 }
+function combatRecentSkillTags(item, list, now, idx) {
+  const tags = [];
+  const actor = String(item?.actor || 'hero');
+  const school = String(item?.school || 'physical');
+  const type = String(item?.type || 'skill');
+  const hits = item?.hits || 0;
+  const crits = item?.crits || 0;
+  const target = String(item?.target || '');
+  const danger = actor === 'boss' && (type === 'danger' || item?.threat === 'high' || item?.threat === 'extreme' || item?.empowered);
+  if (danger) tags.push({ key:'danger', text:item?.empowered ? '灭团' : '高危', title:'首领危险技能,优先打断、减伤或治疗' });
+  if ((type === 'heal' || (item?.heal || 0) > 0) && ((item?.heal || 0) > 0 || (item?.maxAmount || 0) > 0)) {
+    tags.push({ key:'rescue', text:'救场', title:'治疗技能刚刚生效' });
+  } else if ((type === 'shield' || (item?.shield || 0) > 0) && ((item?.shield || 0) > 0 || (item?.maxAmount || 0) > 0)) {
+    tags.push({ key:'guard', text:'护住', title:'护盾或防护技能刚刚生效' });
+  }
+  if (idx === 0) {
+    const chain = (list || []).filter(x => x && x.actor === actor && x.school === school && now - (x.ts || 0) < 3200).length;
+    if (chain >= 2) tags.push({ key:'chain', text:`连动x${chain}`, title:`最近 ${combatSchoolShortName(school)} 技能连续触发 ${chain} 次` });
+  }
+  if (hits >= 3 || target.includes('+') || /全体|多目标|持续伤害/.test(target)) tags.push({ key:'aoe', text:'AOE', title:'命中多个目标或造成群体效果' });
+  if (crits > 0) tags.push({ key:'crit', text:`暴击x${crits}`, title:`本次技能暴击 ${crits} 次` });
+  return tags.slice(0, 3);
+}
 function updateStageSkillChain(list, now) {
   const el = $('combat-skill-chain');
   if (!el) return;
@@ -254,9 +277,10 @@ function updateStageSkillChain(list, now) {
     const type = String(item.type || 'skill').replace(/[^a-z0-9_-]/gi, '') || 'skill';
     const danger = actor === 'boss' && (type === 'danger' || item.threat === 'high' || item.threat === 'extreme' || item.empowered);
     const amount = combatRecentSkillAmountMeta(item);
+    const tags = combatRecentSkillTags(item, fresh, now, idx);
     const status = String(item.status || '').trim();
     const chip = document.createElement('span');
-    chip.className = `combat-skill-chain-chip actor-${actor} school-${school} type-${type}${amount ? ' has-amount amount-' + amount.kind : ''}${status ? ' has-status' : ''}${idx === 0 ? ' is-latest' : ''}${danger ? ' is-danger' : ''}`;
+    chip.className = `combat-skill-chain-chip actor-${actor} school-${school} type-${type}${amount ? ' has-amount amount-' + amount.kind : ''}${status ? ' has-status' : ''}${tags.length ? ' has-tags' : ''}${idx === 0 ? ' is-latest' : ''}${danger ? ' is-danger' : ''}`;
     chip.title = `${combatSchoolShortName(school)} · ${item.icon || ''}${item.name || ''} · ${combatRecentSkillEffectText(item)}${combatRecentSkillTargetText(item) ? ' ' + combatRecentSkillTargetText(item) : ''}${combatRecentSkillDetailText(item) ? ' · ' + combatRecentSkillDetailText(item) : ''}`;
     const source = document.createElement('b');
     source.textContent = actorIcon[actor] || '技';
@@ -265,6 +289,13 @@ function updateStageSkillChain(list, now) {
     const result = document.createElement('i');
     result.textContent = status || (amount ? amount.short : (danger ? '高危' : (combatRecentSkillHitText(item) || combatRecentSkillEffectText(item))));
     chip.append(source, name, result);
+    tags.slice(0, 1).forEach(tagInfo => {
+      const tag = document.createElement('em');
+      tag.className = `combat-skill-chain-tag tag-${tagInfo.key}`;
+      tag.textContent = tagInfo.text;
+      tag.title = tagInfo.title;
+      chip.appendChild(tag);
+    });
     el.appendChild(chip);
   });
   el.style.display = 'flex';
@@ -374,8 +405,6 @@ function updateDmgRecentSkills() {
   const actorName = { hero:'主角', companion:'随从', boss:'首领', enemy:'敌人' };
   const actorIcon = { hero:'我', companion:'伴', boss:'首', enemy:'敌' };
   const typeName = { dmg:'伤害', heal:'治疗', shield:'护盾', buff:'增益', summon:'召唤', danger:'高危', skill:'技能' };
-  const latest = list[0] || null;
-  const chainCount = latest ? list.filter(x => x.actor === latest.actor && x.school === latest.school && now - (x.ts || 0) < 3200).length : 0;
   list.forEach((item, idx) => {
     const chip = document.createElement('span');
     const actor = String(item.actor || 'hero').replace(/[^a-z0-9_-]/gi, '') || 'hero';
@@ -389,10 +418,10 @@ function updateDmgRecentSkills() {
     const amount = combatRecentSkillAmountMeta(item);
     const detailText = combatRecentSkillDetailText(item);
     const status = String(item.status || '').trim();
-    const chainText = idx === 0 && chainCount >= 2 ? `连动x${chainCount}` : '';
+    const tags = combatRecentSkillTags(item, list, now, idx);
     const ageOld = now - (item.ts || 0) > 7500;
-    chip.className = `dm-recent-chip actor-${actor} school-${school} type-${type}${amount ? ' has-amount amount-' + amount.kind : ''}${status ? ' has-status' : ''}${idx === 0 ? ' is-latest' : ''}${danger ? ' is-danger' : ''}${ageOld ? ' is-old' : ''}`;
-    chip.title = `${actorName[actor] || '技能'}释放 ${schoolName}${typeName[type] || '技能'}: ${item.icon || ''}${item.name || ''}。结果: ${effectText}${targetText ? ',' + targetText.replace(/^→/, '目标 ') : ''}${hitText ? ',' + hitText : ''}${detailText ? ',' + detailText : ''}${chainText ? ',' + chainText : ''}。${danger ? '高危首领技能,优先打断或开保命。' : ''}`;
+    chip.className = `dm-recent-chip actor-${actor} school-${school} type-${type}${amount ? ' has-amount amount-' + amount.kind : ''}${status ? ' has-status' : ''}${tags.length ? ' has-tags' : ''}${idx === 0 ? ' is-latest' : ''}${danger ? ' is-danger' : ''}${ageOld ? ' is-old' : ''}`;
+    chip.title = `${actorName[actor] || '技能'}释放 ${schoolName}${typeName[type] || '技能'}: ${item.icon || ''}${item.name || ''}。结果: ${effectText}${targetText ? ',' + targetText.replace(/^→/, '目标 ') : ''}${hitText ? ',' + hitText : ''}${detailText ? ',' + detailText : ''}${tags.length ? ',' + tags.map(t => t.text).join('、') : ''}。${danger ? '高危首领技能,优先打断或开保命。' : ''}`;
     const source = document.createElement('b');
     source.className = 'dm-recent-actor';
     source.textContent = actorIcon[actor] || '技';
@@ -424,12 +453,13 @@ function updateDmgRecentSkills() {
       hits.textContent = hitText;
       chip.appendChild(hits);
     }
-    if (chainText) {
-      const chain = document.createElement('span');
-      chain.className = 'dm-recent-chain';
-      chain.textContent = chainText;
-      chip.appendChild(chain);
-    }
+    tags.forEach(tagInfo => {
+      const tag = document.createElement('span');
+      tag.className = `dm-recent-tag tag-${tagInfo.key}`;
+      tag.textContent = tagInfo.text;
+      tag.title = tagInfo.title;
+      chip.appendChild(tag);
+    });
     el.appendChild(chip);
   });
 }
