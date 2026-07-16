@@ -3400,6 +3400,7 @@ function bossCastUiState(now) {
   const duration = Math.max(1, bossCasting.duration || 1);
   const elapsed = Math.max(0, now - (bossCasting.startTime || now));
   const remainMs = Math.max(0, duration - elapsed);
+  const finalWindow = elapsed / duration >= 0.70 || remainMs <= 1000;
   const threatMeta = (typeof bossCastThreatMeta === 'function') ? bossCastThreatMeta(bossCasting) : { label:'危险', text:'#fecaca' };
   const interruptText = (typeof bossInterruptTag === 'function') ? bossInterruptTag(bossCasting) : '可断';
   const canInterrupt = bossCasting.interruptPolicy !== 'none';
@@ -3445,7 +3446,7 @@ function bossCastUiState(now) {
       : interruptCount
         ? (urgent ? `打断未就绪,${responseText}` : (soonestLeft <= 0 ? '打断缺资源' : `打断未就绪,还差 ${Math.ceil(soonestLeft / 1000)}秒`))
         : `没有可用打断,${responseText}`;
-  return { cast:bossCasting, remainMs, threatMeta, interruptText, canInterrupt, urgent, ready, responseReady, interruptCount, action };
+  return { cast:bossCasting, duration, elapsed, remainMs, finalWindow, threatMeta, interruptText, canInterrupt, urgent, ready, responseReady, interruptCount, action };
 }
 
 function bossCastSkillPrompt(skillKey, sk, now, cdMs) {
@@ -3461,7 +3462,7 @@ function bossCastSkillPrompt(skillKey, sk, now, cdMs) {
       ? (hard ? '现在点击:打断读条并制造破绽窗口' : '现在点击:打断或削弱这次读条')
       : (cdMs > 0 ? `暂时不能用:还差 ${Math.ceil(cdMs / 1000)}秒` : '暂时不能用:资源不足');
     const tip = `${ui.cast.icon || ''}${ui.cast.name || '施法'} · ${ui.threatMeta.label} · ${ui.interruptText} · ${action}`;
-    return { label, cls, tip };
+    return { label, cls, tip, final:ui.finalWindow, urgent:hard, timerPct:Math.max(0, Math.min(100, ui.remainMs / Math.max(1, ui.duration) * 100)) };
   }
   const kind = bossCastResponseKind(skillKey, sk);
   const needsBackup = !ui.canInterrupt || !ui.ready || ui.urgent;
@@ -3472,7 +3473,7 @@ function bossCastSkillPrompt(skillKey, sk, now, cdMs) {
     ? (kind === 'heal' ? '现在点击:用治疗覆盖这次读条' : '现在点击:用减伤/护盾覆盖这次读条')
     : (cdMs > 0 ? `暂时不能用:还差 ${Math.ceil(cdMs / 1000)}秒` : '暂时不能用:资源不足');
   const tip = `${ui.cast.icon || ''}${ui.cast.name || '施法'} · ${ui.threatMeta.label} · ${ui.interruptText} · ${action}`;
-  return { label, cls, tip };
+  return { label, cls, tip, final:ui.finalWindow, urgent:ui.urgent, timerPct:Math.max(0, Math.min(100, ui.remainMs / Math.max(1, ui.duration) * 100)) };
 }
 
 function updateBossIntentLine(now) {
@@ -3702,12 +3703,14 @@ function renderSkillBar() {
     const tip = `${baseTip}${bossPrompt ? `\nBoss读条: ${bossPrompt.tip}` : ''}`.replace(/"/g, '&quot;');
     const baseTipAttr = baseTip.replace(/"/g, '&quot;');
     const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, sk.icon) : sk.icon;
-    return `<button class="skill-btn ${onCd?'on-cd':''} ${useStateClass} ${bossPrompt?.cls || ''}" data-skill="${key}" data-cd-active="${onCd?'1':'0'}" data-resource-ready="${hasMp?'1':'0'}" data-cd-total="${cdTotalMs}" draggable="true" title="${tip}" data-base-title="${baseTipAttr}"
-      style="--cd-angle:${cdAngle}deg;${coreMatch&&!onCd?'border-color:#38bdf8;box-shadow:0 0 0 1px rgba(56,189,248,.50),0 0 14px rgba(56,189,248,.18)':(procMatch&&!onCd?'border-color:#facc15;box-shadow:0 0 0 1px rgba(250,204,21,.45)':(!onCd&&hasMp?'border-color:var(--accent)':''))}">
+    const bossPromptClass = bossPrompt ? `boss-cast-prompt ${bossPrompt.cls || ''} ${bossPrompt.final ? 'boss-cast-final' : ''}` : '';
+    return `<button class="skill-btn ${onCd?'on-cd':''} ${useStateClass} ${bossPromptClass}" data-skill="${key}" data-cd-active="${onCd?'1':'0'}" data-resource-ready="${hasMp?'1':'0'}" data-cd-total="${cdTotalMs}" draggable="true" title="${tip}" data-base-title="${baseTipAttr}"
+      style="--cd-angle:${cdAngle}deg;${bossPrompt ? `--boss-cast-pct:${Math.round(bossPrompt.timerPct || 0)}%;` : ''}${coreMatch&&!onCd?'border-color:#38bdf8;box-shadow:0 0 0 1px rgba(56,189,248,.50),0 0 14px rgba(56,189,248,.18)':(procMatch&&!onCd?'border-color:#facc15;box-shadow:0 0 0 1px rgba(250,204,21,.45)':(!onCd&&hasMp?'border-color:var(--accent)':''))}">
       <span>${skillIconHtml} ${sk.name}</span>
       <span class="mp-cost">${coreMatch?'✹ ':(procMatch?'✦ ':'')}${sk.mp}${c.resKey==='rage'?'怒':c.resKey==='energy'?'能':'蓝'}</span>
       ${onCd?`<div class="cd-overlay" style="--cd-angle:${cdAngle}deg">${(cdMs/1000).toFixed(1)}秒</div>`:''}
       ${bossPrompt ? `<span class="sk-alert">${bossPrompt.label}</span>` : ''}
+      ${bossPrompt ? '<span class="boss-cast-timer"></span>' : ''}
     </button>`;
   }).join('');
 }
@@ -3769,6 +3772,9 @@ function updateSkillBarCd() {
     btn.classList.toggle('defensive-hot', prompt?.cls === 'defensive-hot');
     btn.classList.toggle('heal-hot', prompt?.cls === 'heal-hot');
     btn.classList.toggle('defensive-wait', prompt?.cls === 'defensive-wait');
+    btn.classList.toggle('boss-cast-prompt', !!prompt);
+    btn.classList.toggle('boss-cast-final', !!prompt?.final);
+    btn.style.setProperty('--boss-cast-pct', prompt ? `${Math.round(prompt.timerPct || 0)}%` : '0%');
     let badge = btn.querySelector('.sk-alert');
     if(prompt){
       if(!badge){
@@ -3779,6 +3785,16 @@ function updateSkillBarCd() {
       if(badge.textContent !== prompt.label) badge.textContent = prompt.label;
     }else if(badge){
       badge.remove();
+    }
+    let timer = btn.querySelector('.boss-cast-timer');
+    if(prompt){
+      if(!timer){
+        timer = document.createElement('span');
+        timer.className = 'boss-cast-timer';
+        btn.appendChild(timer);
+      }
+    }else if(timer){
+      timer.remove();
     }
     const baseTitle = btn.dataset.baseTitle || btn.title || '';
     const nextTitle = prompt ? `${baseTitle}\nBoss读条: ${prompt.tip}` : baseTitle;

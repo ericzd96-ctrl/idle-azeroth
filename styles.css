@@ -7128,9 +7128,58 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   border-color: rgba(167,243,208,.55);
   color: #d1fae5;
 }
+.skill-btn.boss-cast-prompt {
+  overflow: visible;
+}
+.skill-btn .boss-cast-timer {
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  bottom: -4px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(15,23,42,.92);
+  border: 1px solid rgba(148,163,184,.24);
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 4;
+}
+.skill-btn .boss-cast-timer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: var(--boss-cast-pct, 100%);
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(251,191,36,.95), rgba(248,113,113,.95));
+  box-shadow: 0 0 8px rgba(248,113,113,.28);
+  transition: width .12s linear;
+}
+.skill-btn.interrupt-soft .boss-cast-timer::before {
+  background: linear-gradient(90deg, rgba(253,230,138,.95), rgba(251,191,36,.95));
+  box-shadow: 0 0 8px rgba(251,191,36,.22);
+}
+.skill-btn.defensive-hot .boss-cast-timer::before,
+.skill-btn.defensive-wait .boss-cast-timer::before {
+  background: linear-gradient(90deg, rgba(147,197,253,.95), rgba(96,165,250,.95));
+  box-shadow: 0 0 8px rgba(96,165,250,.24);
+}
+.skill-btn.heal-hot .boss-cast-timer::before {
+  background: linear-gradient(90deg, rgba(167,243,208,.95), rgba(52,211,153,.95));
+  box-shadow: 0 0 8px rgba(52,211,153,.22);
+}
+.skill-btn.boss-cast-final:not(.on-cd) .boss-cast-timer {
+  animation: bossCastButtonTimerPulse .52s ease-in-out infinite;
+}
 @keyframes interruptPulse {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-1px); }
+}
+@keyframes bossCastButtonTimerPulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.35); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skill-btn.boss-cast-final:not(.on-cd) .boss-cast-timer { animation: none; }
 }
 @keyframes skillReadyFlash {
   0% { filter: brightness(1); }
