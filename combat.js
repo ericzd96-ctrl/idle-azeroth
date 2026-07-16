@@ -267,6 +267,17 @@ function skillVisualSchool(skillKey, sk, actor){
   if(actor === 'boss' && (sk.threat === 'high' || sk.threat === 'extreme' || sk._empowered)) return 'shadow';
   return 'physical';
 }
+function skillSupportVisualSchool(skillKey, sk, actor){
+  if(!sk) return skillVisualSchool(skillKey, sk, actor);
+  if(sk.type === 'heal' || sk.heal || sk.healPct) return 'heal';
+  const text = `${skillKey || ''} ${sk.name || ''} ${sk.desc || ''} ${sk.icon || ''} ${sk.buff || ''}`.toLowerCase();
+  if(sk.shieldPct || /盾|护盾|屏障|壁垒|守护|格挡|防御|shield|barrier|guard|ward/.test(text)) return 'shield';
+  if(sk.type === 'buff' || sk.type === 'support' || sk.type === 'summon' || sk.summonCount){
+    const inferred = skillVisualSchool(skillKey, sk, actor);
+    return inferred === 'physical' ? 'holy' : inferred;
+  }
+  return skillVisualSchool(skillKey, sk, actor);
+}
 function skillFxLayer(){
   if(typeof document === 'undefined' || document.hidden) return null;
   return $('float-layer') || $('stage');
@@ -434,6 +445,18 @@ function showSkillImpactFx(sourceEl, targetEl, sk, opts){
   });
   if(typeof pulseCombatEl === 'function') pulseCombatEl(targetEl, opts?.pulse || (opts?.actor === 'boss' ? 'danger' : 'hit'), opts?.pulseDuration || 220);
   setTimeout(() => burst.remove(), opts?.duration || 560);
+}
+function showSkillSelfFx(sourceEl, sk, opts){
+  if(!sourceEl) return;
+  const school = opts?.school || skillSupportVisualSchool(opts?.skillKey, sk, opts?.actor);
+  showSkillImpactFx(sourceEl, sourceEl, sk, Object.assign({
+    trail:false,
+    school,
+    scale:opts?.small ? 0.72 : 0.9,
+    burstSize:opts?.small ? 28 : 36,
+    pulse:school === 'heal' ? 'heal' : school === 'shield' ? 'shield' : 'artifact',
+    duration:opts?.duration || 520
+  }, opts || {}));
 }
 function showMonsterDeathFx(mon){
   if(!mon || mon._deathFxShown || typeof document === 'undefined' || document.hidden) return;
@@ -11694,7 +11717,8 @@ function castSkill(skillKey,manual){
   const talentForceCrit = consumeNextSkillCrit(sk);
   const specProc = consumeSpecProcForSkill(skillKey, sk, now);
   const heroCastEl = $('hero-emoji');
-  if(heroCastEl) showSkillCastFx(heroCastEl, sk, { skillKey, actor:'hero', small:sk.type!=='dmg' });
+  const heroFxSchool = sk.type === 'dmg' ? skillVisualSchool(skillKey, sk, 'hero') : skillSupportVisualSchool(skillKey, sk, 'hero');
+  if(heroCastEl) showSkillCastFx(heroCastEl, sk, { skillKey, actor:'hero', small:sk.type!=='dmg', school:heroFxSchool });
   if(sk.type==='dmg'){const mon=state.currentMonsters[0];if(!mon)return;
     // 斩杀:消耗所有怒气,每点怒气+1%伤害
     let rageBonus=1;
@@ -11770,6 +11794,7 @@ function castSkill(skillKey,manual){
     const healMult=(1+(state.hero.healBonus||0)/100)*calcSpecIdentityHealMult(skillKey, sk, now)*(1+(specProc?.healPct || 0));
     const h=Math.floor(state.hero.hpMax*sk.heal*healMult);
     const hr=healHeroAmount(h, sk.icon, '#6ee7b7', 'hero', sk.name);
+    if(heroCastEl) showSkillSelfFx(heroCastEl, sk, { skillKey, actor:'hero', school:'heal', pulse:'heal' });
     log(sk.name+'! 恢复 '+hr.applied+' 生命','good');
     applySkillHealEffects(skillKey, sk, hr.applied, hr.overheal);
     applySpecProcHealEffects(specProc, hr.applied, hr.overheal, sk, skillKey, now);
@@ -11780,13 +11805,14 @@ function castSkill(skillKey,manual){
     const owner = { id:'hero', source:'hero', name:'你', icon:sk.icon || getCls()?.icon || '🧙', lvl:state.hero.lvl, atk:state.hero.atk, def:state.hero.def, hpMax:state.hero.hpMax, crit:state.hero.crit, critd:state.hero.critd };
     const summoned = summonAlliedUnits(sk, now, owner);
     if(summoned > 0){
+      if(heroCastEl) showSkillSelfFx(heroCastEl, sk, { skillKey, actor:'hero', school:heroFxSchool, pulse:'artifact' });
       log(`${sk.icon || '🐾'} ${sk.name}! 召唤了 ${summoned} 个单位助战`,'good');
       applySpecProcHealEffects(specProc, 0, 0, sk, skillKey, now);
       applyClassMechanicAfterSkill(skillKey, sk, state.currentMonsters[0] || null, 0, { cost, summoned, now });
       processTalentAfterSkill(skillKey, sk, state.currentMonsters[0] || null, 0, { cost, summoned });
     }
   }
-  else if(sk.type==='buff'){const dur=sk.duration+(state.hero.buffDuration||0)*1000;state.buffs[sk.buff]=Date.now()+dur;recomputeStats();log(sk.name+'!','good');applySpecProcHealEffects(specProc, 0, 0, sk, skillKey, now);applyClassMechanicAfterSkill(skillKey, sk, state.currentMonsters[0] || null, 0, { cost, buff:true, now });}
+  else if(sk.type==='buff'){const dur=sk.duration+(state.hero.buffDuration||0)*1000;state.buffs[sk.buff]=Date.now()+dur;recomputeStats();if(heroCastEl)showSkillSelfFx(heroCastEl, sk, { skillKey, actor:'hero', school:heroFxSchool, pulse:heroFxSchool==='shield'?'shield':'artifact' });log(sk.name+'!','good');applySpecProcHealEffects(specProc, 0, 0, sk, skillKey, now);applyClassMechanicAfterSkill(skillKey, sk, state.currentMonsters[0] || null, 0, { cost, buff:true, now });}
   if(sk.type==='buff') processTalentAfterSkill(skillKey, sk, state.currentMonsters[0] || null, 0, { cost });
 }
 /* BOSS 施法目标(用于施法条提前显示"对谁释放";单体伤害在开始施法时预选,结算时复用) */
@@ -13284,7 +13310,8 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
       const i=ready[0];
       if(i!==undefined){const sk=st.skills[i];
         const compCastEl = $('comp-mini');
-        if(compCastEl) showSkillCastFx(compCastEl, sk, { actor:'companion', small:true, pulse:'comp' });
+        const compFxSchool = sk.type === 'dmg' ? skillVisualSchool(null, sk, 'companion') : skillSupportVisualSchool(null, sk, 'companion');
+        if(compCastEl) showSkillCastFx(compCastEl, sk, { actor:'companion', small:true, pulse:'comp', school:compFxSchool });
         if(sk.type==='dmg'){
           const dmgMult = companionSkillDamageMult(sk, mon, now);
           const compSkillAtk = st.atk + Math.max(0, Math.floor((state.hero.atk || 0) * (sk.heroAtkPct || 0)));
@@ -13313,12 +13340,15 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
             if(healTarget==='both'){
               healCompanionAmount(Math.floor(st.hpMax*sk.heal*COMPANION_HEAL_SCALE*companionTacticHealMult()),st.emoji,'#6ee7b7','comp',sk.name);
               healHeroAmount(Math.floor(state.hero.hpMax*sk.heal*COMPANION_HEAL_SCALE*companionTacticHealMult()), st.emoji, '#6ee7b7', 'comp', sk.name);
+              if(compCastEl){showSkillImpactFx(compCastEl,$('comp-mini'),sk,{actor:'companion',school:'heal',trail:false,scale:.66,pulse:'heal'});showSkillImpactFx(compCastEl,$('hero-emoji'),sk,{actor:'companion',school:'heal',trail:false,scale:.72,pulse:'heal'});}
             } else if(healTarget==='companion'){
               const healAmt=Math.floor(st.hpMax*sk.heal*COMPANION_HEAL_SCALE*companionTacticHealMult());
               healCompanionAmount(healAmt,st.emoji,'#6ee7b7','comp',sk.name);
+              if(compCastEl)showSkillSelfFx(compCastEl,sk,{actor:'companion',school:'heal',small:true,pulse:'heal'});
             } else {
               const healAmt=Math.floor(state.hero.hpMax*sk.heal*COMPANION_HEAL_SCALE*companionTacticHealMult());
               healHeroAmount(healAmt, st.emoji, '#6ee7b7', 'comp', sk.name);
+              if(compCastEl)showSkillImpactFx(compCastEl,$('hero-emoji'),sk,{actor:'companion',school:'heal',trail:false,scale:.72,pulse:'heal'});
             }
           }
           if(sk.lifeSteal) healCompanionAmount(Math.floor(dealt*sk.lifeSteal), '🩸', '#6ee7b7', 'comp', sk.name);
@@ -13331,21 +13361,23 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
             const hh=Math.floor(state.hero.hpMax*sk.heal*COMPANION_HEAL_SCALE*companionTacticHealMult());
             const cr=healCompanionAmount(ch, st.emoji, '#6ee7b7', 'comp', sk.name);
             const hr=healHeroAmount(hh, st.emoji, '#6ee7b7', 'comp', sk.name);
+            if(compCastEl){showSkillImpactFx(compCastEl,$('comp-mini'),sk,{actor:'companion',school:'heal',trail:false,scale:.66,pulse:'heal'});showSkillImpactFx(compCastEl,$('hero-emoji'),sk,{actor:'companion',school:'heal',trail:false,scale:.72,pulse:'heal'});}
             log(sk.name+'! 为主角和随从恢复 '+(hr.applied+cr.applied)+' 生命','good');
           }
           else if(healTarget==='companion'){
             const h=Math.floor(st.hpMax*sk.heal*COMPANION_HEAL_SCALE*companionTacticHealMult());
-            const hr=healCompanionAmount(h, st.emoji, '#6ee7b7', 'comp', sk.name); log(sk.name+'! 为随从恢复 '+hr.applied+' 生命','good');
+            const hr=healCompanionAmount(h, st.emoji, '#6ee7b7', 'comp', sk.name); if(compCastEl)showSkillSelfFx(compCastEl,sk,{actor:'companion',school:'heal',small:true,pulse:'heal'}); log(sk.name+'! 为随从恢复 '+hr.applied+' 生命','good');
           }
           else {
             const h=Math.floor(state.hero.hpMax*sk.heal*COMPANION_HEAL_SCALE*companionTacticHealMult());
-            const hr=healHeroAmount(h, st.emoji, '#6ee7b7', 'comp', sk.name);log(sk.name+'! +'+hr.applied+' 生命','good');
+            const hr=healHeroAmount(h, st.emoji, '#6ee7b7', 'comp', sk.name);if(compCastEl)showSkillImpactFx(compCastEl,$('hero-emoji'),sk,{actor:'companion',school:'heal',trail:false,scale:.72,pulse:'heal'});log(sk.name+'! +'+hr.applied+' 生命','good');
           }
           applyCompanionSupportSkill(sk, st, now);
         }
         else if(sk.type==='buff'){
           applyCompanionBuffAura(sk, now);
           applyCompanionSupportSkill(sk, st, now);
+          if(compCastEl) showSkillSelfFx(compCastEl, sk, { actor:'companion', school:compFxSchool, small:true, pulse:compFxSchool==='shield'?'shield':'artifact' });
           log(sk.name+'!','good');
         }
         else if(sk.type==='summon' || sk.summonCount){
@@ -13354,7 +13386,7 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
           const summoned = summonAlliedUnits(sk, now, { id:`comp:${comp.key}`, source:'companion', name:tpl?.name || st.name, icon:tpl?.emoji || st.emoji, lvl:state.hero.lvl, atk:st.atk, def:st.def, hpMax:st.hpMax, crit:st.crit, critd:st.critd, quality:qualityKey, stars:comp.stars || 1, summonSkillSlots });
           if(sk.buff) applyCompanionBuffAura(sk, now);
           applyCompanionSupportSkill(sk, st, now);
-          if(summoned > 0) log(sk.name+'! 召唤了 '+summoned+' 个单位助战','good');
+          if(summoned > 0){ if(compCastEl)showSkillSelfFx(compCastEl, sk, { actor:'companion', school:compFxSchool, small:true, pulse:'artifact' }); log(sk.name+'! 召唤了 '+summoned+' 个单位助战','good'); }
         }
         compSkillCd[i]=now+companionEffectiveSkillCdMs(sk);lastCompSkill=now;
       }
