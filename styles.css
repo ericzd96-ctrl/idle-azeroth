@@ -6797,6 +6797,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   .dm-combat-heat { gap: 3px; min-height: 20px; padding: 2px 4px; }
   .dm-heat-state { min-width: 34px; padding: 0 5px; }
   .dm-heat-detail { max-width: 40%; font-size: 9px; }
+  .dm-heat-action { max-width: 58px; padding: 0 4px; font-size: 8px; }
   .dm-last-hit { gap: 3px; padding: 2px 4px; }
   .dm-last-hit-chip { max-width: 48%; padding: 1px 2px; }
   .dm-last-hit-chip.latest { max-width: 66%; }
@@ -9082,6 +9083,64 @@ button.dm-combat-tempo-action.ready.skill-pressed {
   color: #cbd5e1;
   font-size: 9px;
   font-weight: 900;
+}
+.dm-heat-action {
+  flex: 0 0 auto;
+  max-width: 86px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,.22);
+  background: rgba(2,6,23,.30);
+  color: #cbd5e1;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+button.dm-heat-action {
+  appearance: none;
+  font: inherit;
+  cursor: pointer;
+  transition: transform .14s ease, filter .14s ease, box-shadow .14s ease;
+}
+button.dm-heat-action.ready:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.16);
+}
+button.dm-heat-action.ready.skill-pressed {
+  transform: translateY(1px) scale(.97);
+  filter: brightness(1.30);
+}
+.dm-heat-action.heal,
+.dm-heat-action.rescue {
+  color: #bbf7d0;
+  border-color: rgba(74,222,128,.32);
+  background: rgba(20,83,45,.26);
+}
+.dm-heat-action.defense,
+.dm-heat-action.warn {
+  color: #fde68a;
+  border-color: rgba(251,191,36,.34);
+  background: rgba(113,63,18,.24);
+}
+.dm-heat-action.danger {
+  color: #fecaca;
+  border-color: rgba(248,113,113,.42);
+  background: rgba(127,29,29,.32);
+  box-shadow: 0 0 9px rgba(248,113,113,.14);
+}
+.dm-heat-action.burst {
+  color: #fde68a;
+  border-color: rgba(251,191,36,.32);
+  background: rgba(113,63,18,.24);
+}
+.dm-heat-action.steady,
+.dm-heat-action.safe {
+  color: #bfdbfe;
+  border-color: rgba(96,165,250,.26);
+  background: rgba(30,64,175,.16);
 }
 .dm-combat-heat.steady { --heat-color: #93c5fd; --heat-soft: rgba(59,130,246,.22); }
 .dm-combat-heat.burst { --heat-color: #fde68a; --heat-soft: rgba(251,191,36,.28); }

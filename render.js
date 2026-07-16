@@ -726,6 +726,23 @@ function updateDmgCombatTempo(total, healTotal) {
     : '';
   el.innerHTML = `<b>${escapeDmgMeterText(stateMeta.label)}</b><span>${escapeDmgMeterText(stateMeta.detail || '')}</span>${actionHtml}`;
 }
+function combatHeatActionMeta(tone, meta, now) {
+  const ui = (typeof bossCastUiState === 'function') ? bossCastUiState(now) : null;
+  if (ui) {
+    if (ui.ready) return { tone:ui.urgent ? 'danger' : 'warn', text:`断 ${ui.ready.sk?.name || '打断'}`, title:`首领正在读条,建议使用 ${ui.ready.sk?.name || '打断技能'}。`, key:ui.ready.key, ready:true };
+    if (ui.responseReady) return { tone:ui.responseReady.kind === 'heal' ? 'heal' : 'defense', text:`保 ${ui.responseReady.sk?.name || '保命'}`, title:`读条无法立刻打断,建议用 ${ui.responseReady.sk?.name || '保命技能'} 覆盖。`, key:ui.responseReady.key, ready:true };
+    return { tone:ui.urgent ? 'danger' : 'warn', text:ui.finalAction || ui.action || '盯读条', title:ui.action || '准备处理首领读条。' };
+  }
+  if (tone === 'danger') {
+    const rec = (typeof combatAdviceRecommendedEntry === 'function') ? combatAdviceRecommendedEntry(now) : null;
+    if (rec?.ready && rec.key) return { tone:rec.kind === 'heal' ? 'heal' : 'defense', text:`按 ${rec.sk?.name || '保命'}`, title:`当前高压,建议使用 ${rec.sk?.name || '保命技能'}。`, key:rec.key, ready:true };
+    return { tone:'danger', text:meta?.coverGap > 0 ? '补覆盖' : '开保命', title:'当前热度来自承伤或首领压力,优先治疗、护盾或减伤。' };
+  }
+  if (tone === 'rescue') return { tone:'heal', text:'稳血线', title:'治疗/护盾正在覆盖伤害,继续稳住血线。' };
+  if (tone === 'burst') return { tone:'burst', text:meta?.bossDanger ? '转处理' : '压爆发', title:meta?.bossDanger ? '爆发同时有首领压力,注意打断或保命。' : '当前输出窗口很好,优先释放高伤害技能。' };
+  if (tone === 'steady') return { tone:'steady', text:'看读条', title:'当前战斗平稳,继续输出并观察首领读条。' };
+  return { tone:'safe', text:'待战', title:'开始战斗后显示热度建议。' };
+}
 function updateDmgCombatHeat(total, healTotal, elapsed) {
   const el = $('dm-combat-heat');
   if (!el) return;
@@ -761,11 +778,18 @@ function updateDmgCombatHeat(total, healTotal, elapsed) {
   }
   const heat = Math.max(8, Math.min(100, Math.round(Math.max(burstScore, pressureScore, coverScore * 0.78) * 100)));
   const sig = `${tone}:${label}:${detail}:${heat}:${dps}:${coverGap}:${recentDamage}:${recentTaken}:${recentCover}`;
-  if (sig === _dmCombatHeatSig) return;
-  _dmCombatHeatSig = sig;
+  const action = combatHeatActionMeta(tone, { coverGap, bossDanger, recentTaken, recentDamage, recentCover }, now);
+  const actionSig = `${action?.tone || ''}:${action?.text || ''}:${action?.key || ''}:${action?.ready ? 1 : 0}`;
+  if (`${sig}|${actionSig}` === _dmCombatHeatSig) return;
+  _dmCombatHeatSig = `${sig}|${actionSig}`;
   el.className = `dm-combat-heat ${tone}`;
-  el.title = `战斗热度: ${label}。当前秒伤 ${fmt(dps)}/秒,近期伤害 ${fmt(recentDamage)},近期承伤 ${fmt(recentTaken)},近期治疗/护盾 ${fmt(recentCover)},本轮生存缺口 ${fmt(coverGap)}。`;
-  el.innerHTML = `<span class="dm-heat-state">${escapeDmgMeterText(label)}</span><span class="dm-heat-rail"><i style="width:${heat}%"></i></span><span class="dm-heat-detail">${escapeDmgMeterText(detail)}</span>`;
+  el.title = `战斗热度: ${label}。当前秒伤 ${fmt(dps)}/秒,近期伤害 ${fmt(recentDamage)},近期承伤 ${fmt(recentTaken)},近期治疗/护盾 ${fmt(recentCover)},本轮生存缺口 ${fmt(coverGap)}。${action ? '建议: ' + (action.title || action.text) : ''}`;
+  const actionHtml = action
+    ? (action.ready && action.key
+      ? `<button type="button" class="dm-heat-action ${escapeDmgMeterText(action.tone)} ready" data-action="pressurecast" data-skill="${escapeDmgMeterText(action.key)}" title="${escapeDmgMeterText((action.title || action.text) + ' 点击立即施放。')}">${escapeDmgMeterText(action.text)}</button>`
+      : `<span class="dm-heat-action ${escapeDmgMeterText(action.tone)}" title="${escapeDmgMeterText(action.title || action.text)}">${escapeDmgMeterText(action.text)}</span>`)
+    : '';
+  el.innerHTML = `<span class="dm-heat-state">${escapeDmgMeterText(label)}</span><span class="dm-heat-rail"><i style="width:${heat}%"></i></span><span class="dm-heat-detail">${escapeDmgMeterText(detail)}</span>${actionHtml}`;
 }
 function updateDmgTacticalStatus(total, healTotal, elapsed) {
   const el = $('dm-tactics');
