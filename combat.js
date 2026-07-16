@@ -309,7 +309,7 @@ function skillFxActorClass(actor){
 }
 function skillFxActiveCount(layer){
   if(!layer || !layer.querySelectorAll) return 0;
-  return layer.querySelectorAll('.skill-cast-ring,.skill-fx-trail,.skill-fx-burst,.skill-fx-label').length;
+  return layer.querySelectorAll('.skill-cast-ring,.skill-fx-trail,.skill-fx-burst,.skill-fx-label,.skill-impact-tag').length;
 }
 function skillFxShouldThrottle(layer, opts){
   if(opts?.force) return false;
@@ -324,6 +324,29 @@ function skillFxLabelText(sk){
   if(!name) return '';
   const icon = String(sk.icon || '').trim();
   return (icon ? icon : '') + name;
+}
+function skillImpactMeta(opts){
+  const forcedTag = String(opts?.impactTag || '').trim();
+  const forcedGrade = String(opts?.impactGrade || '').replace(/[^a-z0-9_-]/gi, '').toLowerCase();
+  const amount = Math.max(0, Math.floor(opts?.amount || 0));
+  const max = Math.max(1, Math.floor(opts?.targetMax || 0));
+  const ratio = max > 0 ? amount / max : 0;
+  let grade = forcedGrade || 'normal';
+  let tag = forcedTag;
+  if(!forcedGrade){
+    if(opts?.actor === 'boss' && (opts?.empowered || opts?.threat === 'extreme' || ratio >= 0.20)) grade = 'danger';
+    else if(opts?.crit) grade = ratio >= 0.16 ? 'huge' : 'crit';
+    else if(ratio >= 0.22) grade = 'huge';
+    else if(ratio >= 0.12) grade = 'heavy';
+  }
+  if(!tag){
+    if(opts?.empowered) tag = '灭团技';
+    else if(opts?.actor === 'boss' && (opts?.threat === 'high' || opts?.threat === 'extreme' || grade === 'danger')) tag = '高危';
+    else if(grade === 'huge') tag = '重击';
+    else if(grade === 'heavy') tag = '强击';
+    else if(grade === 'crit') tag = '暴击';
+  }
+  return { grade, tag };
 }
 const _skillCastCueCooldown = {};
 const _combatRecentSkillCasts = [];
@@ -662,6 +685,7 @@ function showSkillImpactFx(sourceEl, targetEl, sk, opts){
   if(!layer || !a || !b) return;
   const school = opts?.school || skillVisualSchool(opts?.skillKey, sk, opts?.actor);
   const scale = opts?.scale || 1;
+  const impact = skillImpactMeta(opts);
   if(opts?.record !== false) recordCombatSkillImpact(sk, {
     actor:opts?.actor,
     school,
@@ -687,7 +711,7 @@ function showSkillImpactFx(sourceEl, targetEl, sk, opts){
     setTimeout(() => trail.remove(), opts?.duration || 520);
   }
   const burst = document.createElement('div');
-  burst.className = skillFxClass(school, 'skill-fx-burst') + skillFxActorClass(opts?.actor);
+  burst.className = skillFxClass(school, `skill-fx-burst impact-${impact.grade || 'normal'}`) + skillFxActorClass(opts?.actor);
   const size = Math.round((opts?.burstSize || 34) * scale);
   burst.style.left = (b.x - size / 2) + 'px';
   burst.style.top = (b.y - size / 2) + 'px';
@@ -695,12 +719,22 @@ function showSkillImpactFx(sourceEl, targetEl, sk, opts){
   burst.style.height = size + 'px';
   burst.style.setProperty('--skill-fx-duration', (opts?.duration || 560) + 'ms');
   layer.appendChild(burst);
+  if(impact.tag && opts?.tag !== false){
+    const tag = document.createElement('div');
+    tag.className = skillFxClass(school, `skill-impact-tag impact-${impact.grade || 'normal'}`) + skillFxActorClass(opts?.actor);
+    tag.textContent = impact.tag;
+    tag.style.left = b.x + 'px';
+    tag.style.top = (b.y - size * 0.72 - 12) + 'px';
+    tag.style.setProperty('--skill-fx-duration', (opts?.tagDuration || opts?.duration || 560) + 'ms');
+    layer.appendChild(tag);
+    setTimeout(() => tag.remove(), opts?.tagDuration || opts?.duration || 560);
+  }
   if(typeof showCombatHitSlam === 'function') showCombatHitSlam(targetEl, school, {
     school,
     force:true,
-    important:opts?.actor === 'boss' || opts?.pulse === 'crit',
+    important:opts?.actor === 'boss' || opts?.pulse === 'crit' || impact.grade === 'huge' || impact.grade === 'danger',
     duration:opts?.duration || 560,
-    scale
+    scale:impact.grade === 'huge' || impact.grade === 'danger' ? Math.min(1.45, scale * 1.08) : scale
   });
   if(typeof pulseCombatEl === 'function') pulseCombatEl(targetEl, opts?.pulse || (opts?.actor === 'boss' ? 'danger' : 'hit'), opts?.pulseDuration || 220);
   setTimeout(() => burst.remove(), opts?.duration || 560);
@@ -12159,8 +12193,8 @@ function tickCast(now){
           applyHeroDebuff('burn',secs*1000,{dps});
           log(`💀 ${mon.bossName || mon.name} 释放了 ${bc.name}!持续 ${secs} 秒灼烧(每秒约 ${dps})`,'bad');
           showMonsterFloat(mon,(bc.icon||'☠️')+bc.name+'!','#a3e635');
-          if(bossCastEl) showSkillImpactFx(bossCastEl, $('hero-emoji'), bc, { actor:'boss', scale:1.08, pulse:'danger' });
-          if(companionTargetable()){applyCompanionDebuff('burn',secs*1000,{dps:Math.max(1,Math.floor(dps*0.5))});if(bossCastEl)showSkillImpactFx(bossCastEl,$('comp-mini'),bc,{actor:'boss',scale:0.86,pulse:'danger'});}
+          if(bossCastEl) showSkillImpactFx(bossCastEl, $('hero-emoji'), bc, { actor:'boss', amount:dps*secs, targetMax:state.hero.hpMax, threat:bc.threat, empowered:bc._empowered, impactTag:'持续', scale:1.08, pulse:'danger' });
+          if(companionTargetable()){const _cst=computeCompanionStats();applyCompanionDebuff('burn',secs*1000,{dps:Math.max(1,Math.floor(dps*0.5))});if(bossCastEl)showSkillImpactFx(bossCastEl,$('comp-mini'),bc,{actor:'boss',amount:Math.floor(dps*secs*0.5),targetMax:_cst?.hpMax||state.hero.hpMax,threat:bc.threat,empowered:bc._empowered,impactTag:'持续',scale:0.86,pulse:'danger'});}
           trackBossCastOutcome(bc, mon, { target:'持续伤害', damage:dps*secs, kind:'dot' });
           if(state.hp<=0)onHeroDeath();
           return;
@@ -12174,7 +12208,7 @@ function tickCast(now){
           let taken=calcDmg(rawAtk,heroDefAgainst(mon),0,0,false,state.hero.lvl,mon.lvl,{tightVar:true}).dmg;
           taken=resolveMonsterDamageTaken(mon,taken,{aoe:true});
           taken=applyHeroDamage(taken,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ff4444',now,skillName:bc.name});
-          if(bossCastEl) showSkillImpactFx(bossCastEl, $('hero-emoji'), bc, { actor:'boss', scale:1.08, pulse:'danger' });
+          if(bossCastEl) showSkillImpactFx(bossCastEl, $('hero-emoji'), bc, { actor:'boss', amount:taken, targetMax:state.hero.hpMax, threat:bc.threat, empowered:bc._empowered, scale:1.08, pulse:'danger' });
           processTalentLowHp(mon,now);
           if(typeof passiveOnTakeDamage==='function')passiveOnTakeDamage(mon,taken);
           if(bc.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(taken*bc.lifeSteal));
@@ -12186,7 +12220,7 @@ function tickCast(now){
             const cst=computeCompanionStats();
             const cd=calcDmg(rawAtk,cst?cst.def:mon.def,0,0,false,state.hero.lvl,mon.lvl,{tightVar:true});
             const ct=applyCompanionDamage(cd.dmg,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ff9aa0',now});
-            if(bossCastEl) showSkillImpactFx(bossCastEl, $('comp-mini'), bc, { actor:'boss', scale:0.9, pulse:'danger' });
+            if(bossCastEl) showSkillImpactFx(bossCastEl, $('comp-mini'), bc, { actor:'boss', amount:ct, targetMax:cst?.hpMax || state.hero.hpMax, threat:bc.threat, empowered:bc._empowered, scale:0.9, pulse:'danger' });
             skillEffects(bc,mon,ct,now,{target:'companion'});
             castTotalDamage += ct;
             castTargets.push('随从');
@@ -12207,7 +12241,7 @@ function tickCast(now){
             const cst=computeCompanionStats();
             const d2=calcDmg(rawAtk,cst?cst.def:mon.def,0,0,false,state.hero.lvl,mon.lvl,{tightVar:true});
             const ct=applyCompanionDamage(d2.dmg,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ff9aa0',now});
-            if(bossCastEl) showSkillImpactFx(bossCastEl, $('comp-mini'), bc, { actor:'boss', scale:0.96, pulse:'danger' });
+            if(bossCastEl) showSkillImpactFx(bossCastEl, $('comp-mini'), bc, { actor:'boss', amount:ct, targetMax:cst?.hpMax || state.hero.hpMax, threat:bc.threat, empowered:bc._empowered, scale:0.96, pulse:'danger' });
             if(bc.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(d2.dmg*bc.lifeSteal));
             log('🛡️ 随从替你承受了 '+bc.icon+'!','info');
             skillEffects(bc,mon,ct,now,{target:'companion'});
@@ -12223,7 +12257,7 @@ function tickCast(now){
             let taken=calcDmg(rawAtk,heroDefAgainst(mon),0,0,false,state.hero.lvl,mon.lvl,{tightVar:true}).dmg;
             taken=resolveMonsterDamageTaken(mon,taken);
             taken=applyHeroDamage(taken,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ff4444',now,skillName:bc.name});
-            if(bossCastEl) showSkillImpactFx(bossCastEl, $('hero-emoji'), bc, { actor:'boss', scale:1.08, pulse:'danger' });
+            if(bossCastEl) showSkillImpactFx(bossCastEl, $('hero-emoji'), bc, { actor:'boss', amount:taken, targetMax:state.hero.hpMax, threat:bc.threat, empowered:bc._empowered, scale:1.08, pulse:'danger' });
             processTalentLowHp(mon,now);
             if(typeof passiveOnTakeDamage==='function')passiveOnTakeDamage(mon,taken);
             if(bc.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(taken*bc.lifeSteal));
@@ -12291,7 +12325,7 @@ function castSkill(skillKey,manual){
         if(heroCastEl){
           const targetEl = monsterFloatAnchor(target);
           const strong = fxCount < 4;
-          showSkillImpactFx(heroCastEl, targetEl, sk, { skillKey, actor:'hero', scale:strong ? (d.crit ? 1.08 : 0.96) : 0.72, trail:strong, pulse:d.crit ? 'crit' : 'hit' });
+          showSkillImpactFx(heroCastEl, targetEl, sk, { skillKey, actor:'hero', amount:dd, targetMax:target.hpMax, crit:d.crit || forceCrit, scale:strong ? (d.crit ? 1.08 : 0.96) : 0.72, trail:strong, pulse:d.crit ? 'crit' : 'hit', tag:strong });
           fxCount++;
         }
         companionCoordinateTrigger(target, dd, { now, crit:d.crit, skill:true, state:!!(sk.stateKey || sk.debuff), control:!!(sk.slow || sk.stun || sk.interruptCast || sk.debuff === 'sunder') });
@@ -12320,7 +12354,7 @@ function castSkill(skillKey,manual){
       mon.hp-=dd;dmgDone=dd;trackDmg('hero',dd,d.crit,sk.name,{school:heroFxSchool});trackVulnerabilityWindowHit(mon,dd,sk.name,{crit:d.crit||forceCrit,aoe:false});
       companionCoordinateTrigger(mon, dd, { now, crit:d.crit || forceCrit, skill:true, state:!!(sk.stateKey || sk.debuff), control:!!(sk.slow || sk.stun || sk.interruptCast || sk.debuff === 'sunder') });
       showMonsterFloat(mon,(sk.icon||'✨')+'-'+dd,(d.crit||forceCrit)?'#fbbf24':'#a335ee',{variant:(d.crit||forceCrit)?'crit':'hit',scale:(d.crit||forceCrit)?1.16:1,important:true});
-      if(heroCastEl) showSkillImpactFx(heroCastEl, monsterFloatAnchor(mon), sk, { skillKey, actor:'hero', scale:(d.crit||forceCrit)?1.14:1, pulse:(d.crit||forceCrit)?'crit':'hit' });
+      if(heroCastEl) showSkillImpactFx(heroCastEl, monsterFloatAnchor(mon), sk, { skillKey, actor:'hero', amount:dd, targetMax:mon.hpMax, crit:d.crit || forceCrit, scale:(d.crit||forceCrit)?1.14:1, pulse:(d.crit||forceCrit)?'crit':'hit' });
       log(sk.name+'! '+dd+' 伤害'+(forceCrit?' (必暴)':''),'good');
       if(d.crit||forceCrit)processTalentOnCrit(mon,dd,{skillKey});
       if(sk.lifeSteal){const heal=Math.floor(dmgDone*sk.lifeSteal);healHeroAmount(heal,'🩸','#6ee7b7');}
@@ -14097,7 +14131,7 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
         if(sk.type==='dmg'){
           const dmgMult = companionSkillDamageMult(sk, mon, now);
           const compSkillAtk = st.atk + Math.max(0, Math.floor((state.hero.atk || 0) * (sk.heroAtkPct || 0)));
-          const sd=calcDmg(compSkillAtk*sk.mul*dmgMult*COMPANION_SKILL_DMG_BONUS,monArmor(mon),st.crit,st.critd,sk.alwaysCrit,mon.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(mon, sd.dmg, sk.icon || st.emoji).remaining;mon.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,sd.crit,sk.name,{school:compFxSchool});showMonsterFloat(mon,st.emoji+sk.icon+'-'+dealt,'#c0a0ff',allySideFloatOpts({variant:sd.crit?'crit':'comp',scale:sd.crit?1.12:1,important:true}));if(compCastEl)showSkillImpactFx(compCastEl,monsterFloatAnchor(mon),sk,{actor:'companion',scale:sd.crit?0.96:0.82,pulse:sd.crit?'crit':'comp'});}
+          const sd=calcDmg(compSkillAtk*sk.mul*dmgMult*COMPANION_SKILL_DMG_BONUS,monArmor(mon),st.crit,st.critd,sk.alwaysCrit,mon.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(mon, sd.dmg, sk.icon || st.emoji).remaining;mon.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,sd.crit,sk.name,{school:compFxSchool});showMonsterFloat(mon,st.emoji+sk.icon+'-'+dealt,'#c0a0ff',allySideFloatOpts({variant:sd.crit?'crit':'comp',scale:sd.crit?1.12:1,important:true}));if(compCastEl)showSkillImpactFx(compCastEl,monsterFloatAnchor(mon),sk,{actor:'companion',amount:dealt,targetMax:mon.hpMax,crit:sd.crit,scale:sd.crit?0.96:0.82,pulse:sd.crit?'crit':'comp'});}
           if(dealt > 0 && sk.extraHitPct){
             let extra = Math.max(1, Math.floor(dealt * sk.extraHitPct));
             extra = absorbMonsterBarrier(mon, extra, sk.icon || st.emoji).remaining;

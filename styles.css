@@ -5298,7 +5298,8 @@ h1 {
 .skill-cast-ring,
 .skill-fx-trail,
 .skill-fx-burst,
-.skill-fx-label {
+.skill-fx-label,
+.skill-impact-tag {
   --skill-fx-color: #e5e7eb;
   --skill-fx-color-soft: rgba(229,231,235,.28);
   --skill-fx-duration: 520ms;
@@ -5335,6 +5336,15 @@ h1 {
     radial-gradient(circle, rgba(255,255,255,.86) 0 10%, var(--skill-fx-color) 18%, var(--skill-fx-color-soft) 44%, rgba(0,0,0,0) 70%);
   box-shadow: 0 0 16px var(--skill-fx-color-soft);
   animation: skillBurst var(--skill-fx-duration) ease-out forwards;
+}
+.skill-fx-burst.impact-heavy,
+.skill-fx-burst.impact-huge,
+.skill-fx-burst.impact-danger {
+  filter: saturate(1.12) brightness(1.08);
+}
+.skill-fx-burst.impact-huge,
+.skill-fx-burst.impact-danger {
+  box-shadow: 0 0 22px var(--skill-fx-color-soft), 0 0 14px color-mix(in srgb, var(--skill-fx-color) 30%, transparent);
 }
 .skill-fx-burst::after {
   content: "";
@@ -5433,6 +5443,38 @@ h1 {
 .skill-fx-label.actor-companion {
   max-width: 118px;
   font-size: 9px;
+}
+.skill-impact-tag {
+  z-index: 9;
+  min-width: 28px;
+  max-width: 76px;
+  padding: 1px 6px;
+  border: 1px solid color-mix(in srgb, var(--skill-fx-color) 62%, transparent);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(15,23,42,.84), rgba(2,6,23,.70));
+  color: var(--skill-fx-color);
+  box-shadow: 0 5px 14px rgba(0,0,0,.32), inset 0 0 9px var(--skill-fx-color-soft);
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1.15;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 4px rgba(0,0,0,.95);
+  transform: translate(-50%, 0);
+  animation: skillImpactTag var(--skill-fx-duration) ease-out forwards;
+}
+.skill-impact-tag.impact-huge,
+.skill-impact-tag.impact-danger {
+  font-size: 10px;
+  border-color: color-mix(in srgb, var(--skill-fx-color) 78%, transparent);
+  box-shadow: 0 6px 18px rgba(0,0,0,.38), 0 0 14px var(--skill-fx-color-soft), inset 0 0 10px var(--skill-fx-color-soft);
+}
+.skill-impact-tag.actor-boss {
+  max-width: 86px;
+  color: #fecaca;
+  border-color: rgba(248,113,113,.70);
 }
 .basic-attack-trail,
 .basic-attack-spark {
@@ -5639,6 +5681,12 @@ h1 {
   24% { opacity: .96; transform: translate(-50%, 0) scale(1); }
   76% { opacity: .92; transform: translate(-50%, -3px) scale(1); }
   100% { opacity: 0; transform: translate(-50%, -9px) scale(.96); }
+}
+@keyframes skillImpactTag {
+  0% { opacity: 0; transform: translate(-50%, 5px) scale(.86); }
+  24% { opacity: .98; transform: translate(-50%, -1px) scale(1.04); }
+  70% { opacity: .92; transform: translate(-50%, -5px) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -12px) scale(.94); }
 }
 @keyframes basicAttackTrail {
   0% { opacity: 0; clip-path: inset(0 100% 0 0); }
@@ -7780,7 +7828,8 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   }
   .skill-cast-ring,
   .skill-fx-burst,
-  .skill-fx-label {
+  .skill-fx-label,
+  .skill-impact-tag {
     animation-duration: 180ms !important;
   }
   .skill-btn.boss-cast-final:not(.on-cd) .boss-cast-timer { animation: none; }
