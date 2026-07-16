@@ -482,6 +482,59 @@ function updateDmgCombatSummary(total, healTotal) {
   }
   el.style.display = 'flex';
 }
+function combatRecentSkillTempoChips(now) {
+  const list = (typeof combatRecentSkillCasts === 'function') ? combatRecentSkillCasts() : [];
+  const fresh = list.filter(x => now - (x.ts || 0) <= 6500);
+  if (!fresh.length) return [];
+  const chips = [];
+  const latest = fresh[0];
+  const latestAge = now - (latest.ts || 0);
+  const latestActor = String(latest.actor || '');
+  const latestSchool = String(latest.school || 'physical');
+  const bossDanger = fresh.find(x => x.actor === 'boss' && (x.type === 'danger' || x.threat === 'high' || x.threat === 'extreme' || x.empowered));
+  if (bossDanger && now - (bossDanger.ts || 0) <= 5200) {
+    chips.push({
+      tone:'danger',
+      text:`高危后摇 ${Math.max(1, Math.ceil((5200 - (now - (bossDanger.ts || 0))) / 1000))}秒`,
+      title:`${bossDanger.icon || ''}${bossDanger.name || '首领技能'}刚刚结算。观察血线,准备治疗、护盾或减伤。`
+    });
+  }
+  const sameSchool = fresh.filter(x => x.actor === latestActor && x.school === latestSchool && x.actor !== 'boss');
+  if (sameSchool.length >= 3 && latestAge <= 4200) {
+    chips.push({
+      tone:'good',
+      text:`${combatSchoolShortName(latestSchool)}连段x${sameSchool.length}`,
+      title:`最近连续释放 ${sameSchool.length} 个${combatSchoolShortName(latestSchool)}系技能,技能节奏正在成型。`
+    });
+  }
+  const supportCount = fresh.filter(x => x.actor !== 'boss' && (x.type === 'heal' || x.type === 'shield' || x.school === 'heal' || x.school === 'shield')).length;
+  if (supportCount >= 2) {
+    chips.push({
+      tone:'good',
+      text:`防护覆盖x${supportCount}`,
+      title:`最近治疗/护盾技能触发 ${supportCount} 次,生存覆盖较稳定。`
+    });
+  }
+  const heroDmg = fresh.some(x => x.actor === 'hero' && (x.damage || 0) > 0);
+  const compDmg = fresh.some(x => x.actor === 'companion' && (x.damage || 0) > 0);
+  if (heroDmg && compDmg) {
+    chips.push({
+      tone:'good',
+      text:'协同集火',
+      title:'主角和随从最近都打出了伤害,集火节奏良好。'
+    });
+  } else {
+    const companionBurst = fresh.filter(x => x.actor === 'companion' && (x.damage || x.heal || x.shield)).length;
+    if (companionBurst >= 2) {
+      chips.push({
+        tone:'info',
+        text:`随从协同x${companionBurst}`,
+        title:`随从最近连续触发 ${companionBurst} 次有效技能。`
+      });
+    }
+  }
+  return chips.slice(0, 2);
+}
 function updateDmgTacticalStatus(total, healTotal, elapsed) {
   const el = $('dm-tactics');
   if (!el) return;
@@ -531,6 +584,9 @@ function updateDmgTacticalStatus(total, healTotal, elapsed) {
   if (ds?.lastBossCastAt && now - ds.lastBossCastAt < 9000) {
     const dmg = ds.lastBossCastDamage || 0;
     push(dmg > 0 ? 'danger' : 'warn', `刚中读条 ${fmt(dmg)}`, `${ds.lastBossCastBoss || '首领'} 的 ${ds.lastBossCastName || '读条'} 刚命中 ${ds.lastBossCastTarget || '目标'}。`);
+  }
+  for (const chip of combatRecentSkillTempoChips(now)) {
+    push(chip.tone, chip.text, chip.title);
   }
   if (ds && ds.start) {
     const shieldTotal = (ds.heroShield || 0) + (ds.compShield || 0);
