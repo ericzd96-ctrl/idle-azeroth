@@ -5095,7 +5095,8 @@ h1 {
 }
 .skill-cast-ring,
 .skill-fx-trail,
-.skill-fx-burst {
+.skill-fx-burst,
+.skill-fx-label {
   --skill-fx-color: #e5e7eb;
   --skill-fx-color-soft: rgba(229,231,235,.28);
   --skill-fx-duration: 520ms;
@@ -5132,6 +5133,36 @@ h1 {
     radial-gradient(circle, rgba(255,255,255,.86) 0 10%, var(--skill-fx-color) 18%, var(--skill-fx-color-soft) 44%, rgba(0,0,0,0) 70%);
   box-shadow: 0 0 16px var(--skill-fx-color-soft);
   animation: skillBurst var(--skill-fx-duration) ease-out forwards;
+}
+.skill-fx-label {
+  z-index: 8;
+  max-width: 132px;
+  padding: 2px 7px;
+  border: 1px solid color-mix(in srgb, var(--skill-fx-color) 58%, transparent);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(15,23,42,.86), rgba(2,6,23,.74));
+  color: var(--skill-fx-color);
+  box-shadow: 0 5px 16px rgba(0,0,0,.34), inset 0 0 10px var(--skill-fx-color-soft);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.12;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 4px rgba(0,0,0,.95);
+  transform: translate(-50%, 0);
+  animation: skillFxLabel var(--skill-fx-duration) ease-out forwards;
+}
+.skill-fx-label.actor-boss {
+  max-width: 152px;
+  border-color: rgba(248,113,113,.72);
+  color: #fecaca;
+  box-shadow: 0 5px 18px rgba(127,29,29,.34), inset 0 0 12px rgba(248,113,113,.18);
+}
+.skill-fx-label.actor-companion {
+  max-width: 118px;
+  font-size: 9px;
 }
 .basic-attack-trail,
 .basic-attack-spark {
@@ -5332,6 +5363,12 @@ h1 {
   0% { transform: scale(.35); opacity: 0; }
   24% { transform: scale(1.05); opacity: .95; }
   100% { transform: scale(1.58); opacity: 0; }
+}
+@keyframes skillFxLabel {
+  0% { opacity: 0; transform: translate(-50%, 6px) scale(.92); }
+  24% { opacity: .96; transform: translate(-50%, 0) scale(1); }
+  76% { opacity: .92; transform: translate(-50%, -3px) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -9px) scale(.96); }
 }
 @keyframes basicAttackTrail {
   0% { opacity: 0; clip-path: inset(0 100% 0 0); }
@@ -7769,7 +7806,27 @@ button.legend:hover:not(:disabled) {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 4px; font-weight: bold;
 }
-.dm-dps { color: var(--gold); font-size: 13px; font-weight: bold; }
+.dm-dps {
+  display: inline-flex;
+  align-items: center;
+  min-width: 108px;
+  justify-content: flex-start;
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: bold;
+  transition: color .18s ease, text-shadow .18s ease;
+}
+.dm-dps.trend-up {
+  color: #86efac;
+  text-shadow: 0 0 10px rgba(34,197,94,.28);
+}
+.dm-dps.trend-down {
+  color: #fca5a5;
+  text-shadow: 0 0 10px rgba(248,113,113,.28);
+}
+.dm-dps.trend-stable {
+  color: var(--gold);
+}
 .dm-head button {
   padding: 2px 8px; font-size: 10px; background: var(--panel);
   border: 1px solid var(--border); border-radius: 5px; color: var(--muted);

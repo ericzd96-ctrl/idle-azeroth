@@ -293,6 +293,13 @@ function skillFxClass(school, extra){
   const safe = String(school || 'physical').replace(/[^a-z0-9_-]/gi, '') || 'physical';
   return `${extra || ''} school-${safe}`.trim();
 }
+function skillFxLabelText(sk){
+  if(!sk) return '';
+  const name = String(sk.name || '').trim();
+  if(!name) return '';
+  const icon = String(sk.icon || '').trim();
+  return (icon ? icon : '') + name;
+}
 function skillButtonEl(skillKey){
   if(typeof document === 'undefined' || !skillKey) return null;
   const buttons = document.querySelectorAll('.skill-btn[data-skill]');
@@ -403,6 +410,18 @@ function showSkillCastFx(sourceEl, sk, opts){
   ring.style.height = size + 'px';
   ring.style.setProperty('--skill-fx-duration', (opts?.duration || 420) + 'ms');
   layer.appendChild(ring);
+  const labelText = opts?.label === false ? '' : (opts?.label || skillFxLabelText(sk));
+  if(labelText){
+    const label = document.createElement('div');
+    const actor = String(opts?.actor || 'hero').replace(/[^a-z0-9_-]/gi, '') || 'hero';
+    label.className = skillFxClass(school, `skill-fx-label actor-${actor}`);
+    label.textContent = labelText;
+    label.style.left = p.x + 'px';
+    label.style.top = (p.y - size * 0.72 - 16) + 'px';
+    label.style.setProperty('--skill-fx-duration', (opts?.labelDuration || opts?.duration || 520) + 'ms');
+    layer.appendChild(label);
+    setTimeout(() => label.remove(), opts?.labelDuration || opts?.duration || 520);
+  }
   if(typeof pulseCombatEl === 'function') pulseCombatEl(sourceEl, opts?.pulse || (opts?.actor === 'boss' ? 'bosscast' : 'artifact'), opts?.pulseDuration || 220);
   setTimeout(() => ring.remove(), opts?.duration || 420);
 }

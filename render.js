@@ -143,6 +143,7 @@ let _lastDmgMeterPaint = 0;
 let _invFilterSlot = 'all';   // 背包部位筛选
 let _invFilterRarity = 'all'; // 背包品质筛选
 let _dmSampleTotal = 0, _dmSampleTs = 0;   // 峰值秒伤采样基线
+let _dmDpsTrendValue = 0, _dmDpsTrendTs = 0, _dmDpsTrendDir = 'stable', _dmDpsTrendPct = 0;
 let _navBadgePaint = 0, _expLivePaint = 0; // 导航红点 / 远征实时刷新节流
 const _headerResourceLast = {};
 function setHeaderResourceText(id, key, value) {
@@ -172,6 +173,32 @@ function setHeaderResourceText(id, key, value) {
     host.classList.remove(cls);
     delta.remove();
   }, 920);
+}
+function dmgMeterTrendMeta(dps, total) {
+  const now = Date.now();
+  if (!total || dps <= 0) {
+    _dmDpsTrendValue = 0;
+    _dmDpsTrendTs = 0;
+    _dmDpsTrendDir = 'stable';
+    _dmDpsTrendPct = 0;
+    return { dir:'stable', icon:'', label:'', title:'暂无伤害数据' };
+  }
+  if (!_dmDpsTrendTs || !_dmDpsTrendValue) {
+    _dmDpsTrendValue = dps;
+    _dmDpsTrendTs = now;
+    return { dir:'stable', icon:'→', label:'稳定', title:'正在建立秒伤趋势' };
+  }
+  if (now - _dmDpsTrendTs >= 1200) {
+    const prev = Math.max(1, _dmDpsTrendValue);
+    const pct = (dps - prev) / prev;
+    _dmDpsTrendDir = pct > 0.08 ? 'up' : (pct < -0.08 ? 'down' : 'stable');
+    _dmDpsTrendPct = Math.round(Math.abs(pct) * 100);
+    _dmDpsTrendValue = dps;
+    _dmDpsTrendTs = now;
+  }
+  if (_dmDpsTrendDir === 'up') return { dir:'up', icon:'▲', label:`+${_dmDpsTrendPct}%`, title:`秒伤上升 ${_dmDpsTrendPct}%` };
+  if (_dmDpsTrendDir === 'down') return { dir:'down', icon:'▼', label:`-${_dmDpsTrendPct}%`, title:`秒伤下降 ${_dmDpsTrendPct}%` };
+  return { dir:'stable', icon:'→', label:'稳定', title:'秒伤基本稳定' };
 }
 
 /* 导航栏红点:远征储备满 / 公会今日有可做的捐献 */
@@ -1695,7 +1722,12 @@ function updateDmgMeter() {
 
   // 秒伤 文本
   const dpsEl = $('dm-dps');
-  if (dpsEl) dpsEl.textContent = '秒伤 ' + fmt(dps);
+  if (dpsEl) {
+    const trend = dmgMeterTrendMeta(dps, total);
+    dpsEl.className = 'dm-dps trend-' + trend.dir;
+    dpsEl.textContent = trend.icon ? `秒伤 ${fmt(dps)} ${trend.icon}${trend.label ? ' ' + trend.label : ''}` : '秒伤 ' + fmt(dps);
+    dpsEl.title = `当前秒伤 ${fmt(dps)}。${trend.title}`;
+  }
 
   // 英雄条
   const heroBar = $('dm-hero-bar');
