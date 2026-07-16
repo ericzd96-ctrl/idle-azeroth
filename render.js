@@ -2433,6 +2433,7 @@ function updateDmgMeter() {
   }
 
   let damageBreakdownCount = 0;
+  let schoolBreakdownCount = 0;
   let healBreakdownCount = 0;
   let takenBreakdownCount = 0;
 
@@ -2448,6 +2449,18 @@ function updateDmgMeter() {
     const top = allSkills.slice(0, 5);
     damageBreakdownCount = top.length;
     syncMeterBreakdownRows(sdEl, top, 'dmg', '', 'spell_holy_powerinfusion', '伤害来源');
+  }
+  const schoolEl = $('dm-school-breakdown');
+  if (schoolEl) {
+    const hs = (typeof dmgStats !== 'undefined' && dmgStats.heroSchoolDamage) ? dmgStats.heroSchoolDamage : {};
+    const cs = (typeof dmgStats !== 'undefined' && dmgStats.compSchoolDamage) ? dmgStats.compSchoolDamage : {};
+    const allSchools = [];
+    for (const [school, dmg] of Object.entries(hs)) allSchools.push({ name:combatSchoolShortName(school), dmg, src:'🦸' });
+    for (const [school, dmg] of Object.entries(cs)) allSchools.push({ name:combatSchoolShortName(school), dmg, src:'🐾' });
+    allSchools.sort((a, b) => b.dmg - a.dmg);
+    const top = allSchools.slice(0, 5);
+    schoolBreakdownCount = top.length;
+    syncMeterBreakdownRows(schoolEl, top, 'dmg', '#c084fc', 'spell_arcane_blast', '法术系伤害');
   }
   const shEl = $('dm-heal-breakdown');
   if (shEl) {
@@ -2477,6 +2490,7 @@ function updateDmgMeter() {
   if (detailSummary) {
     const parts = [];
     if (damageBreakdownCount) parts.push(`伤害${damageBreakdownCount}`);
+    if (schoolBreakdownCount) parts.push(`法术系${schoolBreakdownCount}`);
     if (healBreakdownCount) parts.push(`治疗${healBreakdownCount}`);
     if (takenBreakdownCount) parts.push(`承伤${takenBreakdownCount}`);
     const text = parts.length ? `来源明细 · ${parts.join(' / ')}` : '来源明细 · 暂无';
