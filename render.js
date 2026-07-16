@@ -497,6 +497,7 @@ function updateDmgBossCastReadout() {
   const pct = Math.min(100, Math.max(0, elapsed / duration * 100));
   const threatMeta = (typeof bossCastThreatMeta === 'function') ? bossCastThreatMeta(cast) : { label: '危险' };
   const interruptText = (typeof bossInterruptTag === 'function') ? bossInterruptTag(cast) : (cast.interruptPolicy === 'none' ? '不可断' : '可断');
+  const ui = (typeof bossCastUiState === 'function') ? bossCastUiState(now) : null;
   const isDamage = (typeof cast.mul === 'number' && cast.mul > 0) && cast.type !== 'heal' && cast.type !== 'buff' && !cast.summonCount;
   const target = cast._targetDesc || (isDamage ? (cast.aoe ? '全体' : '你') : '自身');
   const finalWindow = pct >= 70 || remainMs <= 1000;
@@ -520,8 +521,21 @@ function updateDmgBossCastReadout() {
   const name = cast.name || '施法';
   row.style.display = '';
   el.className = `dm-boss-cast ${cls}`;
-  el.textContent = `${action} · ${icon}${name} · 对${target} · ${remain}s`;
-  el.title = `首领读条: ${cast.bossName || 'BOSS'} 的 ${name}。目标: ${target}。威胁: ${threatMeta.label}。打断: ${interruptText}。剩余 ${remain} 秒。`;
+  const suggestion = ui?.action || action;
+  const text = `${icon}${name} · 对${target} · ${remain}s`;
+  const sig = `${text}|${suggestion}`;
+  if (el.dataset.castSig !== sig) {
+    el.dataset.castSig = sig;
+    el.replaceChildren();
+    const main = document.createElement('span');
+    main.className = 'dm-boss-cast-main';
+    main.textContent = text;
+    const tip = document.createElement('span');
+    tip.className = 'dm-boss-cast-action';
+    tip.textContent = suggestion;
+    el.append(main, tip);
+  }
+  el.title = `首领读条: ${cast.bossName || 'BOSS'} 的 ${name}。目标: ${target}。威胁: ${threatMeta.label}。打断: ${interruptText}。建议: ${suggestion}。剩余 ${remain} 秒。`;
 }
 function updateDmgLastInterrupt() {
   const row = $('dm-last-interrupt-row');

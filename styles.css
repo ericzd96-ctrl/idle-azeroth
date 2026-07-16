@@ -8305,6 +8305,9 @@ button.legend:hover:not(:disabled) {
 .dm-boss-cast {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
   padding: 2px 6px;
   border-radius: 5px;
   border: 1px solid rgba(148,163,184,.24);
@@ -8313,6 +8316,23 @@ button.legend:hover:not(:disabled) {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dm-boss-cast-main {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dm-boss-cast-action {
+  flex: 0 0 auto;
+  max-width: 46%;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(2,6,23,.34);
+  color: #f8fafc;
+  font-size: 9px;
+  font-weight: 900;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -8342,6 +8362,7 @@ button.legend:hover:not(:disabled) {
   background: rgba(15,23,42,.28);
   box-shadow: none;
 }
+.dm-boss-cast.idle .dm-boss-cast-action { color: #94a3b8; }
 .dm-last-interrupt-row { align-items: stretch; }
 .dm-last-interrupt {
   flex: 1;
