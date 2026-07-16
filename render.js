@@ -458,11 +458,12 @@ function updateDmgCombatSummary(total, healTotal) {
   const pressureSource = takenTotal > 0 ? incomingPressureSource(ds) : null;
   if (pressureSource) {
     const pressurePct = Math.round(pressureSource.amount / Math.max(1, takenTotal) * 100);
+    const counterAdvice = pressureSourceCounterAdvice(pressureSource.name, ds);
     chips.push({
       tone:pressurePct >= 45 ? 'danger' : (pressurePct >= 25 ? 'warn' : 'info'),
       kind:'source',
       text:`主压 ${compactPressureSourceName(pressureSource.name)} ${fmt(pressureSource.amount)}`,
-      title:`本场主要承伤来源: ${pressureSource.name},累计 ${fmt(pressureSource.amount)},占总承伤 ${pressurePct}%。`
+      title:`本场主要承伤来源: ${pressureSource.name},累计 ${fmt(pressureSource.amount)},占总承伤 ${pressurePct}%。建议: ${counterAdvice}。`
     });
   }
   if (takenTotal > 0 || healTotal + shieldTotal > 0) {
@@ -834,6 +835,7 @@ function updateCombatReactionAdvice() {
     const coverGap = takenTotal - coverTotal;
     const topSource = incomingPressureSource(ds);
     const sourceText = combatAdviceSourceShort(topSource?.name || '');
+    const sourceCounter = topSource ? pressureSourceCounterAdvice(topSource.name, ds) : '';
     const lastHit = Array.isArray(ds?.recentTakenHits) ? ds.recentTakenHits[0] : null;
     if (hpPct < 0.32) {
       cls = 'danger';
@@ -861,8 +863,8 @@ function updateCombatReactionAdvice() {
       title = `本场打断成功 ${ds?.interruptSuccesses || 0} 次,失败 ${ds?.interruptFails || 0} 次。优先处理高危读条。`;
     } else if (sourceText && takenTotal > 0 && coverGap > 0) {
       cls = 'idle';
-      text = `稳住 · 压力来自 ${sourceText}`;
-      title = `目前可继续输出,但本场主要承伤来源是 ${sourceText},下一次遇到同类技能可留减伤或治疗。`;
+      text = `稳住 · ${sourceCounter || '留保命'} · ${sourceText}`;
+      title = `目前可继续输出,但本场主要承伤来源是 ${sourceText}。建议: ${sourceCounter || '下次遇到同类技能可留减伤或治疗'}。`;
     }
   }
   if (ui?.finalWindow && cls !== 'idle') cls += ' final';
@@ -953,6 +955,17 @@ function compactPressureSourceName(name) {
   const label = parts.length >= 2 ? `${parts[0]}·${parts[parts.length - 1]}` : raw;
   const chars = Array.from(label);
   return chars.length > 9 ? chars.slice(0, 8).join('') + '…' : label;
+}
+function pressureSourceCounterAdvice(source, ds) {
+  const raw = String(source || '').trim();
+  if (!raw) return '观察压力来源';
+  const recentBossCast = ds?.lastBossCastName && raw.includes(ds.lastBossCastName);
+  if (/随从:/.test(raw)) return '护随从';
+  if (recentBossCast || /读条|施法|裂隙|处刑|陨石|风暴|收割|虹吸|禁令|敕令|点名|爆发|毁灭|末日/.test(raw)) return '优先打断/减伤';
+  if (/持续|瘟疫|流血|灼烧|燃烧|中毒|腐蚀|凋零|衰老/.test(raw)) return '补治疗';
+  if (/召唤|援军|镜像|仆从|小怪/.test(raw)) return '先清召唤物';
+  if (/易伤|破绽|易爆|虚弱/.test(raw)) return '等减益';
+  return '留治疗/减伤';
 }
 function updateDmgLastHeal() {
   const el = $('dm-last-heal');
