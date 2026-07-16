@@ -1395,6 +1395,30 @@ function showEnemyInstantSkillFx(mon, targetEl, skill, opts){
     trail:true
   });
 }
+function showEnemySupportSkillFx(mon, skill, opts){
+  if(!mon || !skill || typeof document === 'undefined' || document.hidden) return;
+  const sourceEl = monsterFloatAnchor(mon);
+  if(!sourceEl) return;
+  const school = skillSupportVisualSchool(null, skill, 'boss');
+  const important = !!(mon.isBoss || skill.summonCount || skill.shieldPct || skill.healPct);
+  showSkillCastFx(sourceEl, skill, {
+    actor:'boss',
+    school,
+    small:!important,
+    pulse:school === 'heal' ? 'heal' : school === 'shield' ? 'shield' : 'bosscast',
+    duration:important ? 520 : 420,
+    label:important,
+    cue:false
+  });
+  showSkillSelfFx(sourceEl, skill, {
+    actor:'boss',
+    school,
+    small:!important,
+    pulse:school === 'heal' ? 'heal' : school === 'shield' ? 'shield' : 'bosscast',
+    duration:important ? 560 : 460,
+    record:opts?.record !== false
+  });
+}
 
 /* ---------- 天赋特效运行时 ---------- */
 function talentAuraMeta(key){ return (typeof TALENT_AURA_LIBRARY === 'object' && TALENT_AURA_LIBRARY[key]) || null; }
@@ -8121,6 +8145,7 @@ function applyMonsterSupportSkill(mon, skill, now, opts){
       used = true;
     }
   }
+  if(used && opts?.announce !== false) showEnemySupportSkillFx(mon, skill);
   return used;
 }
 function applyDungeonBossPhase(mon, phase, now){
