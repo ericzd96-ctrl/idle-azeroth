@@ -1400,9 +1400,10 @@ function showEnemySupportSkillFx(mon, skill, opts){
   const sourceEl = monsterFloatAnchor(mon);
   if(!sourceEl) return;
   const school = skillSupportVisualSchool(null, skill, 'boss');
+  const actor = mon.isBoss ? 'boss' : 'enemy';
   const important = !!(mon.isBoss || skill.summonCount || skill.shieldPct || skill.healPct);
   showSkillCastFx(sourceEl, skill, {
-    actor:'boss',
+    actor,
     school,
     small:!important,
     pulse:school === 'heal' ? 'heal' : school === 'shield' ? 'shield' : 'bosscast',
@@ -1411,7 +1412,7 @@ function showEnemySupportSkillFx(mon, skill, opts){
     cue:false
   });
   showSkillSelfFx(sourceEl, skill, {
-    actor:'boss',
+    actor,
     school,
     small:!important,
     pulse:school === 'heal' ? 'heal' : school === 'shield' ? 'shield' : 'bosscast',
@@ -5293,9 +5294,9 @@ function applyHeroDamage(amount, mon, opts){
   if(opts?.skillName || opts?.skill || opts?.sourceSkill){
     recordCombatSkillAmount(mon?.isBoss ? 'boss' : 'enemy', 'taken', opts?.skillName || opts?.skill || opts?.sourceSkill, taken, {
       target:'主角',
-      force:!!mon?.isBoss,
+      force:true,
       icon:opts?.icon || '',
-      school:mon?.isBoss ? 'shadow' : 'physical',
+      school:normalizeSkillFxSchool(opts?.school) || (mon?.isBoss ? 'shadow' : 'physical'),
       threat:mon?.isBoss ? 'high' : ''
     });
   }
@@ -8087,6 +8088,13 @@ function applyMonsterSupportSkill(mon, skill, now, opts){
     mon.hp = Math.min(mon.hpMax, mon.hp + heal);
     showMonsterFloat(mon, '💚+' + heal, '#6ee7b7', { variant:'heal', scale:1.05 });
     pulseMonsterEl(mon, 'heal', 240);
+    if(opts?.announce !== false) recordCombatSkillAmount(mon.isBoss ? 'boss' : 'enemy', 'heal', skill.name, heal, {
+      target:'自身',
+      force:true,
+      icon:skill.icon || '',
+      school:'heal',
+      threat:mon.isBoss ? 'high' : ''
+    });
     used = true;
   }
   if(skill.shieldPct){
@@ -8095,6 +8103,13 @@ function applyMonsterSupportSkill(mon, skill, now, opts){
     syncMonsterShieldAura(mon);
     showMonsterFloat(mon, '🛡️+' + shield, '#93c5fd', { variant:'shield', scale:1.04 });
     pulseMonsterEl(mon, 'shield', 260);
+    if(opts?.announce !== false) recordCombatSkillAmount(mon.isBoss ? 'boss' : 'enemy', 'shield', skill.name, shield, {
+      target:'自身',
+      force:true,
+      icon:skill.icon || '',
+      school:'shield',
+      threat:mon.isBoss ? 'high' : ''
+    });
     used = true;
   }
   if(skill.atkBuffSecs){
@@ -10170,6 +10185,15 @@ function applyCompanionDamage(amount, mon, opts){
     skill: opts?.skillName || opts?.skill || opts?.sourceSkill || '',
     boss: !!mon?.isBoss
   });
+  if(opts?.skillName || opts?.skill || opts?.sourceSkill){
+    recordCombatSkillAmount(mon?.isBoss ? 'boss' : 'enemy', 'taken', opts?.skillName || opts?.skill || opts?.sourceSkill, taken, {
+      target:'随从',
+      force:true,
+      icon:opts?.icon || '',
+      school:normalizeSkillFxSchool(opts?.school) || (mon?.isBoss ? 'shadow' : 'physical'),
+      threat:mon?.isBoss ? 'high' : ''
+    });
+  }
   if((state._compSoulLinkUntil || 0) > now && mon && mon.hp > 0){
     const healBack = Math.max(1, Math.floor(taken * 0.25));
     mon.hp = Math.min(mon.hpMax, mon.hp + healBack);
@@ -10762,7 +10786,7 @@ function tickBattle(now){
     if(target.kind==='companion'){
       const cst=computeCompanionStats();
       const cd=calcDmg(matk,cst?cst.def:0,critRate,(m.critMult?m.critMult*100:150),false,state.hero.lvl,m.lvl);
-      const tc=applyCompanionDamage(Math.max(1,cd.dmg),m,{label:t=>(kindFloat?kindFloat+' ':'')+'-'+t,color:'#ff9aa0',now});
+      const tc=applyCompanionDamage(Math.max(1,cd.dmg),m,{label:t=>(kindFloat?kindFloat+' ':'')+'-'+t,color:'#ff9aa0',now,skillName:kindSkill?.name || '',icon:kindSkill?.icon || '',school:kindSkill ? skillVisualSchool(null, kindSkill, 'boss') : ''});
       if(tc > 0) showBasicAttackFx(monsterFloatAnchor(m), $('comp-mini'), { actor:'monster', crit:cd.crit, dangerous:m.isBoss || !!kindSkill, scale:m.isBoss ? 1.12 : 1 });
       if(kindSkill && tc > 0) showEnemyInstantSkillFx(m, $('comp-mini'), kindSkill, { taken:tc });
       if(typeof pulseCombatEl === 'function') pulseCombatEl($('comp-mini'), (m.isBoss || tc >= ((computeCompanionStats()?.hpMax || 1) * 0.12)) ? 'danger' : 'comp', m.isBoss ? 300 : 220);
@@ -10784,7 +10808,7 @@ function tickBattle(now){
     // BOSS 普攻几率击晕英雄(1.5秒无法攻击/施法)
     if(m.stunChance&&Math.random()<m.stunChance){state.heroStunUntil=now+1500;showFloat($('hero-emoji'),'💫晕眩','#fde047');log('💫 你被 '+m.name+' 击晕了!','bad');}
     taken=resolveMonsterDamageTaken(m,taken);
-    taken=applyHeroDamage(taken,m,{label:t=>'-'+t,color:'#ff7a7a',now,skillName:kindSkill?.name || ''});
+    taken=applyHeroDamage(taken,m,{label:t=>'-'+t,color:'#ff7a7a',now,skillName:kindSkill?.name || '',icon:kindSkill?.icon || '',school:kindSkill ? skillVisualSchool(null, kindSkill, 'boss') : ''});
     if(taken > 0) showBasicAttackFx(monsterFloatAnchor(m), $('hero-emoji'), { actor:'monster', crit:d.crit, dangerous:m.isBoss || !!kindSkill || taken >= state.hero.hpMax * 0.10, scale:m.isBoss ? 1.14 : 1 });
     if(kindSkill && taken > 0) showEnemyInstantSkillFx(m, $('hero-emoji'), kindSkill, { taken });
     if(kindSkill)skillEffects(kindSkill,m,taken,now,{allowFallback:false});

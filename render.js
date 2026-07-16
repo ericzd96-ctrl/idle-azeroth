@@ -205,11 +205,12 @@ function combatRecentSkillAmountMeta(item) {
   if (shield > 0) return { kind:'shield', short:'+' + fmt(shield), label:'护盾 ' + fmt(shield), title:'累计护盾 ' + fmt(shield) };
   if (damage > 0) {
     const bossHit = item?.actor === 'boss' || taken > 0;
+    const sourceText = item?.actor === 'boss' ? '首领技能' : '敌方技能';
     return {
       kind:bossHit ? 'taken' : 'damage',
       short:(bossHit ? '-' : '') + fmt(damage),
       label:(bossHit ? '造成承伤 ' : '伤害 ') + fmt(damage),
-      title:(bossHit ? '首领技能累计命中 ' : '累计伤害 ') + fmt(damage)
+      title:(bossHit ? sourceText + '累计命中 ' : '累计伤害 ') + fmt(damage)
     };
   }
   return null;
@@ -243,7 +244,7 @@ function updateStageSkillChain(list, now) {
   label.className = 'combat-skill-chain-label';
   label.textContent = '技能链';
   el.appendChild(label);
-  const actorIcon = { hero:'我', companion:'伴', boss:'首' };
+  const actorIcon = { hero:'我', companion:'伴', boss:'首', enemy:'敌' };
   fresh.forEach((item, idx) => {
     const actor = String(item.actor || 'hero').replace(/[^a-z0-9_-]/gi, '') || 'hero';
     const school = String(item.school || 'physical').replace(/[^a-z0-9_-]/gi, '') || 'physical';
@@ -366,8 +367,8 @@ function updateDmgRecentSkills() {
   label.className = 'dm-recent-label';
   label.textContent = '回放';
   el.appendChild(label);
-  const actorName = { hero:'主角', companion:'随从', boss:'首领' };
-  const actorIcon = { hero:'我', companion:'伴', boss:'首' };
+  const actorName = { hero:'主角', companion:'随从', boss:'首领', enemy:'敌人' };
+  const actorIcon = { hero:'我', companion:'伴', boss:'首', enemy:'敌' };
   const typeName = { dmg:'伤害', heal:'治疗', shield:'护盾', buff:'增益', summon:'召唤', danger:'高危', skill:'技能' };
   const latest = list[0] || null;
   const chainCount = latest ? list.filter(x => x.actor === latest.actor && x.school === latest.school && now - (x.ts || 0) < 3200).length : 0;
