@@ -231,32 +231,47 @@ function combatRecentSkillDetailText(item) {
 }
 function combatRecentSkillTags(item, list, now, idx) {
   const tags = [];
+  const pushTag = (key, text, title) => {
+    if (!key || tags.some(t => t.key === key)) return;
+    tags.push({ key, text, title });
+  };
   const actor = String(item?.actor || 'hero');
   const school = String(item?.school || 'physical');
   const type = String(item?.type || 'skill');
   const hits = item?.hits || 0;
   const crits = item?.crits || 0;
   const target = String(item?.target || '');
+  const status = String(item?.status || '');
+  const policy = String(item?.interruptPolicy || '');
   const danger = actor === 'boss' && (type === 'danger' || item?.threat === 'high' || item?.threat === 'extreme' || item?.empowered);
-  if (danger) tags.push({ key:'danger', text:item?.empowered ? '灭团' : '高危', title:'首领危险技能,优先打断、减伤或治疗' });
+  if (danger) pushTag('danger', item?.empowered ? '灭团' : '高危', '首领危险技能,优先打断、减伤或治疗');
+  if (actor === 'boss' && policy) {
+    if (policy === 'none') pushTag('immune', '不可断', '这类首领技能不能打断,需要用治疗、护盾或减伤处理');
+    else if (policy === 'hard' || item?.empowered) pushTag('interrupt', '必断', '高价值读条,优先保留打断技能');
+    else if (policy === 'soft') pushTag('interrupt', '可断', '打断能降低后续压力,但可能仍有余波');
+  }
   if ((type === 'heal' || (item?.heal || 0) > 0) && ((item?.heal || 0) > 0 || (item?.maxAmount || 0) > 0)) {
-    tags.push({ key:'rescue', text:'救场', title:'治疗技能刚刚生效' });
+    pushTag('rescue', /主角|英雄|随从/.test(target) ? '抬血' : '救场', '治疗技能刚刚生效');
   } else if ((type === 'shield' || (item?.shield || 0) > 0) && ((item?.shield || 0) > 0 || (item?.maxAmount || 0) > 0)) {
-    tags.push({ key:'guard', text:'护住', title:'护盾或防护技能刚刚生效' });
+    pushTag('guard', '护住', '护盾或防护技能刚刚生效');
   }
   if (idx === 0) {
     const chain = (list || []).filter(x => x && x.actor === actor && x.school === school && now - (x.ts || 0) < 3200).length;
-    if (chain >= 2) tags.push({ key:'chain', text:`连动x${chain}`, title:`最近 ${combatSchoolShortName(school)} 技能连续触发 ${chain} 次` });
+    if (chain >= 2) pushTag('chain', `连动x${chain}`, `最近 ${combatSchoolShortName(school)} 技能连续触发 ${chain} 次`);
   }
-  if (hits >= 3 || target.includes('+') || /全体|多目标|持续伤害/.test(target)) tags.push({ key:'aoe', text:'AOE', title:'命中多个目标或造成群体效果' });
-  if (crits > 0) tags.push({ key:'crit', text:`暴击x${crits}`, title:`本次技能暴击 ${crits} 次` });
-  return tags.slice(0, 3);
+  if (item?.aoe || hits >= 3 || target.includes('+') || /全体|多目标|持续伤害/.test(target)) pushTag('aoe', 'AOE', '命中多个目标或造成群体效果');
+  if (/眩晕|沉默|恐惧|冻结|缴械|减速|控场/.test(status)) pushTag('control', '控场', '这次技能附带控制或压制效果');
+  if (/易伤|易爆|破绽/.test(status)) pushTag('vuln', '易伤', '目标受到增伤类状态影响');
+  if (/持续|流血|中毒|灼烧|凋零|瘟疫|腐蚀|炸弹|吸取/.test(status)) pushTag('dot', '持续', '这次技能带持续伤害或后续结算');
+  if (actor === 'companion' && ((item?.damage || 0) > 0 || (item?.heal || 0) > 0 || (item?.shield || 0) > 0)) pushTag('companion', '随从技', '随从正在贡献有效技能');
+  if (crits > 0) pushTag('crit', `暴击x${crits}`, `本次技能暴击 ${crits} 次`);
+  return tags.slice(0, 4);
 }
 function updateStageSkillChain(list, now) {
   const el = $('combat-skill-chain');
   if (!el) return;
   const fresh = (list || []).filter(x => now - (x.ts || 0) <= 9000).slice(0, 3);
-  const stageSig = fresh.map(x => `${x.actor}:${x.school}:${x.type}:${x.threat}:${x.empowered}:${x.icon}:${x.name}:${x.hits || 0}:${x.target || ''}:${x.status || ''}:${x.damage || 0}:${x.heal || 0}:${x.shield || 0}:${x.taken || 0}:${x.maxAmount || 0}:${x.crits || 0}`).join('|');
+  const stageSig = fresh.map(x => `${x.actor}:${x.school}:${x.type}:${x.threat}:${x.interruptPolicy || ''}:${x.empowered}:${x.aoe ? 1 : 0}:${x.icon}:${x.name}:${x.hits || 0}:${x.target || ''}:${x.status || ''}:${x.damage || 0}:${x.heal || 0}:${x.shield || 0}:${x.taken || 0}:${x.maxAmount || 0}:${x.crits || 0}`).join('|');
   if (!fresh.length) {
     if (_stageSkillChainSig === '') return;
     _stageSkillChainSig = '';
@@ -386,7 +401,7 @@ function updateDmgRecentSkills() {
   if (!el) return;
   const now = Date.now();
   const list = (typeof combatRecentSkillCasts === 'function') ? combatRecentSkillCasts() : [];
-  const sig = list.map(x => `${x.actor}:${x.school}:${x.type}:${x.threat}:${x.empowered}:${x.icon}:${x.name}:${x.hits || 0}:${x.target || ''}:${x.status || ''}:${x.damage || 0}:${x.heal || 0}:${x.shield || 0}:${x.taken || 0}:${x.maxAmount || 0}:${x.crits || 0}:${Math.floor((now - (x.ts || 0)) / 2500)}`).join('|');
+  const sig = list.map(x => `${x.actor}:${x.school}:${x.type}:${x.threat}:${x.interruptPolicy || ''}:${x.empowered}:${x.aoe ? 1 : 0}:${x.icon}:${x.name}:${x.hits || 0}:${x.target || ''}:${x.status || ''}:${x.damage || 0}:${x.heal || 0}:${x.shield || 0}:${x.taken || 0}:${x.maxAmount || 0}:${x.crits || 0}:${Math.floor((now - (x.ts || 0)) / 2500)}`).join('|');
   updateStageSkillChain(list, now);
   if (sig === _dmRecentSkillSig) return;
   _dmRecentSkillSig = sig;
