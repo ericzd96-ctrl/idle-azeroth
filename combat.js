@@ -544,17 +544,40 @@ function skillButtonEl(skillKey){
   return null;
 }
 const SKILL_BUTTON_SCHOOL_CLASSES = ['school-fire','school-frost','school-arcane','school-nature','school-shadow','school-holy','school-physical','school-heal','school-shield'];
+function skillButtonResultLabel(sk, school){
+  if(!sk) return '释放';
+  if(sk.type === 'interrupt' || sk.interruptCast) return '打断';
+  if(sk.type === 'heal' || school === 'heal' || sk.heal || sk.healPct) return '治疗';
+  if(school === 'shield' || sk.shieldPct || /盾|护盾|壁垒|守护|防御|shield|barrier/i.test(`${sk.name || ''} ${sk.desc || ''}`)) return '护盾';
+  if(sk.type === 'summon' || sk.summonCount) return '召唤';
+  if(sk.type === 'buff' || sk.type === 'support') return '增益';
+  if(sk.aoe) return '范围';
+  if(sk.consumeRage || sk.alwaysCrit || sk.mul >= 4) return '爆发';
+  if(sk.stun || sk.slow || sk.freeze || sk.fear || sk.silence || sk.disarm) return '控制';
+  if(sk.dot || sk.dotSkill || sk.plague || sk.bleed) return '持续';
+  return '命中';
+}
 function showSkillButtonCastFx(skillKey, sk, opts){
   if(typeof document === 'undefined' || document.hidden || !skillKey) return;
   const btn = skillButtonEl(skillKey);
   if(!btn) return;
   const school = String(opts?.school || skillVisualSchool(skillKey, sk, 'hero')).replace(/[^a-z0-9_-]/gi, '') || 'physical';
+  const label = opts?.label || skillButtonResultLabel(sk, school);
   btn.classList.remove('skill-cast-success', ...SKILL_BUTTON_SCHOOL_CLASSES);
+  btn.querySelectorAll('.skill-result-badge').forEach(x => x.remove());
   void btn.offsetWidth;
   btn.classList.add('skill-cast-success', `school-${school}`);
+  const badge = document.createElement('em');
+  badge.className = `skill-result-badge school-${school}`;
+  badge.textContent = label;
+  badge.title = `${sk?.name || '技能'}: ${label}`;
+  btn.appendChild(badge);
   setTimeout(() => {
     const b = skillButtonEl(skillKey);
-    if(b) b.classList.remove('skill-cast-success', ...SKILL_BUTTON_SCHOOL_CLASSES);
+    if(b){
+      b.classList.remove('skill-cast-success', ...SKILL_BUTTON_SCHOOL_CLASSES);
+      b.querySelectorAll('.skill-result-badge').forEach(x => x.remove());
+    }
   }, opts?.duration || 620);
 }
 function showSkillDeniedFx(skillKey, reason, opts){

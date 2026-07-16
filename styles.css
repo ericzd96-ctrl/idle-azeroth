@@ -7130,6 +7130,13 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
     min-width: 0;
     width: 100%;
   }
+  body.mobile-ui .skill-result-badge {
+    top: -6px;
+    right: -5px;
+    max-width: 38px;
+    padding: 0 4px;
+    font-size: 8px;
+  }
   body.mobile-ui .compare-tip {
     min-width: 0;
     max-width: min(240px, calc(100vw - 16px));
@@ -7892,6 +7899,31 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   pointer-events: none;
   animation: skillCastButtonRing .62s ease-out forwards;
 }
+.skill-result-badge {
+  --skill-fx-color: #ddd6fe;
+  --skill-fx-color-soft: rgba(168,85,247,.26);
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  z-index: 7;
+  max-width: 48px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--skill-fx-color) 68%, transparent);
+  background: linear-gradient(180deg, rgba(15,23,42,.94), rgba(2,6,23,.82));
+  color: var(--skill-fx-color);
+  box-shadow: 0 0 12px var(--skill-fx-color-soft), inset 0 0 8px var(--skill-fx-color-soft);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 950;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  text-shadow: 0 1px 3px rgba(0,0,0,.92);
+  animation: skillResultBadge .66s ease-out forwards;
+}
 #b-mp-wrap.resource-denied-flash {
   animation: resourceDeniedFlash .62s ease-out;
 }
@@ -8231,6 +8263,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   .skill-btn.advice-window-recommended:not(.on-cd) { transform: none; }
   .resource-bar-delta { animation-duration: 180ms !important; }
   .hp-bar-delta { animation-duration: 180ms !important; }
+  .skill-result-badge { animation-duration: 180ms !important; }
   .boss-cast-targeted::after { animation: none; }
 }
 @keyframes skillReadyFlash {
@@ -8251,6 +8284,12 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   0% { opacity: 0; transform: scale(.86); }
   18% { opacity: .95; transform: scale(1); }
   100% { opacity: 0; transform: scale(1.16); }
+}
+@keyframes skillResultBadge {
+  0% { opacity: 0; transform: translate(5px, 3px) scale(.82); }
+  18% { opacity: 1; transform: translate(0, 0) scale(1); }
+  72% { opacity: 1; transform: translate(-1px, -2px) scale(1); }
+  100% { opacity: 0; transform: translate(-4px, -8px) scale(.94); }
 }
 @keyframes skillDeniedShake {
   0%, 100% { transform: translateX(0); filter: brightness(1); }
