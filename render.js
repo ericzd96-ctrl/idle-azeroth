@@ -322,6 +322,30 @@ function updateDmgLastHit() {
   el.textContent = text;
   el.title = `最近承伤: ${target} 在${agoText}受到 ${fmt(amount)} 点伤害。来源: ${sourceText || '未知来源'}。${boss ? '首领技能或首领攻击。' : ''}`;
 }
+function updateDmgLastHeal() {
+  const el = $('dm-last-heal');
+  if (!el) return;
+  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
+  if (!ds || (!ds.lastHeroHealAt && !ds.lastCompHealAt)) {
+    el.className = 'dm-last-heal idle';
+    el.textContent = '-';
+    el.removeAttribute('title');
+    return;
+  }
+  const heroAt = ds.lastHeroHealAt || 0;
+  const compAt = ds.lastCompHealAt || 0;
+  const source = compAt > heroAt ? '随从' : '主角';
+  const amount = source === '随从' ? (ds.lastCompHealAmount || 0) : (ds.lastHeroHealAmount || 0);
+  const at = source === '随从' ? compAt : heroAt;
+  const skill = source === '随从' ? (ds.lastCompHealSkill || '') : (ds.lastHeroHealSkill || '');
+  const ago = at ? Math.max(0, Math.floor((Date.now() - at) / 1000)) : 0;
+  const agoText = ago < 60 ? `${ago}秒前` : `${Math.floor(ago / 60)}分钟前`;
+  const targetText = source === '随从' ? '随从支援' : '主角治疗';
+  const text = `${targetText} +${fmt(amount)}${skill ? ' · ' + skill : ''}`;
+  el.className = `dm-last-heal ${source === '随从' ? 'companion' : 'hero'}`;
+  el.textContent = text;
+  el.title = `最近治疗: ${targetText} 在${agoText}恢复 ${fmt(amount)} 点生命。${skill ? '来源: ' + skill + '。' : ''}`;
+}
 
 /* 导航栏红点:远征储备满 / 公会今日有可做的捐献 */
 function updateNavBadges() {
@@ -1910,6 +1934,7 @@ function updateDmgMeter() {
       maxHealEl.removeAttribute('title');
     }
   }
+  updateDmgLastHeal();
 
   // 暴击率
   const critEl = $('dm-crit-rate');
