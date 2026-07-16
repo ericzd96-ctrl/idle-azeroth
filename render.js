@@ -232,6 +232,64 @@ function updateDmgRecentSkills() {
     el.appendChild(chip);
   }
 }
+function updateCombatReactionAdvice() {
+  const el = $('dm-reaction');
+  if (!el) return;
+  const now = Date.now();
+  const ui = (typeof bossCastUiState === 'function') ? bossCastUiState(now) : null;
+  let cls = 'idle';
+  let text = '稳定输出';
+  let title = '当前没有需要立即处理的战斗事件。';
+  if (ui) {
+    const remain = Math.max(0, Math.ceil((ui.remainMs || 0) / 1000));
+    const castName = `${ui.cast?.icon || ''}${ui.cast?.name || '施法'}`;
+    if (ui.canInterrupt) {
+      if (ui.ready) {
+        cls = ui.urgent ? 'danger' : 'warn';
+        text = `${ui.urgent ? '立刻打断' : '可打断'} · ${castName} · ${remain}秒`;
+        title = ui.action || '点击打断技能处理这次读条。';
+      } else if (ui.urgent) {
+        cls = 'danger';
+        text = `打断未就绪 · 减伤/治疗 · ${remain}秒`;
+        title = ui.action || '高危读条无法立刻打断,优先用保命技能覆盖。';
+      } else {
+        cls = 'warn';
+        text = `等打断/准备硬吃 · ${remain}秒`;
+        title = ui.action || '普通读条,可等待打断或准备承受。';
+      }
+    } else {
+      cls = ui.responseReady ? 'warn' : 'danger';
+      text = `${ui.responseReady ? '开保命' : '不可断'} · ${castName} · ${remain}秒`;
+      title = ui.action || '这次读条不可打断,用治疗、护盾或减伤覆盖。';
+    }
+  } else {
+    const hMax = Math.max(1, state?.hero?.hpMax || 1);
+    const hpPct = Math.max(0, state?.hp || 0) / hMax;
+    const compStats = (typeof computeCompanionStats === 'function') ? computeCompanionStats() : null;
+    const compAlive = !!compStats && state?._compHp != null && !(typeof compDowned === 'function' && compDowned());
+    const compPct = compAlive ? Math.max(0, state._compHp || 0) / Math.max(1, compStats.hpMax || 1) : 1;
+    if (hpPct < 0.32) {
+      cls = 'danger';
+      text = '先保命 · 治疗/减伤';
+      title = '主角生命较低,先用治疗、护盾或减伤技能稳定血线。';
+    } else if (compAlive && compPct < 0.34) {
+      cls = 'danger';
+      text = '随从告急 · 治疗/护卫';
+      title = '随从生命较低,治疗或切换护卫节奏能避免倒地。';
+    } else if (hpPct < 0.58) {
+      cls = 'warn';
+      text = '血线偏低 · 留保命';
+      title = '主角血线偏低,保留治疗或防御技能应对下一次读条。';
+    } else if (compAlive && compPct < 0.58) {
+      cls = 'warn';
+      text = '随从吃紧 · 留治疗';
+      title = '随从承压,留意治疗随从或护盾类技能。';
+    }
+  }
+  el.className = `dm-reaction ${cls}`;
+  el.title = title;
+  if (el.textContent !== text) el.textContent = text;
+}
 
 /* 导航栏红点:远征储备满 / 公会今日有可做的捐献 */
 function updateNavBadges() {
@@ -1761,6 +1819,7 @@ function updateDmgMeter() {
     dpsEl.title = `当前秒伤 ${fmt(dps)}。${trend.title}`;
   }
   updateDmgRecentSkills();
+  updateCombatReactionAdvice();
 
   // 英雄条
   const heroBar = $('dm-hero-bar');
