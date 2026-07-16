@@ -3474,11 +3474,19 @@ function bossCastResponseKind(skillKey, sk) {
   return '';
 }
 
+function skillUiCost(skillKey, sk, cls) {
+  if (!sk) return 0;
+  const c = cls || (typeof getCls === 'function' ? getCls() : null);
+  let cost = Math.max(0, sk.mp || 0);
+  if (state.hero?.costReduction > 0 && cost > 0) cost = Math.max(1, Math.floor(cost * (1 - state.hero.costReduction / 100)));
+  if (sk.consumeRage && c?.resKey === 'rage') cost = Math.min(Math.max(10, cost), Math.max(10, state.resource || 0));
+  return cost;
+}
+
 function bossCastUsableSkillState(entry, now) {
   if (!entry?.sk) return { left:Infinity, cost:0, ready:false };
   const left = Math.max(0, (state.skillCooldowns?.[entry.key] || 0) - now);
-  let cost = Math.max(0, entry.sk.mp || 0);
-  if (state.hero?.costReduction > 0) cost = Math.max(1, Math.floor(cost * (1 - state.hero.costReduction / 100)));
+  const cost = skillUiCost(entry.key, entry.sk);
   return { left, cost, ready:left <= 0 && (state.resource || 0) >= cost };
 }
 
@@ -3549,7 +3557,7 @@ function bossCastUiState(now) {
 function bossCastSkillPrompt(skillKey, sk, now, cdMs) {
   const ui = bossCastUiState(now);
   if (!ui || !sk) return null;
-  const cost = Math.max(0, sk.mp || 0);
+  const cost = skillUiCost(skillKey, sk);
   const ready = (cdMs || 0) <= 0 && (state.resource || 0) >= cost;
   if (ui.canInterrupt && (sk.type === 'interrupt' || sk.interruptCast)) {
     const hard = ui.urgent || ui.cast?.interruptPolicy === 'hard';
@@ -3587,8 +3595,7 @@ function vulnerabilitySkillPrompt(skillKey, sk, now, cdMs) {
   if (!win) return null;
   const isBurst = (sk.mul || 0) >= 3 || sk.consumeRage || sk.alwaysCrit || sk.bonusVsSunder || /斩杀|爆发|处决|大招|终结|审判|混乱|炎爆|瞄准|灭杀/.test(`${sk.name || ''} ${sk.desc || ''}`);
   if (!isBurst) return null;
-  let cost = Math.max(0, sk.mp || 0);
-  if (state.hero?.costReduction > 0) cost = Math.max(1, Math.floor(cost * (1 - state.hero.costReduction / 100)));
+  const cost = skillUiCost(skillKey, sk);
   const ready = (cdMs || 0) <= 0 && (state.resource || 0) >= cost;
   const label = ready ? '爆发' : (cdMs > 0 ? `${Math.ceil(cdMs / 1000)}秒` : '缺资源');
   const cls = ready ? 'vuln-burst-hot' : 'vuln-burst-wait';
@@ -3768,9 +3775,7 @@ function renderSkillBar() {
     const cdEnd = state.skillCooldowns[key] || 0;
     const cdMs = Math.max(0, cdEnd - now);
     const onCd = cdMs > 0;
-    let useCost = Math.max(0, sk.mp || 0);
-    if(state.hero?.costReduction > 0) useCost = Math.max(1, Math.floor(useCost * (1 - state.hero.costReduction / 100)));
-    if(sk.consumeRage && c.resKey === 'rage') useCost = Math.min(Math.max(10, useCost), Math.max(10, state.resource || 0));
+    const useCost = skillUiCost(key, sk, c);
     const hasMp = (state.resource || 0) >= useCost;
     const cdTotalMs = Math.max(1, Math.round((getSkillCd(sk) * 1000) / ((typeof castSpeedMul === 'function') ? castSpeedMul() : 1)));
     const cdAngle = onCd ? Math.round((1 - Math.min(1, cdMs / cdTotalMs)) * 360) : 360;
@@ -3824,7 +3829,8 @@ function renderSkillBar() {
     const chargeDesc = chargeTip ? `\n技能充能: ${chargeTip}` : '';
     const runeTip = (typeof skillRuneTip === 'function') ? skillRuneTip(key, sk) : '';
     const runeDesc = runeTip ? `\n符文铭刻: ${runeTip}` : '';
-    const baseTip = `${sk.name} · ${baseDesc}${detailDesc}${procDesc}${coreDesc}${engineDesc}${elementDesc}${echoDesc}${markDesc}${weaveDesc}${rhythmDesc}${controlDesc}${weaknessDesc}${prepDesc}${overloadDesc}${resourceDesc}${harvestDesc}${pactDesc}${fieldDesc}${chargeDesc}${runeDesc}\n${c.resource} ${sk.mp} · 冷却 ${getSkillCd(sk)}秒`;
+    const costText = useCost !== Math.max(0, sk.mp || 0) ? `${useCost}(基础${sk.mp || 0})` : `${sk.mp || 0}`;
+    const baseTip = `${sk.name} · ${baseDesc}${detailDesc}${procDesc}${coreDesc}${engineDesc}${elementDesc}${echoDesc}${markDesc}${weaveDesc}${rhythmDesc}${controlDesc}${weaknessDesc}${prepDesc}${overloadDesc}${resourceDesc}${harvestDesc}${pactDesc}${fieldDesc}${chargeDesc}${runeDesc}\n${c.resource} ${costText} · 冷却 ${getSkillCd(sk)}秒`;
     const tip = `${baseTip}${bossPrompt ? `\nBoss读条: ${bossPrompt.tip}` : ''}${vulnPrompt ? `\n破绽窗口: ${vulnPrompt.tip}` : ''}`.replace(/"/g, '&quot;');
     const baseTipAttr = baseTip.replace(/"/g, '&quot;');
     const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, sk.icon) : sk.icon;
@@ -3833,7 +3839,7 @@ function renderSkillBar() {
     return `<button class="skill-btn ${onCd?'on-cd':''} ${useStateClass} ${bossPromptClass} ${vulnPromptClass}" data-skill="${key}" data-cd-active="${onCd?'1':'0'}" data-resource-ready="${hasMp?'1':'0'}" data-cd-total="${cdTotalMs}" draggable="true" title="${tip}" data-base-title="${baseTipAttr}"
       style="--cd-angle:${cdAngle}deg;${bossPrompt ? `--boss-cast-pct:${Math.round(bossPrompt.timerPct || 0)}%;` : ''}${vulnPrompt ? `--skill-window-pct:${Math.round(vulnPrompt.timerPct || 0)}%;` : ''}${coreMatch&&!onCd?'border-color:#38bdf8;box-shadow:0 0 0 1px rgba(56,189,248,.50),0 0 14px rgba(56,189,248,.18)':(procMatch&&!onCd?'border-color:#facc15;box-shadow:0 0 0 1px rgba(250,204,21,.45)':(!onCd&&hasMp?'border-color:var(--accent)':''))}">
       <span>${skillIconHtml} ${sk.name}</span>
-      <span class="mp-cost">${coreMatch?'✹ ':(procMatch?'✦ ':'')}${sk.mp}${c.resKey==='rage'?'怒':c.resKey==='energy'?'能':'蓝'}</span>
+      <span class="mp-cost">${coreMatch?'✹ ':(procMatch?'✦ ':'')}${useCost}${c.resKey==='rage'?'怒':c.resKey==='energy'?'能':'蓝'}</span>
       ${onCd?`<div class="cd-overlay" style="--cd-angle:${cdAngle}deg">${(cdMs/1000).toFixed(1)}秒</div>`:''}
       ${actionPrompt ? `<span class="sk-alert">${actionPrompt.label}</span>` : ''}
       ${bossPrompt ? '<span class="boss-cast-timer"></span>' : ''}
@@ -3858,9 +3864,7 @@ function updateSkillBarCd() {
     const cdTxt = (cdMs / 1000).toFixed(1) + '秒';
     const overlay = btn.querySelector('.cd-overlay');
     const wasOnCd = btn.dataset.cdActive === '1' || btn.classList.contains('on-cd');
-    let useCost = Math.max(0, sk?.mp || 0);
-    if(state.hero?.costReduction > 0) useCost = Math.max(1, Math.floor(useCost * (1 - state.hero.costReduction / 100)));
-    if(sk?.consumeRage && c?.resKey === 'rage') useCost = Math.min(Math.max(10, useCost), Math.max(10, state.resource || 0));
+    const useCost = skillUiCost(key, sk, c);
     const hasResource = (state.resource || 0) >= useCost;
     const wasResourceReady = btn.dataset.resourceReady === '1';
     btn.dataset.resourceReady = hasResource ? '1' : '0';
