@@ -738,6 +738,7 @@ function showSkillImpactFx(sourceEl, targetEl, sk, opts){
     duration:opts?.duration || 560,
     scale:impact.grade === 'huge' || impact.grade === 'danger' ? Math.min(1.45, scale * 1.08) : scale
   });
+  skillImpactStageFx(targetEl, school, impact, opts);
   if(typeof pulseCombatEl === 'function') pulseCombatEl(targetEl, opts?.pulse || (opts?.actor === 'boss' ? 'danger' : 'hit'), opts?.pulseDuration || 220);
   setTimeout(() => burst.remove(), opts?.duration || 560);
 }
@@ -12629,6 +12630,39 @@ function combatHeavyImpactFx(targetEl, kind, opts){
   if(opts?.shake!==false)stageShakeFx();
   stageEdgeFx(opts?.edge || (opts?.critical?'critical':'danger'),{intensity});
   if(opts?.flash)stageFlashFx(opts.flash);
+}
+const _skillImpactStageFxCooldown = {};
+function skillImpactStageFx(targetEl, school, impact, opts){
+  if(typeof document==='undefined'||document.hidden||!targetEl||!impact)return;
+  const actor=String(opts?.actor||'').replace(/[^a-z0-9_-]/gi,'')||'hero';
+  const grade=String(impact.grade||'normal');
+  const amount=Math.max(0,Math.floor(opts?.amount||0));
+  const max=Math.max(1,Math.floor(opts?.targetMax||0));
+  const ratio=max>0?amount/max:0;
+  const bossDanger=actor==='boss'&&(opts?.empowered||opts?.threat==='high'||opts?.threat==='extreme'||grade==='danger');
+  const heavy=grade==='huge'||grade==='danger'||(opts?.crit&&ratio>=0.08)||ratio>=0.16;
+  const support=(school==='heal'||school==='shield')&&(ratio>=0.12||grade==='heavy'||grade==='huge');
+  if(!bossDanger&&!heavy&&!support)return;
+  const targetKey=targetEl.id||targetEl.dataset?.uid||targetEl.className||'target';
+  const key=[actor,school,grade,targetKey,bossDanger?'danger':support?'support':'heavy'].join(':');
+  const now=Date.now();
+  const gap=bossDanger?340:(support?520:480);
+  if((_skillImpactStageFxCooldown[key]||0)>now)return;
+  _skillImpactStageFxCooldown[key]=now+gap;
+  if(bossDanger){
+    stageShakeFx();
+    stageEdgeFx(opts?.empowered?'critical':'danger',{intensity:opts?.empowered?1.18:1});
+    stageFlashFx('danger');
+    return;
+  }
+  if(support){
+    stageEdgeFx(school==='shield'?'shield':'heal',{intensity:.72});
+    return;
+  }
+  if(opts?.crit||grade==='huge'){
+    stageShakeFx();
+    stageFlashFx(opts?.crit?'crit':'boss');
+  }
 }
 function combatCueLanePush(title, detail, kind){
   if(typeof document==='undefined'||document.hidden)return;

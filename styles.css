@@ -8089,6 +8089,13 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   50% { filter: brightness(1.35); }
 }
 @media (prefers-reduced-motion: reduce) {
+  .stage.shake-fx {
+    animation: none !important;
+  }
+  .stage-edge-fx,
+  .stage-flash {
+    animation-duration: 160ms !important;
+  }
   .skill-fx-trail {
     display: none;
   }
