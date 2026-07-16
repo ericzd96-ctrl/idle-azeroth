@@ -166,8 +166,10 @@ function combatSchoolShortName(school) {
 }
 function combatRecentSkillEffectText(item) {
   const type = String(item?.type || 'skill');
+  const status = String(item?.status || '').trim();
   const hits = item?.hits || 0;
   const target = item?.target || '';
+  if (status) return status;
   if (type === 'heal') return target && target !== '自身' ? `回复${target}` : '回复';
   if (type === 'shield') return target && target !== '自身' ? `护住${target}` : '护盾';
   if (type === 'buff') return '增益';
@@ -229,7 +231,7 @@ function updateStageSkillChain(list, now) {
   const el = $('combat-skill-chain');
   if (!el) return;
   const fresh = (list || []).filter(x => now - (x.ts || 0) <= 9000).slice(0, 3);
-  const stageSig = fresh.map(x => `${x.actor}:${x.school}:${x.type}:${x.threat}:${x.empowered}:${x.icon}:${x.name}:${x.hits || 0}:${x.target || ''}:${x.damage || 0}:${x.heal || 0}:${x.shield || 0}:${x.taken || 0}:${x.maxAmount || 0}:${x.crits || 0}`).join('|');
+  const stageSig = fresh.map(x => `${x.actor}:${x.school}:${x.type}:${x.threat}:${x.empowered}:${x.icon}:${x.name}:${x.hits || 0}:${x.target || ''}:${x.status || ''}:${x.damage || 0}:${x.heal || 0}:${x.shield || 0}:${x.taken || 0}:${x.maxAmount || 0}:${x.crits || 0}`).join('|');
   if (!fresh.length) {
     if (_stageSkillChainSig === '') return;
     _stageSkillChainSig = '';
@@ -350,7 +352,7 @@ function updateDmgRecentSkills() {
   if (!el) return;
   const now = Date.now();
   const list = (typeof combatRecentSkillCasts === 'function') ? combatRecentSkillCasts() : [];
-  const sig = list.map(x => `${x.actor}:${x.school}:${x.type}:${x.threat}:${x.empowered}:${x.icon}:${x.name}:${x.hits || 0}:${x.target || ''}:${x.damage || 0}:${x.heal || 0}:${x.shield || 0}:${x.taken || 0}:${x.maxAmount || 0}:${x.crits || 0}:${Math.floor((now - (x.ts || 0)) / 2500)}`).join('|');
+  const sig = list.map(x => `${x.actor}:${x.school}:${x.type}:${x.threat}:${x.empowered}:${x.icon}:${x.name}:${x.hits || 0}:${x.target || ''}:${x.status || ''}:${x.damage || 0}:${x.heal || 0}:${x.shield || 0}:${x.taken || 0}:${x.maxAmount || 0}:${x.crits || 0}:${Math.floor((now - (x.ts || 0)) / 2500)}`).join('|');
   updateStageSkillChain(list, now);
   if (sig === _dmRecentSkillSig) return;
   _dmRecentSkillSig = sig;

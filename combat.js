@@ -324,6 +324,39 @@ function skillFxLabelText(sk){
 const _skillCastCueCooldown = {};
 const _combatRecentSkillCasts = [];
 const _combatRecentSkillCastCooldown = {};
+function mergeCombatStatusText(prev, next){
+  const a = String(prev || '').trim();
+  const b = String(next || '').trim();
+  if(!b) return a;
+  if(!a) return b.slice(0, 18);
+  const parts = a.split(/[、,，]/).map(x => x.trim()).filter(Boolean);
+  if(!parts.includes(b)) parts.push(b);
+  return parts.slice(0, 3).join('、').slice(0, 18);
+}
+function combatSkillStatusText(sk, target){
+  if(!sk) return '';
+  const parts = [];
+  const add = txt => { if(txt && !parts.includes(txt)) parts.push(txt); };
+  if(sk.freeze) add('冻结');
+  if(sk.fear) add('恐惧');
+  if(sk.stun) add('眩晕');
+  if(sk.silence) add('沉默');
+  if(sk.disarm) add('缴械');
+  if(sk.slow) add('减速');
+  if(sk.manaDrain && target !== 'companion') add('抽蓝');
+  if(sk.brittle) add('易爆');
+  if(sk.vulnerable || sk.sunder || sk.revenge) add('易伤');
+  if(sk.weaken) add('虚弱');
+  if(sk.cripple) add('残废');
+  if(sk.decay || sk.decay2 || sk.wither) add('凋零');
+  if(sk.dot || sk.dotSkill || sk.plague || sk.bleed) add('持续');
+  if(sk.soulDrain) add('吸取');
+  if(sk.soulLink) add('灵魂链');
+  if(sk.bomb) add('炸弹');
+  if(sk.summonCount) add('召唤');
+  if(sk.shieldPct) add('护盾');
+  return parts.slice(0, 3).join('、');
+}
 function combatSkillImpactTargetLabel(targetEl, sourceEl){
   if(!targetEl) return '';
   if(targetEl === sourceEl) return '自身';
@@ -368,6 +401,7 @@ function recordCombatSkillCast(sk, opts){
     maxAmount:0,
     crits:0,
     target:'',
+    status:'',
     impactTs:0,
     ts:now
   });
@@ -388,6 +422,7 @@ function recordCombatSkillImpact(sk, opts){
   item.hits = Math.min(99, (item.hits || 0) + 1);
   item.impactTs = now;
   if(opts?.target) item.target = String(opts.target).slice(0, 12);
+  if(opts?.status) item.status = mergeCombatStatusText(item.status, opts.status);
   item.ts = Math.max(item.ts || 0, now - 120);
 }
 function recordCombatSkillAmount(actor, kind, skillLabel, amount, opts){
@@ -422,6 +457,26 @@ function recordCombatSkillAmount(actor, kind, skillLabel, amount, opts){
   if(opts?.crit) item.crits = (item.crits || 0) + 1;
   item.maxAmount = Math.max(item.maxAmount || 0, amount);
   if(opts?.target) item.target = String(opts.target).slice(0, 12);
+  if(opts?.status) item.status = mergeCombatStatusText(item.status, opts.status);
+  item.ts = now;
+}
+function recordCombatSkillStatus(actor, skillLabel, status, opts){
+  const name = String(skillLabel || '').trim();
+  const statusText = String(status || '').trim();
+  if(!name || !statusText) return;
+  const now = Date.now();
+  const safeActor = String(actor || 'enemy').replace(/[^a-z0-9_-]/gi, '') || 'enemy';
+  const school = normalizeSkillFxSchool(opts?.school) || (safeActor === 'boss' ? 'shadow' : 'physical');
+  let item = _combatRecentSkillCasts.find(x => x.actor === safeActor && x.name === name && now - (x.ts || 0) < 2400);
+  if(!item && opts?.force){
+    const fake = { name, icon:opts?.icon || '', type:opts?.type || (safeActor === 'boss' ? 'danger' : 'skill'), school, threat:opts?.threat || '' };
+    recordCombatSkillCast(fake, { actor:safeActor, school });
+    item = _combatRecentSkillCasts.find(x => x.actor === safeActor && x.name === name);
+  }
+  if(!item) return;
+  item.status = mergeCombatStatusText(item.status, statusText);
+  if(opts?.target) item.target = String(opts.target).slice(0, 12);
+  if(safeActor === 'boss' && item.type === 'skill') item.type = 'danger';
   item.ts = now;
 }
 function combatRecentSkillCasts(){
@@ -11945,6 +12000,16 @@ function skillEffects(wc,mon,taken,now,opts){
   const targetEl = target === 'companion' ? $('comp-mini') : $('hero-emoji');
   const applyDebuff = target === 'companion' ? applyCompanionDebuff : applyHeroDebuff;
   const enemyName = mon?.bossName || mon?.name || '敌人';
+  const statusText = combatSkillStatusText(wc, target);
+  if(statusText && opts?.recordStatus !== false){
+    recordCombatSkillStatus(mon?.isBoss ? 'boss' : 'enemy', wc.name || opts?.skillName || '敌方技能', statusText, {
+      target:target === 'companion' ? '随从' : (wc.shieldPct || wc.summonCount ? '自身' : '主角'),
+      force:true,
+      icon:wc.icon || '',
+      school:skillVisualSchool(null, wc, mon?.isBoss ? 'boss' : 'enemy'),
+      threat:mon?.isBoss ? (wc.threat || 'high') : (wc.threat || '')
+    });
+  }
   if(wc.dot){applyDebuff('burn',6000,{dps:Math.max(1,Math.floor(taken*0.12))});log('☠️ '+enemyName+(wc.icon||'')+(target==='companion'?'让随从中毒了!':'让你中毒了!'),'bad');}
   if(wc.slow){applyDebuff('chill',5000);log('❄️ '+enemyName+(wc.icon||'')+(target==='companion'?'减速了随从!':'减速了你!'),'bad');}
   if(wc.stun){
