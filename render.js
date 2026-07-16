@@ -479,6 +479,36 @@ function updateDmgLastInterrupt() {
   el.textContent = `${meta[1]} · ${skill} → ${cast} · ${ago}s前`;
   el.title = `最近打断: ${skill} 对 ${boss} 的 ${cast}。结果: ${meta[1]}。本轮成功 ${ds.interruptSuccesses || 0} 次,失败 ${ds.interruptFails || 0} 次。`;
 }
+function updateDmgBossCastOutcome() {
+  const el = $('dm-boss-cast-outcome');
+  if (!el) return;
+  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
+  if (!ds || !ds.lastBossCastAt) {
+    el.className = 'dm-boss-cast-outcome idle';
+    el.textContent = '-';
+    el.removeAttribute('title');
+    return;
+  }
+  const ago = Math.max(0, Math.floor((Date.now() - ds.lastBossCastAt) / 1000));
+  if (ago > 16) {
+    const hits = ds.bossCastHits || 0;
+    const avg = hits > 0 ? Math.round((ds.bossCastTotalDamage || 0) / hits) : 0;
+    el.className = 'dm-boss-cast-outcome idle';
+    el.textContent = hits ? `近期无结算 · ${hits}次/均${fmt(avg)}` : '-';
+    el.title = hits ? `本轮首领读条结算 ${hits} 次,总伤害 ${fmt(ds.bossCastTotalDamage || 0)},平均 ${fmt(avg)}。` : '';
+    return;
+  }
+  const damage = ds.lastBossCastDamage || 0;
+  const heroMax = Math.max(1, state?.hero?.hpMax || 1);
+  const pct = damage / heroMax;
+  const cls = ds.lastBossCastEmpowered || pct >= 0.22 ? 'danger' : (pct >= 0.10 ? 'warn' : 'hit');
+  const name = ds.lastBossCastName || '首领技能';
+  const target = ds.lastBossCastTarget || '目标';
+  const kind = ds.lastBossCastKind === 'dot' ? '持续' : (ds.lastBossCastKind === 'aoe' ? '群体' : '单体');
+  el.className = `dm-boss-cast-outcome ${cls}`;
+  el.textContent = `${kind}命中 · ${name} → ${target} · ${fmt(damage)} · ${ago}s前`;
+  el.title = `最近首领读条结算: ${ds.lastBossCastBoss || 'BOSS'} 的 ${name},命中 ${target},造成 ${fmt(damage)} 点伤害。`;
+}
 
 /* 导航栏红点:远征储备满 / 公会今日有可做的捐献 */
 function updateNavBadges() {
@@ -2011,6 +2041,7 @@ function updateDmgMeter() {
   updateCombatReactionAdvice();
   updateDmgBossCastReadout();
   updateDmgLastInterrupt();
+  updateDmgBossCastOutcome();
 
   // 英雄条
   const heroBar = $('dm-hero-bar');

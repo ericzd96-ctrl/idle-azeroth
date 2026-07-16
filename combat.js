@@ -11710,6 +11710,7 @@ function tickCast(now){
           showMonsterFloat(mon,(bc.icon||'☠️')+bc.name+'!','#a3e635');
           if(bossCastEl) showSkillImpactFx(bossCastEl, $('hero-emoji'), bc, { actor:'boss', scale:1.08, pulse:'danger' });
           if(companionTargetable()){applyCompanionDebuff('burn',secs*1000,{dps:Math.max(1,Math.floor(dps*0.5))});if(bossCastEl)showSkillImpactFx(bossCastEl,$('comp-mini'),bc,{actor:'boss',scale:0.86,pulse:'danger'});}
+          trackBossCastOutcome(bc, mon, { target:'持续伤害', damage:dps*secs, kind:'dot' });
           if(state.hp<=0)onHeroDeath();
           return;
         }
@@ -11728,16 +11729,24 @@ function tickCast(now){
           if(bc.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(taken*bc.lifeSteal));
           skillEffects(bc,mon,taken,now);
           if(bc._empowered&&state.hp>0){applyHeroDebuff('weaken',4000);log('⚠️ 没能打断蓄力大招,陷入虚弱!下次记得打断','bad');}
+          let castTotalDamage = taken;
+          let castTargets = ['英雄'];
           if(companionTargetable()){
             const cst=computeCompanionStats();
             const cd=calcDmg(rawAtk,cst?cst.def:mon.def,0,0,false,state.hero.lvl,mon.lvl,{tightVar:true});
             const ct=applyCompanionDamage(cd.dmg,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ff9aa0',now});
             if(bossCastEl) showSkillImpactFx(bossCastEl, $('comp-mini'), bc, { actor:'boss', scale:0.9, pulse:'danger' });
-            skillEffects(bc,mon,ct,now,{target:'companion'});}
+            skillEffects(bc,mon,ct,now,{target:'companion'});
+            castTotalDamage += ct;
+            castTargets.push('随从');
+          }
           for(const unit of livingAllySummons(now)){
             const sd=calcDmg(rawAtk,unit.def || 0,0,0,false,state.hero.lvl,mon.lvl,{tightVar:true});
             applyAllySummonDamage(unit,sd.dmg,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ffb4c1',now});
+            castTotalDamage += sd.dmg;
+            if(!castTargets.includes('召唤物')) castTargets.push('召唤物');
           }
+          trackBossCastOutcome(bc, mon, { target:castTargets.join('+'), damage:castTotalDamage, kind:'aoe' });
           if(state.hp<=0)onHeroDeath();
         }else{
           // 复用开始施法时预选的目标(施法条已据此显示"对谁");若该目标已失效则重新选
@@ -11751,12 +11760,14 @@ function tickCast(now){
             if(bc.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(d2.dmg*bc.lifeSteal));
             log('🛡️ 随从替你承受了 '+bc.icon+'!','info');
             skillEffects(bc,mon,ct,now,{target:'companion'});
+            trackBossCastOutcome(bc, mon, { target:'随从', damage:ct, kind:'single' });
           }else if(target.kind==='summon'&&target.unit){
             const unit = target.unit;
             const d3=calcDmg(rawAtk,unit.def || 0,0,0,false,state.hero.lvl,mon.lvl,{tightVar:true});
             applyAllySummonDamage(unit,d3.dmg,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ffb4c1',now});
             if(bc.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(d3.dmg*bc.lifeSteal));
             log(`🛡️ ${unit.baseName || unit.name} 挡下了 ${bc.icon || '✨'}!`,'info');
+            trackBossCastOutcome(bc, mon, { target:unit.baseName || unit.name || '召唤物', damage:d3.dmg, kind:'single' });
           }else{
             let taken=calcDmg(rawAtk,heroDefAgainst(mon),0,0,false,state.hero.lvl,mon.lvl,{tightVar:true}).dmg;
             taken=resolveMonsterDamageTaken(mon,taken);
@@ -11767,6 +11778,7 @@ function tickCast(now){
             if(bc.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(taken*bc.lifeSteal));
             skillEffects(bc,mon,taken,now);
             if(bc._empowered&&state.hp>0){applyHeroDebuff('weaken',4000);log('⚠️ 没能打断蓄力大招,陷入虚弱!下次记得打断','bad');}
+            trackBossCastOutcome(bc, mon, { target:'英雄', damage:taken, kind:'single' });
           }
           if(state.hp<=0)onHeroDeath();}}}}
 }
@@ -11979,9 +11991,23 @@ function doInterrupt(skillKey){
 /* ---------- 随从 ---------- */
 let lastCompAtk=0,lastCompSkill=0,compSkillIdx=0,lastCompRegen=0;
 /* ---------- 伤害统计(战斗日志下面的伤害条) ---------- */
-function defaultDmgStats(){return {hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,heroHeal:0,compHeal:0,heroHealMax:0,compHealMax:0,heroHealSkills:{},compHealSkills:{},lastHeroHealAmount:0,lastHeroHealAt:0,lastHeroHealSkill:'',lastCompHealAmount:0,lastCompHealAt:0,lastCompHealSkill:'',heroShield:0,compShield:0,heroShieldMax:0,compShieldMax:0,lastHeroShieldAmount:0,lastHeroShieldAt:0,lastHeroShieldSkill:'',lastCompShieldAmount:0,lastCompShieldAt:0,lastCompShieldSkill:'',kills:0,heroSkills:{},compSkills:{},taken:0,takenMax:0,takenHits:0,compTaken:0,compTakenMax:0,compTakenHits:0,takenSources:{},compTakenSources:{},killTs:0,killFast:0,killSlow:0,peakDps:0,lastTakenAmount:0,lastTakenAt:0,lastTakenSource:'',lastTakenSkill:'',lastTakenBoss:false,maxTakenSource:'',maxTakenSkill:'',lastCompTakenAmount:0,lastCompTakenAt:0,lastCompTakenSource:'',lastCompTakenSkill:'',lastCompTakenBoss:false,maxCompTakenSource:'',maxCompTakenSkill:'',interruptSuccesses:0,interruptFails:0,lastInterruptAt:0,lastInterruptResult:'',lastInterruptSkill:'',lastInterruptBoss:'',lastInterruptCast:'',lastInterruptEmpowered:false,lastInterruptSoft:false};}
+function defaultDmgStats(){return {hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,heroHeal:0,compHeal:0,heroHealMax:0,compHealMax:0,heroHealSkills:{},compHealSkills:{},lastHeroHealAmount:0,lastHeroHealAt:0,lastHeroHealSkill:'',lastCompHealAmount:0,lastCompHealAt:0,lastCompHealSkill:'',heroShield:0,compShield:0,heroShieldMax:0,compShieldMax:0,lastHeroShieldAmount:0,lastHeroShieldAt:0,lastHeroShieldSkill:'',lastCompShieldAmount:0,lastCompShieldAt:0,lastCompShieldSkill:'',kills:0,heroSkills:{},compSkills:{},taken:0,takenMax:0,takenHits:0,compTaken:0,compTakenMax:0,compTakenHits:0,takenSources:{},compTakenSources:{},killTs:0,killFast:0,killSlow:0,peakDps:0,lastTakenAmount:0,lastTakenAt:0,lastTakenSource:'',lastTakenSkill:'',lastTakenBoss:false,maxTakenSource:'',maxTakenSkill:'',lastCompTakenAmount:0,lastCompTakenAt:0,lastCompTakenSource:'',lastCompTakenSkill:'',lastCompTakenBoss:false,maxCompTakenSource:'',maxCompTakenSkill:'',interruptSuccesses:0,interruptFails:0,lastInterruptAt:0,lastInterruptResult:'',lastInterruptSkill:'',lastInterruptBoss:'',lastInterruptCast:'',lastInterruptEmpowered:false,lastInterruptSoft:false,bossCastHits:0,bossCastTotalDamage:0,lastBossCastAt:0,lastBossCastName:'',lastBossCastBoss:'',lastBossCastTarget:'',lastBossCastDamage:0,lastBossCastKind:'',lastBossCastEmpowered:false};}
 let dmgStats=defaultDmgStats();
 function takenSourceLabel(meta){const src=normalizeTrackedSkillLabel(meta?.source)||'敌人';const skill=normalizeTrackedSkillLabel(meta?.skill);return skill&&skill!==src?`${src}·${skill}`:src;}
+function trackBossCastOutcome(cast,mon,meta){
+  if(typeof dmgStats==='undefined'||!dmgStats)return;
+  const damage=Math.max(0,Math.floor(meta?.damage||0));
+  const t=Date.now();if(!dmgStats.start)dmgStats.start=t;dmgStats.last=t;
+  dmgStats.bossCastHits=(dmgStats.bossCastHits||0)+1;
+  dmgStats.bossCastTotalDamage=(dmgStats.bossCastTotalDamage||0)+damage;
+  dmgStats.lastBossCastAt=t;
+  dmgStats.lastBossCastName=normalizeTrackedSkillLabel(cast?.name)||'首领技能';
+  dmgStats.lastBossCastBoss=normalizeTrackedSkillLabel(cast?.bossName||mon?.bossName||mon?.name)||'BOSS';
+  dmgStats.lastBossCastTarget=normalizeTrackedSkillLabel(meta?.target)||'目标';
+  dmgStats.lastBossCastDamage=damage;
+  dmgStats.lastBossCastKind=normalizeTrackedSkillLabel(meta?.kind)||'cast';
+  dmgStats.lastBossCastEmpowered=!!cast?._empowered;
+}
 function trackInterruptResult(result,meta){
   if(typeof dmgStats==='undefined'||!dmgStats)return;
   const ok=result==='success'||result==='perfect'||result==='soft';

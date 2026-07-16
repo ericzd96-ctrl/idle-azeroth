@@ -8296,6 +8296,42 @@ button.legend:hover:not(:disabled) {
   border-color: rgba(148,163,184,.22);
   background: rgba(15,23,42,.30);
 }
+.dm-boss-cast-outcome-row { align-items: stretch; }
+.dm-boss-cast-outcome {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 6px;
+  border-radius: 5px;
+  border: 1px solid rgba(148,163,184,.24);
+  background: rgba(15,23,42,.34);
+  color: #cbd5e1;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dm-boss-cast-outcome.hit {
+  color: #bfdbfe;
+  border-color: rgba(96,165,250,.34);
+  background: rgba(30,64,175,.15);
+}
+.dm-boss-cast-outcome.warn {
+  color: #fde68a;
+  border-color: rgba(251,191,36,.40);
+  background: rgba(113,63,18,.20);
+}
+.dm-boss-cast-outcome.danger {
+  color: #fecaca;
+  border-color: rgba(248,113,113,.46);
+  background: rgba(127,29,29,.25);
+  box-shadow: inset 0 0 10px rgba(248,113,113,.10);
+}
+.dm-boss-cast-outcome.idle {
+  color: #94a3b8;
+  border-color: rgba(148,163,184,.22);
+  background: rgba(15,23,42,.30);
+}
 @keyframes dmBossCastPulse {
   0%, 100% { filter: brightness(1); }
   50% { filter: brightness(1.22); }
