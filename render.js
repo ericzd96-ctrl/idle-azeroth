@@ -150,6 +150,7 @@ let _dmCombatSummarySig = '';
 let _dmTacticsSig = '';
 let _dmCombatTempoSig = '';
 let _dmCombatHeatSig = '';
+let _combatNextActionSig = '';
 let _navBadgePaint = 0, _expLivePaint = 0; // 导航红点 / 远征实时刷新节流
 const _headerResourceLast = {};
 const _resourceBarLast = { value:null, max:null, key:'' };
@@ -4028,6 +4029,7 @@ function updateBattleVisuals() {
   updateBossIntentLine(now);
   if ((!$('skill-bar')?.children?.length || isDirty('skills')) && !skillDragging) renderSkillBar();
   else updateSkillBarCd();
+  updateCombatNextAction(now);
 
   // 增益图标条
   const buffPaintGap = isMobileLayout() ? 220 : 140;
@@ -5010,6 +5012,148 @@ function survivalSkillPrompt(skillKey, sk, now, cdMs) {
     recommended,
     timerPct:win.severity
   };
+}
+
+function combatNextActionEntry(key, now) {
+  const c = (typeof getCls === 'function') ? getCls() : null;
+  const sk = c?.skills?.[key];
+  if (!key || !sk) return null;
+  const cdMs = Math.max(0, (state.skillCooldowns?.[key] || 0) - now);
+  const cost = skillUiCost(key, sk, c);
+  return {
+    key,
+    sk,
+    cdMs,
+    cost,
+    ready:cdMs <= 0 && (state.resource || 0) >= cost
+  };
+}
+function combatNextActionMeta(now) {
+  const ui = (typeof bossCastUiState === 'function') ? bossCastUiState(now) : null;
+  if (ui) {
+    const castName = `${ui.cast?.icon || ''}${ui.cast?.name || '首领读条'}`;
+    const remain = `${Math.max(0.1, ui.remainMs / 1000).toFixed(1)}秒`;
+    const interruptEntry = combatNextActionEntry(ui.ready?.key, now);
+    const responseEntry = combatNextActionEntry(ui.responseReady?.key, now);
+    if (interruptEntry?.ready) {
+      return {
+        tone:ui.urgent ? 'danger' : 'warn',
+        label:ui.urgent ? '必须打断' : '可打断',
+        detail:`${castName} · 剩 ${remain}`,
+        action:`按 ${interruptEntry.sk.name}`,
+        title:`${castName} 正在读条,建议立刻使用 ${interruptEntry.sk.name}。`,
+        key:interruptEntry.key,
+        ready:true,
+        final:ui.finalWindow
+      };
+    }
+    if (responseEntry?.ready) {
+      const kind = bossCastResponseKind(responseEntry.key, responseEntry.sk);
+      return {
+        tone:kind === 'heal' ? 'heal' : (ui.urgent ? 'danger' : 'defense'),
+        label:ui.canInterrupt ? '打断未好' : '不可打断',
+        detail:`${castName} · 剩 ${remain}`,
+        action:`开 ${responseEntry.sk.name}`,
+        title:`${castName} 暂时不能用打断处理,建议使用 ${responseEntry.sk.name} 覆盖伤害。`,
+        key:responseEntry.key,
+        ready:true,
+        final:ui.finalWindow
+      };
+    }
+    const waitText = ui.canInterrupt && Number.isFinite(ui.soonestLeft) && ui.soonestLeft > 0
+      ? `打断 ${Math.ceil(ui.soonestLeft / 1000)}秒`
+      : (ui.responseCount ? '留保命' : '看血线');
+    return {
+      tone:ui.urgent ? 'danger' : (ui.canInterrupt ? 'warn' : 'defense'),
+      label:ui.canInterrupt ? (ui.urgent ? '等打断' : '盯读条') : '硬吃',
+      detail:`${castName} · 剩 ${remain}`,
+      action:waitText,
+      title:ui.action || '观察首领读条,准备打断、治疗或减伤。',
+      final:ui.finalWindow
+    };
+  }
+  const vuln = (typeof vulnerabilityWindowState === 'function') ? vulnerabilityWindowState(now) : null;
+  if (vuln) {
+    const entry = combatNextActionEntry(vulnerabilityRecommendedBurstKey(now), now);
+    const target = vuln.mon?.bossName || vuln.mon?.name || '目标';
+    return {
+      tone:'burst',
+      label:'破绽窗口',
+      detail:`${target} · ${Math.max(0.1, vuln.left / 1000).toFixed(1)}秒`,
+      action:entry?.ready ? `按 ${entry.sk.name}` : '补高伤技',
+      title:entry?.ready ? `${target} 正在硬直且易伤,建议使用 ${entry.sk.name}。` : `${target} 处于破绽窗口,优先释放高伤害技能。`,
+      key:entry?.ready ? entry.key : '',
+      ready:!!entry?.ready,
+      final:vuln.left <= 900
+    };
+  }
+  const exec = (typeof executeWindowState === 'function') ? executeWindowState() : null;
+  if (exec) {
+    const entry = combatNextActionEntry(executeRecommendedSkillKey(now), now);
+    const target = exec.mon?.bossName || exec.mon?.name || '目标';
+    return {
+      tone:'execute',
+      label:'斩杀窗口',
+      detail:`${target} · ${Math.max(1, Math.round(exec.pct * 100))}%`,
+      action:entry?.ready ? `按 ${entry.sk.name}` : '打终结',
+      title:entry?.ready ? `${target} 进入斩杀线,建议使用 ${entry.sk.name}。` : `${target} 进入斩杀线,优先使用终结技能。`,
+      key:entry?.ready ? entry.key : '',
+      ready:!!entry?.ready,
+      final:exec.pct <= 0.18
+    };
+  }
+  const survival = (typeof survivalWindowState === 'function') ? survivalWindowState() : null;
+  if (survival) {
+    const entry = combatNextActionEntry(survivalRecommendedSkillKey(now), now);
+    const kind = entry ? bossCastResponseKind(entry.key, entry.sk) : '';
+    return {
+      tone:kind === 'heal' ? 'heal' : (survival.critical ? 'danger' : 'defense'),
+      label:survival.critical ? '急救' : '稳血线',
+      detail:`生命 ${Math.max(1, Math.round(survival.pct * 100))}%`,
+      action:entry?.ready ? `按 ${entry.sk.name}` : '开保命',
+      title:entry?.ready ? `当前生命偏低,建议使用 ${entry.sk.name}。` : '当前生命偏低,优先治疗、护盾或减伤。',
+      key:entry?.ready ? entry.key : '',
+      ready:!!entry?.ready,
+      final:survival.final
+    };
+  }
+  const rec = (typeof combatAdviceRecommendedEntry === 'function') ? combatAdviceRecommendedEntry(now) : null;
+  if (rec) {
+    return {
+      tone:rec.kind === 'heal' ? 'heal' : 'defense',
+      label:rec.kind === 'heal' ? '建议治疗' : '建议减伤',
+      detail:rec.reason || '压力抬升',
+      action:rec.ready ? `按 ${rec.sk.name}` : (Number.isFinite(rec.left) && rec.left > 0 ? `等 ${Math.ceil(rec.left / 1000)}秒` : '缺资源'),
+      title:rec.ready ? `建议现在使用 ${rec.sk.name}: ${rec.reason || '处理当前压力'}。` : `${rec.sk?.name || '建议技能'} 暂时不能使用,先留资源并观察血线。`,
+      key:rec.ready ? rec.key : '',
+      ready:!!rec.ready
+    };
+  }
+  return null;
+}
+function updateCombatNextAction(now) {
+  const el = $('combat-next-action');
+  if (!el) return;
+  const meta = combatNextActionMeta(now || Date.now());
+  if (!meta) {
+    if (_combatNextActionSig !== '') {
+      _combatNextActionSig = '';
+      el.style.display = 'none';
+      el.replaceChildren();
+      el.removeAttribute('title');
+    }
+    return;
+  }
+  const sig = `${meta.tone}:${meta.label}:${meta.detail}:${meta.action}:${meta.key || ''}:${meta.ready ? 1 : 0}:${meta.final ? 1 : 0}`;
+  if (sig === _combatNextActionSig && el.style.display !== 'none') return;
+  _combatNextActionSig = sig;
+  el.className = `combat-next-action ${meta.tone || 'safe'}${meta.final ? ' final' : ''}`;
+  el.title = meta.title || `${meta.label}: ${meta.action}`;
+  const actionHtml = meta.ready && meta.key
+    ? `<button type="button" data-action="pressurecast" data-skill="${escapeDmgMeterText(meta.key)}" title="${escapeDmgMeterText((meta.title || meta.action) + ' 点击立即施放。')}">${escapeDmgMeterText(meta.action)}</button>`
+    : `<i>${escapeDmgMeterText(meta.action || '')}</i>`;
+  el.innerHTML = `<b>${escapeDmgMeterText(meta.label || '下一步')}</b><span>${escapeDmgMeterText(meta.detail || '')}</span>${actionHtml}`;
+  el.style.display = 'flex';
 }
 
 function updateBossIntentLine(now) {
