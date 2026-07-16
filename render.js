@@ -147,6 +147,7 @@ let _dmDpsTrendValue = 0, _dmDpsTrendTs = 0, _dmDpsTrendDir = 'stable', _dmDpsTr
 let _dmRecentSkillSig = '';
 let _stageSkillChainSig = '';
 let _stageCombatTempoSig = '';
+let _stageCombatTempoPulseTimer = null;
 let _dmCombatSummarySig = '';
 let _dmSkillFxGuideSig = '';
 let _dmCastKitSig = '';
@@ -821,6 +822,46 @@ function combatTempoActionMeta(stateMeta, now) {
   if (stateMeta.actionText) return { cls:stateMeta.tone || 'steady', text:stateMeta.actionText, title:stateMeta.title || stateMeta.actionText };
   return null;
 }
+function stageCombatTempoMoment(fresh, now) {
+  const latest = (fresh || []).find(x => x && now - (x.ts || 0) <= 1800);
+  if (!latest) return null;
+  const actor = String(latest.actor || 'hero');
+  const amount = combatRecentSkillAmountMeta(latest);
+  const status = String(latest.status || '').trim();
+  const name = String(latest.name || '技能').trim();
+  const icon = String(latest.icon || '').trim();
+  const shortName = (icon + name).slice(0, 7);
+  const danger = actor === 'boss' && (latest.type === 'danger' || latest.threat === 'high' || latest.threat === 'extreme' || latest.empowered);
+  if (danger) {
+    const text = amount ? `高危 ${amount.short}` : '高危命中';
+    return { tone:'danger', text, title:`${shortName}: 首领危险技能刚刚结算。` };
+  }
+  if ((latest.crits || 0) > 0 && (latest.maxAmount || latest.damage || 0) > 0) {
+    return { tone:'crit', text:`暴击 ${fmt(latest.maxAmount || latest.damage)}`, title:`${shortName}: 本次技能出现暴击。` };
+  }
+  if (amount) {
+    if (amount.kind === 'heal') return { tone:'heal', text:`治疗 ${amount.short}`, title:`${shortName}: ${amount.title}。` };
+    if (amount.kind === 'shield') return { tone:'shield', text:`护盾 ${amount.short}`, title:`${shortName}: ${amount.title}。` };
+    if (actor === 'companion') return { tone:'companion', text:`随从 ${amount.short}`, title:`${shortName}: 随从技能生效。` };
+  }
+  if (/眩晕|沉默|恐惧|冻结|缴械|减速|控场/.test(status)) return { tone:'control', text:'控场生效', title:`${shortName}: ${status}。` };
+  if (/易伤|易爆|破绽/.test(status)) return { tone:'vuln', text:'破绽打开', title:`${shortName}: ${status}。` };
+  if (latest.hits > 1) return { tone:'hit', text:`命中x${latest.hits}`, title:`${shortName}: 命中多个目标。` };
+  return null;
+}
+function pulseStageCombatTempo(el, tone) {
+  if (!el || typeof document === 'undefined' || document.hidden) return;
+  el.classList.remove('tempo-pulse', 'tempo-pulse-danger', 'tempo-pulse-crit', 'tempo-pulse-heal', 'tempo-pulse-shield');
+  void el.offsetWidth;
+  el.classList.add('tempo-pulse');
+  if (tone) el.classList.add(`tempo-pulse-${String(tone).replace(/[^a-z0-9_-]/gi, '')}`);
+  if (_stageCombatTempoPulseTimer) clearTimeout(_stageCombatTempoPulseTimer);
+  _stageCombatTempoPulseTimer = setTimeout(() => {
+    const node = $('stage-combat-tempo');
+    if (node) node.classList.remove('tempo-pulse', 'tempo-pulse-danger', 'tempo-pulse-crit', 'tempo-pulse-heal', 'tempo-pulse-shield');
+    _stageCombatTempoPulseTimer = null;
+  }, 680);
+}
 function updateDmgCombatTempo(total, healTotal) {
   const el = $('dm-combat-tempo');
   if (!el) return;
@@ -857,18 +898,27 @@ function updateStageCombatTempo(total, healTotal) {
   }
   const stateMeta = combatTempoState(now, total, healTotal);
   const action = combatTempoActionMeta(stateMeta, now);
-  const sig = `${stateMeta.tone}:${stateMeta.label}:${stateMeta.detail}:${action?.text || ''}:${action?.cls || ''}:${fresh.length}`;
+  const moment = stageCombatTempoMoment(fresh, now);
+  const sig = `${stateMeta.tone}:${stateMeta.label}:${stateMeta.detail}:${moment?.tone || ''}:${moment?.text || ''}:${action?.text || ''}:${action?.cls || ''}:${fresh.length}`;
   if (sig === _stageCombatTempoSig && el.style.display !== 'none') return;
+  const prevTone = (_stageCombatTempoSig || '').split(':')[0] || '';
   _stageCombatTempoSig = sig;
   el.style.display = '';
   el.className = `stage-combat-tempo ${stateMeta.tone || 'steady'}`;
-  el.title = [stateMeta.title, action?.title].filter(Boolean).join(' ');
+  el.title = [stateMeta.title, moment?.title, action?.title].filter(Boolean).join(' ');
   el.replaceChildren();
   const label = document.createElement('b');
   label.textContent = stateMeta.label || '战况';
   const detail = document.createElement('span');
   detail.textContent = stateMeta.detail || '';
   el.append(label, detail);
+  if (moment?.text) {
+    const momentChip = document.createElement('i');
+    momentChip.className = `stage-combat-tempo-moment ${String(moment.tone || 'hit').replace(/[^a-z0-9_-]/gi, '')}`;
+    momentChip.textContent = moment.text;
+    momentChip.title = moment.title || moment.text;
+    el.appendChild(momentChip);
+  }
   if (action?.text) {
     const chip = document.createElement('i');
     chip.className = String(action.cls || stateMeta.tone || 'steady').replace(/[^a-z0-9_ -]/gi, '');
@@ -876,6 +926,7 @@ function updateStageCombatTempo(total, healTotal) {
     chip.title = action.title || action.text;
     el.appendChild(chip);
   }
+  if (moment || (prevTone && prevTone !== stateMeta.tone)) pulseStageCombatTempo(el, moment?.tone || stateMeta.tone);
 }
 function combatHeatActionMeta(tone, meta, now) {
   const ui = (typeof bossCastUiState === 'function') ? bossCastUiState(now) : null;

@@ -722,6 +722,53 @@ h1 {
 .stage-combat-tempo.companion b,
 .stage-combat-tempo.safe i,
 .stage-combat-tempo.companion i { color: #bbf7d0; border-color: rgba(74,222,128,.28); }
+.stage-combat-tempo.tempo-pulse {
+  animation: stageTempoPulse .62s ease-out both;
+}
+.stage-combat-tempo.tempo-pulse-danger {
+  box-shadow: inset 0 0 13px rgba(248,113,113,.18), 0 0 18px rgba(248,113,113,.18);
+}
+.stage-combat-tempo.tempo-pulse-crit {
+  box-shadow: inset 0 0 13px rgba(250,204,21,.18), 0 0 18px rgba(250,204,21,.18);
+}
+.stage-combat-tempo.tempo-pulse-heal,
+.stage-combat-tempo.tempo-pulse-shield {
+  box-shadow: inset 0 0 13px rgba(74,222,128,.16), 0 0 16px rgba(74,222,128,.14);
+}
+.stage-combat-tempo .stage-combat-tempo-moment {
+  border-color: rgba(250,204,21,.34);
+  background: linear-gradient(180deg, rgba(113,63,18,.34), rgba(69,26,3,.26));
+  color: #fde68a;
+  max-width: 96px;
+  text-shadow: 0 1px 4px rgba(0,0,0,.88);
+}
+.stage-combat-tempo .stage-combat-tempo-moment.danger {
+  border-color: rgba(248,113,113,.48);
+  background: linear-gradient(180deg, rgba(127,29,29,.42), rgba(69,10,10,.32));
+  color: #fecaca;
+}
+.stage-combat-tempo .stage-combat-tempo-moment.heal {
+  border-color: rgba(74,222,128,.40);
+  background: linear-gradient(180deg, rgba(20,83,45,.38), rgba(6,78,59,.28));
+  color: #bbf7d0;
+}
+.stage-combat-tempo .stage-combat-tempo-moment.shield {
+  border-color: rgba(96,165,250,.42);
+  background: linear-gradient(180deg, rgba(30,64,175,.36), rgba(30,41,59,.30));
+  color: #bfdbfe;
+}
+.stage-combat-tempo .stage-combat-tempo-moment.companion,
+.stage-combat-tempo .stage-combat-tempo-moment.control,
+.stage-combat-tempo .stage-combat-tempo-moment.vuln {
+  border-color: rgba(56,189,248,.34);
+  background: linear-gradient(180deg, rgba(8,47,73,.34), rgba(15,23,42,.30));
+  color: #bae6fd;
+}
+@keyframes stageTempoPulse {
+  0% { transform: translateY(0) scale(.985); filter: brightness(1); }
+  25% { transform: translateY(-1px) scale(1.018); filter: brightness(1.22); }
+  100% { transform: translateY(0) scale(1); filter: brightness(1); }
+}
 .combat-cue-chip {
   --cue-chip-color: #cbd5e1;
   --cue-chip-soft: rgba(148,163,184,.18);
@@ -8264,6 +8311,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   .resource-bar-delta { animation-duration: 180ms !important; }
   .hp-bar-delta { animation-duration: 180ms !important; }
   .skill-result-badge { animation-duration: 180ms !important; }
+  .stage-combat-tempo.tempo-pulse { animation-duration: 180ms !important; }
   .boss-cast-targeted::after { animation: none; }
 }
 @keyframes skillReadyFlash {
