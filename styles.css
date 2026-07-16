@@ -9550,14 +9550,16 @@ button.dm-boss-cast-chip.skill-pressed {
   background: rgba(113,63,18,.22);
 }
 .dm-boss-cast-chip.effect {
-  color: #ddd6fe;
-  border-color: rgba(168,85,247,.34);
-  background: rgba(88,28,135,.18);
+  color: var(--skill-fx-color, #ddd6fe);
+  border-color: color-mix(in srgb, var(--skill-fx-color, #a78bfa) 45%, transparent);
+  background: linear-gradient(180deg, var(--skill-fx-color-soft, rgba(88,28,135,.18)), rgba(15,23,42,.20));
+  box-shadow: inset 0 0 8px var(--skill-fx-color-soft, rgba(168,85,247,.10));
 }
 .dm-boss-cast-chip.effect.danger {
   color: #fecaca;
-  border-color: rgba(248,113,113,.44);
-  background: rgba(127,29,29,.22);
+  border-color: rgba(248,113,113,.46);
+  background: linear-gradient(180deg, rgba(127,29,29,.28), var(--skill-fx-color-soft, rgba(88,28,135,.18)));
+  box-shadow: inset 0 0 9px rgba(248,113,113,.12), 0 0 8px var(--skill-fx-color-soft, rgba(168,85,247,.10));
 }
 .dm-boss-cast-chip.locked,
 .dm-boss-cast-chip.empty {

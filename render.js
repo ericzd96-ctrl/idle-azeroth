@@ -1259,13 +1259,15 @@ function bossCastEffectChip(cast) {
   if (cast.bomb) add('炸弹');
   if (isDamage && !parts.length) add((cast.mul || 0) >= 5 || cast.alwaysCrit || cast.threat === 'high' || cast.threat === 'extreme' ? '重击' : '伤害');
   if (!parts.length) add(cast.type === 'heal' ? '治疗' : (cast.type === 'buff' || cast.type === 'support' ? '强化' : '机制'));
-  const label = parts.slice(0, 2).join('+');
+  const school = (typeof skillVisualSchool === 'function') ? skillVisualSchool(null, cast, 'boss') : 'physical';
+  const schoolName = combatSchoolShortName(school || 'physical');
+  const label = `${schoolName}·${parts.slice(0, 2).join('+')}`;
   const target = cast._targetDesc || (cast.aoe ? '全体' : (isDamage ? '当前目标' : '自身'));
   const threat = (typeof bossCastThreatMeta === 'function') ? bossCastThreatMeta(cast)?.label : '';
   return {
-    cls:`effect ${cast.threat === 'high' || cast.threat === 'extreme' || cast._empowered ? 'danger' : ''}`.trim(),
+    cls:`effect school-${String(school || 'physical').replace(/[^a-z0-9_-]/gi, '') || 'physical'} ${cast.threat === 'high' || cast.threat === 'extreme' || cast._empowered ? 'danger' : ''}`.trim(),
     text:label,
-    title:`读条效果: ${parts.join('、')}。目标: ${target}${threat ? '。威胁: ' + threat : ''}。`
+    title:`读条效果: ${schoolName}系 ${parts.join('、')}。目标: ${target}${threat ? '。威胁: ' + threat : ''}。`
   };
 }
 function updateDmgBossCastReadout() {
