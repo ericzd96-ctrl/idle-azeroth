@@ -609,6 +609,57 @@ function combatAdviceSourceShort(source) {
   if (!raw) return '';
   return raw.length > 9 ? raw.slice(0, 9) + '…' : raw;
 }
+function combatAdviceRecommendedEntry(now) {
+  if (typeof bossCasting !== 'undefined' && bossCasting) return null;
+  const hMax = Math.max(1, state?.hero?.hpMax || 1);
+  const hpPct = Math.max(0, state?.hp || 0) / hMax;
+  const compStats = (typeof computeCompanionStats === 'function') ? computeCompanionStats() : null;
+  const compAlive = !!compStats && state?._compHp != null && !(typeof compDowned === 'function' && compDowned());
+  const compPct = compAlive ? Math.max(0, state._compHp || 0) / Math.max(1, compStats.hpMax || 1) : 1;
+  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
+  const takenTotal = (ds?.taken || 0) + (ds?.compTaken || 0);
+  const coverTotal = (ds?.heroHeal || 0) + (ds?.compHeal || 0) + (ds?.heroShield || 0) + (ds?.compShield || 0);
+  const coverGap = takenTotal - coverTotal;
+  let reason = '';
+  let kind = '';
+  if (hpPct < 0.58) {
+    reason = hpPct < 0.42 ? '主角血线偏低' : '提前稳血';
+    kind = 'heal';
+  } else if (compAlive && compPct < 0.58) {
+    reason = compPct < 0.42 ? '随从血线偏低' : '提前照看随从';
+    kind = 'heal';
+  } else if (coverGap > Math.max(hMax * 0.20, takenTotal * 0.24) && takenTotal > 0) {
+    reason = '承伤缺口偏大';
+    kind = 'defensive';
+  }
+  if (!kind) return null;
+  const heal = combatAdviceSkillEntries('heal', now)[0] || null;
+  const defensive = combatAdviceSkillEntries('defensive', now)[0] || null;
+  const entry = kind === 'heal' ? (heal || defensive) : (defensive || heal);
+  return entry ? Object.assign({}, entry, { reason, kind:entry.kind || kind }) : null;
+}
+function combatAdviceSkillPrompt(skillKey, sk, now, cdMs) {
+  if (!sk) return null;
+  const rec = combatAdviceRecommendedEntry(now);
+  if (!rec || rec.key !== skillKey) return null;
+  const kind = bossCastResponseKind(skillKey, sk);
+  if (!kind) return null;
+  const cost = skillUiCost(skillKey, sk);
+  const ready = (cdMs || 0) <= 0 && (state.resource || 0) >= cost;
+  const label = ready ? (kind === 'heal' ? '建议治疗' : '建议减伤') : (cdMs > 0 ? `${Math.ceil(cdMs / 1000)}秒` : '缺资源');
+  const cls = ready ? (kind === 'heal' ? 'heal-hot' : 'defensive-hot') : (kind === 'heal' ? 'heal-wait' : 'defensive-wait');
+  const action = ready
+    ? `建议现在使用 ${sk.name}: ${rec.reason}。`
+    : `建议保留 ${sk.name}: ${cdMs > 0 ? '还在冷却' : '资源不足'}。`;
+  return {
+    label,
+    cls,
+    tip:action,
+    final:false,
+    recommended:ready,
+    timerPct:ready ? 100 : 38
+  };
+}
 function updateCombatReactionAdvice() {
   const el = $('dm-reaction');
   if (!el) return;
@@ -4654,7 +4705,8 @@ function renderSkillBar() {
     const vulnPrompt = bossPrompt ? null : vulnerabilitySkillPrompt(key, sk, now, cdMs);
     const executePrompt = (bossPrompt || vulnPrompt) ? null : executeSkillPrompt(key, sk, now, cdMs);
     const survivalPrompt = (bossPrompt || vulnPrompt || executePrompt) ? null : survivalSkillPrompt(key, sk, now, cdMs);
-    const actionPrompt = bossPrompt || vulnPrompt || executePrompt || survivalPrompt;
+    const advicePrompt = (bossPrompt || vulnPrompt || executePrompt || survivalPrompt) ? null : combatAdviceSkillPrompt(key, sk, now, cdMs);
+    const actionPrompt = bossPrompt || vulnPrompt || executePrompt || survivalPrompt || advicePrompt;
     const proc = (typeof currentSpecProcSystem === 'function') ? currentSpecProcSystem() : null;
     const activeProc = proc && state.skillRuntime && state.skillRuntime.specProc && state.skillRuntime.specProc.key === proc.key && (!state.skillRuntime.specProc.expire || state.skillRuntime.specProc.expire > now);
     const procText = `${key} ${sk.name || ''} ${sk.desc || ''} ${sk.type || ''}`;
@@ -4703,7 +4755,7 @@ function renderSkillBar() {
     const runeDesc = runeTip ? `\n符文铭刻: ${runeTip}` : '';
     const costText = useCost !== Math.max(0, sk.mp || 0) ? `${useCost}(基础${sk.mp || 0})` : `${sk.mp || 0}`;
     const baseTip = `${sk.name} · ${baseDesc}${detailDesc}${procDesc}${coreDesc}${engineDesc}${elementDesc}${echoDesc}${markDesc}${weaveDesc}${rhythmDesc}${controlDesc}${weaknessDesc}${prepDesc}${overloadDesc}${resourceDesc}${harvestDesc}${pactDesc}${fieldDesc}${chargeDesc}${runeDesc}\n${c.resource} ${costText} · 冷却 ${getSkillCd(sk)}秒`;
-    const tip = `${baseTip}${bossPrompt ? `\nBoss读条: ${bossPrompt.tip}` : ''}${vulnPrompt ? `\n破绽窗口: ${vulnPrompt.tip}` : ''}${executePrompt ? `\n斩杀窗口: ${executePrompt.tip}` : ''}${survivalPrompt ? `\n保命窗口: ${survivalPrompt.tip}` : ''}`.replace(/"/g, '&quot;');
+    const tip = `${baseTip}${bossPrompt ? `\nBoss读条: ${bossPrompt.tip}` : ''}${vulnPrompt ? `\n破绽窗口: ${vulnPrompt.tip}` : ''}${executePrompt ? `\n斩杀窗口: ${executePrompt.tip}` : ''}${survivalPrompt ? `\n保命窗口: ${survivalPrompt.tip}` : ''}${advicePrompt ? `\n战斗建议: ${advicePrompt.tip}` : ''}`.replace(/"/g, '&quot;');
     const baseTipAttr = baseTip.replace(/"/g, '&quot;');
     const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, sk.icon) : sk.icon;
     const roleTag = skillButtonRoleTag(key, sk);
@@ -4715,8 +4767,10 @@ function renderSkillBar() {
     const executeRecommendClass = executePrompt?.recommended ? 'execute-window-recommended' : '';
     const survivalPromptClass = survivalPrompt ? `survival-window-prompt ${survivalPrompt.cls || ''} ${survivalPrompt.final ? 'survival-window-final' : ''}` : '';
     const survivalRecommendClass = survivalPrompt?.recommended ? 'survival-window-recommended' : '';
-    const skillWindowPrompt = vulnPrompt || executePrompt || survivalPrompt;
-    return `<button class="skill-btn skill-role-${roleTag.cls} ${onCd?'on-cd':''} ${useStateClass} ${bossPromptClass} ${recommendClass} ${vulnPromptClass} ${vulnRecommendClass} ${executePromptClass} ${executeRecommendClass} ${survivalPromptClass} ${survivalRecommendClass}" data-skill="${key}" data-cd-active="${onCd?'1':'0'}" data-resource-ready="${hasMp?'1':'0'}" data-cd-total="${cdTotalMs}" draggable="true" title="${tip}" data-base-title="${baseTipAttr}"
+    const advicePromptClass = advicePrompt ? `advice-window-prompt ${advicePrompt.cls || ''}` : '';
+    const adviceRecommendClass = advicePrompt?.recommended ? 'advice-window-recommended' : '';
+    const skillWindowPrompt = vulnPrompt || executePrompt || survivalPrompt || advicePrompt;
+    return `<button class="skill-btn skill-role-${roleTag.cls} ${onCd?'on-cd':''} ${useStateClass} ${bossPromptClass} ${recommendClass} ${vulnPromptClass} ${vulnRecommendClass} ${executePromptClass} ${executeRecommendClass} ${survivalPromptClass} ${survivalRecommendClass} ${advicePromptClass} ${adviceRecommendClass}" data-skill="${key}" data-cd-active="${onCd?'1':'0'}" data-resource-ready="${hasMp?'1':'0'}" data-cd-total="${cdTotalMs}" draggable="true" title="${tip}" data-base-title="${baseTipAttr}"
       style="--cd-angle:${cdAngle}deg;${bossPrompt ? `--boss-cast-pct:${Math.round(bossPrompt.timerPct || 0)}%;` : ''}${skillWindowPrompt ? `--skill-window-pct:${Math.round(skillWindowPrompt.timerPct || 0)}%;` : ''}${coreMatch&&!onCd?'border-color:#38bdf8;box-shadow:0 0 0 1px rgba(56,189,248,.50),0 0 14px rgba(56,189,248,.18)':(procMatch&&!onCd?'border-color:#facc15;box-shadow:0 0 0 1px rgba(250,204,21,.45)':(!onCd&&hasMp?'border-color:var(--accent)':''))}">
       <span class="sk-name">${skillIconHtml} ${sk.name}</span>
       <span class="sk-role ${roleTag.cls}" title="${roleTag.title}">${roleTag.label}</span>
@@ -4781,14 +4835,15 @@ function updateSkillBarCd() {
     const vulnPrompt = (!bossPrompt && sk) ? vulnerabilitySkillPrompt(key, sk, now, cdMs) : null;
     const executePrompt = (!bossPrompt && !vulnPrompt && sk) ? executeSkillPrompt(key, sk, now, cdMs) : null;
     const survivalPrompt = (!bossPrompt && !vulnPrompt && !executePrompt && sk) ? survivalSkillPrompt(key, sk, now, cdMs) : null;
-    const prompt = bossPrompt || vulnPrompt || executePrompt || survivalPrompt;
+    const advicePrompt = (!bossPrompt && !vulnPrompt && !executePrompt && !survivalPrompt && sk) ? combatAdviceSkillPrompt(key, sk, now, cdMs) : null;
+    const prompt = bossPrompt || vulnPrompt || executePrompt || survivalPrompt || advicePrompt;
     btn.classList.toggle('interrupt-hot', bossPrompt?.cls === 'interrupt-hot');
     btn.classList.toggle('interrupt-soft', bossPrompt?.cls === 'interrupt-soft');
     btn.classList.toggle('interrupt-wait', bossPrompt?.cls === 'interrupt-wait');
-    btn.classList.toggle('defensive-hot', bossPrompt?.cls === 'defensive-hot' || survivalPrompt?.cls === 'defensive-hot');
-    btn.classList.toggle('heal-hot', bossPrompt?.cls === 'heal-hot' || survivalPrompt?.cls === 'heal-hot');
-    btn.classList.toggle('heal-wait', survivalPrompt?.cls === 'heal-wait');
-    btn.classList.toggle('defensive-wait', bossPrompt?.cls === 'defensive-wait' || survivalPrompt?.cls === 'defensive-wait');
+    btn.classList.toggle('defensive-hot', bossPrompt?.cls === 'defensive-hot' || survivalPrompt?.cls === 'defensive-hot' || advicePrompt?.cls === 'defensive-hot');
+    btn.classList.toggle('heal-hot', bossPrompt?.cls === 'heal-hot' || survivalPrompt?.cls === 'heal-hot' || advicePrompt?.cls === 'heal-hot');
+    btn.classList.toggle('heal-wait', survivalPrompt?.cls === 'heal-wait' || advicePrompt?.cls === 'heal-wait');
+    btn.classList.toggle('defensive-wait', bossPrompt?.cls === 'defensive-wait' || survivalPrompt?.cls === 'defensive-wait' || advicePrompt?.cls === 'defensive-wait');
     btn.classList.toggle('boss-cast-prompt', !!bossPrompt);
     btn.classList.toggle('boss-cast-final', !!bossPrompt?.final);
     btn.classList.toggle('boss-cast-recommended', !!bossPrompt?.recommended);
@@ -4805,8 +4860,10 @@ function updateSkillBarCd() {
     btn.classList.toggle('survival-window-prompt', !!survivalPrompt);
     btn.classList.toggle('survival-window-final', !!survivalPrompt?.final);
     btn.classList.toggle('survival-window-recommended', !!survivalPrompt?.recommended);
+    btn.classList.toggle('advice-window-prompt', !!advicePrompt);
+    btn.classList.toggle('advice-window-recommended', !!advicePrompt?.recommended);
     btn.style.setProperty('--boss-cast-pct', bossPrompt ? `${Math.round(bossPrompt.timerPct || 0)}%` : '0%');
-    btn.style.setProperty('--skill-window-pct', (vulnPrompt || executePrompt || survivalPrompt) ? `${Math.round((vulnPrompt || executePrompt || survivalPrompt).timerPct || 0)}%` : '0%');
+    btn.style.setProperty('--skill-window-pct', (vulnPrompt || executePrompt || survivalPrompt || advicePrompt) ? `${Math.round((vulnPrompt || executePrompt || survivalPrompt || advicePrompt).timerPct || 0)}%` : '0%');
     let badge = btn.querySelector('.sk-alert');
     if(prompt){
       if(!badge){
@@ -4829,7 +4886,7 @@ function updateSkillBarCd() {
       timer.remove();
     }
     let winTimer = btn.querySelector('.skill-window-timer');
-    if(vulnPrompt || executePrompt || survivalPrompt){
+    if(vulnPrompt || executePrompt || survivalPrompt || advicePrompt){
       if(!winTimer){
         winTimer = document.createElement('span');
         winTimer.className = 'skill-window-timer';
@@ -4841,7 +4898,7 @@ function updateSkillBarCd() {
     const baseTitle = btn.dataset.baseTitle || btn.title || '';
     const nextTitle = bossPrompt
       ? `${baseTitle}\nBoss读条: ${bossPrompt.tip}`
-      : (vulnPrompt ? `${baseTitle}\n破绽窗口: ${vulnPrompt.tip}` : (executePrompt ? `${baseTitle}\n斩杀窗口: ${executePrompt.tip}` : (survivalPrompt ? `${baseTitle}\n保命窗口: ${survivalPrompt.tip}` : baseTitle)));
+      : (vulnPrompt ? `${baseTitle}\n破绽窗口: ${vulnPrompt.tip}` : (executePrompt ? `${baseTitle}\n斩杀窗口: ${executePrompt.tip}` : (survivalPrompt ? `${baseTitle}\n保命窗口: ${survivalPrompt.tip}` : (advicePrompt ? `${baseTitle}\n战斗建议: ${advicePrompt.tip}` : baseTitle))));
     if(btn.title !== nextTitle) btn.title = nextTitle;
   });
 }

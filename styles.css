@@ -7556,6 +7556,11 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   outline: 1px solid rgba(125,211,252,.36);
   outline-offset: 1px;
 }
+.skill-btn.advice-window-recommended:not(.on-cd) {
+  transform: translateY(-1px);
+  outline: 1px solid rgba(167,243,208,.28);
+  outline-offset: 1px;
+}
 .skill-btn.boss-cast-recommended:not(.on-cd)::before {
   content: '按';
   position: absolute;
@@ -7636,9 +7641,30 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   z-index: 6;
   box-shadow: 0 0 14px rgba(96,165,250,.40);
 }
+.skill-btn.advice-window-recommended:not(.on-cd)::before {
+  content: '荐';
+  position: absolute;
+  top: -8px;
+  left: -6px;
+  width: 17px;
+  height: 17px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(209,250,229,.72);
+  background: radial-gradient(circle at 35% 30%, #ecfdf5, #34d399 58%, #065f46);
+  color: #041713;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 6;
+  box-shadow: 0 0 12px rgba(52,211,153,.34);
+}
 .skill-btn.vuln-window-prompt,
 .skill-btn.execute-window-prompt,
-.skill-btn.survival-window-prompt {
+.skill-btn.survival-window-prompt,
+.skill-btn.advice-window-prompt {
   overflow: visible;
 }
 .skill-btn .boss-cast-timer,
@@ -7729,6 +7755,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   .skill-btn.execute-window-recommended:not(.on-cd) { transform: none; }
   .skill-btn.survival-window-final:not(.on-cd) .skill-window-timer { animation: none; }
   .skill-btn.survival-window-recommended:not(.on-cd) { transform: none; }
+  .skill-btn.advice-window-recommended:not(.on-cd) { transform: none; }
   .resource-bar-delta { animation-duration: 180ms !important; }
   .boss-cast-targeted::after { animation: none; }
 }
