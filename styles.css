@@ -8019,6 +8019,31 @@ button.legend:hover:not(:disabled) {
   box-shadow: 0 0 6px rgba(110,231,183,.45);
 }
 .dm-pressure-row { align-items: stretch; }
+.dm-last-hit-row { align-items: stretch; }
+.dm-last-hit {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 6px;
+  border-radius: 5px;
+  border: 1px solid rgba(148,163,184,.22);
+  background: rgba(15,23,42,.32);
+  color: #94a3b8;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dm-last-hit.warn {
+  color: #fde68a;
+  border-color: rgba(251,191,36,.34);
+  background: rgba(113,63,18,.18);
+}
+.dm-last-hit.danger {
+  color: #fecaca;
+  border-color: rgba(248,113,113,.42);
+  background: rgba(127,29,29,.22);
+  box-shadow: inset 0 0 10px rgba(248,113,113,.10);
+}
 .dm-reaction-row { align-items: stretch; }
 .dm-reaction {
   flex: 1;

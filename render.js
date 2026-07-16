@@ -290,6 +290,38 @@ function updateCombatReactionAdvice() {
   el.title = title;
   if (el.textContent !== text) el.textContent = text;
 }
+function updateDmgLastHit() {
+  const el = $('dm-last-hit');
+  if (!el) return;
+  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
+  if (!ds || (!ds.lastTakenAt && !ds.lastCompTakenAt)) {
+    el.className = 'dm-last-hit idle';
+    el.textContent = '-';
+    el.removeAttribute('title');
+    return;
+  }
+  const heroAt = ds.lastTakenAt || 0;
+  const compAt = ds.lastCompTakenAt || 0;
+  const target = compAt > heroAt ? '随从' : '主角';
+  const amount = target === '随从' ? (ds.lastCompTakenAmount || 0) : (ds.lastTakenAmount || 0);
+  const at = target === '随从' ? compAt : heroAt;
+  const source = target === '随从' ? (ds.lastCompTakenSource || '敌人') : (ds.lastTakenSource || '敌人');
+  const skill = target === '随从' ? (ds.lastCompTakenSkill || '') : (ds.lastTakenSkill || '');
+  const boss = target === '随从' ? !!ds.lastCompTakenBoss : !!ds.lastTakenBoss;
+  const now = Date.now();
+  const ago = at ? Math.max(0, Math.floor((now - at) / 1000)) : 0;
+  const maxHp = target === '随从'
+    ? Math.max(1, ((typeof computeCompanionStats === 'function') ? computeCompanionStats()?.hpMax : 1) || 1)
+    : Math.max(1, state?.hero?.hpMax || 1);
+  const pct = amount / maxHp;
+  let cls = boss || pct >= 0.16 ? 'danger' : (pct >= 0.07 ? 'warn' : 'idle');
+  const sourceText = [source, skill].filter(Boolean).join(' · ');
+  const agoText = ago < 60 ? `${ago}秒前` : `${Math.floor(ago / 60)}分钟前`;
+  const text = `${target} -${fmt(amount)} · ${sourceText || '未知来源'}`;
+  el.className = `dm-last-hit ${cls}`;
+  el.textContent = text;
+  el.title = `最近承伤: ${target} 在${agoText}受到 ${fmt(amount)} 点伤害。来源: ${sourceText || '未知来源'}。${boss ? '首领技能或首领攻击。' : ''}`;
+}
 
 /* 导航栏红点:远征储备满 / 公会今日有可做的捐献 */
 function updateNavBadges() {
@@ -1957,6 +1989,7 @@ function updateDmgMeter() {
       takenEl.removeAttribute('title');
     }
   }
+  updateDmgLastHit();
 
   // 战斗压力:把承伤、治疗和血量换成可读状态,帮助判断卡关原因
   const pressureEl = $('dm-pressure');
