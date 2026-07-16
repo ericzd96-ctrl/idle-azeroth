@@ -1170,6 +1170,29 @@ function bossTelegraphTargets(cast, mon, now){
   if(target?.kind === 'summon' && target.unit && typeof allySummonAnchor === 'function') return [{ el:allySummonAnchor(target.unit), label:'点名', kind:'target' }];
   return [{ el:$('hero-emoji'), label:'点名', kind:'target' }];
 }
+function clearBossCastTargetBadges(){
+  if(typeof document === 'undefined') return;
+  document.querySelectorAll('.boss-cast-targeted,.boss-cast-aoe-target').forEach(el => {
+    el.classList.remove('boss-cast-targeted', 'boss-cast-aoe-target', 'boss-cast-danger-target');
+    delete el.dataset.bossCastTarget;
+  });
+}
+function updateBossCastTargetBadges(cast, mon, opts){
+  if(typeof document === 'undefined' || document.hidden) return;
+  clearBossCastTargetBadges();
+  if(!cast) return;
+  const now = opts?.now || Date.now();
+  const targets = bossTelegraphTargets(cast, mon, now).filter(x => x && x.el).slice(0, 4);
+  if(!targets.length) return;
+  const dangerous = cast._empowered || cast.threat === 'high' || cast.threat === 'extreme';
+  for(const t of targets){
+    const el = t.el;
+    el.classList.add('boss-cast-targeted');
+    if(t.kind === 'aoe') el.classList.add('boss-cast-aoe-target');
+    if(dangerous) el.classList.add('boss-cast-danger-target');
+    el.dataset.bossCastTarget = t.kind === 'aoe' ? '范围' : (dangerous ? '点名!' : '点名');
+  }
+}
 function showBossTargetTelegraph(cast, mon, opts){
   if(!cast || typeof document === 'undefined' || document.hidden) return;
   const layer = skillFxLayer();
@@ -11698,6 +11721,7 @@ function hideBossCastBar(){
   const cb=document.getElementById('boss-cast-bar-wrap');
   if(cb)cb.style.visibility='hidden';
   clearBossCastBarFx();
+  clearBossCastTargetBadges();
 }
 function bossCastingMonster(cast){
   if(!cast) return null;
@@ -11888,6 +11912,7 @@ function tickCast(now){
     bossCastFill.style.setProperty('--boss-cast-fill', bossCastFillStyle);
     bossCastFill.style.width=pct+'%';
     updateBossCastBarFx(bossCasting, pct, remainMs);
+    updateBossCastTargetBadges(bossCasting, bossCastingMonster(bossCasting), { now });
     if(_isDmgCast){
       const castMon = bossCastingMonster(bossCasting);
       if(castMon) showBossCastRhythmFx(bossCasting, castMon, { now, remainMs, pct });

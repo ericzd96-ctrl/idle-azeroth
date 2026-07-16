@@ -5638,6 +5638,51 @@ h1 {
 .mon-row .m-emoji {
   will-change: transform, filter, box-shadow;
 }
+#hero-emoji,
+#comp-mini,
+.boss-cast-targeted {
+  position: relative;
+}
+.boss-cast-targeted {
+  box-shadow: 0 0 0 1px rgba(251,191,36,.30), 0 0 14px rgba(251,191,36,.16);
+}
+.boss-cast-targeted::after {
+  content: attr(data-boss-cast-target);
+  position: absolute;
+  right: -6px;
+  top: -10px;
+  z-index: 12;
+  min-width: 26px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  border: 1px solid rgba(251,191,36,.70);
+  background: linear-gradient(180deg, rgba(113,63,18,.96), rgba(69,26,3,.92));
+  color: #fde68a;
+  box-shadow: 0 0 12px rgba(251,191,36,.28), inset 0 0 8px rgba(251,191,36,.14);
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1.15;
+  text-align: center;
+  pointer-events: none;
+  text-shadow: 0 1px 4px rgba(0,0,0,.92);
+  animation: bossTargetBadgePulse .72s ease-in-out infinite;
+}
+.boss-cast-danger-target {
+  box-shadow: 0 0 0 1px rgba(248,113,113,.42), 0 0 18px rgba(248,113,113,.20);
+}
+.boss-cast-danger-target::after {
+  border-color: rgba(248,113,113,.82);
+  background: linear-gradient(180deg, rgba(127,29,29,.96), rgba(69,10,10,.94));
+  color: #fecaca;
+  box-shadow: 0 0 14px rgba(248,113,113,.34), inset 0 0 10px rgba(248,113,113,.18);
+}
+.boss-cast-aoe-target::after {
+  border-style: dashed;
+}
+@keyframes bossTargetBadgePulse {
+  0%, 100% { transform: translateY(0) scale(1); filter: brightness(1); }
+  50% { transform: translateY(-1px) scale(1.04); filter: brightness(1.16); }
+}
 #hero-emoji.low-hp,
 #comp-mini.low-hp,
 .mon-row.low-hp .m-emoji {
@@ -6540,6 +6585,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   .combat-cue-chip:nth-child(n+4) { display: none; }
   .combat-cue-chip span { font-size: 9px; }
   .resource-bar-delta { right: 5px; min-width: 20px; padding: 0 4px; font-size: 9px; line-height: 12px; }
+  .boss-cast-targeted::after { right: -4px; top: -8px; min-width: 22px; padding: 1px 4px; font-size: 9px; }
   .dm-recent-skills { gap: 3px; min-height: 19px; }
   .dm-recent-chip { max-width: 33%; padding: 1px 5px; font-size: 9px; }
   .dm-recent-chip:nth-child(n+5) { display: none; }
@@ -7666,6 +7712,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   .skill-btn.survival-window-final:not(.on-cd) .skill-window-timer { animation: none; }
   .skill-btn.survival-window-recommended:not(.on-cd) { transform: none; }
   .resource-bar-delta { animation-duration: 180ms !important; }
+  .boss-cast-targeted::after { animation: none; }
 }
 @keyframes skillReadyFlash {
   0% { filter: brightness(1); }
