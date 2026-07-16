@@ -1428,7 +1428,7 @@ function bossCastEffectChip(cast) {
   if (!cast) return null;
   const parts = [];
   const add = (text) => { if (text && !parts.includes(text)) parts.push(text); };
-  const isDamage = (typeof cast.mul === 'number' && cast.mul > 0) && cast.type !== 'heal' && cast.type !== 'buff' && !cast.summonCount;
+  const isDamage = (typeof cast.mul === 'number' && cast.mul > 0) && cast.type !== 'heal' && cast.type !== 'buff';
   if (cast.aoe) add('群体');
   if (cast.dotSkill || cast.dot || cast.plague || cast.bleed) add('持续');
   if (cast.stun || cast.silence || cast.disarm || cast.fear || cast.freeze || cast.cripple) add('控制');
@@ -1454,6 +1454,65 @@ function bossCastEffectChip(cast) {
     title:`读条效果: ${schoolName}系 ${parts.join('、')}。目标: ${target}${threat ? '。威胁: ' + threat : ''}。`
   };
 }
+function bossCastConsequenceChip(cast) {
+  if (!cast) return null;
+  const parts = [];
+  const add = (text) => { if (text && !parts.includes(text)) parts.push(text); };
+  const isDamage = (typeof cast.mul === 'number' && cast.mul > 0) && cast.type !== 'heal' && cast.type !== 'buff';
+  if (isDamage) add(cast.aoe ? '全体伤害' : '点名伤害');
+  if (cast.dotSkill || cast.dot || cast.plague || cast.bleed) add('持续掉血');
+  if (cast.stun || cast.silence || cast.disarm || cast.fear || cast.freeze || cast.cripple) add('控制');
+  if (cast.vulnerable || cast.brittle || cast.sunder || cast.weaken) add('易伤/虚弱');
+  if (cast.manaDrain) add('抽资源');
+  if (cast.summonCount) add('召唤小怪');
+  if (cast.shieldPct || cast.drBuffSecs || cast.defBuffSecs) add('首领变硬');
+  if (cast.atkBuffSecs || cast.spdBuffSecs || cast.critBuffSecs || cast.leechBuffSecs) add('首领强化');
+  if (cast.heal || cast.healPct) add('首领回血');
+  if (!parts.length) add(cast.interruptPolicy === 'none' ? '机制结算' : '吃到增压');
+  const danger = cast._empowered || cast.threat === 'high' || cast.threat === 'extreme' || cast.interruptPolicy === 'hard';
+  return {
+    cls:`consequence ${danger ? 'danger' : 'warn'}`,
+    text:`中:${parts.slice(0, 2).join('+')}`,
+    title:`如果没有处理这次读条,将触发: ${parts.join('、')}。`
+  };
+}
+function bossCastCounterChip(ui) {
+  if (!ui) return null;
+  if (!ui.canInterrupt) {
+    return {
+      cls:ui.responseReady ? (ui.responseReady.kind === 'heal' ? 'heal' : 'defense') : 'locked',
+      text:ui.responseReady ? `解:开${ui.responseReady.kind === 'heal' ? '治疗' : '减伤'}` : '解:硬吃保命',
+      title:ui.responseReady ? `不可打断,用 ${ui.responseReady.sk?.name || '保命技能'} 覆盖。` : '不可打断,需要提前开治疗、护盾或减伤。'
+    };
+  }
+  if (ui.ready) {
+    return {
+      cls:ui.urgent ? 'hot' : 'ready',
+      text:ui.urgent ? '解:立刻打断' : '解:可打断',
+      title:`使用 ${ui.ready.sk?.name || '打断技能'} 处理这次读条。`
+    };
+  }
+  if (ui.urgent && ui.responseReady) {
+    return {
+      cls:ui.responseReady.kind === 'heal' ? 'heal' : 'defense',
+      text:`解:顶${ui.responseReady.kind === 'heal' ? '治疗' : '减伤'}`,
+      title:`打断未就绪,用 ${ui.responseReady.sk?.name || '保命技能'} 覆盖伤害。`
+    };
+  }
+  if (ui.interruptCount > 0) {
+    const left = Math.ceil(Math.max(0, ui.soonestLeft || 0) / 1000);
+    return {
+      cls:left > 0 ? 'wait' : 'empty',
+      text:left > 0 ? `解:等${left}s` : '解:补资源',
+      title:left > 0 ? `最快打断还差 ${left} 秒。` : '打断技能当前资源不足。'
+    };
+  }
+  return {
+    cls:ui.urgent ? 'danger' : 'empty',
+    text:ui.urgent ? '解:补打断' : '解:无打断',
+    title:'当前技能栏没有可用打断;高危读条建议补一个打断或控制技能。'
+  };
+}
 function updateDmgBossCastReadout() {
   const row = $('dm-boss-cast-row');
   const el = $('dm-boss-cast');
@@ -1475,7 +1534,7 @@ function updateDmgBossCastReadout() {
   const threatMeta = (typeof bossCastThreatMeta === 'function') ? bossCastThreatMeta(cast) : { label: '危险' };
   const interruptText = (typeof bossInterruptTag === 'function') ? bossInterruptTag(cast) : (cast.interruptPolicy === 'none' ? '不可断' : '可断');
   const ui = (typeof bossCastUiState === 'function') ? bossCastUiState(now) : null;
-  const isDamage = (typeof cast.mul === 'number' && cast.mul > 0) && cast.type !== 'heal' && cast.type !== 'buff' && !cast.summonCount;
+  const isDamage = (typeof cast.mul === 'number' && cast.mul > 0) && cast.type !== 'heal' && cast.type !== 'buff';
   const target = cast._targetDesc || (isDamage ? (cast.aoe ? '全体' : '你') : '自身');
   const finalWindow = pct >= 70 || remainMs <= 1000;
   const mustKick = cast.interruptPolicy === 'hard' || (!!cast._empowered && cast.interruptPolicy !== 'none');
@@ -1501,7 +1560,9 @@ function updateDmgBossCastReadout() {
   const suggestion = finalWindow ? (ui?.finalAction || action) : (ui?.action || action);
   const text = `${icon}${name} · 对${target}`;
   const effectChip = bossCastEffectChip(cast);
-  const readyChips = [effectChip].filter(Boolean).concat(bossCastReadinessChips(ui));
+  const consequenceChip = bossCastConsequenceChip(cast);
+  const counterChip = bossCastCounterChip(ui);
+  const readyChips = [effectChip, consequenceChip, counterChip].filter(Boolean).concat(bossCastReadinessChips(ui));
   const chipSig = readyChips.map(x => `${x.cls}:${x.text}`).join('|');
   const sig = `${text}|${remain}|${suggestion}|${chipSig}|${finalWindow ? '1' : '0'}`;
   if (el.dataset.castSig !== sig) {
