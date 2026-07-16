@@ -8012,7 +8012,7 @@ button.legend:hover:not(:disabled) {
   --skill-fx-color: #cbd5e1;
   --skill-fx-color-soft: rgba(148,163,184,.20);
   min-width: 0;
-  max-width: 31%;
+  max-width: 30%;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -8029,6 +8029,31 @@ button.legend:hover:not(:disabled) {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.dm-recent-chip.is-latest {
+  border-color: color-mix(in srgb, var(--skill-fx-color) 66%, transparent);
+  background: linear-gradient(180deg, rgba(30,41,59,.78), rgba(15,23,42,.60));
+  box-shadow: inset 0 0 11px var(--skill-fx-color-soft), 0 0 10px var(--skill-fx-color-soft);
+}
+.dm-recent-chip.is-danger {
+  --skill-fx-color: #fca5a5;
+  --skill-fx-color-soft: rgba(248,113,113,.28);
+  border-color: rgba(248,113,113,.64);
+}
+.dm-recent-chip.is-danger.is-latest {
+  animation: dmRecentDangerPulse .82s ease-in-out infinite;
+}
+.dm-recent-actor {
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--skill-fx-color-soft);
+  color: #f8fafc;
+  font-size: 9px;
+  line-height: 1;
+}
 .dm-recent-chip-name {
   min-width: 0;
   overflow: hidden;
@@ -8044,6 +8069,12 @@ button.legend:hover:not(:disabled) {
   font-weight: 800;
   line-height: 1.25;
 }
+.dm-recent-kind {
+  flex: 0 0 auto;
+  color: #94a3b8;
+  font-size: 9px;
+  font-weight: 700;
+}
 .dm-recent-chip.actor-boss {
   color: #fecaca;
   border-color: rgba(248,113,113,.48);
@@ -8051,6 +8082,10 @@ button.legend:hover:not(:disabled) {
 }
 .dm-recent-chip.actor-companion {
   color: #bfdbfe;
+}
+@keyframes dmRecentDangerPulse {
+  0%, 100% { box-shadow: inset 0 0 10px rgba(248,113,113,.18), 0 0 0 rgba(248,113,113,0); }
+  50% { box-shadow: inset 0 0 12px rgba(248,113,113,.26), 0 0 14px rgba(248,113,113,.24); }
 }
 .dm-row {
   display: flex; align-items: center; gap: 8px; margin-bottom: 3px;

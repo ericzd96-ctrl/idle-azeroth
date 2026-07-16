@@ -219,7 +219,7 @@ function updateDmgRecentSkills() {
   const el = $('dm-recent-skills');
   if (!el) return;
   const list = (typeof combatRecentSkillCasts === 'function') ? combatRecentSkillCasts() : [];
-  const sig = list.map(x => `${x.actor}:${x.school}:${x.icon}:${x.name}:${x.ts}`).join('|');
+  const sig = list.map(x => `${x.actor}:${x.school}:${x.type}:${x.threat}:${x.empowered}:${x.icon}:${x.name}:${x.ts}`).join('|');
   if (sig === _dmRecentSkillSig) return;
   _dmRecentSkillSig = sig;
   el.replaceChildren();
@@ -233,25 +233,35 @@ function updateDmgRecentSkills() {
   el.className = 'dm-recent-skills';
   const label = document.createElement('span');
   label.className = 'dm-recent-label';
-  label.textContent = '最近';
+  label.textContent = '轨迹';
   el.appendChild(label);
   const actorName = { hero:'主角', companion:'随从', boss:'首领' };
-  for (const item of list) {
+  const actorIcon = { hero:'我', companion:'伴', boss:'首' };
+  const typeName = { dmg:'伤害', heal:'治疗', shield:'护盾', buff:'增益', summon:'召唤', danger:'高危', skill:'技能' };
+  list.forEach((item, idx) => {
     const chip = document.createElement('span');
     const actor = String(item.actor || 'hero').replace(/[^a-z0-9_-]/gi, '') || 'hero';
     const school = String(item.school || 'physical').replace(/[^a-z0-9_-]/gi, '') || 'physical';
+    const type = String(item.type || 'skill').replace(/[^a-z0-9_-]/gi, '') || 'skill';
+    const danger = actor === 'boss' && (type === 'danger' || item.threat === 'high' || item.threat === 'extreme' || item.empowered);
     const schoolName = combatSchoolShortName(school);
-    chip.className = `dm-recent-chip actor-${actor} school-${school}`;
-    chip.title = `${actorName[actor] || '技能'}释放 ${schoolName}技能: ${item.icon || ''}${item.name || ''}`;
+    chip.className = `dm-recent-chip actor-${actor} school-${school} type-${type}${idx === 0 ? ' is-latest' : ''}${danger ? ' is-danger' : ''}`;
+    chip.title = `${actorName[actor] || '技能'}释放 ${schoolName}${typeName[type] || '技能'}: ${item.icon || ''}${item.name || ''}${danger ? '。高危首领技能,优先打断或开保命。' : ''}`;
+    const source = document.createElement('b');
+    source.className = 'dm-recent-actor';
+    source.textContent = actorIcon[actor] || '技';
     const name = document.createElement('span');
     name.className = 'dm-recent-chip-name';
-    name.textContent = `${actorName[actor] || '技能'} ${(item.icon || '')}${item.name || ''}`;
+    name.textContent = `${item.icon || ''}${item.name || ''}`;
     const badge = document.createElement('span');
     badge.className = 'dm-recent-school';
-    badge.textContent = schoolName;
-    chip.append(name, badge);
+    badge.textContent = danger ? '高危' : schoolName;
+    const kind = document.createElement('span');
+    kind.className = 'dm-recent-kind';
+    kind.textContent = danger ? schoolName : (typeName[type] || '技能');
+    chip.append(source, name, badge, kind);
     el.appendChild(chip);
-  }
+  });
 }
 function updateDmgCombatSummary(total, healTotal) {
   const el = $('dm-combat-summary');

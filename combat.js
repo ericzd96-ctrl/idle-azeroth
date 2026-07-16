@@ -310,6 +310,16 @@ function skillFxLabelText(sk){
 const _skillCastCueCooldown = {};
 const _combatRecentSkillCasts = [];
 const _combatRecentSkillCastCooldown = {};
+function combatRecentSkillType(sk, school, actor){
+  if(!sk) return 'skill';
+  if(sk.type === 'heal' || school === 'heal' || sk.heal || sk.healPct) return 'heal';
+  if(school === 'shield' || sk.shieldPct) return 'shield';
+  if(sk.type === 'buff' || sk.type === 'support') return 'buff';
+  if(sk.type === 'summon' || sk.summonCount) return 'summon';
+  if(actor === 'boss' && (sk.threat === 'high' || sk.threat === 'extreme' || sk._empowered)) return 'danger';
+  if(sk.type === 'dmg' || sk.mul) return 'dmg';
+  return 'skill';
+}
 function recordCombatSkillCast(sk, opts){
   if(!sk || !sk.name) return;
   const now = Date.now();
@@ -321,11 +331,14 @@ function recordCombatSkillCast(sk, opts){
   _combatRecentSkillCasts.unshift({
     actor,
     school,
+    type:combatRecentSkillType(sk, school, actor),
+    threat:String(sk.threat || ''),
+    empowered:!!sk._empowered,
     icon:String(sk.icon || ''),
     name:String(sk.name || ''),
     ts:now
   });
-  _combatRecentSkillCasts.splice(4);
+  _combatRecentSkillCasts.splice(5);
 }
 function combatRecentSkillCasts(){
   return _combatRecentSkillCasts.slice();
