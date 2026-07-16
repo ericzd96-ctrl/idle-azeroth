@@ -1687,6 +1687,23 @@ function bossCastOutcomeAdvice(item) {
   if (pct >= 0.10) return heal || defensive || '提前稳血';
   return '压力可控';
 }
+function bossCastHistoryConsequenceText(item) {
+  const kind = String(item?.kind || '');
+  const target = String(item?.target || '');
+  const threat = String(item?.threat || '');
+  const damage = Math.max(0, Math.floor(item?.damage || 0));
+  const heroMax = Math.max(1, state?.hero?.hpMax || 1);
+  const pct = damage / heroMax;
+  if (item?.empowered || threat === 'extreme') return kind === 'dot' ? '灭团持续' : '灭团压血';
+  if (threat === 'high') return kind === 'aoe' ? '高危全体' : '高危点名';
+  if (kind === 'dot') return '持续掉血';
+  if (kind === 'aoe') return '群体压血';
+  if (target.includes('随从')) return '随从承压';
+  if (target.includes('召唤')) return '召唤物挡刀';
+  if (pct >= 0.22) return '重击压血';
+  if (pct >= 0.10) return '中等伤害';
+  return damage > 0 ? '轻度伤害' : '机制结算';
+}
 function updateDmgBossCastHistory() {
   const el = $('dm-boss-cast-history');
   if (!el) return 0;
@@ -1713,9 +1730,10 @@ function updateDmgBossCastHistory() {
     const cls = item.empowered || damage >= heroMax * 0.22 ? 'danger' : (damage >= heroMax * 0.10 ? 'warn' : 'hit');
     const kind = item.kind === 'dot' ? '持续' : (item.kind === 'aoe' ? '群体' : '单体');
     const ago = item.at ? Math.max(0, Math.floor((Date.now() - item.at) / 1000)) : 0;
+    const consequence = bossCastHistoryConsequenceText(item);
     const advice = bossCastOutcomeAdvice(item);
     row.className = `dm-boss-cast-history-item ${cls}`;
-    row.title = `${item.boss || 'BOSS'} 的 ${item.name || '首领技能'} 命中 ${item.target || '目标'},造成 ${fmt(damage)}。建议: ${advice}。`;
+    row.title = `${item.boss || 'BOSS'} 的 ${item.name || '首领技能'} 命中 ${item.target || '目标'},造成 ${fmt(damage)}。后果: ${consequence}。下次建议: ${advice}。`;
     const kindEl = document.createElement('b');
     kindEl.textContent = kind;
     const nameEl = document.createElement('span');
@@ -1724,11 +1742,20 @@ function updateDmgBossCastHistory() {
     const dmgEl = document.createElement('span');
     dmgEl.className = 'dm-boss-cast-history-dmg';
     dmgEl.textContent = fmt(damage);
-    const adviceEl = document.createElement('em');
-    adviceEl.textContent = advice;
+    const reviewEl = document.createElement('em');
+    reviewEl.className = 'dm-boss-cast-history-review';
+    const consequenceEl = document.createElement('span');
+    consequenceEl.className = `dm-boss-cast-history-chip result ${cls}`;
+    consequenceEl.textContent = `果:${consequence}`;
+    consequenceEl.title = `这次读条造成的主要后果: ${consequence}`;
+    const adviceEl = document.createElement('span');
+    adviceEl.className = 'dm-boss-cast-history-chip advice';
+    adviceEl.textContent = `下:${advice}`;
+    adviceEl.title = `下次处理建议: ${advice}`;
+    reviewEl.append(consequenceEl, adviceEl);
     const agoEl = document.createElement('i');
     agoEl.textContent = `${ago}s`;
-    row.append(kindEl, nameEl, dmgEl, adviceEl, agoEl);
+    row.append(kindEl, nameEl, dmgEl, reviewEl, agoEl);
     el.appendChild(row);
   });
   return history.length;
