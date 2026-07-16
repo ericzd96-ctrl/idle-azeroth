@@ -1782,6 +1782,25 @@ function updateDmgMeter() {
     const k = (typeof dmgStats !== 'undefined') ? (dmgStats.kills || 0) : 0;
     killsEl.textContent = String(k);
   }
+  const streakEl = $('dm-streak');
+  if (streakEl) {
+    const streak = (typeof killStreak === 'number') ? killStreak : 0;
+    const fast = (typeof dmgStats !== 'undefined') ? (dmgStats.killFast || 0) : 0;
+    const slow = (typeof dmgStats !== 'undefined') ? (dmgStats.killSlow || 0) : 0;
+    const lastKillAt = (typeof dmgStats !== 'undefined') ? (dmgStats.killTs || 0) : 0;
+    const ago = lastKillAt ? Math.max(0, (Date.now() - lastKillAt) / 1000) : 0;
+    const cls = streak >= 20 ? 'legend' : streak >= 10 ? 'hot' : streak >= 5 ? 'warm' : streak > 0 ? 'active' : 'idle';
+    const text = streak > 0
+      ? `${streak}连 · 最近${ago.toFixed(1)}s`
+      : '-';
+    streakEl.className = `dm-streak ${cls}`;
+    streakEl.textContent = text;
+    if (streak > 0) {
+      streakEl.title = `当前连杀 ${streak}。最快击杀 ${fast ? fast.toFixed(1) + ' 秒' : '暂无'},最慢间隔 ${slow ? slow.toFixed(1) + ' 秒' : '暂无'}。死亡或重置统计会清空连杀。`;
+    } else {
+      streakEl.removeAttribute('title');
+    }
+  }
 
   // 峰值秒伤
   const peakEl = $('dm-peak-dps');
