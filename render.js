@@ -146,6 +146,7 @@ let _dmSampleTotal = 0, _dmSampleTs = 0;   // 峰值秒伤采样基线
 let _dmDpsTrendValue = 0, _dmDpsTrendTs = 0, _dmDpsTrendDir = 'stable', _dmDpsTrendPct = 0;
 let _dmRecentSkillSig = '';
 let _stageSkillChainSig = '';
+let _stageCombatTempoSig = '';
 let _dmCombatSummarySig = '';
 let _dmSkillFxGuideSig = '';
 let _dmCastKitSig = '';
@@ -804,6 +805,44 @@ function updateDmgCombatTempo(total, healTotal) {
       : `<i class="dm-combat-tempo-action ${escapeDmgMeterText(action.cls)}" title="${escapeDmgMeterText(action.title || action.text)}">${escapeDmgMeterText(action.text)}</i>`)
     : '';
   el.innerHTML = `<b>${escapeDmgMeterText(stateMeta.label)}</b><span>${escapeDmgMeterText(stateMeta.detail || '')}</span>${actionHtml}`;
+}
+function updateStageCombatTempo(total, healTotal) {
+  const el = $('stage-combat-tempo');
+  if (!el) return;
+  const now = Date.now();
+  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
+  const list = (typeof combatRecentSkillCasts === 'function') ? combatRecentSkillCasts() : [];
+  const fresh = list.filter(x => now - (x.ts || 0) <= 6500);
+  const active = !!(ds?.start || fresh.length || total > 0 || healTotal > 0);
+  if (!active) {
+    if (_stageCombatTempoSig === '') return;
+    _stageCombatTempoSig = '';
+    el.style.display = 'none';
+    el.className = 'stage-combat-tempo idle';
+    el.replaceChildren();
+    return;
+  }
+  const stateMeta = combatTempoState(now, total, healTotal);
+  const action = combatTempoActionMeta(stateMeta, now);
+  const sig = `${stateMeta.tone}:${stateMeta.label}:${stateMeta.detail}:${action?.text || ''}:${action?.cls || ''}:${fresh.length}`;
+  if (sig === _stageCombatTempoSig && el.style.display !== 'none') return;
+  _stageCombatTempoSig = sig;
+  el.style.display = '';
+  el.className = `stage-combat-tempo ${stateMeta.tone || 'steady'}`;
+  el.title = [stateMeta.title, action?.title].filter(Boolean).join(' ');
+  el.replaceChildren();
+  const label = document.createElement('b');
+  label.textContent = stateMeta.label || '战况';
+  const detail = document.createElement('span');
+  detail.textContent = stateMeta.detail || '';
+  el.append(label, detail);
+  if (action?.text) {
+    const chip = document.createElement('i');
+    chip.className = String(action.cls || stateMeta.tone || 'steady').replace(/[^a-z0-9_ -]/gi, '');
+    chip.textContent = action.text;
+    chip.title = action.title || action.text;
+    el.appendChild(chip);
+  }
 }
 function combatHeatActionMeta(tone, meta, now) {
   const ui = (typeof bossCastUiState === 'function') ? bossCastUiState(now) : null;
@@ -3420,6 +3459,7 @@ function updateDmgMeter() {
   }
   updateDmgRecentSkills();
   updateDmgCombatTempo(total, healTotal);
+  updateStageCombatTempo(total, healTotal);
   updateDmgCombatHeat(total, healTotal, elapsed);
   updateCombatReactionAdvice();
   updateDmgBossCastReadout();
