@@ -1002,6 +1002,8 @@ function showInterruptFx(mon, kind, label){
 }
 const EXECUTE_WINDOW_THRESHOLD = 0.20;
 let executeWindowFxSeen = new Set();
+let heroSurvivalCueBand = '';
+let heroSurvivalCueAt = 0;
 function monsterExecuteFxId(mon){
   if(!mon) return '';
   if(mon._uid != null) return 'uid:' + mon._uid;
@@ -1051,6 +1053,54 @@ function checkMonsterExecuteWindowFx(){
       showMonsterExecuteWindowFx(mon);
     }
   }
+}
+function combatSurvivalSkillKind(skillKey, sk){
+  if(!sk) return '';
+  if(sk.type === 'heal' || sk.heal || sk.healPct) return 'heal';
+  if(typeof isDefensiveSkill === 'function' && isDefensiveSkill(skillKey, sk)) return 'defensive';
+  const text = `${sk.name || ''} ${sk.desc || ''} ${sk.buff || ''}`;
+  if(/治疗|恢复|圣疗|愈合|链疗|宁静|生命/.test(text)) return 'heal';
+  if(/减伤|护盾|盾|屏障|壁垒|防御|格挡|闪避|圣盾|守护|树皮|冰箱|庇护/.test(text)) return 'defensive';
+  return '';
+}
+function combatSkillReadyForCue(skillKey, sk, now){
+  if(!sk) return false;
+  const cdLeft = Math.max(0, (state.skillCooldowns?.[skillKey] || 0) - now);
+  if(cdLeft > 0) return false;
+  let cost = Math.max(0, sk.mp || 0);
+  if(state.hero?.costReduction > 0 && cost > 0) cost = Math.max(1, Math.floor(cost * (1 - state.hero.costReduction / 100)));
+  if(sk.consumeRage && getCls()?.resKey === 'rage') cost = Math.min(Math.max(10, cost), Math.max(10, state.resource || 0));
+  return (state.resource || 0) >= cost;
+}
+function bestCombatSurvivalCueSkill(now){
+  const c = getCls();
+  let best = null;
+  for(const key of (state.selectedSkills || [])){
+    const sk = c?.skills?.[key];
+    const kind = combatSurvivalSkillKind(key, sk);
+    if(!kind || !combatSkillReadyForCue(key, sk, now)) continue;
+    const score = (kind === 'heal' ? 100 : 80) + (sk.healPct || 0) * 120 + (sk.shieldPct || 0) * 100 - Math.max(0, sk.cd || 0);
+    if(!best || score > best.score) best = { key, sk, kind, score };
+  }
+  return best;
+}
+function checkHeroSurvivalCue(now){
+  if(!state?.hero || !(state.hero.hpMax > 0) || state.hp <= 0) return;
+  const pct = Math.max(0, Math.min(1, state.hp / state.hero.hpMax));
+  let band = '';
+  if(pct <= 0.12) band = 'critical';
+  else if(pct <= 0.20) band = 'danger';
+  else if(pct <= 0.35) band = 'warn';
+  if(!band){ heroSurvivalCueBand = ''; return; }
+  if(heroSurvivalCueBand === band && now - heroSurvivalCueAt < 8500) return;
+  heroSurvivalCueBand = band;
+  heroSurvivalCueAt = now;
+  const skill = bestCombatSurvivalCueSkill(now);
+  const hpPct = Math.max(1, Math.round(pct * 100));
+  const title = band === 'critical' ? `濒死 ${hpPct}%` : (band === 'danger' ? `危险 ${hpPct}%` : `低血 ${hpPct}%`);
+  const detail = skill?.sk?.name ? `按 ${skill.sk.name}` : (band === 'warn' ? '准备保命' : '开治疗/减伤');
+  combatCueLanePush(title, detail, band === 'warn' ? 'shield' : 'danger');
+  if(typeof stageEdgeFx === 'function') stageEdgeFx(band === 'warn' ? 'shield' : 'critical', { intensity:band === 'critical' ? 1.2 : .88 });
 }
 function bossCastIsDamage(cast){
   return !!(cast && typeof cast.mul === 'number' && cast.mul > 0 && cast.type !== 'heal' && cast.type !== 'buff' && cast.type !== 'support' && !cast.summonCount);
@@ -10198,6 +10248,7 @@ function tickBattle(now){
   focusHighestThreat();                                 // 锁定仇恨最高的敌人为焦点([0])
   let mon=state.currentMonsters[0];
   checkMonsterExecuteWindowFx();
+  checkHeroSurvivalCue(now);
   applyCouncilBossMechanics(now);
   applyDungeonBossSpectacleMechanics(now);
   applyDungeonBossDirectorMechanics(now);
@@ -11599,6 +11650,7 @@ function resetCombatState(){
   if(typeof resetDmgStats==='function')resetDmgStats();
   if(typeof killStreak==='number')killStreak=0;
   if(typeof executeWindowFxSeen!=='undefined' && executeWindowFxSeen?.clear) executeWindowFxSeen.clear();
+  if(typeof heroSurvivalCueBand!=='undefined'){heroSurvivalCueBand='';heroSurvivalCueAt=0;}
   compSkillCd={};
   hideHeroCastBar();
   hideBossCastBar();
