@@ -271,10 +271,10 @@ function skillVisualSchool(skillKey, sk, actor){
   if(/冰|霜|寒|雪|冻结|冰枪|冰风暴|凛风|frost|ice|freeze|blizzard|chill/.test(text) || sk.freeze) return 'frost';
   if(/奥术|奥能|法力|魔网|星|星辰|星落|时序|时间|相位|传送|折跃|arcane|mana|time|phase|star|warp/.test(text) || sk.manaDrain || sk.mirror) return 'arcane';
   if(/自然|闪电|雷|风暴|大地|治疗波|月火|阳炎|根须|毒|毒液|瘟毒|图腾|nature|storm|lightning|earth|wrath|poison|venom|totem/.test(text)) return 'nature';
-  if(/暗影|虚空|死亡|邪|恶魔|痛苦|腐蚀|吸血|灵魂|恐惧|凋零|诅咒|末日|shadow|void|death|fel|soul|fear|decay|curse|doom/.test(text) || sk.fear || sk.soulLink || sk.soulDrain || sk.plague || sk.decay || sk.decay2) return 'shadow';
+  if(/暗影|虚空|死亡|邪|恶魔|痛苦|腐蚀|吸血|灵魂|恐惧|凋零|诅咒|末日|毁灭|处刑|禁令|敕令|点名|shadow|void|death|fel|soul|fear|decay|curse|doom/.test(text) || sk.fear || sk.soulLink || sk.soulDrain || sk.plague || sk.decay || sk.decay2) return 'shadow';
   if(/圣|光|神圣|审判|制裁|祝福|holy|light|judgement|justice/.test(text)) return 'holy';
-  if(/射击|瞄准|箭|斩|击|猛击|冲锋|撕咬|爪|刃|拳|踢|物理|shot|strike|slash|cleave|charge|bite|claw|kick/.test(text)) return 'physical';
   if(actor === 'boss' && (sk.threat === 'high' || sk.threat === 'extreme' || sk._empowered)) return 'shadow';
+  if(/射击|瞄准|箭|斩|击|猛击|冲锋|撕咬|爪|刃|拳|踢|物理|shot|strike|slash|cleave|charge|bite|claw|kick/.test(text)) return 'physical';
   return 'physical';
 }
 function skillSupportVisualSchool(skillKey, sk, actor){
@@ -12230,6 +12230,7 @@ function tickCast(now){
           for(const unit of livingAllySummons(now)){
             const sd=calcDmg(rawAtk,unit.def || 0,0,0,false,state.hero.lvl,mon.lvl,{tightVar:true});
             applyAllySummonDamage(unit,sd.dmg,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ffb4c1',now});
+            if(bossCastEl && typeof allySummonAnchor === 'function') showSkillImpactFx(bossCastEl, allySummonAnchor(unit), bc, { actor:'boss', amount:sd.dmg, targetMax:unit.hpMax || state.hero.hpMax, threat:bc.threat, empowered:bc._empowered, trail:false, scale:0.74, pulse:'danger', tag:false });
             castTotalDamage += sd.dmg;
             if(!castTargets.includes('召唤物')) castTargets.push('召唤物');
           }
@@ -12254,6 +12255,7 @@ function tickCast(now){
             const unit = target.unit;
             const d3=calcDmg(rawAtk,unit.def || 0,0,0,false,state.hero.lvl,mon.lvl,{tightVar:true});
             applyAllySummonDamage(unit,d3.dmg,mon,{label:t=>'💀'+bc.icon+'-'+t,color:'#ffb4c1',now});
+            if(bossCastEl && typeof allySummonAnchor === 'function') showSkillImpactFx(bossCastEl, allySummonAnchor(unit), bc, { actor:'boss', amount:d3.dmg, targetMax:unit.hpMax || state.hero.hpMax, threat:bc.threat, empowered:bc._empowered, scale:0.82, pulse:'danger' });
             if(bc.lifeSteal)mon.hp=Math.min(mon.hpMax,mon.hp+Math.floor(d3.dmg*bc.lifeSteal));
             log(`🛡️ ${unit.baseName || unit.name} 挡下了 ${bc.icon || '✨'}!`,'info');
             trackBossCastOutcome(bc, mon, { target:unit.baseName || unit.name || '召唤物', damage:d3.dmg, kind:'single' });

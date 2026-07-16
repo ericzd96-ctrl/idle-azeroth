@@ -9352,6 +9352,10 @@ button.dm-combat-tempo-action.ready.skill-pressed {
 .dm-reaction-row { align-items: stretch; }
 .dm-reaction {
   flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
   min-width: 0;
   padding: 2px 6px;
   border-radius: 5px;
@@ -9362,6 +9366,46 @@ button.dm-combat-tempo-action.ready.skill-pressed {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.dm-reaction-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dm-reaction-action {
+  flex: 0 0 auto;
+  max-width: 96px;
+  padding: 0 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(96,165,250,.36);
+  background: rgba(30,64,175,.24);
+  color: #bfdbfe;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1.35;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: transform .14s ease, filter .14s ease, box-shadow .14s ease;
+}
+.dm-reaction-action:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.16);
+}
+.dm-reaction-action.skill-pressed {
+  transform: translateY(1px) scale(.97);
+  filter: brightness(1.30);
+}
+.dm-reaction-action.heal {
+  color: #bbf7d0;
+  border-color: rgba(52,211,153,.38);
+  background: rgba(6,95,70,.26);
+}
+.dm-reaction-action.defense {
+  color: #bfdbfe;
+  border-color: rgba(96,165,250,.38);
+  background: rgba(30,64,175,.26);
 }
 .dm-reaction.idle {
   color: #a7f3d0;

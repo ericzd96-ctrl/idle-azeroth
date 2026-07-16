@@ -951,6 +951,7 @@ function updateCombatReactionAdvice() {
   let cls = 'idle';
   let text = '稳定输出';
   let title = '当前没有需要立即处理的战斗事件。';
+  let actionEntry = null;
   if (ui) {
     const remain = Math.max(0, Math.ceil((ui.remainMs || 0) / 1000));
     const remainText = ui.finalWindow && ui.remainMs < 1000 ? `${Math.max(0.1, ui.remainMs / 1000).toFixed(1)}秒` : `${remain}秒`;
@@ -1037,11 +1038,20 @@ function updateCombatReactionAdvice() {
       text = `稳住 · ${sourceCounter || '留保命'} · ${sourceText}`;
       title = `目前可继续输出,但本场主要承伤来源是 ${sourceText}。建议: ${sourceCounter || '下次遇到同类技能可留减伤或治疗'}。`;
     }
+    actionEntry = combatAdviceRecommendedEntry(now);
   }
   if (ui?.finalWindow && cls !== 'idle') cls += ' final';
   el.className = `dm-reaction ${cls}`;
   el.title = title;
-  if (el.textContent !== text) el.textContent = text;
+  const canAct = !ui && cls !== 'idle' && actionEntry?.ready && actionEntry?.key && actionEntry?.sk;
+  const sig = `${cls}|${text}|${canAct ? actionEntry.key + ':' + actionEntry.sk.name : ''}`;
+  if (el.dataset.sig === sig) return;
+  el.dataset.sig = sig;
+  if (canAct) {
+    el.innerHTML = `<span class="dm-reaction-text">${escapeDmgMeterText(text)}</span><button type="button" class="dm-reaction-action ${actionEntry.kind === 'heal' ? 'heal' : 'defense'}" data-action="pressurecast" data-skill="${escapeDmgMeterText(actionEntry.key)}" title="${escapeDmgMeterText('建议立即使用 ' + (actionEntry.sk.name || '技能') + ': ' + (actionEntry.reason || '处理当前压力'))}">按 ${escapeDmgMeterText(actionEntry.sk.name || '技能')}</button>`;
+  } else {
+    el.textContent = text;
+  }
 }
 function updateDmgLastHit() {
   const el = $('dm-last-hit');
