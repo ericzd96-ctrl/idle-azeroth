@@ -6156,6 +6156,16 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   border-color: rgba(250,204,21,.54);
   background: linear-gradient(180deg, rgba(113,63,18,.58), rgba(15,23,42,.62));
 }
+.combat-cue-toast.kill {
+  color: #fde68a;
+  border-color: rgba(251,191,36,.52);
+  background: linear-gradient(180deg, rgba(113,63,18,.54), rgba(15,23,42,.62));
+}
+.combat-cue-toast.boss {
+  color: #fef3c7;
+  border-color: rgba(250,204,21,.68);
+  background: linear-gradient(180deg, rgba(146,64,14,.70), rgba(15,23,42,.68));
+}
 .combat-cue-toast.heal {
   color: #bbf7d0;
   border-color: rgba(52,211,153,.50);

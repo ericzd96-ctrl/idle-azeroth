@@ -10588,6 +10588,7 @@ function onMonsterDeath(mon){
   const deathName = mon.bossName || mon.name || '敌人';
   showMonsterDeathFx(mon);
   combatEventBanner(mon.isBoss ? '首领击败' : '击杀', deathName, mon.isBoss ? 'boss' : 'kill');
+  combatKillRecapCue(mon);
   // 大秘境词缀:崩裂/血池
   if (mon._affixes) {
     for (const af of mon._affixes) {
@@ -12274,6 +12275,36 @@ function killStreakToast(n){
   const el=document.createElement('div');el.className='killstreak-toast';el.textContent='🔥 连杀 '+n+'!';
   st.appendChild(el);setTimeout(()=>el.remove(),1100);
   combatEventBanner('连杀 '+n, '战斗节奏提升', 'kill');
+}
+let _lastKillRecapCueTs = 0;
+function combatKillRecapCue(mon){
+  if(typeof document==='undefined'||document.hidden||!mon)return;
+  const now=Date.now();
+  const important=!!(mon.isBoss||mon.isWorldBoss||mon.isRareElite||mon._isRaid||mon._isEpicRaid||mon._fieldCommander||mon._roomReward);
+  const elapsedSec=mon._spawnAt?Math.max(.1,(now-mon._spawnAt)/1000):0;
+  const streak=typeof killStreak==='number'?killStreak:0;
+  const fast=elapsedSec>0&&elapsedSec<=(important?18:2.4);
+  if(!important&&!(fast&&streak>=3&&streak%3===0))return;
+  if(!important&&now-_lastKillRecapCueTs<1500)return;
+  _lastKillRecapCueTs=now;
+  const hp=Math.max(1,mon.hpMax||mon.hp||1);
+  const killDps=elapsedSec?Math.round(hp/elapsedSec):0;
+  const heroDmg=dmgStats?.hero||0;
+  const compDmg=dmgStats?.comp||0;
+  const total=Math.max(1,heroDmg+compDmg);
+  const leader=compDmg>heroDmg?'随从':'主角';
+  const leaderPct=Math.round(Math.max(heroDmg,compDmg)/total*100);
+  const healShield=(dmgStats?.heroHeal||0)+(dmgStats?.compHeal||0)+(dmgStats?.heroShield||0)+(dmgStats?.compShield||0);
+  const taken=(dmgStats?.taken||0)+(dmgStats?.compTaken||0);
+  const cover=healShield-taken;
+  const parts=[];
+  if(elapsedSec)parts.push(`耗时 ${elapsedSec<10?elapsedSec.toFixed(1):Math.round(elapsedSec)}秒`);
+  if(killDps)parts.push(`击杀DPS ${fmt(killDps)}`);
+  if(heroDmg||compDmg)parts.push(`${leader}主导 ${leaderPct}%`);
+  if(taken||healShield)parts.push(cover>=0?`覆盖 +${fmt(cover)}`:`缺口 -${fmt(Math.abs(cover))}`);
+  if(!parts.length)return;
+  const title=important?(mon.isBoss?'首领小结':'精英小结'):'速杀小结';
+  combatCueToast(title, parts.slice(0,3).join(' · '), important?'boss':'kill');
 }
 function normalizeCombatSchoolKey(school){const key=String(school||'').replace(/[^a-z0-9_-]/gi,'');return /^(fire|frost|arcane|nature|shadow|holy|physical|heal|shield)$/.test(key)?key:'';}
 function trackDmg(src,amt,isCrit,skillLabel,meta){
