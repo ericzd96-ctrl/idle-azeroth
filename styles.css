@@ -7041,6 +7041,61 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   display: flex; align-items: center; gap: 4px;
   transition: all .15s; user-select: none; min-width: 70px; justify-content: center;
 }
+.skill-btn .sk-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.skill-btn .sk-role {
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,.22);
+  background: rgba(2,6,23,.30);
+  color: #cbd5e1;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1;
+}
+.skill-btn .sk-role.interrupt {
+  color: #fecaca;
+  border-color: rgba(248,113,113,.42);
+  background: rgba(127,29,29,.28);
+}
+.skill-btn .sk-role.heal {
+  color: #bbf7d0;
+  border-color: rgba(52,211,153,.34);
+  background: rgba(6,95,70,.24);
+}
+.skill-btn .sk-role.defensive {
+  color: #bfdbfe;
+  border-color: rgba(96,165,250,.34);
+  background: rgba(30,64,175,.22);
+}
+.skill-btn .sk-role.control {
+  color: #ddd6fe;
+  border-color: rgba(168,85,247,.34);
+  background: rgba(88,28,135,.24);
+}
+.skill-btn .sk-role.burst {
+  color: #fde68a;
+  border-color: rgba(250,204,21,.38);
+  background: rgba(113,63,18,.24);
+}
+.skill-btn .sk-role.summon,
+.skill-btn .sk-role.buff {
+  color: #bae6fd;
+  border-color: rgba(56,189,248,.30);
+  background: rgba(8,47,73,.22);
+}
+.skill-btn .sk-role.damage {
+  color: #e5e7eb;
+}
 .skill-btn:hover:not(:disabled) { background: #2d345a; border-color: #6ee7b7; }
 .skill-btn.skill-pressed:not(:disabled) {
   transform: translateY(1px) scale(.98);

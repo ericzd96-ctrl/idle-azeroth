@@ -3786,6 +3786,21 @@ function skillAutoRoleTagsHtml(skillKey, sk) {
   return `<div class="skill-role-tags">${tags.map(t => `<span class="skill-role-tag ${t.cls}">${tipAttrText(t.text)}</span>`).join('')}</div>`;
 }
 
+function skillButtonRoleTag(skillKey, sk) {
+  if (!sk) return { label:'技', cls:'skill', title:'技能' };
+  const text = `${skillKey || ''} ${sk.name || ''} ${sk.desc || ''} ${sk.buff || ''}`;
+  if (sk.type === 'interrupt' || sk.interruptCast) return { label:'断', cls:'interrupt', title:'打断/控场' };
+  const response = (typeof bossCastResponseKind === 'function') ? bossCastResponseKind(skillKey, sk) : '';
+  if (response === 'heal' || sk.type === 'heal' || sk.heal || sk.healPct) return { label:'疗', cls:'heal', title:'治疗' };
+  if (response === 'defensive' || sk.shieldPct || /护盾|减伤|格挡|屏障|壁垒|守护|防御/.test(text)) return { label:'护', cls:'defensive', title:'护盾/减伤' };
+  if (sk.stun || sk.freeze || sk.fear || sk.silence || sk.disarm || /眩晕|冰冻|恐惧|沉默|缴械|变羊|制裁/.test(text)) return { label:'控', cls:'control', title:'控场' };
+  if (sk.type === 'summon' || sk.summonCount) return { label:'召', cls:'summon', title:'召唤' };
+  if (sk.type === 'buff' || /祝福|增益|强化|爆发增幅|提高/.test(text)) return { label:'增', cls:'buff', title:'增益' };
+  if (sk.type === 'dmg' && ((sk.mul || 0) >= 3 || sk.consumeRage || sk.alwaysCrit || (sk.cd || 0) >= 12 || /爆发|终结|处决|斩杀|炎爆|混乱|审判|瞄准/.test(text))) return { label:'爆', cls:'burst', title:'爆发伤害' };
+  if (sk.type === 'dmg' || sk.mul) return { label:'伤', cls:'damage', title:'伤害' };
+  return { label:'技', cls:'skill', title:'技能' };
+}
+
 function getTalentRow(t, idx) {
   if (typeof t.req === 'number' && t.req > 0) {
     for (let i = TALENT_ROW_REQ.length - 1; i >= 0; i--) {
@@ -4180,11 +4195,13 @@ function renderSkillBar() {
     const tip = `${baseTip}${bossPrompt ? `\nBoss读条: ${bossPrompt.tip}` : ''}${vulnPrompt ? `\n破绽窗口: ${vulnPrompt.tip}` : ''}`.replace(/"/g, '&quot;');
     const baseTipAttr = baseTip.replace(/"/g, '&quot;');
     const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, sk.icon) : sk.icon;
+    const roleTag = skillButtonRoleTag(key, sk);
     const bossPromptClass = bossPrompt ? `boss-cast-prompt ${bossPrompt.cls || ''} ${bossPrompt.final ? 'boss-cast-final' : ''}` : '';
     const vulnPromptClass = vulnPrompt ? `vuln-window-prompt ${vulnPrompt.cls || ''} ${vulnPrompt.final ? 'vuln-window-final' : ''}` : '';
-    return `<button class="skill-btn ${onCd?'on-cd':''} ${useStateClass} ${bossPromptClass} ${vulnPromptClass}" data-skill="${key}" data-cd-active="${onCd?'1':'0'}" data-resource-ready="${hasMp?'1':'0'}" data-cd-total="${cdTotalMs}" draggable="true" title="${tip}" data-base-title="${baseTipAttr}"
+    return `<button class="skill-btn skill-role-${roleTag.cls} ${onCd?'on-cd':''} ${useStateClass} ${bossPromptClass} ${vulnPromptClass}" data-skill="${key}" data-cd-active="${onCd?'1':'0'}" data-resource-ready="${hasMp?'1':'0'}" data-cd-total="${cdTotalMs}" draggable="true" title="${tip}" data-base-title="${baseTipAttr}"
       style="--cd-angle:${cdAngle}deg;${bossPrompt ? `--boss-cast-pct:${Math.round(bossPrompt.timerPct || 0)}%;` : ''}${vulnPrompt ? `--skill-window-pct:${Math.round(vulnPrompt.timerPct || 0)}%;` : ''}${coreMatch&&!onCd?'border-color:#38bdf8;box-shadow:0 0 0 1px rgba(56,189,248,.50),0 0 14px rgba(56,189,248,.18)':(procMatch&&!onCd?'border-color:#facc15;box-shadow:0 0 0 1px rgba(250,204,21,.45)':(!onCd&&hasMp?'border-color:var(--accent)':''))}">
-      <span>${skillIconHtml} ${sk.name}</span>
+      <span class="sk-name">${skillIconHtml} ${sk.name}</span>
+      <span class="sk-role ${roleTag.cls}" title="${roleTag.title}">${roleTag.label}</span>
       <span class="mp-cost">${coreMatch?'✹ ':(procMatch?'✦ ':'')}${useCost}${c.resKey==='rage'?'怒':c.resKey==='energy'?'能':'蓝'}</span>
       ${onCd?`<div class="cd-overlay" style="--cd-angle:${cdAngle}deg">${(cdMs/1000).toFixed(1)}秒</div>`:''}
       ${actionPrompt ? `<span class="sk-alert">${actionPrompt.label}</span>` : ''}
