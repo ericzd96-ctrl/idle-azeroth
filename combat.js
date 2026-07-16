@@ -1370,6 +1370,31 @@ function showBossCastRhythmFx(cast, mon, opts){
     setTimeout(() => el.remove(), fxDuration + 100);
   }
 }
+function showEnemyInstantSkillFx(mon, targetEl, skill, opts){
+  if(!mon || !skill || !targetEl || typeof document === 'undefined' || document.hidden) return;
+  const sourceEl = monsterFloatAnchor(mon);
+  if(!sourceEl) return;
+  const danger = monsterSkillDangerLevel(skill) > 0 || !!mon.isBoss || (opts?.taken || 0) >= (state?.hero?.hpMax || 1) * 0.08;
+  const school = skillVisualSchool(null, skill, 'boss');
+  showSkillCastFx(sourceEl, skill, {
+    actor:'boss',
+    school,
+    small:true,
+    pulse:danger ? 'danger' : 'bosscast',
+    duration:danger ? 420 : 320,
+    label:danger ? undefined : false,
+    cue:false
+  });
+  showSkillImpactFx(sourceEl, targetEl, skill, {
+    actor:'boss',
+    school,
+    scale:danger ? 0.9 : 0.72,
+    pulse:danger ? 'danger' : 'hit',
+    duration:danger ? 520 : 430,
+    record:false,
+    trail:true
+  });
+}
 
 /* ---------- 天赋特效运行时 ---------- */
 function talentAuraMeta(key){ return (typeof TALENT_AURA_LIBRARY === 'object' && TALENT_AURA_LIBRARY[key]) || null; }
@@ -10714,6 +10739,7 @@ function tickBattle(now){
       const cd=calcDmg(matk,cst?cst.def:0,critRate,(m.critMult?m.critMult*100:150),false,state.hero.lvl,m.lvl);
       const tc=applyCompanionDamage(Math.max(1,cd.dmg),m,{label:t=>(kindFloat?kindFloat+' ':'')+'-'+t,color:'#ff9aa0',now});
       if(tc > 0) showBasicAttackFx(monsterFloatAnchor(m), $('comp-mini'), { actor:'monster', crit:cd.crit, dangerous:m.isBoss || !!kindSkill, scale:m.isBoss ? 1.12 : 1 });
+      if(kindSkill && tc > 0) showEnemyInstantSkillFx(m, $('comp-mini'), kindSkill, { taken:tc });
       if(typeof pulseCombatEl === 'function') pulseCombatEl($('comp-mini'), (m.isBoss || tc >= ((computeCompanionStats()?.hpMax || 1) * 0.12)) ? 'danger' : 'comp', m.isBoss ? 300 : 220);
       if(kindSkill)skillEffects(kindSkill,m,tc,now,{allowFallback:false,target:'companion'});
       continue;   // 这只怪打了随从,英雄本拍不挨打、不进怒气
@@ -10722,6 +10748,7 @@ function tickBattle(now){
       const sd=calcDmg(matk,target.unit.def || 0,critRate,(m.critMult?m.critMult*100:150),false,state.hero.lvl,m.lvl);
       applyAllySummonDamage(target.unit,Math.max(1,sd.dmg),m,{label:t=>(kindFloat?kindFloat+' ':'')+'-'+t,color:'#ffb4c1',now});
       if(typeof allySummonAnchor === 'function') showBasicAttackFx(monsterFloatAnchor(m), allySummonAnchor(target.unit), { actor:'monster', crit:sd.crit, dangerous:m.isBoss || !!kindSkill, scale:m.isBoss ? 1.1 : .96 });
+      if(kindSkill && typeof allySummonAnchor === 'function') showEnemyInstantSkillFx(m, allySummonAnchor(target.unit), kindSkill, { taken:sd.dmg });
       continue;
     }
     // —— 命中英雄(原逻辑) ——
@@ -10734,6 +10761,7 @@ function tickBattle(now){
     taken=resolveMonsterDamageTaken(m,taken);
     taken=applyHeroDamage(taken,m,{label:t=>'-'+t,color:'#ff7a7a',now,skillName:kindSkill?.name || ''});
     if(taken > 0) showBasicAttackFx(monsterFloatAnchor(m), $('hero-emoji'), { actor:'monster', crit:d.crit, dangerous:m.isBoss || !!kindSkill || taken >= state.hero.hpMax * 0.10, scale:m.isBoss ? 1.14 : 1 });
+    if(kindSkill && taken > 0) showEnemyInstantSkillFx(m, $('hero-emoji'), kindSkill, { taken });
     if(kindSkill)skillEffects(kindSkill,m,taken,now,{allowFallback:false});
     processTalentLowHp(m,now);
     totalDmg+=taken;
