@@ -8667,6 +8667,9 @@ button.legend:hover:not(:disabled) {
 .dm-last-hit {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
   padding: 2px 6px;
   border-radius: 5px;
   border: 1px solid rgba(148,163,184,.22);
@@ -8677,16 +8680,53 @@ button.legend:hover:not(:disabled) {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.dm-last-hit-target,
+.dm-last-hit-amount,
+.dm-last-hit-source,
+.dm-last-hit-ago {
+  flex: 0 0 auto;
+  min-width: 0;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(2,6,23,.28);
+  line-height: 1.35;
+  white-space: nowrap;
+}
+.dm-last-hit-amount {
+  color: #fecaca;
+  font-weight: 900;
+}
+.dm-last-hit-source {
+  flex: 1 1 auto;
+  max-width: 46%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #cbd5e1;
+}
+.dm-last-hit-ago {
+  color: #94a3b8;
+}
 .dm-last-hit.warn {
   color: #fde68a;
   border-color: rgba(251,191,36,.34);
   background: rgba(113,63,18,.18);
+}
+.dm-last-hit.warn .dm-last-hit-target {
+  color: #fef3c7;
+  background: rgba(113,63,18,.28);
 }
 .dm-last-hit.danger {
   color: #fecaca;
   border-color: rgba(248,113,113,.42);
   background: rgba(127,29,29,.22);
   box-shadow: inset 0 0 10px rgba(248,113,113,.10);
+}
+.dm-last-hit.danger .dm-last-hit-target {
+  color: #fff1f2;
+  background: rgba(127,29,29,.34);
+}
+.dm-last-hit.danger .dm-last-hit-source {
+  color: #fecaca;
 }
 .dm-top-skill-row { align-items: stretch; }
 .dm-top-skill {

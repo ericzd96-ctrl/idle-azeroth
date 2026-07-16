@@ -594,6 +594,7 @@ function updateDmgLastHit() {
   const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
   if (!ds || (!ds.lastTakenAt && !ds.lastCompTakenAt)) {
     el.className = 'dm-last-hit idle';
+    el.dataset.sig = '';
     el.textContent = '-';
     el.removeAttribute('title');
     return;
@@ -615,9 +616,12 @@ function updateDmgLastHit() {
   let cls = boss || pct >= 0.16 ? 'danger' : (pct >= 0.07 ? 'warn' : 'idle');
   const sourceText = [source, skill].filter(Boolean).join(' · ');
   const agoText = ago < 60 ? `${ago}秒前` : `${Math.floor(ago / 60)}分钟前`;
-  const text = `${target} -${fmt(amount)} · ${sourceText || '未知来源'}`;
+  const html = `<span class="dm-last-hit-target">${escapeDmgMeterText(target)}</span><span class="dm-last-hit-amount">-${fmt(amount)}</span><span class="dm-last-hit-source">${escapeDmgMeterText(sourceText || '未知来源')}</span><span class="dm-last-hit-ago">${escapeDmgMeterText(agoText)}</span>`;
   el.className = `dm-last-hit ${cls}`;
-  el.textContent = text;
+  if (el.dataset.sig !== html) {
+    el.dataset.sig = html;
+    el.innerHTML = html;
+  }
   el.title = `最近承伤: ${target} 在${agoText}受到 ${fmt(amount)} 点伤害。来源: ${sourceText || '未知来源'}。${boss ? '首领技能或首领攻击。' : ''}`;
 }
 function escapeDmgMeterText(value) {
