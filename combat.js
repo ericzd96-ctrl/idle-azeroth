@@ -251,19 +251,26 @@ function monsterFloatAnchor(mon){
 }
 function showMonsterFloat(mon, text, color, opts){ showFloat(monsterFloatAnchor(mon), text, color, opts); }
 function pulseMonsterEl(mon, kind, duration){ if(typeof pulseCombatEl === 'function') pulseCombatEl(monsterFloatAnchor(mon), kind, duration); }
+function normalizeSkillFxSchool(school){
+  const safe = String(school || '').replace(/[^a-z0-9_-]/gi, '').toLowerCase();
+  return /^(fire|frost|arcane|nature|shadow|holy|physical|heal|shield)$/.test(safe) ? safe : '';
+}
 function skillVisualSchool(skillKey, sk, actor){
   if(!sk) return 'physical';
-  if(sk.school) return sk.school;
+  const explicitSchool = normalizeSkillFxSchool(sk.school);
+  if(explicitSchool) return explicitSchool;
   if(sk.type === 'heal' || sk.heal || sk.healPct) return 'heal';
   if(sk.type === 'buff' && /盾|护|壁|屏障|格挡|防御|守护|shield|barrier/i.test(`${sk.name || ''} ${sk.desc || ''} ${sk.buff || ''}`)) return 'shield';
   const text = `${skillKey || ''} ${sk.name || ''} ${sk.desc || ''} ${sk.icon || ''} ${sk.buff || ''}`.toLowerCase();
-  if(/火|炎|焰|灼|燃|熔|爆|凤凰|龙息|fire|flame|burn|ignite|pyro/.test(text) || sk.dot || sk.dotSkill) return 'fire';
-  if(/冰|霜|寒|雪|冻结|冰枪|冰风暴|frost|ice|freeze|blizzard/.test(text) || sk.freeze) return 'frost';
-  if(/奥术|奥能|法力|魔网|星|时序|时间|相位|arcane|mana|time|phase/.test(text) || sk.manaDrain || sk.mirror) return 'arcane';
-  if(/自然|闪电|雷|风暴|大地|治疗波|月火|阳炎|根须|nature|storm|lightning|earth|wrath/.test(text)) return 'nature';
-  if(/暗影|虚空|死亡|邪|恶魔|痛苦|腐蚀|吸血|灵魂|恐惧|shadow|void|death|fel|soul|fear/.test(text) || sk.fear || sk.soulLink || sk.soulDrain || sk.plague || sk.decay || sk.decay2) return 'shadow';
+  if(/治疗|恢复|愈合|回春|生命绽放|活血|圣疗|heal|mend|renew|rejuvenation|lifebloom/.test(text)) return 'heal';
+  if(/盾|护盾|屏障|壁垒|守护|格挡|防御|保护|shield|barrier|guard|ward|protection/.test(text) || sk.shieldPct) return 'shield';
+  if(/火|炎|焰|灼|燃|熔|爆|炸弹|流星|陨石|凤凰|龙息|野火|fire|flame|burn|ignite|pyro|meteor|wildfire|bomb/.test(text) || sk.dotSkill) return 'fire';
+  if(/冰|霜|寒|雪|冻结|冰枪|冰风暴|凛风|frost|ice|freeze|blizzard|chill/.test(text) || sk.freeze) return 'frost';
+  if(/奥术|奥能|法力|魔网|星|星辰|星落|时序|时间|相位|传送|折跃|arcane|mana|time|phase|star|warp/.test(text) || sk.manaDrain || sk.mirror) return 'arcane';
+  if(/自然|闪电|雷|风暴|大地|治疗波|月火|阳炎|根须|毒|毒液|瘟毒|图腾|nature|storm|lightning|earth|wrath|poison|venom|totem/.test(text)) return 'nature';
+  if(/暗影|虚空|死亡|邪|恶魔|痛苦|腐蚀|吸血|灵魂|恐惧|凋零|诅咒|末日|献祭|shadow|void|death|fel|soul|fear|decay|curse|doom/.test(text) || sk.fear || sk.soulLink || sk.soulDrain || sk.plague || sk.decay || sk.decay2) return 'shadow';
   if(/圣|光|神圣|审判|制裁|祝福|holy|light|judgement|justice/.test(text)) return 'holy';
-  if(/盾|护盾|屏障|壁垒|防御|shield|barrier/.test(text) || sk.shieldPct) return 'shield';
+  if(/射击|瞄准|箭|斩|击|猛击|冲锋|撕咬|爪|刃|拳|踢|物理|shot|strike|slash|cleave|charge|bite|claw|kick/.test(text)) return 'physical';
   if(actor === 'boss' && (sk.threat === 'high' || sk.threat === 'extreme' || sk._empowered)) return 'shadow';
   return 'physical';
 }
@@ -290,7 +297,7 @@ function skillFxPoint(el){
   return { x:r.left - sr.left + r.width / 2, y:r.top - sr.top + r.height / 2, w:r.width, h:r.height };
 }
 function skillFxClass(school, extra){
-  const safe = String(school || 'physical').replace(/[^a-z0-9_-]/gi, '') || 'physical';
+  const safe = normalizeSkillFxSchool(school) || 'physical';
   return `${extra || ''} school-${safe}`.trim();
 }
 function skillFxLabelText(sk){

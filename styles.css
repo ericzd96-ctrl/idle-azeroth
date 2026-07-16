@@ -5143,6 +5143,51 @@ h1 {
   box-shadow: 0 0 16px var(--skill-fx-color-soft);
   animation: skillBurst var(--skill-fx-duration) ease-out forwards;
 }
+.skill-fx-burst::after {
+  content: "";
+  position: absolute;
+  inset: 18%;
+  border-radius: inherit;
+  border: 1px solid color-mix(in srgb, var(--skill-fx-color) 70%, transparent);
+  opacity: .86;
+  transform: rotate(18deg);
+}
+.skill-fx-burst.school-fire::after {
+  inset: 24% 12%;
+  border-radius: 40% 62% 46% 60%;
+  background: radial-gradient(circle at 50% 82%, rgba(255,255,255,.56), rgba(251,146,60,.38) 38%, transparent 72%);
+}
+.skill-fx-burst.school-frost::after {
+  inset: 15%;
+  border-radius: 4px;
+  transform: rotate(45deg);
+}
+.skill-fx-burst.school-arcane::after {
+  inset: 12%;
+  border-style: dashed;
+  transform: rotate(32deg);
+}
+.skill-fx-burst.school-nature::after {
+  inset: 16% 24%;
+  border-radius: 70% 30% 70% 30%;
+  transform: rotate(-32deg);
+}
+.skill-fx-burst.school-shadow::after {
+  inset: 10%;
+  border-color: rgba(17,24,39,.72);
+  background: radial-gradient(circle, rgba(88,28,135,.38), rgba(2,6,23,.18) 54%, transparent 76%);
+}
+.skill-fx-burst.school-holy::after {
+  inset: 10%;
+  border-radius: 18px;
+  transform: rotate(45deg) scale(.84);
+}
+.skill-fx-burst.school-heal::after,
+.skill-fx-burst.school-shield::after {
+  inset: 12%;
+  border-style: dashed;
+  background: radial-gradient(circle, var(--skill-fx-color-soft), transparent 68%);
+}
 .skill-fx-label {
   z-index: 8;
   max-width: 132px;

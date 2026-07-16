@@ -276,6 +276,14 @@ function updateDmgCombatSummary(total, healTotal) {
   if (ds.vulnWindowHits || 0) chips.push({ tone:'good', text:`窗口 ${ds.vulnWindowHits}次`, title:`破绽窗口命中 ${ds.vulnWindowHits} 次,累计 ${fmt(ds.vulnWindowDamage || 0)}` });
   if (ds.bossCastHits || 0) chips.push({ tone:bossCastDamage > 0 ? 'danger' : 'warn', text:`读条命中 ${ds.bossCastHits}`, title:`首领读条命中 ${ds.bossCastHits} 次,累计 ${fmt(bossCastDamage)}` });
   if (takenTotal > 0) chips.push({ tone:takenTotal > Math.max(healTotal + shieldTotal, 1) ? 'danger' : 'warn', text:`承伤 ${fmt(takenTotal)}`, title:`英雄与随从累计承伤 ${fmt(takenTotal)}` });
+  if (takenTotal > 0 || healTotal + shieldTotal > 0) {
+    const cover = healTotal + shieldTotal - takenTotal;
+    chips.push({
+      tone:cover >= 0 ? 'good' : (Math.abs(cover) > Math.max(1, takenTotal * 0.28) ? 'danger' : 'warn'),
+      text:cover >= 0 ? `覆盖 +${fmt(cover)}` : `缺口 -${fmt(Math.abs(cover))}`,
+      title:`治疗+护盾 ${fmt(healTotal + shieldTotal)},承伤 ${fmt(takenTotal)},生存差额 ${cover >= 0 ? '+' : '-'}${fmt(Math.abs(cover))}`
+    });
+  }
   if (healTotal + shieldTotal > 0) chips.push({ tone:'good', text:`回复 ${fmt(healTotal + shieldTotal)}`, title:`治疗 ${fmt(healTotal)},护盾 ${fmt(shieldTotal)}` });
   const sig = chips.map(c => `${c.tone}:${c.text}`).join('|');
   if (!sig) {
@@ -291,7 +299,7 @@ function updateDmgCombatSummary(total, healTotal) {
   title.className = 'dm-combat-summary-title';
   title.textContent = '本场';
   el.appendChild(title);
-  for (const chip of chips.slice(0, 6)) {
+  for (const chip of chips.slice(0, 7)) {
     const span = document.createElement('span');
     span.className = `dm-combat-summary-chip ${chip.tone}`;
     span.textContent = chip.text;
