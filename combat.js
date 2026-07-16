@@ -264,11 +264,14 @@ function skillVisualSchool(skillKey, sk, actor){
   const text = `${skillKey || ''} ${sk.name || ''} ${sk.desc || ''} ${sk.icon || ''} ${sk.buff || ''}`.toLowerCase();
   if(/治疗|恢复|愈合|回春|生命绽放|活血|圣疗|heal|mend|renew|rejuvenation|lifebloom/.test(text)) return 'heal';
   if(/盾|护盾|屏障|壁垒|守护|格挡|防御|保护|shield|barrier|guard|ward|protection/.test(text) || sk.shieldPct) return 'shield';
-  if(/火|炎|焰|灼|燃|熔|爆|炸弹|流星|陨石|凤凰|龙息|野火|fire|flame|burn|ignite|pyro|meteor|wildfire|bomb/.test(text) || sk.dotSkill) return 'fire';
+  if(/惩击|圣言|圣光|圣火|神圣|审判|制裁|祝福|holy|smite|light|judgement|justice/.test(text)) return 'holy';
+  if(/月火|星火|星涌|星辰|星落|月神|moonfire|starfire|starsurge|starfall/.test(text)) return 'arcane';
+  if(/献祭|烧尽|混乱之箭|火球|炎爆|烈焰震击|凤凰|fire|flame|burn|ignite|immolate|incinerate|chaosbolt|pyro|meteor|wildfire|bomb/.test(text)) return 'fire';
+  if(/火|炎|焰|灼|燃|熔|爆|炸弹|流星|陨石|龙息|野火/.test(text) || sk.dotSkill) return 'fire';
   if(/冰|霜|寒|雪|冻结|冰枪|冰风暴|凛风|frost|ice|freeze|blizzard|chill/.test(text) || sk.freeze) return 'frost';
   if(/奥术|奥能|法力|魔网|星|星辰|星落|时序|时间|相位|传送|折跃|arcane|mana|time|phase|star|warp/.test(text) || sk.manaDrain || sk.mirror) return 'arcane';
   if(/自然|闪电|雷|风暴|大地|治疗波|月火|阳炎|根须|毒|毒液|瘟毒|图腾|nature|storm|lightning|earth|wrath|poison|venom|totem/.test(text)) return 'nature';
-  if(/暗影|虚空|死亡|邪|恶魔|痛苦|腐蚀|吸血|灵魂|恐惧|凋零|诅咒|末日|献祭|shadow|void|death|fel|soul|fear|decay|curse|doom/.test(text) || sk.fear || sk.soulLink || sk.soulDrain || sk.plague || sk.decay || sk.decay2) return 'shadow';
+  if(/暗影|虚空|死亡|邪|恶魔|痛苦|腐蚀|吸血|灵魂|恐惧|凋零|诅咒|末日|shadow|void|death|fel|soul|fear|decay|curse|doom/.test(text) || sk.fear || sk.soulLink || sk.soulDrain || sk.plague || sk.decay || sk.decay2) return 'shadow';
   if(/圣|光|神圣|审判|制裁|祝福|holy|light|judgement|justice/.test(text)) return 'holy';
   if(/射击|瞄准|箭|斩|击|猛击|冲锋|撕咬|爪|刃|拳|踢|物理|shot|strike|slash|cleave|charge|bite|claw|kick/.test(text)) return 'physical';
   if(actor === 'boss' && (sk.threat === 'high' || sk.threat === 'extreme' || sk._empowered)) return 'shadow';
@@ -1266,7 +1269,7 @@ function showBossCastStartFx(cast, mon, opts){
   if(!cast || !mon || typeof document === 'undefined' || document.hidden) return;
   const sourceEl = monsterFloatAnchor(mon);
   if(!sourceEl) return;
-  const school = skillSupportVisualSchool(null, cast, 'boss');
+  const school = bossCastIsDamage(cast) ? skillVisualSchool(null, cast, 'boss') : skillSupportVisualSchool(null, cast, 'boss');
   const dangerous = cast._empowered || cast.threat === 'high' || cast.threat === 'extreme';
   showSkillCastFx(sourceEl, cast, {
     actor:'boss',
@@ -10201,17 +10204,31 @@ function companionSkillDamageMult(sk, mon, now){
   mult *= companionTacticDmgMult();
   return mult;
 }
-function applyCompanionSplash(mon, dmg, pct, icon, color){
+function applyCompanionSplash(mon, dmg, pct, icon, color, opts){
   pct = Math.max(0, pct || 0);
   if(pct <= 0 || !Array.isArray(state.currentMonsters)) return;
+  const sourceEl = opts?.sourceEl || null;
+  const school = opts?.school || skillVisualSchool(null, opts?.skill, 'companion');
+  let fxCount = 0;
   for(const target of state.currentMonsters){
     if(target === mon || target.hp <= 0) continue;
     let splash = Math.max(1, Math.floor(dmg * pct));
     splash = absorbMonsterBarrier(target, splash, icon || '💥').remaining;
     if(splash <= 0) continue;
     target.hp -= splash;
-    trackDmg('comp', splash);
+    trackDmg('comp', splash, false, opts?.skill?.name || '随从溅射', { school });
     showMonsterFloat(target, (icon || '💥') + '-' + splash, color || '#fca5a5', allySideFloatOpts({ variant:'comp' }));
+    if(sourceEl && fxCount < 4){
+      showSkillImpactFx(sourceEl, monsterFloatAnchor(target), opts?.skill || { name:'随从溅射', icon:icon || '💥' }, {
+        actor:'companion',
+        school,
+        trail:fxCount < 2,
+        scale:.62,
+        pulse:'comp',
+        duration:430
+      });
+      fxCount++;
+    }
   }
 }
 function applyCompanionBuffAura(sk, now){
@@ -13942,6 +13959,7 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
               mon.hp -= extra;
               trackDmg('comp', extra, false, (sk.name || '随从技能') + '追击', {school:compFxSchool});
               showMonsterFloat(mon, (sk.icon || st.emoji) + '追击-' + extra, '#fcd34d', allySideFloatOpts({ variant:'comp', scale:1.08, important:true }));
+              if(compCastEl) showSkillImpactFx(compCastEl, monsterFloatAnchor(mon), sk, { actor:'companion', school:compFxSchool, trail:false, scale:.68, pulse:'comp', duration:400 });
             }
           }
           const dotPct = sk.dotPct || (sk.dot ? 0.12 : 0);
@@ -13950,8 +13968,8 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
           if(sk.stun) mon.stunUntil=Math.max(mon.stunUntil||0,Date.now()+(sk.stunMs||1500));
           if(sk.debuff==='sunder'||/破甲/.test(sk.name||'')) mon.sunderUntil=Math.max(mon.sunderUntil||0,Date.now()+(sk.sunderMs||15000));
           if(sk.stateKey) applyMonsterState(mon, sk.stateKey, sk.stateMs || 9000);
-          if(sk.splashPct) applyCompanionSplash(mon, dealt, sk.splashPct, sk.icon || '💥', '#fca5a5');
-          if(sk.aoePct) applyCompanionSplash(mon, dealt, sk.aoePct, sk.icon || '💥', '#fca5a5');
+          if(sk.splashPct) applyCompanionSplash(mon, dealt, sk.splashPct, sk.icon || '💥', '#fca5a5', { sourceEl:compCastEl, school:compFxSchool, skill:sk });
+          if(sk.aoePct) applyCompanionSplash(mon, dealt, sk.aoePct, sk.icon || '💥', '#fca5a5', { sourceEl:compCastEl, school:compFxSchool, skill:sk });
           applyCompanionSignatureHit(companionSignature(tpl), st, mon, dealt, now);
           if(sk.heal){
             const targetMode = companionSkillTarget(sk);
