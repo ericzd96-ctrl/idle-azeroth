@@ -450,9 +450,22 @@ h1 {
 }
 .combat-cue-chip.crit,
 .combat-cue-chip.hit,
-.combat-cue-chip.kill {
+.combat-cue-chip.kill,
+.combat-cue-chip.gold {
   --cue-chip-color: #fde68a;
   --cue-chip-soft: rgba(250,204,21,.20);
+}
+.combat-cue-chip.loot {
+  --cue-chip-color: #bfdbfe;
+  --cue-chip-soft: rgba(96,165,250,.20);
+}
+.combat-cue-chip.epic {
+  --cue-chip-color: #e9d5ff;
+  --cue-chip-soft: rgba(168,85,247,.24);
+}
+.combat-cue-chip.legend {
+  --cue-chip-color: #fed7aa;
+  --cue-chip-soft: rgba(249,115,22,.26);
 }
 .combat-cue-chip.danger,
 .combat-cue-chip.boss {

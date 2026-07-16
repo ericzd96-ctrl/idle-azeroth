@@ -10489,6 +10489,7 @@ function onMonsterDeath(mon){
   if(xp>0)log('✅ 击败 '+mon.name+',+'+goldEarned+'💰 +'+xp+'XP','good');
   else log('✅ 击败 '+mon.name+',+'+goldEarned+'💰 (灰色:无经验)','info');
   state.gold+=goldEarned;state.honor+=mon.honorReward;
+  combatLootCue('击杀收益', [`+${goldEarned}金币`, xp>0?`+${xp}经验`:'无经验', mon.honorReward?`+${mon.honorReward}荣誉`:''], { kind:'gold', anchor:monsterFloatAnchor(mon), color:'#fde68a', float:goldEarned>0 || xp>0 });
   if(typeof progressionOnGoldGain==='function') progressionOnGoldGain(goldEarned);
   if(typeof eventsOnGoldGain==='function') eventsOnGoldGain(goldEarned);
   if(typeof eventsOnKill==='function') eventsOnKill(mon);
@@ -10499,7 +10500,7 @@ function onMonsterDeath(mon){
   const councilStillFighting = !!(mon._councilGroupKey && state.currentMonsters.some(x => x && x !== mon && x.hp > 0 && x._councilGroupKey === mon._councilGroupKey));
   if(mon._councilGroupKey) handleCouncilMemberDeath(mon, councilStillFighting);
   if(mon.isBoss && (state.mode === 'dungeon' || state.mode === 'mythic')) finalizeDungeonBossChallenges(mon, councilStillFighting);
-  if(Math.random()<(councilStillFighting ? 0 : mon.gemChance)){const gems=mon.isBoss?rng(3,8):1;state.gem+=gems;log('💎 +'+gems+' 钻石','loot');}
+  if(Math.random()<(councilStillFighting ? 0 : mon.gemChance)){const gems=mon.isBoss?rng(3,8):1;state.gem+=gems;log('💎 +'+gems+' 钻石','loot');combatLootCue('稀有掉落', [`+${gems}钻石`], { kind:'loot', important:true, anchor:monsterFloatAnchor(mon), color:'#93c5fd', scale:1.04 });}
   // boss 掉宝石/精华
   if(mon.isBoss&&!councilStillFighting&&typeof bossGemDrop==='function'&&state.mode!=='mythic') bossGemDrop(mon.fromDungeon);
   // 普通怪有低概率掉精华
@@ -10518,7 +10519,7 @@ function onMonsterDeath(mon){
     const it=(mon._isRaid && dKey)
       ? rollItem('epic',mon.lvl,dKey,mon.isBoss?mon.bossName:null,{ exactRarity: !!mon._isEpicRaid, minRarity:_minR })
       : rollItem(_dgTier>=1?'legend':mon.maxRarity,mon.lvl,dKey,mon.isBoss?mon.bossName:null,{ minRarity:_minR });
-    if((state.mode==='dungeon'||state.mode==='mythic')&&(state.dungeonState||state.mythicState))(state.dungeonState||state.mythicState).loot.push(it);addToInventory(it);if(typeof eventsOnItemGet==='function') eventsOnItemGet(it);if(it.rarity==='legend'&&typeof progressionOnLegendary==='function') progressionOnLegendary();const c=it.rarity==='legend'?'legend':(it.rarity==='epic'?'epic':'loot');log('🎁 掉落 '+it.name+(it.epicRaid?' [史诗团本]':''),c);
+    if((state.mode==='dungeon'||state.mode==='mythic')&&(state.dungeonState||state.mythicState))(state.dungeonState||state.mythicState).loot.push(it);addToInventory(it);if(typeof eventsOnItemGet==='function') eventsOnItemGet(it);if(it.rarity==='legend'&&typeof progressionOnLegendary==='function') progressionOnLegendary();const c=it.rarity==='legend'?'legend':(it.rarity==='epic'?'epic':'loot');log('🎁 掉落 '+it.name+(it.epicRaid?' [史诗团本]':''),c);combatLootCue('装备掉落', [it.name + (it.epicRaid?' [史诗团本]':'')], { kind:it.rarity==='legend'?'legend':(it.rarity==='epic'?'epic':'loot'), important:it.rarity==='legend'||it.rarity==='epic'||mon.isBoss, anchor:monsterFloatAnchor(mon), color:it.rarity==='legend'?'#fb923c':(it.rarity==='epic'?'#c084fc':'#fde68a'), scale:1.05 });
   }
   if(mon._isRaid && mon.fromDungeon && !councilStillFighting){
     const dKey2=(state.dungeonState||state.mythicState)?.key;
@@ -10529,6 +10530,7 @@ function onMonsterDeath(mon){
         addToInventory(extraEpic);
         if(typeof eventsOnItemGet==='function') eventsOnItemGet(extraEpic);
         log('🎁 史诗团本尾王额外掉落 '+extraEpic.name+' [史诗团本]','epic');
+        combatLootCue('额外掉落', [extraEpic.name + ' [史诗团本]'], { kind:'epic', important:true, anchor:monsterFloatAnchor(mon), color:'#c084fc', scale:1.06 });
       }
       const dg2=DUNGEONS.find(d=>d.key===dKey2);
       const bossCount=Math.max(1,dg2?.bosses?.length||1);
@@ -10539,6 +10541,7 @@ function onMonsterDeath(mon){
         if((state.dungeonState||state.mythicState)) (state.dungeonState||state.mythicState).loot.push(legend);
         addToInventory(legend);
         log('🎉 史诗团本BOSS额外掉落 '+legend.name+' [史诗团本]', 'legend');
+        combatLootCue('传说掉落', [legend.name + ' [史诗团本]'], { kind:'legend', important:true, anchor:monsterFloatAnchor(mon), color:'#fb923c', scale:1.08 });
         if(typeof progressionOnLegendary==='function') progressionOnLegendary();
       }
     }else if(mon._isRaidFinal&&Math.random()<0.06){
@@ -10546,6 +10549,7 @@ function onMonsterDeath(mon){
       if((state.dungeonState||state.mythicState)) (state.dungeonState||state.mythicState).loot.push(legend);
       addToInventory(legend);
       log('🎉 团本关底BOSS额外掉落 '+legend.name,'legend');
+      combatLootCue('传说掉落', [legend.name], { kind:'legend', important:true, anchor:monsterFloatAnchor(mon), color:'#fb923c', scale:1.08 });
       if(typeof progressionOnLegendary==='function') progressionOnLegendary();
     }
   }
@@ -10572,6 +10576,7 @@ function onMonsterDeath(mon){
       const bonusGold = Math.max(1, Math.floor((mon.goldReward || 1) * ((mon._roomReward.goldPct || 0.15) + 1)));
       state.gold += bonusGold;
       log(`🎁 宝箱守卫倒下,额外金币 +${bonusGold}`, 'loot');
+      combatLootCue('宝箱收益', [`+${bonusGold}金币`], { kind:'gold', important:true, anchor:monsterFloatAnchor(mon), color:'#fde68a', scale:1.04 });
       if(ds){
         ds.roomBonusGold = (ds.roomBonusGold || 0) + bonusGold;
         ds.roomObjectivesBroken = (ds.roomObjectivesBroken || 0) + 1;
@@ -10627,15 +10632,15 @@ function onMonsterDeath(mon){
   else if(state.mode==='boss'){if(mon.isBoss){const map=getMap();log('👑 '+map.boss.name+' 已被击败!','legend');if(typeof grantWorldRenown==='function') grantWorldRenown(map.key, 35 + Math.floor((map.boss.lvl || mon.lvl || 1) / 2), '地图首领', { bossKill:true, alert:Math.max(3, Math.floor((map.boss.lvl || mon.lvl || 1) / 14)) });
     if(map.boss.lvl>=60){
       // 60+ BOSS: 必爆紫装 + 15%概率橙装
-      const purple=rollItemOfRarity('epic',mon.lvl);addToInventory(purple);if(typeof eventsOnItemGet==='function')eventsOnItemGet(purple);log('🎁 必掉 '+purple.name,'epic');
-      if(Math.random()<0.15){const orange=rollItemOfRarity('legend',mon.lvl);addToInventory(orange);if(typeof eventsOnItemGet==='function')eventsOnItemGet(orange);log('🎉 额外掉落 '+orange.name,'legend');}
+      const purple=rollItemOfRarity('epic',mon.lvl);addToInventory(purple);if(typeof eventsOnItemGet==='function')eventsOnItemGet(purple);log('🎁 必掉 '+purple.name,'epic');combatLootCue('首领掉落', [purple.name], { kind:'epic', important:true, anchor:monsterFloatAnchor(mon), color:'#c084fc', scale:1.06 });
+      if(Math.random()<0.15){const orange=rollItemOfRarity('legend',mon.lvl);addToInventory(orange);if(typeof eventsOnItemGet==='function')eventsOnItemGet(orange);log('🎉 额外掉落 '+orange.name,'legend');combatLootCue('传说掉落', [orange.name], { kind:'legend', important:true, anchor:monsterFloatAnchor(mon), color:'#fb923c', scale:1.08 });}
     }else{
       // 60以下: 必爆蓝装 + 15%概率紫装
-      const blue=rollItemOfRarity('rare',mon.lvl);addToInventory(blue);if(typeof eventsOnItemGet==='function')eventsOnItemGet(blue);log('🎁 必掉 '+blue.name,'loot');
-      if(Math.random()<0.15){const purple=rollItemOfRarity('epic',mon.lvl);addToInventory(purple);if(typeof eventsOnItemGet==='function')eventsOnItemGet(purple);log('🎉 额外掉落 '+purple.name,'epic');}
+      const blue=rollItemOfRarity('rare',mon.lvl);addToInventory(blue);if(typeof eventsOnItemGet==='function')eventsOnItemGet(blue);log('🎁 必掉 '+blue.name,'loot');combatLootCue('首领掉落', [blue.name], { kind:'loot', important:true, anchor:monsterFloatAnchor(mon), color:'#93c5fd', scale:1.05 });
+      if(Math.random()<0.15){const purple=rollItemOfRarity('epic',mon.lvl);addToInventory(purple);if(typeof eventsOnItemGet==='function')eventsOnItemGet(purple);log('🎉 额外掉落 '+purple.name,'epic');combatLootCue('额外掉落', [purple.name], { kind:'epic', important:true, anchor:monsterFloatAnchor(mon), color:'#c084fc', scale:1.06 });}
     }
     state.mode='world';markDirty('map');}spawnMonster();}
-  else{const subKey=state.currentMap+'-'+state.currentSubzone;state.subzoneKills[subKey]=(state.subzoneKills[subKey]||0)+1;if(typeof recordWorldFieldOperationKill==='function') recordWorldFieldOperationKill(mon);if(state.subzoneKills[subKey]===50&&!state.subzoneCleared[subKey]){state.subzoneCleared[subKey]=true;const map=getMap();const sub=map.sub[state.currentSubzone];state.gold+=sub.lvl[1]*30;log('🌟 ['+sub.name+'] 探索完成! +'+sub.lvl[1]*30+'💰','epic');const it3=rollItem('rare',sub.lvl[1],state.currentMap);addToInventory(it3);if(typeof eventsOnItemGet==='function') eventsOnItemGet(it3);if(typeof eventsOnSubzoneClear==='function') eventsOnSubzoneClear();if(typeof progressionOnSubzoneClear==='function') progressionOnSubzoneClear(state.currentMap,state.currentSubzone);markDirty('map');}
+  else{const subKey=state.currentMap+'-'+state.currentSubzone;state.subzoneKills[subKey]=(state.subzoneKills[subKey]||0)+1;if(typeof recordWorldFieldOperationKill==='function') recordWorldFieldOperationKill(mon);if(state.subzoneKills[subKey]===50&&!state.subzoneCleared[subKey]){state.subzoneCleared[subKey]=true;const map=getMap();const sub=map.sub[state.currentSubzone];state.gold+=sub.lvl[1]*30;log('🌟 ['+sub.name+'] 探索完成! +'+sub.lvl[1]*30+'💰','epic');combatLootCue('探索完成', [`+${sub.lvl[1]*30}金币`], { kind:'gold', important:true, anchor:monsterFloatAnchor(mon), color:'#fde68a', scale:1.06 });const it3=rollItem('rare',sub.lvl[1],state.currentMap);addToInventory(it3);combatLootCue('区域装备', [it3.name], { kind:'loot', important:true, anchor:monsterFloatAnchor(mon), color:'#93c5fd', scale:1.05 });if(typeof eventsOnItemGet==='function') eventsOnItemGet(it3);if(typeof eventsOnSubzoneClear==='function') eventsOnSubzoneClear();if(typeof progressionOnSubzoneClear==='function') progressionOnSubzoneClear(state.currentMap,state.currentSubzone);markDirty('map');}
     // 多敌:仅移除这一只,整波清空后才刷新下一波
     const di=state.currentMonsters.indexOf(mon);if(di>=0)state.currentMonsters.splice(di,1);
     if(state.currentMonsters.length===0)startWorldMonsterSearch('clear');}
@@ -11916,7 +11921,7 @@ function combatCueLanePush(title, detail, kind){
   const safeKind=String(kind||'info').replace(/[^a-z0-9_-]/gi,'')||'info';
   const item=document.createElement('div');
   item.className='combat-cue-chip '+safeKind;
-  const iconMap={ crit:'✦', hit:'✹', danger:'!', boss:'!!', interrupt:'X', heal:'+', shield:'◆', kill:'✓', info:'•' };
+  const iconMap={ crit:'✦', hit:'✹', danger:'!', boss:'!!', interrupt:'X', heal:'+', shield:'◆', kill:'✓', gold:'$', loot:'🎁', epic:'紫', legend:'橙', info:'•' };
   const icon=document.createElement('b');
   icon.textContent=iconMap[safeKind]||iconMap.info;
   item.appendChild(icon);
@@ -11927,6 +11932,21 @@ function combatCueLanePush(title, detail, kind){
   while(lane.children.length>4) lane.lastElementChild.remove();
   setTimeout(()=>item.classList.add('fade'),2200);
   setTimeout(()=>item.remove(),2900);
+}
+let _lastCombatLootCueTs = 0;
+function combatLootCue(title, parts, opts){
+  if(typeof document==='undefined'||document.hidden)return;
+  const now = Date.now();
+  const detail = (Array.isArray(parts) ? parts : [parts]).filter(Boolean).join(' · ');
+  if(!detail)return;
+  const important = !!opts?.important;
+  if(!important && now - _lastCombatLootCueTs < 650)return;
+  _lastCombatLootCueTs = now;
+  combatCueLanePush(title || '战利品', detail, opts?.kind || 'loot');
+  if(opts?.float !== false){
+    const anchor = opts?.anchor || $('hero-emoji');
+    if(anchor) showFloat(anchor, detail, opts?.color || '#fde68a', { variant:'loot', scale:opts?.scale || .98, dy:opts?.dy || -24 });
+  }
 }
 function combatEventBanner(title, detail, kind){
   if(typeof document==='undefined'||document.hidden)return;
