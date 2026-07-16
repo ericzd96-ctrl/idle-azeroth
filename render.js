@@ -400,6 +400,52 @@ function updateDmgTopSkill(total) {
   el.textContent = `${best.who} ${best.name} · ${fmt(best.amount)} · ${pct}%`;
   el.title = `本轮最高伤害来源: ${best.who}的${best.name}, 累计 ${fmt(best.amount)}, 占总伤害 ${pct}%。`;
 }
+function updateDmgBossCastReadout() {
+  const row = $('dm-boss-cast-row');
+  const el = $('dm-boss-cast');
+  if (!row || !el) return;
+  const cast = (typeof bossCasting !== 'undefined') ? bossCasting : null;
+  if (!cast) {
+    row.style.display = 'none';
+    el.className = 'dm-boss-cast idle';
+    el.textContent = '-';
+    el.removeAttribute('title');
+    return;
+  }
+  const now = Date.now();
+  const elapsed = Math.max(0, now - (cast.startTime || now));
+  const duration = Math.max(1, cast.duration || 1);
+  const remainMs = Math.max(0, duration - elapsed);
+  const remain = (remainMs / 1000).toFixed(1);
+  const pct = Math.min(100, Math.max(0, elapsed / duration * 100));
+  const threatMeta = (typeof bossCastThreatMeta === 'function') ? bossCastThreatMeta(cast) : { label: '危险' };
+  const interruptText = (typeof bossInterruptTag === 'function') ? bossInterruptTag(cast) : (cast.interruptPolicy === 'none' ? '不可断' : '可断');
+  const isDamage = (typeof cast.mul === 'number' && cast.mul > 0) && cast.type !== 'heal' && cast.type !== 'buff' && !cast.summonCount;
+  const target = cast._targetDesc || (isDamage ? (cast.aoe ? '全体' : '你') : '自身');
+  const finalWindow = pct >= 70 || remainMs <= 1000;
+  const mustKick = cast.interruptPolicy === 'hard' || (!!cast._empowered && cast.interruptPolicy !== 'none');
+  let cls = 'idle';
+  let action = '观察';
+  if (cast.interruptPolicy === 'none') {
+    cls = finalWindow ? 'warn' : 'locked';
+    action = isDamage ? '开减伤' : '留意';
+  } else if (mustKick || cast.threat === 'high' || cast.threat === 'extreme') {
+    cls = finalWindow ? 'danger final' : 'danger';
+    action = finalWindow ? '立刻打断' : '准备打断';
+  } else if (cast.interruptPolicy === 'soft' || cast.threat === 'medium') {
+    cls = finalWindow ? 'warn final' : 'warn';
+    action = finalWindow ? '现在打断' : '可打断';
+  } else {
+    cls = finalWindow ? 'warn' : 'idle';
+    action = finalWindow ? '看情况断' : '观察';
+  }
+  const icon = cast.icon || '✨';
+  const name = cast.name || '施法';
+  row.style.display = '';
+  el.className = `dm-boss-cast ${cls}`;
+  el.textContent = `${action} · ${icon}${name} · 对${target} · ${remain}s`;
+  el.title = `首领读条: ${cast.bossName || 'BOSS'} 的 ${name}。目标: ${target}。威胁: ${threatMeta.label}。打断: ${interruptText}。剩余 ${remain} 秒。`;
+}
 
 /* 导航栏红点:远征储备满 / 公会今日有可做的捐献 */
 function updateNavBadges() {
@@ -1930,6 +1976,7 @@ function updateDmgMeter() {
   }
   updateDmgRecentSkills();
   updateCombatReactionAdvice();
+  updateDmgBossCastReadout();
 
   // 英雄条
   const heroBar = $('dm-hero-bar');

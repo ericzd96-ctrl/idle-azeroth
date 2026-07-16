@@ -8164,6 +8164,54 @@ button.legend:hover:not(:disabled) {
   background: rgba(127,29,29,.25);
   box-shadow: inset 0 0 10px rgba(248,113,113,.10);
 }
+.dm-boss-cast-row { align-items: stretch; }
+.dm-boss-cast {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 6px;
+  border-radius: 5px;
+  border: 1px solid rgba(148,163,184,.24);
+  background: rgba(15,23,42,.36);
+  color: #cbd5e1;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dm-boss-cast.locked {
+  color: #bfdbfe;
+  border-color: rgba(96,165,250,.34);
+  background: rgba(30,64,175,.16);
+}
+.dm-boss-cast.warn {
+  color: #fde68a;
+  border-color: rgba(251,191,36,.42);
+  background: rgba(113,63,18,.22);
+  box-shadow: inset 0 0 10px rgba(251,191,36,.10);
+}
+.dm-boss-cast.danger {
+  color: #fecaca;
+  border-color: rgba(248,113,113,.48);
+  background: rgba(127,29,29,.28);
+  box-shadow: inset 0 0 12px rgba(248,113,113,.12), 0 0 10px rgba(248,113,113,.12);
+}
+.dm-boss-cast.final {
+  animation: dmBossCastPulse .72s ease-in-out infinite;
+}
+.dm-boss-cast.idle {
+  color: #64748b;
+  border-color: rgba(148,163,184,.20);
+  background: rgba(15,23,42,.28);
+  box-shadow: none;
+}
+@keyframes dmBossCastPulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.22); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dm-boss-cast.final { animation: none; }
+}
 .dm-pressure {
   flex: 1;
   min-width: 0;
