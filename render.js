@@ -149,6 +149,7 @@ let _stageSkillChainSig = '';
 let _dmCombatSummarySig = '';
 let _dmTacticsSig = '';
 let _dmCombatTempoSig = '';
+let _dmCombatHeatSig = '';
 let _navBadgePaint = 0, _expLivePaint = 0; // 导航红点 / 远征实时刷新节流
 const _headerResourceLast = {};
 const _resourceBarLast = { value:null, max:null, key:'' };
@@ -724,6 +725,47 @@ function updateDmgCombatTempo(total, healTotal) {
       : `<i class="dm-combat-tempo-action ${escapeDmgMeterText(action.cls)}" title="${escapeDmgMeterText(action.title || action.text)}">${escapeDmgMeterText(action.text)}</i>`)
     : '';
   el.innerHTML = `<b>${escapeDmgMeterText(stateMeta.label)}</b><span>${escapeDmgMeterText(stateMeta.detail || '')}</span>${actionHtml}`;
+}
+function updateDmgCombatHeat(total, healTotal, elapsed) {
+  const el = $('dm-combat-heat');
+  if (!el) return;
+  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
+  const now = Date.now();
+  const fresh = ((typeof combatRecentSkillCasts === 'function') ? combatRecentSkillCasts() : []).filter(x => now - (x.ts || 0) <= 6000);
+  const shieldTotal = (ds?.heroShield || 0) + (ds?.compShield || 0);
+  const takenTotal = (ds?.taken || 0) + (ds?.compTaken || 0);
+  const recentDamage = fresh.filter(x => x.actor === 'hero' || x.actor === 'companion').reduce((n, x) => n + Math.floor(x.damage || 0), 0);
+  const recentCover = fresh.reduce((n, x) => n + Math.floor(x.heal || 0) + Math.floor(x.shield || 0), 0);
+  const recentTaken = fresh.filter(x => x.actor === 'boss' || x.type === 'danger').reduce((n, x) => n + Math.floor(x.damage || x.taken || 0), 0);
+  const hMax = Math.max(1, state?.hero?.hpMax || 1);
+  const dps = elapsed > 0 ? Math.round(total / Math.max(0.001, elapsed)) : 0;
+  const peak = Math.max(1, Math.round(ds?.peakDps || dps || 1));
+  const coverGap = Math.max(0, takenTotal - healTotal - shieldTotal);
+  const bossDanger = fresh.some(x => x.actor === 'boss' && (x.type === 'danger' || x.threat === 'high' || x.threat === 'extreme' || x.empowered));
+  const burstScore = Math.min(1, Math.max(dps / Math.max(1, peak), recentDamage / Math.max(1, hMax * 0.72)));
+  const pressureScore = Math.min(1, Math.max(recentTaken / Math.max(1, hMax * 0.34), coverGap / Math.max(1, hMax * 0.45), bossDanger ? 0.82 : 0));
+  const coverScore = Math.min(1, Math.max(recentCover / Math.max(1, hMax * 0.24), (healTotal + shieldTotal) / Math.max(1, takenTotal || hMax)));
+  let tone = 'idle';
+  let label = '待战';
+  let detail = '等待记录';
+  if (total > 0 || takenTotal > 0 || healTotal > 0 || shieldTotal > 0) {
+    if (pressureScore >= 0.70) {
+      tone = 'danger'; label = '高压'; detail = bossDanger ? '首领压迫' : `缺口 ${fmt(coverGap)}`;
+    } else if (coverScore >= 0.70 && (recentTaken > 0 || takenTotal > 0)) {
+      tone = 'rescue'; label = '救场'; detail = `覆盖 ${fmt(healTotal + shieldTotal)}`;
+    } else if (burstScore >= 0.72 || recentDamage >= hMax * 0.45) {
+      tone = 'burst'; label = '爆发'; detail = `火力 ${fmt(dps)}/秒`;
+    } else {
+      tone = 'steady'; label = '平稳'; detail = dps > 0 ? `火力 ${fmt(dps)}/秒` : '压力很低';
+    }
+  }
+  const heat = Math.max(8, Math.min(100, Math.round(Math.max(burstScore, pressureScore, coverScore * 0.78) * 100)));
+  const sig = `${tone}:${label}:${detail}:${heat}:${dps}:${coverGap}:${recentDamage}:${recentTaken}:${recentCover}`;
+  if (sig === _dmCombatHeatSig) return;
+  _dmCombatHeatSig = sig;
+  el.className = `dm-combat-heat ${tone}`;
+  el.title = `战斗热度: ${label}。当前秒伤 ${fmt(dps)}/秒,近期伤害 ${fmt(recentDamage)},近期承伤 ${fmt(recentTaken)},近期治疗/护盾 ${fmt(recentCover)},本轮生存缺口 ${fmt(coverGap)}。`;
+  el.innerHTML = `<span class="dm-heat-state">${escapeDmgMeterText(label)}</span><span class="dm-heat-rail"><i style="width:${heat}%"></i></span><span class="dm-heat-detail">${escapeDmgMeterText(detail)}</span>`;
 }
 function updateDmgTacticalStatus(total, healTotal, elapsed) {
   const el = $('dm-tactics');
@@ -3129,6 +3171,7 @@ function updateDmgMeter() {
   }
   updateDmgRecentSkills();
   updateDmgCombatTempo(total, healTotal);
+  updateDmgCombatHeat(total, healTotal, elapsed);
   updateCombatReactionAdvice();
   updateDmgBossCastReadout();
   updateDmgLastInterrupt();
