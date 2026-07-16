@@ -619,40 +619,81 @@ function combatTempoState(now, total, healTotal) {
   const latest = fresh[0] || {};
   const sameSchool = fresh.filter(x => x.actor === latest.actor && x.actor !== 'boss' && x.school === latest.school).length;
   if (bossHit.length && (bossDmg > supportAmount || bossHit.some(x => x.empowered || x.threat === 'extreme'))) {
-    return { tone:'danger', label:'首领压制', detail:`读条命中 ${fmt(Math.max(0, bossDmg))}`, title:`最近 6 秒首领技能正在制造压力。治疗/护盾覆盖 ${fmt(supportAmount)},本轮总覆盖 ${fmt(dsCover)},总承伤 ${fmt(dsTaken)}。` };
+    return { tone:'danger', label:'首领压制', detail:`读条命中 ${fmt(Math.max(0, bossDmg))}`, actionKind:'defensive', title:`最近 6 秒首领技能正在制造压力。治疗/护盾覆盖 ${fmt(supportAmount)},本轮总覆盖 ${fmt(dsCover)},总承伤 ${fmt(dsTaken)}。` };
   }
   if (support.length >= 2 && supportAmount > 0 && (bossDmg > 0 || supportAmount >= Math.max(1, dsTaken * 0.18))) {
-    return { tone:'safe', label:'救场成功', detail:`覆盖 ${fmt(supportAmount)}`, title:`最近 6 秒治疗/护盾连续触发 ${support.length} 次,覆盖 ${fmt(supportAmount)}。` };
+    return { tone:'safe', label:'救场成功', detail:`覆盖 ${fmt(supportAmount)}`, actionText:'转火输出', title:`最近 6 秒治疗/护盾连续触发 ${support.length} 次,覆盖 ${fmt(supportAmount)}。` };
   }
   if (heroDmg > 0 && compDmg > 0 && freshTotal >= Math.max(1, overallTotal * 0.18)) {
-    return { tone:'burst', label:'协同爆发', detail:`主 ${fmt(heroDmg)} · 随 ${fmt(compDmg)}`, title:`最近 6 秒主角和随从同时输出,合计 ${fmt(freshTotal)}。最高一跳 ${fmt(top)}${crits ? `,暴击 ${crits} 次` : ''}。` };
+    return { tone:'burst', label:'协同爆发', detail:`主 ${fmt(heroDmg)} · 随 ${fmt(compDmg)}`, actionText:'继续集火', title:`最近 6 秒主角和随从同时输出,合计 ${fmt(freshTotal)}。最高一跳 ${fmt(top)}${crits ? `,暴击 ${crits} 次` : ''}。` };
   }
   if (sameSchool >= 3) {
     const school = combatSchoolShortName(latest.school || 'physical');
-    return { tone:'chain', label:`${school}连段`, detail:`技能 x${sameSchool}`, title:`最近 6 秒连续出现 ${sameSchool} 个${school}系技能,循环节奏较集中。` };
+    return { tone:'chain', label:`${school}连段`, detail:`技能 x${sameSchool}`, actionText:'延续连段', title:`最近 6 秒连续出现 ${sameSchool} 个${school}系技能,循环节奏较集中。` };
   }
   if (compDmg > heroDmg && compDmg > 0) {
-    return { tone:'companion', label:'随从爆发', detail:`随从 ${fmt(compDmg)}`, title:`最近 6 秒随从输出超过主角。随从伤害 ${fmt(compDmg)},主角伤害 ${fmt(heroDmg)}。` };
+    return { tone:'companion', label:'随从爆发', detail:`随从 ${fmt(compDmg)}`, actionText:'跟随集火', title:`最近 6 秒随从输出超过主角。随从伤害 ${fmt(compDmg)},主角伤害 ${fmt(heroDmg)}。` };
   }
   if (heroDmg > 0 && (crits > 0 || heroDmg >= Math.max(1, overallTotal * 0.16))) {
-    return { tone:'burst', label:'主角爆发', detail:`伤害 ${fmt(heroDmg)}`, title:`最近 6 秒主角打出爆发。伤害 ${fmt(heroDmg)}${crits ? `,暴击 ${crits} 次` : ''}。` };
+    return { tone:'burst', label:'主角爆发', detail:`伤害 ${fmt(heroDmg)}`, actionText:'补高伤技', title:`最近 6 秒主角打出爆发。伤害 ${fmt(heroDmg)}${crits ? `,暴击 ${crits} 次` : ''}。` };
   }
   if (support.length >= 2) {
-    return { tone:'safe', label:'防护循环', detail:`支援 x${support.length}`, title:`最近 6 秒治疗/护盾技能触发 ${support.length} 次,生存节奏稳定。` };
+    return { tone:'safe', label:'防护循环', detail:`支援 x${support.length}`, actionText:'稳住输出', title:`最近 6 秒治疗/护盾技能触发 ${support.length} 次,生存节奏稳定。` };
   }
-  return { tone:'steady', label:'平稳输出', detail:freshTotal > 0 ? `伤害 ${fmt(freshTotal)}` : combatRecentSkillEffectText(latest), title:`最近 6 秒没有明显危险事件。最新技能: ${latest.icon || ''}${latest.name || '技能'}。` };
+  return { tone:'steady', label:'平稳输出', detail:freshTotal > 0 ? `伤害 ${fmt(freshTotal)}` : combatRecentSkillEffectText(latest), actionText:'观察读条', title:`最近 6 秒没有明显危险事件。最新技能: ${latest.icon || ''}${latest.name || '技能'}。` };
+}
+function combatTempoActionMeta(stateMeta, now) {
+  if (!stateMeta) return null;
+  if (stateMeta.actionKind === 'defensive' || stateMeta.tone === 'danger') {
+    const defensive = combatAdviceSkillEntries('defensive', now)[0] || null;
+    const heal = combatAdviceSkillEntries('heal', now)[0] || null;
+    const pick = (defensive?.ready ? defensive : null) || (heal?.ready ? heal : null) || defensive || heal;
+    if (pick?.ready) {
+      return {
+        cls:pick.kind === 'heal' ? 'heal ready' : 'defense ready',
+        text:`按 ${pick.sk.name}`,
+        title:`当前节奏承压,点击立即使用 ${pick.sk.name}。`,
+        key:pick.key
+      };
+    }
+    if (pick) {
+      const leftText = Number.isFinite(pick.left) && pick.left > 0 ? `${Math.ceil(pick.left / 1000)}秒` : '缺资源';
+      return {
+        cls:'wait',
+        text:`等 ${leftText}`,
+        title:`${pick.sk.name} 暂时不能用,先留资源并观察血线。`
+      };
+    }
+    return { cls:'wait', text:'留保命', title:'当前节奏承压,优先保留治疗、护盾或减伤。' };
+  }
+  const win = (typeof vulnerabilityWindowState === 'function') ? vulnerabilityWindowState(now) : null;
+  if (win && (stateMeta.tone === 'burst' || stateMeta.tone === 'chain' || stateMeta.tone === 'companion')) {
+    return { cls:'burst', text:'打破绽', title:'目标处于破绽窗口,优先打高伤害技能。' };
+  }
+  const executeWin = (typeof executeWindowState === 'function') ? executeWindowState() : null;
+  if (executeWin && stateMeta.tone !== 'danger') {
+    return { cls:'burst', text:'打终结', title:'目标进入斩杀窗口,优先使用终结技能。' };
+  }
+  if (stateMeta.actionText) return { cls:stateMeta.tone || 'steady', text:stateMeta.actionText, title:stateMeta.title || stateMeta.actionText };
+  return null;
 }
 function updateDmgCombatTempo(total, healTotal) {
   const el = $('dm-combat-tempo');
   if (!el) return;
   const now = Date.now();
   const stateMeta = combatTempoState(now, total, healTotal);
-  const sig = `${stateMeta.tone}:${stateMeta.label}:${stateMeta.detail}`;
+  const action = combatTempoActionMeta(stateMeta, now);
+  const sig = `${stateMeta.tone}:${stateMeta.label}:${stateMeta.detail}:${action?.cls || ''}:${action?.text || ''}:${action?.key || ''}`;
   if (sig === _dmCombatTempoSig) return;
   _dmCombatTempoSig = sig;
   el.className = `dm-combat-tempo ${stateMeta.tone}`;
-  el.title = stateMeta.title || '';
-  el.innerHTML = `<b>${escapeDmgMeterText(stateMeta.label)}</b><span>${escapeDmgMeterText(stateMeta.detail || '')}</span>`;
+  el.title = [stateMeta.title, action?.title].filter(Boolean).join(' ');
+  const actionHtml = action
+    ? (action.key
+      ? `<button class="dm-combat-tempo-action ${escapeDmgMeterText(action.cls)}" data-action="pressurecast" data-skill="${escapeDmgMeterText(action.key)}" title="${escapeDmgMeterText(action.title || action.text)}">${escapeDmgMeterText(action.text)}</button>`
+      : `<i class="dm-combat-tempo-action ${escapeDmgMeterText(action.cls)}" title="${escapeDmgMeterText(action.title || action.text)}">${escapeDmgMeterText(action.text)}</i>`)
+    : '';
+  el.innerHTML = `<b>${escapeDmgMeterText(stateMeta.label)}</b><span>${escapeDmgMeterText(stateMeta.detail || '')}</span>${actionHtml}`;
 }
 function updateDmgTacticalStatus(total, healTotal, elapsed) {
   const el = $('dm-tactics');
