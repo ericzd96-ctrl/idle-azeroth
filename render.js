@@ -148,6 +148,7 @@ let _dmRecentSkillSig = '';
 let _stageSkillChainSig = '';
 let _dmCombatSummarySig = '';
 let _dmTacticsSig = '';
+let _dmCombatTempoSig = '';
 let _navBadgePaint = 0, _expLivePaint = 0; // 导航红点 / 远征实时刷新节流
 const _headerResourceLast = {};
 const _resourceBarLast = { value:null, max:null, key:'' };
@@ -593,6 +594,65 @@ function combatRecentSkillTempoChips(now) {
     }
   }
   return chips.slice(0, 2);
+}
+function combatTempoState(now, total, healTotal) {
+  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
+  const list = (typeof combatRecentSkillCasts === 'function') ? combatRecentSkillCasts() : [];
+  const fresh = list.filter(x => now - (x.ts || 0) <= 6000);
+  if (!fresh.length) {
+    if (total > 0) return { tone:'steady', label:'平稳输出', detail:'等待下一次技能节奏', title:'最近 6 秒没有明显技能事件,保持当前输出节奏。' };
+    return { tone:'idle', label:'等待战斗', detail:'技能节奏会显示在这里', title:'开始战斗后,这里会总结最近 6 秒的战斗节奏。' };
+  }
+  const sum = pred => fresh.filter(pred).reduce((n, x) => n + Math.floor(x.damage || x.heal || x.shield || x.taken || 0), 0);
+  const heroDmg = sum(x => x.actor === 'hero' && (x.damage || 0) > 0);
+  const compDmg = sum(x => x.actor === 'companion' && (x.damage || 0) > 0);
+  const bossHit = fresh.filter(x => x.actor === 'boss' && ((x.damage || x.taken || 0) > 0 || x.type === 'danger'));
+  const bossDmg = bossHit.reduce((n, x) => n + Math.floor(x.damage || x.taken || 0), 0);
+  const support = fresh.filter(x => x.actor !== 'boss' && (x.type === 'heal' || x.type === 'shield' || x.school === 'heal' || x.school === 'shield'));
+  const supportAmount = support.reduce((n, x) => n + Math.floor(x.heal || x.shield || 0), 0);
+  const crits = fresh.reduce((n, x) => n + Math.floor(x.crits || 0), 0);
+  const top = fresh.reduce((best, x) => Math.max(best, Math.floor(x.maxAmount || x.damage || x.taken || 0)), 0);
+  const freshTotal = heroDmg + compDmg;
+  const overallTotal = Math.max(1, Math.floor(total || 0));
+  const dsTaken = ds ? (ds.taken || 0) + (ds.compTaken || 0) : 0;
+  const dsCover = Math.floor((healTotal || 0) + (ds?.heroShield || 0) + (ds?.compShield || 0));
+  const latest = fresh[0] || {};
+  const sameSchool = fresh.filter(x => x.actor === latest.actor && x.actor !== 'boss' && x.school === latest.school).length;
+  if (bossHit.length && (bossDmg > supportAmount || bossHit.some(x => x.empowered || x.threat === 'extreme'))) {
+    return { tone:'danger', label:'首领压制', detail:`读条命中 ${fmt(Math.max(0, bossDmg))}`, title:`最近 6 秒首领技能正在制造压力。治疗/护盾覆盖 ${fmt(supportAmount)},本轮总覆盖 ${fmt(dsCover)},总承伤 ${fmt(dsTaken)}。` };
+  }
+  if (support.length >= 2 && supportAmount > 0 && (bossDmg > 0 || supportAmount >= Math.max(1, dsTaken * 0.18))) {
+    return { tone:'safe', label:'救场成功', detail:`覆盖 ${fmt(supportAmount)}`, title:`最近 6 秒治疗/护盾连续触发 ${support.length} 次,覆盖 ${fmt(supportAmount)}。` };
+  }
+  if (heroDmg > 0 && compDmg > 0 && freshTotal >= Math.max(1, overallTotal * 0.18)) {
+    return { tone:'burst', label:'协同爆发', detail:`主 ${fmt(heroDmg)} · 随 ${fmt(compDmg)}`, title:`最近 6 秒主角和随从同时输出,合计 ${fmt(freshTotal)}。最高一跳 ${fmt(top)}${crits ? `,暴击 ${crits} 次` : ''}。` };
+  }
+  if (sameSchool >= 3) {
+    const school = combatSchoolShortName(latest.school || 'physical');
+    return { tone:'chain', label:`${school}连段`, detail:`技能 x${sameSchool}`, title:`最近 6 秒连续出现 ${sameSchool} 个${school}系技能,循环节奏较集中。` };
+  }
+  if (compDmg > heroDmg && compDmg > 0) {
+    return { tone:'companion', label:'随从爆发', detail:`随从 ${fmt(compDmg)}`, title:`最近 6 秒随从输出超过主角。随从伤害 ${fmt(compDmg)},主角伤害 ${fmt(heroDmg)}。` };
+  }
+  if (heroDmg > 0 && (crits > 0 || heroDmg >= Math.max(1, overallTotal * 0.16))) {
+    return { tone:'burst', label:'主角爆发', detail:`伤害 ${fmt(heroDmg)}`, title:`最近 6 秒主角打出爆发。伤害 ${fmt(heroDmg)}${crits ? `,暴击 ${crits} 次` : ''}。` };
+  }
+  if (support.length >= 2) {
+    return { tone:'safe', label:'防护循环', detail:`支援 x${support.length}`, title:`最近 6 秒治疗/护盾技能触发 ${support.length} 次,生存节奏稳定。` };
+  }
+  return { tone:'steady', label:'平稳输出', detail:freshTotal > 0 ? `伤害 ${fmt(freshTotal)}` : combatRecentSkillEffectText(latest), title:`最近 6 秒没有明显危险事件。最新技能: ${latest.icon || ''}${latest.name || '技能'}。` };
+}
+function updateDmgCombatTempo(total, healTotal) {
+  const el = $('dm-combat-tempo');
+  if (!el) return;
+  const now = Date.now();
+  const stateMeta = combatTempoState(now, total, healTotal);
+  const sig = `${stateMeta.tone}:${stateMeta.label}:${stateMeta.detail}`;
+  if (sig === _dmCombatTempoSig) return;
+  _dmCombatTempoSig = sig;
+  el.className = `dm-combat-tempo ${stateMeta.tone}`;
+  el.title = stateMeta.title || '';
+  el.innerHTML = `<b>${escapeDmgMeterText(stateMeta.label)}</b><span>${escapeDmgMeterText(stateMeta.detail || '')}</span>`;
 }
 function updateDmgTacticalStatus(total, healTotal, elapsed) {
   const el = $('dm-tactics');
@@ -2916,6 +2976,7 @@ function updateDmgMeter() {
     dpsEl.title = `当前秒伤 ${fmt(dps)}。${trend.title}`;
   }
   updateDmgRecentSkills();
+  updateDmgCombatTempo(total, healTotal);
   updateCombatReactionAdvice();
   updateDmgBossCastReadout();
   updateDmgLastInterrupt();

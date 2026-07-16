@@ -8773,6 +8773,68 @@ button.legend:hover:not(:disabled) {
 .dm-recent-chip.actor-companion {
   color: #bfdbfe;
 }
+.dm-combat-tempo-row { align-items: stretch; }
+.dm-combat-tempo {
+  flex: 1;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 22px;
+  padding: 2px 7px;
+  border: 1px solid rgba(148,163,184,.22);
+  border-radius: 6px;
+  background: rgba(15,23,42,.30);
+  color: #cbd5e1;
+  overflow: hidden;
+}
+.dm-combat-tempo b {
+  flex: 0 0 auto;
+  color: currentColor;
+  font-size: 10px;
+  font-weight: 900;
+}
+.dm-combat-tempo span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #94a3b8;
+  font-weight: 800;
+}
+.dm-combat-tempo.idle { color: #94a3b8; }
+.dm-combat-tempo.steady {
+  color: #bfdbfe;
+  border-color: rgba(96,165,250,.28);
+  background: rgba(30,64,175,.16);
+}
+.dm-combat-tempo.burst {
+  color: #fde68a;
+  border-color: rgba(251,191,36,.36);
+  background: linear-gradient(90deg, rgba(113,63,18,.30), rgba(15,23,42,.30));
+  box-shadow: inset 0 0 10px rgba(251,191,36,.10);
+}
+.dm-combat-tempo.chain {
+  color: #ddd6fe;
+  border-color: rgba(168,85,247,.32);
+  background: rgba(88,28,135,.18);
+}
+.dm-combat-tempo.companion {
+  color: #bfdbfe;
+  border-color: rgba(96,165,250,.34);
+  background: rgba(30,64,175,.20);
+}
+.dm-combat-tempo.safe {
+  color: #bbf7d0;
+  border-color: rgba(74,222,128,.34);
+  background: rgba(20,83,45,.20);
+}
+.dm-combat-tempo.danger {
+  color: #fecaca;
+  border-color: rgba(248,113,113,.44);
+  background: rgba(127,29,29,.24);
+  box-shadow: inset 0 0 12px rgba(248,113,113,.12);
+}
 @keyframes dmRecentLatestIn {
   0% { transform: translateX(-6px); filter: brightness(1.4); }
   100% { transform: translateX(0); filter: brightness(1); }
