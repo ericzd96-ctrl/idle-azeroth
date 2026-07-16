@@ -11909,6 +11909,25 @@ function stageEdgeFx(kind, opts){
   st.appendChild(el);
   setTimeout(()=>el.remove(),820);
 }
+function combatCueLanePush(title, detail, kind){
+  if(typeof document==='undefined'||document.hidden)return;
+  const lane=document.getElementById('combat-cue-lane');
+  if(!lane)return;
+  const safeKind=String(kind||'info').replace(/[^a-z0-9_-]/gi,'')||'info';
+  const item=document.createElement('div');
+  item.className='combat-cue-chip '+safeKind;
+  const iconMap={ crit:'✦', hit:'✹', danger:'!', boss:'!!', interrupt:'X', heal:'+', shield:'◆', kill:'✓', info:'•' };
+  const icon=document.createElement('b');
+  icon.textContent=iconMap[safeKind]||iconMap.info;
+  item.appendChild(icon);
+  const text=document.createElement('span');
+  text.textContent=String(title||'战斗事件')+(detail?' · '+String(detail):'');
+  item.appendChild(text);
+  lane.prepend(item);
+  while(lane.children.length>4) lane.lastElementChild.remove();
+  setTimeout(()=>item.classList.add('fade'),2200);
+  setTimeout(()=>item.remove(),2900);
+}
 function combatEventBanner(title, detail, kind){
   if(typeof document==='undefined'||document.hidden)return;
   const now=Date.now();
@@ -11928,6 +11947,7 @@ function combatEventBanner(title, detail, kind){
     el.appendChild(detailEl);
   }
   st.appendChild(el);
+  combatCueLanePush(title, detail, kind||'kill');
   setTimeout(()=>el.remove(), important ? 1250 : 900);
 }
 function combatCueToast(title, detail, kind){
@@ -11949,6 +11969,7 @@ function combatCueToast(title, detail, kind){
     el.appendChild(span);
   }
   st.appendChild(el);
+  combatCueLanePush(title, detail, key);
   setTimeout(()=>el.remove(),950);
 }
 function killStreakToast(n){
