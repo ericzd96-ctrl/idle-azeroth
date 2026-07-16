@@ -148,6 +148,7 @@ let _dmRecentSkillSig = '';
 let _stageSkillChainSig = '';
 let _dmCombatSummarySig = '';
 let _dmSkillFxGuideSig = '';
+let _dmCastKitSig = '';
 let _dmTacticsSig = '';
 let _dmCombatTempoSig = '';
 let _dmCombatHeatSig = '';
@@ -994,7 +995,7 @@ function combatAdviceSkillText(kind, now) {
   if (Number.isFinite(best.left) && best.left > 0) return `${prefix}还差 ${Math.ceil(best.left / 1000)}秒`;
   return `${prefix}缺资源`;
 }
-function combatAdviceInterruptSkillText(now) {
+function combatAdviceInterruptEntries(now) {
   const c = (typeof getCls === 'function') ? getCls() : null;
   const selected = Array.isArray(state?.selectedSkills) ? state.selectedSkills : [];
   const manual = selected.map(key => ({ key, sk:c?.skills?.[key], auto:false })).filter(x => x.sk);
@@ -1015,11 +1016,69 @@ function combatAdviceInterruptSkillText(now) {
     if (a.ready !== b.ready) return a.ready ? -1 : 1;
     return a.left - b.left || (a.sk.cd || 0) - (b.sk.cd || 0);
   });
+}
+function combatAdviceInterruptSkillText(now) {
+  const entries = combatAdviceInterruptEntries(now);
   const best = entries[0];
   if (!best) return '补一个打断技能';
   if (best.ready) return `按 ${best.sk.name}`;
   if (Number.isFinite(best.left) && best.left > 0) return `打断还差 ${Math.ceil(best.left / 1000)}秒`;
   return '打断缺资源';
+}
+function combatCastKitMeta(label, entries, opts) {
+  const best = entries[0] || null;
+  const count = entries.length;
+  if (!count) {
+    return {
+      tone:'empty',
+      text:`${label}:未携带`,
+      title:`当前技能配置没有${label}类技能。${opts?.emptyAdvice || '建议补一个应对高压战斗。'}`
+    };
+  }
+  if (best.ready) {
+    return {
+      tone:opts?.readyTone || 'ready',
+      text:`${label}:${best.sk?.name || '就绪'}`,
+      title:`${label}就绪: ${best.sk?.name || '技能'}。来源: ${best.auto ? '自动技能' : '手动栏'}。同类技能 ${count} 个。`
+    };
+  }
+  if (Number.isFinite(best.left) && best.left > 0) {
+    const sec = Math.ceil(best.left / 1000);
+    return {
+      tone:'wait',
+      text:`${label}:${sec}s`,
+      title:`最快${label}技能 ${best.sk?.name || '技能'} 还差 ${sec} 秒。同类技能 ${count} 个。`
+    };
+  }
+  return {
+    tone:'resource',
+    text:`${label}:缺资源`,
+    title:`有${label}技能,但当前资源不足。最快候选: ${best.sk?.name || '技能'}。`
+  };
+}
+function updateDmgCastKit(now) {
+  const el = $('dm-cast-kit');
+  if (!el) return;
+  const interruptMeta = combatCastKitMeta('打断', combatAdviceInterruptEntries(now), { readyTone:'danger', emptyAdvice:'高危读条会更难处理。' });
+  const healMeta = combatCastKitMeta('治疗', combatAdviceSkillEntries('heal', now), { readyTone:'heal', emptyAdvice:'低血线时会缺少直接抬血手段。' });
+  const defenseMeta = combatCastKitMeta('减伤', combatAdviceSkillEntries('defensive', now), { readyTone:'defense', emptyAdvice:'不可断读条更需要护盾或减伤覆盖。' });
+  const metas = [interruptMeta, healMeta, defenseMeta];
+  const sig = metas.map(x => `${x.tone}:${x.text}`).join('|');
+  if (sig === _dmCastKitSig) return;
+  _dmCastKitSig = sig;
+  el.replaceChildren();
+  const title = document.createElement('span');
+  title.className = 'dm-cast-kit-title';
+  title.textContent = '应对';
+  title.title = '当前技能栏面对首领读条时的准备度。';
+  el.appendChild(title);
+  metas.forEach(meta => {
+    const chip = document.createElement('span');
+    chip.className = `dm-cast-kit-chip ${meta.tone}`;
+    chip.textContent = meta.text;
+    chip.title = meta.title;
+    el.appendChild(chip);
+  });
 }
 function combatPressureActionChip(meta, now) {
   const cls = meta?.cls || 'safe';
@@ -3370,6 +3429,7 @@ function updateDmgMeter() {
   updateDmgVulnerabilityWindow();
   updateDmgVulnerabilityHit();
   updateDmgCombatSummary(total, healTotal);
+  updateDmgCastKit(Date.now());
   updateDmgTacticalStatus(total, healTotal, elapsed);
 
   // 英雄条

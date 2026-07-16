@@ -1470,9 +1470,13 @@ function showEnemyInstantSkillFx(mon, targetEl, skill, opts){
   const sourceEl = monsterFloatAnchor(mon);
   if(!sourceEl) return;
   const danger = monsterSkillDangerLevel(skill) > 0 || !!mon.isBoss || (opts?.taken || 0) >= (state?.hero?.hpMax || 1) * 0.08;
-  const school = skillVisualSchool(null, skill, 'boss');
+  const actor = mon.isBoss ? 'boss' : 'enemy';
+  const school = skillVisualSchool(null, skill, actor);
+  const targetMax = opts?.targetMax || (targetEl?.id === 'comp-mini'
+    ? (computeCompanionStats()?.hpMax || state?.hero?.hpMax || 0)
+    : (state?.hero?.hpMax || 0));
   showSkillCastFx(sourceEl, skill, {
-    actor:'boss',
+    actor,
     school,
     small:true,
     pulse:danger ? 'danger' : 'bosscast',
@@ -1481,12 +1485,14 @@ function showEnemyInstantSkillFx(mon, targetEl, skill, opts){
     cue:false
   });
   showSkillImpactFx(sourceEl, targetEl, skill, {
-    actor:'boss',
+    actor,
     school,
+    amount:opts?.taken || 0,
+    targetMax,
     scale:danger ? 0.9 : 0.72,
     pulse:danger ? 'danger' : 'hit',
     duration:danger ? 520 : 430,
-    record:false,
+    record:opts?.record !== false,
     trail:true
   });
 }
@@ -1494,8 +1500,8 @@ function showEnemySupportSkillFx(mon, skill, opts){
   if(!mon || !skill || typeof document === 'undefined' || document.hidden) return;
   const sourceEl = monsterFloatAnchor(mon);
   if(!sourceEl) return;
-  const school = skillSupportVisualSchool(null, skill, 'boss');
   const actor = mon.isBoss ? 'boss' : 'enemy';
+  const school = skillSupportVisualSchool(null, skill, actor);
   const important = !!(mon.isBoss || skill.summonCount || skill.shieldPct || skill.healPct);
   showSkillCastFx(sourceEl, skill, {
     actor,

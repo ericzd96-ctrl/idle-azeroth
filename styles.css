@@ -6912,6 +6912,8 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   .dm-skill-fx-guide { gap: 3px; }
   .dm-skill-fx-guide-chip { max-width: 45%; padding: 1px 5px; font-size: 9px; }
   .dm-skill-fx-guide-chip:nth-child(n+7) { display: none; }
+  .dm-cast-kit { gap: 3px; }
+  .dm-cast-kit-chip { max-width: 31%; padding: 1px 4px; font-size: 9px; }
   .combat-cue-chip { max-width: 32%; padding: 1px 5px 1px 4px; }
   .combat-cue-chip:nth-child(n+4) { display: none; }
   .combat-cue-chip span { font-size: 9px; }
@@ -9551,6 +9553,63 @@ button.dm-heat-action.ready.skill-pressed {
   border-color: rgba(248,113,113,.54);
   color: #fecaca;
   box-shadow: inset 0 0 9px rgba(248,113,113,.14), 0 0 10px rgba(248,113,113,.10);
+}
+.dm-cast-kit {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px dashed rgba(148,163,184,.18);
+}
+.dm-cast-kit-title {
+  flex: 0 0 auto;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 900;
+}
+.dm-cast-kit-chip {
+  min-width: 0;
+  max-width: 132px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,.22);
+  background: rgba(15,23,42,.34);
+  color: #cbd5e1;
+  font-size: 10px;
+  font-weight: 850;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dm-cast-kit-chip.danger,
+.dm-cast-kit-chip.ready {
+  color: #fecaca;
+  border-color: rgba(248,113,113,.42);
+  background: rgba(127,29,29,.24);
+}
+.dm-cast-kit-chip.heal {
+  color: #bbf7d0;
+  border-color: rgba(52,211,153,.34);
+  background: rgba(6,95,70,.22);
+}
+.dm-cast-kit-chip.defense {
+  color: #bfdbfe;
+  border-color: rgba(96,165,250,.34);
+  background: rgba(30,64,175,.22);
+}
+.dm-cast-kit-chip.wait {
+  color: #fde68a;
+  border-color: rgba(251,191,36,.32);
+  background: rgba(113,63,18,.20);
+}
+.dm-cast-kit-chip.resource,
+.dm-cast-kit-chip.empty {
+  color: #94a3b8;
+  border-color: rgba(148,163,184,.18);
+  background: rgba(15,23,42,.24);
 }
 .meter-breakdown-title {
   display: flex;
