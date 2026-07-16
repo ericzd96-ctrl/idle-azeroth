@@ -8391,6 +8391,37 @@ button.legend:hover:not(:disabled) {
   background: rgba(15,23,42,.30);
   box-shadow: none;
 }
+.dm-vuln-hit-row { align-items: stretch; }
+.dm-vuln-hit {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 6px;
+  border-radius: 5px;
+  border: 1px solid rgba(250,204,21,.38);
+  background: rgba(113,63,18,.18);
+  color: #fde68a;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dm-vuln-hit.crit {
+  color: #fef3c7;
+  border-color: rgba(250,204,21,.52);
+  background: rgba(146,64,14,.24);
+  box-shadow: inset 0 0 10px rgba(250,204,21,.12);
+}
+.dm-vuln-hit.hit {
+  color: #fde68a;
+  border-color: rgba(250,204,21,.40);
+  background: rgba(113,63,18,.18);
+}
+.dm-vuln-hit.idle {
+  color: #94a3b8;
+  border-color: rgba(148,163,184,.22);
+  background: rgba(15,23,42,.30);
+}
 @keyframes dmBossCastPulse {
   0%, 100% { filter: brightness(1); }
   50% { filter: brightness(1.22); }

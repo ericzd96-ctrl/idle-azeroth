@@ -11693,11 +11693,12 @@ function tickCast(now){
       const critRate = monsterCritRate(mon, now);
       const bossCastEl = monsterFloatAnchor(mon);
       if(bossCastEl) showSkillCastFx(bossCastEl, bc, { actor:'boss', pulse:'bosscast', duration:460 });
-      if(bc.type==='heal'){const h=bossSkillHealAmount(mon, bc.heal||0.2);mon.hp=Math.min(mon.hpMax,mon.hp+h);showMonsterFloat(mon,'💚+'+h,'#6ee7b7');}
+      if(bc.type==='heal'){const h=bossSkillHealAmount(mon, bc.heal||0.2);mon.hp=Math.min(mon.hpMax,mon.hp+h);showMonsterFloat(mon,'💚+'+h,'#6ee7b7');if(bossCastEl)showSkillSelfFx(bossCastEl,bc,{actor:'boss',school:'heal',pulse:'heal',duration:520});}
       else if(bc.type==='buff'||bc.type==='support'||bc.type==='summon'||(bc.summonCount && !bc.mul)){
         log(`💀 ${mon.bossName || mon.name} 释放了 ${bc.name}!`,'bad');
         showMonsterFloat(mon, (bc.icon || '✨') + bc.name + '!', '#fda4af');
         applyMonsterSupportSkill(mon, bc, now, { announce:false });
+        if(bossCastEl){const bossSupportSchool=skillSupportVisualSchool(null,bc,'boss');showSkillSelfFx(bossCastEl,bc,{actor:'boss',school:bossSupportSchool,pulse:bossSupportSchool==='shield'?'shield':'bosscast',duration:520});}
       } else{
         const mul=bc.mul||2;
         // DoT 类技能:不一次出伤,把这一发摊成持续灼烧(给治疗/吸血留反应空间);不暴击、读条可打断
@@ -11836,7 +11837,7 @@ function castSkill(skillKey,manual){
         let dd=d.dmg;
         {const dr=monsterDamageReduction(target, now);if(dr)dd=Math.max(1,Math.floor(dd*(1-dr)));}
         dd=absorbMonsterBarrier(target,dd,sk.icon||'✨').remaining;   // 技能也被敌方护盾吸收(不再穿盾)
-        target.hp-=dd;dmgDone+=dd;trackDmg('hero',dd,d.crit,sk.name);showMonsterFloat(target,(sk.icon||'✨')+'-'+dd,d.crit?'#fbbf24':'#a335ee',{variant:d.crit?'crit':'hit',scale:d.crit?1.14:1,important:true});
+        target.hp-=dd;dmgDone+=dd;trackDmg('hero',dd,d.crit,sk.name);trackVulnerabilityWindowHit(target,dd,sk.name,{crit:d.crit||forceCrit,aoe:true});showMonsterFloat(target,(sk.icon||'✨')+'-'+dd,d.crit?'#fbbf24':'#a335ee',{variant:d.crit?'crit':'hit',scale:d.crit?1.14:1,important:true});
         if(heroCastEl){
           const targetEl = monsterFloatAnchor(target);
           const strong = fxCount < 4;
@@ -11866,7 +11867,7 @@ function castSkill(skillKey,manual){
       let dd=d.dmg;
       {const dr=monsterDamageReduction(mon, now);if(dr)dd=Math.max(1,Math.floor(dd*(1-dr)));}
       dd=absorbMonsterBarrier(mon,dd,sk.icon||'✨').remaining;   // 技能也被敌方护盾吸收(不再穿盾)
-      mon.hp-=dd;dmgDone=dd;trackDmg('hero',dd,d.crit,sk.name);
+      mon.hp-=dd;dmgDone=dd;trackDmg('hero',dd,d.crit,sk.name);trackVulnerabilityWindowHit(mon,dd,sk.name,{crit:d.crit||forceCrit,aoe:false});
       companionCoordinateTrigger(mon, dd, { now, crit:d.crit || forceCrit, skill:true, state:!!(sk.stateKey || sk.debuff), control:!!(sk.slow || sk.stun || sk.interruptCast || sk.debuff === 'sunder') });
       showMonsterFloat(mon,(sk.icon||'✨')+'-'+dd,(d.crit||forceCrit)?'#fbbf24':'#a335ee',{variant:(d.crit||forceCrit)?'crit':'hit',scale:(d.crit||forceCrit)?1.16:1,important:true});
       if(heroCastEl) showSkillImpactFx(heroCastEl, monsterFloatAnchor(mon), sk, { skillKey, actor:'hero', scale:(d.crit||forceCrit)?1.14:1, pulse:(d.crit||forceCrit)?'crit':'hit' });
@@ -11960,6 +11961,14 @@ function doInterrupt(skillKey){
   }
   log('🦶 打断了 '+bossName+' 的 '+bossCasting.icon+' '+bossCasting.name+'!','good');
   combatEventBanner('打断成功', (bossCasting.icon || '') + (bossCasting.name || '施法'), 'interrupt');
+  if(skillKey){
+    const heroSkill=getCls()?.skills?.[skillKey];
+    const heroEl=$('hero-emoji');
+    const bossEl=mon?monsterFloatAnchor(mon):null;
+    const school=skillSupportVisualSchool(skillKey,heroSkill,'hero');
+    if(heroEl)showSkillCastFx(heroEl,heroSkill||{name:'打断',icon:'🦶'}, { skillKey, actor:'hero', small:true, school, pulse:'artifact', duration:360 });
+    if(heroEl&&bossEl)showSkillImpactFx(heroEl,bossEl,heroSkill||{name:'打断',icon:'🦶'}, { skillKey, actor:'hero', school, scale:.82, pulse:'control', duration:420 });
+  }
   if(mon) showInterruptFx(mon, bossCasting._empowered ? 'perfect' : 'success', bossCasting.name);
   let softResidual = false;
   if(bossCasting.interruptPolicy === 'soft' && mon && mon.hp > 0){
@@ -11991,9 +12000,24 @@ function doInterrupt(skillKey){
 /* ---------- 随从 ---------- */
 let lastCompAtk=0,lastCompSkill=0,compSkillIdx=0,lastCompRegen=0;
 /* ---------- 伤害统计(战斗日志下面的伤害条) ---------- */
-function defaultDmgStats(){return {hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,heroHeal:0,compHeal:0,heroHealMax:0,compHealMax:0,heroHealSkills:{},compHealSkills:{},lastHeroHealAmount:0,lastHeroHealAt:0,lastHeroHealSkill:'',lastCompHealAmount:0,lastCompHealAt:0,lastCompHealSkill:'',heroShield:0,compShield:0,heroShieldMax:0,compShieldMax:0,lastHeroShieldAmount:0,lastHeroShieldAt:0,lastHeroShieldSkill:'',lastCompShieldAmount:0,lastCompShieldAt:0,lastCompShieldSkill:'',kills:0,heroSkills:{},compSkills:{},taken:0,takenMax:0,takenHits:0,compTaken:0,compTakenMax:0,compTakenHits:0,takenSources:{},compTakenSources:{},killTs:0,killFast:0,killSlow:0,peakDps:0,lastTakenAmount:0,lastTakenAt:0,lastTakenSource:'',lastTakenSkill:'',lastTakenBoss:false,maxTakenSource:'',maxTakenSkill:'',lastCompTakenAmount:0,lastCompTakenAt:0,lastCompTakenSource:'',lastCompTakenSkill:'',lastCompTakenBoss:false,maxCompTakenSource:'',maxCompTakenSkill:'',interruptSuccesses:0,interruptFails:0,lastInterruptAt:0,lastInterruptResult:'',lastInterruptSkill:'',lastInterruptBoss:'',lastInterruptCast:'',lastInterruptEmpowered:false,lastInterruptSoft:false,bossCastHits:0,bossCastTotalDamage:0,lastBossCastAt:0,lastBossCastName:'',lastBossCastBoss:'',lastBossCastTarget:'',lastBossCastDamage:0,lastBossCastKind:'',lastBossCastEmpowered:false};}
+function defaultDmgStats(){return {hero:0,comp:0,start:0,last:0,heroMax:0,compMax:0,heroCrits:0,compCrits:0,heroHits:0,compHits:0,heroHeal:0,compHeal:0,heroHealMax:0,compHealMax:0,heroHealSkills:{},compHealSkills:{},lastHeroHealAmount:0,lastHeroHealAt:0,lastHeroHealSkill:'',lastCompHealAmount:0,lastCompHealAt:0,lastCompHealSkill:'',heroShield:0,compShield:0,heroShieldMax:0,compShieldMax:0,lastHeroShieldAmount:0,lastHeroShieldAt:0,lastHeroShieldSkill:'',lastCompShieldAmount:0,lastCompShieldAt:0,lastCompShieldSkill:'',kills:0,heroSkills:{},compSkills:{},taken:0,takenMax:0,takenHits:0,compTaken:0,compTakenMax:0,compTakenHits:0,takenSources:{},compTakenSources:{},killTs:0,killFast:0,killSlow:0,peakDps:0,lastTakenAmount:0,lastTakenAt:0,lastTakenSource:'',lastTakenSkill:'',lastTakenBoss:false,maxTakenSource:'',maxTakenSkill:'',lastCompTakenAmount:0,lastCompTakenAt:0,lastCompTakenSource:'',lastCompTakenSkill:'',lastCompTakenBoss:false,maxCompTakenSource:'',maxCompTakenSkill:'',interruptSuccesses:0,interruptFails:0,lastInterruptAt:0,lastInterruptResult:'',lastInterruptSkill:'',lastInterruptBoss:'',lastInterruptCast:'',lastInterruptEmpowered:false,lastInterruptSoft:false,bossCastHits:0,bossCastTotalDamage:0,lastBossCastAt:0,lastBossCastName:'',lastBossCastBoss:'',lastBossCastTarget:'',lastBossCastDamage:0,lastBossCastKind:'',lastBossCastEmpowered:false,vulnWindowHits:0,vulnWindowDamage:0,lastVulnWindowHitAt:0,lastVulnWindowSkill:'',lastVulnWindowTarget:'',lastVulnWindowDamage:0,lastVulnWindowCrit:false,lastVulnWindowAoe:false};}
 let dmgStats=defaultDmgStats();
 function takenSourceLabel(meta){const src=normalizeTrackedSkillLabel(meta?.source)||'敌人';const skill=normalizeTrackedSkillLabel(meta?.skill);return skill&&skill!==src?`${src}·${skill}`:src;}
+function trackVulnerabilityWindowHit(mon,amt,skillLabel,meta){
+  const now=Date.now();
+  if(!mon||amt<=0||!((mon.sunderUntil||0)>now)||!((mon.stunUntil||0)>now))return;
+  if(typeof dmgStats==='undefined'||!dmgStats)return;
+  const damage=Math.floor(amt||0);
+  if(!dmgStats.start)dmgStats.start=now;dmgStats.last=now;
+  dmgStats.vulnWindowHits=(dmgStats.vulnWindowHits||0)+1;
+  dmgStats.vulnWindowDamage=(dmgStats.vulnWindowDamage||0)+damage;
+  dmgStats.lastVulnWindowHitAt=now;
+  dmgStats.lastVulnWindowSkill=normalizeTrackedSkillLabel(skillLabel)||'技能';
+  dmgStats.lastVulnWindowTarget=normalizeTrackedSkillLabel(mon.bossName||mon.name)||'目标';
+  dmgStats.lastVulnWindowDamage=damage;
+  dmgStats.lastVulnWindowCrit=!!meta?.crit;
+  dmgStats.lastVulnWindowAoe=!!meta?.aoe;
+}
 function trackBossCastOutcome(cast,mon,meta){
   if(typeof dmgStats==='undefined'||!dmgStats)return;
   const damage=Math.max(0,Math.floor(meta?.damage||0));

@@ -540,6 +540,34 @@ function updateDmgVulnerabilityWindow() {
   el.textContent = `${left <= 1800 ? '快结束' : '爆发'} · ${name} 易伤+硬直 · ${(left / 1000).toFixed(1)}s`;
   el.title = `破绽窗口: ${name} 正在硬直且易伤。硬直剩余 ${(stunLeft / 1000).toFixed(1)} 秒,易伤剩余 ${(sunderLeft / 1000).toFixed(1)} 秒。`;
 }
+function updateDmgVulnerabilityHit() {
+  const row = $('dm-vuln-hit-row');
+  const el = $('dm-vuln-hit');
+  if (!row || !el) return;
+  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
+  if (!ds || !ds.lastVulnWindowHitAt) {
+    row.style.display = 'none';
+    el.className = 'dm-vuln-hit idle';
+    el.textContent = '-';
+    el.removeAttribute('title');
+    return;
+  }
+  const ago = Math.max(0, Math.floor((Date.now() - ds.lastVulnWindowHitAt) / 1000));
+  if (ago > 12) {
+    row.style.display = 'none';
+    el.className = 'dm-vuln-hit idle';
+    el.textContent = '-';
+    el.removeAttribute('title');
+    return;
+  }
+  const skill = ds.lastVulnWindowSkill || '技能';
+  const target = ds.lastVulnWindowTarget || '目标';
+  const damage = ds.lastVulnWindowDamage || 0;
+  row.style.display = '';
+  el.className = `dm-vuln-hit ${ds.lastVulnWindowCrit ? 'crit' : 'hit'}`;
+  el.textContent = `${ds.lastVulnWindowCrit ? '暴击' : '命中'} · ${skill} → ${target} · ${fmt(damage)} · ${ago}s前`;
+  el.title = `破绽窗口命中: ${skill} 对 ${target} 造成 ${fmt(damage)} 点伤害。本轮窗口命中 ${ds.vulnWindowHits || 0} 次,累计 ${fmt(ds.vulnWindowDamage || 0)}。`;
+}
 
 /* 导航栏红点:远征储备满 / 公会今日有可做的捐献 */
 function updateNavBadges() {
@@ -2074,6 +2102,7 @@ function updateDmgMeter() {
   updateDmgLastInterrupt();
   updateDmgBossCastOutcome();
   updateDmgVulnerabilityWindow();
+  updateDmgVulnerabilityHit();
 
   // 英雄条
   const heroBar = $('dm-hero-bar');
