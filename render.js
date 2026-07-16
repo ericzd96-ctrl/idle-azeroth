@@ -3990,22 +3990,24 @@ function bossCastSkillPrompt(skillKey, sk, now, cdMs) {
     const hard = ui.urgent || ui.cast?.interruptPolicy === 'hard';
     const label = ready ? (hard ? '必断' : '可断') : (cdMs > 0 ? `${Math.ceil(cdMs / 1000)}秒` : '缺资源');
     const cls = ready ? (hard ? 'interrupt-hot' : 'interrupt-soft') : 'interrupt-wait';
+    const recommended = ready && ui.ready?.key === skillKey;
     const action = ready
       ? (hard ? '现在点击:打断读条并制造破绽窗口' : '现在点击:打断或削弱这次读条')
       : (cdMs > 0 ? `暂时不能用:还差 ${Math.ceil(cdMs / 1000)}秒` : '暂时不能用:资源不足');
     const tip = `${ui.cast.icon || ''}${ui.cast.name || '施法'} · ${ui.threatMeta.label} · ${ui.interruptText} · ${action}`;
-    return { label, cls, tip, final:ui.finalWindow, urgent:hard, timerPct:Math.max(0, Math.min(100, ui.remainMs / Math.max(1, ui.duration) * 100)) };
+    return { label, cls, tip, final:ui.finalWindow, urgent:hard, recommended, timerPct:Math.max(0, Math.min(100, ui.remainMs / Math.max(1, ui.duration) * 100)) };
   }
   const kind = bossCastResponseKind(skillKey, sk);
   const needsBackup = !ui.canInterrupt || !ui.ready || ui.urgent;
   if (!kind || !needsBackup || (!ui.urgent && ui.canInterrupt && ui.interruptCount > 0)) return null;
   const label = ready ? (kind === 'heal' ? '治疗' : '减伤') : (cdMs > 0 ? `${Math.ceil(cdMs / 1000)}秒` : '缺资源');
   const cls = ready ? (kind === 'heal' ? 'heal-hot' : 'defensive-hot') : 'defensive-wait';
+  const recommended = ready && ui.responseReady?.key === skillKey;
   const action = ready
     ? (kind === 'heal' ? '现在点击:用治疗覆盖这次读条' : '现在点击:用减伤/护盾覆盖这次读条')
     : (cdMs > 0 ? `暂时不能用:还差 ${Math.ceil(cdMs / 1000)}秒` : '暂时不能用:资源不足');
   const tip = `${ui.cast.icon || ''}${ui.cast.name || '施法'} · ${ui.threatMeta.label} · ${ui.interruptText} · ${action}`;
-  return { label, cls, tip, final:ui.finalWindow, urgent:ui.urgent, timerPct:Math.max(0, Math.min(100, ui.remainMs / Math.max(1, ui.duration) * 100)) };
+  return { label, cls, tip, final:ui.finalWindow, urgent:ui.urgent, recommended, timerPct:Math.max(0, Math.min(100, ui.remainMs / Math.max(1, ui.duration) * 100)) };
 }
 function vulnerabilityWindowState(now) {
   const mon = state?.currentMonsters?.find(m => m && m.hp > 0 && (m.sunderUntil || 0) > now && (m.stunUntil || 0) > now);
@@ -4263,8 +4265,9 @@ function renderSkillBar() {
     const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, sk.icon) : sk.icon;
     const roleTag = skillButtonRoleTag(key, sk);
     const bossPromptClass = bossPrompt ? `boss-cast-prompt ${bossPrompt.cls || ''} ${bossPrompt.final ? 'boss-cast-final' : ''}` : '';
+    const recommendClass = bossPrompt?.recommended ? 'boss-cast-recommended' : '';
     const vulnPromptClass = vulnPrompt ? `vuln-window-prompt ${vulnPrompt.cls || ''} ${vulnPrompt.final ? 'vuln-window-final' : ''}` : '';
-    return `<button class="skill-btn skill-role-${roleTag.cls} ${onCd?'on-cd':''} ${useStateClass} ${bossPromptClass} ${vulnPromptClass}" data-skill="${key}" data-cd-active="${onCd?'1':'0'}" data-resource-ready="${hasMp?'1':'0'}" data-cd-total="${cdTotalMs}" draggable="true" title="${tip}" data-base-title="${baseTipAttr}"
+    return `<button class="skill-btn skill-role-${roleTag.cls} ${onCd?'on-cd':''} ${useStateClass} ${bossPromptClass} ${recommendClass} ${vulnPromptClass}" data-skill="${key}" data-cd-active="${onCd?'1':'0'}" data-resource-ready="${hasMp?'1':'0'}" data-cd-total="${cdTotalMs}" draggable="true" title="${tip}" data-base-title="${baseTipAttr}"
       style="--cd-angle:${cdAngle}deg;${bossPrompt ? `--boss-cast-pct:${Math.round(bossPrompt.timerPct || 0)}%;` : ''}${vulnPrompt ? `--skill-window-pct:${Math.round(vulnPrompt.timerPct || 0)}%;` : ''}${coreMatch&&!onCd?'border-color:#38bdf8;box-shadow:0 0 0 1px rgba(56,189,248,.50),0 0 14px rgba(56,189,248,.18)':(procMatch&&!onCd?'border-color:#facc15;box-shadow:0 0 0 1px rgba(250,204,21,.45)':(!onCd&&hasMp?'border-color:var(--accent)':''))}">
       <span class="sk-name">${skillIconHtml} ${sk.name}</span>
       <span class="sk-role ${roleTag.cls}" title="${roleTag.title}">${roleTag.label}</span>
@@ -4336,6 +4339,7 @@ function updateSkillBarCd() {
     btn.classList.toggle('defensive-wait', bossPrompt?.cls === 'defensive-wait');
     btn.classList.toggle('boss-cast-prompt', !!bossPrompt);
     btn.classList.toggle('boss-cast-final', !!bossPrompt?.final);
+    btn.classList.toggle('boss-cast-recommended', !!bossPrompt?.recommended);
     btn.classList.toggle('vuln-window-prompt', !!vulnPrompt);
     btn.classList.toggle('vuln-window-final', !!vulnPrompt?.final);
     btn.classList.toggle('vuln-burst-hot', vulnPrompt?.cls === 'vuln-burst-hot');
