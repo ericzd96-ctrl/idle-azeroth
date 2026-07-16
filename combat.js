@@ -332,6 +332,20 @@ function skillButtonEl(skillKey){
   }
   return null;
 }
+const SKILL_BUTTON_SCHOOL_CLASSES = ['school-fire','school-frost','school-arcane','school-nature','school-shadow','school-holy','school-physical','school-heal','school-shield'];
+function showSkillButtonCastFx(skillKey, sk, opts){
+  if(typeof document === 'undefined' || document.hidden || !skillKey) return;
+  const btn = skillButtonEl(skillKey);
+  if(!btn) return;
+  const school = String(opts?.school || skillVisualSchool(skillKey, sk, 'hero')).replace(/[^a-z0-9_-]/gi, '') || 'physical';
+  btn.classList.remove('skill-cast-success', ...SKILL_BUTTON_SCHOOL_CLASSES);
+  void btn.offsetWidth;
+  btn.classList.add('skill-cast-success', `school-${school}`);
+  setTimeout(() => {
+    const b = skillButtonEl(skillKey);
+    if(b) b.classList.remove('skill-cast-success', ...SKILL_BUTTON_SCHOOL_CLASSES);
+  }, opts?.duration || 620);
+}
 function showSkillDeniedFx(skillKey, reason, opts){
   if(typeof document === 'undefined' || document.hidden) return;
   const btn = skillButtonEl(skillKey);
@@ -11746,6 +11760,7 @@ function castSkill(skillKey,manual){
     if(!ok)return;
     if(cost>0)state.resource-=cost;
     const cdSec=sk.cd||10;state.skillCooldowns[skillKey]=now+cdSec*1000/castSpeedMul();
+    showSkillButtonCastFx(skillKey, sk, { school:skillSupportVisualSchool(skillKey, sk, 'hero') });
     markDirty('skills','hero');
     return;
   }
@@ -11762,6 +11777,7 @@ function castSkill(skillKey,manual){
   const specProc = consumeSpecProcForSkill(skillKey, sk, now);
   const heroCastEl = $('hero-emoji');
   const heroFxSchool = sk.type === 'dmg' ? skillVisualSchool(skillKey, sk, 'hero') : skillSupportVisualSchool(skillKey, sk, 'hero');
+  showSkillButtonCastFx(skillKey, sk, { school:heroFxSchool });
   if(heroCastEl) showSkillCastFx(heroCastEl, sk, { skillKey, actor:'hero', small:sk.type!=='dmg', school:heroFxSchool });
   if(sk.type==='dmg'){const mon=state.currentMonsters[0];if(!mon)return;
     // 斩杀:消耗所有怒气,每点怒气+1%伤害
