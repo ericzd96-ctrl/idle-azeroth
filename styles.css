@@ -9454,6 +9454,7 @@ button.legend:hover:not(:disabled) {
 .dm-pressure-state,
 .dm-pressure-net,
 .dm-pressure-time,
+.dm-pressure-action,
 .dm-pressure-source {
   flex: 0 0 auto;
   min-width: 0;
@@ -9474,6 +9475,39 @@ button.legend:hover:not(:disabled) {
 }
 .dm-pressure-net.companion {
   color: #bfdbfe;
+}
+.dm-pressure-action {
+  max-width: 32%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 900;
+  border: 1px solid rgba(148,163,184,.18);
+}
+.dm-pressure-action.heal {
+  color: #bbf7d0;
+  border-color: rgba(52,211,153,.34);
+  background: rgba(6,95,70,.26);
+}
+.dm-pressure-action.defense {
+  color: #bfdbfe;
+  border-color: rgba(96,165,250,.34);
+  background: rgba(30,64,175,.26);
+}
+.dm-pressure-action.warn {
+  color: #fde68a;
+  border-color: rgba(251,191,36,.36);
+  background: rgba(113,63,18,.28);
+}
+.dm-pressure-action.danger {
+  color: #fecaca;
+  border-color: rgba(248,113,113,.44);
+  background: rgba(127,29,29,.32);
+  box-shadow: 0 0 9px rgba(248,113,113,.14);
+}
+.dm-pressure-action.safe {
+  color: #a7f3d0;
+  border-color: rgba(52,211,153,.24);
+  background: rgba(6,95,70,.18);
 }
 .dm-pressure-time {
   color: #cbd5e1;

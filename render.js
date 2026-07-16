@@ -660,6 +660,43 @@ function combatAdviceSkillText(kind, now) {
   if (Number.isFinite(best.left) && best.left > 0) return `${prefix}还差 ${Math.ceil(best.left / 1000)}秒`;
   return `${prefix}缺资源`;
 }
+function combatPressureActionChip(meta, now) {
+  const cls = meta?.cls || 'safe';
+  const danger = cls === 'danger';
+  const warn = cls === 'warn';
+  const active = danger || warn || meta?.netPerSec > 0 || meta?.compNetPerSec > 0;
+  if (!active) return { tone:'safe', text:'稳住输出', title:'当前净压力很低,继续输出即可。' };
+  const heal = combatAdviceSkillEntries('heal', now)[0] || null;
+  const defensive = combatAdviceSkillEntries('defensive', now)[0] || null;
+  const preferHeal = !!meta?.compDanger || meta?.hpPct < 0.58 || (meta?.compNetPerSec || 0) > (meta?.netPerSec || 0);
+  const ordered = preferHeal ? [heal, defensive] : [defensive, heal];
+  const ready = ordered.find(x => x?.ready);
+  if (ready) {
+    const skText = `${ready.sk.name || ''} ${ready.sk.desc || ''} ${ready.sk.buff || ''}`;
+    const pureHeal = ready.sk.type === 'heal' || ((ready.sk.heal || ready.sk.healPct) && !ready.sk.mul && !ready.sk.interruptCast && !(typeof isDefensiveSkill === 'function' && isDefensiveSkill(ready.key, ready.sk)) && /治疗|恢复|圣疗|愈合|链疗|宁静|生命/.test(skText));
+    return {
+      tone:pureHeal ? 'heal' : 'defense',
+      text:`按 ${ready.sk.name}`,
+      title:`建议现在使用 ${ready.sk.name},处理当前${preferHeal ? '血线' : '承伤'}压力。`
+    };
+  }
+  const wait = ordered.find(x => x && Number.isFinite(x.left) && x.left > 0);
+  if (danger) {
+    return {
+      tone:'danger',
+      text:wait ? `撑${Math.ceil(wait.left / 1000)}秒` : '补保命',
+      title:wait ? `${wait.sk.name} 还差 ${Math.ceil(wait.left / 1000)} 秒,先用其他保命手段或尽快结束战斗。` : '当前压力危险,优先治疗、护盾、减伤或切换更稳的随从。'
+    };
+  }
+  if (warn) {
+    return {
+      tone:'warn',
+      text:wait ? `留 ${wait.sk.name}` : '留保命',
+      title:wait ? `${wait.sk.name} 即将成为关键技能,先不要浪费防护窗口。` : '压力开始抬升,保留治疗或防御技能。'
+    };
+  }
+  return { tone:'safe', text:'稳住输出', title:'压力可控,继续输出并保留关键保命技能。' };
+}
 function combatAdviceSourceShort(source) {
   const raw = String(source || '').replace(/^随从:/, '随从承伤:').trim();
   if (!raw) return '';
@@ -3001,9 +3038,17 @@ function updateDmgMeter() {
     const sourceHtml = topSource
       ? `<span class="dm-pressure-source" title="本轮主要承伤来源">${escapeDmgMeterText(topSource.name)} ${fmt(topSource.amount)}</span>`
       : '';
-    const html = `<span class="dm-pressure-state">${escapeDmgMeterText(label)}</span><span class="dm-pressure-net">主 ${fmt(netPerSec)}/秒</span>${compVisible ? `<span class="dm-pressure-net companion">随 ${fmt(compNetPerSec)}/秒</span>` : ''}${sourceHtml}<span class="dm-pressure-time">${escapeDmgMeterText(surviveText)}</span>`;
+    const action = combatPressureActionChip({
+      cls,
+      hpPct:hpNow / hMax,
+      compDanger:compAlive && (compHpPct < 0.55 || compNetPct > 0.030),
+      netPerSec,
+      compNetPerSec
+    }, Date.now());
+    const actionHtml = action ? `<span class="dm-pressure-action ${escapeDmgMeterText(action.tone)}" title="${escapeDmgMeterText(action.title || action.text)}">${escapeDmgMeterText(action.text)}</span>` : '';
+    const html = `<span class="dm-pressure-state">${escapeDmgMeterText(label)}</span>${actionHtml}<span class="dm-pressure-net">主 ${fmt(netPerSec)}/秒</span>${compVisible ? `<span class="dm-pressure-net companion">随 ${fmt(compNetPerSec)}/秒</span>` : ''}${sourceHtml}<span class="dm-pressure-time">${escapeDmgMeterText(surviveText)}</span>`;
     const sourceDetail = topSource ? `主要承伤来源 ${topSource.name} ${fmt(topSource.amount)}。` : '';
-    const detail = `压力判断: ${hint}。主角承伤 ${fmt(dtps)}/秒,治疗 ${fmt(healPerSec)}/秒,净压力 ${fmt(netPerSec)}/秒。${compAlive ? `随从承伤 ${fmt(compDtps)}/秒,治疗 ${fmt(compHealPerSec)}/秒,净压力 ${fmt(compNetPerSec)}/秒。` : ''}${sourceDetail}`;
+    const detail = `压力判断: ${hint}。${action ? `建议: ${action.title || action.text}。` : ''}主角承伤 ${fmt(dtps)}/秒,治疗 ${fmt(healPerSec)}/秒,净压力 ${fmt(netPerSec)}/秒。${compAlive ? `随从承伤 ${fmt(compDtps)}/秒,治疗 ${fmt(compHealPerSec)}/秒,净压力 ${fmt(compNetPerSec)}/秒。` : ''}${sourceDetail}`;
     pressureEl.className = `dm-pressure ${cls}`;
     pressureEl.title = detail;
     if (pressureEl.dataset.sig !== html) {
