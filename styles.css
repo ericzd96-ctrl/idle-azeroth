@@ -8043,6 +8043,52 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   white-space: nowrap;
   z-index: 3;
 }
+.skill-btn .sk-reason {
+  position: absolute;
+  left: 50%;
+  bottom: -17px;
+  transform: translateX(-50%);
+  max-width: 82px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,.24);
+  background: linear-gradient(180deg, rgba(15,23,42,.96), rgba(2,6,23,.84));
+  color: #cbd5e1;
+  box-shadow: 0 0 10px rgba(15,23,42,.36), inset 0 0 8px rgba(148,163,184,.08);
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  z-index: 5;
+  text-shadow: 0 1px 3px rgba(0,0,0,.92);
+}
+.skill-btn .sk-reason.hot {
+  animation: skillReasonPulse .86s ease-in-out infinite;
+}
+.skill-btn .sk-reason.reason-interrupt {
+  border-color: rgba(250,204,21,.48);
+  color: #fef3c7;
+  box-shadow: 0 0 12px rgba(250,204,21,.16), inset 0 0 8px rgba(250,204,21,.10);
+}
+.skill-btn .sk-reason.reason-burst {
+  border-color: rgba(251,191,36,.42);
+  color: #fde68a;
+}
+.skill-btn .sk-reason.reason-execute {
+  border-color: rgba(251,113,133,.46);
+  color: #fecaca;
+}
+.skill-btn .sk-reason.reason-heal {
+  border-color: rgba(74,222,128,.42);
+  color: #bbf7d0;
+}
+.skill-btn .sk-reason.reason-defense {
+  border-color: rgba(96,165,250,.42);
+  color: #bfdbfe;
+}
 .skill-btn.interrupt-soft .sk-alert {
   background: #713f12;
   border-color: rgba(253,230,138,.55);
@@ -8282,6 +8328,10 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   0%, 100% { filter: brightness(1); }
   50% { filter: brightness(1.35); }
 }
+@keyframes skillReasonPulse {
+  0%, 100% { filter: brightness(1); transform: translateX(-50%) translateY(0); }
+  50% { filter: brightness(1.22); transform: translateX(-50%) translateY(-1px); }
+}
 @media (prefers-reduced-motion: reduce) {
   .stage.shake-fx {
     animation: none !important;
@@ -8308,6 +8358,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   .skill-btn.survival-window-final:not(.on-cd) .skill-window-timer { animation: none; }
   .skill-btn.survival-window-recommended:not(.on-cd) { transform: none; }
   .skill-btn.advice-window-recommended:not(.on-cd) { transform: none; }
+  .skill-btn .sk-reason.hot { animation: none; }
   .resource-bar-delta { animation-duration: 180ms !important; }
   .hp-bar-delta { animation-duration: 180ms !important; }
   .skill-result-badge { animation-duration: 180ms !important; }

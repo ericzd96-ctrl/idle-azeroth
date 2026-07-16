@@ -1139,6 +1139,7 @@ function combatAdviceInterruptEntries(now) {
     if (a.ready !== b.ready) return a.ready ? -1 : 1;
     return a.left - b.left || (a.sk.cd || 0) - (b.sk.cd || 0);
   });
+  return entries;
 }
 function combatAdviceInterruptSkillText(now) {
   const entries = combatAdviceInterruptEntries(now);
@@ -1149,6 +1150,7 @@ function combatAdviceInterruptSkillText(now) {
   return '打断缺资源';
 }
 function combatCastKitMeta(label, entries, opts) {
+  entries = Array.isArray(entries) ? entries : [];
   const best = entries[0] || null;
   const count = entries.length;
   if (!count) {
@@ -5351,6 +5353,38 @@ function survivalSkillPrompt(skillKey, sk, now, cdMs) {
     timerPct:win.severity
   };
 }
+function skillPromptReasonMeta(prompt, source) {
+  if (!prompt) return null;
+  const ready = !/秒|缺资源/.test(String(prompt.label || ''));
+  const waitText = String(prompt.label || '').includes('缺资源') ? '缺资源' : '等冷却';
+  const base = source === 'boss'
+    ? (prompt.cls === 'interrupt-hot' || prompt.cls === 'interrupt-soft' || String(prompt.label || '').includes('断')
+      ? { kind:'interrupt', text:ready ? '断读条' : waitText }
+      : { kind:'defense', text:ready ? '抗读条' : waitText })
+    : source === 'vuln'
+      ? { kind:'burst', text:ready ? '打破绽' : waitText }
+      : source === 'execute'
+        ? { kind:'execute', text:ready ? '收尾' : waitText }
+        : source === 'survival'
+          ? { kind:String(prompt.cls || '').includes('heal') ? 'heal' : 'defense', text:ready ? (prompt.urgent ? '救命' : '稳血') : waitText }
+          : source === 'advice'
+            ? { kind:String(prompt.cls || '').includes('heal') ? 'heal' : 'defense', text:ready ? '建议用' : waitText }
+            : null;
+  if (!base) return null;
+  return {
+    kind:base.kind,
+    text:base.text,
+    hot:!!prompt.recommended || !!prompt.final || !!prompt.urgent,
+    title:prompt.tip || base.text
+  };
+}
+function skillPromptReasonForPrompts(bossPrompt, vulnPrompt, executePrompt, survivalPrompt, advicePrompt) {
+  return skillPromptReasonMeta(bossPrompt, 'boss')
+    || skillPromptReasonMeta(vulnPrompt, 'vuln')
+    || skillPromptReasonMeta(executePrompt, 'execute')
+    || skillPromptReasonMeta(survivalPrompt, 'survival')
+    || skillPromptReasonMeta(advicePrompt, 'advice');
+}
 
 function combatNextActionEntry(key, now) {
   const c = (typeof getCls === 'function') ? getCls() : null;
@@ -5674,6 +5708,7 @@ function renderSkillBar() {
     const survivalPrompt = (bossPrompt || vulnPrompt || executePrompt) ? null : survivalSkillPrompt(key, sk, now, cdMs);
     const advicePrompt = (bossPrompt || vulnPrompt || executePrompt || survivalPrompt) ? null : combatAdviceSkillPrompt(key, sk, now, cdMs);
     const actionPrompt = bossPrompt || vulnPrompt || executePrompt || survivalPrompt || advicePrompt;
+    const promptReason = skillPromptReasonForPrompts(bossPrompt, vulnPrompt, executePrompt, survivalPrompt, advicePrompt);
     const proc = (typeof currentSpecProcSystem === 'function') ? currentSpecProcSystem() : null;
     const activeProc = proc && state.skillRuntime && state.skillRuntime.specProc && state.skillRuntime.specProc.key === proc.key && (!state.skillRuntime.specProc.expire || state.skillRuntime.specProc.expire > now);
     const procText = `${key} ${sk.name || ''} ${sk.desc || ''} ${sk.type || ''}`;
@@ -5744,6 +5779,7 @@ function renderSkillBar() {
       <span class="mp-cost">${coreMatch?'✹ ':(procMatch?'✦ ':'')}${useCost}${c.resKey==='rage'?'怒':c.resKey==='energy'?'能':'蓝'}</span>
       ${onCd?`<div class="cd-overlay" style="--cd-angle:${cdAngle}deg">${(cdMs/1000).toFixed(1)}秒</div>`:''}
       ${actionPrompt ? `<span class="sk-alert">${actionPrompt.label}</span>` : ''}
+      ${promptReason ? `<span class="sk-reason reason-${promptReason.kind}${promptReason.hot ? ' hot' : ''}" title="${String(promptReason.title || promptReason.text).replace(/"/g, '&quot;')}">${promptReason.text}</span>` : ''}
       ${bossPrompt ? '<span class="boss-cast-timer"></span>' : ''}
       ${skillWindowPrompt ? '<span class="skill-window-timer"></span>' : ''}
     </button>`;
@@ -5804,6 +5840,7 @@ function updateSkillBarCd() {
     const survivalPrompt = (!bossPrompt && !vulnPrompt && !executePrompt && sk) ? survivalSkillPrompt(key, sk, now, cdMs) : null;
     const advicePrompt = (!bossPrompt && !vulnPrompt && !executePrompt && !survivalPrompt && sk) ? combatAdviceSkillPrompt(key, sk, now, cdMs) : null;
     const prompt = bossPrompt || vulnPrompt || executePrompt || survivalPrompt || advicePrompt;
+    const promptReason = skillPromptReasonForPrompts(bossPrompt, vulnPrompt, executePrompt, survivalPrompt, advicePrompt);
     btn.classList.toggle('interrupt-hot', bossPrompt?.cls === 'interrupt-hot');
     btn.classList.toggle('interrupt-soft', bossPrompt?.cls === 'interrupt-soft');
     btn.classList.toggle('interrupt-wait', bossPrompt?.cls === 'interrupt-wait');
@@ -5841,6 +5878,19 @@ function updateSkillBarCd() {
       if(badge.textContent !== prompt.label) badge.textContent = prompt.label;
     }else if(badge){
       badge.remove();
+    }
+    let reason = btn.querySelector('.sk-reason');
+    if(promptReason){
+      const cls = `sk-reason reason-${promptReason.kind}${promptReason.hot ? ' hot' : ''}`;
+      if(!reason){
+        reason = document.createElement('span');
+        btn.appendChild(reason);
+      }
+      reason.className = cls;
+      reason.textContent = promptReason.text;
+      reason.title = promptReason.title || promptReason.text;
+    }else if(reason){
+      reason.remove();
     }
     let timer = btn.querySelector('.boss-cast-timer');
     if(bossPrompt){
