@@ -7089,6 +7089,13 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   border-color: #34d399 !important;
   box-shadow: 0 0 0 1px rgba(52,211,153,.55), 0 0 15px rgba(52,211,153,.20);
 }
+.skill-btn.vuln-burst-hot:not(.on-cd) {
+  border-color: #facc15 !important;
+  box-shadow: 0 0 0 1px rgba(250,204,21,.62), 0 0 16px rgba(250,204,21,.24);
+}
+.skill-btn.vuln-burst-wait {
+  border-color: rgba(250,204,21,.32);
+}
 .skill-btn.defensive-wait {
   border-color: rgba(96,165,250,.32);
 }
@@ -7128,10 +7135,20 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   border-color: rgba(167,243,208,.55);
   color: #d1fae5;
 }
+.skill-btn.vuln-burst-hot .sk-alert,
+.skill-btn.vuln-burst-wait .sk-alert {
+  background: #713f12;
+  border-color: rgba(253,230,138,.58);
+  color: #fef3c7;
+}
 .skill-btn.boss-cast-prompt {
   overflow: visible;
 }
-.skill-btn .boss-cast-timer {
+.skill-btn.vuln-window-prompt {
+  overflow: visible;
+}
+.skill-btn .boss-cast-timer,
+.skill-btn .skill-window-timer {
   position: absolute;
   left: 7px;
   right: 7px;
@@ -7144,7 +7161,8 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   overflow: hidden;
   z-index: 4;
 }
-.skill-btn .boss-cast-timer::before {
+.skill-btn .boss-cast-timer::before,
+.skill-btn .skill-window-timer::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -7153,6 +7171,11 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
   background: linear-gradient(90deg, rgba(251,191,36,.95), rgba(248,113,113,.95));
   box-shadow: 0 0 8px rgba(248,113,113,.28);
   transition: width .12s linear;
+}
+.skill-btn .skill-window-timer::before {
+  width: var(--skill-window-pct, 100%);
+  background: linear-gradient(90deg, rgba(254,243,199,.95), rgba(250,204,21,.95));
+  box-shadow: 0 0 8px rgba(250,204,21,.24);
 }
 .skill-btn.interrupt-soft .boss-cast-timer::before {
   background: linear-gradient(90deg, rgba(253,230,138,.95), rgba(251,191,36,.95));
@@ -7170,6 +7193,9 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
 .skill-btn.boss-cast-final:not(.on-cd) .boss-cast-timer {
   animation: bossCastButtonTimerPulse .52s ease-in-out infinite;
 }
+.skill-btn.vuln-window-final:not(.on-cd) .skill-window-timer {
+  animation: bossCastButtonTimerPulse .52s ease-in-out infinite;
+}
 @keyframes interruptPulse {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-1px); }
@@ -7180,6 +7206,7 @@ button.epic    { background: linear-gradient(180deg, #a335ee, #6b21a8); border-c
 }
 @media (prefers-reduced-motion: reduce) {
   .skill-btn.boss-cast-final:not(.on-cd) .boss-cast-timer { animation: none; }
+  .skill-btn.vuln-window-final:not(.on-cd) .skill-window-timer { animation: none; }
 }
 @keyframes skillReadyFlash {
   0% { filter: brightness(1); }

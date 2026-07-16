@@ -3572,6 +3572,32 @@ function bossCastSkillPrompt(skillKey, sk, now, cdMs) {
   const tip = `${ui.cast.icon || ''}${ui.cast.name || '施法'} · ${ui.threatMeta.label} · ${ui.interruptText} · ${action}`;
   return { label, cls, tip, final:ui.finalWindow, urgent:ui.urgent, timerPct:Math.max(0, Math.min(100, ui.remainMs / Math.max(1, ui.duration) * 100)) };
 }
+function vulnerabilityWindowState(now) {
+  const mon = state?.currentMonsters?.find(m => m && m.hp > 0 && (m.sunderUntil || 0) > now && (m.stunUntil || 0) > now);
+  if (!mon) return null;
+  const sunderLeft = Math.max(0, (mon.sunderUntil || 0) - now);
+  const stunLeft = Math.max(0, (mon.stunUntil || 0) - now);
+  const left = Math.min(sunderLeft, stunLeft);
+  if (left <= 0) return null;
+  return { mon, left, sunderLeft, stunLeft, pct:Math.max(0, Math.min(100, left / 2200 * 100)) };
+}
+function vulnerabilitySkillPrompt(skillKey, sk, now, cdMs) {
+  if (!sk || sk.type !== 'dmg') return null;
+  const win = vulnerabilityWindowState(now);
+  if (!win) return null;
+  const isBurst = (sk.mul || 0) >= 3 || sk.consumeRage || sk.alwaysCrit || sk.bonusVsSunder || /斩杀|爆发|处决|大招|终结|审判|混乱|炎爆|瞄准|灭杀/.test(`${sk.name || ''} ${sk.desc || ''}`);
+  if (!isBurst) return null;
+  let cost = Math.max(0, sk.mp || 0);
+  if (state.hero?.costReduction > 0) cost = Math.max(1, Math.floor(cost * (1 - state.hero.costReduction / 100)));
+  const ready = (cdMs || 0) <= 0 && (state.resource || 0) >= cost;
+  const label = ready ? '爆发' : (cdMs > 0 ? `${Math.ceil(cdMs / 1000)}秒` : '缺资源');
+  const cls = ready ? 'vuln-burst-hot' : 'vuln-burst-wait';
+  const target = win.mon.bossName || win.mon.name || '目标';
+  const tip = ready
+    ? `${target} 正在硬直且易伤,现在打出高伤害技能。窗口剩余 ${(win.left / 1000).toFixed(1)} 秒。`
+    : `${target} 处于破绽窗口,但该技能${cdMs > 0 ? '还在冷却' : '资源不足'}。窗口剩余 ${(win.left / 1000).toFixed(1)} 秒。`;
+  return { label, cls, tip, final:win.left <= 900, timerPct:win.pct };
+}
 
 function updateBossIntentLine(now) {
   const el = $('boss-intent-line');
@@ -3750,6 +3776,8 @@ function renderSkillBar() {
     const cdAngle = onCd ? Math.round((1 - Math.min(1, cdMs / cdTotalMs)) * 360) : 360;
     const useStateClass = onCd ? '' : (hasMp ? 'action-ready' : 'resource-starved');
     const bossPrompt = bossCastSkillPrompt(key, sk, now, cdMs);
+    const vulnPrompt = bossPrompt ? null : vulnerabilitySkillPrompt(key, sk, now, cdMs);
+    const actionPrompt = bossPrompt || vulnPrompt;
     const proc = (typeof currentSpecProcSystem === 'function') ? currentSpecProcSystem() : null;
     const activeProc = proc && state.skillRuntime && state.skillRuntime.specProc && state.skillRuntime.specProc.key === proc.key && (!state.skillRuntime.specProc.expire || state.skillRuntime.specProc.expire > now);
     const procText = `${key} ${sk.name || ''} ${sk.desc || ''} ${sk.type || ''}`;
@@ -3797,17 +3825,19 @@ function renderSkillBar() {
     const runeTip = (typeof skillRuneTip === 'function') ? skillRuneTip(key, sk) : '';
     const runeDesc = runeTip ? `\n符文铭刻: ${runeTip}` : '';
     const baseTip = `${sk.name} · ${baseDesc}${detailDesc}${procDesc}${coreDesc}${engineDesc}${elementDesc}${echoDesc}${markDesc}${weaveDesc}${rhythmDesc}${controlDesc}${weaknessDesc}${prepDesc}${overloadDesc}${resourceDesc}${harvestDesc}${pactDesc}${fieldDesc}${chargeDesc}${runeDesc}\n${c.resource} ${sk.mp} · 冷却 ${getSkillCd(sk)}秒`;
-    const tip = `${baseTip}${bossPrompt ? `\nBoss读条: ${bossPrompt.tip}` : ''}`.replace(/"/g, '&quot;');
+    const tip = `${baseTip}${bossPrompt ? `\nBoss读条: ${bossPrompt.tip}` : ''}${vulnPrompt ? `\n破绽窗口: ${vulnPrompt.tip}` : ''}`.replace(/"/g, '&quot;');
     const baseTipAttr = baseTip.replace(/"/g, '&quot;');
     const skillIconHtml = (typeof skillIcon === 'function') ? skillIcon(sk.name, 18, sk.icon) : sk.icon;
     const bossPromptClass = bossPrompt ? `boss-cast-prompt ${bossPrompt.cls || ''} ${bossPrompt.final ? 'boss-cast-final' : ''}` : '';
-    return `<button class="skill-btn ${onCd?'on-cd':''} ${useStateClass} ${bossPromptClass}" data-skill="${key}" data-cd-active="${onCd?'1':'0'}" data-resource-ready="${hasMp?'1':'0'}" data-cd-total="${cdTotalMs}" draggable="true" title="${tip}" data-base-title="${baseTipAttr}"
-      style="--cd-angle:${cdAngle}deg;${bossPrompt ? `--boss-cast-pct:${Math.round(bossPrompt.timerPct || 0)}%;` : ''}${coreMatch&&!onCd?'border-color:#38bdf8;box-shadow:0 0 0 1px rgba(56,189,248,.50),0 0 14px rgba(56,189,248,.18)':(procMatch&&!onCd?'border-color:#facc15;box-shadow:0 0 0 1px rgba(250,204,21,.45)':(!onCd&&hasMp?'border-color:var(--accent)':''))}">
+    const vulnPromptClass = vulnPrompt ? `vuln-window-prompt ${vulnPrompt.cls || ''} ${vulnPrompt.final ? 'vuln-window-final' : ''}` : '';
+    return `<button class="skill-btn ${onCd?'on-cd':''} ${useStateClass} ${bossPromptClass} ${vulnPromptClass}" data-skill="${key}" data-cd-active="${onCd?'1':'0'}" data-resource-ready="${hasMp?'1':'0'}" data-cd-total="${cdTotalMs}" draggable="true" title="${tip}" data-base-title="${baseTipAttr}"
+      style="--cd-angle:${cdAngle}deg;${bossPrompt ? `--boss-cast-pct:${Math.round(bossPrompt.timerPct || 0)}%;` : ''}${vulnPrompt ? `--skill-window-pct:${Math.round(vulnPrompt.timerPct || 0)}%;` : ''}${coreMatch&&!onCd?'border-color:#38bdf8;box-shadow:0 0 0 1px rgba(56,189,248,.50),0 0 14px rgba(56,189,248,.18)':(procMatch&&!onCd?'border-color:#facc15;box-shadow:0 0 0 1px rgba(250,204,21,.45)':(!onCd&&hasMp?'border-color:var(--accent)':''))}">
       <span>${skillIconHtml} ${sk.name}</span>
       <span class="mp-cost">${coreMatch?'✹ ':(procMatch?'✦ ':'')}${sk.mp}${c.resKey==='rage'?'怒':c.resKey==='energy'?'能':'蓝'}</span>
       ${onCd?`<div class="cd-overlay" style="--cd-angle:${cdAngle}deg">${(cdMs/1000).toFixed(1)}秒</div>`:''}
-      ${bossPrompt ? `<span class="sk-alert">${bossPrompt.label}</span>` : ''}
+      ${actionPrompt ? `<span class="sk-alert">${actionPrompt.label}</span>` : ''}
       ${bossPrompt ? '<span class="boss-cast-timer"></span>' : ''}
+      ${vulnPrompt ? '<span class="skill-window-timer"></span>' : ''}
     </button>`;
   }).join('');
 }
@@ -3862,16 +3892,23 @@ function updateSkillBarCd() {
         setTimeout(() => btn.classList.remove('skill-resource-flash'), 760);
       }
     }
-    const prompt = sk ? bossCastSkillPrompt(key, sk, now, cdMs) : null;
-    btn.classList.toggle('interrupt-hot', prompt?.cls === 'interrupt-hot');
-    btn.classList.toggle('interrupt-soft', prompt?.cls === 'interrupt-soft');
-    btn.classList.toggle('interrupt-wait', prompt?.cls === 'interrupt-wait');
-    btn.classList.toggle('defensive-hot', prompt?.cls === 'defensive-hot');
-    btn.classList.toggle('heal-hot', prompt?.cls === 'heal-hot');
-    btn.classList.toggle('defensive-wait', prompt?.cls === 'defensive-wait');
-    btn.classList.toggle('boss-cast-prompt', !!prompt);
-    btn.classList.toggle('boss-cast-final', !!prompt?.final);
-    btn.style.setProperty('--boss-cast-pct', prompt ? `${Math.round(prompt.timerPct || 0)}%` : '0%');
+    const bossPrompt = sk ? bossCastSkillPrompt(key, sk, now, cdMs) : null;
+    const vulnPrompt = (!bossPrompt && sk) ? vulnerabilitySkillPrompt(key, sk, now, cdMs) : null;
+    const prompt = bossPrompt || vulnPrompt;
+    btn.classList.toggle('interrupt-hot', bossPrompt?.cls === 'interrupt-hot');
+    btn.classList.toggle('interrupt-soft', bossPrompt?.cls === 'interrupt-soft');
+    btn.classList.toggle('interrupt-wait', bossPrompt?.cls === 'interrupt-wait');
+    btn.classList.toggle('defensive-hot', bossPrompt?.cls === 'defensive-hot');
+    btn.classList.toggle('heal-hot', bossPrompt?.cls === 'heal-hot');
+    btn.classList.toggle('defensive-wait', bossPrompt?.cls === 'defensive-wait');
+    btn.classList.toggle('boss-cast-prompt', !!bossPrompt);
+    btn.classList.toggle('boss-cast-final', !!bossPrompt?.final);
+    btn.classList.toggle('vuln-window-prompt', !!vulnPrompt);
+    btn.classList.toggle('vuln-window-final', !!vulnPrompt?.final);
+    btn.classList.toggle('vuln-burst-hot', vulnPrompt?.cls === 'vuln-burst-hot');
+    btn.classList.toggle('vuln-burst-wait', vulnPrompt?.cls === 'vuln-burst-wait');
+    btn.style.setProperty('--boss-cast-pct', bossPrompt ? `${Math.round(bossPrompt.timerPct || 0)}%` : '0%');
+    btn.style.setProperty('--skill-window-pct', vulnPrompt ? `${Math.round(vulnPrompt.timerPct || 0)}%` : '0%');
     let badge = btn.querySelector('.sk-alert');
     if(prompt){
       if(!badge){
@@ -3884,7 +3921,7 @@ function updateSkillBarCd() {
       badge.remove();
     }
     let timer = btn.querySelector('.boss-cast-timer');
-    if(prompt){
+    if(bossPrompt){
       if(!timer){
         timer = document.createElement('span');
         timer.className = 'boss-cast-timer';
@@ -3893,8 +3930,18 @@ function updateSkillBarCd() {
     }else if(timer){
       timer.remove();
     }
+    let winTimer = btn.querySelector('.skill-window-timer');
+    if(vulnPrompt){
+      if(!winTimer){
+        winTimer = document.createElement('span');
+        winTimer.className = 'skill-window-timer';
+        btn.appendChild(winTimer);
+      }
+    }else if(winTimer){
+      winTimer.remove();
+    }
     const baseTitle = btn.dataset.baseTitle || btn.title || '';
-    const nextTitle = prompt ? `${baseTitle}\nBoss读条: ${prompt.tip}` : baseTitle;
+    const nextTitle = bossPrompt ? `${baseTitle}\nBoss读条: ${bossPrompt.tip}` : (vulnPrompt ? `${baseTitle}\n破绽窗口: ${vulnPrompt.tip}` : baseTitle);
     if(btn.title !== nextTitle) btn.title = nextTitle;
   });
 }
