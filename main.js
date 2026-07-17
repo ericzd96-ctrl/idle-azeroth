@@ -1239,6 +1239,7 @@ function startNewGame(name) {
   recomputeStats();
   checkSkillUnlocks();
   if (typeof mountAutoGrantStarter==='function') mountAutoGrantStarter();
+  if (typeof companionAutoGrantStarters==='function') companionAutoGrantStarters();
   spawnMonster();
   markDirty('all');
   const cls = CLASSES[pendingClass];
@@ -1322,6 +1323,7 @@ function boot() {
     recomputeStats();
     checkSkillUnlocks();
     if (typeof mountAutoGrantStarter==='function') mountAutoGrantStarter();
+    if (typeof companionAutoGrantStarters==='function') companionAutoGrantStarters();
     applyOfflineProgress();
     if (typeof lifeOfflineCatchup==='function') lifeOfflineCatchup();
     spawnMonster();

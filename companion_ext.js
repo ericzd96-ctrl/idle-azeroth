@@ -596,3 +596,22 @@
     }
   }
 })();
+
+/* ====== 白色随从自动解锁(2026-07-17)======
+   5 个白色(普通)随从开局即自动解锁为 1 星,新手无需随从券也有随从可上阵。
+   角色创建后 / 进入游戏时各调用一次(见 main.js,与 mountAutoGrantStarter 同挂点)。 */
+function companionAutoGrantStarters() {
+  if (typeof COMPANIONS === 'undefined' || !state || !Array.isArray(state.companions)) return;
+  const granted = [];
+  for (const tpl of COMPANIONS) {
+    if ((tpl.quality || '') !== 'white') continue;
+    if (state.companions.find(c => c.key === tpl.key)) continue;
+    state.companions.push({ key: tpl.key, stars: 1 });
+    granted.push(`${tpl.emoji || ''}${tpl.name}`);
+  }
+  if (granted.length) {
+    if (typeof recomputeStats === 'function') recomputeStats();
+    if (typeof markDirty === 'function') markDirty('companion', 'hero');
+    if (typeof log === 'function') log(`🐾 新兵报到! 自动解锁白色随从(1星): ${granted.join('、')}`, 'good');
+  }
+}
