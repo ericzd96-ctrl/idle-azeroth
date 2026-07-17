@@ -2663,7 +2663,7 @@ function worldFieldOperationTagHtml(map, subIdx, opts) {
   if (!tip) return '';
   return inlineTipSpanHtml(tip, {
     fallbackIcon:'achievement_zone_kalimdor_01',
-    color:tip.tone === 'done' ? '#86efac' : (tip.tone === 'failed' ? '#fb7185' : (tip.tone === 'ready' ? '#fbbf24' : '#67e8f9')),
+    color:tip.tone === 'done' ? '#86efac' : (tip.tone === 'failed' ? '#fb7185' : (tip.tone === 'ready' ? '#fbbf24' : (tip.tone === 'locked' ? '#94a3b8' : '#67e8f9'))),
     meta:tip.meta,
     metaVisible:!!opts?.metaVisible
   });
@@ -6004,7 +6004,7 @@ function renderMap() {
             <div><span class="bname rare-name-tip" data-rarekey="${rare.key}" style="cursor:help">${rareIconHtml} ${rare.name}</span> <span class="pill">等级${rare.lvl}</span></div>
             <div class="muted">${rare.desc}</div>
           </div>
-          <div class="muted" style="font-size:11px;text-align:right">${rareSeen ? '已现身' : `野外约 ${Math.round((rare.spawnChance || 0.025) * 1000) / 10}% 遭遇`}</div>
+          <div class="muted" style="font-size:11px;text-align:right">${rareSeen ? '已现身' : ((typeof rareEliteEncountersUnlocked === 'function' && !rareEliteEncountersUnlocked()) ? `勇者${typeof RARE_ELITE_ENCOUNTER_MIN_LEVEL !== 'undefined' ? RARE_ELITE_ENCOUNTER_MIN_LEVEL : 30}级后可遭遇` : `野外约 ${Math.round((rare.spawnChance || 0.025) * 1000) / 10}% 遭遇`)}</div>
         </div>`;
     }
     if (typeof renderZoneBounty === 'function') html += renderZoneBounty(m);

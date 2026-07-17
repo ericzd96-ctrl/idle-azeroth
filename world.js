@@ -127,12 +127,18 @@ const WORLD_FIELD_OPERATION_RULES = [
   { key:'break_blockade', icon:'🛡️', name:'突破封锁线', tags:['守卫','军团','黑铁','兽人','迪菲亚','血色','舰队'], meta:'据点突破', desc:'敌人在此地架起封锁线。击杀野外敌人可摧毁路障,完成后会引出据点指挥官。', commander:'封锁线督军', reward:'金币、荣誉与一件区域装备', mod:{ hp:0.18, atk:0.11, def:0.10, shieldPct:0.06 } },
   { key:'seal_rupture', icon:'🪐', name:'封印裂隙', tags:['虚空','裂隙','暗影','邪能','卡雷什','虚刃','影点','暮色'], meta:'裂隙封印', desc:'空间裂隙正在吞噬附近生物。击杀被污染的敌人可稳定裂隙,完成后会出现裂隙看守。', commander:'裂隙看守', reward:'精华、钻石与高品质装备', mod:{ hp:0.20, atk:0.13, dr:0.04, drainPct:0.08 } },
   { key:'purge_plague', icon:'☠️', name:'净化瘟疫源', tags:['瘟疫','亡灵','腐','凋零','怨灵','食尸鬼','白骨'], meta:'净化事件', desc:'瘟疫源正在扩散。击杀感染敌人可削弱瘟疫,完成后会唤出疫源宿主。', commander:'疫源宿主', reward:'精华、金币与区域装备', mod:{ hp:0.22, atk:0.08, leech:0.05, burnDpsPct:0.012 } },
-  { key:'hunt_alpha', icon:'🐾', name:'追猎兽群首领', tags:['野兽','狼','熊','虎','豹','野猪','鳄','蝎','暴龙','迅猛龙'], meta:'狩猎事件', minLv:30, desc:'兽群正在围猎旅行者。击杀野兽会逼近兽群首领,完成后可挑战阿尔法猎手(勇者30级后才会出现)。', commander:'阿尔法猎手', reward:'金币、荣誉与暴击向装备', mod:{ hp:0.16, atk:0.14, crit:0.06, hastePct:0.18 } },
+  { key:'hunt_alpha', icon:'🐾', name:'追猎兽群首领', tags:['野兽','狼','熊','虎','豹','野猪','鳄','蝎','暴龙','迅猛龙'], meta:'狩猎事件', desc:'兽群正在围猎旅行者。击杀野兽会逼近兽群首领,完成后可挑战阿尔法猎手。', commander:'阿尔法猎手', reward:'金币、荣誉与暴击向装备', mod:{ hp:0.16, atk:0.14, crit:0.06, hastePct:0.18 } },
   { key:'drain_arcane', icon:'🔮', name:'关闭奥术枢纽', tags:['法师','奥术','法力','秘库','圆顶','守望者','机器人','机械'], meta:'枢纽事件', desc:'奥术枢纽正在给敌人供能。击杀守卫可过载枢纽,完成后会出现枢纽监管者。', commander:'枢纽监管者', reward:'钻石、精华与法术装备', mod:{ hp:0.17, atk:0.09, def:0.14, shieldPct:0.08, drainPct:0.12 } },
   { key:'quell_elements', icon:'🌋', name:'平息元素暴动', tags:['火','元素','熔岩','风暴','沙暴','潮汐','闪电','灼热','燃烧'], meta:'元素事件', desc:'元素暴动正在撕裂地形。击杀元素化敌人可削弱风暴,完成后会出现暴动核心。', commander:'暴动核心', reward:'金币、精华与元素装备', mod:{ hp:0.18, atk:0.15, shieldPct:0.05, dmgPct:0.030 } },
   { key:'burn_sporebed', icon:'🍄', name:'焚毁孢床', tags:['孢','蘑菇','自然','沼泽','植物','德鲁伊','湿地','哈兰达尔'], meta:'孢群事件', desc:'失控孢床正在复制敌人。击杀孢化生物可焚毁菌丝,完成后会出现孢床母体。', commander:'孢床母体', reward:'精华、金币与恢复装备', mod:{ hp:0.24, def:0.08, leech:0.04, healPct:0.055 } },
   { key:'ambush_ring', icon:'🎯', name:'清剿伏击圈', tags:['盗','刺客','劫匪','巨魔','半人马','暗巷','路口','哨兵'], meta:'伏击事件', desc:'伏击圈正在收紧。击杀巡逻敌人可暴露伏击首领,完成后会出现伏击队长。', commander:'伏击队长', reward:'金币、荣誉与敏捷装备', mod:{ hp:0.14, atk:0.15, dodge:0.06, crit:0.04 } }
 ];
+
+// 野外据点行动(打怪推进度→引出据点指挥官)统一解锁等级:指挥官强度远超同区小怪,低级新号必然打不过
+const WORLD_FIELD_OP_MIN_LEVEL = 30;
+function worldFieldOpsUnlocked() {
+  return Math.max(1, state?.hero?.lvl || 1) >= WORLD_FIELD_OP_MIN_LEVEL;
+}
 
 function worldZoneThreatText(map, sub) {
   const boss = map?.boss || {};
@@ -290,6 +296,7 @@ function worldFieldOperationGoal(map, sub) {
 function getWorldFieldOperation(map, subIdx, opts) {
   if (!map && typeof getMap === 'function') map = getMap();
   if (!map) return null;
+  if (!worldFieldOpsUnlocked()) return null;   // 30级前野外据点行动整体不开启(不生成/不推进度/不刷指挥官)
   const idx = Math.max(0, subIdx == null ? (state?.currentSubzone || 0) : subIdx);
   const sub = map.sub?.[idx] || map.sub?.[0];
   if (!sub) return null;
@@ -355,6 +362,16 @@ function worldFieldOperationProgressText(op) {
 }
 
 function worldFieldOperationTip(map, subIdx, opts) {
+  if (!worldFieldOpsUnlocked()) {
+    return {
+      name:'野外据点行动(未开启)',
+      icon:'🔒',
+      desc:`勇者达到 ${WORLD_FIELD_OP_MIN_LEVEL} 级后开启:击杀野外敌人可推进据点行动,完成后会引出据点指挥官(强力首领)。`,
+      meta:`Lv.${WORLD_FIELD_OP_MIN_LEVEL} 开启`,
+      tone:'locked',
+      failLeftMs:0
+    };
+  }
   const op = getWorldFieldOperation(map, subIdx, { includeCompleted:true, previewOnly:!!opts?.previewOnly });
   if (!op) return null;
   const failLeft = worldFieldOperationFailLeftMs(op);
@@ -439,7 +456,7 @@ function onWorldFieldCommanderKill(mon) {
   const high = sub?.lvl?.[1] || map.lvlRange?.[1] || mon?.lvl || 1;
   const renownBonus = worldRenownBonuses(map.key);
   const rewardMult = renownBonus.commanderRewardMult || 1;
-  const gold = Math.floor((high * 95 + (op.goal || 10) * 35) * rewardMult);
+  const gold = Math.floor((high * 95 + (op?.goal || 10) * 35) * rewardMult);
   const honor = Math.floor((25 + high * 2.4) * rewardMult);
   const essence = Math.max(1, Math.floor(high / 18));
   const gems = high >= 55 ? Math.max(1, Math.floor(high / 28)) : 0;
@@ -461,7 +478,7 @@ function onWorldFieldCommanderKill(mon) {
   };
   delete ops.active[key];
   grantWorldRenown(map.key, 45 + high, '据点完成', { fieldClear:true, alert:Math.max(4, Math.floor(high / 12)) });
-  log(`${op.icon || '🗺️'} 完成野外据点「${op.name}」: +${gold}💰 +${honor}荣誉 +${essence}精华${gems ? ` +${gems}💎` : ''} · ${item.name}`, 'legend');
+  log(`${op?.icon || '🗺️'} 完成野外据点「${op?.name || '据点行动'}」: +${gold}💰 +${honor}荣誉 +${essence}精华${gems ? ` +${gems}💎` : ''} · ${item.name}`, 'legend');
   if (typeof progressionOnGoldGain === 'function') progressionOnGoldGain(gold);
   state.currentMonsters = [];
   spawnMonster();

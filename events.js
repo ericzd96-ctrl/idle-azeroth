@@ -429,9 +429,16 @@ function buildRareEliteMonsterData(rare) {
   return mon;
 }
 
+// 稀有精英自动遭遇解锁等级:稀有精英倍率远超同区小怪,低级新号野外刷怪不该被动撞上
+const RARE_ELITE_ENCOUNTER_MIN_LEVEL = 30;
+function rareEliteEncountersUnlocked() {
+  return Math.max(1, state?.hero?.lvl || 1) >= RARE_ELITE_ENCOUNTER_MIN_LEVEL;
+}
+
 function maybeSpawnRareEliteEncounter(map) {
   if (!map || typeof RARE_ELITES === 'undefined') return false;
   if (state.mode !== 'world') return false;
+  if (!rareEliteEncountersUnlocked()) return false;   // 30级前不会在野外被动遭遇稀有精英
   const rare = getRareEliteForMap(map.key);
   if (!rare) return false;
   if (Math.random() >= (rare.spawnChance || 0.025)) return false;
