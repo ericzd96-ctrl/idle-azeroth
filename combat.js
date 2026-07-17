@@ -7812,14 +7812,9 @@ function clearExpiredWorldCombatPause(now){
   return true;
 }
 function worldMonsterSearchDelayMs(){
-  const map = typeof getMap === 'function' ? getMap() : null;
-  const sub = map?.sub?.[state.currentSubzone] || map?.sub?.[0] || null;
-  const high = Math.max(map?.lvlRange?.[1] || 1, sub?.lvl?.[1] || 1);
-  const endgame = Math.max(0, high - 70);
-  const base = 1350 + Math.min(950, endgame * 18);
-  const variance = rng(0, 650);
+  // 野外搜寻下一批敌人固定 1 秒(2026-07-17,原为 1350~2000ms 且终局地图最多 ~2950ms);战斗加速可进一步缩短
   const speed = Math.max(1, state.battleSpeed || 1);
-  return Math.max(700, Math.floor((base + variance) / speed));
+  return Math.max(250, Math.floor(1000 / speed));
 }
 function startWorldMonsterSearch(reason){
   if(!state || state.mode !== 'world') return false;
