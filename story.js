@@ -89,28 +89,56 @@ function showStoryModal(script, onDone){
 
 /* ---------- 主线幕间演出 ---------- */
 function storyActOpeningScript(act){
-  const lines = [];
-  const flavor = {
-    act1: ['边境的烽火台已经三天没有点灯。', '征召令贴满了每一根路灯柱。'],
-    act2: ['补给线的钟声在夜里断掉了。', '信使的马鞍上还留着黑色的箭孔。'],
-    act3: ['东部的风里开始有灰的味道。', '旧王国的废墟在雾里发着不祥的光。'],
-    act4: ['黑暗之门的绿光撕开了天幕。', '远征军在门的另一侧竖起了第一面旗。'],
-    act5: ['北境的雪埋到了膝盖。', '冰霜巨龙的影子掠过军营上空。'],
+  const horde = typeof state !== 'undefined' && state.faction === 'horde';
+  const openings = {
+    act1: [
+      { icon:'📖', who:'旁白', text:horde ? '试炼谷的信号鼓停了，森金村和剃刀岭也没等到换岗的人。' : '北郡的烽火台连续三夜没有点灯，东谷送来的木料车也不见了。', scene:horde ? '杜隆塔尔 · 失联的哨线' : '艾尔文森林 · 失联的哨线' },
+      { icon:'✉️', who:'幸存信使', text:horde ? '兽群冲散了我们。烟里有人搬着祭料箱，箱盖烙着火刃的印。' : '豺狼人堵住了路；我还看见迪菲亚的货车趁乱从旁边经过。' },
+      { icon:'🎖️', who:'军需官', text:horde ? '先把沿途哨火点起来，再查清祭料被送往何处。' : '先救回巡逻队，再追那批货车。别把两股威胁误当成同一伙人。' },
+      { icon:'⚔️', who:'你', text:'把最后一个失联哨站的位置给我。' },
+    ],
+    act2: [
+      { icon:'📖', who:'旁白', text:'一只空马鞍被送进营地，马蹄上还结着远路的泥。', scene:'东部道路 · 失踪的信使' },
+      { icon:'✉️', who:'传令兵', text:'这已经是第三名没能送达的人。最后一封信只写到“阿拉希”，后半页被撕走了。' },
+      { icon:'🎖️', who:'军需官', text:'先查断路，再追收件人。修道院附近的封锁，或许能解释那些消失的信。' },
+      { icon:'⚔️', who:'你', text:'我会把信和人一起带回来。' },
+    ],
+    act3: [
+      { icon:'📖', who:'旁白', text:'两份战报同时抵达：灼热峡谷有封印石失窃，东部疫线则在请求撤离。', scene:'东部战线 · 两份求援' },
+      { icon:'🎖️', who:'军需官', text:'先核对奥达曼的古代铭文，再把能用的拓印送往避难点。两处危机不一定出自同一只手。' },
+      { icon:'✉️', who:'疫区信使', text:'静默教堂还亮着灯。只要城外的路能通，里面的人就有机会出来。' },
+      { icon:'⚔️', who:'你', text:'先保住那条撤离路。' },
+    ],
+    act4: [
+      { icon:'📖', who:'旁白', text:'黑暗之门另一侧的回信晚了七天。最后一批车队停在地狱火半岛的路口。', scene:'黑暗之门 · 外域求援' },
+      { icon:'🎖️', who:'远征军斥候', text:'前线需要补给。影月谷的巡逻线也在收紧，黑暗神殿的路不会自己打开。' },
+      { icon:'🎖️', who:'军需官', text:'这是一场新的战事。先让车队安全通过，再和斥候会合。' },
+      { icon:'⚔️', who:'你', text:'给我一张标着失联路口的地图。' },
+    ],
+    act5: [
+      { icon:'📖', who:'旁白', text:'来自北境的船靠岸时，甲板上只有一盏信号灯还亮着。', scene:'北境航线 · 最后一封战报' },
+      { icon:'✉️', who:'北境信使', text:'龙骨荒野的路被亡灵车队占住。守军正在等下一批补给，也在等能带他们向冰冠推进的人。' },
+      { icon:'🎖️', who:'军需官', text:'从北风苔原登陆，找出能让攻城队通过的路。最后一战不能让他们孤军前进。' },
+      { icon:'⚔️', who:'你', text:'先点亮海岸的信号火。' },
+    ],
   };
-  const fl = flavor[act.key] || [act.brief];
-  lines.push({ icon:'📖', who:'旁白', text: fl[0] });
-  if (fl[1]) lines.push({ icon:'📖', who:'旁白', text: fl[1] });
-  lines.push({ icon:'📖', who:'旁白', text: act.brief });
-  lines.push({ icon:'🎖️', who:'军需官', text: `${act.numeral}「${act.title}」的任务交给你了。完成六个阶段的指令, 幕后主使就会现形。`, scene:'军需官把一枚磨旧的徽章按进你手心' });
-  lines.push({ icon:'⚔️', who:'你', text: '留给我的人, 也留给我一句战场上见。' });
-  return { steps: lines, lastLabel: '接下任务 ▸' };
+  return { steps: openings[act.key] || [{ icon:'📖', who:'旁白', text:act.brief }], lastLabel:'接下任务 ▸' };
 }
 function storyActFinaleScript(act){
+  const endings = {
+    act1:{ who:'值守士兵', icon:'🛡️', text:'今夜轮到我们守灯。你带回的失踪名单，终于能一笔一笔划去。', reply:'把新来的求援信给我。' },
+    act2:{ who:'获救信使', icon:'✉️', text:'我会亲手把信送到下一座哨站。疫线的求援，别让它也等三天。', reply:'东部的人还在等路通。' },
+    act3:{ who:'避难者', icon:'🕯️', text:'城外的车还在，我们能走。请把留在里面的人名也带出去。', reply:'名单我会送到他们家里。' },
+    act4:{ who:'远征军斥候', icon:'🎖️', text:'神殿外的伤员已经归队。下一封从北境寄来的信，我替你留在军帐里。', reply:'北境还有人等着回信。' },
+    act5:{ who:'北境守军', icon:'🛡️', text:'信号火没有熄。我们会在这里把路重新修好。', reply:'先把阵亡者的名字送回家。' },
+  };
+  const ending = endings[act.key] || { who:'幸存者', icon:'🕯️', text:'道路重新通行了。', reply:'我们继续前进。' };
   return {
     steps: [
       { icon:'📖', who:'旁白', text: act.completeText || '这一幕的威胁尘埃落定。' },
-      { icon:'🎖️', who:'军需官', text: `干得漂亮, 冒险者。${act.numeral}的报酬已经备好: ${act.reward.title ? '称号「' + act.reward.title + '」' : ''}以及一笔可观的补给。` },
-      { icon:'⚔️', who:'你', text: '下一场战斗在哪里?' },
+      { icon:ending.icon, who:ending.who, text:ending.text },
+      { icon:'🎖️', who:'军需官', text: `${act.numeral}的战报与补给已备好。${act.reward.title ? '你的新称号是「' + act.reward.title + '」。' : ''}` },
+      { icon:'⚔️', who:'你', text:ending.reply },
     ],
     lastLabel: '领取犒赏 ▸',
   };
@@ -133,10 +161,10 @@ const BOSS_TAUNTS = {
   eastern_plague: { line:'克尔苏加德大人早已算到了你的每一步。包括这一步。', flavor:'克尔苏加德的密使展开了瘟疫纹章的信。' },
   hellfire: { line:'凡人的军队在深渊领主面前, 只配做燃料。', flavor:'玛瑟里顿的铁链哗啦作响, 熔岩从蹄下渗出。' },
   nagrand: { line:'邦多饿了。邦多想吃掉你的坐骑, 再吃掉你。', flavor:'邦多抡起石锤, 砸平了一块浮岩。' },
-  shadowmoon: { line:'你们毫无抉择的权利。在这里, 众人皆服于我。', flavor:'伊利丹·怒风的双刃燃起绿焰。' },
+  shadowmoon: { line:'神殿外墙由我把守。你们休想踏进统帅的领地。', flavor:'伊利达雷守门官抽出魔刃，身后的巡逻队封住退路。' },
   borean: { line:'咔哧咔哧……冰层下的猎物, 总是跑不掉的。', flavor:'卡格瓦的下颚滴着冰水。' },
   storm: { line:'凡人! 竟敢直视风暴的容颜! 我, 索林姆, 判你死刑!', flavor:'风暴峭壁的天空随他的怒吼劈下一道闪电。' },
-  icecrown: { line:'这一切……都是计划之中。你的终结, 也将服务于巫妖王。', flavor:'阿尔萨斯·巫妖王缓缓举起霜之哀伤。' },
+  icecrown: { line:'封锁线还在，我就不会让你的攻城队靠近王座。', flavor:'天灾攻城统领挥动符文战刃，亡灵从外墙下列队而出。' },
   lochmodan: { line:'莫格罗什的地盘, 石头都比你的脑袋硬!', flavor:'莫格罗什举起比人还高的碎石锤。' },
   ashenvale: { line:'暗夜精灵的月亮井, 也救不了堕入暗影的你。', flavor:'萨特领主的尾巴在身后愉悦地摇摆。' },
   arathi: { line:'托尔贝恩的斧头已经几百年没尝过活人的血了。', flavor:'托尔贝恩的亡魂从断墙后显形。' },
@@ -144,7 +172,7 @@ const BOSS_TAUNTS = {
   feralas: { line:'绿龙的荣耀不容侵犯, 变节者更不例外。', flavor:'伊兰尼库斯之影从翡翠色的雾里浮现。' },
   tanaris: { line:'嘶……沙子里又埋进一个不知死活的名字。', flavor:'加兹瑞拉的尾部扫塌了半面沙墙。' },
   zangarmarsh: { line:'纳迦的荣耀, 不容蘑菇沼泽里的臭虫置喙。', flavor:'瓦斯琪的蛇尾在水面划出优雅的弧线。' },
-  dragonblight: { line:'蓝龙的寒冰曾封存巨龙的英灵, 也会封存你。', flavor:'辛达苟萨的吐息让空气结出了冰花。' },
+  dragonblight: { line:'这条北上的路，活人一步也过不去。', flavor:'霜骨龙将掠过龙骨冢，吐息把旧路冻成白色。' },
   stonetalon: { line:'咕——石爪的暴风, 会把你的骨头吹成粉末。', flavor:'格雷苏·碎石的双翼掀起一阵毒风。' },
   hillsbrad: { line:'为洛丹米尔而战! 嚣张的冒险者, 放马过来!', flavor:'赫洛德把战旗插进冻土, 双手各握一柄重剑。' },
   dustwallow: { line:'嘶吼, 燃烧, 毁灭——黑龙公主的问候一向如此。', flavor:'奥妮克希亚的瞳孔缩成一条竖线。' },
@@ -205,7 +233,7 @@ const DUNGEON_BOSS_INTROS = {
   hol:         { line:'我，曾是泰坦的看守。你，不过是尘埃里的误差。', flavor:'洛肯的巨掌上电弧汇聚成链。' },
   toc:         { line:'竞技场见真章！亮出武器，冠军之路不容退缩！', flavor:'银白十字军的号角响彻看台。' },
   forge:       { line:'灵魂……你们的灵魂闻起来像刚出炉的面包。', flavor:'布隆亚姆的魂炉张开了通风口。' },
-  icc:         { line:'你的历史到此为止。让我为你的词条……画上句号。', flavor:'索·维尔的编年史书页无风自动。' },
+  icc:         { line:'你们一路走到这里，终究也只是我的新兵。', flavor:'巫妖王举起霜之哀伤，冰封王座前的风雪骤然静止。' },
 };
 function dungeonBossIntroScript(dg){
   const boss = (dg.bosses && dg.bosses[dg.bosses.length-1]) || { name:'首领', emoji:'👹' };
@@ -251,17 +279,17 @@ function queueStoryActFinaleThenNext(actKey){
 
 /* ---------- 区域地标与事件链 ---------- */
 const ZONE_LANDMARKS = {
-  elwynn:  { icon:'🌳', name:'迷雾古橡', text:'你在森林深处找到一棵缠满祈福布条的古橡树。树洞里藏着前人留下的补给。' },
-  tirisfal:{ icon:'⚰️', name:'无碑之冢', text:'一片没有墓碑的坟场, 每一座土堆下都曾是一个名字。你默哀片刻, 拾起了一些遗物。' },
-  durotar: { icon:'🌵', name:'先祖之岩', text:'红色的巨岩上刻满兽人先祖的姓名。按传统, 你留下了一份供品, 取走了一袋干粮。' },
+  elwynn:  { icon:'🌳', name:'迷雾古橡', text:'古橡上的求救布条记着三座哨站的失联日期。树洞里留有巡逻队的应急箱，泥地上的新车辙却绕开了霍格的巢穴。', followUp:'先把布条送回北郡，再追那道车辙。' },
+  tirisfal:{ icon:'⚰️', name:'无碑之冢', text:'无名坟旁立着一盏仍有油的灯，灯罩内侧刻有叛逃者的集合时辰。守墓人留下了给巡路者的急救包。', followUp:'记下集合时辰，把灯留给守墓人。' },
+  durotar: { icon:'🌵', name:'先祖之岩', text:'先祖之岩背面的哨兵留言被烟熏黑了：试炼谷的祭料车向剃刀岭驶去，车轮烙着火刃印记。岩缝里还压着备用水袋。', followUp:'把水袋带给失联的哨兵，沿车辙继续找。' },
   westfall:{ icon:'🌾', name:'断风的磨坊', text:'废弃磨坊的齿轮间卡着一只迪菲亚的钱箱。你的撬棍恰好派上用场。' },
-  duskwood:{ icon:'🌑', name:'守夜人营地', text:'守夜人的篝火还剩一点余烬。你添了把柴, 从他们藏物资的树洞里取走了一份给养。' },
-  hillsbrad:{ icon:'🏔️', name:'南海岸灯塔', text:'灯塔的油早已燃尽, 但望镜还亮着。你用它确认了安全的路线, 顺走了守望者的应急金。' },
-  arathi:  { icon:'⚔️', name:'落锤纪念碑', text:'巨石上满是大战的凿痕。石缝里嵌着历年旅人祈愿用的硬币。' },
-  searing: { icon:'🌋', name:'焦痕巨人', text:'一具化为焦岩的巨人残骸, 胸口的凹坑积满了火晶。' },
-  eastern_plague:{ icon:'☣️', name:'静默教堂', text:'瘟疫之地上唯一没有葬礼的教堂。圣水盆里的水意外地清澈。' },
-  hellfire:{ icon:'🟩', name:'断焰堡垒', text:'半熔的兽人战旗下埋着远征军早期的补给箱, 封条完好。' },
-  shadowmoon:{ icon:'🌑', name:'亡语祭坛', text:'祭坛上的黑水晶在低语。你没有听, 只是取走了供奉的宝珠。' },
+  duskwood:{ icon:'🌑', name:'守夜人营地', text:'篝火已经熄了，值夜人的哨灯却被人摆成指向北路的一行。压在灯下的信袋写着“阿拉希”，营地还留有应急给养。', followUp:'把信袋交回守夜人，先查这条北路。' },
+  hillsbrad:{ icon:'🏔️', name:'南海岸灯塔', text:'灯塔的油被搬空，望镜下卡着失踪信使的半页路线图。图上的终点被圈在阿拉希；储物柜里还有未用完的灯油与给养。', followUp:'补亮灯塔，把路线图送给下一班信使。' },
+  arathi:  { icon:'⚔️', name:'落锤纪念碑', text:'纪念碑后的旧信箱没有上锁。里面的密令封蜡印着修道院纹章，收件人一栏被刻意刮掉，信箱底部仍留有路费。', followUp:'封好证物，沿寄信人的路继续查。' },
+  searing: { icon:'🌋', name:'焦痕巨人', text:'焦岩残骸下压着烧去一角的货单：“封印石，奥达曼出土”。看守货单的矿工留下了一袋冷却火晶。', followUp:'带上货单，去奥达曼核对铭文。' },
+  eastern_plague:{ icon:'☣️', name:'静默教堂', text:'教堂里的净水盆旁摆着尚未用完的药布。地窖传来敲门声，几名幸存者正等一条通往斯坦索姆城外的撤离路。', followUp:'把给养分给他们，我去找能通车的路。' },
+  hellfire:{ icon:'🟩', name:'断焰堡垒', text:'半熔的旗帜下压着远征军旧路标。路标背面写着两处失联补给站的名字，旁边的箱子还存着一批未发出的水袋。', followUp:'把路标立回去，让后来的车队看见。' },
+  shadowmoon:{ icon:'🌑', name:'亡语祭坛', text:'黑水晶的低语掩住了远处巡逻的脚步。斥候在祭坛背面刻下黑暗神殿外墙的换岗时辰，并留了补给。', followUp:'只记时辰，不碰水晶。' },
   silverpine:{ icon:'🧪', name:'瘟炼工坊', text:'被遗忘者遗弃的炼金工坊, 坩埚里还剩半瓶稳定的药剂。你按标签收好了它。' },
   redridge:{ icon:'⛏️', name:'断桥矿镇', text:'赤脊山的吊桥断了半边, 桥墩下卡着矿工们撤退时来不及带走的工钱箱。' },
   barrens:{ icon:'🏜️', name:'半人马图腾柱', text:'斑驳的图腾柱上挂满风干的护符。你取下最旧的几枚, 把新布条系了上去。' },
@@ -272,16 +300,16 @@ const ZONE_LANDMARKS = {
   ungoro:{ icon:'💠', name:'水晶绿洲', text:'环形山的蒸汽湖边长满了发光的水晶。最大的一株根部裹着沉积的晶粉。' },
   silithus:{ icon:'🐛', name:'其拉外墙残垣', text:'甲虫之墙的残垣下散落着其拉人的甲壳碎片, 某些碎片泛着金属光泽。' },
   nagrand:{ icon:'🪐', name:'悬浮岩阶', text:'纳格兰的浮空岩群离水面只有一步。最高那块的凹槽里积着历年飞鸟留下的亮东西。' },
-  borean:{ icon:'🐋', name:'海象人渔栅', text:'海象人的渔栅挂着冻结的收获。栅桩上刻着感谢丰饶的符文, 旁边挂着一袋贝壳币。' },
-  storm:{ icon:'⚡', name:'风暴残柱', text:'风暴神殿的断柱仍在放电。柱座下压着开拓者留下的雷镀怀表。' },
-  icecrown:{ icon:'⚔️', name:'寒冰墓穴', text:'冰层里封着一位银色铠甲的骑士, 手里的符文剑仍在低鸣。你取走了他腰间的徽记。' },
+  borean:{ icon:'🐋', name:'海象人渔栅', text:'海象人的渔栅旁立着一根被风雪磨白的航标。栅桩上有给新来船队的浅滩警告，渔人还备好了交换补给。', followUp:'把浅滩标在地图上，别让下一艘船搁浅。' },
+  storm:{ icon:'⚡', name:'风暴残柱', text:'断柱仍在放电，柱座下压着开拓者的哨图和备用雷镀怀表。哨图用红线标出了通往冰冠的避雪路。', followUp:'先抄下路线，再把哨图交给攻城队。' },
+  icecrown:{ icon:'⚔️', name:'寒冰墓穴', text:'冰层封着一名银甲守军，他的盾背上刻有一条未被亡灵封死的山口。附近的补给匣仍可打开，姓名牌则留在盾上。', followUp:'先记住他的名字，再把路带给活着的人。' },
   lochmodan:{ icon:'🏔️', name:'石坝闸房', text:'矮人的石坝闸房里, 老绞盘的储物格塞满了历代闸主的私藏。' },
   ashenvale:{ icon:'🌙', name:'残月井', text:'半枯的月亮井仍泛着银光。井底沉着暗夜精灵留下的银币与一枚哨箭。' },
   desolace:{ icon:'💀', name:'玛格拉石环', text:'石环中央的祭台刻着肯瑞托的旧印。抽开祭台暗格, 里面是一册受潮的账本和钱袋。' },
   feralas:{ icon:'🏛️', name:'精灵断柱林', text:'上等精灵的废墟柱林间, 藤蔓掩着一座仍未上锁的供品龛。' },
   tanaris:{ icon:'⏳', name:'时之漏斗', text:'时光洞穴外, 一只青铜沙漏立在风沙里, 漏斗下积着细碎的金砂。' },
   zangarmarsh:{ icon:'🍄', name:'巨伞菇冠', text:'你爬上最大的伞菇菌冠, 菌褶间藏着孢子人晾晒的荧光珠串。' },
-  dragonblight:{ icon:'🐉', name:'龙骨冢', text:'龙骨荒野中央, 巨龙的骸骨堆成山丘。龙颅的眼窝里, 商队塞满了祈福的金器。' },
+  dragonblight:{ icon:'🐉', name:'龙骨冢', text:'龙骨冢的雪地上，亡灵车辙从巨龙遗骸之间穿过。守望者在龙颅旁留下了给巡路队的火油和一张北行示意图。', followUp:'把火油送去哨站，北行路线已经有了。' },
   stonetalon:{ icon:'🌬️', name:'风蚀巢穴', text:'石爪峰的背风面藏着一处鹰身人巢穴, 巢里的亮东西比想象中值钱。' },
   dustwallow:{ icon:'🌫️', name:'沉没神庙檐角', text:'沼泽退水处露出神庙的檐角。檐兽的铜像嘴里含着一颗潮胀的宝珠。' },
   blasted:{ icon:'🌑', name:'黑门瞭望台', text:'黑暗之门的绿光在瞭望台上一览无余。台面散落着历代戍卫留下的护符。' },
@@ -308,6 +336,40 @@ const ZONE_LANDMARKS = {
   rhovan:{ icon:'🌿', name:'罗凡雨心', text:'生态圆顶的罗凡雨心终年滴翠。树心凹处, 圆顶工程师藏了私人的应急金。' },
   zulaman_midnight:{ icon:'🐻', name:'血祭祭坛', text:'午夜祖阿曼的血祭祭坛上, 石碗里的陈年供品早已风干成宝。' },
 };
+const ZONE_CHAIN_EVENTS = {
+  elwynn:{ who:'巡逻队长', opening:'北郡、闪金镇与东谷的哨火同时亮了起来。迪菲亚货车在林边丢下一本沾泥的账簿。', report:'霍格的袭击与货车并非一伙，却让我们无暇搜车。账簿的最后一页写着“死亡矿井”。', response:'把账簿送回哨站，我去清理挡路的豺狼人。' },
+  durotar:{ who:'剃刀岭斥候', opening:'试炼谷、森金村和剃刀岭的信号鼓重新响起。巡路队从荒地捡回一只烙有火刃印记的祭料箱。', report:'兽群堵住路口，教徒便趁乱搬箱子。最近的车辙停在怒焰裂谷入口。', response:'先让斥候安全通过，再去看那座裂谷。' },
+  tirisfal:{ who:'布瑞尔守墓人', opening:'三处墓园哨线恢复联络，一盏写着集合时辰的旧灯被送回布瑞尔。', report:'叛逃者没能再截住信使，仍有人在壁垒附近接应他们。', response:'把名字写入记录，让下一班守卫认得出他们。' },
+  duskwood:{ who:'守夜人', opening:'最后一盏哨灯重新点亮，失踪信使的信袋在暮色镇北路被找到了。', report:'袋中只剩半张路图，所有被刮去的地名都指向阿拉希。', response:'把路图拓下来，下一站去阿拉希。' },
+  hillsbrad:{ who:'灯塔守望者', opening:'南海岸的灯塔恢复照明，三辆失踪的补给车终于在山路旁被找到。', report:'车厢里没有货，只有写着“阿拉希收件人”的运单。', response:'护送信使出山，我去找那位收件人。' },
+  arathi:{ who:'路口信使', opening:'阿拉希各路口重新通行，被截下的信件从旧堡地窖里搬了出来。', report:'信件封蜡来自血色修道院。名单上有仍未回家的信使。', response:'先抄下名单，再按换岗时间进入修道院。' },
+  searing:{ who:'矿工', opening:'灼热峡谷的矿道重新开通，一车封印石的空木箱被推到营地。', report:'装箱货单写着奥达曼。我们不知道石头能做什么，但能认出箱上的矿工记号。', response:'带上货单，去古库核对石头的来历。' },
+  eastern_plague:{ who:'静默教堂守护者', opening:'疫区三处巡路点传回信号，教堂地窖的门终于敢从里面打开。', report:'幸存者还在等撤离。斯坦索姆城外的路被密使堵住，车队过不去。', response:'药布先留给他们，我去打通城外的路。' },
+  hellfire:{ who:'远征军车队长', opening:'地狱火半岛的失联补给站重新互通信号，车队排在路口等命令。', report:'封锁线还在前方。只要路口守军退下，水袋和药箱就能运到影月谷。', response:'让车队待命，我先去处理封锁线。' },
+  shadowmoon:{ who:'远征军斥候', opening:'影月谷的巡逻路线已画在地图上，黑暗神殿外墙的换岗时辰也有了记录。', report:'神殿前仍有守军。路一旦打通，伤员与补给便能一同抵达城墙下。', response:'把地图交给攻城队，我去清理前路。' },
+  borean:{ who:'登陆队水手', opening:'北风苔原的海岸信号火依次亮起，后续船队在雾里看见了靠岸处。', report:'补给能上岸了。沿龙骨荒野北行的旧路，还需要有人先去探。', response:'把浅滩图留给船长，我走在车队前面。' },
+  dragonblight:{ who:'巡路守望者', opening:'龙骨荒野的旧路不再失联，雪地里终于能分清守军与亡灵车队的痕迹。', report:'亡灵向冰冠北去；穿过风暴峭壁的山路或许能绕开它们的主力。', response:'把车辙标给守军，我去试那条山路。' },
+  storm:{ who:'开拓者', opening:'风暴峭壁的残柱下，哨图被摊在干燥的石台上。', report:'避雪路已经标好。攻城队还需要有人先夺下冰冠堡垒外的路口。', response:'让攻城队照图行军，我先去路口。' },
+  icecrown:{ who:'北境守军', opening:'冰冠外的最后几处哨线恢复联络，攻城信号传到了后方。', report:'堡垒仍在前方。我们等你夺下外侧封锁线，就能把补给与伤员一起送上来。', response:'把信号火守住，我去打开那道门。' },
+};
+function zoneChainScript(m){
+  const event = ZONE_CHAIN_EVENTS[m.key];
+  if (event) return {
+    steps:[
+      { icon:'📖', who:'旁白', text:event.opening, scene:`${m.name} · 巡路营地` },
+      { icon:'🎖️', who:event.who, text:event.report },
+      { icon:'⚔️', who:'你', text:event.response },
+    ],
+  };
+  const localBosses = typeof state !== 'undefined' ? state.bossesKilled : null;
+  const accountBosses = typeof account !== 'undefined' ? account.bossesKilled : null;
+  const bossDefeated = !!((localBosses?.[m.key] || 0) + (accountBosses?.[m.key] || 0));
+  return { steps:[
+    { icon:'📖', who:'旁白', text:`${m.name}的${m.sub.length}处巡路点重新通行。营地正在核对失踪者与补给的记录。`, scene:`${m.name} · 巡路营地` },
+    { icon:'🎖️', who:'卫戍官', text:bossDefeated ? '区域首领已被击退；仍需有人守住重新打开的道路。' : '巡路点虽已清理，区域首领仍在前方。我们需要有人继续守住道路。' },
+    { icon:'⚔️', who:'你', text:'把这份战报留在营地，下一班巡路队会用得上。' },
+  ] };
+}
 function zoneLandmarkData(m){
   if (ZONE_LANDMARKS[m.key]) return ZONE_LANDMARKS[m.key];
   return { icon: m.icon || '📍', name: m.name + '的隐秘角落', text: `你在${m.name}的僻静处发现了一处前人留下的藏物点。` };
@@ -334,7 +396,7 @@ function runZoneLandmark(m){
   showStoryModal({
     steps: [
       { icon: d.icon, who:'地标', text: d.text, scene: `${m.name} · ${d.name}` },
-      { icon:'🎒', who:'你', text: '不错的收获。把位置记在地图上, 下次再来。' },
+      { icon:'🎒', who:'你', text: d.followUp || '把地点记在地图上，收好能带走的物资。' },
     ],
     lastLabel: '收下 ▸',
   }, () => {
@@ -346,16 +408,12 @@ function runZoneLandmark(m){
 function runZoneChain(m){
   if (zoneChainDone(m.key)) return;
   if (!state._chainDone) state._chainDone = {};
-  const b = m.boss || { name:'首领', emoji:'👹' };
+  const scene = zoneChainScript(m);
   showStoryModal({
-    steps: [
-      { icon:'📜', who:'区域公告', text: `${m.name}全域的威胁已被清剿。卫戍官向每一位贡献者致谢。`, scene: `${m.name} · 卫戍营地` },
-      { icon:'🎖️', who:'卫戍官', text: `${b.name}倒了, ${m.sub.length}个区域的哨站重新点起了灯火。这是你应得的。` },
-      { icon:'🗡️', who:'你', text: '替我把它钉在公告栏上。下一站是哪里?' },
-    ],
+    steps: scene.steps,
     choices: [
-      { label:'领取补给 (金币+宝石)' },
-      { label:'只要荣誉 (额外称号)' },
+      { label:'领取补给（金币+宝石）' },
+      { label:'留下姓名（称号+宝石）' },
     ],
     onChoice(ci){
       const lvl = Math.max(1, (m.lvlRange && m.lvlRange[1]) || (state.hero && state.hero.lvl) || 1);
@@ -367,7 +425,7 @@ function runZoneChain(m){
       } else {
         state.gem += 4;
         if (!Array.isArray(account.unlockedTitles)) account.unlockedTitles = [];
-        const title = `${m.name}解放者`;
+        const title = `${m.name}守望者`;
         if (!account.unlockedTitles.includes(title)) account.unlockedTitles.push(title);
         log(`📜 ${m.name}事件链完成 · 获得称号「${title}」 +4💎`, 'legend');
       }

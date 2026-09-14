@@ -10299,6 +10299,19 @@ button.dm-heat-action.ready.skill-pressed {
   font-size: 10px;
   line-height: 1.45;
 }
+.campaign-discovery {
+  display: grid;
+  gap: 3px;
+  margin-top: 9px;
+  padding: 8px 10px;
+  border: 1px solid rgba(213,169,78,.26);
+  border-radius: 7px;
+  background: rgba(213,169,78,.07);
+  color: #dce2ee;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.campaign-discovery b { color: #f3d680; font-size: 10px; }
 .campaign-reward {
   display: grid;
   gap: 3px;
