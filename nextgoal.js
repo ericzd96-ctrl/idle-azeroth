@@ -25,6 +25,17 @@ function collectNextGoals() {
   const lvl = state.hero.lvl || 1;
   const maxLvl = (typeof MAX_LEVEL === 'number') ? MAX_LEVEL : 80;
 
+  if (lvl <= 9) {
+    goals.push({
+      prio: 30,
+      icon: '🛡️',
+      text: lvl < 5
+        ? '新手保护生效中: 先在当前区域积累等级和第一套装备'
+        : '怪群规模正在逐步增加,及时穿上背包里的升级装备',
+      tab: lvl < 3 ? 'map' : 'inv'
+    });
+  }
+
   // 未分配天赋点
   if ((state.talentPoints || 0) > 0)
     goals.push({ prio: 90, icon: '🌟', text: `有 ${state.talentPoints} 点天赋点未分配,去强化角色`, tab: 'talent' });
@@ -48,7 +59,7 @@ function collectNextGoals() {
   // 远征储备满
   if (typeof expeditionStorageFull === 'function' && expeditionStorageFull())
     goals.push({ prio: 70, icon: '🚩', text: '远征军团储备已满,去领取产出', tab: 'expedition' });
-  else if (typeof expeditionMembers === 'function' && expeditionMembers().length === 0 && (typeof characters !== 'undefined') && characters.length < 2)
+  else if (lvl >= 20 && typeof expeditionMembers === 'function' && expeditionMembers().length === 0 && (typeof characters !== 'undefined') && characters.length < 2)
     goals.push({ prio: 20, icon: '🚩', text: '多创建一个角色,组建远征军团离线产出', tab: null });
 
   // 公会今日可捐
@@ -96,17 +107,36 @@ function collectNextGoals() {
   return goals;
 }
 
+function nextGoalTabUnlocked(tab) {
+  if (!tab) return true;
+  const nav = document.querySelector(`.tab[data-tab="${tab}"]`);
+  if (!nav) return false;
+  return Math.max(1, state?.hero?.lvl || 1) >= Math.max(1, Number(nav.dataset.unlock) || 1);
+}
+
+let _nextGoalRenderSig = '';
+
 function renderNextGoals() {
   const el = document.getElementById('next-goal');
   if (!el || !state || !state.cls) return;
-  const goals = collectNextGoals().slice(0, 4);
+  const goals = collectNextGoals().filter(g => nextGoalTabUnlocked(g.tab)).slice(0, 3);
+  const sig = goals.map(g => `${g.icon}:${g.text}:${g.tab || ''}`).join('|');
+  if (sig === _nextGoalRenderSig) return;
+  _nextGoalRenderSig = sig;
   if (goals.length === 0) { el.innerHTML = ''; return; }
-  const rows = goals.map(g =>
-    `<div data-goto="${g.tab || ''}" style="display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:6px;${g.tab ? 'cursor:pointer;' : ''}font-size:12px">
-      <span style="font-size:14px">${g.icon}</span><span>${g.text}</span>${g.tab ? '<span style="margin-left:auto;color:var(--muted);font-size:11px">前往 ›</span>' : ''}
-    </div>`).join('');
-  el.innerHTML = `<div style="border:1px solid var(--accent);border-radius:10px;padding:8px;margin-bottom:8px;background:rgba(59,130,246,.08)">
-    <div style="font-size:12px;font-weight:bold;margin-bottom:4px">🧭 接下来做什么</div>
-    ${rows}
-  </div>`;
+  const primary = goals[0];
+  const secondary = goals.slice(1).map(g => {
+    const tag = g.tab ? 'button' : 'div';
+    return `<${tag} ${g.tab ? `type="button" aria-label="${g.text}"` : ''} class="next-goal-secondary" data-goto="${g.tab || ''}">
+      <span class="next-goal-icon">${g.icon}</span><span>${g.text}</span>${g.tab ? '<span class="next-goal-arrow">›</span>' : ''}
+    </${tag}>`;
+  }).join('');
+  const primaryTag = primary.tab ? 'button' : 'div';
+  el.innerHTML = `<section class="next-goal-card" aria-label="旅途指引">
+    <header><b>🧭 旅途指引</b><span>先处理这一件事</span></header>
+    <${primaryTag} ${primary.tab ? `type="button" aria-label="${primary.text}"` : ''} class="next-goal-primary" data-goto="${primary.tab || ''}">
+      <span class="next-goal-icon">${primary.icon}</span><strong>${primary.text}</strong>${primary.tab ? '<span class="next-goal-arrow">前往 ›</span>' : ''}
+    </${primaryTag}>
+    ${secondary ? `<div class="next-goal-secondary-list">${secondary}</div>` : ''}
+  </section>`;
 }

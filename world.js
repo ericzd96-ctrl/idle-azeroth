@@ -99,19 +99,6 @@ function contentRangeLabel(min, max) {
   return hi > MAX_LEVEL ? `终局${lo}-${hi}` : `等级${lo}-${hi}`;
 }
 
-const WORLD_ZONE_THREAT_RULES = [
-  { key:'defias_ambush', icon:'🗡️', name:'伏击路障', tags:['迪菲亚','盗','刺客','劫匪','路口','哨兵','西部荒野','银月','暗巷'], meta:'野外战术', desc:'敌人会用路障和夹击压缩你的行动空间。周期造成物理伤害并可能缴械,首领和稀有精英获得额外闪避。', mod:{ hp:0.11, atk:0.07, def:0.04, dodge:0.04, tickMs:15500, dmgPct:0.030, debuff:'disarm', debuffMs:1800 } },
-  { key:'plague_miasma', icon:'☠️', name:'瘟疫弥雾', tags:['亡灵','瘟疫','提瑞斯法','腐','怨灵','食尸鬼','白骨','诅咒','凋零'], meta:'持续腐蚀', desc:'瘟疫会持续侵蚀生命与回复节奏。周期施加毒性持续伤害,并让敌人获得吸血。', mod:{ hp:0.14, atk:0.05, leech:0.035, tickMs:12500, dmgPct:0.018, burnDpsPct:0.010, burnMs:5200, debuff:'decay', debuffMs:4200 } },
-  { key:'beast_hunt', icon:'🐾', name:'兽群围猎', tags:['野兽','狼','熊','虎','豹','野猪','鳄','蝎','迅猛龙','暴龙','荆棘谷','贫瘠','杜隆塔尔'], meta:'兽群压力', desc:'野兽会在血腥气味中越战越快。周期提高敌方攻速,低血量时额外获得暴击。', mod:{ hp:0.10, atk:0.09, crit:0.035, spd:0.06, tickMs:14000, hastePct:0.20, debuff:'cripple', debuffMs:3600 } },
-  { key:'elemental_surge', icon:'🌋', name:'元素暴涌', tags:['火','熔岩','元素','灼热','燃烧','黑石','峡谷','平原','风暴','沙暴','潮汐','闪电'], meta:'环境爆发', desc:'元素能量会周期爆发。造成高额环境伤害,并给敌人套上元素护盾。', mod:{ hp:0.12, atk:0.10, def:0.05, tickMs:17500, dmgPct:0.042, shieldPct:0.045, burnDpsPct:0.006, burnMs:4200 } },
-  { key:'shadow_curse', icon:'🌑', name:'暗影诅咒', tags:['暮色','暗影','影','鬼','吸血','狼人','虚空','邪能','恶魔','卡雷什','影点','沙恩多拉'], meta:'暗影压迫', desc:'暗影会干扰施法和战斗节奏。周期造成暗影伤害,并可能沉默或虚弱玩家。', mod:{ hp:0.13, atk:0.08, dr:0.025, tickMs:16000, dmgPct:0.034, debuff:'silence', debuffMs:1800, altDebuff:'weaken', altDebuffMs:4400 } },
-  { key:'arcane_lockdown', icon:'🔮', name:'奥术封锁', tags:['法师','奥术','魔法','法力','秘库','普莱姆斯','圆顶','法力熔炉','蓝龙','守望者'], meta:'资源压制', desc:'奥术封锁会抽干资源并重组敌方护盾。周期扣除资源,同时给敌人护盾与防御。', mod:{ hp:0.10, atk:0.06, def:0.09, tickMs:15000, drainPct:0.16, shieldPct:0.055, debuff:'chill', debuffMs:3600 } },
-  { key:'titan_overwatch', icon:'🛡️', name:'泰坦监控', tags:['泰坦','守护者','傀儡','机械','机器人','奥杜尔','风暴峭壁','机甲','看守'], meta:'高护甲', desc:'古代装置会修正敌方防御矩阵。敌人更硬,周期治疗并获得减伤。', mod:{ hp:0.16, atk:0.04, def:0.12, dr:0.035, tickMs:18000, healPct:0.035, shieldPct:0.035 } },
-  { key:'fungal_bloom', icon:'🍄', name:'孢子繁盛', tags:['孢','蘑菇','沼泽','自然','德鲁伊','植物','哈兰达尔','湿地','赞加'], meta:'增殖', desc:'孢子会在战斗中繁殖。周期治疗敌人并施加衰老,首领可能呼叫孢群援军。', mod:{ hp:0.15, atk:0.04, leech:0.025, tickMs:16500, healPct:0.045, debuff:'decay', debuffMs:4200, summonTheme:'spore' } },
-  { key:'void_rupture', icon:'🪐', name:'虚空裂隙', tags:['虚空','虚无','裂隙','吞界','虚刃','卡雷什','影卫','暗影界','终域'], meta:'终局异常', desc:'虚空裂隙会吞噬节奏并制造高压窗口。周期造成虚空伤害、资源流失和易伤。', mod:{ hp:0.18, atk:0.12, def:0.06, dr:0.025, tickMs:14500, dmgPct:0.040, drainPct:0.10, debuff:'vulnerable', debuffMs:3800 } },
-  { key:'warband_rally', icon:'📯', name:'战团集结', tags:['兽人','巨魔','督军','半人马','黑铁','血色','守卫','战士','军团','舰队'], meta:'群体增援', desc:'敌方战团会共享战吼。周期提高敌方攻击,首领和稀有精英更容易召来援军。', mod:{ hp:0.12, atk:0.11, def:0.04, tickMs:17000, hastePct:0.14, summonTheme:'warband', summonBossOnly:true } }
-];
-
 const WORLD_RARE_MUTATIONS = [
   { key:'mirrorhide', icon:'🪞', name:'镜鳞外皮', tags:['arcane','shadow','brute'], desc:'受到爆发后会短暂获得护盾。稀有精英生命和减伤提高。', mod:{ hp:0.18, def:0.08, dr:0.035, shieldPct:0.050 } },
   { key:'blood_scent', icon:'🩸', name:'嗜血追猎', tags:['beast','brute','nature'], desc:'血量越低越凶。攻击、暴击和吸血提高,周期施加残废。', mod:{ atk:0.12, crit:0.055, leech:0.045, debuff:'cripple', debuffMs:3600 } },
@@ -122,23 +109,6 @@ const WORLD_RARE_MUTATIONS = [
   { key:'commander_mark', icon:'🎯', name:'指挥官标记', tags:['brute','arcane'], desc:'会锁定你的弱点。攻击和暴击提高,周期施加易伤。', mod:{ atk:0.10, crit:0.045, debuff:'vulnerable', debuffMs:3600 } },
   { key:'void_seed', icon:'🧿', name:'虚空种子', tags:['shadow','arcane','nature'], desc:'体内虚空种子不断开裂。全属性提高,周期虚弱并造成虚空伤害。', mod:{ hp:0.14, atk:0.10, def:0.06, dr:0.020, dmgPct:0.025, debuff:'weaken', debuffMs:4200 } }
 ];
-
-const WORLD_FIELD_OPERATION_RULES = [
-  { key:'break_blockade', icon:'🛡️', name:'突破封锁线', tags:['守卫','军团','黑铁','兽人','迪菲亚','血色','舰队'], meta:'据点突破', desc:'敌人在此地架起封锁线。击杀野外敌人可摧毁路障,完成后会引出据点指挥官。', commander:'封锁线督军', reward:'金币、荣誉与一件区域装备', mod:{ hp:0.18, atk:0.11, def:0.10, shieldPct:0.06 } },
-  { key:'seal_rupture', icon:'🪐', name:'封印裂隙', tags:['虚空','裂隙','暗影','邪能','卡雷什','虚刃','影点','暮色'], meta:'裂隙封印', desc:'空间裂隙正在吞噬附近生物。击杀被污染的敌人可稳定裂隙,完成后会出现裂隙看守。', commander:'裂隙看守', reward:'精华、钻石与高品质装备', mod:{ hp:0.20, atk:0.13, dr:0.04, drainPct:0.08 } },
-  { key:'purge_plague', icon:'☠️', name:'净化瘟疫源', tags:['瘟疫','亡灵','腐','凋零','怨灵','食尸鬼','白骨'], meta:'净化事件', desc:'瘟疫源正在扩散。击杀感染敌人可削弱瘟疫,完成后会唤出疫源宿主。', commander:'疫源宿主', reward:'精华、金币与区域装备', mod:{ hp:0.22, atk:0.08, leech:0.05, burnDpsPct:0.012 } },
-  { key:'hunt_alpha', icon:'🐾', name:'追猎兽群首领', tags:['野兽','狼','熊','虎','豹','野猪','鳄','蝎','暴龙','迅猛龙'], meta:'狩猎事件', desc:'兽群正在围猎旅行者。击杀野兽会逼近兽群首领,完成后可挑战阿尔法猎手。', commander:'阿尔法猎手', reward:'金币、荣誉与暴击向装备', mod:{ hp:0.16, atk:0.14, crit:0.06, hastePct:0.18 } },
-  { key:'drain_arcane', icon:'🔮', name:'关闭奥术枢纽', tags:['法师','奥术','法力','秘库','圆顶','守望者','机器人','机械'], meta:'枢纽事件', desc:'奥术枢纽正在给敌人供能。击杀守卫可过载枢纽,完成后会出现枢纽监管者。', commander:'枢纽监管者', reward:'钻石、精华与法术装备', mod:{ hp:0.17, atk:0.09, def:0.14, shieldPct:0.08, drainPct:0.12 } },
-  { key:'quell_elements', icon:'🌋', name:'平息元素暴动', tags:['火','元素','熔岩','风暴','沙暴','潮汐','闪电','灼热','燃烧'], meta:'元素事件', desc:'元素暴动正在撕裂地形。击杀元素化敌人可削弱风暴,完成后会出现暴动核心。', commander:'暴动核心', reward:'金币、精华与元素装备', mod:{ hp:0.18, atk:0.15, shieldPct:0.05, dmgPct:0.030 } },
-  { key:'burn_sporebed', icon:'🍄', name:'焚毁孢床', tags:['孢','蘑菇','自然','沼泽','植物','德鲁伊','湿地','哈兰达尔'], meta:'孢群事件', desc:'失控孢床正在复制敌人。击杀孢化生物可焚毁菌丝,完成后会出现孢床母体。', commander:'孢床母体', reward:'精华、金币与恢复装备', mod:{ hp:0.24, def:0.08, leech:0.04, healPct:0.055 } },
-  { key:'ambush_ring', icon:'🎯', name:'清剿伏击圈', tags:['盗','刺客','劫匪','巨魔','半人马','暗巷','路口','哨兵'], meta:'伏击事件', desc:'伏击圈正在收紧。击杀巡逻敌人可暴露伏击首领,完成后会出现伏击队长。', commander:'伏击队长', reward:'金币、荣誉与敏捷装备', mod:{ hp:0.14, atk:0.15, dodge:0.06, crit:0.04 } }
-];
-
-// 野外据点行动(打怪推进度→引出据点指挥官)统一解锁等级:指挥官强度远超同区小怪,低级新号必然打不过
-const WORLD_FIELD_OP_MIN_LEVEL = 30;
-function worldFieldOpsUnlocked() {
-  return Math.max(1, state?.hero?.lvl || 1) >= WORLD_FIELD_OP_MIN_LEVEL;
-}
 
 function worldZoneThreatText(map, sub) {
   const boss = map?.boss || {};
@@ -159,13 +129,6 @@ function worldThreatHash(s) {
     h = Math.imul(h, 16777619);
   }
   return h >>> 0;
-}
-
-function ensureWorldFieldOps() {
-  if (!state.worldFieldOps || typeof state.worldFieldOps !== 'object') state.worldFieldOps = { active:{}, completed:{} };
-  if (!state.worldFieldOps.active || typeof state.worldFieldOps.active !== 'object') state.worldFieldOps.active = {};
-  if (!state.worldFieldOps.completed || typeof state.worldFieldOps.completed !== 'object') state.worldFieldOps.completed = {};
-  return state.worldFieldOps;
 }
 
 function ensureWorldRenown() {
@@ -226,9 +189,7 @@ function worldRenownBonuses(mapKey) {
     rank,
     alert:worldRenownAlertLevel(mapKey),
     goldMult:1 + Math.min(0.36, rank * 0.022),
-    dropMult:1 + Math.min(0.16, rank * 0.010),
-    fieldBonus:Math.floor(rank / 4),
-    commanderRewardMult:1 + Math.min(0.30, rank * 0.018)
+    dropMult:1 + Math.min(0.16, rank * 0.010)
   };
 }
 
@@ -263,271 +224,8 @@ function worldRenownTip(mapKey) {
     name:`${map?.name || '区域'}声望 ${bonus.rank}`,
     icon:'🏕️',
     meta:`警戒 ${bonus.alert}`,
-    desc:`清理野外、完成据点和击败地图首领会提高当地声望。当前进度 ${nextText};金币 ×${bonus.goldMult.toFixed(2)},掉率 ×${bonus.dropMult.toFixed(2)},据点推进 +${bonus.fieldBonus}。敌人同步获得警戒强化。`
+    desc:`清理野外和击败地图首领会提高当地声望。当前进度 ${nextText};金币 ×${bonus.goldMult.toFixed(2)},掉率 ×${bonus.dropMult.toFixed(2)}。敌人同步获得警戒强化。`
   };
-}
-
-function worldFieldOpKey(map, subIdx) {
-  return `${map?.key || state.currentMap}-${Math.max(0, subIdx == null ? (state.currentSubzone || 0) : subIdx)}`;
-}
-
-function worldFieldOperationScore(rule, map, sub) {
-  const text = worldZoneThreatText(map, sub);
-  let score = 0;
-  for (const tag of (rule.tags || [])) if (text.includes(tag)) score += 10;
-  score += worldThreatHash(`${map?.key || ''}:${sub?.name || ''}:${rule.key}:field`) % 8;
-  return score;
-}
-
-function selectWorldFieldOperationRule(map, sub) {
-  const heroLvl = Math.max(1, state?.hero?.lvl || 1);
-  const pool = WORLD_FIELD_OPERATION_RULES.filter(rule => !(rule.minLv > heroLvl));
-  const list = pool.length ? pool : WORLD_FIELD_OPERATION_RULES;
-  return list
-    .map(rule => ({ rule, score:worldFieldOperationScore(rule, map, sub) }))
-    .sort((a, b) => b.score - a.score)[0]?.rule || list[0];
-}
-
-function worldFieldOperationGoal(map, sub) {
-  const high = sub?.lvl?.[1] || map?.lvlRange?.[1] || 1;
-  return Math.max(8, Math.min(18, 8 + Math.floor(high / 14)));
-}
-
-function getWorldFieldOperation(map, subIdx, opts) {
-  if (!map && typeof getMap === 'function') map = getMap();
-  if (!map) return null;
-  if (!worldFieldOpsUnlocked()) return null;   // 30级前野外据点行动整体不开启(不生成/不推进度/不刷指挥官)
-  const idx = Math.max(0, subIdx == null ? (state?.currentSubzone || 0) : subIdx);
-  const sub = map.sub?.[idx] || map.sub?.[0];
-  if (!sub) return null;
-  const ops = ensureWorldFieldOps();
-  const key = worldFieldOpKey(map, idx);
-  const completed = ops.completed[key];
-  if (completed && !opts?.includeCompleted) return Object.assign({ key, completed:true }, completed);
-  if (!ops.active[key] && !completed && opts?.previewOnly) {
-    const rule = selectWorldFieldOperationRule(map, sub);
-    return Object.assign({}, rule, {
-      key,
-      rule,
-      mapKey:map.key,
-      subIdx:idx,
-      subName:sub.name,
-      progress:0,
-      goal:worldFieldOperationGoal(map, sub),
-      commanderPending:false,
-      commanderKilled:false,
-      preview:true,
-      completed:false
-    });
-  }
-  if (!ops.active[key] && !completed) {
-    const rule = selectWorldFieldOperationRule(map, sub);
-    ops.active[key] = {
-      key,
-      ruleKey:rule.key,
-      mapKey:map.key,
-      subIdx:idx,
-      progress:0,
-      goal:worldFieldOperationGoal(map, sub),
-      commanderPending:false,
-      commanderKilled:false,
-      startedAt:Date.now()
-    };
-  }
-  const active = ops.active[key];
-  let rule = WORLD_FIELD_OPERATION_RULES.find(r => r.key === active?.ruleKey) || selectWorldFieldOperationRule(map, sub);
-  if (!active) return completed ? Object.assign({ key, completed:true }, completed) : null;
-  if (rule.minLv > Math.max(1, state?.hero?.lvl || 1)) {
-    rule = selectWorldFieldOperationRule(map, sub);
-    active.ruleKey = rule.key;
-  }
-  return Object.assign({}, rule, active, { rule, subName:sub.name, completed:false });
-}
-
-function worldFieldOperationFailLeftMs(op, now) {
-  if (!op?.failedAt) return 0;
-  return Math.max(0, 90000 - ((now || Date.now()) - op.failedAt));
-}
-
-function worldFieldOperationProgressText(op) {
-  if (!op) return '';
-  if (op.completed) return '已完成';
-  const failLeft = worldFieldOperationFailLeftMs(op);
-  if (failLeft > 0) {
-    const sec = Math.ceil(failLeft / 1000);
-    return `挑战失败 · ${sec}秒后可重新推进 ${Math.min(op.progress || 0, op.goal || 1)}/${op.goal || 1}`;
-  }
-  if (op.commanderPending) return '指挥官现身';
-  return `${Math.min(op.progress || 0, op.goal || 1)}/${op.goal || 1}`;
-}
-
-function worldFieldOperationTip(map, subIdx, opts) {
-  if (!worldFieldOpsUnlocked()) {
-    return {
-      name:'野外据点行动(未开启)',
-      icon:'🔒',
-      desc:`勇者达到 ${WORLD_FIELD_OP_MIN_LEVEL} 级后开启:击杀野外敌人可推进据点行动,完成后会引出据点指挥官(强力首领)。`,
-      meta:`Lv.${WORLD_FIELD_OP_MIN_LEVEL} 开启`,
-      tone:'locked',
-      failLeftMs:0
-    };
-  }
-  const op = getWorldFieldOperation(map, subIdx, { includeCompleted:true, previewOnly:!!opts?.previewOnly });
-  if (!op) return null;
-  const failLeft = worldFieldOperationFailLeftMs(op);
-  const failText = failLeft > 0
-    ? `上次首领挑战失败,首领已撤退;${Math.ceil(failLeft / 1000)}秒后继续击杀野外敌人,补回进度即可再次引出。`
-    : '';
-  return {
-    name:op.name || '野外据点',
-    icon:op.icon || '🗺️',
-    desc:`${op.desc || '完成野外事件可引出据点指挥官。'} 进度: ${worldFieldOperationProgressText(op)}。${failText ? `${failText} ` : ''}奖励: ${op.reward || '区域补给'}。`,
-    meta:op.completed ? '已完成' : (failLeft > 0 ? '失败冷却' : (op.commanderPending ? '首领现身' : op.meta || '野外事件')),
-    tone:op.completed ? 'done' : (failLeft > 0 ? 'failed' : (op.commanderPending ? 'ready' : 'active')),
-    failLeftMs:failLeft
-  };
-}
-
-function recordWorldFieldOperationKill(mon) {
-  if (state.mode !== 'world' || mon?.isBoss || mon?._summoned) return null;
-  const map = typeof getMap === 'function' ? getMap() : null;
-  if (!map) return null;
-  const threatBonus = mon?._zoneThreats?.length ? 1 : 0;
-  grantWorldRenown(map.key, 1 + threatBonus, '野外击杀', { alert:1 });
-  const op = getWorldFieldOperation(map, state.currentSubzone);
-  if (!op || op.completed || op.commanderPending) return op;
-  const active = ensureWorldFieldOps().active[op.key];
-  if (!active) return op;
-  const renownBonus = worldRenownBonuses(map.key).fieldBonus || 0;
-  active.progress = Math.min(active.goal, (active.progress || 0) + 1 + threatBonus + renownBonus);
-  if (active.progress >= active.goal) {
-    active.commanderPending = true;
-    log(`${op.icon || '🗺️'} 野外据点「${op.name}」已推进完成,据点指挥官即将现身!`, 'epic');
-  }
-  markDirty('map', 'stage');
-  return getWorldFieldOperation(map, state.currentSubzone);
-}
-
-function worldFieldCommanderName(op, map, sub) {
-  return `${op.icon || '🗺️'}${sub?.name || map?.name || '据点'}·${op.commander || '据点指挥官'}`;
-}
-
-function shouldSpawnWorldFieldCommander(map, subIdx) {
-  const op = getWorldFieldOperation(map, subIdx);
-  return !!(op && !op.completed && op.commanderPending && !op.commanderKilled);
-}
-
-function failWorldFieldCommanderEncounter(mon) {
-  const ops = ensureWorldFieldOps();
-  const fallbackMap = typeof getMap === 'function' ? getMap() : null;
-  const fallbackKey = fallbackMap ? worldFieldOpKey(fallbackMap, state.currentSubzone) : null;
-  const key = mon?._fieldOperationKey || fallbackKey;
-  const active = key ? ops.active[key] : null;
-  if (!active) return null;
-  const goal = Math.max(1, active.goal || 1);
-  const rule = WORLD_FIELD_OPERATION_RULES.find(r => r.key === active.ruleKey);
-  const map = typeof MAPS !== 'undefined' ? MAPS.find(m => m.key === (active.mapKey || state.currentMap)) : fallbackMap;
-  active.commanderPending = false;
-  active.commanderKilled = false;
-  active.failedAt = Date.now();
-  active.failCount = (active.failCount || 0) + 1;
-  active.progress = Math.max(0, Math.min(goal - 1, Math.floor(goal * 0.72)));
-  markDirty('map', 'stage');
-  return {
-    key,
-    active,
-    rule,
-    map,
-    name:mon?.bossName || rule?.commander || rule?.name || '据点指挥官'
-  };
-}
-
-function onWorldFieldCommanderKill(mon) {
-  const ops = ensureWorldFieldOps();
-  const key = mon?._fieldOperationKey;
-  const active = key ? ops.active[key] : null;
-  const map = typeof MAPS !== 'undefined' ? MAPS.find(m => m.key === (active?.mapKey || state.currentMap)) : null;
-  if (!active || !map) {
-    spawnMonster();
-    return;
-  }
-  const sub = map.sub?.[active.subIdx] || map.sub?.[0];
-  const op = getWorldFieldOperation(map, active.subIdx, { includeCompleted:true });
-  const high = sub?.lvl?.[1] || map.lvlRange?.[1] || mon?.lvl || 1;
-  const renownBonus = worldRenownBonuses(map.key);
-  const rewardMult = renownBonus.commanderRewardMult || 1;
-  const gold = Math.floor((high * 95 + (op?.goal || 10) * 35) * rewardMult);
-  const honor = Math.floor((25 + high * 2.4) * rewardMult);
-  const essence = Math.max(1, Math.floor(high / 18));
-  const gems = high >= 55 ? Math.max(1, Math.floor(high / 28)) : 0;
-  state.gold += gold;
-  state.honor += honor;
-  if (typeof ensureMats === 'function') ensureMats();
-  state.essence += essence;
-  if (gems) state.gem += gems;
-  const rarity = high >= 70 ? 'epic' : (high >= 35 ? 'rare' : 'uncommon');
-  const item = rollItem(rarity, high, map.key);
-  addToInventory(item);
-  if (typeof eventsOnItemGet === 'function') eventsOnItemGet(item);
-  ops.completed[key] = {
-    ruleKey:active.ruleKey,
-    completedAt:Date.now(),
-    progress:active.goal,
-    goal:active.goal,
-    rewardGold:gold
-  };
-  delete ops.active[key];
-  grantWorldRenown(map.key, 45 + high, '据点完成', { fieldClear:true, alert:Math.max(4, Math.floor(high / 12)) });
-  log(`${op?.icon || '🗺️'} 完成野外据点「${op?.name || '据点行动'}」: +${gold}💰 +${honor}荣誉 +${essence}精华${gems ? ` +${gems}💎` : ''} · ${item.name}`, 'legend');
-  if (typeof progressionOnGoldGain === 'function') progressionOnGoldGain(gold);
-  state.currentMonsters = [];
-  spawnMonster();
-  markDirty('map', 'hero', 'inventory', 'stage');
-}
-
-function worldZoneThreatScore(rule, map, sub) {
-  const text = worldZoneThreatText(map, sub);
-  let score = 0;
-  for (const tag of (rule.tags || [])) {
-    if (text.includes(tag)) score += 12;
-  }
-  const high = map?.lvlRange?.[1] || sub?.lvl?.[1] || 1;
-  if (rule.key === 'void_rupture' && high >= 70) score += 4;
-  if (rule.key === 'titan_overwatch' && high >= 55) score += 2;
-  score += (worldThreatHash(`${map?.key || ''}:${sub?.name || ''}:${rule.key}`) % 7);
-  return score;
-}
-
-function worldZoneThreatPressure(map, sub, opts) {
-  const high = map?.lvlRange?.[1] || sub?.lvl?.[1] || 1;
-  const level = Math.max(1, high);
-  const curve = 1 + Math.max(0, level - 20) * 0.006 + Math.max(0, level - 60) * 0.008 + Math.max(0, level - 90) * 0.006;
-  const boss = opts?.boss ? 0.45 : 0;
-  const rare = opts?.rare ? 0.65 : 0;
-  const pack = opts?.packSize > 2 ? 0.10 : 0;
-  return Math.max(0.85, Math.min(2.35, curve + boss + rare + pack));
-}
-
-function getWorldZoneThreats(map, sub, opts) {
-  if (!map && typeof getMap === 'function') map = getMap();
-  if (!map) return [];
-  if (!sub) sub = map.sub?.[state?.currentSubzone || 0] || map.sub?.[0] || null;
-  const high = map.lvlRange?.[1] || sub?.lvl?.[1] || 1;
-  const count = Math.max(1, Math.min(3, opts?.count || (opts?.rare ? 2 : (opts?.boss || high >= 70 ? 2 : 1))));
-  return WORLD_ZONE_THREAT_RULES
-    .map(rule => ({ rule, score:worldZoneThreatScore(rule, map, sub) }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, count)
-    .map(entry => {
-      const pressure = worldZoneThreatPressure(map, sub, opts);
-      return {
-        ...entry.rule,
-        pressure,
-        meta:entry.rule.meta || '区域威胁',
-        desc:entry.rule.desc || '该区域正在影响野外战斗。',
-        mod:{ ...(entry.rule.mod || {}) }
-      };
-    });
 }
 
 function getRareEliteMutations(rare, map) {
@@ -583,7 +281,6 @@ function switchSubzone(mapKey, subIdx) {
   if (mapKey === state.currentMap) {
     state.currentSubzone = subIdx;
     state.currentMonsters = [];
-    state.worldCombatPause = null;
     if (typeof resetDmgStats === 'function') resetDmgStats();
     spawnMonster();
     const sub = map.sub[subIdx];
@@ -624,7 +321,6 @@ function tickTravel(now) {
     state.currentMap = t.mapKey;
     state.currentSubzone = t.subIdx;
     state.travel = null;
-    state.worldCombatPause = null;
     if (typeof resetDmgStats === 'function') resetDmgStats();
     spawnMonster();
     const map = MAPS.find(m => m.key === t.mapKey);
@@ -645,6 +341,14 @@ function challengeBoss(mapKey) {
   if (state.mode === 'travel') { log('正在旅行中', 'bad'); return; }
   if (state.mode !== 'world') { log('请先结束当前战斗', 'bad'); return; }
   const cdEnd = state.bossCd[mapKey] || 0;
+  if (typeof showStoryModal === 'function' && typeof storyBossScript === 'function'){
+    if (!state._storyBossSeen || typeof state._storyBossSeen !== 'object') state._storyBossSeen = {};
+    if (!state._storyBossSeen[mapKey]){
+      state._storyBossSeen[mapKey] = true;
+      showStoryModal(storyBossScript(map), () => challengeBoss(mapKey));
+      return;
+    }
+  }
   const onCd = cdEnd > Date.now();
   if (onCd && state.tickets < 1) { log('首领挑战冷却中，通用券不足无法跳过', 'bad'); return; }
   if (onCd) { state.tickets -= 1; log(`⚔️ 挑战 ${map.boss.emoji}${map.boss.name}! (消耗1通用券跳过冷却)`, 'epic'); }
@@ -686,16 +390,14 @@ function enterDungeon(key) {
   const trials = (typeof getDungeonContractTrials === 'function') ? getDungeonContractTrials(dg, contractLevel) : [];
   const environments = (typeof getDungeonEnvironments === 'function') ? getDungeonEnvironments(dg, contractLevel) : [];
   const cataclysms = (typeof getDungeonCataclysms === 'function') ? getDungeonCataclysms(dg, contractLevel) : [];
-  const edicts = (typeof getDungeonTacticalEdicts === 'function') ? getDungeonTacticalEdicts(dg, contractLevel) : [];
   const combatRooms = (typeof getDungeonCombatRooms === 'function') ? getDungeonCombatRooms(dg, contractLevel) : [];
   const timer = (typeof createDungeonTimer === 'function') ? createDungeonTimer(dg, contractLevel) : null;
-  state.dungeonState = { key, wave: 1, loot: [], affixes: themeAffixes.concat(baseAffixes, trials), themeAffixes, trials, environments, cataclysms, edicts, combatRooms, timer, contractLevel, contract, alertLevel: 0, maxAlert: 0 };
+  state.dungeonState = { key, wave: 1, loot: [], affixes: themeAffixes.concat(baseAffixes, trials), themeAffixes, trials, environments, cataclysms, combatRooms, timer, contractLevel, contract, alertLevel: 0, maxAlert: 0 };
   if (contractLevel > 0 && contract) log(`${contract.icon || '📜'} 已启用 ${contract.name}: ${contract.desc}`, 'legend');
   if (themeAffixes.length) log(`🧭 副本主题: ${themeAffixes.map(a => `${a.icon || '🧭'}${a.name}`).join(' · ')}`, 'bad');
   if (trials.length) log(`🔥 契约试炼: ${trials.map(t => `${t.icon || '🔥'}${t.name}`).join(' · ')}`, 'legend');
   if (environments.length) log(`🧭 副本环境: ${environments.map(e => `${e.icon || '🧭'}${e.name}`).join(' · ')}`, 'bad');
   if (cataclysms.length) log(`🌪️ 环境灾变: ${cataclysms.map(e => `${e.icon || '🌪️'}${e.name}`).join(' · ')}`, 'bad');
-  if (edicts.length) log(`📜 战术禁令: ${edicts.map(e => `${e.icon || '📜'}${e.name}`).join(' · ')}`, 'bad');
   if (combatRooms.length) log(`🎲 战斗房间: ${combatRooms.map(r => `${r.icon || '🎲'}${r.name}`).join(' · ')}`, 'bad');
   if (timer) log(`⏳ 限时挑战: ${timer.label} 内通关奖励+${Math.round((timer.rewardMult - 1) * 100)}%,超时后每15秒叠加压迫`, 'legend');
   // 进入副本:全量刷新所有技能CD(英雄/天赋/神器/随从)+清理身上的 buff/debuff/护盾(含随从护盾与随从buff/debuff)
@@ -926,8 +628,6 @@ const DUNGEON_MECHANIC_CODEX = [
   { key:'swiftKill', name:'速战速决', icon:'⏱️', desc:'在指定秒数内击败首领。默认窗口为 55 秒,越适合爆发、斩杀和打断循环的角色越容易完成。' },
   { key:'healthyFinish', name:'稳健收尾', icon:'❤️', desc:'击败首领时自身生命不低于指定比例。默认要求 35% 生命,鼓励带减伤、治疗、吸血或护盾来处理尾王终局压力。' },
   { key:'timePulse', name:'时序脉冲', icon:'⏳', desc:'限时挑战超时后的惩罚脉冲。每 15 秒叠加一次压迫,提高后续伤害压力,防止高层契约被拖成无风险磨血。' },
-  { key:'timeEdict', name:'时序禁令', icon:'📜', desc:'契约副本抽取的战术禁令。禁令会提高怪物生命、攻击、防御、资源压力、治疗压力或增援概率,并同步提高通关奖励。' },
-  { key:'timeMark', name:'时序点名', icon:'🎯', desc:'高压时间线上的定向机制。常见表现为沉默、资源燃烧、易伤、处刑或召唤目标,需要优先打断、转火或用防御技能覆盖。' },
   { key:'alert', name:'契约警戒', icon:'🚨', desc:'契约副本每清一波和击败首领都会提高警戒。警戒越高,后续敌人越强,也更容易出现戒备队长。' },
   { key:'combatRoom', name:'战斗房间', icon:'🎲', desc:'副本路线中的房间规则。每个副本会轮换伏击、圣物库、祭坛、传送门等房间,让同一副本每天有不同处理重点。' },
   { key:'themeAffix', name:'主题压力', icon:'🧭', desc:'每座副本按地图、Boss和资料片主题固定获得的战斗规则。它会提高对应怪物压力,并参与通关奖励修正。' },
@@ -937,43 +637,6 @@ const DUNGEON_MECHANIC_CODEX = [
 
 function dungeonMechanicCodex() {
   return DUNGEON_MECHANIC_CODEX.map(x => ({ ...x, dungeonCodex:true }));
-}
-
-const DUNGEON_TIME_MARK_TYPES = [
-  { key:'resource', name:'资源点名', icon:'💧', fallbackIcon:'spell_shadow_manaburn', desc:'禁令周期性点名玩家并燃烧资源,会压缩自动施法、爆发和治疗窗口。', match:mod => !!mod.drainTickMs },
-  { key:'healing', name:'腐蚀点名', icon:'💀', fallbackIcon:'ability_creature_disease_02', desc:'禁令周期性施加腐蚀或毒性持续伤害,通常需要治疗、护盾或更快击杀来覆盖。', match:mod => !!mod.poisonTickMs },
-  { key:'mobility', name:'塌方点名', icon:'🪨', fallbackIcon:'spell_nature_earthquake', desc:'禁令周期性制造塌方落石,直接造成生命压力并惩罚拖长战斗。', match:mod => !!mod.ceilingTickMs },
-  { key:'pressure', name:'虚弱点名', icon:'🌫️', fallbackIcon:'spell_shadow_mindrot', desc:'禁令周期性让玩家虚弱,在后续承伤窗口里更容易被首领或小怪击穿。', match:mod => !!mod.weakenTickMs },
-  { key:'execution', name:'处刑点名', icon:'⏱️', fallbackIcon:'ability_rogue_eviscerate', desc:'首领低血量后周期性触发处刑压力,要求更稳的收尾、防御覆盖或爆发斩杀。', match:mod => !!mod.executePulsePct },
-];
-
-function dungeonTimeMarkTypes(edicts) {
-  const picked = [];
-  const seen = new Set();
-  for (const edict of Array.isArray(edicts) ? edicts : []) {
-    const mod = edict?.mod || {};
-    for (const type of DUNGEON_TIME_MARK_TYPES) {
-      if (!seen.has(type.key) && type.match(mod)) {
-        picked.push({ ...type, source:edict.name || '战术禁令', timeMark:true });
-        seen.add(type.key);
-      }
-    }
-  }
-  return picked;
-}
-
-function dungeonTimeMarkSummary(edicts, count) {
-  const types = dungeonTimeMarkTypes(edicts);
-  if (!types.length && !count) return null;
-  const codex = dungeonCodexEntry('timeMark') || { name:'时序点名', icon:'🎯', desc:'高压时间线上的定向机制。' };
-  const typeText = types.length ? types.map(t => t.name).join(' / ') : '战斗中触发的定向压力';
-  return {
-    ...codex,
-    desc:`${codex.desc || '高压时间线上的定向机制。'} 本次契约包含: ${typeText}。`,
-    meta:count ? `${count}次触发` : `${types.length}类`,
-    types,
-    timeMarkSummary:true,
-  };
 }
 
 function getDungeonCombatRooms(dg, contractLevel) {
@@ -1000,82 +663,6 @@ function getDungeonCombatRooms(dg, contractLevel) {
     const matchedTags = (r.tags || []).filter(tag => routeTags.includes(tag));
     return { ...r, matchedTags, routeMatched:matchedTags.length > 0, dungeonCombatRoom:true };
   });
-}
-
-const DUNGEON_TACTICAL_EDICTS = (() => {
-  const groups = [
-    { key:'assault', name:'进攻铁律', icon:'⚔️', mods:i=>({ trashDmg:0.05+i*0.004, bossDmg:0.035+i*0.004 }), variants:['锋刃齐鸣','血线推进','破阵冲锋','无休追击','侧翼合围','狂攻号角','压迫火力','猛击节奏','残酷轮换','终末突袭'] },
-    { key:'bulwark', name:'壁垒铁律', icon:'🛡️', mods:i=>({ trashDef:0.08+i*0.004, bossDef:0.06+i*0.004 }), variants:['重甲封门','盾墙常驻','铁壁驻防','坚守阵线','护卫轮班','钉刺甲胄','城墙姿态','硬化甲片','堡垒协议','不屈防线'] },
-    { key:'vitality', name:'生命铁律', icon:'🫀', mods:i=>({ trashHp:0.09+i*0.005, bossHp:0.055+i*0.005 }), variants:['厚血军令','血肉增幅','生命税契','强壮守备','不死执念','坚韧骨架','鲜血储备','再生纪律','巨兽化生','耐久演算'] },
-    { key:'resource', name:'资源禁令', icon:'💧', mods:i=>({ resourceDrainPct:0.06+i*0.004, drainTickMs:12000-Math.min(3500,i*280) }), variants:['法力漏斗','怒气征税','能量封存','灵泉枯竭','蓝焰回收','施法抽税','奥能逆流','专注瓦解','余烬克扣','源质蒸发'] },
-    { key:'healing', name:'治疗禁令', icon:'💀', mods:i=>({ healReduction:0.09+i*0.006, poisonDpsPct:0.009+i*0.001, poisonTickMs:12500-Math.min(3000,i*250) }), variants:['腐毒注入','止血封印','黑血污染','创口诅咒','疫雾漫灌','圣泉枯萎','愈合反噬','生命压价','伤口撕裂','败血律令'] },
-    { key:'mobility', name:'机动禁令', icon:'🪨', mods:i=>({ heroSpd:-(0.035+i*0.003), ceilingDamagePct:0.035+i*0.002, ceilingTickMs:15000-Math.min(3200,i*260) }), variants:['沉重地面','锁足碎石','塌方预案','泥沼封路','迟滞力场','狭路压迫','碎阶坠落','重力偏转','铁靴诅咒','断桥行军'] },
-    { key:'shield', name:'护盾禁令', icon:'🔷', mods:i=>({ monsterShieldPct:0.025+i*0.003, shieldTickMs:16500-Math.min(3500,i*300) }), variants:['护符轮值','晶壁轮转','蓝盾巡礼','奥术屏障','法阵加固','护盾税契','结界回响','屏障重启','棱镜守卫','壁障灌注'] },
-    { key:'reinforce', name:'增援禁令', icon:'🚩', mods:i=>({ edictAddChance:0.10+i*0.01, trashDmg:0.03+i*0.002 }), variants:['哨兵补位','副官巡场','后备队列','战旗召集','伏兵暗号','守门换防','精锐点名','号角响应','执法队列','铁卫加派'] },
-    { key:'pressure', name:'压迫禁令', icon:'🌫️', mods:i=>({ takenMult:0.04+i*0.004, weakenTickMs:14500-Math.min(3000,i*250), weakenMs:3500+i*180 }), variants:['恐惧税契','低语审判','心智重压','胆怯扩散','暗雾判令','意志压迫','噩兆回声','绝望队列','黑幕临场','精神勒令'] },
-    { key:'execution', name:'处刑禁令', icon:'⏱️', mods:i=>({ bossDmg:0.04+i*0.004, executePulsePct:0.035+i*0.002, executeBelow:0.38 }), variants:['斩杀窗口','终局倒计','残血清算','处刑铃声','灭口协议','断魂号令','收割时刻','终幕压力','濒死追猎','最后审判'] },
-  ];
-  return groups.flatMap((group, gi) => group.variants.map((variant, vi) => ({
-    key:`edict_${group.key}_${vi + 1}`,
-    name:`${group.name}·${variant}`,
-    icon:group.icon,
-    desc:tacticalEdictDesc(group.key, group.name, variant, vi),
-    mod:group.mods(vi),
-    score:gi * 10 + vi + 1,
-    tacticalEdict:true,
-  })));
-})();
-
-function tacticalEdictDesc(groupKey, groupName, variant, i) {
-  const n = i + 1;
-  const map = {
-    assault:`敌方攻势提高,小怪与首领造成更高伤害。强度 ${n}/10。`,
-    bulwark:`敌方防御提高,更难被快速击穿。强度 ${n}/10。`,
-    vitality:`敌方生命提高,拉长战斗并放大后续机制压力。强度 ${n}/10。`,
-    resource:`周期性燃烧资源,压缩自动施法和爆发窗口。强度 ${n}/10。`,
-    healing:`治疗效果降低,并周期性施加毒性持续伤害。强度 ${n}/10。`,
-    mobility:`攻击速度降低,并周期性遭遇塌方落石。强度 ${n}/10。`,
-    shield:`敌方周期性获得小型护盾,拖慢击杀节奏。强度 ${n}/10。`,
-    reinforce:`小怪波次可能出现禁令执法者增援。强度 ${n}/10。`,
-    pressure:`受到伤害提高,并周期性陷入虚弱。强度 ${n}/10。`,
-    execution:`首领伤害提高,低血量阶段周期性施加处刑压力。强度 ${n}/10。`,
-  };
-  return map[groupKey] || `${groupName}·${variant}:额外副本规则。`;
-}
-
-function getDungeonTacticalEdictCount(contractLevel) {
-  const level = Math.max(0, Math.min(3, Math.floor(contractLevel || 0)));
-  return level <= 0 ? 0 : (level === 1 ? 2 : (level === 2 ? 3 : 5));
-}
-
-function getDungeonTacticalEdicts(dg, contractLevel) {
-  const count = getDungeonTacticalEdictCount(contractLevel);
-  if (!dg || count <= 0) return [];
-  const day = Math.floor(Date.now() / 86400000);
-  let seed = ((dg.reqLvl || 1) * 419 + count * 1297 + (day % 100000) * 911) % 2147483647;
-  const key = dg.key || '';
-  for (let i = 0; i < key.length; i++) seed = (seed * 47 + key.charCodeAt(i)) % 2147483647;
-  seed = seed || 1;
-  const grouped = {};
-  for (const edict of DUNGEON_TACTICAL_EDICTS) {
-    const group = edict.key.split('_')[1] || edict.key;
-    if (!grouped[group]) grouped[group] = [];
-    grouped[group].push(edict);
-  }
-  const groupKeys = Object.keys(grouped);
-  for (let i = groupKeys.length - 1; i > 0; i--) {
-    seed = (seed * 16807) % 2147483647;
-    const j = seed % (i + 1);
-    [groupKeys[i], groupKeys[j]] = [groupKeys[j], groupKeys[i]];
-  }
-  const picked = [];
-  for (const groupKey of groupKeys) {
-    seed = (seed * 16807) % 2147483647;
-    const pool = grouped[groupKey];
-    picked.push(pool[seed % pool.length]);
-    if (picked.length >= count) break;
-  }
-  return picked.map(e => ({ ...e, mod:{ ...(e.mod || {}) } }));
 }
 
 function createDungeonTimer(dg, contractLevel) {
@@ -1257,9 +844,8 @@ function setDungeonContractLevel(level) {
 
 function dungeonContractRewardMult(ds) {
   const lvl = Math.max(0, Math.min(3, Math.floor(ds?.contractLevel || 0)));
-  const edictBonus = Array.isArray(ds?.edicts) ? ds.edicts.length * 0.04 : 0;
   const timerBonus = ds?.timer?.onTime ? (ds.timer.rewardMult || 1) : 1;
-  return (dungeonContractInfo(lvl).reward || 1) * (1 + edictBonus) * timerBonus;
+  return (dungeonContractInfo(lvl).reward || 1) * timerBonus;
 }
 
 function dungeonAlertInfo(ds) {
@@ -1568,6 +1154,8 @@ function grantDungeonFirstClearItem(dg, lastBoss, rarityKey, bonusPower) {
 }
 
 function onDungeonClear(dg) {
+  if (typeof playSfx === 'function') playSfx('victory');
+  if (typeof companionAffinityGain === 'function') companionAffinityGain(15);
   const dungeonStateSnapshot = state.dungeonState || {};
   if (dungeonStateSnapshot.timer) {
     dungeonStateSnapshot.timer.clearedAt = Date.now();
@@ -1672,14 +1260,6 @@ function onDungeonClear(dg) {
   const roomHtml = dungeonStateSnapshot?.combatRooms?.length
     ? `<div class="muted" style="font-size:12px">${dungeonClearCodexTip('combatRoom', `${dungeonStateSnapshot.roomEvents || 0}次`)}: ${dungeonStateSnapshot.combatRooms.map(r => dungeonClearInlineTip(r, { fallbackIcon:'inv_misc_dice_02', color:'#f9a8d4' })).join(' · ')} · 击破目标 ${dungeonStateSnapshot.roomObjectivesBroken || 0}${dungeonStateSnapshot.roomBonusGold ? ` · 额外金币 +${dungeonStateSnapshot.roomBonusGold}` : ''}</div>`
     : '';
-  const timeMarkClearSummary = dungeonTimeMarkSummary(dungeonStateSnapshot?.edicts, dungeonStateSnapshot?.timeMarks || 0);
-  const timeMarkClearTip = timeMarkClearSummary
-    ? dungeonClearInlineTip(timeMarkClearSummary, {
-        fallbackIcon:'achievement_bg_kill_flag_carrier',
-        color:'#fca5a5',
-        metaVisible:true,
-      })
-    : '';
   const contractSummaryTags = dungeonStateSnapshot?.contractLevel > 0
     ? [
         dungeonClearMetricTip(`契约:${contractInfo.name}`, contractInfo.icon, contractInfo.desc || '副本契约会提高怪物强度并同步提高通关奖励。', `奖励 ×${contractMult.toFixed(2)}`, 'inv_scroll_03', '#f6c453'),
@@ -1696,9 +1276,6 @@ function onDungeonClear(dg) {
         dungeonClearCodexTip('combatRoom', `${dungeonStateSnapshot.roomEvents || 0}次`),
         dungeonClearMetricTip('环境触发', '🧭', '契约环境危害在本次副本中的触发次数。', `${dungeonStateSnapshot.environmentHits || 0}次`, 'spell_frost_arcticwinds', '#67e8f9'),
         dungeonClearMetricTip('灾变触发', '🌪️', '环境灾变在本次副本中的爆发次数。', `${dungeonStateSnapshot.cataclysmHits || 0}次`, 'spell_nature_earthquake', '#fb7185'),
-        dungeonClearCodexTip('timeEdict', `${dungeonStateSnapshot.edictHits || 0}次`),
-        timeMarkClearTip,
-        dungeonClearMetricTip('禁令增援', '👥', '战术禁令额外召唤或派出的增援数量。', `${dungeonStateSnapshot.edictAdds || 0}`, 'achievement_bg_killxenemies_generalsroom', '#fcd34d'),
       ].filter(Boolean).join(' · ')
     : '';
   const contractHtml = dungeonStateSnapshot?.contractLevel > 0
@@ -2258,4 +1835,274 @@ function onMythicFail() {
   state.mode = 'world';
   state.mythicState = null;
   markDirty('ascend');
+}
+
+/* ---------- 野外奇遇: 给挂机插入低频决策点 ----------
+   野外战斗中每隔 2~4 分钟随机出现一张选择卡, 12 秒内不选自动走稳妥项。
+   全部使用现有结算系统(金币/经验/治疗/伤害/加怪), 不引入新的成长轴。 */
+const WORLD_EVENT_POOL = [
+  {
+    key:'cache', icon:'🧰', title:'遗落的辎重箱',
+    desc:'路边有一只上锁的辎重箱, 锁扣上缠着泛黄的引信。',
+    opts:[
+      { label:'撬开 (有陷阱风险)', run(){
+        const lvl = Math.max(1, state.hero?.lvl || 1);
+        if(Math.random() < 0.55){
+          const g = Math.floor((30 + lvl * 15) * 2.5);
+          state.gold += g; if(typeof progressionOnGoldGain==='function') progressionOnGoldGain(g);
+          log(`🧰 撬开了辎重箱, 满满一把金币 +${fmt(g)}💰!`, 'loot');
+        }else{
+          const dmg = Math.max(1, Math.floor((state.hero?.hpMax||1) * 0.06));
+          log('🧰 箱子里是捕兽夹!', 'bad');
+          if(typeof applyHeroDamage==='function') applyHeroDamage(dmg, null, { source:'辎重箱陷阱' });
+        }
+      } },
+      { label:'无视 (搜刮点散落物)', run(){
+        const lvl = Math.max(1, state.hero?.lvl || 1);
+        const g = Math.floor((30 + lvl * 15) * 0.3);
+        state.gold += g; if(typeof progressionOnGoldGain==='function') progressionOnGoldGain(g);
+        log(`🧰 你从箱子缝隙里摸出一点散财 +${fmt(g)}💰`, 'info');
+      } }
+    ]
+  },
+  {
+    key:'spring', icon:'⛲', title:'林间甘泉',
+    desc:'一眼清泉泛着微光, 喝起来或许能恢复体力。',
+    opts:[
+      { label:'畅饮 (大概率恢复)', run(){
+        const heal = Math.floor((state.hero?.hpMax||1) * 0.25);
+        state.hp = Math.min(state.hero?.hpMax||1, state.hp + heal);
+        log(`⛲ 泉水甘甜, 回复了 ${fmt(heal)} 点生命`, 'good');
+        if(Math.random() < 0.3){
+          const dmg = Math.max(1, Math.floor((state.hero?.hpMax||1) * 0.05));
+          log('⛲ 喝急了, 肚子里一阵绞痛…', 'bad');
+          if(typeof applyHeroDamage==='function') applyHeroDamage(dmg, null, { source:'泉水不适' });
+        }
+      } },
+      { label:'洗把脸 (小额恢复)', run(){
+        const heal = Math.floor((state.hero?.hpMax||1) * 0.08);
+        state.hp = Math.min(state.hero?.hpMax||1, state.hp + heal);
+        log(`⛲ 清凉舒缓, 回复了 ${fmt(heal)} 点生命`, 'good');
+      } }
+    ]
+  },
+  {
+    key:'elite', icon:'💀', title:'挑衅的精英',
+    desc:'一只精英怪从灌木里盯着你, 似乎在等你先动手。',
+    opts:[
+      { label:'应战 (强化精英, 掉落翻倍)', run(){
+        const m = (state.currentMonsters||[])[0];
+        if(!m){ log('💀 精英怪缩回了灌木丛', 'info'); return; }
+        const map=getMap(); const sub=map?map.sub[state.currentSubzone]:null;
+        const mobName=sub?choice(sub.mobs.split('|')):m.name;
+        const lvl=Math.max(1,(m.lvl||1)+2);
+        const e=makeMonster('⭐'+mobName.replace(/^[^\u4e00-\u9fa5A-Za-z]*/,''), lvl, false, 'rare');
+        if(typeof applyWildMonsterHpScaling==='function') applyWildMonsterHpScaling(e, lvl);
+        e.hp=Math.floor(e.hpMax*2.2); e.hpMax=Math.floor(e.hpMax*2.2);
+        e.atk=Math.floor(e.atk*1.3);
+        e.baseGold=Math.floor((e.baseGold||10)*3); e.baseXp=Math.floor((e.baseXp||30)*3);
+        e.goldReward=Math.floor((e.goldReward||e.baseGold||10)*3);
+        e.dropRate=Math.min(0.9,(e.dropRate||0.15)+0.35); e.gemChance=Math.min(0.5,(e.gemChance||0.03)+0.15);
+        e.threat=e.atk*1.4; e._uid=monUidSeq++; e._dots={}; e._spawnAt=Date.now();
+        e._lastSkill=Date.now()-rng(1000,4000);
+        state.currentMonsters.push(e);
+        log('💀 精英怪咆哮着加入了战局! 击败它有丰厚奖赏', 'epic');
+      } },
+      { label:'避开 (不节外生枝)', run(){
+        log('💀 你低头赶路, 精英怪无趣地走开了', 'info');
+      } }
+    ]
+  },
+  {
+    key:'totem', icon:'🗿', title:'古老图腾',
+    desc:'刻满符文的图腾微微发烫, 像在等待触碰。',
+    opts:[
+      { label:'触摸 (获得经验, 惊动野兽)', run(){
+        const lvl = Math.max(1, state.hero?.lvl || 1);
+        const xp = Math.floor(40 + lvl * 10);
+        if(typeof gainXP==='function') gainXP(xp);
+        log(`🗿 图腾的力量涌入体内 +${fmt(xp)}XP, 但四周窸窣作响…`, 'loot');
+        if(typeof spawnMonster==='function') spawnMonster();   // 惊动野兽: 换一批(可能更大)怪群
+      } },
+      { label:'不动它 (谨慎为上)', run(){
+        log('🗿 你绕开了图腾, 走得更稳了', 'info');
+      } }
+    ]
+  },
+  {
+    key:'beehive', icon:'🐝', title:'悬挂的蜂巢',
+    desc:'树杈上挂着一个饱满的蜂巢, 蜜香隔着老远都能闻到。',
+    opts:[
+      { label:'捅它 (蜂蜜+可能的蜂群)', run(){
+        const lvl = Math.max(1, state.hero?.lvl || 1);
+        if (Math.random() < 0.6){
+          const g = Math.floor((40 + lvl * 18) * 2);
+          state.gold += g; if (typeof progressionOnGoldGain==='function') progressionOnGoldGain(g);
+          log(`🐝 满满一巢野蜜! 卖了个好价钱 +${fmt(g)}💰`, 'loot');
+        } else {
+          const dmg = Math.max(1, Math.floor((state.hero?.hpMax||1) * 0.08));
+          log('🐝 惹翻了整个蜂群! 蜇得你抱头鼠窜', 'bad');
+          if (typeof applyHeroDamage==='function') applyHeroDamage(dmg, null, { source:'蜂群' });
+        }
+      } },
+      { label:'绕开 (蜜蜂也有家庭)', run(){ log('🐝 你明智地绕开了蜂巢', 'info'); } }
+    ]
+  },
+  {
+    key:'peddler', icon:'🛒', title:'流浪货郎',
+    desc:'货郎的担子里闪着蓝光。"钻石, 上好的钻石, 只换急用钱。"',
+    opts:[
+      { label:'买下 (换2💎)', run(){
+        const lvl = Math.max(1, state.hero?.lvl || 1);
+        const price = 800 + lvl * 120;
+        if (state.gold < price){ log('🛒 钱不够, 货郎耸耸肩走了', 'bad'); return; }
+        state.gold -= price; state.gem += 2;
+        log(`🛒 成交! -${fmt(price)}💰 +2💎`, 'good');
+      } },
+      { label:'摇头走开', run(){ log('🛒 货郎继续赶路, 吆喝声渐远', 'info'); } }
+    ]
+  },
+  {
+    key:'bounty', icon:'📜', title:'前哨悬赏令',
+    desc:'告示板上钉着一张悬赏令, 落款处有两个戳记——赏金与学分任选其一。',
+    opts:[
+      { label:'赏金猎人 (金币+荣誉)', run(){
+        const lvl = Math.max(1, state.hero?.lvl || 1);
+        const g = 150 + lvl * 55, h = 6 + Math.floor(lvl / 4);
+        state.gold += g; state.honor += h;
+        if (typeof progressionOnGoldGain==='function') progressionOnGoldGain(g);
+        log(`📜 悬赏达成 +${fmt(g)}💰 +${h}🏅`, 'loot');
+      } },
+      { label:'见习学者 (经验+精华)', run(){
+        const lvl = Math.max(1, state.hero?.lvl || 1);
+        const xp = 80 + lvl * 22, e = 2 + Math.floor(lvl / 12);
+        if (typeof gainXP==='function') gainXP(xp);
+        state.essence += e;
+        log(`📜 悬赏达成 +${fmt(xp)}XP +${e}🔮`, 'loot');
+      } }
+    ]
+  },
+  {
+    key:'trader', icon:'🐺', title:'受困的旅商',
+    desc:'商人的货车陷在泥里, 远处有狼嚎。"搭把手——货随便挑！"',
+    opts:[
+      { label:'救助 (得装备, 强盗追来)', run(){
+        const lvl = Math.max(1, state.hero?.lvl || 1);
+        if (typeof rollItem === 'function' && typeof addToInventory === 'function'){
+          const it = rollItem('rare', lvl);
+          addToInventory(it);
+          log(`🐺 商人兑现承诺: 送你 ${it.name}`, 'loot');
+        }
+        const m = (state.currentMonsters||[])[0];
+        if (m){
+          const e = Object.assign({}, m, {
+            name:'🐺贪心强盗', hpMax:Math.max(1, Math.floor(m.hpMax*0.8)), hp:Math.max(1, Math.floor(m.hpMax*0.8)),
+            atk:Math.max(1, Math.floor(m.atk*0.9)), _summoned:true, _uid:(typeof monUidSeq!=='undefined'?monUidSeq++:Date.now()%1e6),
+            _dots:{}, _spawnAt:Date.now(), _lastAtk:Date.now(), threat:Math.max(1, Math.floor((m.atk||10)*0.5)) });
+          state.currentMonsters.push(e);
+          log('🐺 泥地里的不只是商人——强盗也盯上了这批货!', 'bad');
+        }
+      } },
+      { label:'多一事不如少一事', run(){ log('🐺 你快步离开了泥洼地', 'info'); } }
+    ]
+  },
+  {
+    key:'moonvein', icon:'🌘', title:'月光矿脉',
+    desc:'夜色里, 岩壁上一条矿脉泛着月白色的光。',
+    opts:[
+      { label:'开采 (精华, 偶有坍塌)', run(){
+        const lvl = Math.max(1, state.hero?.lvl || 1);
+        const e = 2 + Math.floor(Math.random() * 3) + Math.floor(lvl / 15);
+        state.essence += e;
+        log(`🌘 敲下几块月光矿 +${e}🔮`, 'loot');
+        if (Math.random() < 0.25){
+          const dmg = Math.max(1, Math.floor((state.hero?.hpMax||1) * 0.05));
+          log('🌘 矿脉坍塌了! 碎石砸在背上', 'bad');
+          if (typeof applyHeroDamage==='function') applyHeroDamage(dmg, null, { source:'矿脉坍塌' });
+        }
+      } },
+      { label:'只捡几块散矿', run(){
+        state.essence += 1;
+        log('🌘 捡到一小块散落的月光矿 +1🔮', 'info');
+      } }
+    ]
+  },
+  {
+    key:'feast', icon:'🍖', title:'旅人篝火',
+    desc:'篝火上烤着一只肥得流油的野味, 主人招呼你坐下歇歇脚。',
+    opts:[
+      { label:'饱餐一顿 (大幅恢复)', run(){
+        const heal = Math.floor((state.hero?.hpMax||1) * 0.4);
+        state.hp = Math.min(state.hero?.hpMax||1, state.hp + heal);
+        log(`🍖 酒足饭饱, 回复了 ${fmt(heal)} 点生命`, 'good');
+        if (Math.random() < 0.25){
+          const dmg = Math.max(1, Math.floor((state.hero?.hpMax||1) * 0.04));
+          log('🍖 也许烤得不够熟… 肚子一阵翻搅', 'bad');
+          if (typeof applyHeroDamage==='function') applyHeroDamage(dmg, null, { source:'吃坏了肚子' });
+        }
+      } },
+      { label:'只喝口热汤 (小幅恢复)', run(){
+        const heal = Math.floor((state.hero?.hpMax||1) * 0.1);
+        state.hp = Math.min(state.hero?.hpMax||1, state.hp + heal);
+        log(`🍖 热汤暖身, 回复了 ${fmt(heal)} 点生命`, 'good');
+      } }
+    ]
+  },
+];
+let _worldEventState = null;
+let _worldEventNextAt = (typeof Date !== 'undefined' ? Date.now() + 90000 : 0);   // 开局先打 1.5 分钟再开始出现奇遇
+let _worldEventLastCheck = 0;
+function worldEventStageEl(){ return document.getElementById('stage'); }
+function worldEventRemoveCard(){
+  if(!_worldEventState) return;
+  try{ _worldEventState.el?.remove(); }catch(e){}
+  _worldEventState = null;
+}
+function worldEventChoose(idx, auto){
+  if(!_worldEventState) return;
+  const ev = _worldEventState.ev;
+  const opt = ev.opts[idx] || ev.opts[ev.opts.length-1];
+  worldEventRemoveCard();
+  if(auto) log(`⏳ 你犹豫太久, 选择了稳妥的做法`, 'info');
+  try{ opt.run(); }catch(e){ if(typeof log==='function') log('奇遇结算异常: '+e.message, 'bad'); }
+  _worldEventNextAt = Date.now() + 120000 + rng(0, 90000);
+  if(typeof markDirty==='function') markDirty('stage');
+}
+function worldEventStart(now){
+  const ev = choice(WORLD_EVENT_POOL);
+  const st = worldEventStageEl(); if(!st) return;
+  const el = document.createElement('div');
+  el.className = 'world-event-card';
+  const deadline = Date.now() + 12000;
+  el.innerHTML = `
+    <div class="we-title">${ev.icon} ${ev.title}<span class="we-timer">12s</span></div>
+    <div class="we-desc">${ev.desc}</div>
+    <div class="we-opts">${ev.opts.map((o,i)=>`<button data-wei="${i}" class="${i===1?'ghost':''}">${o.label}</button>`).join('')}</div>`;
+  el.querySelectorAll('button[data-wei]').forEach(b => b.addEventListener('click', () => worldEventChoose(parseInt(b.dataset.wei), false)));
+  st.appendChild(el);
+  if (typeof playSfx === 'function') playSfx('event');
+  _worldEventState = { ev, el, deadline };
+  log(`${ev.icon} 奇遇: ${ev.title} — ${ev.desc}`, 'info');
+}
+function tickWorldEvent(){
+  /* 统一用 Date.now(), 避免调用方混用 performance.now 时比较失真 */
+  if(typeof document==='undefined' || document.hidden) return;
+  const now = Date.now();
+  if(_worldEventState){
+    if(state.mode !== 'world' || (state.hp <= 0)){ worldEventRemoveCard(); _worldEventNextAt = Date.now() + 90000; return; }
+    const left = _worldEventState.deadline - Date.now();
+    if(left <= 0){ worldEventChoose(1, true); return; }
+    const timerEl = _worldEventState.el?.querySelector('.we-timer');
+    const secs = Math.ceil(left/1000);
+    if(timerEl && timerEl.textContent !== secs+'s') timerEl.textContent = secs+'s';
+    return;
+  }
+  if(now - _worldEventLastCheck < 2000) return;
+  _worldEventLastCheck = now;
+  if(now < _worldEventNextAt) return;
+  if(state.mode !== 'world' || state.hp <= 0) return;
+  if(typeof document !== 'undefined' && document.querySelector('.modal-bg.show')) return;
+  if(!(state.currentMonsters||[]).length) return;
+  if(Math.random() < 0.35) worldEventStart(now);
+  else _worldEventNextAt = now + 45000;
 }

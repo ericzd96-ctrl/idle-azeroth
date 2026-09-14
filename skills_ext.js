@@ -321,7 +321,8 @@ const NEW_SKILLS = {
                     fx:{ bonusStates:{ exposed:0.7 }, bonusPerAuraStack:{ key:'r_combo', pct:0.16 }, consumeAura:{ key:'r_combo', all:true } }},
   },
   hunter: {
-    h_killCommand:{name:'杀戮命令',icon:'🎯', desc:'爆发:6秒内攻击+28%、暴击+10、暴伤+22', mp:35, type:'buff', buff:'h_burst', duration:6000, unlockLvl:26},
+    h_killCommand:{name:'杀戮命令',icon:'🐺', desc:'命令宠物撕咬:5倍攻击;宠物在场或印记目标时更痛', mp:35, type:'dmg', mul:5, unlockLvl:26,
+                    fx:{ grantAura:{ key:'h_beastBond', add:1, max:5, duration:15000 }, bonusPerAuraStack:{ key:'h_beastBond', pct:0.08 }, bonusStates:{ marked:0.25 } }},
     h_feignDeath:{name:'假死',     icon:'🦗', desc:'减伤:4秒内受到伤害降低34%',      mp:25, type:'buff', buff:'s_mitigate', duration:4000,  unlockLvl:34},
     h_rapidFire: {name:'急速射击', icon:'🏹', desc:'功能:5秒内攻速+33%',           mp:25, type:'buff', buff:'s_haste',    duration:5000, unlockLvl:44},
     h_explosiveShot:{name:'爆炸射击',icon:'💥',desc:'特色:5倍攻击,引爆灼烧',        mp:45, type:'dmg',  mul:10, dot:true,                    unlockLvl:54},
@@ -444,7 +445,7 @@ const SKILL_REWORKS = {
     multi:{ desc:'3倍范围伤害,命中的敌人越多越适合接杀戮射击', aoe:true, cd:8, fx:{ bonusVsLowHp:0.12, executeThreshold:0.4 } },
     killShot:{ desc:'7倍攻击,对残血目标造成更高伤害并在击杀后返还能量', cd:12, fx:{ bonusVsLowHp:0.8, executeThreshold:0.35, resourceGainOnKill:14 } },
     bestialWrath:{ desc:'15秒攻击+40%,野兽之怒期间高倍率技能更狠' },
-    h_killCommand:{ desc:'6秒爆发窗口,适合开怪与Boss' },
+    h_killCommand:{ desc:'命令宠物撕咬:5倍攻击,有宠物/印记目标时是稳定的爆发技' },
     h_explosiveShot:{ desc:'10倍爆炸射击,对带钉刺目标额外增伤并溅射附近敌人', cd:14, fx:{ bonusPerDot:0.3, splashPct:0.35 } },
   },
   shaman: {
@@ -532,10 +533,10 @@ const CLASS_MECHANIC_SKILL_PATCHES = {
     divineHymn:{ desc:'神圣赞美诗大治疗,会同时治疗随从并给双方加护盾', fx:{ companionHealPct:0.40, companionShieldPct:0.10, companionBuff:'p_grace', companionBuffMs:12000, grantAura:{ key:'p_grace', add:2, max:5, duration:15000 } } },
   },
   hunter: {
-    summonPet:{ desc:'召唤宠物持续作战;宠物在场时猎人获得兽群羁绊', fx:{ grantAura:{ key:'h_beastBond', add:2, max:5, duration:16000 }, classMechanic:'宠物/召唤物在场时协同猛攻更强' } },
+    summonPet:{ desc:'召唤宠物持续作战;宠物在场时猎人获得兽群羁绊,羁绊同步强化宠物的攻击与攻速', fx:{ grantAura:{ key:'h_beastBond', add:2, max:5, duration:16000 }, classMechanic:'宠物/召唤物在场时协同猛攻更强' } },
     huntersMark:{ desc:'猎人印记施加破绽和钉刺窗口,并叠兽群羁绊', fx:{ applyTargetState:[{ key:'marked', durMs:14000 }, { key:'exposed', durMs:9000 }], grantAura:{ key:'h_beastBond', add:1, max:5, duration:15000 } } },
     bestialWrath:{ desc:'野兽狂怒强化猎人与宠物,并立即叠兽群羁绊', fx:{ grantAura:{ key:'h_beastBond', add:2, max:5, duration:15000 } } },
-    h_killCommand:{ desc:'短爆发命令宠物撕咬,宠物/召唤物在场时额外追击', fx:{ grantAura:{ key:'h_beastBond', add:1, max:5, duration:15000 }, extraHitPctIfSummon:0.35 } },
+    h_killCommand:{ desc:'命令宠物撕咬:5倍攻击;宠物在场或印记目标时更痛,并叠兽群羁绊', fx:{ grantAura:{ key:'h_beastBond', add:1, max:5, duration:15000 }, bonusPerAuraStack:{ key:'h_beastBond', pct:0.08 }, bonusStates:{ marked:0.25 } } },
     h_coordinatedAssault:{ desc:'兽群协同猛攻,消耗兽群羁绊后多段追击', fx:{ bonusPerAuraStack:{ key:'h_beastBond', pct:0.20 }, consumeAura:{ key:'h_beastBond', all:true }, extraHitPct:0.45, extraHitPctIfSummon:0.35 } },
     stampede:{ desc:'兽群奔腾召唤多只野兽,大幅堆叠兽群羁绊', fx:{ grantAura:{ key:'h_beastBond', add:3, max:5, duration:16000 } } },
   },
@@ -1720,6 +1721,7 @@ const AUTO_DEFENSIVE_BUFFS = new Set(['shield','divine','bark','iceBarrier','ear
 
 const SKILL_AI_OVERRIDES = {
   warrior: {
+    cleave:{ priorityTag:'builder' },
     battleShout:{ priorityTag:'buff', useIfBuffMissing:'battleShout', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
     sunderArmor:{ priorityTag:'setup', applyTargetState:'sunder', useIfTargetMissing:'sunder', avoidIfTargetHpBelow:0.2 },
     mortalStrike:{ priorityTag:'spender', useIfTargetHas:'sunder', preferOnBoss:true },
@@ -1781,7 +1783,7 @@ const SKILL_AI_OVERRIDES = {
     multi:{ priorityTag:'aoe', minEnemies:3 },
     rapidFire:{ priorityTag:'buff', useIfBuffMissing:'rapidFire', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
     bestialWrath:{ priorityTag:'buff', useIfBuffMissing:'bestial', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
-    h_killCommand:{ priorityTag:'buff', useIfBuffMissing:'h_burst', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
+    h_killCommand:{ priorityTag:'spender', preferOnBoss:true, avoidIfTargetHpBelow:0.2 },
     h_feignDeath:{ priorityTag:'defBuff', useIfSelfHpBelow:0.45 },
     h_rapidFire:{ priorityTag:'buff', useIfBuffMissing:'s_haste', preferOnBoss:true, avoidIfTargetHpBelow:0.25 },
     h_explosiveShot:{ priorityTag:'spender', applyTargetState:null, useIfTargetMissing:null, useIfTargetDotKeyPresent:'skill:serpentSting', preferOnBoss:true },

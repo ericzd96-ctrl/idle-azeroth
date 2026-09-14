@@ -2,6 +2,41 @@
   const BASE = 'assets/wow/ui/';       // 本地路径(优先)
   const CDN_BASE = 'https://wow.zamimg.com/images/wow/icons/large/';   // CDN 兜底
   const warmedUrls = new Set();
+  // A few source icon names are not in the bundled set. Resolve them to close local
+  // equivalents so offline play does not repeatedly issue failing HTTP requests.
+  const LOCAL_ICON_ALIASES = Object.freeze({
+    achievement_reputation_argentchampion:'achievement_reputation_08',
+    ability_druid_flourish:'spell_nature_tranquility',
+    ability_hunter_aimedshot:'ability_hunter_focusedaim',
+    ability_hunter_markedfordeath:'ability_hunter_mastermarksman',
+    ability_impalingbolt:'ability_hunter_quickshot',
+    ability_rogue_shadowstrike:'ability_rogue_ambush',
+    inv_drink_04:'achievement_worldevent_brewmaster',
+    inv_drink_05:'achievement_worldevent_brewmaster',
+    inv_drink_13:'achievement_worldevent_brewmaster',
+    inv_misc_bell_01:'inv_misc_pocketwatch_01',
+    inv_misc_crate_04:'inv_misc_bag_08',
+    inv_misc_food_15:'inv_potion_155',
+    inv_misc_food_64:'inv_potion_155',
+    inv_throwingknife_04:'ability_rogue_ambush',
+    spell_arcane_arcane01:'spell_arcane_blast',
+    spell_holy_avenginewrath:'spell_holy_crusaderstrike',
+    spell_holy_divinehymn:'spell_nature_tranquility',
+    spell_holy_divineshield:'spell_holy_powerwordshield',
+    spell_holy_penance:'spell_holy_holybolt',
+    spell_holy_renew:'spell_holy_flashheal',
+    spell_nature_abolishmagic:'spell_nature_magicimmunity',
+    spell_nature_earthshock:'spell_nature_lightning',
+    spell_nature_polymorph:'spell_nature_sleep',
+    spell_nature_slow:'spell_frost_frostbolt02',
+    spell_nature_wispsplode:'spell_nature_starfall',
+    spell_paladin_hammerofwrath:'spell_holy_crusaderstrike',
+    spell_shadow_ritualofsacrifice:'spell_shadow_soulgem',
+    spell_shadow_shadowfury:'spell_shadow_deathcoil',
+    spell_shadow_summoninfernal:'spell_shadow_summonfelguard',
+    spell_warlock_demonbolt:'spell_shadow_shadowbolt',
+    warrior_talent_icon_avatar:'ability_warrior_battleshout',
+  });
   const UI_ICON = {
     battle:'ability_warrior_savageblow',
     hero:'achievement_level_10',
@@ -1609,8 +1644,8 @@
 
   function wowIconName(name) {
     if (!name) return '';
-    // CDN优先, 避免本地缺失文件的404错误; CDN失败时onerror回退本地
-    return CDN_BASE + name + '.jpg';
+    // 本地优先(命中即显示, 不产生加载空白); 本地缺失时 onerror 再回退 CDN
+    return BASE + (LOCAL_ICON_ALIASES[name] || name) + '.jpg';
   }
 
   function warmIconUrl(url) {
@@ -1624,12 +1659,17 @@
   function imgHtml(src, size, alt, fallback, cls, loadingMode) {
     const px = normalizeSize(size);
     const iconKey = String(src || '').replace(BASE, '').replace(CDN_BASE, '').replace(/\.jpg$/i, '');
-    // 构造本地兜底 URL (CDN加载失败时尝试)
+    // 本地 + CDN 两个候选 URL, 本地作为初始 src
     const localSrc = src.indexOf(BASE) === 0 ? src : src.replace(CDN_BASE, BASE);
-    warmIconUrl(src);
+    const cdnSrc = src.indexOf(CDN_BASE) === 0 ? src : src.replace(BASE, CDN_BASE);
+    // 本地+CDN 都失败过的图标: 后续重渲染直接出兜底文本, 避免每次重建都闪一次空白
+    if (typeof window !== 'undefined' && window.__wowDeadIcons && window.__wowDeadIcons[iconKey]) {
+      return (fallback || '').replace(/"/g, '&quot;');
+    }
+    warmIconUrl(localSrc);
     return `<span class="${cls || 'ui-icon wow-ico'}" style="width:${px}px;height:${px}px" title="${alt || ''}">
-      <img src="${src}" alt="${alt || ''}" loading="${loadingMode || 'eager'}" decoding="sync"
-        onerror="var t=this;window.__wowMissingIcons=window.__wowMissingIcons||{};window.__wowMissingIcons['${iconKey}']=1;if(!t.dataset.tried){t.dataset.tried='1';t.src='${localSrc}';}else{t.parentNode.replaceWith(document.createTextNode(t.dataset.fb||''))}"
+      <img src="${localSrc}" alt="${alt || ''}" loading="${loadingMode || 'eager'}" decoding="sync"
+        onerror="var t=this;window.__wowMissingIcons=window.__wowMissingIcons||{};window.__wowMissingIcons['${iconKey}']=1;if(!t.dataset.tried){t.dataset.tried='1';t.src='${cdnSrc}';}else{window.__wowDeadIcons=window.__wowDeadIcons||{};window.__wowDeadIcons['${iconKey}']=1;t.parentNode.replaceWith(document.createTextNode(t.dataset.fb||''))}"
         data-fb="${(fallback || '').replace(/"/g, '&quot;')}">
     </span>`;
   }

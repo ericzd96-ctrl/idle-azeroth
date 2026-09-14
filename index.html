@@ -2,9 +2,10 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>艾泽拉斯放置勇者</title>
-<link rel="stylesheet" href="styles.css?v=20260716cg">
+<link rel="icon" type="image/jpeg" href="assets/wow/ui/ability_warrior_savageblow.jpg">
+<link rel="stylesheet" href="styles.css?v=20260914ux1">
 </head>
 <body>
 <div class="wrap">
@@ -15,11 +16,11 @@
       <span><span data-ui-icon="location" data-ui-size="sm" data-ui-label="位置"></span> <b id="h-zone">-</b></span>
       <span title="金币 — 主货币。用途:装备强化/重铸、背包扩容、觉醒。来源:击杀怪物、副本、远征军团。"><span data-ui-icon="gold" data-ui-size="sm" data-ui-label="金币"></span> <b id="h-gold">0</b></span>
       <span title="钻石 — 稀有货币(账号共享)。用途:抽随从、扩容、加速、黑市。来源:成就、首领、每日/每周任务、远征。"><span data-ui-icon="gem" data-ui-size="sm" data-ui-label="宝石"></span> <b id="h-gem">0</b></span>
-      <span title="通用券 — 用途:冷却中跳过副本/地图首领直接再战。来源:段位/任务奖励、黑市。"><span data-ui-icon="ticket" data-ui-size="sm" data-ui-label="通用券"></span> <b id="h-tickets">0</b></span>
-      <span title="随从券 — 用途:在随从页抽取随从。来源:每日/每周任务、黑市。"><span data-ui-icon="companion" data-ui-size="sm" data-ui-label="随从券"></span> <b id="h-comp-tickets">0</b></span>
-      <span title="荣誉 — 竞技场货币(账号共享)。用途:荣誉商店竞技场强化、换对手、黑市。来源:竞技场排位/切磋、任务。"><span data-ui-icon="honor" data-ui-size="sm" data-ui-label="荣誉"></span> <b id="h-honor">0</b></span>
-      <span title="塔币 — 无尽塔货币。用途:无尽塔商店、黑市兑换。来源:攀爬无尽塔。"><span data-ui-icon="towercoin" data-ui-size="sm" data-ui-label="塔币"></span> <b id="h-towercoin">0</b></span>
-      <span title="魔法精华 — 用途:附魔、装备重铸、词缀升阶/转换。来源:副本、任务、远征、黑市。"><span data-ui-icon="essence" data-ui-size="sm" data-ui-label="精华"></span> <b id="h-essence">0</b></span>
+      <span class="advanced-resource" data-min-level="5" title="通用券 — 用途:冷却中跳过副本/地图首领直接再战。来源:段位/任务奖励、黑市。"><span data-ui-icon="ticket" data-ui-size="sm" data-ui-label="通用券"></span> <b id="h-tickets">0</b></span>
+      <span class="advanced-resource" data-min-level="3" title="随从券 — 用途:在随从页抽取随从。来源:每日/每周任务、黑市。"><span data-ui-icon="companion" data-ui-size="sm" data-ui-label="随从券"></span> <b id="h-comp-tickets">0</b></span>
+      <span class="advanced-resource" data-min-level="15" title="荣誉 — 竞技场货币(账号共享)。用途:荣誉商店竞技场强化、换对手、黑市。来源:竞技场排位/切磋、任务。"><span data-ui-icon="honor" data-ui-size="sm" data-ui-label="荣誉"></span> <b id="h-honor">0</b></span>
+      <span class="advanced-resource" data-min-level="20" title="塔币 — 无尽塔货币。用途:无尽塔商店、黑市兑换。来源:攀爬无尽塔。"><span data-ui-icon="towercoin" data-ui-size="sm" data-ui-label="塔币"></span> <b id="h-towercoin">0</b></span>
+      <span class="advanced-resource" data-min-level="10" title="魔法精华 — 用途:附魔、装备重铸、词缀升阶/转换。来源:副本、任务、远征、黑市。"><span data-ui-icon="essence" data-ui-size="sm" data-ui-label="精华"></span> <b id="h-essence">0</b></span>
       <span class="pill"><span data-ui-icon="clock" data-ui-size="xs" data-ui-label="时钟"></span><b id="h-clock">00:00</b></span>
     </div>
   </header>
@@ -80,8 +81,7 @@
         <span id="progress-text"></span>
       </div>
       <div class="combat-cue-lane" id="combat-cue-lane" aria-hidden="true"></div>
-      <div class="combat-skill-chain" id="combat-skill-chain" aria-label="即时技能链" style="display:none"></div>
-      <div class="stage-combat-tempo idle" id="stage-combat-tempo" aria-label="即时战况" style="display:none"></div>
+      <div class="combat-skill-chain" id="combat-skill-chain" aria-label="即时技能链"></div>
       <div class="arena" id="arena">
         <div class="fighter">
           <div class="emoji" id="hero-emoji">🧙</div>
@@ -118,14 +118,23 @@
         <div class="ally-summon-title" id="ally-summon-title"></div>
         <div class="ally-summon-list" id="ally-summon-list"></div>
       </div>
-      <div class="row" style="justify-content:center;gap:8px;flex-wrap:wrap">
+      <div id="combat-next-action" class="combat-next-action" style="display:none"></div>
+      <div id="death-recap" class="death-recap" hidden role="status">
+        <div class="death-recap-head"><b>☠️ 上次倒下的原因：<span id="death-recap-cause"></span></b><button id="death-recap-close" type="button" aria-label="关闭死亡回顾">×</button></div>
+        <div id="death-recap-detail"></div>
+        <div class="death-recap-advice">下一步：<span id="death-recap-advice"></span></div>
+      </div>
+      <div class="skill-bar" id="skill-bar"></div>
+      <div class="row combat-controls" style="justify-content:center;gap:8px;flex-wrap:wrap">
         <button id="btn-speed" title="战斗倍速">⏩ 1x</button>
         <button id="btn-leave" class="success" style="display:none"><span data-ui-icon="dungeon" data-ui-size="sm"></span>离开</button>
       </div>
-      <div id="combat-next-action" class="combat-next-action" style="display:none"></div>
-      <div class="skill-bar" id="skill-bar"></div>
       <div class="log" id="log">
-        <div class="muted" style="text-align:center;padding:4px;font-size:10px"><span class="ui-label compact"><span data-ui-icon="battle" data-ui-size="xs"></span><span>战斗日志</span></span></div>
+        <div class="log-toolbar">
+          <span class="ui-label compact"><span data-ui-icon="battle" data-ui-size="xs"></span><span>战斗摘要</span></span>
+          <button type="button" id="btn-log-detail" aria-pressed="false" title="显示普通攻击、怪物技能与状态变化">显示细节</button>
+        </div>
+        <div class="log-lines" id="log-lines" role="log" aria-live="polite" aria-relevant="additions"></div>
       </div>
       <div class="dmg-meter" id="dmg-meter">
         <div class="dm-head">
@@ -134,43 +143,21 @@
           <button id="btn-dmg-reset" data-action="dmgreset" title="清空本轮伤害、治疗、承伤、击杀耗时和来源明细统计">重置</button>
         </div>
         <div class="dm-recent-skills idle" id="dm-recent-skills" aria-label="最近技能"><span>最近技能 -</span></div>
-        <div class="dm-row dm-combat-tempo-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="battle" data-ui-size="xs"></span><span>节奏</span></span></span><span id="dm-combat-tempo" class="dm-combat-tempo idle"><b>等待战斗</b><span>技能节奏会显示在这里</span></span></div>
-        <div class="dm-row dm-combat-heat-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="battle" data-ui-size="xs"></span><span>热度</span></span></span><span id="dm-combat-heat" class="dm-combat-heat idle"><span class="dm-heat-state">待战</span><span class="dm-heat-rail"><i style="width:8%"></i></span><span class="dm-heat-detail">等待记录</span></span></div>
         <div class="dm-row"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="hero2" data-ui-size="xs"></span><span>英雄</span></span></span><div class="dm-bar"><i id="dm-hero-bar"></i></div><span class="dm-val" id="dm-hero-val">0</span></div>
         <div class="dm-row"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="companion" data-ui-size="xs"></span><span>随从</span></span></span><div class="dm-bar"><i id="dm-comp-bar" class="comp"></i></div><span class="dm-val" id="dm-comp-val">0</span></div>
         <div class="dm-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="battle" data-ui-size="xs"></span><span>最高</span></span></span><span id="dm-max-hit" style="flex:1">-</span></div>
         <div class="dm-row dm-top-skill-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="battle" data-ui-size="xs"></span><span>主力技能</span></span></span><span id="dm-top-skill" class="dm-top-skill idle">-</span></div>
         <div class="dm-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="heal" data-ui-size="xs"></span><span>治疗</span></span></span><span id="dm-heal-total" style="flex:1">-</span></div>
-        <div class="dm-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="heal" data-ui-size="xs"></span><span>最高治疗</span></span></span><span id="dm-max-heal" style="flex:1">-</span></div>
-        <div class="dm-row dm-last-heal-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="heal" data-ui-size="xs"></span><span>最近治疗</span></span></span><span id="dm-last-heal" class="dm-last-heal idle">-</span></div>
-        <div class="dm-row dm-last-shield-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="shield" data-ui-size="xs"></span><span>最近护盾</span></span></span><span id="dm-last-shield" class="dm-last-shield idle">-</span></div>
-        <div class="dm-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="shield" data-ui-size="xs"></span><span>防护</span></span></span><span id="dm-shield-total" class="dm-shield-total">-</span></div>
-        <div class="dm-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="guide" data-ui-size="xs"></span><span>暴击率</span></span></span><span id="dm-crit-rate" style="flex:1">-</span></div>
         <div class="dm-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="kills" data-ui-size="xs"></span><span>击杀</span></span></span><span id="dm-kills" style="flex:1">0</span></div>
-        <div class="dm-row dm-streak-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="battle" data-ui-size="xs"></span><span>连杀</span></span></span><span id="dm-streak" class="dm-streak idle">-</span></div>
         <div class="dm-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="battle" data-ui-size="xs"></span><span>峰值秒伤</span></span></span><span id="dm-peak-dps" style="flex:1">-</span></div>
         <div class="dm-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="hero2" data-ui-size="xs"></span><span>承受</span></span></span><span id="dm-taken" style="flex:1">-</span></div>
-        <div class="dm-row dm-last-hit-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="battle" data-ui-size="xs"></span><span>最近承伤</span></span></span><span id="dm-last-hit" class="dm-last-hit idle">-</span></div>
-        <div class="dm-row dm-reaction-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="guide" data-ui-size="xs"></span><span>建议</span></span></span><span id="dm-reaction" class="dm-reaction idle">稳定输出</span></div>
-        <div class="dm-row dm-tactics-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="battle" data-ui-size="xs"></span><span>态势</span></span></span><span id="dm-tactics" class="dm-tactics idle">等待战斗</span></div>
-        <div class="dm-row dm-boss-cast-row" id="dm-boss-cast-row" style="font-size:10px;display:none"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="battle" data-ui-size="xs"></span><span>首领读条</span></span></span><span id="dm-boss-cast" class="dm-boss-cast idle">-</span></div>
-        <div class="dm-row dm-last-interrupt-row" id="dm-last-interrupt-row" style="font-size:10px;display:none"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="battle" data-ui-size="xs"></span><span>最近打断</span></span></span><span id="dm-last-interrupt" class="dm-last-interrupt idle">-</span></div>
-        <div class="dm-row dm-boss-cast-outcome-row" id="dm-boss-cast-outcome-row" style="font-size:10px;display:none"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="battle" data-ui-size="xs"></span><span>读条后果</span></span></span><span id="dm-boss-cast-outcome" class="dm-boss-cast-outcome idle">-</span></div>
-        <div class="dm-row dm-vuln-window-row" id="dm-vuln-window-row" style="font-size:10px;display:none"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="battle" data-ui-size="xs"></span><span>破绽窗口</span></span></span><span id="dm-vuln-window" class="dm-vuln-window idle">-</span></div>
-        <div class="dm-row dm-vuln-hit-row" id="dm-vuln-hit-row" style="font-size:10px;display:none"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="battle" data-ui-size="xs"></span><span>窗口命中</span></span></span><span id="dm-vuln-hit" class="dm-vuln-hit idle">-</span></div>
-        <div class="dm-row dm-pressure-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="shield" data-ui-size="xs"></span><span>压力</span></span></span><span id="dm-pressure" class="dm-pressure safe">安全</span></div>
-        <div class="dm-row dm-death-row" id="dm-death-row" style="font-size:10px;display:none"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="guide" data-ui-size="xs"></span><span>上次死亡</span></span></span><span id="dm-death-recap" class="dm-death-recap">-</span></div>
-        <div class="dm-row" style="font-size:10px"><span class="dm-lbl"><span class="ui-label compact"><span data-ui-icon="kills" data-ui-size="xs"></span><span>击杀耗时</span></span></span><span id="dm-ttk" style="flex:1">-</span></div>
         <details class="dm-detail">
           <summary><span data-ui-icon="guide" data-ui-size="xs"></span><span id="dm-detail-summary">来源明细</span></summary>
           <div id="dm-combat-summary" class="dm-combat-summary" style="display:none"></div>
-          <div id="dm-skill-fx-guide" class="dm-skill-fx-guide"></div>
-          <div id="dm-cast-kit" class="dm-cast-kit"></div>
           <div id="dm-skills-breakdown" style="margin-top:4px;border-top:1px dashed var(--border);padding-top:4px;display:none"></div>
           <div id="dm-school-breakdown" style="margin-top:4px;border-top:1px dashed var(--border);padding-top:4px;display:none"></div>
           <div id="dm-heal-breakdown" style="margin-top:4px;border-top:1px dashed var(--border);padding-top:4px;display:none"></div>
           <div id="dm-taken-breakdown" style="margin-top:4px;border-top:1px dashed var(--border);padding-top:4px;display:none"></div>
-          <div id="dm-boss-cast-history" class="dm-boss-cast-history" style="display:none"></div>
         </details>
         <div class="dm-total muted" id="dm-total">总计 0 · 0s</div>
       </div>
@@ -180,34 +167,36 @@
 
   <!-- Right: tabs -->
   <section class="panel side-panel" id="side-panel">
-    <div class="tabs">
-      <div class="tab" data-tab="hero"><span data-ui-icon="hero" data-ui-size="sm"></span></div>
-      <div class="tab active" data-tab="map"><span data-ui-icon="map" data-ui-size="sm"></span></div>
-      <div class="tab" data-tab="inv"><span data-ui-icon="inventory" data-ui-size="sm"></span></div>
-      <div class="tab" data-tab="shop"><span data-ui-icon="stats" data-ui-size="sm"></span></div>
-      <div class="tab" data-tab="skill"><span data-ui-icon="guide" data-ui-size="sm"></span></div>
-      <div class="tab" data-tab="talent"><span data-ui-icon="talent" data-ui-size="sm"></span></div>
-      <div class="tab" data-tab="companion"><span data-ui-icon="companion" data-ui-size="sm"></span></div>
-      <div class="tab" data-tab="dungeon"><span data-ui-icon="dungeon" data-ui-size="sm"></span></div>
-      <div class="tab" data-tab="arena"><span data-ui-icon="arena" data-ui-size="sm"></span></div>
-      <div class="tab" data-tab="artifact"><span data-ui-icon="artifact" data-ui-size="sm"></span></div>
-      <div class="tab tab-life" data-tab="life" title="专业">
+    <div class="tabs" id="system-tabs" aria-label="游戏系统">
+      <button type="button" class="tab" data-tab="hero" data-unlock="1" title="角色" aria-label="角色"><span data-ui-icon="hero" data-ui-size="sm"></span><span class="tab-label">角色</span></button>
+      <button type="button" class="tab active" data-tab="map" data-unlock="1" title="冒险" aria-label="冒险" aria-selected="true"><span data-ui-icon="map" data-ui-size="sm"></span><span class="tab-label">冒险</span></button>
+      <button type="button" class="tab" data-tab="inv" data-unlock="1" title="背包" aria-label="背包"><span data-ui-icon="inventory" data-ui-size="sm"></span><span class="tab-label">背包</span></button>
+      <button type="button" class="tab" data-tab="shop" data-unlock="1" title="成长" aria-label="成长"><span data-ui-icon="stats" data-ui-size="sm"></span><span class="tab-label">成长</span></button>
+      <button type="button" class="tab" data-tab="skill" data-unlock="1" title="技能" aria-label="技能"><span data-ui-icon="guide" data-ui-size="sm"></span><span class="tab-label">技能</span></button>
+      <button type="button" class="tab" data-tab="talent" data-unlock="2" title="天赋 · 2级解锁" aria-label="天赋"><span data-ui-icon="talent" data-ui-size="sm"></span><span class="tab-label">天赋</span></button>
+      <button type="button" class="tab tab-secondary" data-tab="companion" data-unlock="3" title="随从 · 3级解锁" aria-label="随从"><span data-ui-icon="companion" data-ui-size="sm"></span><span class="tab-label">随从</span></button>
+      <button type="button" class="tab" data-tab="dungeon" data-unlock="10" title="副本 · 10级解锁" aria-label="副本"><span data-ui-icon="dungeon" data-ui-size="sm"></span><span class="tab-label">副本</span></button>
+      <button type="button" class="tab" data-tab="arena" data-unlock="15" title="竞技场 · 15级解锁" aria-label="竞技场"><span data-ui-icon="arena" data-ui-size="sm"></span><span class="tab-label">竞技场</span></button>
+      <button type="button" class="tab tab-secondary" data-tab="artifact" data-unlock="20" title="神器 · 20级解锁" aria-label="神器"><span data-ui-icon="artifact" data-ui-size="sm"></span><span class="tab-label">神器</span></button>
+      <button type="button" class="tab tab-life tab-secondary" data-tab="life" data-unlock="5" title="专业 · 5级解锁" aria-label="专业">
         <span data-ui-icon="profession" data-ui-size="sm"></span>
-        <span class="tab-text">专业</span>
+        <span class="tab-label tab-text">专业</span>
         <span class="tab-badge" id="life-tab-badge" hidden></span>
-      </div>
-      <div class="tab" data-tab="progression"><span data-ui-icon="progression" data-ui-size="sm"></span></div>
-      <div class="tab" data-tab="events"><span data-ui-icon="events" data-ui-size="sm"></span></div>
-      <div class="tab" data-tab="expedition" title="远征军团">🚩</div>
-      <div class="tab" data-tab="guild" title="公会">🏰</div>
-      <div class="tab" data-tab="stronghold" title="要塞建设">🏗️</div>
-      <div class="tab" data-tab="astrology" title="占星命盘">✨</div>
-      <div class="tab" data-tab="market" title="轮换黑市">🛒</div>
-      <div class="tab" data-tab="quests" title="任务板">📋</div>
-      <div class="tab" data-tab="vault" title="每周宝库">🎁</div>
-      <div class="tab" data-tab="leaderboard" title="天梯排行榜">🏆</div>
-      <div class="tab" data-tab="ascend"><span data-ui-icon="ascend" data-ui-size="sm"></span></div>
-      <div class="tab" data-tab="paragon" title="巅峰系统">🌟</div>
+      </button>
+      <button type="button" class="tab tab-secondary" data-tab="progression" data-unlock="5" title="成就 · 5级解锁" aria-label="成就"><span data-ui-icon="progression" data-ui-size="sm"></span><span class="tab-label">成就</span></button>
+      <button type="button" class="tab tab-secondary" data-tab="events" data-unlock="10" title="活动 · 10级解锁" aria-label="活动"><span data-ui-icon="events" data-ui-size="sm"></span><span class="tab-label">活动</span></button>
+      <button type="button" class="tab tab-secondary" data-tab="expedition" data-unlock="20" title="远征军团 · 20级解锁" aria-label="远征军团">🚩<span class="tab-label">远征</span></button>
+      <button type="button" class="tab tab-secondary" data-tab="guild" data-unlock="20" title="公会 · 20级解锁" aria-label="公会">🏰<span class="tab-label">公会</span></button>
+      <button type="button" class="tab tab-secondary" data-tab="stronghold" data-unlock="30" title="要塞建设 · 30级解锁" aria-label="要塞建设">🏗️<span class="tab-label">要塞</span></button>
+      <button type="button" class="tab tab-secondary" data-tab="astrology" data-unlock="40" title="占星命盘 · 40级解锁" aria-label="占星命盘">✨<span class="tab-label">占星</span></button>
+      <button type="button" class="tab tab-secondary" data-tab="market" data-unlock="15" title="轮换黑市 · 15级解锁" aria-label="轮换黑市">🛒<span class="tab-label">黑市</span></button>
+      <button type="button" class="tab tab-secondary" data-tab="quests" data-unlock="3" title="任务板 · 3级解锁" aria-label="任务板">📋<span class="tab-label">任务</span></button>
+      <button type="button" class="tab tab-secondary" data-tab="vault" data-unlock="20" title="每周宝库 · 20级解锁" aria-label="每周宝库">🎁<span class="tab-label">宝库</span></button>
+      <button type="button" class="tab tab-secondary" data-tab="leaderboard" data-unlock="20" title="天梯排行榜 · 20级解锁" aria-label="天梯排行榜">🏆<span class="tab-label">天梯</span></button>
+      <button type="button" class="tab tab-secondary" data-tab="ascend" data-unlock="80" title="觉醒 · 80级解锁" aria-label="觉醒"><span data-ui-icon="ascend" data-ui-size="sm"></span><span class="tab-label">觉醒</span></button>
+      <button type="button" class="tab tab-secondary" data-tab="paragon" data-unlock="80" title="巅峰系统 · 80级解锁" aria-label="巅峰系统">🌟<span class="tab-label">巅峰</span></button>
+      <button type="button" class="tab-more" id="btn-more-tabs" aria-expanded="false" aria-label="更多系统" title="展开更多系统">•••<span>更多</span></button>
+      <div class="systems-menu" id="systems-menu" hidden></div>
     </div>
 
     <div class="tab-panel" id="tab-hero">
@@ -218,9 +207,15 @@
     </div>
 
     <div class="tab-panel active" id="tab-map">
-      <div id="daily-hub"></div>
-      <div id="next-goal"></div>
-      <div id="zone-bounty-hub"></div>
+      <div id="campaign-root"></div>
+      <details class="adventure-optional">
+        <summary><span>支线与委托</span><small>日常、旅途建议与区域悬赏</small></summary>
+        <div class="adventure-optional-body">
+          <div id="daily-hub"></div>
+          <div id="next-goal"></div>
+          <div id="zone-bounty-hub"></div>
+        </div>
+      </details>
       <div class="muted" style="margin-bottom:6px">当前: <b id="cur-location">-</b></div>
       <div class="map-list" id="map-list"></div>
     </div>
@@ -235,16 +230,19 @@
         <select id="inv-filter-slot" style="font-size:11px;padding:2px 4px"></select>
         <span style="font-size:11px;color:var(--muted)">品质:</span>
         <select id="inv-filter-rarity" style="font-size:11px;padding:2px 4px"></select>
-        <span style="flex-basis:100%"></span>
-        <span style="font-size:11px;color:var(--muted)">自动卖:</span>
-        <button data-action="autosell" data-rarity="off" id="btn-as-off">关闭</button>
-        <button data-action="autosell" data-rarity="common" id="btn-as-common">普通</button>
-        <button data-action="autosell" data-rarity="uncommon" id="btn-as-uncommon">优秀及以下</button>
-        <button data-action="autosell" data-rarity="rare" id="btn-as-rare">精良及以下</button>
-        <span style="flex-basis:100%"></span>
-        <button data-action="sellall" data-rarity="common">一键卖普通</button>
-        <button data-action="sellall" data-rarity="uncommon">一键卖优秀及以下</button>
-        <button data-action="sellall" data-rarity="rare">一键卖精良及以下</button>
+        <details class="inv-advanced"><summary>整理与售卖</summary>
+          <div class="inv-advanced-actions"><span>自动卖:</span>
+            <button data-action="autosell" data-rarity="off" id="btn-as-off">关闭</button>
+            <button data-action="autosell" data-rarity="common" id="btn-as-common">普通</button>
+            <button data-action="autosell" data-rarity="uncommon" id="btn-as-uncommon">优秀及以下</button>
+            <button data-action="autosell" data-rarity="rare" id="btn-as-rare">精良及以下</button>
+          </div>
+          <div class="inv-advanced-actions">
+            <button data-action="sellall" data-rarity="common">一键卖普通</button>
+            <button data-action="sellall" data-rarity="uncommon">一键卖优秀及以下</button>
+            <button data-action="sellall" data-rarity="rare">一键卖精良及以下</button>
+          </div>
+        </details>
       </div>
       <div class="inv-list" id="inv-list"></div>
     </div>
@@ -262,6 +260,7 @@
         <label><input type="checkbox" class="auto-skill-kind" data-kind="buff" checked> Buff/治疗/减伤</label>
         <label><input type="checkbox" class="auto-skill-kind" data-kind="interrupt"> 打断/控制</label>
       </div>
+      <div id="auto-skill-status" class="auto-skill-status" role="status">自动施法：等待战斗</div>
       <div class="muted" style="margin-bottom:6px">职业技能(随等级解锁)</div>
       <div id="skill-list"></div>
       <div id="passive-list"></div>
@@ -379,10 +378,17 @@
   </section>
 
   <div class="footer-actions">
-    <button id="btn-save"><span data-ui-icon="save" data-ui-size="sm"></span>保存</button>
-    <button id="btn-export"><span data-ui-icon="export" data-ui-size="sm"></span>导出</button>
-    <button id="btn-import"><span data-ui-icon="import" data-ui-size="sm"></span>导入</button>
-    <button id="btn-reset" class="danger"><span data-ui-icon="reset" data-ui-size="sm"></span>重新开始</button>
+    <details class="save-tools">
+      <summary><span data-ui-icon="save" data-ui-size="sm"></span>存档与设置</summary>
+      <div class="save-tools-menu">
+        <button id="btn-sound" type="button" title="切换游戏音效">🔊 音效：开</button>
+        <button id="btn-combat-fx" type="button" title="切换战斗特效强度">✨ 特效：标准</button>
+        <button id="btn-save"><span data-ui-icon="save" data-ui-size="sm"></span>立即保存</button>
+        <button id="btn-export"><span data-ui-icon="export" data-ui-size="sm"></span>导出存档</button>
+        <button id="btn-import"><span data-ui-icon="import" data-ui-size="sm"></span>导入存档</button>
+        <button id="btn-reset" class="danger"><span data-ui-icon="reset" data-ui-size="sm"></span>清除存档</button>
+      </div>
+    </details>
   </div>
 </div>
 <div id="mobile-panel-backdrop"></div>
@@ -540,22 +546,34 @@
   </div>
 </div>
 
-<script src="data.js?v=20260713d"></script>
+<script src="data.js?v=20260829a"></script>
 <script src="icons.js"></script>
-<script src="ui_icons.js?v=20260713g"></script>
+<script src="ui_icons.js?v=20260908ux1"></script>
 <script src="talents_ext.js?v=20260714o"></script>
-<script src="skills_ext.js?v=20260714x"></script>
+<script src="skills_ext.js?v=20260914ux1"></script>
+<script src="skills_ext2.js?v=20260913hero3"></script>
+<script src="talents_ext2.js?v=20260913plain1"></script>
+<script src="talents_ext3.js?v=20260913redo4"></script>
 <script src="companion_ext.js?v=20260714g"></script>
-<script src="state.js?v=20260715f"></script>
+<script src="sfx.js?v=20260913sfx1"></script>
+<script src="story.js?v=20260914ux1"></script>
+<script src="state.js?v=20260913sfx1"></script>
 <script src="enhance.js?v=20260713b"></script>
 <script src="progression.js"></script>
 <script src="class_orders.js"></script>
 <script src="chronicles.js"></script>
 <script src="astrology.js"></script>
-<script src="events.js?v=20260714b"></script>
+<script src="events.js?v=20260829a"></script>
 <script src="ascend.js"></script>
-<script src="combat.js?v=20260716at"></script>
-<script src="world.js?v=20260715b"></script>
+<script src="balance_rules.js?v=20260908ux1"></script>
+<script src="combat.js?v=20260914ux1"></script>
+<script src="companion_ext2.js?v=20260913pack1"></script>
+<script src="companion_ext3.js?v=20260913pack3"></script>
+<script src="companion_ext4.js?v=20260913pack4"></script>
+<script src="companion_ext5.js?v=20260913legend2"></script>
+<script src="companion_gameplay.js?v=20260913gp1"></script>
+<script src="companion_combo.js?v=20260913combo1"></script>
+<script src="world.js?v=20260913gp1"></script>
 <script src="delves.js"></script>
 <script src="tower.js"></script>
 <script src="life.js"></script>
@@ -564,6 +582,8 @@
 <script src="mount.js"></script>
 <script src="roguelike.js"></script>
 <script src="midgame_ext.js?v=20260713c"></script>
+<script src="companion_ext6.js?v=20260913skill1"></script>
+<script src="companion_ext7.js?v=20260913mech1"></script>
 <script src="dragon_treasures.js"></script>
 <script src="world_invasions.js?v=20260713b"></script>
 <script src="worldsoul.js"></script>
@@ -578,16 +598,17 @@
 <script src="stronghold.js"></script>
 <script src="loadout.js?v=20260713a"></script>
 <script src="market.js"></script>
-<script src="quests.js"></script>
+<script src="quests.js?v=20260908ux2"></script>
 <script src="vault.js"></script>
 <script src="paragon.js"></script>
 <script src="leaderboard.js"></script>
 <script src="zone_bounty.js"></script>
-<script src="nextgoal.js"></script>
-<script src="dailyhub.js"></script>
+<script src="campaign.js?v=20260913story1"></script>
+<script src="nextgoal.js?v=20260908ux2"></script>
+<script src="dailyhub.js?v=20260908ux2"></script>
 <script src="passives.js"></script>
 <script src="spd_tuning.js"></script>
-<script src="render.js?v=20260716bz"></script>
-<script src="main.js?v=20260716b"></script>
+<script src="render.js?v=20260914ux1"></script>
+<script src="main.js?v=20260914ux1"></script>
 </body>
 </html>

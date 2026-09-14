@@ -33,7 +33,6 @@ const defaultState = () => ({
   currentSubzone: 0,
   subzoneKills: {},
   subzoneCleared: {},
-  worldFieldOps: { active:{}, completed:{} },
   worldRenown: { maps:{} },
   bossCd: {},
   killsTotal: 0,
@@ -48,7 +47,6 @@ const defaultState = () => ({
   companionWishlist: [],   // 账号共享:随从收藏目标 key[]
   activeCompanion: -1,     // 当前出战随从索引, -1=无
   companionSupport: [],     // 当前角色:支援随从 key[],不直接普攻,但会低频触发支援专属
-  companionTactic: 'balanced', // 当前角色:出战随从战术指令
   companionShards: {},     // {key: count} 碎片
   compUniversalShards: {white:0,green:0,blue:0,purple:0,orange:0}, // 品质通用碎片
   companionMissions: { active:[], totalCompleted:0, history:[] }, // 随从派遣任务
@@ -56,7 +54,6 @@ const defaultState = () => ({
   battleSpeed: 1,          // 战斗倍速(1x / 2x)
   travel: null,
   worldSearch: null,
-  worldCombatPause: null,
   dungeonState: null,
   dungeonCd: {},
   dungeonFirstClear: {},   // 每角色:已首通的副本 key(首通一次性奖励用)
@@ -136,6 +133,8 @@ const SHARED_FIELDS = ['gold','gem','honor','essence','tickets','compTickets','t
 
 function defaultAccount() {
   return {
+    combatFx: 'standard',   // 战斗特效偏好: minimal / standard / cinematic
+    sound: 'on',            // 游戏音效: on / off
     // ---- 公共资源(账号共享) ----
     gold: 0, gem: 5, honor: 0, essence: 0,
     tickets: 10, compTickets: 5, towerCoin: 0, roguelikeCoin: 0,
@@ -178,6 +177,7 @@ function defaultAccount() {
     dragonTreasures: { claimed:{} }, // 龙岛宝藏收藏 {claimed:{treasureKey:timestamp}}
     classOrders: { claimed:{} }, // 职业大厅委托 {claimed:{classMissionKey:timestamp}}
     chronicles: { claimed:{} }, // 艾泽拉斯编年史 {claimed:{chapterKey:timestamp}}
+    campaign: { version:1, claimedActs:{}, claimedAt:{} }, // 五幕主线战役(账号共享,旧战绩可补认)
     worldInvasions: { progress:{}, claimed:{}, totalClaims:0 }, // 世界入侵轮换
     kareshExpedition: { weekId:0, missions:[], claimed:{}, seals:0, totalClaims:0, totalSeals:0, cacheClaims:0, metaClaimed:false, history:[] }, // 卡雷什终局远征周常
     timewalking: { weekId:0, eraKey:'classic', missions:[], claimed:{}, badges:0, totalBadges:0, totalClaims:0, cacheClaims:0, metaClaimed:false, metaClaims:0, history:[], research:{}, bought:{}, erasMastered:{}, maxThreat:0, distortions:[], selected:{}, distortionClears:0 }, // 时光漫游周轮换
@@ -211,6 +211,8 @@ function mergeAccount(saved) {
   const d = defaultAccount();
   const mo = (def, sav) => Object.assign({}, def, sav || {});
   return Object.assign(d, saved, {
+    combatFx: ['minimal','standard','cinematic'].includes(saved.combatFx) ? saved.combatFx : d.combatFx,
+    sound: saved.sound === 'off' ? 'off' : 'on',
     achievementsClaimed: saved.achievementsClaimed || {},
     achievementsCompleted: saved.achievementsCompleted || {},
     unlockedTitles: Array.isArray(saved.unlockedTitles) ? saved.unlockedTitles : [],
@@ -236,6 +238,10 @@ function mergeAccount(saved) {
     chronicles: saved.chronicles ? Object.assign({}, d.chronicles, saved.chronicles, {
       claimed: saved.chronicles.claimed || {},
     }) : d.chronicles,
+    campaign: saved.campaign ? Object.assign({}, d.campaign, saved.campaign, {
+      claimedActs: saved.campaign.claimedActs || {},
+      claimedAt: saved.campaign.claimedAt || {},
+    }) : d.campaign,
     worldInvasions: saved.worldInvasions ? Object.assign({}, d.worldInvasions, saved.worldInvasions, {
       progress: saved.worldInvasions.progress || {},
       claimed: saved.worldInvasions.claimed || {},
@@ -479,16 +485,11 @@ function mergeState(saved) {
     bossCd: saved.bossCd || {},
     subzoneKills: saved.subzoneKills || {},
     subzoneCleared: saved.subzoneCleared || {},
-    worldFieldOps: saved.worldFieldOps ? Object.assign({ active:{}, completed:{} }, saved.worldFieldOps, {
-      active: saved.worldFieldOps.active || {},
-      completed: saved.worldFieldOps.completed || {},
-    }) : { active:{}, completed:{} },
     worldRenown: saved.worldRenown ? Object.assign({ maps:{} }, saved.worldRenown, {
       maps: saved.worldRenown.maps || {},
     }) : { maps:{} },
     travel: null,
     worldSearch: null,
-    worldCombatPause: null,
     currentMonsters: saved.currentMon ? [saved.currentMon] : (saved.currentMonsters || []),
     // 装备深度
     gems: saved.gems || {},
@@ -719,10 +720,15 @@ function setBar(el, pct, text) {
     const delta = clampedPct - prevPct;
     const isHpBar = bar.classList.contains('hp');
     const isResourceBar = bar.classList.contains('mp') || bar.classList.contains('rage') || bar.classList.contains('energy');
-    const flashClass = isHpBar
-      ? (delta < -1 ? 'bar-loss-flash' : delta > 3.5 ? 'bar-gain-flash' : '')
+    const fxMode = combatFxMode();
+    const hpLossThreshold = fxMode === 'cinematic' ? -1 : -7;
+    const hpGainThreshold = fxMode === 'cinematic' ? 3.5 : 8;
+    const resourceSpendThreshold = fxMode === 'cinematic' ? -2.5 : -12;
+    const resourceGainThreshold = fxMode === 'cinematic' ? 4 : 12;
+    const flashClass = fxMode === 'minimal' ? '' : isHpBar
+      ? (delta < hpLossThreshold ? 'bar-loss-flash' : delta > hpGainThreshold ? 'bar-gain-flash' : '')
       : isResourceBar
-        ? (delta < -2.5 ? 'bar-spend-flash' : delta > 4 ? 'bar-resource-gain-flash' : '')
+        ? (delta < resourceSpendThreshold ? 'bar-spend-flash' : delta > resourceGainThreshold ? 'bar-resource-gain-flash' : '')
         : '';
     if (flashClass) {
       bar.classList.remove('bar-loss-flash', 'bar-gain-flash', 'bar-spend-flash', 'bar-resource-gain-flash');
@@ -753,6 +759,29 @@ let _lastImpactHaloTs = 0;
 let _lastImpactSlamTs = 0;
 let _lastStatusSigilTs = 0;
 
+function combatFxMode() {
+  const value = account && account.combatFx;
+  return ['minimal','standard','cinematic'].includes(value) ? value : 'standard';
+}
+
+function applyCombatFxPreference() {
+  const mode = combatFxMode();
+  if (typeof document !== 'undefined') document.documentElement.dataset.combatFx = mode;
+  const btn = typeof document !== 'undefined' ? document.getElementById('btn-combat-fx') : null;
+  if (btn) {
+    const labels = { minimal:'精简', standard:'标准', cinematic:'华丽' };
+    const help = {
+      minimal:'只保留伤害数字与首领危险提示',
+      standard:'保留技能辨识度，压低常规闪光与震动',
+      cinematic:'显示完整轨迹、爆点与关键震动'
+    };
+    btn.textContent = `✨ 特效：${labels[mode]}`;
+    btn.title = `${help[mode]}。点击切换。`;
+    btn.setAttribute('aria-label', `战斗特效：${labels[mode]}。点击切换`);
+  }
+  return mode;
+}
+
 function isMobilePerfMode() {
   return typeof window !== 'undefined' && window.innerWidth <= 920;
 }
@@ -763,7 +792,19 @@ function inHeavyCombatMode() {
 }
 
 function isImportantLog(text) {
-  return /击败|掉落|通关|失败|升级|升到|世界BOSS|世界Boss|史诗团本|获得随从|通用券|进入 \[|挑战 |探索完成|重新投入战斗|倒下|已完成|周宝箱|专属传说/.test(text || '');
+  return /击败|掉落|通关|失败|升级|升到|新系统解锁|世界BOSS|世界Boss|史诗团本|获得随从|通用券|进入 \[|挑战 |探索完成|重新投入战斗|倒下|已完成|周宝箱|专属传说|学会了|新手保护|新兵报到|新坐骑|踏上了|重返艾泽拉斯/.test(text || '');
+}
+
+function syncLogDetailButton() {
+  const logEl = $('log');
+  const linesEl = $('log-lines');
+  const btn = $('btn-log-detail');
+  if (!logEl || !linesEl || !btn) return;
+  const showing = logEl.classList.contains('show-details');
+  const routineCount = linesEl.querySelectorAll('.log-routine').length;
+  btn.setAttribute('aria-pressed', showing ? 'true' : 'false');
+  btn.textContent = showing ? '收起细节' : (routineCount ? `细节 ${routineCount}` : '显示细节');
+  btn.title = showing ? '只保留击杀、掉落、升级等关键结果' : '显示普通攻击、怪物技能与状态变化';
 }
 
 function inferFloatVariant(text, opts) {
@@ -782,6 +823,8 @@ function inferFloatVariant(text, opts) {
 }
 
 function pulseCombatEl(targetEl, kind, duration) {
+  /* 特效精简: 行列闪光已移除(纯装饰), 战斗信息由飘字与状态图标承载 */
+  return;
   if (!targetEl) return;
   const cls = `impact-${kind || 'hit'}`;
   const token = `impact-${++_impactSeq}`;
@@ -796,6 +839,8 @@ function pulseCombatEl(targetEl, kind, duration) {
 }
 
 function showCombatImpactHalo(targetEl, kind, duration) {
+  /* 特效精简: 光环特效已移除 */
+  return;
   const stage = $('stage');
   const layer = $('float-layer') || stage;
   if (!stage || !layer || !targetEl) return;
@@ -846,6 +891,8 @@ function statusSigilKind(text, variant) {
 }
 
 function showCombatStatusSigil(targetEl, text, variant, opts) {
+  /* 特效精简: 状态符文闪光已移除, 状态信息保留在怪物行的减益图标里 */
+  return;
   if (opts?.statusFx === false) return;
   const kind = statusSigilKind(text, variant);
   if (!kind || !targetEl) return;
@@ -881,6 +928,8 @@ function showCombatStatusSigil(targetEl, text, variant, opts) {
 }
 
 function showCombatHitSlam(targetEl, kind, opts) {
+  /* 特效精简: 砸击条特效已移除 */
+  return;
   const stage = $('stage');
   const layer = $('float-layer') || stage;
   if (!stage || !layer || !targetEl) return;
@@ -919,23 +968,28 @@ function showCombatHitSlam(targetEl, kind, opts) {
 function log(text, cls) {
   const logEl = $('log');
   if (!logEl) return;
+  const linesEl = $('log-lines') || logEl;
   const now = Date.now();
-  if (isMobilePerfMode() && inHeavyCombatMode() && !isImportantLog(text)) {
-    const gap = 220;
+  const important = isImportantLog(text);
+  if (isMobilePerfMode() && !important) {
+    const heroLvl = Math.max(1, state?.hero?.lvl || 1);
+    const gap = heroLvl < 10 ? 650 : (inHeavyCombatMode() ? 320 : 420);
     if (now - _lastLogTs < gap) return;
   }
   _lastLogTs = now;
   const el = document.createElement('div');
   el.className = 'l-' + (cls || 'info');
+  if (!important) el.classList.add('log-routine');
   const t = new Date(now);
   const ts = String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0')+':'+String(t.getSeconds()).padStart(2,'0');
   el.textContent = ts + ' ' + text;
-  logEl.appendChild(el);
-  const maxLogs = isMobilePerfMode() ? 70 : 120;
-  while (logEl.children.length > maxLogs) logEl.firstChild.remove();
-  if (!isMobilePerfMode() || !inHeavyCombatMode() || logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 80) {
-    logEl.scrollTop = logEl.scrollHeight;
+  linesEl.appendChild(el);
+  const maxLogs = isMobilePerfMode() ? 48 : 120;
+  while (linesEl.children.length > maxLogs) linesEl.firstChild.remove();
+  if (!isMobilePerfMode() || !inHeavyCombatMode() || linesEl.scrollHeight - linesEl.scrollTop - linesEl.clientHeight < 80) {
+    linesEl.scrollTop = linesEl.scrollHeight;
   }
+  syncLogDetailButton();
 }
 
 function pickRarity(maxRarity) {

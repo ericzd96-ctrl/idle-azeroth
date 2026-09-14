@@ -113,13 +113,29 @@ function collectDailyTasks() {
   return out;
 }
 
+function dailyTaskUnlocked(tab) {
+  const nav = document.querySelector(`.tab[data-tab="${tab}"]`);
+  if (!nav) return false;
+  const unlockLevel = Math.max(1, Number(nav.dataset.unlock) || 1);
+  return Math.max(1, state?.hero?.lvl || 1) >= unlockLevel;
+}
+
+let _dailyHubRenderSig = '';
+
 function renderDailyHub() {
   const el = document.getElementById('daily-hub');
   if (!el || !state || !state.cls) return;
-  const tasks = collectDailyTasks();
+  const tasks = collectDailyTasks().filter(t => dailyTaskUnlocked(t.tab));
+  const sig = tasks.map(t => `${t.tab}:${t.status}:${t.detail}`).join('|');
+  if (sig === _dailyHubRenderSig) return;
+  _dailyHubRenderSig = sig;
   if (!tasks.length) { el.innerHTML = ''; return; }
 
   const availCount = tasks.filter(t => t.status === 'avail').length;
+  const progressCount = tasks.filter(t => t.status === 'progress').length;
+  const summaryText = availCount > 0
+    ? `${availCount} 项可处理`
+    : (progressCount > 0 ? `${progressCount} 项进行中` : '今日已完成 ✓');
   const COLOR = { avail: 'var(--accent)', done: '#22c55e', progress: 'var(--border)' };
   const TXT   = { avail: 'var(--accent)', done: '#86efac', progress: 'var(--muted)' };
   const MARK  = { avail: '●', done: '✓', progress: '…' };
@@ -136,7 +152,7 @@ function renderDailyHub() {
   el.innerHTML = `<div style="border:1px solid var(--border);border-radius:10px;padding:7px 8px;margin-bottom:8px;background:rgba(255,255,255,.02)">
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap">
       <span style="font-size:12px;font-weight:bold">📅 今日事务</span>
-      <span class="muted" style="font-size:10px">${availCount > 0 ? `${availCount} 项可做` : '已全部清空 🎉'}</span>
+      <span class="muted" style="font-size:10px">${summaryText}</span>
     </div>
     <div style="display:flex;flex-wrap:wrap;gap:6px">${pills}</div>
   </div>`;

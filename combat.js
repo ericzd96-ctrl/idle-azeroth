@@ -311,11 +311,17 @@ function skillFxActiveCount(layer){
   if(!layer || !layer.querySelectorAll) return 0;
   return layer.querySelectorAll('.skill-cast-ring,.skill-fx-trail,.skill-fx-burst,.skill-fx-label,.skill-impact-tag').length;
 }
+function combatFxProfile(){
+  const mode = typeof combatFxMode === 'function' ? combatFxMode() : 'standard';
+  const mobile = typeof isMobilePerfMode === 'function' && isMobilePerfMode();
+  if(mode === 'minimal') return { mode, cap:mobile ? 2 : 3, basicGap:220, basicCap:1 };
+  if(mode === 'cinematic') return { mode, cap:mobile ? 8 : 16, basicGap:mobile ? 80 : 55, basicCap:mobile ? 4 : 7 };
+  return { mode:'standard', cap:mobile ? 4 : 8, basicGap:mobile ? 150 : 120, basicCap:mobile ? 2 : 3 };
+}
 function skillFxShouldThrottle(layer, opts){
   if(opts?.force) return false;
-  const mobile = typeof isMobilePerfMode === 'function' && isMobilePerfMode();
-  const cap = mobile ? 18 : 42;
-  if(skillFxActiveCount(layer) < cap) return false;
+  const profile = combatFxProfile();
+  if(skillFxActiveCount(layer) < profile.cap) return false;
   return !(opts?.important || opts?.actor === 'boss' || opts?.pulse === 'crit' || opts?.pulse === 'danger');
 }
 function skillFxLabelText(sk){
@@ -632,9 +638,12 @@ function showBasicAttackFx(sourceEl, targetEl, opts){
   if(!layer || !a || !b) return;
   const now = Date.now();
   const important = !!(opts?.crit || opts?.dangerous);
+  const profile = combatFxProfile();
   const mobile = typeof isMobilePerfMode === 'function' && isMobilePerfMode();
-  if(!opts?.force && now - _lastBasicAttackFxTs < (important ? 45 : 95)) return;
-  if(mobile && _activeBasicAttackFx >= (important ? 7 : 4)) return;
+  /* 特效精简: 普攻轨迹/火花仅在华丽档保留, 标准/精简档由伤害飘字承载 */
+  if(profile.mode !== 'cinematic') return;
+  if(!opts?.force && now - _lastBasicAttackFxTs < (important ? Math.min(90, profile.basicGap) : profile.basicGap)) return;
+  if(_activeBasicAttackFx >= (important ? profile.basicCap + 1 : profile.basicCap)) return;
   _lastBasicAttackFxTs = now;
   const actor = String(opts?.actor || 'hero').replace(/[^a-z0-9_-]/gi, '') || 'hero';
   const dx = b.x - a.x;
@@ -651,20 +660,23 @@ function showBasicAttackFx(sourceEl, targetEl, opts){
   trail.style.transform = `rotate(${angle}rad) scaleY(${scale})`;
   trail.style.setProperty('--basic-attack-duration', duration + 'ms');
   layer.appendChild(trail);
-  const spark = document.createElement('div');
-  spark.className = `basic-attack-spark basic-attack-${actor}${opts?.crit ? ' crit' : ''}${opts?.dangerous ? ' dangerous' : ''}`;
-  const size = Math.round((important ? 28 : 22) * scale);
-  spark.style.left = (b.x - size / 2) + 'px';
-  spark.style.top = (b.y - size / 2) + 'px';
-  spark.style.width = size + 'px';
-  spark.style.height = size + 'px';
-  spark.style.setProperty('--basic-attack-duration', duration + 'ms');
-  spark.style.setProperty('--basic-attack-angle', (angle * 180 / Math.PI) + 'deg');
-  layer.appendChild(spark);
+  let spark = null;
+  if(important || profile.mode === 'cinematic'){
+    spark = document.createElement('div');
+    spark.className = `basic-attack-spark basic-attack-${actor}${opts?.crit ? ' crit' : ''}${opts?.dangerous ? ' dangerous' : ''}`;
+    const size = Math.round((important ? 24 : 18) * scale);
+    spark.style.left = (b.x - size / 2) + 'px';
+    spark.style.top = (b.y - size / 2) + 'px';
+    spark.style.width = size + 'px';
+    spark.style.height = size + 'px';
+    spark.style.setProperty('--basic-attack-duration', duration + 'ms');
+    spark.style.setProperty('--basic-attack-angle', (angle * 180 / Math.PI) + 'deg');
+    layer.appendChild(spark);
+  }
   _activeBasicAttackFx++;
   setTimeout(() => {
     trail.remove();
-    spark.remove();
+    if(spark) spark.remove();
     _activeBasicAttackFx = Math.max(0, _activeBasicAttackFx - 1);
   }, duration + 90);
 }
@@ -673,12 +685,19 @@ function showSkillCastFx(sourceEl, sk, opts){
   const p = skillFxPoint(sourceEl);
   if(!layer || !p) return;
   const school = opts?.school || skillVisualSchool(opts?.skillKey, sk, opts?.actor);
+  const profile = combatFxProfile();
+  const important = opts?.important || opts?.actor === 'boss' || sk?.threat === 'high' || sk?.threat === 'extreme' || sk?._empowered;
+  /* 特效精简: 施法光环/技能名闪光仅在华丽档保留, 标准/精简档由技能链行与日志承载 */
+  if(profile.mode !== 'cinematic'){
+    combatSkillCue(sk, { actor:opts?.actor, school, skillKey:opts?.skillKey, cue:opts?.cue, kind:opts?.cueKind });
+    return;
+  }
   if(skillFxShouldThrottle(layer, opts)){
     combatSkillCue(sk, { actor:opts?.actor, school, skillKey:opts?.skillKey, cue:opts?.cue, kind:opts?.cueKind });
     if(typeof pulseCombatEl === 'function') pulseCombatEl(sourceEl, opts?.pulse || (opts?.actor === 'boss' ? 'bosscast' : 'artifact'), opts?.pulseDuration || 220);
     return;
   }
-  const size = opts?.size || (opts?.small ? 28 : 42);
+  const size = opts?.size || (opts?.small ? 26 : (profile.mode === 'cinematic' ? 42 : 34));
   const ring = document.createElement('div');
   ring.className = skillFxClass(school, 'skill-cast-ring') + skillFxActorClass(opts?.actor);
   ring.style.left = (p.x - size / 2) + 'px';
@@ -687,7 +706,7 @@ function showSkillCastFx(sourceEl, sk, opts){
   ring.style.height = size + 'px';
   ring.style.setProperty('--skill-fx-duration', (opts?.duration || 420) + 'ms');
   layer.appendChild(ring);
-  const labelText = opts?.label === false ? '' : (opts?.label || skillFxLabelText(sk));
+  const labelText = opts?.label === false || (profile.mode !== 'cinematic' && !important) ? '' : (opts?.label || skillFxLabelText(sk));
   if(labelText){
     const label = document.createElement('div');
     const actor = String(opts?.actor || 'hero').replace(/[^a-z0-9_-]/gi, '') || 'hero';
@@ -711,12 +730,16 @@ function showSkillImpactFx(sourceEl, targetEl, sk, opts){
   const school = opts?.school || skillVisualSchool(opts?.skillKey, sk, opts?.actor);
   const scale = opts?.scale || 1;
   const impact = skillImpactMeta(opts);
+  const profile = combatFxProfile();
+  const important = opts?.important || opts?.actor === 'boss' || opts?.pulse === 'danger' || impact.grade === 'danger' || impact.grade === 'huge';
   if(opts?.record !== false) recordCombatSkillImpact(sk, {
     actor:opts?.actor,
     school,
     skillKey:opts?.skillKey,
     target:opts?.target || combatSkillImpactTargetLabel(targetEl, sourceEl)
   });
+  /* 特效精简: 技能轨迹/爆点/打击斩仅在华丽档保留, 标准/精简档保留伤害飘字与技能链行 */
+  if(profile.mode !== 'cinematic') return;
   if(skillFxShouldThrottle(layer, opts)){
     if(typeof pulseCombatEl === 'function') pulseCombatEl(targetEl, opts?.pulse || (opts?.actor === 'boss' ? 'danger' : 'hit'), opts?.pulseDuration || 220);
     return;
@@ -724,7 +747,7 @@ function showSkillImpactFx(sourceEl, targetEl, sk, opts){
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const dist = Math.max(12, Math.sqrt(dx * dx + dy * dy));
-  if(opts?.trail !== false && dist > 18){
+  if(opts?.trail !== false && dist > 18 && (profile.mode === 'cinematic' || important)){
     const trail = document.createElement('div');
     trail.className = skillFxClass(school, 'skill-fx-trail') + skillFxActorClass(opts?.actor);
     trail.style.left = a.x + 'px';
@@ -737,14 +760,14 @@ function showSkillImpactFx(sourceEl, targetEl, sk, opts){
   }
   const burst = document.createElement('div');
   burst.className = skillFxClass(school, `skill-fx-burst impact-${impact.grade || 'normal'}`) + skillFxActorClass(opts?.actor);
-  const size = Math.round((opts?.burstSize || 34) * scale);
+  const size = Math.round((opts?.burstSize || (profile.mode === 'cinematic' ? 34 : 28)) * scale);
   burst.style.left = (b.x - size / 2) + 'px';
   burst.style.top = (b.y - size / 2) + 'px';
   burst.style.width = size + 'px';
   burst.style.height = size + 'px';
   burst.style.setProperty('--skill-fx-duration', (opts?.duration || 560) + 'ms');
   layer.appendChild(burst);
-  if(impact.tag && opts?.tag !== false){
+  if(impact.tag && opts?.tag !== false && (profile.mode === 'cinematic' || important)){
     const tag = document.createElement('div');
     tag.className = skillFxClass(school, `skill-impact-tag impact-${impact.grade || 'normal'}`) + skillFxActorClass(opts?.actor);
     tag.textContent = impact.tag;
@@ -754,7 +777,7 @@ function showSkillImpactFx(sourceEl, targetEl, sk, opts){
     layer.appendChild(tag);
     setTimeout(() => tag.remove(), opts?.tagDuration || opts?.duration || 560);
   }
-  if(typeof showCombatHitSlam === 'function') showCombatHitSlam(targetEl, school, {
+  if(typeof showCombatHitSlam === 'function' && (profile.mode === 'cinematic' || impact.grade === 'danger' || opts?.actor === 'boss')) showCombatHitSlam(targetEl, school, {
     school,
     force:true,
     important:opts?.actor === 'boss' || opts?.pulse === 'crit' || impact.grade === 'huge' || impact.grade === 'danger',
@@ -771,6 +794,9 @@ function showCombatHitSlam(targetEl, kind, opts){
   const p = skillFxPoint(targetEl);
   if(!layer || !p) return;
   const safeKind = String(kind || 'hit').replace(/[^a-z0-9_-]/gi, '') || 'hit';
+  const profile = combatFxProfile();
+  /* 特效精简: 打击斩闪光仅在华丽档保留 */
+  if(profile.mode !== 'cinematic') return;
   const school = normalizeSkillFxSchool(opts?.school || safeKind);
   const scale = Math.max(.72, Math.min(1.45, opts?.scale || 1));
   const important = !!opts?.important || safeKind === 'danger' || safeKind === 'boss' || safeKind === 'crit';
@@ -790,6 +816,8 @@ function showCombatHitSlam(targetEl, kind, opts){
   setTimeout(() => el.remove(), (opts?.duration || (important ? 430 : 340)) + 90);
 }
 function showSkillSelfFx(sourceEl, sk, opts){
+  /* 特效精简: 施法光环/粒子已移除, 技能信息由战斗日志与技能链行承载 */
+  return;
   if(!sourceEl) return;
   const school = opts?.school || skillSupportVisualSchool(opts?.skillKey, sk, opts?.actor);
   showSkillImpactFx(sourceEl, sourceEl, sk, Object.assign({
@@ -803,13 +831,16 @@ function showSkillSelfFx(sourceEl, sk, opts){
 }
 function showMonsterDeathFx(mon){
   if(!mon || mon._deathFxShown || typeof document === 'undefined' || document.hidden) return;
+  const profile = combatFxProfile();
+  const boss = !!(mon.isBoss || mon.isWorldBoss || mon._isRaid || mon._isEpicRaid);
+  const elite = boss || !!(mon.isRareElite || mon._roomReward || mon._bossTacticReward || mon._bossWeakpointReward);
+  /* 特效精简: 死亡碎裂特效仅在华丽档保留 */
+  if(profile.mode !== 'cinematic') return;
   const layer = skillFxLayer();
   const anchor = monsterFloatAnchor(mon);
   const p = skillFxPoint(anchor);
   if(!layer || !p) return;
   mon._deathFxShown = true;
-  const boss = !!(mon.isBoss || mon.isWorldBoss || mon._isRaid || mon._isEpicRaid);
-  const elite = boss || !!(mon.isRareElite || mon._fieldCommander || mon._roomReward || mon._bossTacticReward || mon._bossWeakpointReward);
   const size = Math.round(Math.max(42, Math.min(132, Math.max(p.w, p.h) + (boss ? 82 : elite ? 54 : 34))));
   const el = document.createElement('div');
   el.className = `monster-death-fx ${boss ? 'boss' : elite ? 'elite' : 'trash'}`;
@@ -832,6 +863,11 @@ function showMonsterDeathFx(mon){
 }
 function showManualFocusFx(mon){
   if(!mon || typeof document === 'undefined' || document.hidden) return;
+  /* 特效精简: 集火光环仅在华丽档保留, 集火飘字保留 */
+  if(combatFxProfile().mode !== 'cinematic'){
+    showMonsterFloat(mon, '🎯集火', '#facc15', { variant:'status', scale:1.06, important:true });
+    return;
+  }
   const layer = skillFxLayer();
   const anchor = monsterFloatAnchor(mon);
   const p = skillFxPoint(anchor);
@@ -854,6 +890,8 @@ function showManualFocusFx(mon){
 const _guardianFxCooldown = {};
 function showGuardianTriggerFx(targetEl, kind, amount, opts){
   if(!targetEl || typeof document === 'undefined' || document.hidden) return;
+  /* 特效精简: 护盾/治疗光环仅在华丽档保留, 数值由飘字承载 */
+  if(combatFxProfile().mode !== 'cinematic') return;
   amount = Math.max(0, Math.floor(amount || 0));
   const max = Math.max(1, opts?.max || state.hero?.hpMax || 1);
   const important = !!opts?.important || amount >= max * 0.08;
@@ -884,6 +922,8 @@ function showGuardianTriggerFx(targetEl, kind, amount, opts){
 const _defenseOutcomeFxCooldown = {};
 function showDefenseOutcomeFx(targetEl, kind, opts){
   if(!targetEl || typeof document === 'undefined' || document.hidden) return;
+  /* 特效精简: 闪避/吸收/重击光环仅在华丽档保留, 数值由飘字承载 */
+  if(combatFxProfile().mode !== 'cinematic') return;
   const safeKind = String(kind || 'hit').replace(/[^a-z0-9_-]/gi, '') || 'hit';
   const amount = Math.max(0, Math.floor(opts?.amount || 0));
   const max = Math.max(1, opts?.max || state.hero?.hpMax || 1);
@@ -939,6 +979,8 @@ function statusSigilMeta(key, opts){
 }
 function showStatusSigilFx(targetEl, key, opts){
   if(!targetEl || typeof document === 'undefined' || document.hidden) return;
+  /* 特效精简: 状态符文闪光仅在华丽档保留, 状态保留在目标行的减益图标里 */
+  if(combatFxProfile().mode !== 'cinematic') return;
   const meta = statusSigilMeta(key, opts);
   const target = opts?.target || targetEl.id || 'target';
   const throttleKey = `${target}:${key || meta.kind}`;
@@ -972,6 +1014,8 @@ function showSpecProcFx(targetEl, proc, mode, opts){
   const now = Date.now();
   if((_specProcFxCooldown[key] || 0) > now) return;
   _specProcFxCooldown[key] = now + (safeMode === 'release' ? 420 : 760);
+  /* 特效精简: 专属强化闪光仅在华丽档保留, 信息由飘字/增益图标/日志承载 */
+  if(combatFxProfile().mode !== 'cinematic') return;
   const layer = skillFxLayer();
   const p = skillFxPoint(targetEl);
   if(!layer || !p) return;
@@ -1019,6 +1063,8 @@ function showCompanionSpecialFx(tpl, spec, mon, ctx){
   const now = Date.now();
   if((_companionSpecialFxCooldown[key] || 0) > now) return;
   _companionSpecialFxCooldown[key] = now + (support ? 900 : 620);
+  /* 特效精简: 随从专属施法闪光仅在华丽档保留, 信息由战斗日志承载 */
+  if(combatFxProfile().mode !== 'cinematic') return;
   const layer = skillFxLayer();
   const sp = skillFxPoint(sourceEl);
   const tp = skillFxPoint(targetEl || sourceEl);
@@ -1070,6 +1116,8 @@ function showCompanionSpecialFx(tpl, spec, mon, ctx){
 let _lastAllySummonStrikeFxTs = 0;
 let _activeAllySummonStrikeFx = 0;
 function showAllySummonStrikeFx(unit, target, skill, opts){
+  /* 特效精简: 宠物攻击特效已移除, 伤害数字保留 */
+  return;
   if(!unit || !target || typeof document === 'undefined' || document.hidden) return;
   const sourceEl = typeof allySummonAnchor === 'function' ? allySummonAnchor(unit) : null;
   const targetEl = monsterFloatAnchor(target);
@@ -1128,6 +1176,8 @@ function showAllySummonStrikeFx(unit, target, skill, opts){
 }
 function showBossPhaseFx(mon, label, opts){
   if(!mon || typeof document === 'undefined' || document.hidden) return;
+  /* 特效精简: 阶段转换光环仅在华丽档保留, 信息由战斗日志承载 */
+  if(combatFxProfile().mode !== 'cinematic') return;
   const layer = skillFxLayer();
   const anchor = monsterFloatAnchor(mon);
   const p = skillFxPoint(anchor);
@@ -1158,6 +1208,8 @@ function showBossPhaseFx(mon, label, opts){
 }
 function showInterruptFx(mon, kind, label){
   if(!mon || typeof document === 'undefined' || document.hidden) return;
+  /* 特效精简: 打断光环仅在华丽档保留, 信息由战斗日志承载 */
+  if(combatFxProfile().mode !== 'cinematic') return;
   const layer = skillFxLayer();
   const anchor = monsterFloatAnchor(mon);
   const p = skillFxPoint(anchor);
@@ -1199,12 +1251,14 @@ function monsterExecuteFxId(mon){
 }
 function showMonsterExecuteWindowFx(mon){
   if(!mon || typeof document === 'undefined' || document.hidden) return;
+  /* 特效精简: 斩杀窗口光环仅在华丽档保留, 斩杀阶段由敌人血条(低于20%)直接体现 */
+  if(combatFxProfile().mode !== 'cinematic') return;
   const layer = skillFxLayer();
   const anchor = monsterFloatAnchor(mon);
   const p = skillFxPoint(anchor);
   if(!layer || !p) return;
   const boss = !!(mon.isBoss || mon.isWorldBoss || mon._isRaid || mon._isEpicRaid);
-  const elite = boss || !!(mon.isRareElite || mon._fieldCommander);
+  const elite = boss || !!(mon.isRareElite);
   const size = Math.round(Math.max(48, Math.min(126, Math.max(p.w, p.h) + (boss ? 66 : elite ? 48 : 34))));
   const el = document.createElement('div');
   el.className = `execute-window-fx ${boss ? 'boss' : elite ? 'elite' : 'trash'}`;
@@ -4999,6 +5053,7 @@ function applySpecIdentityMechanicAfterSkill(skillKey, sk, mon, value, ctx){
     }
   } else if(cls === 'hunter' && spec === 'bm'){
     if(summonSkill || /宠物|野兽|倒刺|杀戮|兽群/.test(name)) addSkillAura('h_beastBond', { add:summonSkill?2:1, max:5, duration:15000 });
+    if(/印记/.test(name) && mon) applyMonsterState(mon, 'marked', 12000);   // 兽王印记也给宠物提供撕咬目标
     if(dmgSkill && activeAllySummonCount(now) > 0 && classRuntimeReady('spec-bm-bite', 1400, now)){
       const stacks = Math.max(1, skillAuraStacks('h_beastBond'));
       applySkillFollowupDamage(mon, value * Math.min(0.55, 0.12 + stacks * 0.07), '🐾', '#86efac', now);
@@ -5823,7 +5878,14 @@ function recomputeStats() {
       const t = tree.talents.find(x => x.key === tKey); if (!t || (!t.mod && !t.fx)) continue;
       if (rank > 0 && t.fx) {
         const fxList = Array.isArray(t.fx) ? t.fx : [t.fx];
-        for (const fx of fxList) talentFx.push(Object.assign({ talentKey:t.key, talentName:t.name, treeKey }, fx));
+        for (const fx of fxList) {
+          const scaled = Object.assign({}, fx);
+          /* 多层天赋的 fx 数值按层数缩放(单层天赋不受影响) */
+          for (const k of ['dmgPct','dmgPctPerStack','takenPct']) {
+            if (typeof scaled[k] === 'number') scaled[k] = +(scaled[k] * rank).toFixed(3);
+          }
+          talentFx.push(Object.assign({ talentKey:t.key, talentName:t.name, treeKey }, scaled));
+        }
       }
       if (!t.mod) continue;
       for (const [k, v] of Object.entries(t.mod)) {
@@ -6288,13 +6350,6 @@ function recomputeStats() {
       if (mod.healReduction) healBonus = Math.floor(healBonus * (1 - mod.healReduction));
     }
   }
-  if (state.mode === 'dungeon' && ms2?.edicts?.length) {
-    for (const edict of ms2.edicts) {
-      const mod = edict.mod || {};
-      if (mod.heroSpd) spd = +(spd * (1 + mod.heroSpd)).toFixed(2);
-      if (mod.healReduction) healBonus = Math.floor(healBonus * (1 - mod.healReduction));
-    }
-  }
 
   // 精通被动:属性类效果(dotAmp/healAmp/critdAmp/leechAmp)在此并入对应属性;
   // dmgAmp/dr/bleedOnCrit 为战斗时钩子(masteryDmgMult/masteryTakenMult/暴击流血)。
@@ -6632,7 +6687,9 @@ function makeAllySummonSkillPack(skill, cfg, owner, now, index){
     desc:`主动技能 · 冷却 ${((skill.summonSkillCd || cfg.skillCd || 7800) / 1000).toFixed(1).replace(/\.0$/,'')} 秒`
   };
   const unlocked = allySummonUnlockCount(skill, owner, cfg);
-  const extras = Array.isArray(cfg.extraSkills) ? cfg.extraSkills.slice(0, Math.max(0, unlocked - 1)) : [];
+  // 额外技能支持技能级覆盖(summonExtraSkills), 未提供时回退主题配置
+  const extras = Array.isArray(skill.summonExtraSkills) ? skill.summonExtraSkills.slice(0, Math.max(0, unlocked - 1))
+    : Array.isArray(cfg.extraSkills) ? cfg.extraSkills.slice(0, Math.max(0, unlocked - 1)) : [];
   const all = [primary].concat(extras);
   return all.map((entry, skillIdx) => ({
     name:entry.name || primary.name,
@@ -6667,9 +6724,32 @@ function makeAllySummonSkillPack(skill, cfg, owner, now, index){
 function allySummonFrenzyActive(unit){
   return !!(unit?.frenzyThreshold > 0 && unit?.hp > 0 && unit?.hpMax > 0 && unit.hp <= unit.hpMax * unit.frenzyThreshold);
 }
+/* 猎人宠物专属天赋(兽王树): 使用时从 state.talents 现算, 不依赖缓存 */
+function heroPetTalentMods(){
+  const c = getCls(); if (!c) return {};
+  const out = {};
+  for (const tree of c.trees) {
+    const tals = state.talents && state.talents[tree.key];
+    if (!tals) continue;
+    for (const t of tree.talents) {
+      if (!t.mod) continue;
+      const rank = tals[t.key] || 0;
+      if (rank <= 0) continue;
+      for (const [k, v] of Object.entries(t.mod)) {
+        if (k === 'petAtkPct' || k === 'petTakenCut' || k === 'petBondPct' || k === 'petDurSec') out[k] = (out[k] || 0) + v * rank;
+      }
+    }
+  }
+  return out;
+}
 function allySummonAttackSpeed(unit){
   let spd = Math.max(0.45, unit?.spd || 1);
   if(allySummonFrenzyActive(unit)) spd *= unit.frenzySpdMul || 1;
+  // 兽群羁绊同步提升猎人宠物攻速(每层 +4%)
+  if(unit?._ownerType === 'hero'){
+    const bondStacks = skillAuraStacks('h_beastBond');
+    if(bondStacks > 0) spd *= 1 + bondStacks * 0.04;
+  }
   return spd;
 }
 function allySummonDamageMult(unit, mon, skill, now){
@@ -6685,6 +6765,11 @@ function allySummonDamageMult(unit, mon, skill, now){
   applyBonus(unit);
   applyBonus(skill);
   if(allySummonFrenzyActive(unit)) mult *= 1 + (unit.frenzyAtkBonus || 0);
+  // 兽群羁绊反向联动: 每层羁绊同步强化猎人自己的召唤物(人宠合一天赋提高每层收益)
+  if(unit?._ownerType === 'hero'){
+    const bondStacks = skillAuraStacks('h_beastBond');
+    if(bondStacks > 0) mult *= 1 + bondStacks * (0.06 + (heroPetTalentMods().petBondPct || 0) / 100);
+  }
   return mult;
 }
 function allySummonSkillDisplay(unit){
@@ -6748,6 +6833,8 @@ function makeAllySummon(skill, owner, now, index){
   const ownerIsCompanion = owner?.source === 'companion';
   const ownerBoost = owner?.source === 'companion' ? COMPANION_SUMMON_BOOST : (owner?.source === 'hero' ? HERO_SUMMON_BOOST : null);
   const summonPower = (skill.summonPower || 1) * (ownerBoost?.power || 1);
+  // 主角召唤物吃宠物专属天赋(兽王树: 野兽训练/厚皮野兽/野性之心)
+  const petMods = owner?.source === 'hero' ? heroPetTalentMods() : {};
   const summonName = skill.summonName || choice(cfg.names || ['召唤兽']);
   const summonIcon = skill.summonIcon || cfg.icon || owner.icon || '🐾';
   const fullName = Array.from(String(summonName || '')).some(ch => /[^\u4e00-\u9fa5A-Za-z0-9]/.test(ch)) ? summonName : `${summonIcon}${summonName}`;
@@ -6755,7 +6842,7 @@ function makeAllySummon(skill, owner, now, index){
   const atkPct = (skill.summonAtkPct || cfg.atkPct || 0.58) * (ownerBoost?.atk || 1);
   const defPct = (skill.summonDefPct || cfg.defPct || 0.54) * (ownerBoost?.def || 1);
   const spd = +((skill.summonSpd || cfg.spd || 1) * (ownerBoost?.spd || 1)).toFixed(2);
-  const durationMs = skill.summonDuration || cfg.duration || 18000;
+  const durationMs = (skill.summonDuration || cfg.duration || 18000) + (petMods.petDurSec || 0) * 1000;
   const summonSkills = makeAllySummonSkillPack(skill, cfg, owner, now, index);
   const displaySkill = summonSkills[0] || {};
   const skillDisplay = { icon:displaySkill.icon || summonIcon || '✨', name:displaySkill.name || '协同猛袭', readyAt:displaySkill.readyAt || 0 };
@@ -6771,7 +6858,7 @@ function makeAllySummon(skill, owner, now, index){
     lvl:owner.lvl || state.hero.lvl || 1,
     hpMax:Math.max(12, Math.floor((owner.hpMax || state.hero.hpMax || 50) * hpPct * summonPower)),
     hp:0,
-    atk:Math.max(1, Math.floor((owner.atk || state.hero.atk || 1) * atkPct * summonPower)),
+    atk:Math.max(1, Math.floor((owner.atk || state.hero.atk || 1) * atkPct * summonPower * (1 + (petMods.petAtkPct || 0) / 100))),
     def:Math.max(0, Math.floor((owner.def || state.hero.def || 0) * defPct * summonPower)),
     spd,
     crit:(skill.summonCrit || cfg.crit || Math.max(5, Math.floor((owner.crit || state.hero.crit || 5) * 0.45))) + (ownerBoost?.crit || 0),
@@ -6783,7 +6870,7 @@ function makeAllySummon(skill, owner, now, index){
     slowMs:skill.summonSlowMs || 3000,
     splashPct:skill.summonSplashPct ?? cfg.splashPct ?? 0,
     leechPct:skill.summonLeechPct ?? cfg.leechPct ?? 0,
-    damageTakenMult:skill.summonDamageTakenMult ?? cfg.damageTakenMult ?? 1,
+    damageTakenMult:Math.max(0.4, (skill.summonDamageTakenMult ?? cfg.damageTakenMult ?? 1) * (1 - (petMods.petTakenCut || 0) / 100)),
     bonusVsBoss:skill.summonBonusVsBoss ?? cfg.bonusVsBoss ?? 0,
     bonusVsDot:skill.summonBonusVsDot ?? cfg.bonusVsDot ?? 0,
     bonusVsSlow:skill.summonBonusVsSlow ?? cfg.bonusVsSlow ?? 0,
@@ -7081,6 +7168,9 @@ function pickMonSupportSkill(name, kind, lvl, isBoss){
 }
 
 function wildMonsterHpMultiplier(lvl){
+  if(typeof GameBalanceRules !== 'undefined' && GameBalanceRules.wildMonsterHpMultiplier){
+    return GameBalanceRules.wildMonsterHpMultiplier(lvl);
+  }
   const level = Math.max(1, Math.floor(lvl || 1));
   const curveLow = Math.max(0, Math.min(1, (level - 10) / 25));
   const curveMid = Math.max(0, Math.min(1, (level - 40) / 30));
@@ -7176,28 +7266,6 @@ function applyThreatStatMods(mon, source, pressure, roleMult){
   return { hp:hpPct, atk:atkPct, def:defPct };
 }
 
-function applyWorldZoneThreatScalingToMonster(mon, map, sub, opts){
-  if(!mon || typeof getWorldZoneThreats !== 'function') return mon;
-  map = map || (typeof getMap === 'function' ? getMap() : null);
-  if(!map) return mon;
-  sub = sub || map.sub?.[state?.currentSubzone || 0] || map.sub?.[0] || null;
-  const options = Object.assign({ boss:!!mon.isBoss, rare:!!mon.isRareElite }, opts || {});
-  const threats = getWorldZoneThreats(map, sub, options);
-  if(!threats.length) return mon;
-  let hp = 0, atk = 0, def = 0;
-  const roleMult = mon.isRareElite ? 1.26 : (mon.isBoss ? 1.15 : 0.74);
-  for(const threat of threats){
-    const delta = applyThreatStatMods(mon, threat, threat.pressure, roleMult);
-    hp += delta.hp; atk += delta.atk; def += delta.def;
-  }
-  mon._zoneThreats = threats;
-  mon._zoneThreatMapKey = map.key;
-  mon._zoneThreatSubName = sub?.name || '';
-  mon._zoneThreatDesc = `区域威胁强化: 生命+${Math.round(hp*100)}%, 攻击+${Math.round(atk*100)}%, 防御+${Math.round(def*100)}%`;
-  setMonsterTrickAura(mon, 'zoneThreatScaling', { name:'区域威胁', icon:threats[0].icon || '🧭', desc:mon._zoneThreatDesc }, 0, { stacks:threats.length, desc:mon._zoneThreatDesc });
-  return mon;
-}
-
 function applyRareEliteMutationScaling(mon, rare, map){
   if(!mon || !rare || typeof getRareEliteMutations !== 'function') return mon;
   const mutations = getRareEliteMutations(rare, map);
@@ -7240,27 +7308,24 @@ function applyWorldRenownAlertScalingToMonster(mon, map, opts){
   return mon;
 }
 
+/* 野外机制触发器: 稀有异变的周期效果(区域威胁与据点系统已删除) */
 function applyWorldZoneThreatEffects(mon, now){
   if(!(state.mode === 'world' || state.mode === 'boss') || !mon || mon.hp <= 0) return;
-  const threats = Array.isArray(mon._zoneThreats) ? mon._zoneThreats : [];
   const mutations = Array.isArray(mon._rareMutations) ? mon._rareMutations : [];
-  const fieldOps = mon._fieldOperation ? [{ ...mon._fieldOperation, fieldOperation:true, pressure:1.2 }] : [];
-  if(!threats.length && !mutations.length && !fieldOps.length) return;
-  const sources = threats
-    .concat(mutations.map(m => ({ ...m, rareMutation:true, pressure:1.15 })))
-    .concat(fieldOps);
+  if(!mutations.length) return;
+  const sources = mutations
+    .map(m => ({ ...m, rareMutation:true, pressure:1.15 }));
   for(const src of sources){
     const mod = src.mod || {};
     const cd = Math.max(8500, Math.floor((mod.tickMs || 17000) / Math.max(0.8, src.pressure || 1)));
     const key = `zone:${src.key}`;
     if(now - (mon[key] || 0) < cd) continue;
     mon[key] = now;
-    mon._zoneThreatHits = (mon._zoneThreatHits || 0) + 1;
     const p = Math.max(0.9, src.pressure || 1);
     const live = (state.currentMonsters || []).filter(x => x && x.hp > 0);
     if(mod.dmgPct){
       const dmg = Math.max(1, Math.floor((state.hero.hpMax || 1) * mod.dmgPct * p + (mon.lvl || 1) * 1.2));
-      applyHeroDamage(dmg, mon, { label:t=>(src.icon || '🧭') + '-' + t, color:src.rareMutation ? '#fbbf24' : '#fb7185', now, variant:'boss' });
+      applyHeroDamage(dmg, mon, { label:t=>(src.icon || '🧭') + '-' + t, color:'#fbbf24', now, variant:'boss' });
     }
     if(mod.burnDpsPct){
       applyHeroDebuff('burn', mod.burnMs || 4200, { dps:Math.max(1, Math.floor((state.hero.hpMax || 1) * mod.burnDpsPct * p)) });
@@ -7293,16 +7358,16 @@ function applyWorldZoneThreatEffects(mon, now){
       for(const target of live){
         target._trickSpdBuff = Math.max(target._trickSpdBuff || 0, now + 5200);
         target._trickSpdPct = Math.max(target._trickSpdPct || 0, Math.round(mod.hastePct * 100 * p));
-        setMonsterTrickAura(target, 'zoneThreatHaste', { name:src.name, icon:src.icon || '🧭', desc:'区域威胁加速: 攻击速度提高' }, target._trickSpdBuff);
+        setMonsterTrickAura(target, 'zoneThreatHaste', { name:src.name, icon:src.icon || '🧭', desc:'攻击速度提高' }, target._trickSpdBuff);
       }
     }
     if(mod.summonTheme && (!mod.summonBossOnly || mon.isBoss) && live.length < 5){
       summonMonsterAlly(mon, { summonCount:1, summonTheme:mod.summonTheme, summonHpPct:0.13, summonAtkPct:0.28, summonDefPct:0.32 }, now);
     }
-    setMonsterTrickAura(mon, 'zoneThreatActive:' + src.key, { name:src.name, icon:src.icon || '🧭', desc:src.desc || '区域威胁正在影响战斗' }, now + 6500, { desc:src.desc || '区域威胁正在影响战斗' });
-    showMonsterFloat(mon, `${src.icon || '🧭'}威胁`, src.rareMutation ? '#fbbf24' : '#fb7185', { variant:'boss', scale:1.05 });
-    const sourceName = src.fieldOperation ? '野外据点' : (src.rareMutation ? '稀有异变' : '区域威胁');
-    log(`${src.icon || '🧭'} ${sourceName}「${src.name}」触发: ${src.desc || '野外环境正在施压'}`, src.rareMutation || src.fieldOperation ? 'epic' : 'bad');
+    setMonsterTrickAura(mon, 'zoneThreatActive:' + src.key, { name:src.name, icon:src.icon || '🧭', desc:src.desc || '野外机制正在影响战斗' }, now + 6500, { desc:src.desc || '野外机制正在影响战斗' });
+    showMonsterFloat(mon, `${src.icon || '🧭'}威胁`, '#fbbf24', { variant:'boss', scale:1.05 });
+    const sourceName = '稀有异变';
+    log(`${src.icon || '🧭'} ${sourceName}「${src.name}」触发: ${src.desc || '野外环境正在施压'}`, 'epic');
     if(typeof markDirty === 'function') markDirty('hero', 'stage');
     break;
   }
@@ -7335,45 +7400,6 @@ function applyWorldRenownAlertEffects(mon, now){
   showMonsterFloat(mon, `🏕️警戒${alert}`, '#67e8f9', { variant:'boss', scale:1.04 });
   log(`🏕️ 区域警戒 ${alert} 触发巡逻压迫: 敌人获得护盾并压低你的节奏`, 'bad');
   if(typeof markDirty === 'function') markDirty('hero', 'stage');
-}
-
-function applyWorldFieldOperationMods(mon, op){
-  if(!mon || !op) return mon;
-  const mod = op.mod || op.rule?.mod || {};
-  const high = Math.max(1, mon.lvl || 1);
-  const pressure = 1.12 + Math.max(0, high - 30) * 0.006;
-  const source = { mod, pressure };
-  const delta = applyThreatStatMods(mon, source, pressure, 1.2);
-  mon._fieldOperation = op;
-  mon._fieldCommander = true;
-  mon._fieldOperationKey = op.key;
-  mon._fieldOperationDesc = `据点指挥官强化: 生命+${Math.round(delta.hp*100)}%, 攻击+${Math.round(delta.atk*100)}%, 防御+${Math.round(delta.def*100)}%`;
-  setMonsterTrickAura(mon, 'fieldCommander', { name:op.name || '野外据点', icon:op.icon || '🗺️', desc:mon._fieldOperationDesc }, 0, { desc:mon._fieldOperationDesc });
-  return mon;
-}
-
-function spawnWorldFieldCommander(map, sub){
-  if(!map || !sub || typeof getWorldFieldOperation !== 'function') return false;
-  const op = getWorldFieldOperation(map, state.currentSubzone);
-  if(!op || !op.commanderPending || op.completed) return false;
-  const lvl = Math.max(sub.lvl?.[1] || map.lvlRange?.[1] || 1, (map.lvlRange?.[1] || 1) + 1);
-  const name = typeof worldFieldCommanderName === 'function' ? worldFieldCommanderName(op, map, sub) : `${op.icon || '🗺️'}据点指挥官`;
-  const mon = makeMonster(name, lvl, true, lvl >= 70 ? 'epic' : 'rare');
-  mon.bossName = op.commander || op.name || '据点指挥官';
-  mon._monSupportSkills = buildMonsterSupportPool(mon.bossName, null, lvl, true, 2);
-  mon._supportSkillCooldowns = {};
-  mon._nextTrickAt = Date.now() + 6500;
-  mon.dropRate = Math.max(mon.dropRate || 0, 0.75);
-  mon.gemChance = Math.max(mon.gemChance || 0, lvl >= 55 ? 0.35 : 0.12);
-  mon.dmgReduction = Math.max(mon.dmgReduction || 0, 0.12);
-  applyWorldZoneThreatScalingToMonster(mon, map, sub, { boss:true, count:2 });
-  applyWorldRenownAlertScalingToMonster(mon, map, { boss:true });
-  applyWorldFieldOperationMods(mon, op);
-  applySpecAdaptationToMonster(mon, { extra:1 });
-  state.currentMonsters = [mon];
-  log(`${op.icon || '🗺️'} 据点指挥官「${mon.bossName}」现身!`, 'epic');
-  if(typeof markDirty === 'function') markDirty('map', 'stage');
-  return true;
 }
 
 function makeMonster(name,lvl,isBoss,maxRarity){
@@ -7412,14 +7438,6 @@ function spawnMonster(){
   initCompanionHp();state.currentMonsters=[];
   state.worldSearch = null;
   state._currentRareElite = null;
-  if(state.mode==='world' && state.worldCombatPause){
-    if(clearExpiredWorldCombatPause(Date.now())){
-      state.worldSearch = null;
-    }else{
-      if(typeof markDirty === 'function') markDirty('stage', 'map');
-      return;
-    }
-  }
   // 新战斗清除随从护盾;英雄护盾改为按持续时间到期(不再每波清盾,否则秒杀刷怪时护盾瞬间消失)
   state._compBarrier = 0;
   if(state.mode==='travel')return;
@@ -7429,21 +7447,24 @@ function spawnMonster(){
   if(state.mode==='boss')return spawnZoneBoss();
   const map=getMap();if(!map){state.currentMap=MAPS[0].key;state.currentSubzone=0;return spawnMonster();}
   const sub=map.sub[state.currentSubzone]||map.sub[0];
-  if(typeof shouldSpawnWorldFieldCommander==='function' && shouldSpawnWorldFieldCommander(map, state.currentSubzone)){
-    if(spawnWorldFieldCommander(map, sub)) return;
-  }
   if(typeof maybeSpawnRareEliteEncounter==='function'&&maybeSpawnRareEliteEncounter(map, sub)) return;
   // 敌群:野外可同时刷出 1~4 只敌人(怪群越大,单只攻击略降,避免瞬秒,但总收益更高)
   const packRoll=Math.random();
-  const count=packRoll<0.07?4:packRoll<0.25?3:packRoll<0.55?2:1;
+  const heroLvl=Math.max(1,state.hero?.lvl||1);
+  const count=(typeof GameBalanceRules!=='undefined'&&GameBalanceRules.worldPackSize)
+    ? GameBalanceRules.worldPackSize(heroLvl,packRoll)
+    : (packRoll<0.07?4:packRoll<0.25?3:packRoll<0.55?2:1);
   const atkDamp=count>=3?0.8:(count===2?0.9:1);
   for(let i=0;i<count;i++){
-    const mobName=choice(sub.mobs.split('|'));const lvl=rng(sub.lvl[0],sub.lvl[1]);
+    const mobName=choice(sub.mobs.split('|'));
+    const rolledLvl=rng(sub.lvl[0],sub.lvl[1]);
+    const lvl=(typeof GameBalanceRules!=='undefined'&&GameBalanceRules.worldMonsterLevel)
+      ? GameBalanceRules.worldMonsterLevel(heroLvl,sub.lvl[0],sub.lvl[1],rolledLvl)
+      : rolledLvl;
     const rareRoll=Math.random();
     const maxR=rareRoll<0.06?'epic':rareRoll<0.20?'rare':'uncommon';   // 2026-06-16 提高小怪爆蓝/紫上限概率(epic 0.02→0.06, rare 0.08→0.20)
     const m=makeMonster(mobName,lvl,false,maxR);
     applyWildMonsterHpScaling(m, lvl);
-    applyWorldZoneThreatScalingToMonster(m, map, sub, { packSize:count });
     applyWorldRenownAlertScalingToMonster(m, map);
     applySpecAdaptationToMonster(m);
     if(atkDamp!==1)m.atk=Math.max(1,Math.floor(m.atk*atkDamp));
@@ -7467,7 +7488,6 @@ function spawnZoneBoss(){
     if(map.boss.passive.atkBonus)mon.atk=Math.floor(mon.atk*(1+map.boss.passive.atkBonus));
     if(map.boss.passive.leech)mon.lifeSteal=map.boss.passive.leech;
   }
-  applyWorldZoneThreatScalingToMonster(mon, map, map.sub?.[state.currentSubzone] || map.sub?.[0], { boss:true, count:2 });
   applyWorldRenownAlertScalingToMonster(mon, map, { boss:true });
   applySpecAdaptationToMonster(mon, { extra:1 });
   state.currentMonsters.push(mon);
@@ -7561,18 +7581,6 @@ function spawnDungeonMonster(){
     mon.goldReward = Math.floor(mon.goldReward * (contract.reward || 1));
     mon.baseXp = Math.floor(mon.baseXp * (1 + ((contract.reward || 1) - 1) * 0.5));
     mon._dungeonContractLevel = ds.contractLevel;
-  }
-  if (state.mode === 'dungeon' && Array.isArray(ds.edicts) && ds.edicts.length) {
-    for (const edict of ds.edicts) {
-      const mod = edict.mod || {};
-      if (mod.trashHp && !isBoss) { mon.hpMax = Math.floor(mon.hpMax * (1 + mod.trashHp)); mon.hp = mon.hpMax; }
-      if (mod.bossHp && isBoss) { mon.hpMax = Math.floor(mon.hpMax * (1 + mod.bossHp)); mon.hp = mon.hpMax; }
-      if (mod.trashDmg && !isBoss) mon.atk = Math.floor(mon.atk * (1 + mod.trashDmg));
-      if (mod.bossDmg && isBoss) mon.atk = Math.floor(mon.atk * (1 + mod.bossDmg));
-      if (mod.trashDef && !isBoss) mon.def = Math.floor(mon.def * (1 + mod.trashDef));
-      if (mod.bossDef && isBoss) mon.def = Math.floor(mon.def * (1 + mod.bossDef));
-    }
-    mon._dungeonEdicts = ds.edicts;
   }
   const alertInfo = (state.mode === 'dungeon' && typeof dungeonAlertInfo === 'function') ? dungeonAlertInfo(ds) : null;
   if (alertInfo && alertInfo.level > 0) {
@@ -7678,13 +7686,14 @@ function spawnDungeonMonster(){
     state.currentMonsters.push(captain);
     log(`🚨 警戒${alertInfo.level}: ${captain.name} 加入战斗`, 'bad');
   }
-  const edictAddChance = state.mode === 'dungeon' && !isBoss
-    ? (Array.isArray(ds.edicts) ? ds.edicts : []).concat(Array.isArray(ds.affixes) ? ds.affixes : [])
+  // 主题词缀增援(禁令系统已删除, 仅保留军势类词缀的增援概率)
+  const affixAddChance = state.mode === 'dungeon' && !isBoss
+    ? (Array.isArray(ds.affixes) ? ds.affixes : [])
       .reduce((sum, rule) => sum + (rule?.mod?.edictAddChance || 0) + (rule?.mod?.ambushChance || 0), 0)
     : 0;
-  if (edictAddChance > 0 && Math.random() < Math.min(0.55, edictAddChance)) {
+  if (affixAddChance > 0 && Math.random() < Math.min(0.55, affixAddChance)) {
     const enforcer = Object.assign({}, mon, {
-      name: `${temoji}禁令执法者`,
+      name: `${temoji}增援兵`,
       hpMax: Math.max(1, Math.floor(mon.hpMax * 0.72)),
       hp: Math.max(1, Math.floor(mon.hpMax * 0.72)),
       atk: Math.max(1, Math.floor(mon.atk * 0.74)),
@@ -7706,8 +7715,7 @@ function spawnDungeonMonster(){
       _lastSupportSkill: Date.now() - rng(1200, 3600),
     });
     state.currentMonsters.push(enforcer);
-    state.dungeonState.edictAdds = (state.dungeonState.edictAdds || 0) + 1;
-    log(`📜 战术禁令: ${enforcer.name} 加入战斗`, 'bad');
+    log(`🚩 增援: ${enforcer.name} 加入战斗`, 'bad');
   }
   if (isBoss && typeof getDungeonBossCouncilMembers === 'function') {
     spawnDungeonCouncilMembers(mon, boss, dg, ds);
@@ -7727,6 +7735,23 @@ function spawnDungeonMonster(){
   for(const unit of (state.currentMonsters || [])){
     if(unit && unit.hp > 0) applyDungeonCataclysmSpawnScaling(unit, ds, !!unit.isBoss);
     if(unit && unit.hp > 0) applySpecAdaptationToMonster(unit, { extra:isFinalBoss ? 1 : 0 });
+  }
+  if(isBoss) attachBossSignature(mon, dg, isFinalBoss);
+  if(isBoss && isFinalBoss && typeof showStoryModal === 'function' && typeof dungeonBossIntroScript === 'function'){
+    const _introKey = (state.mode === 'mythic' ? 'm:' : 'd:') + dg.key;
+    if (!state._storyBossIntro || typeof state._storyBossIntro !== 'object') state._storyBossIntro = {};
+    if (!state._storyBossIntro[_introKey]){
+      state._storyBossIntro[_introKey] = true;
+      /* 冻结Boss, 对话结束再开战 */
+      mon._lastAtk = Date.now() + 600000;
+      mon._lastSupportSkill = Date.now() + 600000;
+      mon._nextTrickAt = Date.now() + 600000;
+      showStoryModal(dungeonBossIntroScript(dg), () => {
+        mon._lastAtk = Date.now();
+        mon._lastSupportSkill = Date.now() - 1000;
+        mon._nextTrickAt = Date.now() + 6000;
+      });
+    }
   }
   applyCompanionChallengeScalingToCurrent();
 }
@@ -7797,20 +7822,6 @@ function worldSearchRemainingMs(now){
   if(state.mode !== 'world' || !state.worldSearch) return 0;
   return Math.max(0, (state.worldSearch.until || 0) - (now || Date.now()));
 }
-function worldCombatPauseRemainingMs(now){
-  if(!state || state.mode !== 'world' || !state.worldCombatPause) return 0;
-  const until = state.worldCombatPause.until || 0;
-  if(!until) return Number.POSITIVE_INFINITY;
-  return Math.max(0, until - (now || Date.now()));
-}
-function clearExpiredWorldCombatPause(now){
-  if(!state || state.mode !== 'world' || !state.worldCombatPause) return false;
-  const until = state.worldCombatPause.until || 0;
-  if(!until || until > (now || Date.now())) return false;
-  state.worldCombatPause = null;
-  if(typeof markDirty === 'function') markDirty('stage', 'map');
-  return true;
-}
 function worldMonsterSearchDelayMs(){
   // 野外搜寻下一批敌人固定 1 秒(2026-07-17,原为 1350~2000ms 且终局地图最多 ~2950ms);战斗加速可进一步缩短
   const speed = Math.max(1, state.battleSpeed || 1);
@@ -7818,7 +7829,6 @@ function worldMonsterSearchDelayMs(){
 }
 function startWorldMonsterSearch(reason){
   if(!state || state.mode !== 'world') return false;
-  if(state.worldCombatPause && !clearExpiredWorldCombatPause(Date.now())) return false;
   if(getAliveMonsters().length > 0) return false;
   const now = Date.now();
   const delay = worldMonsterSearchDelayMs();
@@ -7840,11 +7850,6 @@ function waitOrResolveWorldMonsterSearch(now){
     state.worldSearch = null;
     return false;
   }
-  if(state.worldCombatPause && !clearExpiredWorldCombatPause(now)){
-    state.worldSearch = null;
-    if(typeof markDirty === 'function') markDirty('stage', 'map');
-    return true;
-  }
   if(worldSearchRemainingMs(now) > 0){
     if(typeof markDirty === 'function') markDirty('stage');
     return true;
@@ -7855,25 +7860,6 @@ function waitOrResolveWorldMonsterSearch(now){
   lastMonAtk = now;
   if(typeof markDirty === 'function') markDirty('stage', 'map');
   return true;
-}
-function pauseWorldCombatAfterFieldCommanderFail(mon, failInfo){
-  if(!state || state.mode !== 'world') return;
-  const now = Date.now();
-  const failedAt = failInfo?.active?.failedAt || now;
-  const until = failedAt + 90000;
-  state.worldSearch = null;
-  state.worldCombatPause = {
-    reason: 'fieldCommanderFail',
-    at: now,
-    until,
-    name: mon?.bossName || mon?.name || '据点指挥官',
-    text: '挑战失败,首领已撤退。冷却结束后会恢复野外推进,也可以切换区域。'
-  };
-  if(typeof markDirty === 'function') markDirty('stage', 'map');
-}
-function isWorldCombatPaused(){
-  if(!state || state.mode !== 'world' || !state.worldCombatPause) return false;
-  return !clearExpiredWorldCombatPause(Date.now());
 }
 function bossTrickList(bossData){
   if(!bossData) return [];
@@ -8639,77 +8625,6 @@ function applyDungeonCataclysmEffects(ds, mon, now){
   if((ds.cataclysmHits || 0) !== beforeHits && typeof markDirty === 'function') markDirty('hero', 'stage');
 }
 
-function recordDungeonTimeMark(ds, key, edict) {
-  if (!ds) return;
-  const markKey = key || 'unknown';
-  ds.timeMarks = (ds.timeMarks || 0) + 1;
-  ds.timeMarkBreakdown = ds.timeMarkBreakdown || {};
-  ds.timeMarkBreakdown[markKey] = (ds.timeMarkBreakdown[markKey] || 0) + 1;
-  if (edict?.name) {
-    ds.timeMarkSources = ds.timeMarkSources || {};
-    ds.timeMarkSources[edict.key || markKey] = edict.name;
-  }
-}
-
-function applyDungeonEdictEffects(ds, mon, now){
-  if(state.mode !== 'dungeon' || !ds?.edicts?.length || !mon) return;
-  const beforeHits = ds.edictHits || 0;
-  for(const edict of ds.edicts){
-    const mod = edict.mod || {};
-    const prefix = `edict:${edict.key}`;
-    if(mod.drainTickMs && now - (ds[`${prefix}:drain`] || 0) > mod.drainTickMs){
-      ds[`${prefix}:drain`] = now;
-      const drain = Math.min(state.resource || 0, Math.floor((state.resourceMax || 0) * (mod.resourceDrainPct || 0.08)));
-      if(drain > 0){
-        state.resource = Math.max(0, state.resource - drain);
-        showFloat($('hero-emoji'), `${edict.icon || '📜'}-${drain}`, '#93c5fd', { variant:'status', scale:1.04 });
-        ds.edictHits = (ds.edictHits || 0) + 1;
-        recordDungeonTimeMark(ds, 'resource', edict);
-      }
-    }
-    if(mod.poisonTickMs && now - (ds[`${prefix}:poison`] || 0) > mod.poisonTickMs){
-      ds[`${prefix}:poison`] = now;
-      const dps = Math.max(1, Math.floor((state.hero.hpMax || 1) * (mod.poisonDpsPct || 0.01)));
-      applyHeroDebuff('burn', 4200, { dps });
-      showFloat($('hero-emoji'), `${edict.icon || '📜'}腐蚀`, '#a3e635', { variant:'status', scale:1.04 });
-      ds.edictHits = (ds.edictHits || 0) + 1;
-      recordDungeonTimeMark(ds, 'healing', edict);
-    }
-    if(mod.ceilingTickMs && now - (ds[`${prefix}:ceiling`] || 0) > mod.ceilingTickMs){
-      ds[`${prefix}:ceiling`] = now;
-      const dmg = Math.max(1, Math.floor((state.hero.hpMax || 1) * (mod.ceilingDamagePct || 0.04)));
-      applyHeroDamage(dmg, mon, { label:t=>(edict.icon || '📜') + '-' + t, color:'#f59e0b', now });
-      ds.edictHits = (ds.edictHits || 0) + 1;
-      recordDungeonTimeMark(ds, 'mobility', edict);
-    }
-    if(mod.shieldTickMs && now - (ds[`${prefix}:shield`] || 0) > mod.shieldTickMs){
-      ds[`${prefix}:shield`] = now;
-      for(const target of (state.currentMonsters || [])){
-        if(!target || target.hp <= 0) continue;
-        const shield = Math.max(1, Math.floor(target.hpMax * (mod.monsterShieldPct || 0.03)));
-        target._arcaneShield = (target._arcaneShield || 0) + shield;
-        syncMonsterShieldAura(target);
-        showMonsterFloat(target, `${edict.icon || '📜'}盾`, '#93c5fd');
-      }
-      ds.edictHits = (ds.edictHits || 0) + 1;
-    }
-    if(mod.weakenTickMs && now - (ds[`${prefix}:weaken`] || 0) > mod.weakenTickMs){
-      ds[`${prefix}:weaken`] = now;
-      applyHeroDebuff('weaken', mod.weakenMs || 4500);
-      showFloat($('hero-emoji'), `${edict.icon || '📜'}虚弱`, '#fca5a5', { variant:'status', scale:1.04 });
-      ds.edictHits = (ds.edictHits || 0) + 1;
-      recordDungeonTimeMark(ds, 'pressure', edict);
-    }
-    if(mod.executePulsePct && mon.isBoss && mon.hpMax > 0 && mon.hp / mon.hpMax <= (mod.executeBelow || 0.35) && now - (ds[`${prefix}:execute`] || 0) > 9000){
-      ds[`${prefix}:execute`] = now;
-      const dmg = Math.max(1, Math.floor((state.hero.hpMax || 1) * mod.executePulsePct));
-      applyHeroDamage(dmg, mon, { label:t=>(edict.icon || '⏱️') + '-' + t, color:'#fb7185', now });
-      ds.edictHits = (ds.edictHits || 0) + 1;
-      recordDungeonTimeMark(ds, 'execution', edict);
-    }
-  }
-  if((ds.edictHits || 0) !== beforeHits && typeof markDirty === 'function') markDirty('hero', 'stage');
-}
 function applyDungeonTimerPressure(ds, mon, now){
   const timer = ds?.timer;
   if(state.mode !== 'dungeon' || !timer || !mon) return;
@@ -10147,9 +10062,6 @@ function heroDebuffTakenMult(){
   const now=Date.now();let m=1;
   if(state.heroDebuffs){for(const k in state.heroDebuffs){const d=state.heroDebuffs[k];if(d.expire>now){const fx=DEBUFF_FX[k];if(fx&&fx.takenMul)m*=fx.takenMul;}}}
   if(state.mode === 'dungeon' && state.dungeonState?.environments?.some(env => env?.mod?.vulnerableTaken)) m *= 1.10;
-  if(state.mode === 'dungeon' && state.dungeonState?.edicts?.length) {
-    for(const edict of state.dungeonState.edicts) m *= 1 + (edict?.mod?.takenMult || 0);
-  }
   if(state.mode === 'dungeon' && state.dungeonState?.affixes?.length) {
     for(const affix of state.dungeonState.affixes) m *= 1 + (affix?.mod?.takenMult || 0);
   }
@@ -10599,11 +10511,7 @@ function tickBattle(now){
   reapDeadMonsters();                                   // 先结算上一拍可能死亡的敌人(含 AOE 群杀)
   if(getAliveMonsters().length===0){
     if(state.mode === 'world'){
-      if(isWorldCombatPaused()){
-        lastHeroAtk=now;lastMonAtk=now;
-        return;
-      }
-      if(waitOrResolveWorldMonsterSearch(now)) return;
+          if(waitOrResolveWorldMonsterSearch(now)) return;
       startWorldMonsterSearch('empty');
       lastHeroAtk=now;lastMonAtk=now;
       return;
@@ -10756,9 +10664,6 @@ function tickBattle(now){
   if ((state.mode === 'dungeon' || state.mode === 'mythic') && (state.dungeonState || state.mythicState)?.cataclysms?.length) {
     applyDungeonCataclysmEffects(state.dungeonState || state.mythicState, mon, now);
   }
-  if (state.mode === 'dungeon' && state.dungeonState?.edicts?.length) {
-    applyDungeonEdictEffects(state.dungeonState, mon, now);
-  }
   if (state.mode === 'dungeon' && state.dungeonState?.combatRooms?.length) {
     applyDungeonCombatRoomEffects(state.dungeonState, mon, now);
   }
@@ -10769,7 +10674,7 @@ function tickBattle(now){
     applyWorldBossAssaultEffects(state.worldBoss.activeEncounter, mon, now);
     advanceWorldBossPressure(state.worldBoss.activeEncounter, mon, now);
   }
-  if ((state.mode === 'world' || state.mode === 'boss') && mon?._zoneThreats?.length) {
+  if ((state.mode === 'world' || state.mode === 'boss') && mon?._rareMutations?.length) {
     applyWorldZoneThreatEffects(mon, now);
   }
   if ((state.mode === 'world' || state.mode === 'boss') && mon?._worldRenownAlert) {
@@ -10925,6 +10830,9 @@ function tickBattle(now){
     if(kindFloat)showFloat($('hero-emoji'),kindFloat,kindColor,{variant:(kindSkill&&monsterSkillDangerLevel(kindSkill)>0)?'boss':'status',scale:(kindSkill&&monsterSkillDangerLevel(kindSkill)>1)?1.12:1.04});
     if(kindLog)log(kindLog[0],kindLog[1]);
     const d=calcDmg(matk,heroDefAgainst(m),critRate,(m.critMult?m.critMult*100:150),false,state.hero.lvl,m.lvl);let taken=d.dmg;
+    if(state.mode==='world'&&!m.isBoss&&typeof GameBalanceRules!=='undefined'&&GameBalanceRules.worldMonsterDamageMultiplier){
+      taken=Math.max(1,Math.floor(taken*GameBalanceRules.worldMonsterDamageMultiplier(state.hero.lvl,false)));
+    }
     // BOSS 普攻几率击晕英雄(1.5秒无法攻击/施法)
     if(m.stunChance&&Math.random()<m.stunChance){state.heroStunUntil=now+1500;showFloat($('hero-emoji'),'💫晕眩','#fde047');log('💫 你被 '+m.name+' 击晕了!','bad');}
     taken=resolveMonsterDamageTaken(m,taken);
@@ -10968,11 +10876,11 @@ function tickBattle(now){
     const _pickSk=_queuedSk||_forcedPhaseSk||_phasePool[bossSkillIdx%Math.max(1,_phasePool.length)];
     const rawCd=(_pickSk&&_pickSk.cd)||10;
     const skillCd=Math.max(2,Math.floor(rawCd*0.42));   // 读条技更频繁:CD压缩58%,但最低2秒间隔
-    if(_allBossSkills.length&&now-lastBossSkill>skillCd*1000){const sk=_pickSk;let castTime=sk.castTime!==undefined?sk.castTime:2;const instantChance=typeof mon.instantCastChance==='number'?mon.instantCastChance:(mon.instantCast?0.35:0);let instant=instantChance>0&&Math.random()<instantChance;if(instant&&isEmpoweredBossCast(sk))instant=false;/* 大伤害/灭团技(蓄力大招)绝不瞬发,必须读条可打断 */if(instant)castTime=0;bossCasting={casterUid:mon._uid,bossName:mon.bossName||mon.name,name:sk.name,icon:sk.icon,type:sk.type,heal:sk.heal,healPct:sk.healPct,mul:sk.mul,dotSkill:sk.dotSkill,dotSecs:sk.dotSecs,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,spdBuffSecs:sk.spdBuffSecs,spdBuffPct:sk.spdBuffPct,atkBuffSecs:sk.atkBuffSecs,atkBuffPct:sk.atkBuffPct,defBuffSecs:sk.defBuffSecs,defBuffPct:sk.defBuffPct,drBuffSecs:sk.drBuffSecs,drBuffPct:sk.drBuffPct,shieldPct:sk.shieldPct,critBuffSecs:sk.critBuffSecs,critBuffPct:sk.critBuffPct,leechBuffSecs:sk.leechBuffSecs,leechBuffPct:sk.leechBuffPct,summonCount:sk.summonCount,summonTheme:sk.summonTheme,aoe:sk.aoe,silence:sk.silence,disarm:sk.disarm,fear:sk.fear,freeze:sk.freeze,cripple:sk.cripple,decay:sk.decay,wither:sk.wither,manaDrain:sk.manaDrain,bomb:sk.bomb,plague:sk.plague,bleed:sk.bleed,brittle:sk.brittle,soulDrain:sk.soulDrain,soulLink:sk.soulLink,revenge:sk.revenge,vulnerable:sk.vulnerable,frenzy:sk.frenzy,decay2:sk.decay2,mirror:sk.mirror,threat:sk.threat,interruptPolicy:sk.interruptPolicy,_empowered:isEmpoweredBossCast(sk),startTime:now,duration:castTime*1000};const _bt=bossCastTargetInfo(sk,now);bossCasting._targetDesc=_bt.desc;bossCasting._target=_bt.target;showBossTargetTelegraph(bossCasting,mon,{now,duration:instant?700:undefined});showBossCastStartFx(bossCasting,mon,{instant});const _emp=!instant&&isEmpoweredBossCast(sk)&&sk.interruptPolicy!=='none';const _aoeLog=(sk.type!=='heal'&&sk.type!=='buff'&&!sk.summonCount&&typeof sk.mul==='number'&&sk.mul>0)?(sk.aoe?' [🌀群体]':' [🎯单体]'):'';if(_emp || sk.threat==='high' || sk.threat==='extreme')combatEventBanner(_emp?'必须打断':'高危读条',(sk.icon||'')+sk.name,'danger');log('💀 '+(mon.bossName||mon.name)+(instant?' 瞬发 ':' 开始施放 ')+sk.name+_aoeLog+'!'+(instant?'(无法打断)':(_emp?' ⚡蓄力大招—打断可造成破绽!':'')),'bad');lastBossSkill=now;bossSkillIdx++;}
+    if(_allBossSkills.length&&now-lastBossSkill>skillCd*1000&&!(mon._silencedUntil>now)){const sk=_pickSk;let castTime=sk.castTime!==undefined?sk.castTime:2;const instantChance=typeof mon.instantCastChance==='number'?mon.instantCastChance:(mon.instantCast?0.35:0);let instant=instantChance>0&&Math.random()<instantChance;if(instant&&isEmpoweredBossCast(sk))instant=false;/* 大伤害/灭团技(蓄力大招)绝不瞬发,必须读条可打断 */if(instant)castTime=0;bossCasting={casterUid:mon._uid,bossName:mon.bossName||mon.name,name:sk.name,icon:sk.icon,type:sk.type,heal:sk.heal,healPct:sk.healPct,mul:sk.mul,dotSkill:sk.dotSkill,dotSecs:sk.dotSecs,alwaysCrit:sk.alwaysCrit,lifeSteal:sk.lifeSteal,dot:sk.dot,slow:sk.slow,stun:sk.stun,weaken:sk.weaken,sunder:sk.sunder,spdBuff:sk.spdBuff,spdBuffSecs:sk.spdBuffSecs,spdBuffPct:sk.spdBuffPct,atkBuffSecs:sk.atkBuffSecs,atkBuffPct:sk.atkBuffPct,defBuffSecs:sk.defBuffSecs,defBuffPct:sk.defBuffPct,drBuffSecs:sk.drBuffSecs,drBuffPct:sk.drBuffPct,shieldPct:sk.shieldPct,critBuffSecs:sk.critBuffSecs,critBuffPct:sk.critBuffPct,leechBuffSecs:sk.leechBuffSecs,leechBuffPct:sk.leechBuffPct,summonCount:sk.summonCount,summonTheme:sk.summonTheme,aoe:sk.aoe,silence:sk.silence,disarm:sk.disarm,fear:sk.fear,freeze:sk.freeze,cripple:sk.cripple,decay:sk.decay,wither:sk.wither,manaDrain:sk.manaDrain,bomb:sk.bomb,plague:sk.plague,bleed:sk.bleed,brittle:sk.brittle,soulDrain:sk.soulDrain,soulLink:sk.soulLink,revenge:sk.revenge,vulnerable:sk.vulnerable,frenzy:sk.frenzy,decay2:sk.decay2,mirror:sk.mirror,threat:sk.threat,interruptPolicy:sk.interruptPolicy,_empowered:isEmpoweredBossCast(sk),startTime:now,duration:castTime*1000};const _bt=bossCastTargetInfo(sk,now);bossCasting._targetDesc=_bt.desc;bossCasting._target=_bt.target;showBossTargetTelegraph(bossCasting,mon,{now,duration:instant?700:undefined});showBossCastStartFx(bossCasting,mon,{instant});const _emp=!instant&&isEmpoweredBossCast(sk)&&sk.interruptPolicy!=='none';const _aoeLog=(sk.type!=='heal'&&sk.type!=='buff'&&!sk.summonCount&&typeof sk.mul==='number'&&sk.mul>0)?(sk.aoe?' [🌀群体]':' [🎯单体]'):'';if(_emp || sk.threat==='high' || sk.threat==='extreme')combatEventBanner(_emp?'必须打断':'高危读条',(sk.icon||'')+sk.name,'danger');log('💀 '+(mon.bossName||mon.name)+(instant?' 瞬发 ':' 开始施放 ')+sk.name+_aoeLog+'!'+(instant?'(无法打断)':(_emp?' ⚡蓄力大招—打断可造成破绽!':'')),'bad');lastBossSkill=now;bossSkillIdx++;}
     // BOSS技巧(独立冷却,避免开场和支援技能一起连发)
     const tricks=bossTrickList(bossData).filter(trick => bossTrickAvailable(mon, trick, _hpFrac, now));
     const supportRecently = (mon._lastSupportSkill || 0) > 0 && now - mon._lastSupportSkill < 4500;
-    const trickReady = tricks.length && now >= (mon._nextTrickAt || 0) && !supportRecently;
+    const trickReady = tricks.length && now >= (mon._nextTrickAt || 0) && !supportRecently && !(mon._silencedUntil > now);
     if(tricks.length&&trickReady){
       const trick=tricks[Math.floor(Math.random()*tricks.length)];
       const passiveSupport = isPassiveMonsterSupportTrick(trick);
@@ -11159,7 +11067,6 @@ function onMonsterDeath(mon){
   // 世界Boss 击杀
   if(mon.isWorldBoss){if(typeof onWorldBossKill==='function') onWorldBossKill(mon);return;}
   if(mon.isRareElite){if(typeof onRareEliteKill==='function') onRareEliteKill(mon);return;}
-  if(mon._fieldCommander){if(typeof onWorldFieldCommanderKill==='function') onWorldFieldCommanderKill(mon);return;}
   if(mon._roomReward && !mon._roomExpired){
     const ds = state.dungeonState || state.mythicState;
     if(mon._roomReward.type === 'relic'){
@@ -11232,7 +11139,7 @@ function onMonsterDeath(mon){
   else if(state.mode==='mythic'){const ms=state.mythicState;const dg=DUNGEONS.find(d=>d.key===ms.key);const lastBoss=(dg.bosses||[])[dg.bosses.length-1];if(mon.isBoss)onMythicBossKill();ms.wave+=1;if(lastBoss&&ms.wave>lastBoss.wave){onMythicClear();return;}spawnDungeonMonster();}
   else if(state.mode==='tower'){if(typeof onTowerMonsterKill==='function') onTowerMonsterKill(mon);}
   else if(state.mode==='roguelike'){if(typeof onRoguelikeMonsterKill==='function') onRoguelikeMonsterKill(mon);}
-  else if(state.mode==='boss'){if(mon.isBoss){const map=getMap();log('👑 '+map.boss.name+' 已被击败!','legend');if(typeof grantWorldRenown==='function') grantWorldRenown(map.key, 35 + Math.floor((map.boss.lvl || mon.lvl || 1) / 2), '地图首领', { bossKill:true, alert:Math.max(3, Math.floor((map.boss.lvl || mon.lvl || 1) / 14)) });
+  else if(state.mode==='boss'){if(mon.isBoss){const map=getMap();log('👑 '+map.boss.name+' 已被击败!','legend');if(typeof playSfx==='function')playSfx('victory');if(typeof grantWorldRenown==='function') grantWorldRenown(map.key, 35 + Math.floor((map.boss.lvl || mon.lvl || 1) / 2), '地图首领', { bossKill:true, alert:Math.max(3, Math.floor((map.boss.lvl || mon.lvl || 1) / 14)) });
     if(map.boss.lvl>=60){
       // 60+ BOSS: 必爆紫装 + 15%概率橙装
       const purple=rollItemOfRarity('epic',mon.lvl);addToInventory(purple);if(typeof eventsOnItemGet==='function')eventsOnItemGet(purple);log('🎁 必掉 '+purple.name,'epic');combatLootCue('首领掉落', [purple.name], { kind:'epic', important:true, anchor:monsterFloatAnchor(mon), color:'#c084fc', scale:1.06 });
@@ -11243,7 +11150,7 @@ function onMonsterDeath(mon){
       if(Math.random()<0.15){const purple=rollItemOfRarity('epic',mon.lvl);addToInventory(purple);if(typeof eventsOnItemGet==='function')eventsOnItemGet(purple);log('🎉 额外掉落 '+purple.name,'epic');combatLootCue('额外掉落', [purple.name], { kind:'epic', important:true, anchor:monsterFloatAnchor(mon), color:'#c084fc', scale:1.06 });}
     }
     state.mode='world';markDirty('map');}spawnMonster();}
-  else{const subKey=state.currentMap+'-'+state.currentSubzone;state.subzoneKills[subKey]=(state.subzoneKills[subKey]||0)+1;if(typeof recordWorldFieldOperationKill==='function') recordWorldFieldOperationKill(mon);if(state.subzoneKills[subKey]===50&&!state.subzoneCleared[subKey]){state.subzoneCleared[subKey]=true;const map=getMap();const sub=map.sub[state.currentSubzone];state.gold+=sub.lvl[1]*30;log('🌟 ['+sub.name+'] 探索完成! +'+sub.lvl[1]*30+'💰','epic');combatLootCue('探索完成', [`+${sub.lvl[1]*30}金币`], { kind:'gold', important:true, anchor:monsterFloatAnchor(mon), color:'#fde68a', scale:1.06 });const it3=rollItem('rare',sub.lvl[1],state.currentMap);addToInventory(it3);combatLootCue('区域装备', [it3.name], { kind:'loot', important:true, anchor:monsterFloatAnchor(mon), color:'#93c5fd', scale:1.05 });if(typeof eventsOnItemGet==='function') eventsOnItemGet(it3);if(typeof eventsOnSubzoneClear==='function') eventsOnSubzoneClear();if(typeof progressionOnSubzoneClear==='function') progressionOnSubzoneClear(state.currentMap,state.currentSubzone);markDirty('map');}
+  else{const subKey=state.currentMap+'-'+state.currentSubzone;state.subzoneKills[subKey]=(state.subzoneKills[subKey]||0)+1;if(state.subzoneKills[subKey]>=subzoneKillGoal(state.currentMap,state.currentSubzone)&&!state.subzoneCleared[subKey]){state.subzoneCleared[subKey]=true;const map=getMap();const sub=map.sub[state.currentSubzone];state.gold+=sub.lvl[1]*30;log('🌟 ['+sub.name+'] 探索完成! +'+sub.lvl[1]*30+'💰','epic');combatLootCue('探索完成', [`+${sub.lvl[1]*30}金币`], { kind:'gold', important:true, anchor:monsterFloatAnchor(mon), color:'#fde68a', scale:1.06 });const it3=rollItem('rare',sub.lvl[1],state.currentMap);addToInventory(it3);combatLootCue('区域装备', [it3.name], { kind:'loot', important:true, anchor:monsterFloatAnchor(mon), color:'#93c5fd', scale:1.05 });if(typeof eventsOnItemGet==='function') eventsOnItemGet(it3);if(typeof eventsOnSubzoneClear==='function') eventsOnSubzoneClear();if(typeof progressionOnSubzoneClear==='function') progressionOnSubzoneClear(state.currentMap,state.currentSubzone);markDirty('map');}
     // 多敌:仅移除这一只,整波清空后才刷新下一波
     const di=state.currentMonsters.indexOf(mon);if(di>=0)state.currentMonsters.splice(di,1);
     if(state.currentMonsters.length===0)startWorldMonsterSearch('clear');}
@@ -11290,7 +11197,7 @@ function combatDeathRecap(){
     advice = '换上治疗/护盾随从,或把保命技能加入手动栏。';
   }else if((dmgStats.takenHits || 0) >= 8 && maxHit < hMax * 0.22){
     cause = '小伤害叠加致死';
-    advice = '清理召唤物、降低区域威胁,别只追求爆发输出。';
+    advice = '清理召唤物、优先击杀带机制的精英,别只追求爆发输出。';
   }
   const detail = `${cause}。承伤 ${combatNum(taken)}(${combatNum(dtps)}/秒),治疗 ${combatNum(heal)}(${combatNum(hps)}/秒),最高一击 ${combatNum(maxHit)},最后一击 ${combatNum(lastHit)} 来自 ${lastName}。建议: ${advice}`;
   state.lastDeathRecap = {
@@ -11310,29 +11217,8 @@ function combatDeathRecap(){
   if(typeof markDirty === 'function') markDirty('stage');
   log(`📉 死亡回放: ${detail}`,'bad');
 }
-function failFieldCommanderChallenge(mon){
-  if(!mon || !mon._fieldCommander) return false;
-  const failInfo = typeof failWorldFieldCommanderEncounter === 'function' ? failWorldFieldCommanderEncounter(mon) : null;
-  const failName = mon.bossName || failInfo?.name || mon.name || '据点指挥官';
-  log(`💀 ${failName} 挑战失败,本次据点首领已经撤退,战斗已结束`, 'bad');
-  state.mode = 'world';
-  if(typeof pauseWorldCombatAfterFieldCommanderFail === 'function') pauseWorldCombatAfterFieldCommanderFail(mon, failInfo);
-  bossCasting = null;
-  casting = null;
-  if(typeof hideBossCastBar === 'function') hideBossCastBar();
-  if(typeof hideHeroCastBar === 'function') hideHeroCastBar();
-  state.currentMonsters = [];
-  state.worldSearch = null;
-  lastHeroAtk = 0;
-  lastMonAtk = 0;
-  lastBossSkill = 0;
-  bossSkillIdx = 0;
-  markDirty('map', 'stage');
-  return true;
-}
 function onHeroDeath(){
-  log('☠️ 你倒下了…','bad');killStreak=0;state._compHp=null;state._compDownUntil=0;   // 复活后随从满血归来
-  const failedFieldCommander = (state.currentMonsters || []).find(m => m && m._fieldCommander);
+  log('☠️ 你倒下了…','bad');if(typeof playSfx==='function')playSfx('down');killStreak=0;state._compHp=null;state._compDownUntil=0;   // 复活后随从满血归来
   combatDeathRecap();
   clearAllBuffs();
   state._compBarrier = 0;
@@ -11357,7 +11243,6 @@ function onHeroDeath(){
     state.gold=Math.max(0,state.gold-loss);
   }
   state.hp=state.hero.hpMax;state.resource=state.resourceMax;
-  if(failedFieldCommander && failFieldCommanderChallenge(failedFieldCommander)) return;
   if(state.mode==='dungeon'){showDungeonFail();return;}
   if(state.mode==='mythic'){onMythicFail();return;}
   if(state.mode==='tower'){if(typeof onTowerFail==='function') onTowerFail(); spawnMonster(); return;}
@@ -11397,16 +11282,29 @@ function gainXP(amt){
     for(const k of['str','agi','int','spi','sta'])state.attrs[k]+=1;
     state.talentPoints+=1;recomputeStats();state.hp=state.hero.hpMax;
     const c=getCls();state.resource=c.resKey==='rage'?0:state.resourceMax;
-    checkSkillUnlocks();log('🎉 升到 Lv.'+state.hero.lvl+'! 全属性+1 +1天赋点','good');
+    checkSkillUnlocks();log('🎉 升到 Lv.'+state.hero.lvl+'! 全属性+1 +1天赋点','good');if(typeof playSfx==='function')playSfx('levelup');
+    /* 新手引导: 第一次拿到天赋点时指路(每存档一次) */
+    if(!state._talentHintShown && state.talentPoints >= 1 && state.hero.lvl <= 5){
+      state._talentHintShown = true;
+      log('💡 提示: 天赋点别忘了用 — 打开【天赋】页选一个专精, 先点满左侧核心节点性价比最高!', 'info');
+    }
     markDirty('hero','shop','talents','skills','map','dungeon');
   }
   if(state.hero.lvl>=MAX_LEVEL)state.hero.xp=0;
 }
 function xpNeeded(lvl){if(lvl>=MAX_LEVEL)return Infinity;return Math.floor((30+lvl*lvl*5+lvl*10)*(typeof XP_CURVE_MULT==='number'?XP_CURVE_MULT:1));}
+function subzoneKillGoal(mapKey, subIndex){
+  if (['elwynn','tirisfal','durotar'].includes(mapKey)) return [20,30,40][subIndex] || 50;
+  return 50;
+}
 function checkSkillUnlocks(){
   const c=getCls();if(!c)return;
   const entries=(typeof classSkillEntriesForCurrentSpec==='function')?classSkillEntriesForCurrentSpec(c):Object.entries(c.skills);
   for(const[key,sk]of entries){if(sk.unlockLvl&&state.hero.lvl>=sk.unlockLvl&&!state.unlockedSkills[key]){state.unlockedSkills[key]=true;if(state.selectedSkills.length===0&&(typeof isSkillAllowedForCurrentSpec!=='function'||isSkillAllowedForCurrentSpec(key)))state.selectedSkills.push(key);log('✨ 学会了 ['+sk.name+']','good');markDirty('skills');}}
+  if (state.hero.lvl === 1 && state.selectedSkills.length <= 1 && !state.selectedSkills.some(key => c.skills[key]?.type === 'dmg')) {
+    const starter = entries.find(([key, sk]) => sk.type === 'dmg' && state.unlockedSkills[key] && (typeof isSkillAllowedForCurrentSpec !== 'function' || isSkillAllowedForCurrentSpec(key)));
+    if (starter) { state.selectedSkills.push(starter[0]); markDirty('skills'); }
+  }
   if(typeof pruneSelectedSkillsForCurrentSpec==='function')pruneSelectedSkillsForCurrentSpec();
   if(typeof passiveCheckUnlocks==='function'){passiveCheckUnlocks();markDirty('skills');}
   checkDungeonUnlocks();
@@ -11923,6 +11821,16 @@ function addToInventory(item){
     state.gold+=item.sell||0;log('📦 背包已满,自动出售 '+item.name+' +'+(item.sell||0)+'💰','info');return;
   }
   state.inventory.push(item);markDirty('inventory');
+  { const _ri = RARITY.findIndex(r => r.key === item.rarity);
+    if (typeof playSfx === 'function') playSfx(_ri >= 4 ? 'legend' : _ri === 3 ? 'epic' : _ri === 2 ? 'loot' : 'gold'); }
+  /* 新手引导: 首次拾取装备且一身空时, 提示去穿装备(每存档一次) */
+  if(!state._equipHintShown && state.hero.lvl < 10){
+    const emptySlots = state.equipped ? Object.keys(state.equipped).filter(k=>state.equipped[k]).length : 0;
+    if(emptySlots === 0){
+      state._equipHintShown = true;
+      log('💡 提示: 打开【背包】页, 点「一键穿最优」即可换上刚捡到的装备, 战力立刻提升!', 'info');
+    }
+  }
 }
 function equipItem(itemId){const idx=state.inventory.findIndex(i=>i.id===itemId);if(idx<0)return;const item=state.inventory[idx];if(typeof syncItemIdentity==='function') syncItemIdentity(item);if(item.reqLvl&&state.hero.lvl<item.reqLvl){log('需要等级 Lv.'+item.reqLvl,'bad');return;}const prev=state.equipped[item.slot];state.equipped[item.slot]=item;state.inventory.splice(idx,1);if(prev)state.inventory.push(prev);recomputeStats();log('🎽 装备了 '+item.name,'good');markDirty('inventory','equipment','hero');}
 /* ---------- 背包容量 ---------- */
@@ -12004,7 +11912,6 @@ function resetCombatState(){
     clearAllBuffs();
     state.heroStunUntil=0;state.heroSilenceUntil=0;state.heroDisarmUntil=0;
     state.worldSearch=null;
-    state.worldCombatPause=null;
     state._compBarrier=0;state._compStunUntil=0;state._compSilenceUntil=0;state._compDisarmUntil=0;state._compSoulLinkUntil=0;state._compFrenzyUntil=0;state._compDecayUntil=0;state._compLastDotTick=0;
     state._brittleUntil=0;state._soulLinkUntil=0;state._decayUntil=0;
     state._allySummons=[];
@@ -12318,6 +12225,7 @@ function castSkill(skillKey,manual){
     if(cost>0)state.resource-=cost;
     const cdSec=sk.cd||10;state.skillCooldowns[skillKey]=now+cdSec*1000/castSpeedMul();
     showSkillButtonCastFx(skillKey, sk, { school:skillSupportVisualSchool(skillKey, sk, 'hero') });
+    if (!manual) state._lastAutoSkillCast = { name:sk.name, at:now };
     markDirty('skills','hero');
     return;
   }
@@ -12330,6 +12238,7 @@ function castSkill(skillKey,manual){
   if(state.resource<cost){if(manual){showSkillDeniedFx(skillKey, 'resource', { label:c.resource+'不足' });log(c.resource+'不足','bad');}return;}
   if(!sk.consumeRage)state.resource-=cost;   // 斩杀在伤害计算时消耗全部怒气
   const cdSec=getSkillCd(sk);state.skillCooldowns[skillKey]=now+cdSec*1000/castSpeedMul();   // CD 受 倍速×极速 影响
+  if (!manual) state._lastAutoSkillCast = { name:sk.name, at:now };
   const talentForceCrit = consumeNextSkillCrit(sk);
   const specProc = consumeSpecProcForSkill(skillKey, sk, now);
   const heroCastEl = $('hero-emoji');
@@ -12479,7 +12388,7 @@ function doInterrupt(skillKey){
     if(mon) showInterruptFx(mon, 'immune', bossCasting.name);
     return false;
   }
-  log('🦶 打断了 '+bossName+' 的 '+bossCasting.icon+' '+bossCasting.name+'!','good');
+  log('🦶 打断了 '+bossName+' 的 '+bossCasting.icon+' '+bossCasting.name+'!','good');if(typeof playSfx==='function')playSfx('interrupt');
   combatEventBanner('打断成功', (bossCasting.icon || '') + (bossCasting.name || '施法'), 'interrupt');
   if(skillKey){
     const heroSkill=getCls()?.skills?.[skillKey];
@@ -12599,12 +12508,17 @@ const _stageEdgeFxCooldown = {};
 const _combatCueCooldown = {};
 function stageShakeFx(){
   if(typeof document==='undefined'||document.hidden)return;
+  const profile=combatFxProfile();
+  /* 特效精简: 屏幕震动仅华丽档保留, 标准/精简档不再震动 */
+  if(profile.mode!=='cinematic')return;
   const now=Date.now();if(now-_lastShakeTs<500)return;_lastShakeTs=now;
   const st=document.getElementById('stage');if(!st)return;
   st.classList.remove('shake-fx');void st.offsetWidth;st.classList.add('shake-fx');
   setTimeout(()=>{const s=document.getElementById('stage');if(s)s.classList.remove('shake-fx');},240);
 }
 function stageFlashFx(kind){
+  /* 特效精简: 全屏闪光已移除 */
+  return;
   if(typeof document==='undefined'||document.hidden)return;
   const now=Date.now();if(now-_lastStageFlashTs<120)return;_lastStageFlashTs=now;
   const st=document.getElementById('stage');if(!st)return;
@@ -12616,6 +12530,10 @@ function stageFlashFx(kind){
 function stageEdgeFx(kind, opts){
   if(typeof document==='undefined'||document.hidden)return;
   const key=kind||'danger';
+  const profile=combatFxProfile();
+  /* 特效精简: 屏幕边缘彩色闪光仅华丽档保留; 精简档只留危险/暴击弱提示, 标准档关闭 */
+  if(profile.mode==='standard')return;
+  if(profile.mode==='minimal'&&!['danger','critical'].includes(key))return;
   const now=Date.now();
   const gap=key==='danger'||key==='critical'?260:420;
   if((_stageEdgeFxCooldown[key]||0)>now)return;
@@ -12623,7 +12541,8 @@ function stageEdgeFx(kind, opts){
   const st=document.getElementById('stage');if(!st)return;
   const el=document.createElement('div');
   el.className='stage-edge-fx '+key;
-  el.style.setProperty('--stage-edge-opacity', String(Math.max(0.38, Math.min(1, 0.72 * (opts?.intensity || 1)))));
+  const baseOpacity=profile.mode==='cinematic'?0.72:profile.mode==='minimal'?0.34:0.46;
+  el.style.setProperty('--stage-edge-opacity', String(Math.max(0.26, Math.min(.82, baseOpacity * (opts?.intensity || 1)))));
   st.appendChild(el);
   setTimeout(()=>el.remove(),820);
 }
@@ -12683,6 +12602,8 @@ function skillImpactStageFx(targetEl, school, impact, opts){
   }
 }
 function combatCueLanePush(title, detail, kind){
+  /* 特效精简: 战斗提示碎片(✦大暴击/战利品等)已移除, 信息保留在战斗日志 */
+  return;
   if(typeof document==='undefined'||document.hidden)return;
   const lane=document.getElementById('combat-cue-lane');
   if(!lane)return;
@@ -12717,6 +12638,8 @@ function combatLootCue(title, parts, opts){
   }
 }
 function combatEventBanner(title, detail, kind){
+  /* 特效精简: 击杀/危险大横幅与全屏闪光已移除, 信息保留在战斗日志 */
+  return;
   if(typeof document==='undefined'||document.hidden)return;
   const now=Date.now();
   const important = kind === 'boss' || kind === 'danger' || kind === 'interrupt';
@@ -12802,6 +12725,8 @@ function bossCastResultCue(cast, kind, detail, opts){
   }
 }
 function combatCueToast(title, detail, kind){
+  /* 特效精简: 战斗提示弹条已移除, 信息保留在战斗日志 */
+  return;
   if(typeof document==='undefined'||document.hidden)return;
   const now=Date.now();
   const key=kind||'info';
@@ -12864,6 +12789,8 @@ function maybeCombatSupportMoment(src, kind, amt, cleanLabel, prevMax){
 }
 function killStreakToast(n){
   if(typeof document==='undefined'||document.hidden)return;
+  /* 特效精简: 连杀庆祝浮字仅在华丽档保留, 击杀信息保留在战斗日志 */
+  if(combatFxProfile().mode !== 'cinematic') return;
   const st=document.getElementById('stage');if(!st)return;
   const el=document.createElement('div');el.className='killstreak-toast';el.textContent='🔥 连杀 '+n+'!';
   st.appendChild(el);setTimeout(()=>el.remove(),1100);
@@ -12873,7 +12800,7 @@ let _lastKillRecapCueTs = 0;
 function combatKillRecapCue(mon){
   if(typeof document==='undefined'||document.hidden||!mon)return;
   const now=Date.now();
-  const important=!!(mon.isBoss||mon.isWorldBoss||mon.isRareElite||mon._isRaid||mon._isEpicRaid||mon._fieldCommander||mon._roomReward);
+  const important=!!(mon.isBoss||mon.isWorldBoss||mon.isRareElite||mon._isRaid||mon._isEpicRaid||mon._roomReward);
   const elapsedSec=mon._spawnAt?Math.max(.1,(now-mon._spawnAt)/1000):0;
   const streak=typeof killStreak==='number'?killStreak:0;
   const fast=elapsedSec>0&&elapsedSec<=(important?18:2.4);
@@ -12977,7 +12904,7 @@ function trackShield(src,amt,skillLabel){
     });
   }
 }
-function trackKill(){const now=Date.now();if(dmgStats.killTs){const dt=(now-dmgStats.killTs)/1000;if(dt>0&&dt<600){if(!dmgStats.killFast||dt<dmgStats.killFast)dmgStats.killFast=dt;if(dt>(dmgStats.killSlow||0))dmgStats.killSlow=dt;}}dmgStats.killTs=now;dmgStats.kills=(dmgStats.kills||0)+1;killStreak++;if(killStreak>=5&&killStreak%5===0)killStreakToast(killStreak);}
+function trackKill(){if(typeof companionAffinityGain==='function')companionAffinityGain(1);const now=Date.now();if(dmgStats.killTs){const dt=(now-dmgStats.killTs)/1000;if(dt>0&&dt<600){if(!dmgStats.killFast||dt<dmgStats.killFast)dmgStats.killFast=dt;if(dt>(dmgStats.killSlow||0))dmgStats.killSlow=dt;}}dmgStats.killTs=now;dmgStats.kills=(dmgStats.kills||0)+1;killStreak++;if(killStreak>=5&&killStreak%5===0)killStreakToast(killStreak);}
 function resetDmgStats(){dmgStats=defaultDmgStats();if(typeof killStreak==='number')killStreak=0;if(typeof markDirty==='function')markDirty('stage');}
 let compSkillCd={};   // 随从每个技能的独立冷却就绪时间戳(键=技能下标;_owner 记录当前随从,换随从自动重置)
 const COMP_SKILL_DEFAULT_CD=8;   // 随从技能默认CD(秒,技能未写 cd 时)
@@ -12994,12 +12921,6 @@ const COMPANION_ROLE_PROFILE = {
   heal: { atk:0.72, def:0.94, hp:0.62, spd:0.82, reg:0.66, critd:0.88 },
 };
 const COMPANION_REACTION_CD_MS = 45000;
-const COMPANION_TACTICS = {
-  balanced: { label:'均衡', icon:'⚖️', desc:'保持当前战斗节奏，不改变随从强度；低血量时触发一次小额协助。', reaction:'均衡协助', atk:1, def:1, hp:1, spd:1, heal:1, shield:1, dmg:1, aggro:0 },
-  assault: { label:'猛攻', icon:'⚔️', desc:'随从更主动打伤害，技能伤害和攻速提高，但更脆且治疗效率下降；敌人低血量时触发压制斩击。', reaction:'压制斩击', atk:1.14, def:0.92, hp:0.90, spd:1.08, heal:0.90, shield:0.92, dmg:1.08, aggro:-0.04 },
-  guard: { label:'守护', icon:'🛡️', desc:'随从更愿意挡刀和放防护技能，生命防御提高，但输出降低；主角危险时触发护卫壁垒。', reaction:'护卫壁垒', atk:0.88, def:1.18, hp:1.16, spd:0.96, heal:1.06, shield:1.16, dmg:0.90, aggro:0.18 },
-  support: { label:'支援', icon:'💚', desc:'随从优先治疗、护盾和净化，支援效果提高，但直接输出下降；主角危险时触发紧急救护。', reaction:'紧急救护', atk:0.90, def:0.96, hp:0.94, spd:1.02, heal:1.18, shield:1.18, dmg:0.92, aggro:-0.06 },
-};
 const COMPANION_STAR_GROWTH = 0.22;   // 每星成长
 const COMPANION_SKILL_DMG_BONUS = 2.05;  // 随从技能伤害全局加成
 const COMPANION_HEAL_SCALE = 1.25;        // 随从治疗统一收口
@@ -13114,23 +13035,13 @@ const COMPANION_UNIQUE_TRAITS = {
   voljin:{ name:'洛阿低语', icon:'🧿', tags:['dot','mark','sustain'], crit:4, healPower:1.06, specialPower:1.07, desc:'诅咒和续航兼具,适合持续战。' },
   akama:{ name:'灰舌暗路', icon:'🌫️', tags:['mark','execute','control'], spd:1.05, crit:4, supportPower:1.07, desc:'伏击和支援标记更灵活。' },
 };
-function companionTacticKey(){
-  const key = state?.companionTactic || 'balanced';
-  return COMPANION_TACTICS[key] ? key : 'balanced';
-}
-function companionTacticMeta(key){ return COMPANION_TACTICS[key || companionTacticKey()] || COMPANION_TACTICS.balanced; }
-function companionSetTactic(key){
-  if(!COMPANION_TACTICS[key]) return;
-  state.companionTactic = key;
-  initCompanionHp();
-  markDirty('companion');
-  if(typeof saveState === 'function') saveState();
-  if(typeof renderCompanion === 'function') renderCompanion();
-  log(`${COMPANION_TACTICS[key].icon} 随从战术切换为「${COMPANION_TACTICS[key].label}」`,'good');
-}
-function companionTacticHealMult(){ return companionTacticMeta().heal || 1; }
-function companionTacticShieldMult(){ return companionTacticMeta().shield || 1; }
-function companionTacticDmgMult(){ return companionTacticMeta().dmg || 1; }
+/* 随从战术指令已删除: 统一按"均衡"行为战斗(数值乘区恒为 1), 仅保留战友反应 */
+const COMPANION_TACTIC_BALANCED = { label:'均衡', icon:'⚖️', reaction:'均衡协助', atk:1, def:1, hp:1, spd:1, heal:1, shield:1, dmg:1, aggro:0 };
+function companionTacticKey(){ return 'balanced'; }
+function companionTacticMeta(){ return COMPANION_TACTIC_BALANCED; }
+function companionTacticHealMult(){ return 1; }
+function companionTacticShieldMult(){ return 1; }
+function companionTacticDmgMult(){ return 1; }
 function companionSkillCdLeft(i){ return Math.max(0, ((compSkillCd&&compSkillCd[i])||0) - Date.now()); }   // 供 UI 显示剩余CD(毫秒)
 function companionReactionLeftMs(now){ return Math.max(0, (state._compReactionUntil || 0) - (now || Date.now())); }
 function companionResonanceLeftMs(now){ return Math.max(0, (state._compResonanceUntil || 0) - (now || Date.now())); }
@@ -13192,22 +13103,25 @@ function companionUseMaxQualityName(lvl){
 }
 function companionUseRuleText(lvl){
   const level = Number.isFinite(lvl) ? lvl : (state.hero?.lvl || 1);
-  return `当前${level}级最高可出战${companionUseMaxQualityName(level)}随从。30级解锁优秀,50级解锁精良,60级解锁史诗,70级解锁传说。`;
+  return `高品质随从可提前出战(效果按等级压缩), 30/50/60/70级后优秀/精良/史诗/传说全额发挥。`;
 }
 function companionUseGate(tpl, lvl){
   const q = (typeof compQuality === 'function') ? compQuality(tpl) : { key:tpl?.quality || 'white', name:tpl?.quality || '普通' };
   const level = Number.isFinite(lvl) ? lvl : (state.hero?.lvl || 1);
   const reqLevel = companionQualityUnlockLevel(q.key);
-  const allowed = level >= reqLevel;
+  /* 高品质随从不再锁死: 可提前出战, 效果从40%线性成长到门槛级的100% */
+  const allowed = true;
+  const scalePct = level >= reqLevel ? 100 : Math.round((0.4 + 0.6 * Math.max(0, Math.min(1, level / reqLevel))) * 100);
   return {
     allowed,
     level,
     reqLevel,
+    scalePct,
     qKey:q.key,
     qName:q.name,
     maxKey:companionUseMaxQualityKey(level),
     maxName:companionUseMaxQualityName(level),
-    text:allowed ? companionUseRuleText(level) : `${q.name}随从需要${reqLevel}级才能出战或支援。${companionUseRuleText(level)}`
+    text:scalePct < 100 ? `${q.name}随从提前出战: 当前以 ${scalePct}% 效果参战, ${reqLevel}级后全额发挥。${companionUseRuleText(level)}` : companionUseRuleText(level)
   };
 }
 function companionCanUseTpl(tpl, lvl){ return companionUseGate(tpl, lvl).allowed; }
@@ -13534,7 +13448,12 @@ function computeCompanionTemplateStats(comp, tpl, opts){
   const unique = companionUniqueTrait(tpl);
   const awaken = companionAwakenInfo(comp, tpl);
   const awakenMult = awaken.active ? 1 + awaken.statPct : 1;
-  const stats={name:tpl.name,emoji:tpl.emoji,role:tpl.role,skills,signature:companionSignature(tpl),veteran,unique,awaken,atk:Math.floor(state.hero.atk*qm*sm*role.atk*(tpl.atkMul||1)*(tactic.atk||1)*supportScale*dungeonMult*veteranPower*(unique?.atk||1)*awakenMult),def:Math.floor(state.hero.def*qm*sm*0.72*role.def*(tpl.defMul||1)*(tactic.def||1)*supportScale*(unique?.def||1)*awakenMult),hpMax:Math.floor(state.hero.hpMax*qm*sm*role.hp*(tpl.hpMul||1)*(tactic.hp||1)*supportScale*(unique?.hp||1)*awakenMult),crit:Math.floor(state.hero.crit*qm*0.40*(tpl.critMul||1))+(unique?.crit||0)+(awaken.active?2:0),critd:Math.floor(state.hero.critd*role.critd*(tpl.critdMul||1))+(unique?.critd||0)+(awaken.active?10:0),spd:state.hero.spd*role.spd*(tpl.spdMul||1)*(tactic.spd||1)*(unique?.spd||1)*(awaken.active?1.04:1),reg:Math.max(1, Math.floor((state.hero.reg||0)*role.reg*(tpl.regMul||1)*(tactic.heal||1)*supportScale*(unique?.reg||1)*awakenMult))};
+  /* 提前出战的高品质随从: 参战属性按等级压缩(companionUseGate.scalePct) */
+  const earlyUse = (typeof companionUseGate === 'function') ? companionUseGate(tpl) : null;
+  const earlyUseMult = (earlyUse && earlyUse.scalePct < 100) ? (earlyUse.scalePct / 100) : 1;
+  /* 好感度加成: 每级随从参战属性+2% */
+  const affMult = (typeof companionAffinityLevel === 'function') ? (1 + (Math.max(1, companionAffinityLevel(comp)) - 1) * 0.02) : 1;
+  const stats={name:tpl.name,emoji:tpl.emoji,role:tpl.role,skills,signature:companionSignature(tpl),veteran,unique,awaken,earlyUseScalePct:earlyUse ? earlyUse.scalePct : 100,atk:Math.floor(state.hero.atk*qm*sm*role.atk*(tpl.atkMul||1)*(tactic.atk||1)*supportScale*dungeonMult*veteranPower*(unique?.atk||1)*awakenMult*earlyUseMult*affMult),def:Math.floor(state.hero.def*qm*sm*0.72*role.def*(tpl.defMul||1)*(tactic.def||1)*supportScale*(unique?.def||1)*awakenMult*earlyUseMult*affMult),hpMax:Math.floor(state.hero.hpMax*qm*sm*role.hp*(tpl.hpMul||1)*(tactic.hp||1)*supportScale*(unique?.hp||1)*awakenMult*earlyUseMult),crit:Math.floor(state.hero.crit*qm*0.40*(tpl.critMul||1))+(unique?.crit||0)+(awaken.active?2:0),critd:Math.floor(state.hero.critd*role.critd*(tpl.critdMul||1))+(unique?.critd||0)+(awaken.active?10:0),spd:state.hero.spd*role.spd*(tpl.spdMul||1)*(tactic.spd||1)*(unique?.spd||1)*(awaken.active?1.04:1),reg:Math.max(1, Math.floor((state.hero.reg||0)*role.reg*(tpl.regMul||1)*(tactic.heal||1)*supportScale*(unique?.reg||1)*awakenMult*earlyUseMult*affMult))};
   applyCompanionSignatureStats(stats, tpl);
   if(!opts?.support){
     applyCompanionBuffEffects(stats);
@@ -13567,6 +13486,16 @@ function collectCompanionMod(){
   out.hpPct+=Math.min(owned*0.08,1.8);   // 收藏被动保留存在感,但不再把角色面板顶飞
   if(typeof COMPANION_BONDS!=='undefined'){const ks=new Set(state.companions.map(c=>c.key));
     for(const b of COMPANION_BONDS){if(b.keys.every(k=>ks.has(k)))for(const[k,v]of Object.entries(b.mod))out[k]=(out[k]||0)+v;}}
+  /* 上阵共鸣: 羁绊全员同时上阵(出战+支援)时, 羁绊加成额外+50% */
+  if(typeof COMPANION_BONDS!=='undefined'){
+    const deployed=new Set();
+    const act=state.companions&&state.companions[state.activeCompanion];
+    if(act)deployed.add(act.key);
+    for(const k of(state.companionSupport||[]))deployed.add(k);
+    if(deployed.size){for(const b of COMPANION_BONDS){
+      if(b.keys.every(k=>deployed.has(k))&&b.mod)for(const[k,v]of Object.entries(b.mod))out[k]=(out[k]||0)+v*0.5;
+    }}
+  }
   return out;
 }
 function activeCompanionBonds(){if(typeof COMPANION_BONDS==='undefined'||!state.companions)return[];const ks=new Set(state.companions.map(c=>c.key));return COMPANION_BONDS.filter(b=>b.keys.every(k=>ks.has(k)));}
@@ -13945,10 +13874,6 @@ function companionSkillPriority(sk, st, mon, now){
   return score;
 }
 function companionReactionDesc(key){
-  const k = key || companionTacticKey();
-  if(k === 'assault') return '敌人生命低于40%或首领生命低于55%时，随从追加一次高倍率压制伤害。';
-  if(k === 'guard') return '主角或随从生命危险时，随从为双方施加护盾，主角护盾持续12秒。';
-  if(k === 'support') return '主角生命低于60%或有减益时，随从立即治疗主角并优先净化1个减益。';
   return '主角或随从低血量时，随从进行一次小额治疗和护盾支援。';
 }
 function companionReactionTrigger(now, st, tpl, mon){
@@ -14265,7 +14190,7 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
         if(sk.type==='dmg'){
           const dmgMult = companionSkillDamageMult(sk, mon, now);
           const compSkillAtk = st.atk + Math.max(0, Math.floor((state.hero.atk || 0) * (sk.heroAtkPct || 0)));
-          const sd=calcDmg(compSkillAtk*sk.mul*dmgMult*COMPANION_SKILL_DMG_BONUS,monArmor(mon),st.crit,st.critd,sk.alwaysCrit,mon.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(mon, sd.dmg, sk.icon || st.emoji).remaining;mon.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,sd.crit,sk.name,{school:compFxSchool});showMonsterFloat(mon,st.emoji+sk.icon+'-'+dealt,'#c0a0ff',allySideFloatOpts({variant:sd.crit?'crit':'comp',scale:sd.crit?1.12:1,important:true}));if(compCastEl)showSkillImpactFx(compCastEl,monsterFloatAnchor(mon),sk,{actor:'companion',amount:dealt,targetMax:mon.hpMax,crit:sd.crit,scale:sd.crit?0.96:0.82,pulse:sd.crit?'crit':'comp'});}
+          const _penArmor=Math.floor(monArmor(mon)*(1-Math.min(0.6,sk.armorPen||0)));const sd=calcDmg(compSkillAtk*sk.mul*dmgMult*COMPANION_SKILL_DMG_BONUS,_penArmor,st.crit,st.critd,sk.alwaysCrit,mon.lvl,state.hero.lvl);const dealt=absorbMonsterBarrier(mon, sd.dmg, sk.icon || st.emoji).remaining;mon.hp-=dealt;if(dealt>0){trackDmg('comp',dealt,sd.crit,sk.name,{school:compFxSchool});showMonsterFloat(mon,st.emoji+sk.icon+'-'+dealt,'#c0a0ff',allySideFloatOpts({variant:sd.crit?'crit':'comp',scale:sd.crit?1.12:1,important:true}));if(compCastEl)showSkillImpactFx(compCastEl,monsterFloatAnchor(mon),sk,{actor:'companion',amount:dealt,targetMax:mon.hpMax,crit:sd.crit,scale:sd.crit?0.96:0.82,pulse:sd.crit?'crit':'comp'});}
           if(dealt > 0 && sk.extraHitPct){
             let extra = Math.max(1, Math.floor(dealt * sk.extraHitPct));
             extra = absorbMonsterBarrier(mon, extra, sk.icon || st.emoji).remaining;
@@ -14275,6 +14200,31 @@ function tickCompanion(now){const comp=getActiveCompanion();if(!comp)return;cons
               showMonsterFloat(mon, (sk.icon || st.emoji) + '追击-' + extra, '#fcd34d', allySideFloatOpts({ variant:'comp', scale:1.08, important:true }));
               if(compCastEl) showSkillImpactFx(compCastEl, monsterFloatAnchor(mon), sk, { actor:'companion', school:compFxSchool, trail:false, scale:.68, pulse:'comp', duration:400 });
             }
+          }
+          if(sk.hits > 1 && dealt > 0){
+            let combo = 0;
+            for(let h = 1; h < sk.hits; h++){
+              let ex = Math.floor(dealt * 0.55);
+              ex = absorbMonsterBarrier(mon, ex, sk.icon || st.emoji).remaining;
+              if(ex > 0){ mon.hp -= ex; combo += ex; }
+            }
+            if(combo > 0){
+              trackDmg('comp', combo, false, (sk.name||'随从技能') + '连击', {school:compFxSchool});
+              showMonsterFloat(mon, (sk.icon||st.emoji) + 'x' + sk.hits + '-' + combo, '#fcd34d', allySideFloatOpts({ variant:'comp', scale:1.05 }));
+            }
+          }
+          if(sk.armorPen && dealt > 0){ showMonsterFloat(mon, '🛡️透甲', '#e2e8f0', allySideFloatOpts({ variant:'comp', scale:.9 })); }
+          if(sk.interrupt && bossCasting && bossCasting.casterUid === mon._uid && bossCasting.interruptPolicy !== 'none'){
+            doInterrupt();
+            showMonsterFloat(mon, '🦶打断', '#fde047', { variant:'control', scale:1.04 });
+          }
+          if(sk.silence){
+            mon._silencedUntil = Math.max(mon._silencedUntil||0, Date.now() + (sk.silenceMs || 5000));
+            showMonsterFloat(mon, '🔇沉默', '#c4b5fd', { variant:'control', scale:1.04 });
+            if(typeof log === 'function') log(`🔇 ${st.name} 沉默了 ${mon.bossName||mon.name}, 它暂时无法施法!`, 'good');
+          }
+          if(sk.selfDamagePct && (state._compHp||0) > 0){
+            applyCompanionDamage(Math.max(1, Math.floor(st.hpMax * sk.selfDamagePct)), mon, { label: t => '💥-' + t, now });
           }
           const dotPct = sk.dotPct || (sk.dot ? 0.12 : 0);
           if(dotPct > 0) applyMonsterDot(mon,`comp:${comp.key}:${i}`,Math.max(1,Math.floor(dealt*dotPct)),sk.dotMs||6000,{icon:sk.icon,name:sk.name,source:st.name});
@@ -14467,4 +14417,118 @@ function companionUpgradeNeed(comp, q){
   const stars = comp?.stars || 1;
   const mult = ({ white:0.55, green:0.70, blue:0.86, purple:1, orange:1 })[q?.key] || 1;
   return Math.max(2, Math.ceil(stars * 8 * mult));
+}
+
+/* ---------- 副本/大秘境最终Boss招牌机制 ----------
+   30个副本的最终Boss按序轮转四种机制, 让"打谁"变成"该怎么打谁":
+   enrage 软狂暴 / mines 地雷阵 / brood 召唤眷属 / phase 双阶段 */
+const BOSS_SIG_ROTATION = ['enrage','mines','brood','phase'];
+const BOSS_SIG_MECH_META = {
+  enrage: { icon:'🔥', name:'狂暴之心', desc:'战斗超过45秒后, Boss攻击力每8秒递增6%。速战速决!' },
+  mines:  { icon:'💣', name:'地雷阵',   desc:'Boss会在战斗区布下红圈地雷, 点击红圈拆除, 踩爆会受伤。' },
+  brood:  { icon:'🥚', name:'召唤眷属', desc:'Boss血量降至70%和40%时召唤援军。' },
+  phase:  { icon:'😤', name:'双阶段',   desc:'Boss血量降至50%时进入狂怒阶段: 攻击提升且技能更凶。' },
+};
+function dungeonSigMechKey(dgKey){
+  const i = DUNGEONS.findIndex(d => d.key === dgKey);
+  return BOSS_SIG_ROTATION[((i % BOSS_SIG_ROTATION.length) + BOSS_SIG_ROTATION.length) % BOSS_SIG_ROTATION.length];
+}
+function attachBossSignature(mon, dg, isFinalBoss){
+  if(!mon || !mon.isBoss || !isFinalBoss || !dg) return;
+  const key = dungeonSigMechKey(dg.key);
+  const meta = BOSS_SIG_MECH_META[key];
+  if(!meta) return;
+  mon._sigMech = key;
+  mon._sigEnrageNextAt = Date.now() + 45000;
+  mon._sigEnrageStacks = 0;
+  mon._sigNextMineAt = Date.now() + 8000;
+  log(`${meta.icon} ☠️ 招牌机制【${meta.name}】: ${meta.desc}`, 'epic');if(typeof playSfx==='function')playSfx('boss');
+}
+let _sigMine = null;
+function sigRemoveMine(){
+  if(_sigMine){ try{ _sigMine.el.remove(); }catch(e){} _sigMine = null; }
+}
+function sigSpawnMine(mon){
+  const st = document.getElementById('stage');
+  const anchor = (typeof monsterFloatAnchor==='function') ? monsterFloatAnchor(mon) : null;
+  if(!st || !anchor) return;
+  const sRect = st.getBoundingClientRect();
+  const r = anchor.getBoundingClientRect();
+  if(!r.width || !sRect.width) return;
+  const size = Math.max(44, Math.min(80, Math.max(r.width, r.height) * 0.85));
+  const x = r.left - sRect.left + r.width/2 - size/2 + rng(-70, 70);
+  const y = r.top - sRect.top + r.height/2 - size/2 + rng(-26, 26);
+  const el = document.createElement('div');
+  el.className = 'boss-sig-mine';
+  el.textContent = '💣';
+  el.title = '点击拆除地雷!';
+  el.style.left = Math.max(4, Math.min(sRect.width - size - 4, x)) + 'px';
+  el.style.top = Math.max(4, Math.min(sRect.height - size - 4, y)) + 'px';
+  el.style.width = size + 'px';
+  el.style.height = size + 'px';
+  el.addEventListener('click', () => {
+    if(_sigMine && _sigMine.el === el){ sigRemoveMine(); log('💣 你眼疾手快拆除了地雷!', 'good'); if(typeof playSfx==='function')playSfx('loot'); }
+  });
+  st.appendChild(el);
+  _sigMine = { el, expiresAt: Date.now() + 3400 };
+}
+function sigSpawnAdd(boss){
+  const dg = DUNGEONS.find(d => d.key === (state.dungeonState ? state.dungeonState.key : null));
+  const power = Math.max(1, (dg?.reqLvl || boss.lvl || 10));
+  const bossEmojis = (dg?.bosses||[]).map(b => b.emoji).filter(Boolean);
+  const temoji = bossEmojis.length ? choice(bossEmojis) : '👹';
+  const hp = Math.max(1, Math.floor(boss.hpMax * 0.16));
+  const m = { name: temoji + choice(['爪牙','眷属','仆从','触须']), isBoss:false,
+    lvl:Math.max(1, boss.lvl||1), hpMax:hp, hp,
+    atk:Math.max(1, Math.floor(boss.atk*0.5)), def:Math.max(0, Math.floor(boss.def*0.7)),
+    baseGold:Math.floor(6+power*1.5), baseXp:Math.floor(15+power*2),
+    goldReward:Math.floor(8+power*2), honorReward:1,
+    dropRate:0.12, gemChance:0.02, maxRarity:'uncommon', fromDungeon:true,
+    _summoned:true, _uid:monUidSeq++, _dots:{}, _dotLegacyImported:true, _lastDotTick:0, _spawnAt:Date.now(),
+    _monSkill:null, _monSkills:[], _monSupportSkills:[], _supportSkillCooldowns:{},
+    _lastSkill:Date.now()-rng(800,2500), _lastTrick:0, _nextTrickAt:0,
+    _lastAtk:Date.now()-rng(0,800), atkInterval:1200, threat:Math.max(1, Math.floor(boss.atk*0.4)) };
+  state.currentMonsters.push(m);
+  log(`🥚 ${boss.bossName||boss.name} 召唤了 ${m.name}!`, 'bad');
+}
+function tickBossSignature(){
+  if(typeof document==='undefined' || document.hidden) return;
+  if(state.mode !== 'dungeon'){ sigRemoveMine(); return; }
+  const mon = (state.currentMonsters||[]).find(m => m && m.isBoss && m._sigMech && m.hp > 0);
+  if(!mon){ sigRemoveMine(); return; }
+  const now = Date.now();
+  const mech = mon._sigMech;
+  if(mech === 'enrage' && now >= (mon._sigEnrageNextAt || 0)){
+    if(!mon._sigEnrageStacks) log(`🔥 ${mon.bossName||mon.name} 狂暴了! 攻击开始不断攀升!`, 'bad');
+    mon._sigEnrageStacks = Math.min(20, (mon._sigEnrageStacks||0) + 1);
+    mon.atk = Math.floor(mon.atk * 1.06);
+    mon._sigEnrageNextAt = now + 8000;
+  }
+  if(mech === 'brood'){
+    const frac = mon.hp / Math.max(1, mon.hpMax);
+    if(frac <= 0.7 && !mon._sigBrood70){ mon._sigBrood70 = true; sigSpawnAdd(mon); }
+    if(frac <= 0.4 && !mon._sigBrood40){ mon._sigBrood40 = true; sigSpawnAdd(mon); }
+  }
+  if(mech === 'phase' && !mon._sigPhase2 && mon.hp / Math.max(1, mon.hpMax) <= 0.5){
+    mon._sigPhase2 = true;
+    mon.atk = Math.floor(mon.atk * 1.15);
+    try{
+      mon._monSupportSkills = buildMonsterSupportPool(mon.bossName || mon.name, null, mon.lvl || 10, true, 4);
+      mon._supportSkillCooldowns = {};
+    }catch(e){}
+    log(`😤 ${mon.bossName||mon.name} 进入狂怒阶段, 技能变得更凶了!`, 'bad');
+  }
+  if(mech === 'mines'){
+    if(_sigMine){
+      if(now >= _sigMine.expiresAt){
+        sigRemoveMine();
+        const dmg = Math.max(1, Math.floor((state.hero?.hpMax||1) * 0.07));
+        log('💣 你没注意到地雷, 被炸伤了!', 'bad');if(typeof playSfx==='function')playSfx('boom');
+        if(typeof applyHeroDamage==='function') applyHeroDamage(dmg, mon, { source:'地雷' });
+      }
+    } else if(now >= (mon._sigNextMineAt || 0)){
+      mon._sigNextMineAt = now + 9000 + rng(0, 5000);
+      sigSpawnMine(mon);
+    }
+  }
 }

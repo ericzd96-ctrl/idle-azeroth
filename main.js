@@ -17,6 +17,7 @@ let mobilePanelOpen = false;
 let _lastMobile = null;
 let _lastLoopRun = 0;
 let _zoomLockInstalled = false;
+let _lastNavSyncLevel = null;
 
 let _loopErrLogged = false;
 let _prevBuffs = '';   // 上帧活跃 buff 签名(检测过期)
@@ -117,6 +118,58 @@ function applyResponsiveLayout() {
   updateHeroMobileToggle();
 }
 
+function syncProgressiveNav(announce) {
+  const lvl = Math.max(1, state?.hero?.lvl || 1);
+  const tabsRoot = $('system-tabs');
+  if (!tabsRoot) return;
+  tabsRoot.setAttribute('role', 'tablist');
+  const unlockedNow = [];
+  tabsRoot.querySelectorAll('.tab[data-unlock]').forEach(tab => {
+    const unlockLvl = Math.max(1, parseInt(tab.dataset.unlock || '1', 10));
+    const locked = lvl < unlockLvl;
+    const nearLocked = locked && (unlockLvl - lvl) <= 5;   // 差5级内可见🔒, 让玩家知道前方有什么
+    const wasLocked = tab.hidden;
+    tab.hidden = locked && !nearLocked;
+    tab.disabled = locked;
+    tab.classList.toggle('tab-locked-preview', nearLocked);
+    if (nearLocked && !tab.querySelector('.tab-lock')) {
+      const lock = document.createElement('span');
+      lock.className = 'tab-lock';
+      lock.textContent = '🔒';
+      tab.insertBefore(lock, tab.firstChild);
+    } else if (!locked) {
+      const lock = tab.querySelector('.tab-lock');
+      if (lock) lock.remove();
+    }
+    tab.setAttribute('role', 'tab');
+    tab.setAttribute('aria-controls', `tab-${tab.dataset.tab}`);
+    tab.setAttribute('aria-selected', tab.classList.contains('active') ? 'true' : 'false');
+    tab.setAttribute('aria-hidden', locked ? 'true' : 'false');
+    if (!locked && wasLocked && unlockLvl > 1) unlockedNow.push(tab.getAttribute('aria-label') || tab.title || '新系统');
+  });
+  document.body.classList.toggle('starter-ui', lvl < 5);
+  document.body.classList.toggle('new-player-ui', lvl < 10);
+
+  const moreBtn = $('btn-more-tabs');
+  const secondaryUnlocked = [...tabsRoot.querySelectorAll('.tab-secondary')].filter(tab => !tab.hidden);
+  if (moreBtn) {
+    moreBtn.hidden = secondaryUnlocked.length === 0;
+    const expanded = tabsRoot.classList.contains('systems-expanded');
+    moreBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    moreBtn.setAttribute('aria-label', expanded ? '收起更多系统' : `更多系统，共${secondaryUnlocked.length}项`);
+    const label = moreBtn.querySelector('span');
+    if (label) label.textContent = expanded ? '收起' : '更多';
+    moreBtn.title = expanded ? '收起次要系统' : `展开更多系统（${secondaryUnlocked.length}）`;
+  }
+
+  const active = tabsRoot.querySelector('.tab.active');
+  if (active?.hidden) tabsRoot.querySelector('.tab[data-tab="map"]')?.click();
+  if (announce && _lastNavSyncLevel !== null && lvl > _lastNavSyncLevel && unlockedNow.length) {
+    log(`🧭 新系统解锁: ${unlockedNow.join('、')}`, 'good');
+  }
+  _lastNavSyncLevel = lvl;
+}
+
 function manualCastSkillFromUi(key, sourceEl) {
   if (!key) return;
   if (sourceEl) {
@@ -148,26 +201,64 @@ function targetFrameIntervalMs() {
   return inCombat ? 33 : 50;
 }
 
+/* 循环调度器: 前台走 rAF, 后台标签页 rAF 被浏览器完全冻结,
+   必须切换到 setTimeout 才能让放置进度在后台继续(targetFrameIntervalMs 已含后台降频意图) */
+let _cancelLoopSchedule = null;
+let _lastLoopBodyRun = (typeof performance !== 'undefined' ? performance.now() : 0);
+function scheduleLoop() {
+  if (_cancelLoopSchedule) { _cancelLoopSchedule(); _cancelLoopSchedule = null; }
+  if (typeof document !== 'undefined' && document.hidden) {
+    const t = setTimeout(() => { _cancelLoopSchedule = null; loop(); }, targetFrameIntervalMs());
+    _cancelLoopSchedule = () => clearTimeout(t);
+  } else {
+    const id = requestAnimationFrame(() => { _cancelLoopSchedule = null; loop(); });
+    _cancelLoopSchedule = () => cancelAnimationFrame(id);
+  }
+}
+/* rAF 心跳兜底: 某些环境(内嵌面板/最小化窗口)下 rAF 冻结但 document.hidden 仍为 false,
+   visibilitychange 不会触发; 只要循环超过 1.5s 没跑过就由固定心跳驱动一帧,
+   rAF 恢复后 _lastLoopBodyRun 持续刷新, 心跳自动休眠, 不会产生双倍 tick */
+if (typeof setInterval === 'function') {
+  setInterval(() => {
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    if (now - _lastLoopBodyRun > 1500) loop();
+  }, 1000);
+}
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', scheduleLoop);
+}
+
 function loop() {
   try {
     const frameNow = Date.now();
     if (frameNow - _lastLoopRun < targetFrameIntervalMs()) {
-      requestAnimationFrame(loop);
+      scheduleLoop();
       return;
     }
     _lastLoopRun = frameNow;
+    _lastLoopBodyRun = (typeof performance !== 'undefined' ? performance.now() : frameNow);
     if (state.cls) {
       const now = frameNow;
+      if (typeof isStoryModalOpen === 'function' && isStoryModalOpen()) {
+        lastTickTime = now;
+        updateBattleVisuals();
+        processDirty();
+        scheduleLoop();
+        return;
+      }
       const dt = (now - lastTickTime) / 1000;
       lastTickTime = now;
       elapsedSec += dt;
 
       tickBattle(now);
       tickCompanion(now);
+      if (typeof tickCompanionCombo === 'function') tickCompanionCombo(now);
       if (typeof tickCompanionSupport === 'function') tickCompanionSupport(now, state.currentMonsters && state.currentMonsters[0]);
       if (typeof tickCompanionMissions === 'function') tickCompanionMissions(now);
       if (typeof tickAllySummons === 'function') tickAllySummons(now);
       tickTravel(now);
+      if (typeof tickWorldEvent === 'function') tickWorldEvent(now);
+      if (typeof tickBossSignature === 'function') tickBossSignature(now);
       if (typeof tickLife==='function') tickLife(now);
 
       // buff 过期检测: 上帧还在、本帧已消失 → 重算属性
@@ -191,6 +282,7 @@ function loop() {
       secondsCounter += dt;
       if (secondsCounter >= 1) {
         secondsCounter = 0;
+        syncProgressiveNav(true);
         const total = Math.floor(elapsedSec);
         const m = Math.floor(total/60), s = total%60;
         $('h-clock').textContent = String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
@@ -211,13 +303,18 @@ function loop() {
     // 单帧异常不应让整个游戏循环永久卡死:记录一次,继续下一帧
     if (!_loopErrLogged) { console.error('loop tick error:', e); _loopErrLogged = true; }
   }
-  requestAnimationFrame(loop);
+  scheduleLoop();
 }
 
 /* ---------- 事件代理:右侧 tab 各面板 ---------- */
 function setupDelegation() {
   const hoverTipsEnabled = () => typeof tooltipHoverEnabled === 'function' ? tooltipHoverEnabled() : !isMobileLayout();
   document.addEventListener('click', e => {
+    if (e.target.closest('#death-recap-close') && state.lastDeathRecap) {
+      state.lastDeathRecap.dismissed = true;
+      markDirty('stage');
+      return;
+    }
     if (e.target.closest('[data-tip-close]') && typeof unpinTip === 'function') {
       unpinTip();
     }
@@ -356,8 +453,12 @@ function setupDelegation() {
     if (!row) return;
     const tab = row.dataset.goto;
     if (!tab) return;
-    const tabEl = document.querySelector('.tab[data-tab="' + tab + '"]');
-    if (tabEl) tabEl.click();
+      const tabEl = document.querySelector('.tab[data-tab="' + tab + '"]');
+      if (tabEl && !tabEl.hidden && !tabEl.disabled) {
+        /* 分类菜单模式下二级页签始终可点击, 无需先展开 */
+        tabEl.click();
+      }
+    else if (tabEl) log(`${tabEl.dataset.unlock || '?'}级解锁「${tabEl.getAttribute('aria-label') || tab}」`, 'info');
   };
   const ngEl = $('next-goal');
   if (ngEl) ngEl.addEventListener('click', gotoJump);
@@ -398,6 +499,12 @@ function setupDelegation() {
     if (btn.dataset.action === 'subzone') switchSubzone(btn.dataset.map, parseInt(btn.dataset.sub));
     else if (btn.dataset.action === 'boss') challengeBoss(btn.dataset.map);
     else if (btn.dataset.action === 'claimzonebounty' && typeof claimZoneBounty === 'function') claimZoneBounty(btn.dataset.map);
+    else if (btn.dataset.action === 'maplandmark' && typeof runZoneLandmark === 'function') { const mm = MAPS.find(x => x.key === btn.dataset.map); if (mm) runZoneLandmark(mm); }
+    else if (btn.dataset.action === 'mapchain' && typeof runZoneChain === 'function') { const mm = MAPS.find(x => x.key === btn.dataset.map); if (mm) runZoneChain(mm); }
+    else if (btn.dataset.action === 'togglemaplist') {
+      window.__showAllMaps = !window.__showAllMaps;
+      renderMap();
+    }
   });
 
   // 副本
@@ -672,7 +779,6 @@ function setupDelegation() {
     if(act==='compclosedetail'){ companionCloseDetail(); return; }
     if(act==='compwish'){ companionToggleWishlist(btn.dataset.key); return; }
     if(act==='compclearwish'){ companionClearWishlist(); return; }
-    if(act==='comptactic'){ companionSetTactic(btn.dataset.value); return; }
     if(act==='compresetfilter'){ companionResetFilters(); return; }
     if(act==='clearcompsearch'){ companionClearSearch(); return; }
     if(act==='trackcompbond'){ companionTrackBond(btn.dataset.bond); return; }
@@ -794,6 +900,33 @@ function setupMainButtons() {
     log(`战斗倍速: ${state.battleSpeed}倍`, 'info');
   });
 
+  const soundBtn = $('btn-sound');
+  if (soundBtn) soundBtn.addEventListener('click', () => {
+    if (typeof account !== 'undefined' && account) account.sound = (account.sound === 'off') ? 'on' : 'off';
+    const on = (typeof account !== 'undefined' && account) ? account.sound !== 'off' : true;
+    soundBtn.textContent = on ? '🔊 音效：开' : '🔇 音效：关';
+    soundBtn.title = on ? '点击关闭游戏音效' : '点击开启游戏音效';
+    if (on && typeof playSfx === 'function') playSfx('loot');
+    if (typeof saveState === 'function') saveState();
+    if (typeof log === 'function') log(on ? '🔊 游戏音效已开启' : '🔇 游戏音效已关闭', 'info');
+  });
+  if (soundBtn && typeof account !== 'undefined' && account && account.sound === 'off') {
+    soundBtn.textContent = '🔇 音效：关';
+    soundBtn.title = '点击开启游戏音效';
+  }
+
+  const combatFxBtn = $('btn-combat-fx');
+  if (combatFxBtn) combatFxBtn.addEventListener('click', () => {
+    const modes = ['minimal', 'standard', 'cinematic'];
+    const current = typeof combatFxMode === 'function' ? combatFxMode() : 'standard';
+    const next = modes[(modes.indexOf(current) + 1) % modes.length];
+    if (account) account.combatFx = next;
+    if (typeof applyCombatFxPreference === 'function') applyCombatFxPreference();
+    saveState();
+    const labels = { minimal:'精简', standard:'标准', cinematic:'华丽' };
+    log(`✨ 战斗特效已切换为${labels[next]}`, 'info');
+  });
+
   $('btn-leave').addEventListener('click', () => {
     if (state.mode === 'dungeon') {
       if (!confirm('确定离开副本?(进度丢失,但保留CD)')) return;
@@ -830,6 +963,14 @@ function setupMainButtons() {
   });
 
   $('btn-save').addEventListener('click', () => { saveState(); log('💾 已保存', 'good'); });
+
+  const logDetailBtn = $('btn-log-detail');
+  if (logDetailBtn) logDetailBtn.addEventListener('click', () => {
+    const logEl = $('log');
+    if (!logEl) return;
+    logEl.classList.toggle('show-details');
+    if (typeof syncLogDetailButton === 'function') syncLogDetailButton();
+  });
 
   $('btn-reset').addEventListener('click', () => {
     if (!confirm('确定重新开始?所有进度将丢失!')) return;
@@ -876,17 +1017,93 @@ function setupMainButtons() {
   const mobileBackdrop = $('mobile-panel-backdrop');
   if (mobileBackdrop) mobileBackdrop.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', 'false'));
     document.querySelectorAll('.tab-panel').forEach(x => x.classList.remove('active'));
     setMobilePanelOpen(false);
+  });
+
+  const moreTabsBtn = $('btn-more-tabs');
+  if (moreTabsBtn) moreTabsBtn.addEventListener('click', () => {
+    const tabsRoot = $('system-tabs');
+    if (!tabsRoot) return;
+    const menu = $('systems-menu');
+    if (!menu) { tabsRoot.classList.toggle('systems-expanded'); syncProgressiveNav(false); return; }
+    const opening = menu.hidden;
+    if (opening) renderSystemsMenu();
+    menu.hidden = !opening;
+    tabsRoot.classList.toggle('systems-expanded', opening);
+    moreTabsBtn.setAttribute('aria-expanded', opening ? 'true' : 'false');
+    syncProgressiveNav(false);
+  });
+
+  /* 系统分类菜单: 16+个二级系统按用途分组, 替代原来的单行平铺 */
+  const SYSTEM_TAB_GROUPS = [
+    { name:'⚔️ 战斗', keys:['dungeon','arena','events'] },
+    { name:'🌱 养成', keys:['companion','artifact','life','progression','ascend','paragon'] },
+    { name:'🏰 经营', keys:['expedition','guild','stronghold','astrology','market','vault'] },
+    { name:'📜 信息', keys:['quests','leaderboard'] },
+  ];
+  function renderSystemsMenu(){
+    const menu = $('systems-menu');
+    const tabsRoot = $('system-tabs');
+    if (!menu || !tabsRoot) return;
+    const parts = [];
+    for (const g of SYSTEM_TAB_GROUPS) {
+      const btns = g.keys
+        .map(k => tabsRoot.querySelector('.tab[data-tab="' + k + '"]'))
+        .filter(Boolean)
+        .filter(t => !t.hidden)
+        .sort((a, b) => parseInt(a.dataset.unlock || '1') - parseInt(b.dataset.unlock || '1'));
+      if (!btns.length) continue;
+      parts.push('<div class="systems-menu-group"><div class="systems-menu-head">' + g.name + '</div>' +
+        btns.map(t => {
+          const label = t.querySelector('.tab-label')?.textContent || t.getAttribute('aria-label') || t.dataset.tab;
+          const dot = t.classList.contains('has-badge') ? '<i class="systems-menu-dot"></i>' : '';
+          const locked = t.disabled;
+          return '<button type="button" class="systems-menu-item' + (locked ? ' locked' : '') + (t.classList.contains('active') ? ' active' : '') + '" data-menutab="' + t.dataset.tab + '" data-menulocked="' + (locked ? t.dataset.unlock : '') + '" title="' + label + '">' + (locked ? '🔒' : '') + label + (locked ? ` (${t.dataset.unlock}级)` : '') + dot + '</button>';
+        }).join('') + '</div>');
+    }
+    menu.innerHTML = parts.join('');
+  }
+  function closeSystemsMenu(){
+    const menu = $('systems-menu');
+    const tabsRoot = $('system-tabs');
+    if (menu) menu.hidden = true;
+    if (tabsRoot) tabsRoot.classList.remove('systems-expanded');
+    const btn = $('btn-more-tabs');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  }
+  const systemsMenuEl = $('systems-menu');
+  if (systemsMenuEl) systemsMenuEl.addEventListener('click', e => {
+    const item = e.target.closest('[data-menutab]');
+    if (!item) return;
+    const real = document.querySelector('.tab[data-tab="' + item.dataset.menutab + '"]');
+    if (real && real.disabled) {
+      closeSystemsMenu();
+      const lk = item.dataset.menulocked || '?';
+      log(`🔒 「${item.title || item.dataset.menutab}」需要 ${lk} 级解锁, 继续冒险吧!`, 'info');
+      return;
+    }
+    closeSystemsMenu();
+    if (real && !real.hidden) real.click();
+  });
+  document.addEventListener('click', e => {
+    const menu = $('systems-menu');
+    if (!menu || menu.hidden) return;
+    if (e.target.closest('#systems-menu') || e.target.closest('#btn-more-tabs')) return;
+    closeSystemsMenu();
   });
 
   // Tabs
   document.querySelectorAll('.tab').forEach(t => {
     t.addEventListener('click', () => {
+      if (typeof unpinTip === 'function') unpinTip();
       if (isMobileLayout() && t.dataset.tab === 'hero') {
         document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', 'false'));
         document.querySelectorAll('.tab-panel').forEach(x => x.classList.remove('active'));
         t.classList.add('active');
+        t.setAttribute('aria-selected', 'true');
         $('tab-' + t.dataset.tab).classList.add('active');
         focusHeroPanel();
         return;
@@ -897,8 +1114,10 @@ function setupMainButtons() {
         return;
       }
       document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', 'false'));
       document.querySelectorAll('.tab-panel').forEach(x => x.classList.remove('active'));
       t.classList.add('active');
+      t.setAttribute('aria-selected', 'true');
       $('tab-' + t.dataset.tab).classList.add('active');
       if(t.dataset.tab==='companion') { renderCompanion(); if (typeof renderMounts==='function') renderMounts(); }
       if(t.dataset.tab==='progression'&&typeof renderProgression==='function') renderProgression();
@@ -1237,13 +1456,21 @@ function showNameInput() {
 function startNewGame(name) {
   createNewCharacter(name, pendingFaction, pendingRace, pendingClass);
   recomputeStats();
+  // 新角色的最终生命上限会在属性/种族/账号加成结算后提高；创建时按职业基础值
+  // 填充会让角色以残血进入第一场战斗。这里按最终面板补满，避免开局无故暴毙。
+  state.hp = state.hero.hpMax;
   checkSkillUnlocks();
   if (typeof mountAutoGrantStarter==='function') mountAutoGrantStarter();
   if (typeof companionAutoGrantStarters==='function') companionAutoGrantStarters();
   spawnMonster();
   markDirty('all');
+        if (typeof processDirty === 'function') processDirty();   // 角色切换/创建时同步重绘, 不依赖游戏循环
   const cls = CLASSES[pendingClass];
   log(`🌟 ${name}(${cls.name})踏上了艾泽拉斯的征程!`, 'good');
+  if (typeof queueStoryActOpening === 'function') queueStoryActOpening('act1');
+  log('🛡️ 新手保护已启用: 前9级会逐步提高怪群规模、野怪耐久与伤害。', 'good');
+  _lastNavSyncLevel = null;
+  syncProgressiveNav(false);
 }
 
 /* ---------- 角色列表 ---------- */
@@ -1283,6 +1510,7 @@ function setupCharListEvents() {
         checkSkillUnlocks();
         spawnMonster();
         markDirty('all');
+        if (typeof processDirty === 'function') processDirty();   // 角色切换/创建时同步重绘, 不依赖游戏循环
         log('🌟 切换角色成功', 'good');
       }
     } else if (btn.dataset.action === 'deletechar') {
@@ -1294,6 +1522,7 @@ function setupCharListEvents() {
         checkSkillUnlocks();
         spawnMonster();
         markDirty('all');
+        if (typeof processDirty === 'function') processDirty();   // 角色切换/创建时同步重绘, 不依赖游戏循环
         log('🗑️ 角色已删除', 'info');
       }
     }
@@ -1306,12 +1535,14 @@ function setupCharListEvents() {
 
 /* ---------- 启动 ---------- */
 function boot() {
-  installMobileZoomLock();
   applyResponsiveLayout();
+  if (typeof applyCombatFxPreference === 'function') applyCombatFxPreference();
   setupDelegation();
+  if (typeof setupCampaign === 'function') setupCampaign();
   setupMainButtons();
   setupCharListEvents();
   setupAttrHover();
+  syncProgressiveNav(false);
 
   // 角色名点击打开角色列表
   $('h-name').addEventListener('click', showCharacterList);
@@ -1334,6 +1565,7 @@ function boot() {
       $('btn-speed').classList.toggle('gold', bs > 1);
     }
     markDirty('all');
+        if (typeof processDirty === 'function') processDirty();   // 角色切换/创建时同步重绘, 不依赖游戏循环
     log('🌟 重返艾泽拉斯', 'good');
   }
   loop();

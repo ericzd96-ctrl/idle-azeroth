@@ -15,27 +15,27 @@ const QUEST_WEEKLY_COUNT = 3;
 
 /* 每日任务池(具体目标 + 固定奖励;每天按种子取 3 个不同 key) */
 const QUEST_DAILY_POOL = [
-  { key:'d_kill1', type:'kill',    icon:'⚔️', goal:150,   label:n=>`击杀 ${n} 只野怪`,       reward:{ gold:8000,  honor:120 } },
-  { key:'d_kill2', type:'kill',    icon:'🗡️', goal:320,   label:n=>`击杀 ${n} 只野怪`,       reward:{ gold:16000, essence:8 } },
-  { key:'d_boss',  type:'boss',    icon:'👹', goal:3,     label:n=>`击败 ${n} 个地图首领`,   reward:{ honor:300,  gem:6 } },
-  { key:'d_dgn',   type:'dungeon', icon:'🏰', goal:2,     label:n=>`通关 ${n} 个副本`,       reward:{ essence:12, gem:8 } },
-  { key:'d_arena', type:'arena',   icon:'🏟️', goal:3,     label:n=>`竞技场排位胜利 ${n} 场`, reward:{ honor:400,  gem:5 } },
-  { key:'d_gem',   type:'gem',     icon:'💎', goal:2,     label:n=>`镶嵌 ${n} 颗宝石`,       reward:{ gold:10000, essence:6 } },
-  { key:'d_gold',  type:'gold',    icon:'💰', goal:60000, label:n=>`赚取 ${fmt(n)} 金币`,    reward:{ gem:6,      honor:150 } },
-  { key:'d_gather',type:'gather',  icon:'🛠️', goal:40,    label:n=>`采集 ${n} 个生活材料`,   reward:{ gold:9000,  essence:8 } },
-  { key:'d_enhance',type:'enhance',icon:'✨', goal:3,     label:n=>`附魔/重铸装备 ${n} 次`,   reward:{ essence:14, gold:8000 } },
+  { key:'d_kill1', type:'kill',    minLvl:1,  icon:'⚔️', goal:150,   label:n=>`击杀 ${n} 只野怪`,       reward:{ gold:8000,  honor:120 } },
+  { key:'d_kill2', type:'kill',    minLvl:1,  icon:'🗡️', goal:320,   label:n=>`击杀 ${n} 只野怪`,       reward:{ gold:16000, essence:8 } },
+  { key:'d_boss',  type:'boss',    minLvl:10, icon:'👹', goal:3,     label:n=>`击败 ${n} 个地图首领`,   reward:{ honor:300,  gem:6 } },
+  { key:'d_dgn',   type:'dungeon', minLvl:10, icon:'🏰', goal:2,     label:n=>`通关 ${n} 个副本`,       reward:{ essence:12, gem:8 } },
+  { key:'d_arena', type:'arena',   minLvl:15, icon:'🏟️', goal:3,     label:n=>`竞技场排位胜利 ${n} 场`, reward:{ honor:400,  gem:5 } },
+  { key:'d_gem',   type:'gem',     minLvl:10, icon:'💎', goal:2,     label:n=>`镶嵌 ${n} 颗宝石`,       reward:{ gold:10000, essence:6 } },
+  { key:'d_gold',  type:'gold',    minLvl:1,  icon:'💰', goal:60000, label:n=>`赚取 ${fmt(n)} 金币`,    reward:{ gem:6,      honor:150 } },
+  { key:'d_gather',type:'gather',  minLvl:5,  icon:'🛠️', goal:40,    label:n=>`采集 ${n} 个生活材料`,   reward:{ gold:9000,  essence:8 } },
+  { key:'d_enhance',type:'enhance',minLvl:10, icon:'✨', goal:3,     label:n=>`附魔/重铸装备 ${n} 次`,   reward:{ essence:14, gold:8000 } },
 ];
 const QUEST_DAILY_BONUS = { gold:30000, gem:12, essence:10 };
 
 /* 每周任务池(更大目标、更厚奖励) */
 const QUEST_WEEKLY_POOL = [
-  { key:'w_kill',  type:'kill',    icon:'⚔️', goal:2500, label:n=>`本周累计击杀 ${fmt(n)} 只野怪`, reward:{ gold:120000, gem:40, essence:30 } },
-  { key:'w_boss',  type:'boss',    icon:'👹', goal:25,   label:n=>`本周击败 ${n} 个地图首领`,      reward:{ honor:2500, gem:50 } },
-  { key:'w_dgn',   type:'dungeon', icon:'🏰', goal:12,   label:n=>`本周通关 ${n} 个副本`,          reward:{ essence:80, gem:60, tickets:3 } },
-  { key:'w_arena', type:'arena',   icon:'🏟️', goal:15,   label:n=>`本周竞技场胜利 ${n} 场`,        reward:{ honor:3000, gem:50 } },
-  { key:'w_gem',   type:'gem',     icon:'💎', goal:20,   label:n=>`本周镶嵌 ${n} 颗宝石`,          reward:{ gold:150000, essence:40 } },
-  { key:'w_gather',type:'gather',  icon:'🛠️', goal:400,  label:n=>`本周采集 ${fmt(n)} 个生活材料`,  reward:{ gold:130000, essence:50 } },
-  { key:'w_mythic',type:'mythic',  icon:'🌀', goal:8,    label:n=>`本周完成 ${n} 次大秘境`,        reward:{ essence:90, gem:60, tickets:2 } },
+  { key:'w_kill',  type:'kill',    minLvl:1,  icon:'⚔️', goal:2500, label:n=>`本周累计击杀 ${fmt(n)} 只野怪`, reward:{ gold:120000, gem:40, essence:30 } },
+  { key:'w_boss',  type:'boss',    minLvl:10, icon:'👹', goal:25,   label:n=>`本周击败 ${n} 个地图首领`,      reward:{ honor:2500, gem:50 } },
+  { key:'w_dgn',   type:'dungeon', minLvl:10, icon:'🏰', goal:12,   label:n=>`本周通关 ${n} 个副本`,          reward:{ essence:80, gem:60, tickets:3 } },
+  { key:'w_arena', type:'arena',   minLvl:15, icon:'🏟️', goal:15,   label:n=>`本周竞技场胜利 ${n} 场`,        reward:{ honor:3000, gem:50 } },
+  { key:'w_gem',   type:'gem',     minLvl:10, icon:'💎', goal:20,   label:n=>`本周镶嵌 ${n} 颗宝石`,          reward:{ gold:150000, essence:40 } },
+  { key:'w_gather',type:'gather',  minLvl:5,  icon:'🛠️', goal:400,  label:n=>`本周采集 ${fmt(n)} 个生活材料`,  reward:{ gold:130000, essence:50 } },
+  { key:'w_mythic',type:'mythic',  minLvl:80, icon:'🌀', goal:8,    label:n=>`本周完成 ${n} 次大秘境`,        reward:{ essence:90, gem:60, tickets:2 } },
 ];
 const QUEST_WEEKLY_BONUS = { gold:300000, gem:80, essence:60, tickets:2 };
 
@@ -52,17 +52,35 @@ function questRng(seed) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
-function questPick(pool, count, seed) {
-  const a = pool.slice();
+function questAccountLevel() {
+  const activeLevel = Math.max(1, state?.hero?.lvl || 1);
+  if (typeof characters === 'undefined' || !Array.isArray(characters)) return activeLevel;
+  return characters.reduce((best, character) => Math.max(best, character?.hero?.lvl || 1), activeLevel);
+}
+function questPick(pool, count, seed, level) {
+  const eligibleLevel = Math.max(1, Number(level) || 1);
+  const a = pool.filter(def => (def.minLvl || 1) <= eligibleLevel);
   const rnd = questRng(seed);
   for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
   return a.slice(0, count).map(def => ({ key: def.key, prog: 0, claimed: false }));
 }
 
+function questReconcileForLevel(list, pool, count, seed, level) {
+  const eligibleKeys = new Set(pool.filter(def => (def.minLvl || 1) <= level).map(def => def.key));
+  const result = (Array.isArray(list) ? list : []).filter(item => eligibleKeys.has(item.key)).slice(0, count);
+  const used = new Set(result.map(item => item.key));
+  const replacements = questPick(pool, pool.length, seed, level);
+  for (const item of replacements) {
+    if (result.length >= count) break;
+    if (!used.has(item.key)) { result.push(item); used.add(item.key); }
+  }
+  return result;
+}
+
 function ensureQuestState() {
   if (typeof account === 'undefined' || !account) return null;
   if (!account.quests || typeof account.quests !== 'object') {
-    account.quests = { day: -1, week: -1, daily: [], weekly: [], dailyBonusClaimed: false, weeklyBonusClaimed: false };
+    account.quests = { day: -1, week: -1, daily: [], weekly: [], dailyBonusClaimed: false, weeklyBonusClaimed: false, poolVersion: 2 };
   }
   const q = account.quests;
   if (typeof q.day !== 'number') q.day = -1;
@@ -70,15 +88,21 @@ function ensureQuestState() {
   if (!Array.isArray(q.daily)) q.daily = [];
   if (!Array.isArray(q.weekly)) q.weekly = [];
   const today = questDayIndex(), thisWeek = questWeekIndex();
+  const accountLevel = questAccountLevel();
   if (q.day !== today) {
     q.day = today;
-    q.daily = questPick(QUEST_DAILY_POOL, QUEST_DAILY_COUNT, (today * 2654435761) >>> 0);
+    q.daily = questPick(QUEST_DAILY_POOL, QUEST_DAILY_COUNT, (today * 2654435761) >>> 0, accountLevel);
     q.dailyBonusClaimed = false;
   }
   if (q.week !== thisWeek) {
     q.week = thisWeek;
-    q.weekly = questPick(QUEST_WEEKLY_POOL, QUEST_WEEKLY_COUNT, (thisWeek * 40503 + 17) >>> 0);
+    q.weekly = questPick(QUEST_WEEKLY_POOL, QUEST_WEEKLY_COUNT, (thisWeek * 40503 + 17) >>> 0, accountLevel);
     q.weeklyBonusClaimed = false;
+  }
+  if (q.poolVersion !== 2) {
+    q.daily = questReconcileForLevel(q.daily, QUEST_DAILY_POOL, QUEST_DAILY_COUNT, (today * 2654435761) >>> 0, accountLevel);
+    q.weekly = questReconcileForLevel(q.weekly, QUEST_WEEKLY_POOL, QUEST_WEEKLY_COUNT, (thisWeek * 40503 + 17) >>> 0, accountLevel);
+    q.poolVersion = 2;
   }
   return q;
 }
@@ -292,4 +316,8 @@ function renderQuests() {
   </div>`;
 
   panel.innerHTML = html;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { QUEST_DAILY_POOL, QUEST_WEEKLY_POOL, questPick, questReconcileForLevel };
 }

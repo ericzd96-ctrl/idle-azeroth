@@ -408,7 +408,7 @@ const CLASSES = {
       serpentSting: {name:'毒蛇钉刺', icon:'🐍', desc:'3倍攻击,持续中毒', mp:20, type:'dmg', mul:3, dot:true, unlockLvl:12,castTime:0},
       rapidFire:    {name:'急速射击', icon:'⚡', desc:'15秒攻速+60%', mp:35, type:'buff', buff:'rapidFire', duration:15000, unlockLvl:25,castTime:0},
       concussiveShot:{name:'震荡射击', icon:'🎯', desc:'3倍射击,击晕并顺带打断读条', mp:28, type:'dmg', mul:3, slow:true, stun:true, stunMs:1100, interruptCast:true, unlockLvl:34, castTime:0, cd:18},
-      summonPet:    {name:'召唤宠物', icon:'🐺', desc:'召唤1只野兽伙伴持续24秒助战', mp:28, type:'summon', summonCount:1, summonCap:1, summonTheme:'beast', summonDuration:24000, summonPower:1.05, unlockLvl:20, castTime:0, cd:18},
+      summonPet:    {name:'召唤宠物', icon:'🐺', desc:'召唤1只野兽伙伴持续24秒助战(野性之心天赋可延长):撕咬扑袭2.35倍并附加流血,对被印记的目标更痛,兽群羁绊同步强化宠物', mp:28, type:'summon', summonCount:1, summonCap:1, summonTheme:'beast', summonDuration:24000, summonPower:1.05, summonBonusVsState:'marked', summonBonusStatePct:0.22, summonSkillMul:2.35, summonSkillCd:6800, summonSkillDotPct:0.20, summonSkillDotMs:7000, summonSkillCrit:14, summonSkillBonusVsDot:0.15, summonLeechPct:0.10, summonBonusVsSlow:0.15, summonExtraSkills:[{ name:'裂爪撕扯', icon:'🩸', mul:2.25, cdMs:7200, dotPct:0.30, dotMs:9000, slow:true, slowMs:3000, desc:'撕裂利爪造成重度流血并放缓目标' }, { name:'猎群奔袭', icon:'🐾', mul:2.35, cdMs:8000, splashPct:0.30, slow:true, slowMs:4500, stun:true, stunMs:800, desc:'迅猛突袭波及周围目标并短暂击晕' }, { name:'狂野怒嚎', icon:'📯', mul:2.60, cdMs:8600, critBonus:18, critdBonus:25, healSelfPct:0.10, executeBonus:0.30, executeThreshold:0.40, bonusVsBoss:0.20, desc:'战吼大幅强化扑杀并回复自身,对首领更痛' }], unlockLvl:20, castTime:0, cd:18},
       aimed:        {name:'瞄准射击', icon:'🎯', desc:'3倍攻击,必定暴击', mp:35, type:'dmg', mul:4, alwaysCrit:true,castTime:2.5},
       multi:        {name:'多重射击', icon:'🎯', desc:'3倍攻击', mp:30, type:'dmg', mul:3,castTime:0},
       killShot:     {name:'杀戮射击', icon:'💀', desc:'7倍攻击,残血斩杀', mp:42, type:'dmg', mul:7, unlockLvl:45,castTime:0},
@@ -434,7 +434,11 @@ const CLASSES = {
         {key:'凶暴_1761', name:'凶暴', desc:'暴伤 +8%/层 · 额外攻击 +2%/层', max:5, req:28, mod:{critdPct:8,extraAtk:3}},
         {key:'兽王之力_lugl', name:'兽王之力', desc:'攻击 +2%/层 · 暴击 +1.5%/层', max:5, req:30, mod:{atkPct:2,crit:1.5}},
         {key:'野兽大师_e4rr', name:'野兽大师', desc:'技能冷却 +5%/层 · 斩杀加成 +4%/层', max:3, req:33, mod:{cdReduction:5,executeBonus:4}},
-        {key:'兽王宗师_l5ob', name:'兽王宗师', desc:'攻击 +1%/层 · 精通 +2%/层', max:3, req:36, mod:{atkPct:3,mastery:2}}
+        {key:'兽王宗师_l5ob', name:'兽王宗师', desc:'攻击 +1%/层 · 精通 +2%/层', max:3, req:36, mod:{atkPct:3,mastery:2}},
+        {key:'tal_petTrain', name:'野兽训练', desc:'宠物攻击 +3%/层', max:5, req:20, mod:{petAtkPct:3}},
+        {key:'tal_petHide', name:'厚皮野兽', desc:'宠物受到伤害 -4%/层', max:3, req:24, mod:{petTakenCut:4}},
+        {key:'tal_petBond', name:'人宠合一', desc:'每层兽群羁绊额外强化宠物攻击 +1%/层', max:5, req:30, mod:{petBondPct:1}},
+        {key:'tal_petVigor', name:'野性之心', desc:'宠物持续时间 +2秒/层', max:3, req:34, mod:{petDurSec:2}}
       ,
 {key:'tal_belq97', name:'兽群呼唤', desc:'攻击 +2%/层 · 额外攻击 +1%/层', max:5,req:38,mod:{atkPct:2,extraAtk:4}},{key:'tal_pr5je7', name:'万兽之王', desc:'敏捷 +8%/层 · 暴击 +3%/层', max:5,req:42,mod:{agiPct:8,crit:3}},{key:'tal_s5oa1w', name:'兽王至尊', desc:'攻击 +1%/层 · 吸血 +6%/层 · 精通 +2%/层', max:3,req:45,mod:{atkPct:4,leech:6,mastery:2}}]},
       {key:'marks', name:'射击', icon:'🎯', masteryDesc:'瞄准射击暴伤 +6%/精通', talents:[

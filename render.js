@@ -146,8 +146,6 @@ let _dmSampleTotal = 0, _dmSampleTs = 0;   // 峰值秒伤采样基线
 let _dmDpsTrendValue = 0, _dmDpsTrendTs = 0, _dmDpsTrendDir = 'stable', _dmDpsTrendPct = 0;
 let _dmRecentSkillSig = '';
 let _stageSkillChainSig = '';
-let _stageCombatTempoSig = '';
-let _stageCombatTempoPulseTimer = null;
 let _dmCombatSummarySig = '';
 let _dmSkillFxGuideSig = '';
 let _dmCastKitSig = '';
@@ -185,53 +183,16 @@ function combatSkillFxGuideMeta(school) {
     shield:{ text:'蓝色护盾', title:'护盾技能:蓝色反馈,表示护盾、防护、壁垒或守护效果。' }
   })[school] || { text:'技能反馈', title:'技能释放时会出现起手光、轨迹和命中爆点。' };
 }
-function updateDmgSkillFxGuide(list, now) {
-  const el = $('dm-skill-fx-guide');
-  if (!el) return;
-  const fresh = (list || []).filter(x => x && now - (x.ts || 0) <= 9000);
-  const seen = new Set();
-  const schools = [];
-  fresh.forEach(item => {
-    const school = String(item.school || '').replace(/[^a-z0-9_-]/gi, '');
-    if (school && !seen.has(school)) {
-      seen.add(school);
-      schools.push(school);
-    }
-  });
-  const defaults = fresh.length ? ['heal', 'shield'] : ['fire', 'frost', 'arcane', 'holy', 'heal', 'shield'];
-  defaults.forEach(school => {
-    if (!seen.has(school)) {
-      seen.add(school);
-      schools.push(school);
-    }
-  });
-  if (!schools.length) schools.push('physical');
-  const danger = fresh.find(x => x.actor === 'boss' && (x.type === 'danger' || x.threat === 'high' || x.threat === 'extreme' || x.empowered));
-  const sig = `${schools.slice(0, 6).join('|')}#${danger ? `${danger.name}:${danger.threat}:${danger.empowered ? 1 : 0}` : 'safe'}#${fresh.length ? 1 : 0}`;
-  if (sig === _dmSkillFxGuideSig) return;
-  _dmSkillFxGuideSig = sig;
-  el.replaceChildren();
-  const title = document.createElement('span');
-  title.className = 'dm-skill-fx-guide-title';
-  title.textContent = fresh.length ? '演出说明' : '演出图例';
-  title.title = '技能释放会显示起手光、飞行轨迹和命中爆点;颜色代表技能类型。';
-  el.appendChild(title);
-  schools.slice(0, 6).forEach(school => {
-    const meta = combatSkillFxGuideMeta(school);
-    const chip = document.createElement('span');
-    chip.className = `dm-skill-fx-guide-chip school-${school}`;
-    chip.textContent = `${combatSchoolShortName(school)}:${meta.text}`;
-    chip.title = meta.title;
-    el.appendChild(chip);
-  });
-  if (danger) {
-    const chip = document.createElement('span');
-    chip.className = 'dm-skill-fx-guide-chip danger school-shadow';
-    chip.textContent = '高危:红边优先处理';
-    chip.title = `${danger.icon || ''}${danger.name || '首领技能'} 是危险技能;看到红边、暗影爆点或高危标签时,优先打断、减伤、治疗或护盾。`;
-    el.appendChild(chip);
-  }
+function escapeDmgMeterText(value) {
+  return String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#39;'
+  }[ch]));
 }
+
 function combatRecentSkillEffectText(item) {
   const type = String(item?.type || 'skill');
   const status = String(item?.status || '').trim();
@@ -246,19 +207,6 @@ function combatRecentSkillEffectText(item) {
   if (hits > 1) return `命中x${hits}`;
   if (hits === 1) return target ? `命中${target}` : '命中';
   return '起手';
-}
-function combatRecentSkillTargetText(item) {
-  const target = String(item?.target || '').trim();
-  const hits = item?.hits || 0;
-  if (!target && hits <= 0) return '';
-  if (!target) return hits > 1 ? '多目标' : '目标';
-  if (target.includes('+') || /全体|持续伤害/.test(target)) return `→${target.length > 5 ? '多目标' : target}`;
-  if (/英雄|主角|你/.test(target)) return '→主角';
-  if (/随从/.test(target)) return '→随从';
-  if (/召唤/.test(target)) return '→召唤';
-  if (/自身/.test(target)) return '自身';
-  if (/敌人|目标/.test(target)) return '→敌人';
-  return `→${target.slice(0, 5)}`;
 }
 function combatRecentSkillHitText(item) {
   const hits = item?.hits || 0;
@@ -333,54 +281,18 @@ function combatRecentSkillTags(item, list, now, idx) {
   if (crits > 0) pushTag('crit', `暴击x${crits}`, `本次技能暴击 ${crits} 次`);
   return tags.slice(0, 4);
 }
-function updateStageSkillChain(list, now) {
-  const el = $('combat-skill-chain');
-  if (!el) return;
-  const fresh = (list || []).filter(x => now - (x.ts || 0) <= 9000).slice(0, 3);
-  const stageSig = fresh.map(x => `${x.actor}:${x.school}:${x.type}:${x.threat}:${x.interruptPolicy || ''}:${x.empowered}:${x.aoe ? 1 : 0}:${x.icon}:${x.name}:${x.hits || 0}:${x.target || ''}:${x.status || ''}:${x.damage || 0}:${x.heal || 0}:${x.shield || 0}:${x.taken || 0}:${x.maxAmount || 0}:${x.crits || 0}`).join('|');
-  if (!fresh.length) {
-    if (_stageSkillChainSig === '') return;
-    _stageSkillChainSig = '';
-    el.style.display = 'none';
-    el.replaceChildren();
-    return;
-  }
-  if (stageSig === _stageSkillChainSig && el.style.display !== 'none') return;
-  _stageSkillChainSig = stageSig;
-  el.replaceChildren();
-  const label = document.createElement('span');
-  label.className = 'combat-skill-chain-label';
-  label.textContent = '技能链';
-  el.appendChild(label);
-  const actorIcon = { hero:'我', companion:'伴', boss:'首', enemy:'敌' };
-  fresh.forEach((item, idx) => {
-    const actor = String(item.actor || 'hero').replace(/[^a-z0-9_-]/gi, '') || 'hero';
-    const school = String(item.school || 'physical').replace(/[^a-z0-9_-]/gi, '') || 'physical';
-    const type = String(item.type || 'skill').replace(/[^a-z0-9_-]/gi, '') || 'skill';
-    const danger = actor === 'boss' && (type === 'danger' || item.threat === 'high' || item.threat === 'extreme' || item.empowered);
-    const amount = combatRecentSkillAmountMeta(item);
-    const tags = combatRecentSkillTags(item, fresh, now, idx);
-    const status = String(item.status || '').trim();
-    const chip = document.createElement('span');
-    chip.className = `combat-skill-chain-chip actor-${actor} school-${school} type-${type}${amount ? ' has-amount amount-' + amount.kind : ''}${status ? ' has-status' : ''}${tags.length ? ' has-tags' : ''}${idx === 0 ? ' is-latest' : ''}${danger ? ' is-danger' : ''}`;
-    chip.title = `${combatSchoolShortName(school)} · ${item.icon || ''}${item.name || ''} · ${combatRecentSkillEffectText(item)}${combatRecentSkillTargetText(item) ? ' ' + combatRecentSkillTargetText(item) : ''}${combatRecentSkillDetailText(item) ? ' · ' + combatRecentSkillDetailText(item) : ''}`;
-    const source = document.createElement('b');
-    source.textContent = actorIcon[actor] || '技';
-    const name = document.createElement('span');
-    name.textContent = `${item.icon || ''}${item.name || ''}`;
-    const result = document.createElement('i');
-    result.textContent = status || (amount ? amount.short : (danger ? '高危' : (combatRecentSkillHitText(item) || combatRecentSkillEffectText(item))));
-    chip.append(source, name, result);
-    tags.slice(0, 1).forEach(tagInfo => {
-      const tag = document.createElement('em');
-      tag.className = `combat-skill-chain-tag tag-${tagInfo.key}`;
-      tag.textContent = tagInfo.text;
-      tag.title = tagInfo.title;
-      chip.appendChild(tag);
-    });
-    el.appendChild(chip);
-  });
-  el.style.display = 'flex';
+function combatRecentSkillTargetText(item) {
+  const target = String(item?.target || '').trim();
+  const hits = item?.hits || 0;
+  if (!target && hits <= 0) return '';
+  if (!target) return hits > 1 ? '多目标' : '目标';
+  if (target.includes('+') || /全体|持续伤害/.test(target)) return `→${target.length > 5 ? '多目标' : target}`;
+  if (/英雄|主角|你/.test(target)) return '→主角';
+  if (/随从/.test(target)) return '→随从';
+  if (/召唤/.test(target)) return '→召唤';
+  if (/自身/.test(target)) return '自身';
+  if (/敌人|目标/.test(target)) return '→敌人';
+  return `→${target.slice(0, 5)}`;
 }
 function setHeaderResourceText(id, key, value) {
   const el = $(id);
@@ -494,6 +406,106 @@ function dmgMeterTrendMeta(dps, total) {
   if (_dmDpsTrendDir === 'down') return { dir:'down', icon:'▼', label:`-${_dmDpsTrendPct}%`, title:`秒伤下降 ${_dmDpsTrendPct}%` };
   return { dir:'stable', icon:'→', label:'稳定', title:'秒伤基本稳定' };
 }
+function incomingPressureSource(ds) {
+  if (!ds) return null;
+  const combined = {};
+  const addMap = (map, prefix) => {
+    for (const [raw, amount] of Object.entries(map || {})) {
+      const name = String(raw || '').trim();
+      const value = Math.max(0, amount || 0);
+      if (!name || value <= 0) continue;
+      const key = `${prefix}${name}`;
+      combined[key] = (combined[key] || 0) + value;
+    }
+  };
+  addMap(ds.takenSources, '');
+  addMap(ds.compTakenSources, '随从:');
+  const entries = Object.entries(combined).sort((a, b) => b[1] - a[1]);
+  if (!entries.length) return null;
+  return { name:entries[0][0], amount:entries[0][1] };
+}
+function compactPressureSourceName(name) {
+  const raw = String(name || '').replace(/^随从:/, '随从·').trim();
+  if (!raw) return '未知';
+  const parts = raw.split('·').filter(Boolean);
+  const label = parts.length >= 2 ? `${parts[0]}·${parts[parts.length - 1]}` : raw;
+  const chars = Array.from(label);
+  return chars.length > 9 ? chars.slice(0, 8).join('') + '…' : label;
+}
+function pressureSourceCounterAdvice(source, ds) {
+  const raw = String(source || '').trim();
+  if (!raw) return '观察压力来源';
+  const recentBossCast = ds?.lastBossCastName && raw.includes(ds.lastBossCastName);
+  if (/随从:/.test(raw)) return '护随从';
+  if (recentBossCast || /读条|施法|裂隙|处刑|陨石|风暴|收割|虹吸|禁令|敕令|点名|爆发|毁灭|末日/.test(raw)) return '优先打断/减伤';
+  if (/持续|瘟疫|流血|灼烧|燃烧|中毒|腐蚀|凋零|衰老/.test(raw)) return '补治疗';
+  if (/召唤|援军|镜像|仆从|小怪/.test(raw)) return '先清召唤物';
+  if (/易伤|破绽|易爆|虚弱/.test(raw)) return '等减益';
+  return '留治疗/减伤';
+}
+function topDamageSkillEntry() {
+  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
+  if (!ds) return null;
+  let best = null;
+  const scan = (map, who) => {
+    Object.entries(map || {}).forEach(([name, amount]) => {
+      const value = Math.floor(amount || 0);
+      if (value <= 0) return;
+      if (!best || value > best.amount) best = { who, name, amount: value };
+    });
+  };
+  scan(ds.heroSkills, '主角');
+  scan(ds.compSkills, '随从');
+  return best;
+}
+function updateStageSkillChain(list, now) {
+  const el = $('combat-skill-chain');
+  if (!el) return;
+  const fresh = (list || []).filter(x => now - (x.ts || 0) <= 9000).slice(0, 3);
+  const stageSig = fresh.map(x => `${x.actor}:${x.school}:${x.type}:${x.threat}:${x.interruptPolicy || ''}:${x.empowered}:${x.aoe ? 1 : 0}:${x.icon}:${x.name}:${x.hits || 0}:${x.target || ''}:${x.status || ''}:${x.damage || 0}:${x.heal || 0}:${x.shield || 0}:${x.taken || 0}:${x.maxAmount || 0}:${x.crits || 0}`).join('|');
+  if (!fresh.length) {
+    if (_stageSkillChainSig === '') return;
+    _stageSkillChainSig = '';
+    el.replaceChildren();
+    return;
+  }
+  if (stageSig === _stageSkillChainSig) return;
+  _stageSkillChainSig = stageSig;
+  el.replaceChildren();
+  const actorIcon = { hero:'我', companion:'伴', boss:'首', enemy:'敌' };
+  fresh.forEach((item, idx) => {
+    const actor = String(item.actor || 'hero').replace(/[^a-z0-9_-]/gi, '') || 'hero';
+    const school = String(item.school || 'physical').replace(/[^a-z0-9_-]/gi, '') || 'physical';
+    const type = String(item.type || 'skill').replace(/[^a-z0-9_-]/gi, '') || 'skill';
+    const danger = actor === 'boss' && (type === 'danger' || item.threat === 'high' || item.threat === 'extreme' || item.empowered);
+    const amount = combatRecentSkillAmountMeta(item);
+    const tags = combatRecentSkillTags(item, fresh, now, idx);
+    const chip = document.createElement('span');
+    chip.className = `combat-skill-chain-chip actor-${actor} school-${school} type-${type}${amount ? ' has-amount amount-' + amount.kind : ''}${idx === 0 ? ' is-latest' : ''}${danger ? ' is-danger' : ''}`;
+    chip.title = `${combatSchoolShortName(school)} · ${item.icon || ''}${item.name || ''} · ${combatRecentSkillEffectText(item)}${combatRecentSkillTargetText(item) ? ' ' + combatRecentSkillTargetText(item) : ''}${combatRecentSkillDetailText(item) ? ' · ' + combatRecentSkillDetailText(item) : ''}${tags.length ? ' · ' + tags.map(t => t.title).join(' ') : ''}`;
+    const source = document.createElement('b');
+    source.textContent = actorIcon[actor] || '技';
+    const name = document.createElement('span');
+    name.textContent = `${item.icon || ''}${item.name || ''}`;
+    chip.append(source, name);
+    if (amount) {
+      const result = document.createElement('i');
+      result.textContent = amount.short;
+      chip.appendChild(result);
+    }
+    // 只保留需要立刻反应的标签(高危/打断), 其余信息在 tooltip 里
+    const alertTag = tags.find(t => t.key === 'danger' || t.key === 'interrupt' || t.key === 'immune');
+    if (alertTag) {
+      const tag = document.createElement('em');
+      tag.className = `combat-skill-chain-tag tag-${alertTag.key}`;
+      tag.textContent = alertTag.text;
+      tag.title = alertTag.title;
+      chip.appendChild(tag);
+    }
+    el.appendChild(chip);
+  });
+}
+
 function updateDmgRecentSkills() {
   const el = $('dm-recent-skills');
   if (!el) return;
@@ -501,7 +513,6 @@ function updateDmgRecentSkills() {
   const list = (typeof combatRecentSkillCasts === 'function') ? combatRecentSkillCasts() : [];
   const sig = list.map(x => `${x.actor}:${x.school}:${x.type}:${x.threat}:${x.interruptPolicy || ''}:${x.empowered}:${x.aoe ? 1 : 0}:${x.icon}:${x.name}:${x.hits || 0}:${x.target || ''}:${x.status || ''}:${x.damage || 0}:${x.heal || 0}:${x.shield || 0}:${x.taken || 0}:${x.maxAmount || 0}:${x.crits || 0}:${Math.floor((now - (x.ts || 0)) / 2500)}`).join('|');
   updateStageSkillChain(list, now);
-  updateDmgSkillFxGuide(list, now);
   if (sig === _dmRecentSkillSig) return;
   _dmRecentSkillSig = sig;
   el.replaceChildren();
@@ -687,59 +698,6 @@ function combatSummaryVerdictChip(ds, total, healTotal, shieldTotal, takenTotal,
     title:`${killText}复盘: ${advice} ${leader}贡献最高,约 ${Math.round(best * 100)}%。承伤 ${fmt(takenTotal)},覆盖 ${cover >= 0 ? '+' : '-'}${fmt(Math.abs(cover))}。`
   };
 }
-function combatRecentSkillTempoChips(now) {
-  const list = (typeof combatRecentSkillCasts === 'function') ? combatRecentSkillCasts() : [];
-  const fresh = list.filter(x => now - (x.ts || 0) <= 6500);
-  if (!fresh.length) return [];
-  const chips = [];
-  const latest = fresh[0];
-  const latestAge = now - (latest.ts || 0);
-  const latestActor = String(latest.actor || '');
-  const latestSchool = String(latest.school || 'physical');
-  const bossDanger = fresh.find(x => x.actor === 'boss' && (x.type === 'danger' || x.threat === 'high' || x.threat === 'extreme' || x.empowered));
-  if (bossDanger && now - (bossDanger.ts || 0) <= 5200) {
-    chips.push({
-      tone:'danger',
-      text:`高危后摇 ${Math.max(1, Math.ceil((5200 - (now - (bossDanger.ts || 0))) / 1000))}秒`,
-      title:`${bossDanger.icon || ''}${bossDanger.name || '首领技能'}刚刚结算。观察血线,准备治疗、护盾或减伤。`
-    });
-  }
-  const sameSchool = fresh.filter(x => x.actor === latestActor && x.school === latestSchool && x.actor !== 'boss');
-  if (sameSchool.length >= 3 && latestAge <= 4200) {
-    chips.push({
-      tone:'good',
-      text:`${combatSchoolShortName(latestSchool)}连段x${sameSchool.length}`,
-      title:`最近连续释放 ${sameSchool.length} 个${combatSchoolShortName(latestSchool)}系技能,技能节奏正在成型。`
-    });
-  }
-  const supportCount = fresh.filter(x => x.actor !== 'boss' && (x.type === 'heal' || x.type === 'shield' || x.school === 'heal' || x.school === 'shield')).length;
-  if (supportCount >= 2) {
-    chips.push({
-      tone:'good',
-      text:`防护覆盖x${supportCount}`,
-      title:`最近治疗/护盾技能触发 ${supportCount} 次,生存覆盖较稳定。`
-    });
-  }
-  const heroDmg = fresh.some(x => x.actor === 'hero' && (x.damage || 0) > 0);
-  const compDmg = fresh.some(x => x.actor === 'companion' && (x.damage || 0) > 0);
-  if (heroDmg && compDmg) {
-    chips.push({
-      tone:'good',
-      text:'协同集火',
-      title:'主角和随从最近都打出了伤害,集火节奏良好。'
-    });
-  } else {
-    const companionBurst = fresh.filter(x => x.actor === 'companion' && (x.damage || x.heal || x.shield)).length;
-    if (companionBurst >= 2) {
-      chips.push({
-        tone:'info',
-        text:`随从协同x${companionBurst}`,
-        title:`随从最近连续触发 ${companionBurst} 次有效技能。`
-      });
-    }
-  }
-  return chips.slice(0, 2);
-}
 function combatTempoState(now, total, healTotal) {
   const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
   const list = (typeof combatRecentSkillCasts === 'function') ? combatRecentSkillCasts() : [];
@@ -786,307 +744,6 @@ function combatTempoState(now, total, healTotal) {
     return { tone:'safe', label:'防护循环', detail:`支援 x${support.length}`, actionText:'稳住输出', title:`最近 6 秒治疗/护盾技能触发 ${support.length} 次,生存节奏稳定。` };
   }
   return { tone:'steady', label:'平稳输出', detail:freshTotal > 0 ? `伤害 ${fmt(freshTotal)}` : combatRecentSkillEffectText(latest), actionText:'观察读条', title:`最近 6 秒没有明显危险事件。最新技能: ${latest.icon || ''}${latest.name || '技能'}。` };
-}
-function combatTempoActionMeta(stateMeta, now) {
-  if (!stateMeta) return null;
-  if (stateMeta.actionKind === 'defensive' || stateMeta.tone === 'danger') {
-    const defensive = combatAdviceSkillEntries('defensive', now)[0] || null;
-    const heal = combatAdviceSkillEntries('heal', now)[0] || null;
-    const pick = (defensive?.ready ? defensive : null) || (heal?.ready ? heal : null) || defensive || heal;
-    if (pick?.ready) {
-      return {
-        cls:pick.kind === 'heal' ? 'heal ready' : 'defense ready',
-        text:`按 ${pick.sk.name}`,
-        title:`当前节奏承压,点击立即使用 ${pick.sk.name}。`,
-        key:pick.key
-      };
-    }
-    if (pick) {
-      const leftText = Number.isFinite(pick.left) && pick.left > 0 ? `${Math.ceil(pick.left / 1000)}秒` : '缺资源';
-      return {
-        cls:'wait',
-        text:`等 ${leftText}`,
-        title:`${pick.sk.name} 暂时不能用,先留资源并观察血线。`
-      };
-    }
-    return { cls:'wait', text:'留保命', title:'当前节奏承压,优先保留治疗、护盾或减伤。' };
-  }
-  const win = (typeof vulnerabilityWindowState === 'function') ? vulnerabilityWindowState(now) : null;
-  if (win && (stateMeta.tone === 'burst' || stateMeta.tone === 'chain' || stateMeta.tone === 'companion')) {
-    return { cls:'burst', text:'打破绽', title:'目标处于破绽窗口,优先打高伤害技能。' };
-  }
-  const executeWin = (typeof executeWindowState === 'function') ? executeWindowState() : null;
-  if (executeWin && stateMeta.tone !== 'danger') {
-    return { cls:'burst', text:'打终结', title:'目标进入斩杀窗口,优先使用终结技能。' };
-  }
-  if (stateMeta.actionText) return { cls:stateMeta.tone || 'steady', text:stateMeta.actionText, title:stateMeta.title || stateMeta.actionText };
-  return null;
-}
-function stageCombatTempoMoment(fresh, now) {
-  const latest = (fresh || []).find(x => x && now - (x.ts || 0) <= 1800);
-  if (!latest) return null;
-  const actor = String(latest.actor || 'hero');
-  const amount = combatRecentSkillAmountMeta(latest);
-  const status = String(latest.status || '').trim();
-  const name = String(latest.name || '技能').trim();
-  const icon = String(latest.icon || '').trim();
-  const shortName = (icon + name).slice(0, 7);
-  const danger = actor === 'boss' && (latest.type === 'danger' || latest.threat === 'high' || latest.threat === 'extreme' || latest.empowered);
-  if (danger) {
-    const text = amount ? `高危 ${amount.short}` : '高危命中';
-    return { tone:'danger', text, title:`${shortName}: 首领危险技能刚刚结算。` };
-  }
-  if ((latest.crits || 0) > 0 && (latest.maxAmount || latest.damage || 0) > 0) {
-    return { tone:'crit', text:`暴击 ${fmt(latest.maxAmount || latest.damage)}`, title:`${shortName}: 本次技能出现暴击。` };
-  }
-  if (amount) {
-    if (amount.kind === 'heal') return { tone:'heal', text:`治疗 ${amount.short}`, title:`${shortName}: ${amount.title}。` };
-    if (amount.kind === 'shield') return { tone:'shield', text:`护盾 ${amount.short}`, title:`${shortName}: ${amount.title}。` };
-    if (actor === 'companion') return { tone:'companion', text:`随从 ${amount.short}`, title:`${shortName}: 随从技能生效。` };
-  }
-  if (/眩晕|沉默|恐惧|冻结|缴械|减速|控场/.test(status)) return { tone:'control', text:'控场生效', title:`${shortName}: ${status}。` };
-  if (/易伤|易爆|破绽/.test(status)) return { tone:'vuln', text:'破绽打开', title:`${shortName}: ${status}。` };
-  if (latest.hits > 1) return { tone:'hit', text:`命中x${latest.hits}`, title:`${shortName}: 命中多个目标。` };
-  return null;
-}
-function pulseStageCombatTempo(el, tone) {
-  if (!el || typeof document === 'undefined' || document.hidden) return;
-  el.classList.remove('tempo-pulse', 'tempo-pulse-danger', 'tempo-pulse-crit', 'tempo-pulse-heal', 'tempo-pulse-shield');
-  void el.offsetWidth;
-  el.classList.add('tempo-pulse');
-  if (tone) el.classList.add(`tempo-pulse-${String(tone).replace(/[^a-z0-9_-]/gi, '')}`);
-  if (_stageCombatTempoPulseTimer) clearTimeout(_stageCombatTempoPulseTimer);
-  _stageCombatTempoPulseTimer = setTimeout(() => {
-    const node = $('stage-combat-tempo');
-    if (node) node.classList.remove('tempo-pulse', 'tempo-pulse-danger', 'tempo-pulse-crit', 'tempo-pulse-heal', 'tempo-pulse-shield');
-    _stageCombatTempoPulseTimer = null;
-  }, 680);
-}
-function updateDmgCombatTempo(total, healTotal) {
-  const el = $('dm-combat-tempo');
-  if (!el) return;
-  const now = Date.now();
-  const stateMeta = combatTempoState(now, total, healTotal);
-  const action = combatTempoActionMeta(stateMeta, now);
-  const sig = `${stateMeta.tone}:${stateMeta.label}:${stateMeta.detail}:${action?.cls || ''}:${action?.text || ''}:${action?.key || ''}`;
-  if (sig === _dmCombatTempoSig) return;
-  _dmCombatTempoSig = sig;
-  el.className = `dm-combat-tempo ${stateMeta.tone}`;
-  el.title = [stateMeta.title, action?.title].filter(Boolean).join(' ');
-  const actionHtml = action
-    ? (action.key
-      ? `<button type="button" class="dm-combat-tempo-action ${escapeDmgMeterText(action.cls)}" data-action="pressurecast" data-skill="${escapeDmgMeterText(action.key)}" title="${escapeDmgMeterText(action.title || action.text)}">${escapeDmgMeterText(action.text)}</button>`
-      : `<i class="dm-combat-tempo-action ${escapeDmgMeterText(action.cls)}" title="${escapeDmgMeterText(action.title || action.text)}">${escapeDmgMeterText(action.text)}</i>`)
-    : '';
-  el.innerHTML = `<b>${escapeDmgMeterText(stateMeta.label)}</b><span>${escapeDmgMeterText(stateMeta.detail || '')}</span>${actionHtml}`;
-}
-function updateStageCombatTempo(total, healTotal) {
-  const el = $('stage-combat-tempo');
-  if (!el) return;
-  const now = Date.now();
-  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
-  const list = (typeof combatRecentSkillCasts === 'function') ? combatRecentSkillCasts() : [];
-  const fresh = list.filter(x => now - (x.ts || 0) <= 6500);
-  const active = !!(ds?.start || fresh.length || total > 0 || healTotal > 0);
-  if (!active) {
-    if (_stageCombatTempoSig === '') return;
-    _stageCombatTempoSig = '';
-    el.style.display = 'none';
-    el.className = 'stage-combat-tempo idle';
-    el.replaceChildren();
-    return;
-  }
-  const stateMeta = combatTempoState(now, total, healTotal);
-  const action = combatTempoActionMeta(stateMeta, now);
-  const moment = stageCombatTempoMoment(fresh, now);
-  const sig = `${stateMeta.tone}:${stateMeta.label}:${stateMeta.detail}:${moment?.tone || ''}:${moment?.text || ''}:${action?.text || ''}:${action?.cls || ''}:${fresh.length}`;
-  if (sig === _stageCombatTempoSig && el.style.display !== 'none') return;
-  const prevTone = (_stageCombatTempoSig || '').split(':')[0] || '';
-  _stageCombatTempoSig = sig;
-  el.style.display = '';
-  el.className = `stage-combat-tempo ${stateMeta.tone || 'steady'}`;
-  el.title = [stateMeta.title, moment?.title, action?.title].filter(Boolean).join(' ');
-  el.replaceChildren();
-  const label = document.createElement('b');
-  label.textContent = stateMeta.label || '战况';
-  const detail = document.createElement('span');
-  detail.textContent = stateMeta.detail || '';
-  el.append(label, detail);
-  if (moment?.text) {
-    const momentChip = document.createElement('i');
-    momentChip.className = `stage-combat-tempo-moment ${String(moment.tone || 'hit').replace(/[^a-z0-9_-]/gi, '')}`;
-    momentChip.textContent = moment.text;
-    momentChip.title = moment.title || moment.text;
-    el.appendChild(momentChip);
-  }
-  if (action?.text) {
-    const chip = document.createElement('i');
-    chip.className = String(action.cls || stateMeta.tone || 'steady').replace(/[^a-z0-9_ -]/gi, '');
-    chip.textContent = action.text;
-    chip.title = action.title || action.text;
-    el.appendChild(chip);
-  }
-  if (moment || (prevTone && prevTone !== stateMeta.tone)) pulseStageCombatTempo(el, moment?.tone || stateMeta.tone);
-}
-function combatHeatActionMeta(tone, meta, now) {
-  const ui = (typeof bossCastUiState === 'function') ? bossCastUiState(now) : null;
-  if (ui) {
-    if (ui.ready) return { tone:ui.urgent ? 'danger' : 'warn', text:`断 ${ui.ready.sk?.name || '打断'}`, title:`首领正在读条,建议使用 ${ui.ready.sk?.name || '打断技能'}。`, key:ui.ready.key, ready:true };
-    if (ui.responseReady) return { tone:ui.responseReady.kind === 'heal' ? 'heal' : 'defense', text:`保 ${ui.responseReady.sk?.name || '保命'}`, title:`读条无法立刻打断,建议用 ${ui.responseReady.sk?.name || '保命技能'} 覆盖。`, key:ui.responseReady.key, ready:true };
-    return { tone:ui.urgent ? 'danger' : 'warn', text:ui.finalAction || ui.action || '盯读条', title:ui.action || '准备处理首领读条。' };
-  }
-  if (tone === 'danger') {
-    const rec = (typeof combatAdviceRecommendedEntry === 'function') ? combatAdviceRecommendedEntry(now) : null;
-    if (rec?.ready && rec.key) return { tone:rec.kind === 'heal' ? 'heal' : 'defense', text:`按 ${rec.sk?.name || '保命'}`, title:`当前高压,建议使用 ${rec.sk?.name || '保命技能'}。`, key:rec.key, ready:true };
-    return { tone:'danger', text:meta?.coverGap > 0 ? '补覆盖' : '开保命', title:'当前热度来自承伤或首领压力,优先治疗、护盾或减伤。' };
-  }
-  if (tone === 'rescue') return { tone:'heal', text:'稳血线', title:'治疗/护盾正在覆盖伤害,继续稳住血线。' };
-  if (tone === 'burst') return { tone:'burst', text:meta?.bossDanger ? '转处理' : '压爆发', title:meta?.bossDanger ? '爆发同时有首领压力,注意打断或保命。' : '当前输出窗口很好,优先释放高伤害技能。' };
-  if (tone === 'steady') return { tone:'steady', text:'看读条', title:'当前战斗平稳,继续输出并观察首领读条。' };
-  return { tone:'safe', text:'待战', title:'开始战斗后显示热度建议。' };
-}
-function updateDmgCombatHeat(total, healTotal, elapsed) {
-  const el = $('dm-combat-heat');
-  if (!el) return;
-  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
-  const now = Date.now();
-  const fresh = ((typeof combatRecentSkillCasts === 'function') ? combatRecentSkillCasts() : []).filter(x => now - (x.ts || 0) <= 6000);
-  const shieldTotal = (ds?.heroShield || 0) + (ds?.compShield || 0);
-  const takenTotal = (ds?.taken || 0) + (ds?.compTaken || 0);
-  const recentDamage = fresh.filter(x => x.actor === 'hero' || x.actor === 'companion').reduce((n, x) => n + Math.floor(x.damage || 0), 0);
-  const recentCover = fresh.reduce((n, x) => n + Math.floor(x.heal || 0) + Math.floor(x.shield || 0), 0);
-  const recentTaken = fresh.filter(x => x.actor === 'boss' || x.type === 'danger').reduce((n, x) => n + Math.floor(x.damage || x.taken || 0), 0);
-  const hMax = Math.max(1, state?.hero?.hpMax || 1);
-  const dps = elapsed > 0 ? Math.round(total / Math.max(0.001, elapsed)) : 0;
-  const peak = Math.max(1, Math.round(ds?.peakDps || dps || 1));
-  const coverGap = Math.max(0, takenTotal - healTotal - shieldTotal);
-  const bossDanger = fresh.some(x => x.actor === 'boss' && (x.type === 'danger' || x.threat === 'high' || x.threat === 'extreme' || x.empowered));
-  const burstScore = Math.min(1, Math.max(dps / Math.max(1, peak), recentDamage / Math.max(1, hMax * 0.72)));
-  const pressureScore = Math.min(1, Math.max(recentTaken / Math.max(1, hMax * 0.34), coverGap / Math.max(1, hMax * 0.45), bossDanger ? 0.82 : 0));
-  const coverScore = Math.min(1, Math.max(recentCover / Math.max(1, hMax * 0.24), (healTotal + shieldTotal) / Math.max(1, takenTotal || hMax)));
-  let tone = 'idle';
-  let label = '待战';
-  let detail = '等待记录';
-  if (total > 0 || takenTotal > 0 || healTotal > 0 || shieldTotal > 0) {
-    if (pressureScore >= 0.70) {
-      tone = 'danger'; label = '高压'; detail = bossDanger ? '首领压迫' : `缺口 ${fmt(coverGap)}`;
-    } else if (coverScore >= 0.70 && (recentTaken > 0 || takenTotal > 0)) {
-      tone = 'rescue'; label = '救场'; detail = `覆盖 ${fmt(healTotal + shieldTotal)}`;
-    } else if (burstScore >= 0.72 || recentDamage >= hMax * 0.45) {
-      tone = 'burst'; label = '爆发'; detail = `火力 ${fmt(dps)}/秒`;
-    } else {
-      tone = 'steady'; label = '平稳'; detail = dps > 0 ? `火力 ${fmt(dps)}/秒` : '压力很低';
-    }
-  }
-  const heat = Math.max(8, Math.min(100, Math.round(Math.max(burstScore, pressureScore, coverScore * 0.78) * 100)));
-  const sig = `${tone}:${label}:${detail}:${heat}:${dps}:${coverGap}:${recentDamage}:${recentTaken}:${recentCover}`;
-  const action = combatHeatActionMeta(tone, { coverGap, bossDanger, recentTaken, recentDamage, recentCover }, now);
-  const actionSig = `${action?.tone || ''}:${action?.text || ''}:${action?.key || ''}:${action?.ready ? 1 : 0}`;
-  if (`${sig}|${actionSig}` === _dmCombatHeatSig) return;
-  _dmCombatHeatSig = `${sig}|${actionSig}`;
-  el.className = `dm-combat-heat ${tone}`;
-  el.title = `战斗热度: ${label}。当前秒伤 ${fmt(dps)}/秒,近期伤害 ${fmt(recentDamage)},近期承伤 ${fmt(recentTaken)},近期治疗/护盾 ${fmt(recentCover)},本轮生存缺口 ${fmt(coverGap)}。${action ? '建议: ' + (action.title || action.text) : ''}`;
-  const actionHtml = action
-    ? (action.ready && action.key
-      ? `<button type="button" class="dm-heat-action ${escapeDmgMeterText(action.tone)} ready" data-action="pressurecast" data-skill="${escapeDmgMeterText(action.key)}" title="${escapeDmgMeterText((action.title || action.text) + ' 点击立即施放。')}">${escapeDmgMeterText(action.text)}</button>`
-      : `<span class="dm-heat-action ${escapeDmgMeterText(action.tone)}" title="${escapeDmgMeterText(action.title || action.text)}">${escapeDmgMeterText(action.text)}</span>`)
-    : '';
-  el.innerHTML = `<span class="dm-heat-state">${escapeDmgMeterText(label)}</span><span class="dm-heat-rail"><i style="width:${heat}%"></i></span><span class="dm-heat-detail">${escapeDmgMeterText(detail)}</span>${actionHtml}`;
-}
-function updateDmgTacticalStatus(total, healTotal, elapsed) {
-  const el = $('dm-tactics');
-  if (!el) return;
-  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
-  const now = Date.now();
-  const chips = [];
-  const push = (tone, text, title) => {
-    if (!text) return;
-    chips.push({ tone, text, title:title || text });
-  };
-  const ui = (typeof bossCastUiState === 'function') ? bossCastUiState(now) : null;
-  if (ui) {
-    const name = `${ui.cast?.icon || ''}${ui.cast?.name || '读条'}`;
-    const remain = ui.remainMs < 1000 ? `${Math.max(0.1, ui.remainMs / 1000).toFixed(1)}秒` : `${Math.ceil(ui.remainMs / 1000)}秒`;
-    push(ui.urgent ? 'danger' : 'warn', `读条 ${remain}`, `${name}: ${ui.finalAction || ui.action || '准备应对'}`);
-    push(ui.ready ? 'good' : (ui.responseReady ? 'warn' : 'danger'), ui.finalAction || ui.action || '准备应对', `当前建议: ${ui.action || ui.finalAction || '观察'}。`);
-  }
-  const survival = (typeof survivalWindowState === 'function') ? survivalWindowState() : null;
-  if (survival) {
-    const hpText = Math.max(1, Math.round(survival.pct * 100));
-    push(survival.critical ? 'danger' : 'warn', survival.critical ? `急救 ${hpText}%` : `保命 ${hpText}%`, `生命约 ${hpText}%。优先使用治疗、护盾或减伤技能。`);
-  }
-  if (ds && ds.start) {
-    const hMax = Math.max(1, state?.hero?.hpMax || 1);
-    const dtps = (ds.taken || 0) ? Math.round((ds.taken || 0) / Math.max(0.001, elapsed || 1)) : 0;
-    const healPerSec = healTotal > 0 ? Math.round(healTotal / Math.max(0.001, elapsed || 1)) : 0;
-    const netPerSec = Math.max(0, dtps - healPerSec);
-    const netPct = netPerSec / hMax;
-    const topSource = (typeof incomingPressureSource === 'function') ? incomingPressureSource(ds) : null;
-    if (netPct > 0.04) {
-      push('danger', `减伤 ${fmt(netPerSec)}/秒`, `当前净压力约 ${fmt(netPerSec)}/秒。${topSource ? `主要来源: ${topSource.name}。` : '建议开减伤或治疗。'}`);
-    } else if (netPct > 0.018) {
-      push('warn', `承压 ${fmt(netPerSec)}/秒`, `当前净压力约 ${fmt(netPerSec)}/秒。${topSource ? `主要来源: ${topSource.name}。` : '注意保留保命技能。'}`);
-    }
-  }
-  const win = (typeof vulnerabilityWindowState === 'function') ? vulnerabilityWindowState(now) : null;
-  if (win) {
-    const target = win.mon?.bossName || win.mon?.name || '目标';
-    push('good', `破绽 ${(win.left / 1000).toFixed(1)}秒`, `${target} 正处于破绽窗口,优先打高伤害技能。`);
-  }
-  const executeWin = (typeof executeWindowState === 'function') ? executeWindowState() : null;
-  if (executeWin) {
-    const target = executeWin.mon?.bossName || executeWin.mon?.name || '目标';
-    const hpText = Math.max(1, Math.round(executeWin.pct * 100));
-    push('good', `收尾 ${hpText}%`, `${target} 进入斩杀窗口,优先使用终结技能。`);
-  }
-  if (ds?.lastBossCastAt && now - ds.lastBossCastAt < 9000) {
-    const dmg = ds.lastBossCastDamage || 0;
-    push(dmg > 0 ? 'danger' : 'warn', `刚中读条 ${fmt(dmg)}`, `${ds.lastBossCastBoss || '首领'} 的 ${ds.lastBossCastName || '读条'} 刚命中 ${ds.lastBossCastTarget || '目标'}。`);
-  }
-  for (const chip of combatRecentSkillTempoChips(now)) {
-    push(chip.tone, chip.text, chip.title);
-  }
-  if (ds && ds.start) {
-    const shieldTotal = (ds.heroShield || 0) + (ds.compShield || 0);
-    const takenTotal = (ds.taken || 0) + (ds.compTaken || 0);
-    const cover = healTotal + shieldTotal - takenTotal;
-    if (takenTotal > 0 && cover < 0) {
-      const severity = Math.abs(cover) > Math.max(1, takenTotal * 0.28) ? 'danger' : 'warn';
-      push(severity, `生存缺口 ${fmt(Math.abs(cover))}`, `本轮治疗+护盾比承伤少 ${fmt(Math.abs(cover))}。`);
-    }
-    const fails = ds.interruptFails || 0;
-    const ok = ds.interruptSuccesses || 0;
-    if (fails > ok && fails > 0) push('warn', `打断失误 ${fails}`, `本轮打断成功 ${ok} 次,失败 ${fails} 次。`);
-  }
-  if (!chips.length) {
-    if (total > 0) push('good', '输出稳定', '当前没有明显危险事件。');
-    else push('idle', '等待战斗', '开始战斗后这里会显示当前最重要的战斗态势。');
-  }
-  const toneRank = { idle:0, good:1, info:1, warn:2, danger:3 };
-  const overall = chips.reduce((best, x) => (toneRank[x.tone] || 0) > (toneRank[best] || 0) ? x.tone : best, 'idle');
-  const shown = chips.slice(0, 3);
-  const sig = shown.map(x => `${x.tone}:${x.text}`).join('|') + `|${overall}`;
-  if (sig === _dmTacticsSig) return;
-  _dmTacticsSig = sig;
-  el.className = `dm-tactics ${overall}`;
-  el.title = shown.map(x => x.title).join(' ');
-  el.replaceChildren();
-  shown.forEach(chip => {
-    const span = document.createElement('span');
-    span.className = `dm-tactics-chip ${chip.tone}`;
-    span.textContent = chip.text;
-    span.title = chip.title;
-    el.appendChild(span);
-  });
-}
-function deathRecapAdviceShort(recap) {
-  const cause = String(recap?.cause || '');
-  if (cause.includes('爆发')) return '留减伤或打断';
-  if (cause.includes('持续')) return '补防御和治疗';
-  if (cause.includes('治疗')) return '换治疗/护盾随从';
-  if (cause.includes('小伤害')) return '先清召唤物';
-  const advice = String(recap?.advice || '').split(/[。.!]/)[0].trim();
-  return advice || '调整保命技能';
 }
 function combatAdviceSkillEntries(kind, now) {
   const c = (typeof getCls === 'function') ? getCls() : null;
@@ -1181,69 +838,6 @@ function combatCastKitMeta(label, entries, opts) {
     title:`有${label}技能,但当前资源不足。最快候选: ${best.sk?.name || '技能'}。`
   };
 }
-function updateDmgCastKit(now) {
-  const el = $('dm-cast-kit');
-  if (!el) return;
-  const interruptMeta = combatCastKitMeta('打断', combatAdviceInterruptEntries(now), { readyTone:'danger', emptyAdvice:'高危读条会更难处理。' });
-  const healMeta = combatCastKitMeta('治疗', combatAdviceSkillEntries('heal', now), { readyTone:'heal', emptyAdvice:'低血线时会缺少直接抬血手段。' });
-  const defenseMeta = combatCastKitMeta('减伤', combatAdviceSkillEntries('defensive', now), { readyTone:'defense', emptyAdvice:'不可断读条更需要护盾或减伤覆盖。' });
-  const metas = [interruptMeta, healMeta, defenseMeta];
-  const sig = metas.map(x => `${x.tone}:${x.text}`).join('|');
-  if (sig === _dmCastKitSig) return;
-  _dmCastKitSig = sig;
-  el.replaceChildren();
-  const title = document.createElement('span');
-  title.className = 'dm-cast-kit-title';
-  title.textContent = '应对';
-  title.title = '当前技能栏面对首领读条时的准备度。';
-  el.appendChild(title);
-  metas.forEach(meta => {
-    const chip = document.createElement('span');
-    chip.className = `dm-cast-kit-chip ${meta.tone}`;
-    chip.textContent = meta.text;
-    chip.title = meta.title;
-    el.appendChild(chip);
-  });
-}
-function combatPressureActionChip(meta, now) {
-  const cls = meta?.cls || 'safe';
-  const danger = cls === 'danger';
-  const warn = cls === 'warn';
-  const active = danger || warn || meta?.netPerSec > 0 || meta?.compNetPerSec > 0;
-  if (!active) return { tone:'safe', text:'稳住输出', title:'当前净压力很低,继续输出即可。' };
-  const heal = combatAdviceSkillEntries('heal', now)[0] || null;
-  const defensive = combatAdviceSkillEntries('defensive', now)[0] || null;
-  const preferHeal = !!meta?.compDanger || meta?.hpPct < 0.58 || (meta?.compNetPerSec || 0) > (meta?.netPerSec || 0);
-  const ordered = preferHeal ? [heal, defensive] : [defensive, heal];
-  const ready = ordered.find(x => x?.ready);
-  if (ready) {
-    const skText = `${ready.sk.name || ''} ${ready.sk.desc || ''} ${ready.sk.buff || ''}`;
-    const pureHeal = ready.sk.type === 'heal' || ((ready.sk.heal || ready.sk.healPct) && !ready.sk.mul && !ready.sk.interruptCast && !(typeof isDefensiveSkill === 'function' && isDefensiveSkill(ready.key, ready.sk)) && /治疗|恢复|圣疗|愈合|链疗|宁静|生命/.test(skText));
-    return {
-      tone:pureHeal ? 'heal' : 'defense',
-      text:`按 ${ready.sk.name}`,
-      title:`建议现在使用 ${ready.sk.name},处理当前${preferHeal ? '血线' : '承伤'}压力。`,
-      key:ready.key,
-      ready:true
-    };
-  }
-  const wait = ordered.find(x => x && Number.isFinite(x.left) && x.left > 0);
-  if (danger) {
-    return {
-      tone:'danger',
-      text:wait ? `撑${Math.ceil(wait.left / 1000)}秒` : '补保命',
-      title:wait ? `${wait.sk.name} 还差 ${Math.ceil(wait.left / 1000)} 秒,先用其他保命手段或尽快结束战斗。` : '当前压力危险,优先治疗、护盾、减伤或切换更稳的随从。'
-    };
-  }
-  if (warn) {
-    return {
-      tone:'warn',
-      text:wait ? `留 ${wait.sk.name}` : '留保命',
-      title:wait ? `${wait.sk.name} 即将成为关键技能,先不要浪费防护窗口。` : '压力开始抬升,保留治疗或防御技能。'
-    };
-  }
-  return { tone:'safe', text:'稳住输出', title:'压力可控,继续输出并保留关键保命技能。' };
-}
 function combatAdviceSourceShort(source) {
   const raw = String(source || '').replace(/^随从:/, '随从承伤:').trim();
   if (!raw) return '';
@@ -1299,275 +893,6 @@ function combatAdviceSkillPrompt(skillKey, sk, now, cdMs) {
     recommended:ready,
     timerPct:ready ? 100 : 38
   };
-}
-function updateCombatReactionAdvice() {
-  const el = $('dm-reaction');
-  if (!el) return;
-  const now = Date.now();
-  const ui = (typeof bossCastUiState === 'function') ? bossCastUiState(now) : null;
-  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
-  let cls = 'idle';
-  let text = '稳定输出';
-  let title = '当前没有需要立即处理的战斗事件。';
-  let actionEntry = null;
-  if (ui) {
-    const remain = Math.max(0, Math.ceil((ui.remainMs || 0) / 1000));
-    const remainText = ui.finalWindow && ui.remainMs < 1000 ? `${Math.max(0.1, ui.remainMs / 1000).toFixed(1)}秒` : `${remain}秒`;
-    const castName = `${ui.cast?.icon || ''}${ui.cast?.name || '施法'}`;
-    const readySkill = ui.ready?.sk?.name || '';
-    const responseSkill = ui.responseReady?.sk?.name || '';
-    const responseKind = ui.responseReady?.kind === 'heal' ? '治疗' : '减伤';
-    const finalPrefix = ui.finalWindow ? '最后窗口' : '';
-    if (ui.canInterrupt) {
-      if (ui.ready) {
-        cls = ui.urgent ? 'danger' : 'warn';
-        text = ui.finalWindow
-          ? `${finalPrefix} · ${ui.finalAction || '按打断'} · ${remainText}`
-          : `${ui.urgent ? '立刻打断' : '可打断'} · ${readySkill || castName} · ${remainText}`;
-        title = `${ui.action || '点击打断技能处理这次读条。'} 当前读条: ${castName}。`;
-      } else if (ui.urgent) {
-        cls = ui.responseReady ? 'warn' : 'danger';
-        text = ui.finalWindow
-          ? `${finalPrefix} · ${ui.finalAction || '硬吃保命'} · ${remainText}`
-          : ui.responseReady
-            ? `打断未就绪 · ${responseKind}${responseSkill ? ' ' + responseSkill : ''} · ${remainText}`
-            : `打断未就绪 · 减伤/治疗 · ${remainText}`;
-        title = `${ui.action || '高危读条无法立刻打断,优先用保命技能覆盖。'} 当前读条: ${castName}。`;
-      } else {
-        cls = 'warn';
-        text = ui.finalWindow
-          ? `${finalPrefix} · ${ui.finalAction || '看情况断'} · ${remainText}`
-          : ui.responseReady
-            ? `可硬吃 · ${responseKind}${responseSkill ? ' ' + responseSkill : ''} · ${remainText}`
-            : `等打断/准备硬吃 · ${remainText}`;
-        title = `${ui.action || '普通读条,可等待打断或准备承受。'} 当前读条: ${castName}。`;
-      }
-    } else {
-      cls = ui.responseReady ? 'warn' : 'danger';
-      text = ui.finalWindow
-        ? `${finalPrefix} · ${ui.finalAction || '开保命'} · ${remainText}`
-        : ui.responseReady
-          ? `开${responseKind} · ${responseSkill || castName} · ${remainText}`
-          : `不可断 · ${castName} · ${remainText}`;
-      title = `${ui.action || '这次读条不可打断,用治疗、护盾或减伤覆盖。'} 当前读条: ${castName}。`;
-    }
-  } else {
-    const hMax = Math.max(1, state?.hero?.hpMax || 1);
-    const hpPct = Math.max(0, state?.hp || 0) / hMax;
-    const compStats = (typeof computeCompanionStats === 'function') ? computeCompanionStats() : null;
-    const compAlive = !!compStats && state?._compHp != null && !(typeof compDowned === 'function' && compDowned());
-    const compPct = compAlive ? Math.max(0, state._compHp || 0) / Math.max(1, compStats.hpMax || 1) : 1;
-    const healSkill = combatAdviceSkillText('heal', now);
-    const defSkill = combatAdviceSkillText('defensive', now);
-    const survivalSkill = healSkill || defSkill;
-    const takenTotal = (ds?.taken || 0) + (ds?.compTaken || 0);
-    const coverTotal = (ds?.heroHeal || 0) + (ds?.compHeal || 0) + (ds?.heroShield || 0) + (ds?.compShield || 0);
-    const coverGap = takenTotal - coverTotal;
-    const topSource = incomingPressureSource(ds);
-    const sourceText = combatAdviceSourceShort(topSource?.name || '');
-    const sourceCounter = topSource ? pressureSourceCounterAdvice(topSource.name, ds) : '';
-    const lastHit = Array.isArray(ds?.recentTakenHits) ? ds.recentTakenHits[0] : null;
-    if (hpPct < 0.32) {
-      cls = 'danger';
-      text = `先保命 · ${survivalSkill || '治疗/减伤'}`;
-      title = `主角生命较低,先用治疗、护盾或减伤技能稳定血线。${sourceText ? ' 主要压力来自: ' + sourceText + '。' : ''}`;
-    } else if (compAlive && compPct < 0.34) {
-      cls = 'danger';
-      text = `随从告急 · ${healSkill || defSkill || '治疗/护卫'}`;
-      title = `随从生命较低,治疗或切换护卫节奏能避免倒地。${sourceText ? ' 主要压力来自: ' + sourceText + '。' : ''}`;
-    } else if (hpPct < 0.58) {
-      cls = 'warn';
-      text = survivalSkill ? `血线偏低 · ${survivalSkill}` : '血线偏低 · 留保命';
-      title = '主角血线偏低,保留治疗或防御技能应对下一次读条。';
-    } else if (compAlive && compPct < 0.58) {
-      cls = 'warn';
-      text = healSkill ? `随从吃紧 · ${healSkill}` : '随从吃紧 · 留治疗';
-      title = '随从承压,留意治疗随从或护盾类技能。';
-    } else if (coverGap > Math.max(hMax * 0.20, takenTotal * 0.24) && takenTotal > 0) {
-      cls = 'warn';
-      text = `${lastHit?.boss ? '首领压血' : '承伤偏高'} · ${defSkill || healSkill || '补防护'}`;
-      title = `本场承伤比治疗+护盾多 ${fmt(coverGap)}。${sourceText ? '主要压力来自: ' + sourceText + '。' : ''}`;
-    } else if ((ds?.interruptFails || 0) > Math.max(1, ds?.interruptSuccesses || 0)) {
-      cls = 'warn';
-      text = '打断失误偏多 · 盯读条';
-      title = `本场打断成功 ${ds?.interruptSuccesses || 0} 次,失败 ${ds?.interruptFails || 0} 次。优先处理高危读条。`;
-    } else if (sourceText && takenTotal > 0 && coverGap > 0) {
-      cls = 'idle';
-      text = `稳住 · ${sourceCounter || '留保命'} · ${sourceText}`;
-      title = `目前可继续输出,但本场主要承伤来源是 ${sourceText}。建议: ${sourceCounter || '下次遇到同类技能可留减伤或治疗'}。`;
-    }
-    actionEntry = combatAdviceRecommendedEntry(now);
-  }
-  if (ui?.finalWindow && cls !== 'idle') cls += ' final';
-  el.className = `dm-reaction ${cls}`;
-  el.title = title;
-  const canAct = !ui && cls !== 'idle' && actionEntry?.ready && actionEntry?.key && actionEntry?.sk;
-  const sig = `${cls}|${text}|${canAct ? actionEntry.key + ':' + actionEntry.sk.name : ''}`;
-  if (el.dataset.sig === sig) return;
-  el.dataset.sig = sig;
-  if (canAct) {
-    el.innerHTML = `<span class="dm-reaction-text">${escapeDmgMeterText(text)}</span><button type="button" class="dm-reaction-action ${actionEntry.kind === 'heal' ? 'heal' : 'defense'}" data-action="pressurecast" data-skill="${escapeDmgMeterText(actionEntry.key)}" title="${escapeDmgMeterText('建议立即使用 ' + (actionEntry.sk.name || '技能') + ': ' + (actionEntry.reason || '处理当前压力'))}">按 ${escapeDmgMeterText(actionEntry.sk.name || '技能')}</button>`;
-  } else {
-    el.textContent = text;
-  }
-}
-function updateDmgLastHit() {
-  const el = $('dm-last-hit');
-  if (!el) return;
-  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
-  const legacyHit = () => {
-    const heroAt = ds?.lastTakenAt || 0;
-    const compAt = ds?.lastCompTakenAt || 0;
-    if (!heroAt && !compAt) return null;
-    const target = compAt > heroAt ? '随从' : '主角';
-    return {
-      target,
-      amount:target === '随从' ? (ds.lastCompTakenAmount || 0) : (ds.lastTakenAmount || 0),
-      at:target === '随从' ? compAt : heroAt,
-      source:target === '随从' ? (ds.lastCompTakenSource || '敌人') : (ds.lastTakenSource || '敌人'),
-      skill:target === '随从' ? (ds.lastCompTakenSkill || '') : (ds.lastTakenSkill || ''),
-      boss:target === '随从' ? !!ds.lastCompTakenBoss : !!ds.lastTakenBoss
-    };
-  };
-  const hits = Array.isArray(ds?.recentTakenHits) && ds.recentTakenHits.length ? ds.recentTakenHits : [legacyHit()].filter(Boolean);
-  if (!ds || !hits.length) {
-    el.className = 'dm-last-hit idle';
-    el.dataset.sig = '';
-    el.textContent = '-';
-    el.removeAttribute('title');
-    return;
-  }
-  const now = Date.now();
-  const compMax = Math.max(1, ((typeof computeCompanionStats === 'function') ? computeCompanionStats()?.hpMax : 1) || 1);
-  const heroMax = Math.max(1, state?.hero?.hpMax || 1);
-  const meta = hits.slice(0, 4).map((hit, idx) => {
-    const target = String(hit.target || '主角');
-    const amount = Math.max(0, Math.floor(hit.amount || 0));
-    const maxHp = target === '随从' ? compMax : heroMax;
-    const pct = amount / maxHp;
-    const tone = hit.boss || pct >= 0.16 ? 'danger' : (pct >= 0.07 ? 'warn' : 'idle');
-    const ago = hit.at ? Math.max(0, Math.floor((now - hit.at) / 1000)) : 0;
-    const agoText = ago < 60 ? `${ago}秒` : `${Math.floor(ago / 60)}分`;
-    const sourceText = [hit.source || '敌人', hit.skill || ''].filter(Boolean).join(' · ');
-    return { target, amount, tone, agoText, sourceText, latest:idx === 0 };
-  });
-  let cls = meta.some(x => x.tone === 'danger') ? 'danger' : (meta.some(x => x.tone === 'warn') ? 'warn' : 'idle');
-  const html = meta.map(hit => `<span class="dm-last-hit-chip ${hit.tone}${hit.latest ? ' latest' : ''}"><span class="dm-last-hit-target">${escapeDmgMeterText(hit.target)}</span><span class="dm-last-hit-amount">-${fmt(hit.amount)}</span><span class="dm-last-hit-source">${escapeDmgMeterText(hit.sourceText || '未知来源')}</span><span class="dm-last-hit-ago">${escapeDmgMeterText(hit.agoText)}</span></span>`).join('');
-  el.className = `dm-last-hit ${cls}`;
-  if (el.dataset.sig !== html) {
-    el.dataset.sig = html;
-    el.innerHTML = html;
-  }
-  el.title = '最近承伤: ' + meta.map(hit => `${hit.target} -${fmt(hit.amount)} (${hit.sourceText || '未知来源'}, ${hit.agoText}前)`).join(' / ');
-}
-function escapeDmgMeterText(value) {
-  return String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({
-    '&':'&amp;',
-    '<':'&lt;',
-    '>':'&gt;',
-    '"':'&quot;',
-    "'":'&#39;'
-  }[ch]));
-}
-function incomingPressureSource(ds) {
-  if (!ds) return null;
-  const combined = {};
-  const addMap = (map, prefix) => {
-    for (const [raw, amount] of Object.entries(map || {})) {
-      const name = String(raw || '').trim();
-      const value = Math.max(0, amount || 0);
-      if (!name || value <= 0) continue;
-      const key = `${prefix}${name}`;
-      combined[key] = (combined[key] || 0) + value;
-    }
-  };
-  addMap(ds.takenSources, '');
-  addMap(ds.compTakenSources, '随从:');
-  const entries = Object.entries(combined).sort((a, b) => b[1] - a[1]);
-  if (!entries.length) return null;
-  return { name:entries[0][0], amount:entries[0][1] };
-}
-function compactPressureSourceName(name) {
-  const raw = String(name || '').replace(/^随从:/, '随从·').trim();
-  if (!raw) return '未知';
-  const parts = raw.split('·').filter(Boolean);
-  const label = parts.length >= 2 ? `${parts[0]}·${parts[parts.length - 1]}` : raw;
-  const chars = Array.from(label);
-  return chars.length > 9 ? chars.slice(0, 8).join('') + '…' : label;
-}
-function pressureSourceCounterAdvice(source, ds) {
-  const raw = String(source || '').trim();
-  if (!raw) return '观察压力来源';
-  const recentBossCast = ds?.lastBossCastName && raw.includes(ds.lastBossCastName);
-  if (/随从:/.test(raw)) return '护随从';
-  if (recentBossCast || /读条|施法|裂隙|处刑|陨石|风暴|收割|虹吸|禁令|敕令|点名|爆发|毁灭|末日/.test(raw)) return '优先打断/减伤';
-  if (/持续|瘟疫|流血|灼烧|燃烧|中毒|腐蚀|凋零|衰老/.test(raw)) return '补治疗';
-  if (/召唤|援军|镜像|仆从|小怪/.test(raw)) return '先清召唤物';
-  if (/易伤|破绽|易爆|虚弱/.test(raw)) return '等减益';
-  return '留治疗/减伤';
-}
-function updateDmgLastHeal() {
-  const el = $('dm-last-heal');
-  if (!el) return;
-  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
-  if (!ds || (!ds.lastHeroHealAt && !ds.lastCompHealAt)) {
-    el.className = 'dm-last-heal idle';
-    el.textContent = '-';
-    el.removeAttribute('title');
-    return;
-  }
-  const heroAt = ds.lastHeroHealAt || 0;
-  const compAt = ds.lastCompHealAt || 0;
-  const source = compAt > heroAt ? '随从' : '主角';
-  const amount = source === '随从' ? (ds.lastCompHealAmount || 0) : (ds.lastHeroHealAmount || 0);
-  const at = source === '随从' ? compAt : heroAt;
-  const skill = source === '随从' ? (ds.lastCompHealSkill || '') : (ds.lastHeroHealSkill || '');
-  const ago = at ? Math.max(0, Math.floor((Date.now() - at) / 1000)) : 0;
-  const agoText = ago < 60 ? `${ago}秒前` : `${Math.floor(ago / 60)}分钟前`;
-  const targetText = source === '随从' ? '随从支援' : '主角治疗';
-  const text = `${targetText} +${fmt(amount)}${skill ? ' · ' + skill : ''}`;
-  el.className = `dm-last-heal ${source === '随从' ? 'companion' : 'hero'}`;
-  el.textContent = text;
-  el.title = `最近治疗: ${targetText} 在${agoText}恢复 ${fmt(amount)} 点生命。${skill ? '来源: ' + skill + '。' : ''}`;
-}
-function updateDmgLastShield() {
-  const el = $('dm-last-shield');
-  if (!el) return;
-  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
-  if (!ds || (!ds.lastHeroShieldAt && !ds.lastCompShieldAt)) {
-    el.className = 'dm-last-shield idle';
-    el.textContent = '-';
-    el.removeAttribute('title');
-    return;
-  }
-  const heroAt = ds.lastHeroShieldAt || 0;
-  const compAt = ds.lastCompShieldAt || 0;
-  const source = compAt > heroAt ? '随从' : '主角';
-  const amount = source === '随从' ? (ds.lastCompShieldAmount || 0) : (ds.lastHeroShieldAmount || 0);
-  const at = source === '随从' ? compAt : heroAt;
-  const skill = source === '随从' ? (ds.lastCompShieldSkill || '') : (ds.lastHeroShieldSkill || '');
-  const ago = at ? Math.max(0, Math.floor((Date.now() - at) / 1000)) : 0;
-  const agoText = ago < 60 ? `${ago}秒前` : `${Math.floor(ago / 60)}分钟前`;
-  const label = source === '随从' ? '随从护盾' : '主角护盾';
-  const text = `${label} +${fmt(amount)}${skill ? ' · ' + skill : ''}`;
-  el.className = `dm-last-shield ${source === '随从' ? 'companion' : 'hero'}`;
-  el.textContent = text;
-  el.title = `最近护盾: ${label} 在${agoText}获得 ${fmt(amount)} 点护盾。${skill ? '来源: ' + skill + '。' : ''}`;
-}
-function topDamageSkillEntry() {
-  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
-  if (!ds) return null;
-  let best = null;
-  const scan = (map, who) => {
-    Object.entries(map || {}).forEach(([name, amount]) => {
-      const value = Math.floor(amount || 0);
-      if (value <= 0) return;
-      if (!best || value > best.amount) best = { who, name, amount: value };
-    });
-  };
-  scan(ds.heroSkills, '主角');
-  scan(ds.compSkills, '随从');
-  return best;
 }
 function updateDmgTopSkill(total) {
   const el = $('dm-top-skill');
@@ -1697,306 +1022,6 @@ function bossCastCounterChip(ui) {
     title:'当前技能栏没有可用打断;高危读条建议补一个打断或控制技能。'
   };
 }
-function updateDmgBossCastReadout() {
-  const row = $('dm-boss-cast-row');
-  const el = $('dm-boss-cast');
-  if (!row || !el) return;
-  const cast = (typeof bossCasting !== 'undefined') ? bossCasting : null;
-  if (!cast) {
-    row.style.display = 'none';
-    el.className = 'dm-boss-cast idle';
-    el.textContent = '-';
-    el.removeAttribute('title');
-    return;
-  }
-  const now = Date.now();
-  const elapsed = Math.max(0, now - (cast.startTime || now));
-  const duration = Math.max(1, cast.duration || 1);
-  const remainMs = Math.max(0, duration - elapsed);
-  const remain = (remainMs / 1000).toFixed(1);
-  const pct = Math.min(100, Math.max(0, elapsed / duration * 100));
-  const threatMeta = (typeof bossCastThreatMeta === 'function') ? bossCastThreatMeta(cast) : { label: '危险' };
-  const interruptText = (typeof bossInterruptTag === 'function') ? bossInterruptTag(cast) : (cast.interruptPolicy === 'none' ? '不可断' : '可断');
-  const ui = (typeof bossCastUiState === 'function') ? bossCastUiState(now) : null;
-  const isDamage = (typeof cast.mul === 'number' && cast.mul > 0) && cast.type !== 'heal' && cast.type !== 'buff';
-  const target = cast._targetDesc || (isDamage ? (cast.aoe ? '全体' : '你') : '自身');
-  const finalWindow = pct >= 70 || remainMs <= 1000;
-  const mustKick = cast.interruptPolicy === 'hard' || (!!cast._empowered && cast.interruptPolicy !== 'none');
-  let cls = 'idle';
-  let action = '观察';
-  if (cast.interruptPolicy === 'none') {
-    cls = finalWindow ? 'warn' : 'locked';
-    action = isDamage ? '开减伤' : '留意';
-  } else if (mustKick || cast.threat === 'high' || cast.threat === 'extreme') {
-    cls = finalWindow ? 'danger final' : 'danger';
-    action = finalWindow ? '立刻打断' : '准备打断';
-  } else if (cast.interruptPolicy === 'soft' || cast.threat === 'medium') {
-    cls = finalWindow ? 'warn final' : 'warn';
-    action = finalWindow ? '现在打断' : '可打断';
-  } else {
-    cls = finalWindow ? 'warn' : 'idle';
-    action = finalWindow ? '看情况断' : '观察';
-  }
-  const icon = cast.icon || '✨';
-  const name = cast.name || '施法';
-  row.style.display = '';
-  el.className = `dm-boss-cast ${cls}`;
-  const suggestion = finalWindow ? (ui?.finalAction || action) : (ui?.action || action);
-  const text = `${icon}${name} · 对${target}`;
-  const effectChip = bossCastEffectChip(cast);
-  const consequenceChip = bossCastConsequenceChip(cast);
-  const counterChip = bossCastCounterChip(ui);
-  const readyChips = [effectChip, consequenceChip, counterChip].filter(Boolean).concat(bossCastReadinessChips(ui));
-  const chipSig = readyChips.map(x => `${x.cls}:${x.text}`).join('|');
-  const sig = `${text}|${remain}|${suggestion}|${chipSig}|${finalWindow ? '1' : '0'}`;
-  if (el.dataset.castSig !== sig) {
-    el.dataset.castSig = sig;
-    el.replaceChildren();
-    const main = document.createElement('span');
-    main.className = 'dm-boss-cast-main';
-    main.textContent = text;
-    const clock = document.createElement('span');
-    clock.className = 'dm-boss-cast-clock';
-    clock.textContent = remain + 's';
-    const tip = document.createElement('span');
-    tip.className = 'dm-boss-cast-action';
-    tip.textContent = suggestion;
-    el.append(main, clock, tip);
-    for (const meta of readyChips) {
-      const chip = document.createElement(meta.ready && meta.key ? 'button' : 'span');
-      chip.className = `dm-boss-cast-chip ${meta.cls}`;
-      chip.textContent = meta.text;
-      chip.title = meta.title;
-      if (meta.ready && meta.key) {
-        chip.dataset.action = 'bosscastskill';
-        chip.dataset.skill = meta.key;
-      }
-      el.appendChild(chip);
-    }
-  }
-  el.title = `首领读条: ${cast.bossName || 'BOSS'} 的 ${name}。目标: ${target}。威胁: ${threatMeta.label}。打断: ${interruptText}。建议: ${suggestion}。剩余 ${remain} 秒。`;
-}
-function updateDmgLastInterrupt() {
-  const row = $('dm-last-interrupt-row');
-  const el = $('dm-last-interrupt');
-  if (!el) return;
-  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
-  if (!ds || !ds.lastInterruptAt) {
-    if (row) row.style.display = 'none';
-    el.className = 'dm-last-interrupt idle';
-    el.textContent = '-';
-    el.removeAttribute('title');
-    return;
-  }
-  const ago = Math.max(0, Math.floor((Date.now() - ds.lastInterruptAt) / 1000));
-  if (ago > 14) {
-    if (row) row.style.display = 'none';
-    el.className = 'dm-last-interrupt idle';
-    el.textContent = `近期无打断 · 成功${ds.interruptSuccesses || 0}/失败${ds.interruptFails || 0}`;
-    el.title = `本轮打断成功 ${ds.interruptSuccesses || 0} 次,失败 ${ds.interruptFails || 0} 次。`;
-    return;
-  }
-  const result = ds.lastInterruptResult || 'miss';
-  const map = {
-    perfect: ['perfect', '完美打断'],
-    success: ['success', '打断成功'],
-    soft: ['soft', '打断成功 · 有余波'],
-    immune: ['immune', '不可打断'],
-    miss: ['miss', '无读条']
-  };
-  const meta = map[result] || map.miss;
-  const skill = ds.lastInterruptSkill || '打断';
-  const cast = ds.lastInterruptCast || '施法';
-  const boss = ds.lastInterruptBoss || 'BOSS';
-  if (row) row.style.display = '';
-  el.className = `dm-last-interrupt ${meta[0]}`;
-  el.textContent = `${meta[1]} · ${skill} → ${cast} · ${ago}s前`;
-  el.title = `最近打断: ${skill} 对 ${boss} 的 ${cast}。结果: ${meta[1]}。本轮成功 ${ds.interruptSuccesses || 0} 次,失败 ${ds.interruptFails || 0} 次。`;
-}
-function updateDmgBossCastOutcome() {
-  const row = $('dm-boss-cast-outcome-row');
-  const el = $('dm-boss-cast-outcome');
-  if (!el) return;
-  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
-  if (!ds || !ds.lastBossCastAt) {
-    if (row) row.style.display = 'none';
-    el.className = 'dm-boss-cast-outcome idle';
-    el.textContent = '-';
-    el.removeAttribute('title');
-    return;
-  }
-  const ago = Math.max(0, Math.floor((Date.now() - ds.lastBossCastAt) / 1000));
-  if (ago > 16) {
-    const hits = ds.bossCastHits || 0;
-    const avg = hits > 0 ? Math.round((ds.bossCastTotalDamage || 0) / hits) : 0;
-    if (row) row.style.display = 'none';
-    el.className = 'dm-boss-cast-outcome idle';
-    el.textContent = hits ? `近期无结算 · ${hits}次/均${fmt(avg)}` : '-';
-    el.title = hits ? `本轮首领读条结算 ${hits} 次,总伤害 ${fmt(ds.bossCastTotalDamage || 0)},平均 ${fmt(avg)}。` : '';
-    return;
-  }
-  const damage = ds.lastBossCastDamage || 0;
-  const heroMax = Math.max(1, state?.hero?.hpMax || 1);
-  const pct = damage / heroMax;
-  const cls = ds.lastBossCastEmpowered || pct >= 0.22 ? 'danger' : (pct >= 0.10 ? 'warn' : 'hit');
-  const name = ds.lastBossCastName || '首领技能';
-  const target = ds.lastBossCastTarget || '目标';
-  const kind = ds.lastBossCastKind === 'dot' ? '持续' : (ds.lastBossCastKind === 'aoe' ? '群体' : '单体');
-  const advice = bossCastOutcomeAdvice({
-    name,
-    target,
-    damage,
-    kind:ds.lastBossCastKind,
-    empowered:ds.lastBossCastEmpowered,
-    threat:ds.lastBossCastThreat || ''
-  });
-  if (row) row.style.display = '';
-  el.className = `dm-boss-cast-outcome ${cls}`;
-  el.textContent = `${kind}命中 · ${name} → ${target} · ${fmt(damage)} · 下次:${advice}`;
-  el.title = `最近首领读条结算: ${ds.lastBossCastBoss || 'BOSS'} 的 ${name},命中 ${target},造成 ${fmt(damage)} 点伤害,${ago}秒前。下次建议: ${advice}。`;
-}
-function bossCastOutcomeAdvice(item) {
-  const now = Date.now();
-  const damage = item?.damage || 0;
-  const heroMax = Math.max(1, state?.hero?.hpMax || 1);
-  const pct = damage / heroMax;
-  const interrupt = combatAdviceInterruptSkillText(now);
-  const defensive = combatAdviceSkillText('defensive', now);
-  const heal = combatAdviceSkillText('heal', now);
-  if (item?.empowered || item?.threat === 'extreme' || item?.threat === 'high') return interrupt || '下次优先打断';
-  if (item?.kind === 'aoe') return defensive || heal || '群体前开减伤';
-  if (item?.kind === 'dot') return heal || defensive || '持续伤害交治疗';
-  if (String(item?.target || '').includes('随从')) return heal || defensive || '照看随从血线';
-  if (pct >= 0.20) return defensive || heal || '留保命硬吃';
-  if (pct >= 0.10) return heal || defensive || '提前稳血';
-  return '压力可控';
-}
-function bossCastHistoryConsequenceText(item) {
-  const kind = String(item?.kind || '');
-  const target = String(item?.target || '');
-  const threat = String(item?.threat || '');
-  const damage = Math.max(0, Math.floor(item?.damage || 0));
-  const heroMax = Math.max(1, state?.hero?.hpMax || 1);
-  const pct = damage / heroMax;
-  if (item?.empowered || threat === 'extreme') return kind === 'dot' ? '灭团持续' : '灭团压血';
-  if (threat === 'high') return kind === 'aoe' ? '高危全体' : '高危点名';
-  if (kind === 'dot') return '持续掉血';
-  if (kind === 'aoe') return '群体压血';
-  if (target.includes('随从')) return '随从承压';
-  if (target.includes('召唤')) return '召唤物挡刀';
-  if (pct >= 0.22) return '重击压血';
-  if (pct >= 0.10) return '中等伤害';
-  return damage > 0 ? '轻度伤害' : '机制结算';
-}
-function updateDmgBossCastHistory() {
-  const el = $('dm-boss-cast-history');
-  if (!el) return 0;
-  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
-  const history = Array.isArray(ds?.bossCastHistory) ? ds.bossCastHistory.slice(0, 3) : [];
-  if (!history.length) {
-    el.style.display = 'none';
-    el.replaceChildren();
-    return 0;
-  }
-  el.style.display = 'block';
-  const sig = history.map(x => `${x.at}:${Math.max(0, Math.floor((Date.now() - (x.at || 0)) / 1000))}:${x.name}:${x.target}:${x.damage}:${x.kind}:${x.empowered}:${x.threat}`).join('|');
-  if (el.dataset.sig === sig) return history.length;
-  el.dataset.sig = sig;
-  el.replaceChildren();
-  const title = document.createElement('div');
-  title.className = 'dm-boss-cast-history-title';
-  title.textContent = `读条回放 · 最近${history.length}`;
-  el.appendChild(title);
-  history.forEach(item => {
-    const row = document.createElement('div');
-    const damage = item.damage || 0;
-    const heroMax = Math.max(1, state?.hero?.hpMax || 1);
-    const cls = item.empowered || damage >= heroMax * 0.22 ? 'danger' : (damage >= heroMax * 0.10 ? 'warn' : 'hit');
-    const kind = item.kind === 'dot' ? '持续' : (item.kind === 'aoe' ? '群体' : '单体');
-    const ago = item.at ? Math.max(0, Math.floor((Date.now() - item.at) / 1000)) : 0;
-    const consequence = bossCastHistoryConsequenceText(item);
-    const advice = bossCastOutcomeAdvice(item);
-    row.className = `dm-boss-cast-history-item ${cls}`;
-    row.title = `${item.boss || 'BOSS'} 的 ${item.name || '首领技能'} 命中 ${item.target || '目标'},造成 ${fmt(damage)}。后果: ${consequence}。下次建议: ${advice}。`;
-    const kindEl = document.createElement('b');
-    kindEl.textContent = kind;
-    const nameEl = document.createElement('span');
-    nameEl.className = 'dm-boss-cast-history-name';
-    nameEl.textContent = `${item.name || '首领技能'} → ${item.target || '目标'}`;
-    const dmgEl = document.createElement('span');
-    dmgEl.className = 'dm-boss-cast-history-dmg';
-    dmgEl.textContent = fmt(damage);
-    const reviewEl = document.createElement('em');
-    reviewEl.className = 'dm-boss-cast-history-review';
-    const consequenceEl = document.createElement('span');
-    consequenceEl.className = `dm-boss-cast-history-chip result ${cls}`;
-    consequenceEl.textContent = `果:${consequence}`;
-    consequenceEl.title = `这次读条造成的主要后果: ${consequence}`;
-    const adviceEl = document.createElement('span');
-    adviceEl.className = 'dm-boss-cast-history-chip advice';
-    adviceEl.textContent = `下:${advice}`;
-    adviceEl.title = `下次处理建议: ${advice}`;
-    reviewEl.append(consequenceEl, adviceEl);
-    const agoEl = document.createElement('i');
-    agoEl.textContent = `${ago}s`;
-    row.append(kindEl, nameEl, dmgEl, reviewEl, agoEl);
-    el.appendChild(row);
-  });
-  return history.length;
-}
-function updateDmgVulnerabilityWindow() {
-  const row = $('dm-vuln-window-row');
-  const el = $('dm-vuln-window');
-  if (!row || !el) return;
-  const now = Date.now();
-  const mon = state?.currentMonsters?.find(m => m && m.hp > 0 && ((m.sunderUntil || 0) > now || (m.stunUntil || 0) > now));
-  const sunderLeft = mon ? Math.max(0, (mon.sunderUntil || 0) - now) : 0;
-  const stunLeft = mon ? Math.max(0, (mon.stunUntil || 0) - now) : 0;
-  if (!mon || sunderLeft <= 0 || stunLeft <= 0) {
-    row.style.display = 'none';
-    el.className = 'dm-vuln-window idle';
-    el.textContent = '-';
-    el.removeAttribute('title');
-    return;
-  }
-  const left = Math.max(sunderLeft, stunLeft);
-  const cls = left <= 1800 ? 'ending' : 'active';
-  const name = mon.bossName || mon.name || '目标';
-  row.style.display = '';
-  el.className = `dm-vuln-window ${cls}`;
-  el.textContent = `${left <= 1800 ? '快结束' : '爆发'} · ${name} 易伤+硬直 · ${(left / 1000).toFixed(1)}s`;
-  el.title = `破绽窗口: ${name} 正在硬直且易伤。硬直剩余 ${(stunLeft / 1000).toFixed(1)} 秒,易伤剩余 ${(sunderLeft / 1000).toFixed(1)} 秒。`;
-}
-function updateDmgVulnerabilityHit() {
-  const row = $('dm-vuln-hit-row');
-  const el = $('dm-vuln-hit');
-  if (!row || !el) return;
-  const ds = (typeof dmgStats !== 'undefined') ? dmgStats : null;
-  if (!ds || !ds.lastVulnWindowHitAt) {
-    row.style.display = 'none';
-    el.className = 'dm-vuln-hit idle';
-    el.textContent = '-';
-    el.removeAttribute('title');
-    return;
-  }
-  const ago = Math.max(0, Math.floor((Date.now() - ds.lastVulnWindowHitAt) / 1000));
-  if (ago > 12) {
-    row.style.display = 'none';
-    el.className = 'dm-vuln-hit idle';
-    el.textContent = '-';
-    el.removeAttribute('title');
-    return;
-  }
-  const skill = ds.lastVulnWindowSkill || '技能';
-  const target = ds.lastVulnWindowTarget || '目标';
-  const damage = ds.lastVulnWindowDamage || 0;
-  row.style.display = '';
-  el.className = `dm-vuln-hit ${ds.lastVulnWindowCrit ? 'crit' : 'hit'}`;
-  el.textContent = `${ds.lastVulnWindowCrit ? '暴击' : '命中'} · ${skill} → ${target} · ${fmt(damage)} · ${ago}s前`;
-  el.title = `破绽窗口命中: ${skill} 对 ${target} 造成 ${fmt(damage)} 点伤害。本轮窗口命中 ${ds.vulnWindowHits || 0} 次,累计 ${fmt(ds.vulnWindowDamage || 0)}。`;
-}
-
-/* 导航栏红点:远征储备满 / 公会今日有可做的捐献 */
 function updateNavBadges() {
   const now = Date.now();
   if (now - _navBadgePaint < 1500) return;
@@ -2041,6 +1066,7 @@ function updateNavBadges() {
   // 目标引导 / 今日事务:地图页可见时一并刷新
   const mapPanel = document.getElementById('tab-map');
   if (mapPanel && mapPanel.classList.contains('active')) {
+    if (typeof renderCampaign === 'function') renderCampaign();
     if (typeof renderNextGoals === 'function') renderNextGoals();
     if (typeof renderDailyHub === 'function') renderDailyHub();
     if (typeof renderZoneBountyHub === 'function') renderZoneBountyHub();
@@ -2172,12 +1198,9 @@ function focusBuffs(now) {
         key === 'specPressure' ? ((aura.expire || 0) > now) :
         key === 'cataclysmScaling' ? !!mon._cataclysms?.length :
         key.startsWith('cataclysmActive:') ? ((aura.expire || 0) > now) :
-        key === 'zoneThreatScaling' ? !!mon._zoneThreats?.length :
         key === 'rareMutation' ? !!mon._rareMutations?.length :
-        key === 'fieldCommander' ? !!mon._fieldCommander :
         key === 'worldRenownAlert' ? !!mon._worldRenownAlert :
         key === 'worldRenownAlertPulse' ? ((aura.expire || 0) > now) :
-        key.startsWith('zoneThreatActive:') ? ((aura.expire || 0) > now) :
         activeKeys.includes(key);
       if (!shouldKeep) {
         delete auraMap[key];
@@ -2645,30 +1668,6 @@ function monsterMechanicSectionHtml(title, color, list, fallbackIcon, mapper) {
   return `<div style="margin-top:4px;color:${color}">${tipAttrText(title)}:</div>${lines}`;
 }
 
-function worldZoneThreatTagsHtml(map, sub, opts) {
-  if (typeof getWorldZoneThreats !== 'function' || !map) return '';
-  const threats = getWorldZoneThreats(map, sub, opts || {});
-  if (!threats.length) return '';
-  return `<span class="stage-mechanic-tags">${threats.map(t => inlineTipSpanHtml({
-    name:t.name || '区域威胁',
-    icon:t.icon || '🧭',
-    desc:t.desc || '该区域正在影响野外战斗。',
-    meta:t.meta || '区域威胁'
-  }, { fallbackIcon:'achievement_zone_outland_01', color:'#fb7185', meta:t.meta, metaVisible:!!t.meta })).join('')}</span>`;
-}
-
-function worldFieldOperationTagHtml(map, subIdx, opts) {
-  if (typeof worldFieldOperationTip !== 'function') return '';
-  const tip = worldFieldOperationTip(map, subIdx, opts || {});
-  if (!tip) return '';
-  return inlineTipSpanHtml(tip, {
-    fallbackIcon:'achievement_zone_kalimdor_01',
-    color:tip.tone === 'done' ? '#86efac' : (tip.tone === 'failed' ? '#fb7185' : (tip.tone === 'ready' ? '#fbbf24' : (tip.tone === 'locked' ? '#94a3b8' : '#67e8f9'))),
-    meta:tip.meta,
-    metaVisible:!!opts?.metaVisible
-  });
-}
-
 function worldRenownTagHtml(map, opts) {
   if (!map || typeof worldRenownTip !== 'function') return '';
   const tip = worldRenownTip(map.key);
@@ -2707,15 +1706,6 @@ function dungeonProgressMechanicTags(ds, contract, alert, timerStatus) {
       meta:timerStatus.text || ''
     }, { fallbackIcon:'inv_misc_pocketwatch_01', color:timerStatus.expired ? '#fb7185' : '#67e8f9' }));
   }
-  const timeMarkSummary = (typeof dungeonTimeMarkSummary === 'function') ? dungeonTimeMarkSummary(ds.edicts, ds.timeMarks || 0) : null;
-  if (timeMarkSummary) {
-    tags.push(inlineTipSpanHtml(timeMarkSummary, {
-      fallbackIcon:'achievement_bg_kill_flag_carrier',
-      color:'#fca5a5',
-      meta:timeMarkSummary.meta,
-      metaVisible:true
-    }));
-  }
   const themeAffixes = Array.isArray(ds.themeAffixes) ? ds.themeAffixes : [];
   for (const affix of themeAffixes.slice(0, 2)) {
     tags.push(inlineTipSpanHtml({
@@ -2743,23 +1733,6 @@ function dungeonProgressMechanicTags(ds, contract, alert, timerStatus) {
       desc:cat.desc || '副本环境周期性爆发,并强化本次敌人强度。',
       meta:cat.meta || '灾变'
     }, { fallbackIcon:'spell_nature_earthquake', color:'#fb7185', meta:cat.meta, metaVisible:!!cat.meta }));
-  }
-  const edicts = Array.isArray(ds.edicts) ? ds.edicts : [];
-  for (const edict of edicts.slice(0, 4)) {
-    tags.push(inlineTipSpanHtml({
-      name:edict.name || '时序禁令',
-      icon:edict.icon || '📜',
-      desc:edict.desc || '额外副本禁令',
-      meta:'禁令'
-    }, { fallbackIcon:'inv_scroll_03', color:'#fde68a' }));
-  }
-  if (edicts.length > 4) {
-    tags.push(inlineTipSpanHtml({
-      name:`禁令库 +${edicts.length - 4}`,
-      icon:'📜',
-      desc:'本次契约还有更多禁令正在生效。打开副本详情可查看完整列表。',
-      meta:`共${edicts.length}条`
-    }, { fallbackIcon:'inv_scroll_03', color:'#fde68a' }));
   }
   return tags.length ? `<span class="stage-mechanic-tags">${tags.join('')}</span>` : '';
 }
@@ -2798,15 +1771,6 @@ function monsterEncounterDetailHtml(mon, bossData) {
       desc:cat.desc || '副本环境周期性爆发,并强化本次敌人强度。'
     }));
   }
-  const zoneThreats = Array.isArray(mon._zoneThreats) ? mon._zoneThreats : [];
-  if (zoneThreats.length) {
-    html += monsterMechanicSectionHtml('区域威胁', '#fb7185', zoneThreats, 'achievement_zone_outland_01', threat => ({
-      icon:threat.icon || '🧭',
-      name:threat.name || '区域威胁',
-      meta:threat.meta || '',
-      desc:`${threat.desc || '野外环境正在影响战斗。'} ${mon._zoneThreatDesc || ''}`.trim()
-    }));
-  }
   const rareMutations = Array.isArray(mon._rareMutations) ? mon._rareMutations : [];
   if (rareMutations.length) {
     html += monsterMechanicSectionHtml('稀有异变', '#fbbf24', rareMutations, 'achievement_boss_illidan', mut => ({
@@ -2814,14 +1778,6 @@ function monsterEncounterDetailHtml(mon, bossData) {
       name:mut.name || '稀有异变',
       meta:mut.meta || '',
       desc:`${mut.desc || '稀有精英获得额外专属性质。'} ${mon._rareMutationDesc || ''}`.trim()
-    }));
-  }
-  if (mon._fieldCommander && mon._fieldOperation) {
-    html += monsterMechanicSectionHtml('野外据点', '#67e8f9', [mon._fieldOperation], 'achievement_zone_kalimdor_01', op => ({
-      icon:op.icon || '🗺️',
-      name:op.name || '野外据点',
-      meta:'据点指挥官',
-      desc:`${op.desc || '击败据点指挥官可完成本区域的野外事件。'} ${mon._fieldOperationDesc || ''}`.trim()
     }));
   }
   if (mon._worldRenownAlert) {
@@ -3279,13 +2235,8 @@ function renderMonList() {
   const all = state.currentMonsters || [];
   const now = Date.now();
   const searching = state.mode === 'world' && state.worldSearch && (state.worldSearch.until || 0) > now && all.length === 0;
-  const paused = state.mode === 'world' && state.worldCombatPause && all.length === 0;
   const searchRemain = searching ? Math.max(1, Math.ceil(((state.worldSearch.until || 0) - now) / 1000)) : 0;
   const searchPct = searching ? Math.max(0, Math.min(100, ((now - (state.worldSearch.start || now)) / Math.max(1, state.worldSearch.duration || ((state.worldSearch.until || now) - (state.worldSearch.start || now)))) * 100)) : 0;
-  const pauseRemainMs = paused ? Math.max(0, (state.worldCombatPause.until || now) - now) : 0;
-  const pauseRemain = paused ? Math.ceil(pauseRemainMs / 1000) : 0;
-  const pauseDuration = paused ? Math.max(1, (state.worldCombatPause.until || now) - (state.worldCombatPause.at || now)) : 1;
-  const pausePct = paused ? Math.max(0, Math.min(100, ((now - (state.worldCombatPause.at || now)) / pauseDuration) * 100)) : 0;
   const displayName = (raw) => {
     const s = String(raw || '');
     if (!s) return '敌人';
@@ -3294,9 +2245,8 @@ function renderMonList() {
     return s;
   };
 
-  // 始终渲染至少4个槽位, 超出则全部显示(召唤物), 死敌保留槽位不删除
-  const SLOTS = 4;
-  const slotCount = Math.max(SLOTS, all.length);
+  // 只渲染真实敌人与“寻找目标”状态；空槽会制造无意义的横线和战场留白。
+  const slotCount = Math.max(searching ? 1 : 0, all.length);
   const slots = [];
   for (let i = 0; i < slotCount; i++) slots.push(i < all.length ? all[i] : null);
 
@@ -3304,7 +2254,7 @@ function renderMonList() {
   const focus = all.find(m => m.hp > 0) || all[0] || null;
 
   // 签名: 槽位内容(含空槽)
-  const sig = (searching ? `S${searchRemain}|` : '') + (paused ? `P${state.worldCombatPause.reason || ''}:${pauseRemain}|` : '') + slots.map((m, i) => m ? m._uid + (m === focus ? 'F' : '') + (m.hp > 0 ? 'A' : 'D') : 'E' + i).join('|');
+  const sig = (searching ? `S${searchRemain}|` : '') + slots.map((m, i) => m ? m._uid + (m === focus ? 'F' : '') + (m.hp > 0 ? 'A' : 'D') : 'E' + i).join('|');
   if (sig !== _monListSig) {
     _monListSig = sig;
     wrap.innerHTML = slots.map((m, i) => {
@@ -3313,17 +2263,6 @@ function renderMonList() {
           return `<div class="mon-row mon-placeholder" data-slot="${i}">
             <div class="m-emoji">🔎</div>
             <div class="m-mid"><div class="m-name">寻找目标<span class="m-lvl">${searchRemain}秒</span></div><div class="bar hp"><i style="width:${searchPct}%"></i><span>${state.worldSearch.text || '正在寻找下一批敌人'}</span></div></div>
-          </div>`;
-        }
-        if (paused && i === 0) {
-          const pauseName = state.worldCombatPause.name || '据点指挥官';
-          const pauseText = pauseRemainMs > 0
-            ? `挑战失败,首领已撤退。${pauseRemain}秒后恢复野外推进。`
-            : (state.worldCombatPause.text || '挑战冷却结束,正在重新寻找敌人。');
-          const pauseLevel = pauseRemainMs > 0 ? `失败冷却 ${pauseRemain}秒` : '恢复中';
-          return `<div class="mon-row mon-placeholder" data-slot="${i}">
-            <div class="m-emoji">💀</div>
-            <div class="m-mid"><div class="m-name">${pauseName}<span class="m-lvl">${pauseLevel}</span></div><div class="bar hp"><i style="width:${pausePct}%"></i><span>${pauseText}</span></div></div>
           </div>`;
         }
         return `<div class="mon-row mon-placeholder" data-slot="${i}">
@@ -3381,7 +2320,7 @@ function renderMonList() {
     const isDead = m.hp <= 0;
     const hpFrac = (!isDead && m.hpMax > 0) ? Math.max(0, Math.min(1, m.hp / m.hpMax)) : 0;
     const isBossLike = !!(m.isBoss || m.isWorldBoss || m._isRaid || m._isEpicRaid);
-    const isEliteLike = isBossLike || !!(m.isRareElite || m._fieldCommander);
+    const isEliteLike = isBossLike || !!m.isRareElite;
     const executeActive = hpFrac > 0 && hpFrac <= 0.20;
     row.classList.toggle('dead', isDead);
     row.classList.toggle('low-hp', hpFrac > 0 && hpFrac <= 0.35);
@@ -3418,13 +2357,16 @@ function renderMonList() {
       const executeTitle = executeActive ? (isBossLike ? '首领已进入斩杀窗口。' : '目标已进入斩杀窗口。') : '';
       row.title = isDead ? '已击败' : [isFocusRow ? '当前攻击目标;点击其他敌人可切换集火' : '点击切换为攻击目标', executeTitle].filter(Boolean).join('\n');
       const wildText = m._wildHpMult ? `野外耐久 ×${Number(m._wildHpMult || 1).toFixed(2)}` : '';
+      const protectionMult = (!m.isBoss&&state.mode==='world'&&typeof GameBalanceRules!=='undefined'&&GameBalanceRules.worldMonsterDamageMultiplier)
+        ? GameBalanceRules.worldMonsterDamageMultiplier(state.hero.lvl,false) : 1;
+      const protectionText = protectionMult < 1 ? `新手减伤 ${Math.round((1-protectionMult)*100)}%` : '';
       const challengeText = m._companionChallengeName ? `${m._companionChallengeName} ${m._companionChallengeRank || ''}` : '';
       const focusText = isFocusRow && !isDead ? '当前目标' : '';
       const executeText = executeActive ? (isBossLike ? '💀 首领斩杀' : '💀 斩杀') : '';
-      const idleText = [focusText, executeText, challengeText, wildText].filter(Boolean).join(' · ');
+      const idleText = [focusText, executeText, challengeText, wildText, protectionText].filter(Boolean).join(' · ');
       const targetIcon = targetKind === 'companion' ? '🛡️' : targetKind === 'summon' ? '✦' : '🎯';
       const targetName = m._lastTargetName || (targetKind === 'companion' ? '随从' : targetKind === 'summon' ? '召唤物' : '主角');
-      const targetText = recentTarget ? `${isFocusRow ? '⚔️ 集火 · ' : ''}${targetIcon} 盯 ${targetName}${executeActive ? ' · 斩杀' : ''}` : idleText;
+      const targetText = recentTarget ? `${isFocusRow ? '⚔️ 集火 · ' : ''}${targetIcon} 盯 ${targetName}${executeActive ? ' · 斩杀' : ''}${protectionText ? ` · ${protectionText}` : ''}` : idleText;
       row.classList.toggle('target-hero', recentTarget && targetKind === 'hero');
       row.classList.toggle('target-companion', recentTarget && targetKind === 'companion');
       row.classList.toggle('target-summon', recentTarget && targetKind === 'summon');
@@ -3545,19 +2487,7 @@ function updateDmgMeter() {
     dpsEl.title = `当前秒伤 ${fmt(dps)}。${trend.title}`;
   }
   updateDmgRecentSkills();
-  updateDmgCombatTempo(total, healTotal);
-  updateStageCombatTempo(total, healTotal);
-  updateDmgCombatHeat(total, healTotal, elapsed);
-  updateCombatReactionAdvice();
-  updateDmgBossCastReadout();
-  updateDmgLastInterrupt();
-  updateDmgBossCastOutcome();
-  const bossCastHistoryCount = updateDmgBossCastHistory();
-  updateDmgVulnerabilityWindow();
-  updateDmgVulnerabilityHit();
   updateDmgCombatSummary(total, healTotal);
-  updateDmgCastKit(Date.now());
-  updateDmgTacticalStatus(total, healTotal, elapsed);
 
   // 英雄条
   const heroBar = $('dm-hero-bar');
@@ -3603,59 +2533,6 @@ function updateDmgMeter() {
       healEl.removeAttribute('title');
     }
   }
-  const maxHealEl = $('dm-max-heal');
-  if (maxHealEl) {
-    const hm = (typeof dmgStats !== 'undefined') ? (dmgStats.heroHealMax || 0) : 0;
-    const cm = (typeof dmgStats !== 'undefined') ? (dmgStats.compHealMax || 0) : 0;
-    if (hm || cm) {
-      const top = Math.max(hm, cm);
-      const who = hm >= cm ? '主角' : '随从';
-      maxHealEl.textContent = `${who} ${fmt(top)}`;
-      maxHealEl.title = `主角最高治疗 ${fmt(hm)}。随从最高治疗 ${fmt(cm)}。`;
-    } else {
-      maxHealEl.textContent = '-';
-      maxHealEl.removeAttribute('title');
-    }
-  }
-  updateDmgLastHeal();
-  updateDmgLastShield();
-  const shieldTotalEl = $('dm-shield-total');
-  if (shieldTotalEl) {
-    const heroShield = (typeof dmgStats !== 'undefined') ? (dmgStats.heroShield || 0) : 0;
-    const compShield = (typeof dmgStats !== 'undefined') ? (dmgStats.compShield || 0) : 0;
-    const shieldTotal = heroShield + compShield;
-    if (shieldTotal > 0) {
-      const sps = Math.round(shieldTotal / elapsed);
-      shieldTotalEl.className = 'dm-shield-total active';
-      shieldTotalEl.textContent = `${fmt(shieldTotal)}(${fmt(sps)}/秒)`;
-      shieldTotalEl.title = `主角护盾 ${fmt(heroShield)}。随从护盾 ${fmt(compShield)}。`;
-    } else {
-      shieldTotalEl.className = 'dm-shield-total';
-      shieldTotalEl.textContent = '-';
-      shieldTotalEl.removeAttribute('title');
-    }
-  }
-
-  // 暴击率
-  const critEl = $('dm-crit-rate');
-  if (critEl) {
-    const hc = (typeof dmgStats !== 'undefined') ? (dmgStats.heroCrits || 0) : 0;
-    const cc = (typeof dmgStats !== 'undefined') ? (dmgStats.compCrits || 0) : 0;
-    const hh = (typeof dmgStats !== 'undefined') ? (dmgStats.heroHits || 0) : 0;
-    const ch = (typeof dmgStats !== 'undefined') ? (dmgStats.compHits || 0) : 0;
-    const hRate = hh > 0 ? Math.round(hc / hh * 100) : 0;
-    const cRate = ch > 0 ? Math.round(cc / ch * 100) : 0;
-    const hits = hh + ch;
-    const crits = hc + cc;
-    if (hits) {
-      const rate = Math.round(crits / hits * 100);
-      critEl.textContent = `总体 ${rate}%`;
-      critEl.title = `主角暴击 ${hc}/${hh} (${hRate}%)。随从暴击 ${cc}/${ch} (${cRate}%)。`;
-    } else {
-      critEl.textContent = '-';
-      critEl.removeAttribute('title');
-    }
-  }
 
   // 击杀数
   const killsEl = $('dm-kills');
@@ -3663,26 +2540,6 @@ function updateDmgMeter() {
     const k = (typeof dmgStats !== 'undefined') ? (dmgStats.kills || 0) : 0;
     killsEl.textContent = String(k);
   }
-  const streakEl = $('dm-streak');
-  if (streakEl) {
-    const streak = (typeof killStreak === 'number') ? killStreak : 0;
-    const fast = (typeof dmgStats !== 'undefined') ? (dmgStats.killFast || 0) : 0;
-    const slow = (typeof dmgStats !== 'undefined') ? (dmgStats.killSlow || 0) : 0;
-    const lastKillAt = (typeof dmgStats !== 'undefined') ? (dmgStats.killTs || 0) : 0;
-    const ago = lastKillAt ? Math.max(0, (Date.now() - lastKillAt) / 1000) : 0;
-    const cls = streak >= 20 ? 'legend' : streak >= 10 ? 'hot' : streak >= 5 ? 'warm' : streak > 0 ? 'active' : 'idle';
-    const text = streak > 0
-      ? `${streak}连 · 最近${ago.toFixed(1)}s`
-      : '-';
-    streakEl.className = `dm-streak ${cls}`;
-    streakEl.textContent = text;
-    if (streak > 0) {
-      streakEl.title = `当前连杀 ${streak}。最快击杀 ${fast ? fast.toFixed(1) + ' 秒' : '暂无'},最慢间隔 ${slow ? slow.toFixed(1) + ' 秒' : '暂无'}。死亡或重置统计会清空连杀。`;
-    } else {
-      streakEl.removeAttribute('title');
-    }
-  }
-
   // 峰值秒伤
   const peakEl = $('dm-peak-dps');
   if (peakEl) {
@@ -3712,121 +2569,6 @@ function updateDmgMeter() {
     } else {
       takenEl.textContent = '-';
       takenEl.removeAttribute('title');
-    }
-  }
-  updateDmgLastHit();
-
-  // 战斗压力:把承伤、治疗和血量换成可读状态,帮助判断卡关原因
-  const pressureEl = $('dm-pressure');
-  if (pressureEl) {
-    const hMax = Math.max(1, state?.hero?.hpMax || 1);
-    const hpNow = Math.max(0, state?.hp || 0);
-    const compStats = (typeof computeCompanionStats === 'function') ? computeCompanionStats() : null;
-    const compMax = Math.max(1, compStats?.hpMax || 1);
-    const compHpKnown = state?._compHp != null;
-    const compHp = Math.max(0, state?._compHp || 0);
-    const compAlive = !!compStats && compHpKnown && !(typeof compDowned === 'function' && compDowned());
-    const healPerSec = healTotal > 0 ? Math.round(healTotal / elapsed) : 0;
-    const netPerSec = Math.max(0, dtps - healPerSec);
-    const compHealPerSec = compHeal > 0 ? Math.round(compHeal / elapsed) : 0;
-    const compNetPerSec = Math.max(0, compDtps - compHealPerSec);
-    const takenPct = dtps / hMax;
-    const netPct = netPerSec / hMax;
-    const compNetPct = compNetPerSec / compMax;
-    const compHpPct = compAlive ? compHp / compMax : 1;
-    let cls = 'safe', label = '安全', hint = tk ? '承伤很低' : '暂无压力';
-    if (compAlive && (compHpPct < 0.30 || compNetPct > 0.055)) {
-      cls = 'danger'; label = '护卫告急'; hint = compHpPct < 0.30 ? '随从濒危' : '随从承压';
-    } else if (compAlive && (compHpPct < 0.55 || compNetPct > 0.030)) {
-      cls = 'warn'; label = '护卫吃紧'; hint = compHpPct < 0.55 ? '随从低血' : '随从承压';
-    } else if (tk) {
-      if (netPerSec <= 0 && hpNow > hMax * 0.55) {
-        cls = 'safe'; label = '稳定'; hint = '治疗覆盖';
-      } else if (netPct <= 0.015 && takenPct <= 0.045) {
-        cls = 'ok'; label = '可控'; hint = '压力可控';
-      } else if (netPct <= 0.04 && hpNow > hMax * 0.35) {
-        cls = 'warn'; label = '吃紧'; hint = '需要减伤';
-      } else {
-        cls = 'danger'; label = '危险'; hint = '容易暴毙';
-      }
-    }
-    const surviveText = netPerSec > 0 ? `可撑 ${Math.max(1, Math.min(120, Math.floor(hpNow / netPerSec)))}秒${hpNow / netPerSec > 120 ? '+' : ''}` : '净压力0';
-    const compVisible = compAlive && (compTk || compHpPct < 0.95);
-    const topSource = incomingPressureSource((typeof dmgStats !== 'undefined') ? dmgStats : null);
-    const sourceHtml = topSource
-      ? `<span class="dm-pressure-source" title="本轮主要承伤来源">${escapeDmgMeterText(topSource.name)} ${fmt(topSource.amount)}</span>`
-      : '';
-    const action = combatPressureActionChip({
-      cls,
-      hpPct:hpNow / hMax,
-      compDanger:compAlive && (compHpPct < 0.55 || compNetPct > 0.030),
-      netPerSec,
-      compNetPerSec
-    }, Date.now());
-    const actionHtml = action
-      ? (action.ready && action.key
-        ? `<button type="button" class="dm-pressure-action ${escapeDmgMeterText(action.tone)} ready" data-action="pressurecast" data-skill="${escapeDmgMeterText(action.key)}" title="${escapeDmgMeterText((action.title || action.text) + ' 点击立即施放。')}">${escapeDmgMeterText(action.text)}</button>`
-        : `<span class="dm-pressure-action ${escapeDmgMeterText(action.tone)}" title="${escapeDmgMeterText(action.title || action.text)}">${escapeDmgMeterText(action.text)}</span>`)
-      : '';
-    const html = `<span class="dm-pressure-state">${escapeDmgMeterText(label)}</span>${actionHtml}<span class="dm-pressure-net">主 ${fmt(netPerSec)}/秒</span>${compVisible ? `<span class="dm-pressure-net companion">随 ${fmt(compNetPerSec)}/秒</span>` : ''}${sourceHtml}<span class="dm-pressure-time">${escapeDmgMeterText(surviveText)}</span>`;
-    const sourceDetail = topSource ? `主要承伤来源 ${topSource.name} ${fmt(topSource.amount)}。` : '';
-    const detail = `压力判断: ${hint}。${action ? `建议: ${action.title || action.text}。` : ''}主角承伤 ${fmt(dtps)}/秒,治疗 ${fmt(healPerSec)}/秒,净压力 ${fmt(netPerSec)}/秒。${compAlive ? `随从承伤 ${fmt(compDtps)}/秒,治疗 ${fmt(compHealPerSec)}/秒,净压力 ${fmt(compNetPerSec)}/秒。` : ''}${sourceDetail}`;
-    pressureEl.className = `dm-pressure ${cls}`;
-    pressureEl.title = detail;
-    if (pressureEl.dataset.sig !== html) {
-      pressureEl.dataset.sig = html;
-      pressureEl.innerHTML = html;
-    }
-  }
-
-  // 上次死亡回放:保留在面板中,避免日志滚动后丢失失败原因
-  const deathRow = $('dm-death-row');
-  const deathEl = $('dm-death-recap');
-  if (deathRow && deathEl) {
-    const recap = state?.lastDeathRecap;
-    if (recap?.at) {
-      deathRow.style.display = '';
-      const agoSec = Math.max(0, Math.floor((Date.now() - recap.at) / 1000));
-      const ago = agoSec < 60 ? `${agoSec}秒前` : `${Math.floor(agoSec / 60)}分钟前`;
-      const lastHit = fmt(recap.lastHit || 0);
-      const source = recap.source || '未知来源';
-      const text = `${recap.cause || '战败'} · ${ago} · 最后一击 ${lastHit}`;
-      const detail = recap.detail || `${text} · 来自 ${source}。建议: ${recap.advice || '调整技能和随从后再战。'}`;
-      deathEl.className = `dm-death-recap ${recap.tone || 'warn'}`;
-      deathEl.title = detail;
-      const advice = deathRecapAdviceShort(recap);
-      const sig = `${text}|${advice}`;
-      if (deathEl.dataset.deathSig !== sig) {
-        deathEl.dataset.deathSig = sig;
-        deathEl.replaceChildren();
-        const main = document.createElement('span');
-        main.className = 'dm-death-main';
-        main.textContent = text;
-        const tip = document.createElement('span');
-        tip.className = 'dm-death-advice';
-        tip.textContent = `建议 ${advice}`;
-        deathEl.append(main, tip);
-      }
-    } else {
-      deathRow.style.display = 'none';
-      deathEl.textContent = '-';
-      delete deathEl.dataset.deathSig;
-      deathEl.removeAttribute('title');
-    }
-  }
-
-  // 击杀耗时(平均 · 最快)
-  const ttkEl = $('dm-ttk');
-  if (ttkEl) {
-    const k = (typeof dmgStats !== 'undefined') ? (dmgStats.kills || 0) : 0;
-    const fast = (typeof dmgStats !== 'undefined') ? (dmgStats.killFast || 0) : 0;
-    if (k >= 1 && elapsed > 0.2) {
-      const avg = elapsed / k;
-      ttkEl.textContent = `均${avg.toFixed(1)}s` + (fast ? ` · 快${fast.toFixed(1)}s` : '');
-      ttkEl.title = `已统计 ${k} 次击杀,总战斗时间 ${Math.floor(elapsed)} 秒。平均击杀耗时 ${avg.toFixed(1)} 秒${fast ? `,最快 ${fast.toFixed(1)} 秒` : ''}。`;
-    } else {
-      ttkEl.textContent = '-';
-      ttkEl.removeAttribute('title');
     }
   }
 
@@ -3961,7 +2703,6 @@ function updateDmgMeter() {
     if (schoolBreakdownCount) parts.push(`法术系${schoolBreakdownCount}`);
     if (healBreakdownCount) parts.push(`治疗${healBreakdownCount}`);
     if (takenBreakdownCount) parts.push(`承伤${takenBreakdownCount}`);
-    if (bossCastHistoryCount) parts.push(`读条${bossCastHistoryCount}`);
     const text = parts.length ? `来源明细 · ${parts.join(' / ')}` : '来源明细 · 暂无';
     if (detailSummary.textContent !== text) detailSummary.textContent = text;
   }
@@ -3979,6 +2720,44 @@ function updateBattleVisuals() {
   const c = getCls();
   const h = state.hero;
   const now = Date.now();
+
+  const recap = state.lastDeathRecap;
+  const recapEl = $('death-recap');
+  if (recapEl) {
+    recapEl.hidden = !recap || !!recap.dismissed;
+    if (recap && recapEl.dataset.recapAt !== String(recap.at)) {
+      recapEl.dataset.recapAt = String(recap.at);
+      $('death-recap-cause').textContent = recap.cause || '战斗失败';
+      $('death-recap-detail').textContent = `${recap.source || '敌人'}最后造成 ${fmt(recap.lastHit || 0)} 伤害 · 本场承伤 ${fmt(recap.taken || 0)} / 治疗 ${fmt(recap.heal || 0)}`;
+      $('death-recap-advice').textContent = state.hero.lvl < 4
+        ? `打开背包点「一键穿最优」，再挑战当前区域。${recap.advice || ''}`
+        : (recap.advice || '调整装备和技能后再试。');
+    }
+  }
+
+  const autoStatusEl = $('auto-skill-status');
+  if (autoStatusEl) {
+    let autoText = '自动施法：已关闭';
+    if (state.autoSkill) {
+      const recent = state._lastAutoSkillCast;
+      if (recent && now - recent.at < 20000) {
+        autoText = `自动施法：最近释放 ${recent.name}（${Math.floor((now - recent.at) / 1000)} 秒前）`;
+      } else {
+        const autoSkills = (typeof autoCastSkillEntries === 'function' ? autoCastSkillEntries(c) : [])
+          .filter(([key, sk]) => sk.type !== 'interrupt' && (typeof autoSkillAllowed !== 'function' || autoSkillAllowed(key, sk)));
+        if (!autoSkills.length) autoText = '自动施法：当前没有已解锁且启用的技能';
+        else {
+          const affordable = autoSkills.filter(([, sk]) => state.resource >= (sk.mp || 0));
+          if (!affordable.length) {
+            const minCost = Math.min(...autoSkills.map(([, sk]) => sk.mp || 0));
+            autoText = `自动施法：等待${c.resource} ${fmt(state.resource)}/${fmt(minCost)}`;
+          } else if (affordable.every(([key]) => state.skillCooldowns[key] > now)) autoText = '自动施法：等待技能冷却';
+          else autoText = '自动施法：等待合适目标或攻击时机';
+        }
+      }
+    }
+    if (autoStatusEl.textContent !== autoText) autoStatusEl.textContent = autoText;
+  }
 
   // 残血暗角:生命 <25% 时给战斗区加红色脉冲暗角
   const _st = $('stage');
@@ -4009,6 +2788,7 @@ function updateBattleVisuals() {
   setHeaderResourceText('h-honor', 'honor', state.honor);
   setHeaderResourceText('h-towercoin', 'towerCoin', state.towerCoin || 0);
   setHeaderResourceText('h-essence', 'essence', state.essence || 0);
+  document.querySelectorAll('.advanced-resource').forEach(el => { el.hidden = state.hero.lvl < Number(el.dataset.minLevel || 1); });
   if ($('btn-speed')) {
     const bs = state.battleSpeed || 1;
     const lbl = `⏩ ${bs}倍`;
@@ -4055,18 +2835,13 @@ function updateBattleVisuals() {
     const base = `${state.mode}|${state.currentMap}|${state.currentSubzone}`;
     if (state.mode === 'world') {
       const sk = `${state.currentMap}-${state.currentSubzone}`;
-      const searchLeft = state.worldSearch?.until ? Math.max(0, Math.ceil((state.worldSearch.until - Date.now()) / 1000)) : 0;
-      const map = (typeof getMap === 'function') ? getMap() : null;
-      const op = (map && typeof getWorldFieldOperation === 'function') ? getWorldFieldOperation(map, state.currentSubzone, { includeCompleted:true }) : null;
-      const fieldFailLeft = (op && typeof worldFieldOperationFailLeftMs === 'function') ? Math.ceil(worldFieldOperationFailLeftMs(op) / 1000) : 0;
-      return base + `|${state.subzoneKills[sk]||0}|${state.subzoneCleared[sk]||''}|search:${searchLeft}|fieldFail:${fieldFailLeft}`;
+      return base + `|${state.subzoneKills[sk]||0}|${state.subzoneCleared[sk]||''}`;
     }
     if (state.mode === 'dungeon') {
       const ds = state.dungeonState || {};
       const roomSig = (ds.combatRooms || []).map(r => r.key).join(',');
-      const edictSig = (ds.edicts || []).map(e => e.key).join(',');
       const timerSig = ds.timer ? `${ds.timer.expired ? 1 : 0}:${ds.timer.overtimeStacks || 0}:${ds.timer.overtimePulses || 0}` : '';
-      return base + `|${ds.wave}|${ds.key}|${ds.alertLevel || 0}|${roomSig}|${edictSig}|${timerSig}`;
+      return base + `|${ds.wave}|${ds.key}|${ds.alertLevel || 0}|${roomSig}|${timerSig}`;
     }
     if (state.mode === 'mythic') return base + `|${state.mythicState?.wave}|${state.mythicState?.key}|${state.mythicState?.level}`;
     if (state.mode === 'tower') return base + `|${state.towerState?.floor}|${state.towerState?.coinThisRun}`;
@@ -4093,24 +2868,25 @@ function updateBattleVisuals() {
       const subKey = `${state.currentMap}-${state.currentSubzone}`;
       const subKills = state.subzoneKills[subKey] || 0;
       const cleared = state.subzoneCleared[subKey];
-      const threatTags = worldZoneThreatTagsHtml(map, sub);
-      const fieldOpTag = worldFieldOperationTagHtml(map, state.currentSubzone, { metaVisible:true });
-      const renownTag = worldRenownTagHtml(map, { metaVisible:true });
-      const searchLeft = state.worldSearch?.until ? Math.max(0, Math.ceil((state.worldSearch.until - Date.now()) / 1000)) : 0;
-      const searchTag = searchLeft > 0 ? ` · 🔎 寻找目标 <b>${searchLeft}</b>秒` : '';
+      // 顶部一行只留"有变化"的信息: 声望/警戒为 0 时不占位, 明细看悬浮提示与地图页。
+      // 寻找目标倒计时不再放这里(怪物列表占位行已有), 避免这一行每秒重渲染/换行把下面内容顶得上下跳
+      const renownBonus = (typeof worldRenownBonuses === 'function') ? worldRenownBonuses(map.key) : null;
+      const renownTag = (!renownBonus || renownBonus.rank > 0 || renownBonus.alert > 0)
+        ? worldRenownTagHtml(map, { metaVisible:false })
+        : '';
       $('h-zone').innerHTML = `${mapIconHtml} ${map.name} · ${sub.name}`;
       $('zone-name').innerHTML = `${mapIconHtml} ${map.name} · ${sub.name} (等级${sub.lvl[0]}-${sub.lvl[1]})`;
-      $('progress-text').innerHTML = `探索进度 <b>${Math.min(subKills,50)}</b> / 50 ${cleared?'✅':''}${searchTag}${renownTag ? ` · ${renownTag}` : ''}${fieldOpTag ? ` · ${fieldOpTag}` : ''}${threatTags ? ` · ${threatTags}` : ''}`;
+      const killGoal = typeof subzoneKillGoal === 'function' ? subzoneKillGoal(state.currentMap, state.currentSubzone) : 50;
+      $('progress-text').innerHTML = `探索进度 <b>${Math.min(subKills,killGoal)}</b> / ${killGoal} ${cleared?'✅':''}${renownTag ? ` · ${renownTag}` : ''}`;
       bindInlineTipElements($('progress-text'));
     }
   } else if (state.mode === 'boss') {
     const map = getMap();
     const mapIconHtml = symbolIconHtml(map.icon, 16, map.name, 'inv_misc_map_01');
     const bossBattleIconHtml = statusIconHtml('首领战', '⚔️', 16);
-    const threatTags = worldZoneThreatTagsHtml(map, map.sub?.[state.currentSubzone] || map.sub?.[0], { boss:true, count:2 });
     $('h-zone').innerHTML = `${mapIconHtml} ${map.name} · ${bossBattleIconHtml}首领战`;
     $('zone-name').innerHTML = `${bossBattleIconHtml} ${mapIconHtml} ${map.name} · 首领战`;
-    $('progress-text').innerHTML = `<b>${map.boss.name}</b>${threatTags ? ` · ${threatTags}` : ''}`;
+    $('progress-text').innerHTML = `<b>${map.boss.name}</b>`;
     bindInlineTipElements($('progress-text'));
   } else if (state.mode === 'dungeon') {
     const dg = DUNGEONS.find(d => d.key === state.dungeonState.key);
@@ -4210,7 +2986,8 @@ function updateBattleVisuals() {
     ].join('|');
     if (_compMiniHeadSig !== headSig && compMiniName) {
       _compMiniHeadSig = headSig;
-      compMiniName.innerHTML=`${compIconHtml} ${tpl?.name} · <span class="${q.cls||''}">${q.name}</span> ${'⭐'.repeat(comp.stars||1)}${sigBadge} · 攻${fmt(st.atk)} 防${fmt(st.def)}${statusTag}`;
+      const _affLv = (typeof companionAffinityLevel==='function') ? companionAffinityLevel(comp) : 1;
+      compMiniName.innerHTML=`${compIconHtml} ${tpl?.name} · <span class="${q.cls||''}">${q.name}</span> ${'⭐'.repeat(comp.stars||1)}${_affLv>1?` ❤${_affLv}`:''}${sigBadge} · 攻${fmt(st.atk)} 防${fmt(st.def)}${statusTag}`;
     }
     setBar($('b-comp-hp'),Math.max(0,compHp)/st.hpMax*100,compDown?`倒下 ${reviveLeft}秒`:hpWithShieldText(compHp, st.hpMax, Math.max(0, state._compBarrier || 0)));
     updateHpBarFeedback('companion:active', $('b-comp-hp'), Math.max(0, compHp), st.hpMax, { side:'companion', reset:compDown });
@@ -4781,10 +3558,13 @@ function renderShop() {
   const c = getCls();
   const primary = c ? c.attackAttr : 'str';
   const primaryName = fmtStatName(primary);
-  const ticketPrice = 50000;
-  const bulkPrice = 425000;
-  const compTicketPrice = 100000;
-  const compBulkPrice = 850000;
+  /* 券价按进度分级: 原固定 50000/100000 与前期产出差4个数量级, 新手永远买不起 */
+  const _prog = (typeof playerProgressLevel === 'function') ? playerProgressLevel() : (state?.hero?.lvl || 1);
+  const _tier = Math.max(1, Math.ceil(_prog / 10));
+  const ticketPrice = 4000 * _tier;
+  const compTicketPrice = 6000 * _tier;
+  const bulkPrice = Math.round(ticketPrice * 10 * 0.85);
+  const compBulkPrice = Math.round(compTicketPrice * 10 * 0.85);
   $('shop-list').innerHTML = `
     <div style="margin-bottom:12px;padding:10px;background:var(--panel-2);border-radius:8px;border:1px solid var(--gold)">
       <div style="font-weight:bold;margin-bottom:4px">🎫 通用券商店</div>
@@ -4891,7 +3671,7 @@ function renderSkills() {
   if (typeof syncAllowedSkillUnlocks === 'function') syncAllowedSkillUnlocks();
   if (typeof pruneSelectedSkillsForCurrentSpec === 'function') pruneSelectedSkillsForCurrentSpec();
   const skl = $('skill-list');
-  skl.innerHTML = `<div class="muted" style="margin-bottom:6px;font-size:11px">手动技能栏 <b style="color:var(--accent)">${state.selectedSkills.length}</b>/8 · 自动施法按上方分类使用已解锁技能 · 打断/控制会优先纯打断,瞬发控制兜底</div>`;
+  skl.innerHTML = `<div class="muted" style="margin-bottom:6px;font-size:11px">手动技能栏 <b style="color:var(--accent)">${state.selectedSkills.length}</b>/8 · 自动施法会从已解锁且启用的技能中择机释放，不受手动技能栏限制；资源不足或冷却中会等待。打断/控制默认关闭。</div>`;
   const mech = (typeof CLASS_COMBAT_MECHANICS === 'object') ? CLASS_COMBAT_MECHANICS[state.cls] : null;
   if (mech) {
     const mechDiv = document.createElement('div');
@@ -5921,6 +4701,7 @@ function updateSkillBarCd() {
 }
 
 function renderMap() {
+  if (typeof renderCampaign === 'function') renderCampaign();
   if (typeof renderZoneBountyHub === 'function') renderZoneBountyHub();
   const mapCur = getMap();
   if (mapCur) {
@@ -5940,7 +4721,13 @@ function renderMap() {
     if (aFit !== bFit) return aFit ? -1 : 1;
     return Math.abs(hl - aMid) - Math.abs(hl - bMid);
   });
-  for (const m of sortedMaps) {
+  const progressLvl = (typeof playerProgressLevel === 'function') ? playerProgressLevel() : state.hero.lvl;
+  const compactLimit = progressLvl < 10 ? 1 : (progressLvl < 30 ? 6 : 8);
+  let visibleMaps = window.__showAllMaps ? sortedMaps : sortedMaps.slice(0, compactLimit);
+  if (!window.__showAllMaps && mapCur && !visibleMaps.some(m => m.key === mapCur.key)) {
+    visibleMaps = [mapCur, ...visibleMaps.filter(m => m.key !== mapCur.key)].slice(0, compactLimit);
+  }
+  for (const m of visibleMaps) {
     const isCurrent = m.key === state.currentMap;
     const progressLvl = (typeof playerProgressLevel === 'function') ? playerProgressLevel() : state.hero.lvl;
     const tooHigh = progressLvl < m.lvlRange[0] - 3;
@@ -5950,8 +4737,6 @@ function renderMap() {
     const bossPanelIcon = (typeof entityIcon === 'function') ? entityIcon(m.boss.name, 18, m.boss.emoji) : m.boss.emoji;
     const mapIconHtml = symbolIconHtml(m.icon, 18, m.name, 'inv_misc_map_01');
     const mapArt = m.art ? `<div class="map-art-banner" style="background-image:linear-gradient(180deg, rgba(11,15,25,.14), rgba(11,15,25,.72)), url('${m.art}')"></div>` : '';
-    const mapThreatTags = worldZoneThreatTagsHtml(m, m.sub?.[0], { count:(m.lvlRange?.[1] || 1) >= 70 ? 2 : 1 });
-    const mapFieldOpTag = worldFieldOperationTagHtml(m, 0, { metaVisible:true, previewOnly:!(m.key === state.currentMap && state.currentSubzone === 0) });
     const renownTag = worldRenownTagHtml(m, { metaVisible:true });
     let html = `
       <div class="map-head">
@@ -5961,20 +4746,24 @@ function renderMap() {
       ${mapArt}
       <div class="map-desc">${m.desc}${tooHigh?' · ⚠️ 当前终局进度偏低,请谨慎推进':''}</div>
       ${renownTag ? `<div class="muted" style="font-size:11px;margin:4px 0 6px">区域声望 ${renownTag}</div>` : ''}
-      ${mapFieldOpTag ? `<div class="muted" style="font-size:11px;margin:4px 0 6px">野外据点 ${mapFieldOpTag}</div>` : ''}
-      ${mapThreatTags ? `<div class="muted" style="font-size:11px;margin:4px 0 6px">区域威胁 ${mapThreatTags}</div>` : ''}
       <div class="sub-list">`;
     m.sub.forEach((s, idx) => {
       const subKey = `${m.key}-${idx}`;
       const active = isCurrent && state.currentSubzone === idx && state.mode === 'world';
       const cleared = state.subzoneCleared[subKey];
-      const opTag = worldFieldOperationTagHtml(m, idx, { previewOnly:!(m.key === state.currentMap && state.currentSubzone === idx) });
       html += `<button class="sub-btn ${active?'active':''}" data-action="subzone" data-map="${m.key}" data-sub="${idx}">
-        ${cleared?'<span class="sub-cleared">✅ </span>':''}${s.name}${opTag ? ` · ${opTag}` : ''}
+        ${cleared?'<span class="sub-cleared">✅ </span>':''}${s.name}
         <span class="sub-lvl">${typeof contentRangeLabel === 'function' ? contentRangeLabel(s.lvl[0], s.lvl[1]) : `等级${s.lvl[0]}-${s.lvl[1]}`}</span>
       </button>`;
     });
     html += `</div>`;
+    const lmDone = (typeof zoneLandmarkDone === 'function') && zoneLandmarkDone(m.key);
+    const chainDone = (typeof zoneChainDone === 'function') && zoneChainDone(m.key);
+    const chainReady = (typeof zoneAllCleared === 'function') && zoneAllCleared(m);
+    html += `<div class="map-content-row">
+      <button class="map-landmark-btn${lmDone ? ' done' : ''}" data-action="maplandmark" data-map="${m.key}" ${lmDone ? 'disabled' : ''}>📍 ${lmDone ? '地标已发现' : '探索地标'}</button>
+      ${chainReady ? `<button class="map-chain-btn${chainDone ? ' done' : ''}" data-action="mapchain" data-map="${m.key}" ${chainDone ? 'disabled' : ''}>📜 ${chainDone ? '事件链已完成' : '区域事件链'}</button>` : ''}
+    </div>`;
     const bCdEnd = state.bossCd[m.key] || 0;
     const bCdLeft = Math.max(0, Math.ceil((bCdEnd - Date.now()) / 1000));
     const bOnCd = bCdLeft > 0;
@@ -6031,15 +4820,6 @@ function renderMap() {
           if (p.atkBonus) tip += '<div>⚔️ 攻击 +'+(p.atkBonus*100)+'%</div>';
           if (p.leech) tip += '<div>🩸 吸血 +'+(p.leech*100)+'%</div>';
         }
-        const bossThreats = typeof getWorldZoneThreats === 'function' ? getWorldZoneThreats(m, m.sub?.[0], { boss:true, count:2 }) : [];
-        if (bossThreats.length) {
-          tip += monsterMechanicSectionHtml('区域威胁', '#fb7185', bossThreats, 'achievement_zone_outland_01', t => ({
-            icon:t.icon || '🧭',
-            name:t.name || '区域威胁',
-            meta:t.meta || '',
-            desc:t.desc || '该区域正在强化地图首领。'
-          }));
-        }
         const tipEl = $('compare-tip');
         tipEl.querySelector('.compare-head').innerHTML = tip;
         tipEl.querySelector('.compare-body').innerHTML = '';
@@ -6089,6 +4869,16 @@ function renderMap() {
       addTouchPin(rareNameEl, showRareTip);
     }
     ml.appendChild(div);
+  }
+  if (sortedMaps.length > compactLimit) {
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'map-list-toggle';
+    toggle.dataset.action = 'togglemaplist';
+    const hiddenCount = Math.max(0, sortedMaps.length - visibleMaps.length);
+    toggle.textContent = window.__showAllMaps ? '收起世界地图' : `查看全部区域（另有 ${hiddenCount} 个）`;
+    toggle.setAttribute('aria-expanded', window.__showAllMaps ? 'true' : 'false');
+    ml.appendChild(toggle);
   }
 }
 
@@ -6434,11 +5224,12 @@ function companionUseGateInfo(tpl){
 }
 function companionUseLockNoteHtml(tpl){
   const gate = companionUseGateInfo(tpl);
-  return gate.allowed ? '' : `<div class="comp-use-lock-note">🔒 ${tipAttrText(gate.text)}</div>`;
+  if (gate.allowed && (gate.scalePct == null || gate.scalePct >= 100)) return '';
+  return `<div class="comp-use-lock-note">⚡ ${tipAttrText(gate.text)}</div>`;
 }
 function companionUseTitle(tpl){
   const gate = companionUseGateInfo(tpl);
-  return gate.allowed ? '出战' : gate.text;
+  return (gate.allowed && (gate.scalePct == null || gate.scalePct >= 100)) ? '出战' : gate.text;
 }
 function companionBadge(label, tone, tip){
   const tipAttr = tip ? ` data-tip="${companionTipAttr(tip)}"` : '';
@@ -6454,7 +5245,8 @@ function companionMetaBadges(tpl){
     companionBadge(companionRoleLabel(tpl.role), tpl.role || 'dps', companionRoleTipHtml(tpl.role)),
   ];
   const gate = companionUseGateInfo(tpl);
-  if (!gate.allowed) badges.push(companionBadge(`${gate.reqLevel}级解锁`, 'locked', `<b>等级封印</b><br>${tipAttrText(gate.text)}`));
+  if (gate.allowed && gate.scalePct != null && gate.scalePct < 100) badges.push(companionBadge(`提前出战 ${gate.scalePct}%`, 'locked', `<b>提前出战</b><br>${tipAttrText(gate.text)}`));
+  else if (!gate.allowed) badges.push(companionBadge(`${gate.reqLevel}级解锁`, 'locked', `<b>等级封印</b><br>${tipAttrText(gate.text)}`));
   if (unique) badges.push(companionBadge(unique.name, 'unique', `<b>${tipAttrText(unique.icon || '✦')} ${tipAttrText(unique.name)}</b><br>${tipAttrText(unique.desc || '')}${typeof companionUniqueTraitSummary === 'function' ? `<br><span class="muted">${tipAttrText(companionUniqueTraitSummary(tpl) || '')}</span>` : ''}`));
   for (const [key, meta] of Object.entries(COMPANION_TRAIT_META)) {
     if (traits[key]) badges.push(companionBadge(meta.label, meta.tone, companionTraitTipHtml(key)));
@@ -6488,9 +5280,10 @@ function companionCombatSummaryHtml(tpl, comp, options){
   const compact = options?.compact;
   return `<div class="comp-combat-summary ${awakened ? 'awakened' : ''}">
     <span><b>${roleText}</b>${target}%${atkText}</span>
-    <span>${q.name}战技 +${qSkills} · 技能 ${totalSkills}</span>
+    <span>${(q.key === 'orange' && companionLegendSkill(tpl)) ? `传说技 +1` : `${q.name}战技 +${qSkills}`} · 技能 ${totalSkills}</span>
     <span>${awakened ? '觉醒已生效' : '5星可觉醒跃迁'}</span>
     ${compact ? '' : `<em>${tpl.role === 'dps' ? '输出随从按品质常驻压过主角,觉醒后进入主战力档位。' : '非输出定位也会通过护盾、治疗、控制和战技补足价值。'}</em>`}
+    ${comp ? `<div class="comp-affinity-line">❤️ 好感度 Lv.${(typeof companionAffinityLevel==='function')?companionAffinityLevel(comp):1}${(typeof companionAffinityPoints==='function')?` <small>(${companionAffinityPoints(comp)}/${companionAffinityNextAt((typeof companionAffinityLevel==='function')?companionAffinityLevel(comp):1)})</small>`:''} · 每级参战属性+2%</div>` : ''}
   </div>`;
 }
 function buildCompanionEntries(){
@@ -6860,29 +5653,6 @@ function companionBattleScore(entry) {
 function companionScoreRank(score) {
   return score >= 115 ? 'S' : score >= 92 ? 'A' : score >= 72 ? 'B' : score >= 52 ? 'C' : 'D';
 }
-function companionTacticPanelHtml() {
-  if (typeof COMPANION_TACTICS !== 'object') return '';
-  const key = typeof companionTacticKey === 'function' ? companionTacticKey() : (state.companionTactic || 'balanced');
-  const buttons = Object.entries(COMPANION_TACTICS).map(([id, meta]) => {
-    const active = key === id;
-    const parts = [];
-    if (meta.atk && meta.atk !== 1) parts.push(`攻击 ${Math.round((meta.atk - 1) * 100)}%`);
-    if (meta.def && meta.def !== 1) parts.push(`防御 ${Math.round((meta.def - 1) * 100)}%`);
-    if (meta.hp && meta.hp !== 1) parts.push(`生命 ${Math.round((meta.hp - 1) * 100)}%`);
-    if (meta.heal && meta.heal !== 1) parts.push(`治疗 ${Math.round((meta.heal - 1) * 100)}%`);
-    const reactionDesc = (typeof companionReactionDesc === 'function') ? companionReactionDesc(id) : '';
-    const tip = `<b>${meta.icon} ${tipAttrText(meta.label)}</b><br>${tipAttrText(meta.desc)}${parts.length ? `<br><span class="muted">${tipAttrText(parts.join(' · '))}</span>` : ''}${reactionDesc ? `<br><span class="muted">战友反应: ${tipAttrText(meta.reaction || '战友反应')} · ${tipAttrText(reactionDesc)} · 冷却45秒</span>` : ''}`;
-    return `<button class="comp-tactic-btn comp-tip ${active ? 'active' : ''}" data-action="comptactic" data-value="${id}" data-tip="${companionTipAttr(tip)}">${meta.icon} ${meta.label}</button>`;
-  }).join('');
-  const activeMeta = typeof companionTacticMeta === 'function' ? companionTacticMeta(key) : COMPANION_TACTICS[key];
-  return `<div class="comp-tactic-panel">
-    <div class="comp-tactic-head">
-      <div><b>⚔️ 战术指令</b><span>当前: ${activeMeta.icon} ${activeMeta.label}</span></div>
-      <span>${tipAttrText(activeMeta.desc)} · 战友反应: ${tipAttrText(activeMeta.reaction || '战友反应')} / 45秒</span>
-    </div>
-    <div class="comp-tactic-list">${buttons}</div>
-  </div>`;
-}
 function companionPowerPanelHtml(entries) {
   const owned = entries.filter(entry => entry.isOwned);
   if (!owned.length) {
@@ -7059,7 +5829,7 @@ function companionAwakenSkillHtml(tpl, comp, compact) {
   return `<div class="comp-awaken-skill-note comp-tip ${active ? 'active' : 'locked'}" data-tip="${tip}">
     <b>${active ? '觉醒专属技已解锁' : '觉醒专属技预览'}</b><span>${icon} ${tipAttrText(sk.name)}</span>
     <div>${tipAttrText(sk.desc || '')}</div>
-    ${active ? `<small>熟悉度 ${comp.familiarity || 100} · 觉醒属性 +${Math.round((cost?.statPct || 0.1) * 100)}%</small>` : `<small>${(comp.stars || 1) >= 5 ? tipAttrText(costText) : '升到5星后可消耗同品质通用碎片和资源觉醒。'}</small>`}
+    ${active ? `<small>熟悉度 ${comp.familiarity || 100} · ❤️好感 Lv.${(typeof companionAffinityLevel==='function')?companionAffinityLevel(comp):1}${(typeof companionAffinityPoints==='function')?`(${companionAffinityPoints(comp)}/${companionAffinityNextAt((typeof companionAffinityLevel==='function')?companionAffinityLevel(comp):1)})`:''} · 觉醒属性 +${Math.round((cost?.statPct || 0.1) * 100)}%</small>` : `<small>${(comp.stars || 1) >= 5 ? tipAttrText(costText) : '升到5星后可消耗同品质通用碎片和资源觉醒。'}</small>`}
   </div>`;
 }
 function companionDetailBondsHtml(tpl, entries) {
@@ -7070,7 +5840,9 @@ function companionDetailBondsHtml(tpl, entries) {
     const bondId = companionBondId(bond);
     const missing = companionBondMissingKeys(bond, entries);
     const active = missing.length === 0;
-    const missingText = missing.length ? `缺口: ${missing.map(key => COMPANIONS.find(c => c.key === key)?.name || key).join('、')}` : '已激活:属性已计入角色面板';
+    const deployedSet = new Set([state.companions?.[state.activeCompanion]?.key, ...(state.companionSupport || [])].filter(Boolean));
+    const resonance = active && bond.keys.every(key => deployedSet.has(key));
+    const missingText = missing.length ? `缺口: ${missing.map(key => COMPANIONS.find(c => c.key === key)?.name || key).join('、')}` : `已激活:属性已计入角色面板${resonance ? ' · ⚡上阵共鸣(+50%)' : ''}`;
     const memberText = bond.keys.map(key => {
       const member = COMPANIONS.find(c => c.key === key);
       const owned = (entries || []).some(entry => entry.tpl.key === key && entry.isOwned);
@@ -7614,14 +6386,13 @@ function companionPanelRenderSig(){
   const bonds = (typeof activeCompanionBonds==='function' ? activeCompanionBonds() : []).map(b=>b.name).join('|');
   const filters = `${Object.values(companionFilters).join('|')}#${companionDetailKey || ''}`;
   const wishlist = companionWishlistKeys().join('|');
-  const tactic = typeof companionTacticKey === 'function' ? companionTacticKey() : (state.companionTactic || 'balanced');
   const skillSig = (typeof COMPANIONS !== 'undefined' ? COMPANIONS : [])
     .map(c => `${c.key}:${(c.skills || []).length}:${(c.skills || []).filter(s => s._legendSkill).map(s => s.name).join(',')}:${(c.skills || []).filter(s => s._extraSkill).length}:${c.signature?.name || ''}`)
     .join('|');
   const missions = state.companionMissions?.active
     ? state.companionMissions.active.map(m => `${m.id}:${m.endAt}:${m.compKey}`).join('|') + `#${state.companionMissions.totalCompleted || 0}#${Math.floor(Date.now()/30000)}`
     : '';
-  return [state.cls||'', state.hero?.lvl||0, state.compTickets||0, active, support, compList, shards, bonds, filters, wishlist, tactic, skillSig, missions, companionSheetTab].join('||');
+  return [state.cls||'', state.hero?.lvl||0, state.compTickets||0, active, support, compList, shards, bonds, filters, wishlist, skillSig, missions, companionSheetTab].join('||');
 }
 function renderCompanion() {
   $('gem-cost').textContent = '(消耗1🐾随从券 · 技能含定位招牌技+专属技，品质/星级决定强度)';
@@ -7664,7 +6435,7 @@ function renderCompanion() {
     return;
   }
   if (companionSheetTab === 'combat') {
-    html += `<div class="comp-sheet-pane">${companionSupportPanelHtml(entries)}${companionTacticPanelHtml()}${companionPowerPanelHtml(entries)}</div>`;
+    html += `<div class="comp-sheet-pane">${companionSupportPanelHtml(entries)}${companionPowerPanelHtml(entries)}</div>`;
     cl.innerHTML = html;
     cl.dataset.renderSig = renderSig;
     cl.dataset.rendered = '1';
@@ -8296,12 +7067,10 @@ function dungeonRouteBriefHtml(dg, selectedContract) {
   const tags = (typeof dungeonTraitTagsForDungeon === 'function') ? dungeonTraitTagsForDungeon(dg.key) : [];
   const themeAffixes = (typeof getDungeonThemeAffixes === 'function') ? getDungeonThemeAffixes(dg) : [];
   const rooms = (typeof getDungeonCombatRooms === 'function') ? getDungeonCombatRooms(dg, contractLevel) : [];
-  const edicts = contractLevel > 0 && typeof getDungeonTacticalEdicts === 'function' ? getDungeonTacticalEdicts(dg, contractLevel) : [];
   const environments = contractLevel > 0 && typeof getDungeonEnvironments === 'function' ? getDungeonEnvironments(dg, contractLevel) : [];
   const cataclysms = contractLevel > 0 && typeof getDungeonCataclysms === 'function' ? getDungeonCataclysms(dg, contractLevel) : [];
   const trials = contractLevel > 0 && typeof getDungeonContractTrials === 'function' ? getDungeonContractTrials(dg, contractLevel) : [];
   const timer = contractLevel > 0 && typeof createDungeonTimer === 'function' ? createDungeonTimer(dg, contractLevel) : null;
-  const timeMarkSummary = contractLevel > 0 && typeof dungeonTimeMarkSummary === 'function' ? dungeonTimeMarkSummary(edicts, 0) : null;
   const traitPreview = (typeof dungeonTraitPreviewForDungeon === 'function') ? dungeonTraitPreviewForDungeon(dg.key, 3) : null;
   const lastBoss = (dg.bosses || [])[(dg.bosses || []).length - 1];
   const challengePreview = lastBoss && typeof getDungeonBossChallengeSeals === 'function' ? getDungeonBossChallengeSeals(lastBoss).slice(0, 3) : [];
@@ -8317,8 +7086,6 @@ function dungeonRouteBriefHtml(dg, selectedContract) {
     .concat(rooms.slice(0, 2).map(r => ({ item:r, fallback:'inv_misc_dice_02', color:'#f9a8d4', meta:r.routeMatched ? '路线匹配' : '房间' })))
     .concat(environments.slice(0, 1).map(e => ({ item:e, fallback:'spell_frost_arcticwinds', color:'#67e8f9', meta:'环境' })))
     .concat(cataclysms.slice(0, 1).map(c => ({ item:c, fallback:'spell_nature_earthquake', color:'#fb7185', meta:c.meta || '灾变' })))
-    .concat(edicts.slice(0, 2).map(e => ({ item:e, fallback:'inv_scroll_03', color:'#fde68a', meta:'禁令' })))
-    .concat(timeMarkSummary ? [{ item:timeMarkSummary, fallback:'achievement_bg_kill_flag_carrier', color:'#fca5a5', meta:timeMarkSummary.meta }] : [])
     .concat(trials.slice(0, 1).map(t => ({ item:t, fallback:'ability_warrior_battleshout', color:'#fb7185', meta:'试炼' })));
   if (timer) pressureItems.push({ item:{ name:'限时挑战', icon:'⏳', desc:'在限定时间内通关可获得额外奖励;超时后进入时序脉冲。' }, fallback:'inv_misc_pocketwatch_01', color:'#fde68a', meta:timer.label });
   const pressureHtml = pressureItems.length ? pressureItems.slice(0, 7).map(x => inlineTipSpanHtml(x.item, {
@@ -8546,15 +7313,13 @@ function dungeonHandlingCodexHtml(dg, selectedContract) {
   const contractLevel = Math.max(0, Math.floor(selectedContract?.level || 0));
   const themeAffixes = (typeof getDungeonThemeAffixes === 'function') ? getDungeonThemeAffixes(dg) : [];
   const rooms = (typeof getDungeonCombatRooms === 'function') ? getDungeonCombatRooms(dg, contractLevel) : [];
-  const edicts = contractLevel > 0 && typeof getDungeonTacticalEdicts === 'function' ? getDungeonTacticalEdicts(dg, contractLevel) : [];
   const timer = contractLevel > 0 && typeof createDungeonTimer === 'function' ? createDungeonTimer(dg, contractLevel) : null;
-  const timeMarks = contractLevel > 0 && typeof dungeonTimeMarkSummary === 'function' ? dungeonTimeMarkSummary(edicts, 0) : null;
   const fallbackIcons = {
     interrupt:'ability_kick', adds:'ability_warrior_battleshout', defensive:'ability_warrior_shieldwall',
     resource:'spell_shadow_manaburn', purge:'spell_holy_powerwordshield', execute:'inv_misc_pocketwatch_01',
     clean:'spell_holy_heal', bossChallenge:'achievement_general', addControl:'ability_warrior_battleshout',
     swiftKill:'inv_misc_pocketwatch_01', healthyFinish:'spell_holy_heal', timePulse:'inv_misc_pocketwatch_01',
-    timeEdict:'inv_scroll_03', timeMark:'achievement_bg_kill_flag_carrier', alert:'achievement_bg_returnxflags_def_wsg',
+    alert:'achievement_bg_returnxflags_def_wsg',
     combatRoom:'inv_misc_dice_02', themeAffix:'spell_arcane_starfire', dungeonTrait:'inv_misc_gem_diamond_02',
     firstClear:'inv_misc_gem_topaz_02',
   };
@@ -8562,25 +7327,21 @@ function dungeonHandlingCodexHtml(dg, selectedContract) {
     interrupt:'#fca5a5', adds:'#f9a8d4', defensive:'#93c5fd', resource:'#67e8f9',
     purge:'#c4b5fd', execute:'#fde68a', clean:'#86efac', bossChallenge:'#f6c453',
     addControl:'#f9a8d4', swiftKill:'#fde68a', healthyFinish:'#86efac', timePulse:'#fb7185',
-    timeEdict:'#fcd34d', timeMark:'#fca5a5', alert:'#fb7185', combatRoom:'#f9a8d4',
+    alert:'#fb7185', combatRoom:'#f9a8d4',
     themeAffix:'#67e8f9', dungeonTrait:'#fde68a', firstClear:'#f6c453',
   };
   const metaFor = key => {
     if (handlingCounts.has(key)) return `${handlingCounts.get(key)}/${Math.max(1, bosses.length)}名首领`;
     if (key === 'themeAffix') return themeAffixes.length ? `${themeAffixes.length}条主题` : '常驻规则';
     if (key === 'combatRoom') return rooms.length ? `${rooms.length}个房间` : '路线规则';
-    if (key === 'timeEdict') return edicts.length ? `${edicts.length}条禁令` : '契约开启';
     if (key === 'timePulse') return timer ? timer.label : '超时触发';
-    if (key === 'timeMark') return timeMarks?.meta || '点名压力';
     if (key === 'alert') return contractLevel > 0 ? `${selectedContract?.name || '契约'}生效` : '契约开启';
     return '说明';
   };
   const isActive = key => handlingCounts.has(key)
     || (key === 'themeAffix' && themeAffixes.length)
     || (key === 'combatRoom' && rooms.length)
-    || (key === 'timeEdict' && edicts.length)
     || (key === 'timePulse' && !!timer)
-    || (key === 'timeMark' && !!timeMarks)
     || (key === 'alert' && contractLevel > 0);
   const cell = key => {
     const entry = byKey[key];
@@ -8603,7 +7364,7 @@ function dungeonHandlingCodexHtml(dg, selectedContract) {
   const groups = [
     { title:'首领处理', note:'这些标签来自当前副本所有 Boss 技能,命中越多代表越需要准备对应解法。', keys:['interrupt','adds','defensive','resource','purge','execute','clean'] },
     { title:'挑战目标', note:'首领详情中的挑战目标会影响通关结算奖励和长期完成记录。', keys:['bossChallenge','addControl','swiftKill','healthyFinish'] },
-    { title:'契约时间线', note:'契约、禁令、房间和限时挑战会让同一个副本每天出现不同节奏。', keys:['timePulse','timeEdict','timeMark','alert','combatRoom','themeAffix'] },
+    { title:'契约时间线', note:'契约、房间和限时挑战会让同一个副本每天出现不同节奏。', keys:['timePulse','alert','combatRoom','themeAffix'] },
     { title:'奖励规则', note:'副本装备会同时受首通、掉落池、装等阶梯和副本印记影响。', keys:['dungeonTrait','firstClear'] },
   ];
   const sections = groups.map(group => {
@@ -8791,38 +7552,16 @@ function buildDungeonInfoHtml(dg) {
     const trialPreview = (typeof getDungeonContractTrials === 'function') ? getDungeonContractTrials(dg, selectedContract.level) : [];
     const environmentPreview = (typeof getDungeonEnvironments === 'function') ? getDungeonEnvironments(dg, selectedContract.level) : [];
     const cataclysmPreview = (typeof getDungeonCataclysms === 'function') ? getDungeonCataclysms(dg, selectedContract.level) : [];
-    const edictPreview = (typeof getDungeonTacticalEdicts === 'function') ? getDungeonTacticalEdicts(dg, selectedContract.level) : [];
     const timerPreview = (typeof createDungeonTimer === 'function') ? createDungeonTimer(dg, selectedContract.level) : null;
-    const timeMarkPreview = (typeof dungeonTimeMarkSummary === 'function') ? dungeonTimeMarkSummary(edictPreview, 0) : null;
     const alertLabelTip = inlineTipSpanHtml({ name:'警戒', icon:'🚨', desc:'契约副本每清一波 +1 级，击败首领 +2 级；警戒越高，后续敌人越强，也更容易出现戒备队长。' }, { fallbackIcon:'achievement_bg_returnxflags_def_wsg', color:'#fb7185' });
-    const edictLabelTip = inlineTipSpanHtml({ name:'战术禁令库', icon:'📜', desc:'每次契约会从禁令库随机抽取额外限制；禁令会提高战斗压力，并小幅提高通关奖励。', meta:`当前抽取 ${edictPreview.length} 条` }, { fallbackIcon:'inv_scroll_03', color:'#fcd34d' });
     const timerLabelTip = timerPreview ? inlineTipSpanHtml({ name:'限时挑战', icon:'⏳', desc:'在限定时间内通关可获得额外奖励；超时后每 15 秒叠加一次压迫。', meta:timerPreview.label }, { fallbackIcon:'inv_misc_pocketwatch_01', color:'#fde68a' }) : '';
-    const timeMarkLabelTip = timeMarkPreview ? inlineTipSpanHtml(timeMarkPreview, { fallbackIcon:'achievement_bg_kill_flag_carrier', color:'#fca5a5', meta:timeMarkPreview.meta, metaVisible:true }) : '';
     html += `<div class="dungeon-contract-info">
       <b>${selectedContract.icon} 当前契约: ${selectedContract.name}</b>
       <div class="muted">${selectedContract.desc}</div>
       <div>怪物生命 ×${selectedContract.hp.toFixed(2)} · 攻击 ×${selectedContract.atk.toFixed(2)} · 防御 ×${selectedContract.def.toFixed(2)} · 通关奖励 ×${selectedContract.reward.toFixed(2)}</div>
       <div class="dungeon-alert-rule">${alertLabelTip}: 契约副本每清一波+1级,击败首领+2级;高警戒会强化后续敌人并派出戒备队长。</div>
-      <div class="dungeon-edict-rule">${edictLabelTip}: 100条,当前契约抽取 ${edictPreview.length} 条;禁令会提高难度并小幅提高通关奖励。</div>
-      ${timeMarkPreview ? `<div class="dungeon-edict-rule">${timeMarkLabelTip}: ${timeMarkPreview.types.map(t => t.name).join(' · ')}</div>` : ''}
       ${timerPreview ? `<div class="dungeon-timer-rule">${timerLabelTip}: ${timerPreview.label} 内通关奖励 ×${timerPreview.rewardMult.toFixed(2)},超时后每15秒叠加压迫。</div>` : ''}
     </div>`;
-    if (timeMarkPreview?.types?.length) {
-      html += `<div class="dungeon-edict-info">
-        <b>🎯 时序点名</b>
-        <div style="display:flex;flex-direction:column;gap:5px;margin-top:5px">
-          ${timeMarkPreview.types.map(t => `<div><span style="color:#fca5a5">${symbolIconHtml(t.icon, 14, t.name, t.fallbackIcon || 'achievement_bg_kill_flag_carrier')} ${t.name}</span><div class="muted">${t.desc}${t.source ? ` 来源: ${tipAttrText(t.source)}` : ''}</div></div>`).join('')}
-        </div>
-      </div>`;
-    }
-    if (edictPreview.length) {
-      html += `<div class="dungeon-edict-info">
-        <b>📜 战术禁令</b>
-        <div style="display:flex;flex-direction:column;gap:5px;margin-top:5px">
-          ${edictPreview.map(e => `<div><span style="color:#fcd34d">${symbolIconHtml(e.icon, 14, e.name, 'inv_scroll_03')} ${e.name}</span><div class="muted">${e.desc || '额外战斗限制'}</div></div>`).join('')}
-        </div>
-      </div>`;
-    }
     if (environmentPreview.length) {
       html += `<div class="dungeon-environment-info">
         <b>🧭 副本环境</b>
@@ -9163,7 +7902,7 @@ function renderDungeon() {
         <span class="cd-display">${statusText}</span>
         <div style="display:flex;gap:6px;align-items:center">
           <button style="padding:4px 8px;font-size:11px" data-action="dungeoninfo" data-key="${dg.key}">详情</button>
-          <button class="enter-btn ${canEnter?'epic':''}" data-action="enterdungeon" data-key="${dg.key}" ${canEnter?'':'disabled'}>${btnText}</button>
+          <button class="enter-btn ${canEnter?'epic':''}" data-action="enterdungeon" data-key="${dg.key}" ${canEnter?'':`disabled title="${(access.reason || access.short || '进度不足').replace(/"/g, '')}"`}>${btnText}</button>
         </div>
       </div>`;
     bindInlineTipElements(div);
@@ -9229,6 +7968,8 @@ function updateCdDisplays() {
     if (cdSpan && cdSpan.innerHTML !== statusText) cdSpan.innerHTML = statusText;
     if (btn.textContent !== btnText) btn.textContent = btnText;
     btn.disabled = !canEnter;
+    // 禁用时给出原因,避免"点了没反应"
+    btn.title = canEnter ? '' : (access.reason || access.short || (state.mode !== 'world' ? '当前战斗结束后再来' : '进度不足'));
     btn.classList.toggle('epic', canEnter);
     // CD状态变化时同步变暗/恢复(CD结束立即恢复高亮,无需整列重建)
     const dim = onCd ? '0.6' : '';

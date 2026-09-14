@@ -417,9 +417,6 @@ function buildRareEliteMonsterData(rare) {
     _nextTrickAt: Date.now() + 9000
   };
   const map = typeof MAPS !== 'undefined' ? MAPS.find(m => m.key === rare.mapKey) : null;
-  if (typeof applyWorldZoneThreatScalingToMonster === 'function') {
-    applyWorldZoneThreatScalingToMonster(mon, map, map?.sub?.[state?.currentSubzone || 0] || map?.sub?.[0], { rare:true, boss:true, count:2 });
-  }
   if (typeof applyWorldRenownAlertScalingToMonster === 'function') {
     applyWorldRenownAlertScalingToMonster(mon, map, { rare:true, boss:true });
   }
